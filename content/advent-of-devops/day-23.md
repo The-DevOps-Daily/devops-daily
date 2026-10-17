@@ -4,7 +4,7 @@ day: 23
 excerpt: 'Solve complex container networking challenges involving multi-container apps, custom networks, and service discovery.'
 description: 'Master Docker networking by solving real-world challenges with custom networks, DNS, port mapping, and container communication.'
 publishedAt: '2025-12-23T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Docker'
 tags:
@@ -44,8 +44,6 @@ Solve container networking challenges.
 #### docker-compose.yml (Broken)
 
 ```yaml
-version: '3.8'
-
 services:
   # Frontend - web server
   frontend:
@@ -86,8 +84,6 @@ services:
 ### 1. Fixed docker-compose.yml
 
 ```yaml
-version: '3.8'
-
 networks:
   frontend-net:
     driver: bridge
@@ -274,8 +270,6 @@ tcpdump -i eth0 port 3000
 
 ```yaml
 # isolated-services.yml
-version: '3.8'
-
 networks:
   public:
     driver: bridge
@@ -428,7 +422,7 @@ echo "=== Docker Network Troubleshooting ==="
 
 # Start services
 echo "Starting services..."
-docker-compose up -d
+docker compose up -d
 
 # Wait for services to be healthy
 echo "Waiting for services..."
@@ -447,22 +441,22 @@ curl -f http://localhost:8080/api/health || echo "❌ Backend not accessible via
 # Test container-to-container communication
 echo ""
 echo "Testing container communication..."
-docker-compose exec -T frontend sh -c "wget -q -O- http://backend-api:3000/health" || echo "❌ Frontend cannot reach backend"
+docker compose exec -T frontend sh -c "wget -q -O- http://backend-api:3000/health" || echo "❌ Frontend cannot reach backend"
 
 # Test database connection
 echo ""
 echo "Testing database connection..."
-docker-compose exec -T backend sh -c "nc -zv db 5432" || echo "❌ Backend cannot reach database"
+docker compose exec -T backend sh -c "nc -zv db 5432" || echo "❌ Backend cannot reach database"
 
 # Test Redis connection
 echo ""
 echo "Testing Redis connection..."
-docker-compose exec -T backend sh -c "nc -zv cache 6379" || echo "❌ Backend cannot reach Redis"
+docker compose exec -T backend sh -c "nc -zv cache 6379" || echo "❌ Backend cannot reach Redis"
 
 # DNS resolution tests
 echo ""
 echo "Testing DNS resolution..."
-docker-compose exec -T frontend nslookup backend-api || echo "❌ DNS resolution failed"
+docker compose exec -T frontend nslookup backend-api || echo "❌ DNS resolution failed"
 
 # Network inspection
 echo ""
@@ -545,13 +539,13 @@ Connection established
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # Check service status
-docker-compose ps
+docker compose ps
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Test connectivity
 ./test-network.sh
@@ -600,7 +594,7 @@ docker inspect backend-api | jq '.[0].NetworkSettings'
 
 ```bash
 # 1. All containers running
-docker-compose ps
+docker compose ps
 # All should be "Up (healthy)"
 
 # 2. Networks created
@@ -612,15 +606,15 @@ docker network inspect backend-net | jq '.[0].Containers'
 # Should list expected containers
 
 # 4. DNS resolution works
-docker-compose exec frontend nslookup backend-api
+docker compose exec frontend nslookup backend-api
 # Should resolve
 
 # 5. Port mapping correct
-docker-compose port frontend 80
+docker compose port frontend 80
 # Should show host port mapping
 
 # 6. Inter-container communication works
-docker-compose exec frontend wget -q -O- http://backend-api:3000/health
+docker compose exec frontend wget -q -O- http://backend-api:3000/health
 # Should succeed
 ```
 
@@ -645,9 +639,9 @@ docker-compose exec frontend wget -q -O- http://backend-api:3000/health
 
 ## Links
 
-- [Docker Networking](https://docs.docker.com/network/)
-- [Compose Networking](https://docs.docker.com/compose/networking/)
-- [Network Drivers](https://docs.docker.com/network/drivers/)
+- [Docker Networking](https://docs.docker.com/engine/network/)
+- [Compose Networking](https://docs.docker.com/compose/how-tos/networking/)
+- [Network Drivers](https://docs.docker.com/engine/network/drivers/)
 - [netshoot](https://github.com/nicolaka/netshoot)
 
 ## Share Your Success

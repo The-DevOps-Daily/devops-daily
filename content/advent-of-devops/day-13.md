@@ -4,7 +4,7 @@ day: 13
 excerpt: 'Scan container images and infrastructure code for security vulnerabilities and misconfigurations.'
 description: 'Learn container and infrastructure security scanning with Trivy, Checkov, and automated security checks in CI/CD pipelines.'
 publishedAt: '2025-12-13T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Security'
 tags:
@@ -43,7 +43,8 @@ Scan container images and infrastructure code for security issues.
 
 ```dockerfile
 # Vulnerable Dockerfile
-FROM node:14  # Old version with known vulnerabilities
+# Old version with known vulnerabilities
+FROM node:14
 
 WORKDIR /app
 
@@ -109,11 +110,12 @@ resource "aws_db_instance" "main" {
 ```bash
 # Install Trivy (container & IaC scanner)
 # macOS
-brew install aquasecurity/trivy/trivy
+brew install trivy
 
 # Linux
-wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+sudo apt-get install wget gnupg
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" | sudo tee /etc/apt/sources.list.d/trivy.list
 sudo apt-get update
 sudo apt-get install trivy
 
@@ -179,7 +181,8 @@ checkov -d . --output json > security-report.json
 
 ```dockerfile
 # Secure Dockerfile
-FROM node:20-alpine  # Latest stable, minimal image
+# Current LTS, minimal image
+FROM node:24-alpine
 
 WORKDIR /app
 
@@ -299,9 +302,11 @@ resource "aws_security_group" "web" {
 
 # Secure RDS
 resource "aws_db_instance" "main" {
-  engine         = "postgres"
-  engine_version = "15.3"
-  instance_class = "db.t3.micro"
+  engine            = "postgres"
+  engine_version    = "15"
+  instance_class    = "db.t3.micro"
+  allocated_storage = 20
+  username          = "dbadmin"
 
   # Not publicly accessible
   publicly_accessible = false
@@ -310,8 +315,8 @@ resource "aws_db_instance" "main" {
   storage_encrypted = true
   kms_key_id       = aws_kms_key.rds.arn
 
-  # Use secrets manager for password
-  master_password = data.aws_secretsmanager_secret_version.db_password.secret_string
+  # Let RDS keep the password in Secrets Manager
+  manage_master_user_password = true
 
   # Enable backup
   backup_retention_period = 7
@@ -347,6 +352,10 @@ on:
   schedule:
     - cron: '0 0 * * 0'  # Weekly scan
 
+permissions:
+  contents: read
+  security-events: write  # Needed to upload SARIF results
+
 jobs:
   trivy-image-scan:
     name: Trivy Image Scan
@@ -354,13 +363,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build image
         run: docker build -t ${{ github.repository }}:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ github.repository }}:${{ github.sha }}
           format: 'sarif'
@@ -368,13 +377,13 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
       - name: Fail on critical vulnerabilities
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ github.repository }}:${{ github.sha }}
           exit-code: '1'
@@ -386,10 +395,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Trivy config scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'config'
           scan-ref: '.'
@@ -397,7 +406,7 @@ jobs:
           output: 'trivy-config.sarif'
 
       - name: Upload results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-config.sarif'
@@ -408,10 +417,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
+        uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: terraform,kubernetes,dockerfile
@@ -420,7 +429,7 @@ jobs:
           soft_fail: false
 
       - name: Upload results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: checkov-results.sarif
@@ -431,12 +440,12 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Run npm audit
         run: npm audit --audit-level=high
@@ -688,10 +697,10 @@ npm audit
 
 ## Links
 
-- [Trivy Documentation](https://aquasecurity.github.io/trivy/)
+- [Trivy Documentation](https://trivy.dev/docs/latest/)
 - [Checkov Documentation](https://www.checkov.io/)
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
-- [Docker Security Best Practices](https://docs.docker.com/develop/security-best-practices/)
+- [Docker Engine Security](https://docs.docker.com/engine/security/)
 - [CIS Benchmarks](https://www.cisecurity.org/cis-benchmarks/)
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 

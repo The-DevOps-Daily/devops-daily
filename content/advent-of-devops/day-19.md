@@ -4,7 +4,7 @@ day: 19
 excerpt: 'Perform load testing on your application to identify performance bottlenecks and capacity limits.'
 description: 'Learn load testing fundamentals with k6, Apache Bench, and wrk to measure application performance under stress.'
 publishedAt: '2025-12-19T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Performance'
 tags:
@@ -451,8 +451,7 @@ Example:
 brew install k6
 
 # Linux
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
 sudo apt-get update
 sudo apt-get install k6
@@ -554,10 +553,10 @@ done
 
 ## Links
 
-- [k6 Documentation](https://k6.io/docs/)
+- [k6 Documentation](https://grafana.com/docs/k6/latest/)
 - [Apache Bench Manual](https://httpd.apache.org/docs/2.4/programs/ab.html)
 - [wrk GitHub](https://github.com/wg/wrk)
-- [Load Testing Best Practices](https://k6.io/docs/testing-guides/test-types/)
+- [Load Testing Best Practices](https://grafana.com/docs/k6/latest/testing-guides/test-types/)
 - [Performance Testing Guide](https://martinfowler.com/articles/practical-test-pyramid.html)
 
 ## Share Your Success

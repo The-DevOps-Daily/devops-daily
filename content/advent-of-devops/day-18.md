@@ -4,7 +4,7 @@ day: 18
 excerpt: 'Deploy a static website to AWS S3 with CloudFront CDN for global performance and HTTPS support.'
 description: 'Learn static site deployment using S3, CloudFront, and automation with GitHub Actions for continuous deployment.'
 publishedAt: '2025-12-18T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Cloud'
 tags:
@@ -267,7 +267,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -444,10 +444,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

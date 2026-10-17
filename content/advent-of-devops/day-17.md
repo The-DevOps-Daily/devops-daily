@@ -4,7 +4,7 @@ day: 17
 excerpt: 'Deploy a serverless function to AWS Lambda with API Gateway, learning modern serverless architecture patterns.'
 description: 'Learn serverless deployment with AWS Lambda, API Gateway, and Infrastructure as Code using AWS SAM or Serverless Framework.'
 publishedAt: '2025-12-17T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Serverless'
 tags:
@@ -125,11 +125,11 @@ module.exports.createUser = async (event) => {
 ```yaml
 service: advent-serverless-api
 
-frameworkVersion: '3'
+frameworkVersion: '4'
 
 provider:
   name: aws
-  runtime: nodejs20.x
+  runtime: nodejs24.x
   region: us-east-1
   stage: ${opt:stage, 'dev'}
   memorySize: 256
@@ -220,12 +220,9 @@ plugins:
     "logs": "serverless logs -f hello -t",
     "local": "serverless offline"
   },
-  "dependencies": {
-    "aws-sdk": "^2.1500.0"
-  },
   "devDependencies": {
-    "serverless": "^3.38.0",
-    "serverless-offline": "^13.3.0"
+    "serverless": "^4.44.0",
+    "serverless-offline": "^14.8.3"
   }
 }
 ```
@@ -243,7 +240,7 @@ Globals:
   Function:
     Timeout: 10
     MemorySize: 256
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
     Environment:
       Variables:
         STAGE: !Ref Stage
@@ -363,7 +360,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -378,7 +375,7 @@ resource "aws_lambda_function" "hello" {
   function_name = "hello-${var.environment}"
   role          = aws_iam_role.lambda_role.arn
   handler       = "handler.hello"
-  runtime       = "nodejs20.x"
+  runtime       = "nodejs24.x"
   timeout       = 10
   memory_size   = 256
 
@@ -545,7 +542,7 @@ HTTP Request → API Gateway → Lambda Function → Response
 ### Deploy with Serverless Framework
 
 ```bash
-# Install Serverless Framework
+# Install Serverless Framework (v4 asks you to log in on first use)
 npm install -g serverless
 
 # Install dependencies

@@ -4,7 +4,7 @@ day: 16
 excerpt: 'Configure horizontal pod autoscaling in Kubernetes to automatically scale applications based on CPU and memory usage.'
 description: 'Implement Kubernetes Horizontal Pod Autoscaler (HPA) and learn metrics-based scaling for efficient resource utilization and high availability.'
 publishedAt: '2025-12-16T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Kubernetes'
 tags:
@@ -608,10 +608,10 @@ spec:
 
 ## Links
 
-- [Horizontal Pod Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+- [Horizontal Pod Autoscaler](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/)
 - [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 - [HPA Walkthrough](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/)
-- [Custom Metrics](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#support-for-custom-metrics)
+- [Custom Metrics](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/#scaling-on-custom-metrics)
 - [VPA](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)
 
 ## Share Your Success

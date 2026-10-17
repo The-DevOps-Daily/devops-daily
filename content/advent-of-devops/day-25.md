@@ -4,7 +4,7 @@ day: 25
 excerpt: 'Reflect on your DevOps learning journey, document what you built, and share your knowledge with the community.'
 description: 'Celebrate completing the Advent of DevOps by documenting your journey, creating a portfolio, and sharing your learnings with the world.'
 publishedAt: '2025-12-25T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Career'
 tags:
@@ -87,7 +87,7 @@ Create a single repository to house all your Advent of DevOps projects:
 
 ## About This Repository
 
-This repository contains all my projects from the [Advent of DevOps](https://www.devopsdaily.com/advent) challenge by [@thedevopsdaily](https://x.com/thedevopsdaily).
+This repository contains all my projects from the [Advent of DevOps](https://devops-daily.com/advent-of-devops) challenge by [@thedevopsdaily](https://x.com/thedevopsdaily).
 
 **Read my full journey:** [Link to your Dev.to/DevDojo article]
 
@@ -105,36 +105,36 @@ This repository contains all my projects from the [Advent of DevOps](https://www
 ## Projects by Day
 
 ### Week 1: Foundations
-- **Day 1**: [Docker basics](/advent-of-devops/day-1) - Containerized first application
-- **Day 2**: [Docker Compose](/advent-of-devops/day-2) - Multi-container apps
-- **Day 3**: [GitHub Actions](/advent-of-devops/day-03) - CI/CD automation
-- **Day 4**: [Caching](/advent-of-devops/day-04) - Performance optimization
-- **Day 5**: [Container Debugging](/advent-of-devops/day-05) - Troubleshooting
-- **Day 6**: [Terraform Modules](/advent-of-devops/day-06) - Module development
-- **Day 7**: [IaC Testing](/advent-of-devops/day-07) - Testing and validation
+- **Day 1**: [Minimal Docker Image](https://devops-daily.com/advent-of-devops/day-1) - Multi-stage builds
+- **Day 2**: [Fix a Slow Docker Build](https://devops-daily.com/advent-of-devops/day-2) - Layer caching
+- **Day 3**: [GitHub Actions CI](https://devops-daily.com/advent-of-devops/day-3) - CI/CD automation
+- **Day 4**: [CI Caching](https://devops-daily.com/advent-of-devops/day-4) - Faster pipelines
+- **Day 5**: [Debug a Broken Container](https://devops-daily.com/advent-of-devops/day-5) - Troubleshooting
+- **Day 6**: [Terraform Module](https://devops-daily.com/advent-of-devops/day-6) - Module development
+- **Day 7**: [Improve the Terraform Module](https://devops-daily.com/advent-of-devops/day-7) - Testing and documentation
 
 ### Week 2: Kubernetes & Orchestration
-- **Day 8**: [Kubernetes](/advent-of-devops/day-08/) - Deployment fundamentals
-- **Day 9**: [Pod Debugging](/advent-of-devops/day-09) - Troubleshooting
-- **Day 10**: [Helm Charts](/advent-of-devops/day-10) - Package management
-- **Day 11**: [Monitoring](/advent-of-devops/day-11) - Prometheus & Grafana
-- **Day 12**: [Log Analysis](/advent-of-devops/day-12) - Parsing and analysis
-- **Day 13**: [Security Scanning](/advent-of-devops/day-13) - Trivy
-- **Day 14**: [K8s Networking](/advent-of-devops/day-14) - Deep dive
+- **Day 8**: [Deploy on Kubernetes](https://devops-daily.com/advent-of-devops/day-8) - Deployment fundamentals
+- **Day 9**: [Fix a Failing Pod](https://devops-daily.com/advent-of-devops/day-9) - Troubleshooting
+- **Day 10**: [Helm Chart](https://devops-daily.com/advent-of-devops/day-10) - Package management
+- **Day 11**: [Basic Observability](https://devops-daily.com/advent-of-devops/day-11) - Prometheus & Grafana
+- **Day 12**: [Log Parsing](https://devops-daily.com/advent-of-devops/day-12) - Parsing and analysis
+- **Day 13**: [Security Scan](https://devops-daily.com/advent-of-devops/day-13) - Trivy & Checkov
+- **Day 14**: [Networking Debugging](https://devops-daily.com/advent-of-devops/day-14) - DNS, Services, Network Policies
 
 ### Week 3: Automation & Performance
-- **Day 15**: [Bash Scripting](/advent-of-devops/day-15) - Automation
-- **Day 16**: [Autoscaling](/advent-of-devops/day-16) - HPA
-- **Day 17**: [Serverless](/advent-of-devops/day-17) - AWS Lambda
-- **Day 18**: [Static Sites](/advent-of-devops/day-18) - S3 + CloudFront
-- **Day 19**: [Load Testing](/advent-of-devops/day-19) - k6
-- **Day 20**: [Secrets](/advent-of-devops/day-20) - Secrets management
-- **Day 21**: [Templates](/advent-of-devops/day-21) - Project templates
+- **Day 15**: [Bash Scripting](https://devops-daily.com/advent-of-devops/day-15) - Automation
+- **Day 16**: [Autoscaling](https://devops-daily.com/advent-of-devops/day-16) - HPA
+- **Day 17**: [Serverless Deploy](https://devops-daily.com/advent-of-devops/day-17) - AWS Lambda
+- **Day 18**: [Static Site](https://devops-daily.com/advent-of-devops/day-18) - S3 + CloudFront
+- **Day 19**: [Load Testing](https://devops-daily.com/advent-of-devops/day-19) - k6
+- **Day 20**: [Secrets Management](https://devops-daily.com/advent-of-devops/day-20) - Secrets Manager & External Secrets
+- **Day 21**: [Template Repo](https://devops-daily.com/advent-of-devops/day-21) - Project templates
 
 ### Week 4: Advanced Topics
-- **Day 22**: [Local K8s](/advent-of-devops/day-22/) - Minikube/Kind
-- **Day 23**: [Networking](/advent-of-devops/day-23-challenges/) - Challenges
-- **Day 24**: [Security](/advent-of-devops/day-24/) - Hardening
+- **Day 22**: [Local Cluster](https://devops-daily.com/advent-of-devops/day-22) - Minikube/Kind/k3d
+- **Day 23**: [Container Networking Puzzle](https://devops-daily.com/advent-of-devops/day-23) - Docker networks
+- **Day 24**: [Harden a Config](https://devops-daily.com/advent-of-devops/day-24) - Hardening
 - **Day 25**: Knowledge Sharing - You are here!
 
 ## Key Takeaways
@@ -496,8 +496,8 @@ Thanks @thedevopsdaily for an amazing challenge!
 
 ### Helpful Resources
 
-- [GitHub Profile README Guide](https://docs.github.com/en/account-and-profile/setting-up-and-managing-your-github-profile/customizing-your-profile/managing-your-profile-readme)
-- [Dev.to Writing Guide](https://dev.to/michaelburrows/comment/164k0)
+- [GitHub Profile README Guide](https://docs.github.com/en/account-and-profile/how-tos/profile-customization/managing-your-profile-readme)
+- [DEV Editor Guide](https://dev.to/p/editor_guide)
 - [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
 
 ## Share Your Success
@@ -543,7 +543,7 @@ You've completed the Advent of DevOps challenge!
 
 You've learned Docker, Kubernetes, CI/CD, security, observability, and so much more. You've built 25 projects, written hundreds of lines of code, and grown tremendously as a DevOps engineer.
 
-But this isn't the end—it's just the beginning of your DevOps journey.
+But this isn't the end. It's just the beginning of your DevOps journey.
 
 **What's next?**
 - **Keep building** production projects
@@ -554,10 +554,10 @@ But this isn't the end—it's just the beginning of your DevOps journey.
 
 The DevOps community is better with you in it. Your experiences, shared on platforms where others can find them, will help countless future learners on their journey.
 
-**Don't build another blog—share where people already are!**
+**Don't build another blog. Share where people already are!**
 
 See you in next year's Advent of DevOps! 🚀
 
 ---
 
-*"DevOps is not a destination, it's a continuous journey of improvement—and sharing that journey helps everyone grow."*
+*"DevOps is not a destination, it's a continuous journey of improvement, and sharing that journey helps everyone grow."*

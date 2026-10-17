@@ -4,7 +4,7 @@ day: 20
 excerpt: 'Securely manage application secrets and credentials using AWS Secrets Manager, Kubernetes Secrets, and best practices.'
 description: 'Learn proper secrets management with AWS Secrets Manager, Kubernetes Secrets, and External Secrets Operator for secure credential handling.'
 publishedAt: '2025-12-20T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Security'
 tags:
@@ -296,7 +296,7 @@ helm install external-secrets \
 
 ```yaml
 # secret-store.yaml
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: SecretStore
 metadata:
   name: aws-secretsmanager
@@ -316,7 +316,7 @@ spec:
 
 ```yaml
 # external-secret.yaml
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: database-credentials
@@ -661,7 +661,7 @@ aws secretsmanager describe-secret --secret-id prod/database/credentials | jq '.
 - [AWS Secrets Manager](https://docs.aws.amazon.com/secretsmanager/)
 - [Kubernetes Secrets](https://kubernetes.io/docs/concepts/configuration/secret/)
 - [External Secrets Operator](https://external-secrets.io/)
-- [HashiCorp Vault](https://www.vaultproject.io/)
+- [HashiCorp Vault](https://developer.hashicorp.com/vault)
 - [OWASP Secrets Management](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 
 ## Share Your Success

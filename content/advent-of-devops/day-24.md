@@ -4,7 +4,7 @@ day: 24
 excerpt: 'Apply security hardening best practices to application configurations, containers, and infrastructure.'
 description: 'Learn security hardening by applying CIS benchmarks, security best practices, and defensive configurations to your infrastructure.'
 publishedAt: '2025-12-24T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Security'
 tags:
@@ -90,7 +90,7 @@ server {
 
 ```dockerfile
 # Use specific version, not latest
-FROM node:20.10-alpine3.18
+FROM node:24.22.0-alpine3.24
 
 # Security labels
 LABEL maintainer="security@example.com"
@@ -334,9 +334,6 @@ spec:
     metadata:
       labels:
         app: myapp
-      annotations:
-        # Pod security annotations
-        container.apparmor.security.beta.kubernetes.io/myapp: runtime/default
     spec:
       serviceAccountName: myapp
 
@@ -348,6 +345,8 @@ spec:
         fsGroup: 1001
         fsGroupChangePolicy: "OnRootMismatch"
         seccompProfile:
+          type: RuntimeDefault
+        appArmorProfile:
           type: RuntimeDefault
 
       containers:

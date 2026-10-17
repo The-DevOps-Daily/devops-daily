@@ -4,7 +4,7 @@ day: 22
 excerpt: 'Set up a local Kubernetes cluster with Minikube or Kind for development and testing without cloud costs.'
 description: 'Learn to run local Kubernetes clusters using Minikube, Kind, or k3d for fast development, testing, and learning.'
 publishedAt: '2025-12-22T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Kubernetes'
 tags:
@@ -140,7 +140,7 @@ minikube dashboard
 brew install kind
 
 # Install Kind (Linux)
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64
 chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
 
@@ -174,6 +174,8 @@ kind create cluster --config kind-config.yaml --name dev-cluster
 kubectl cluster-info --context kind-dev-cluster
 
 # Install ingress controller
+# Note: Ingress NGINX was retired in March 2026 and gets no more security fixes.
+# It is fine for a local lab. For real clusters, use a Gateway API controller.
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 
 # Wait for ingress to be ready
@@ -209,7 +211,7 @@ k3d cluster list
 
 ```yaml
 # skaffold.yaml
-apiVersion: skaffold/v4beta6
+apiVersion: skaffold/v4beta14
 kind: Config
 metadata:
   name: local-dev
@@ -224,10 +226,12 @@ build:
       - src: "src/**/*.js"
         dest: /app/src
 
+manifests:
+  rawYaml:
+  - k8s/*.yaml
+
 deploy:
-  kubectl:
-    manifests:
-    - k8s/*.yaml
+  kubectl: {}
 
 portForward:
 - resourceType: service
@@ -311,7 +315,7 @@ eval $(minikube docker-env)
 docker build -t myapp:latest .
 
 # Use in deployment (no push needed)
-kubectl set image deployment/myapp myapp=myapp:latest --record
+kubectl set image deployment/myapp myapp=myapp:latest
 ```
 
 ### 6. Helper Scripts
@@ -336,7 +340,7 @@ case $TOOL in
       --profile=$CLUSTER_NAME \
       --cpus=4 \
       --memory=8192 \
-      --kubernetes-version=v1.28.0
+      --kubernetes-version=v1.37.0
 
     minikube addons enable ingress -p $CLUSTER_NAME
     minikube addons enable metrics-server -p $CLUSTER_NAME
@@ -451,7 +455,7 @@ kind create cluster --name dev
 # Verify
 kubectl get nodes
 # NAME                STATUS   ROLES           AGE   VERSION
-# dev-control-plane   Ready    control-plane   1m    v1.28.0
+# dev-control-plane   Ready    control-plane   1m    v1.37.0
 
 # Deploy application
 kubectl apply -f test-app.yaml
