@@ -4,7 +4,7 @@ day: 11
 excerpt: 'Set up monitoring and logging for your Kubernetes application with Prometheus and Grafana.'
 description: 'Implement observability fundamentals: metrics collection with Prometheus, visualization with Grafana, and centralized logging.'
 publishedAt: '2025-12-11T00:00:00Z'
-updatedAt: '2026-10-17T00:00:00Z'
+updatedAt: '2026-10-18T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Observability'
 tags:
@@ -260,23 +260,152 @@ data:
     }
 ```
 
-### 4. Logging with Loki
+### 4. Logging with Loki and Grafana Alloy
 
-#### Install Loki Stack
+The old `loki-stack` chart is deprecated, and [Promtail reached end of life on March 2, 2026](https://grafana.com/docs/loki/latest/send-data/promtail/). Today's setup uses the current Loki chart in monolithic mode (one pod, good for a lab) and [Grafana Alloy](https://grafana.com/docs/alloy/latest/) to collect the logs. The Loki chart is now published in the `grafana-community` Helm repository; Alloy stays in the `grafana` repository.
+
+#### Install Loki
+
+```yaml
+# loki-values.yaml
+deploymentMode: Monolithic
+loki:
+  auth_enabled: false          # single tenant, no X-Scope-OrgID header needed
+  commonConfig:
+    replication_factor: 1      # required for a single replica
+  storage:
+    type: filesystem           # chunks and index on the pod's volume; use object storage in production
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+singleBinary:
+  replicas: 1
+# The chart defaults to 3 replicas of the scalable targets; monolithic mode needs 0
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+# Skip the memcached caches (the chunks cache asks for 8 GB of memory by default)
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+lokiCanary:
+  enabled: false
+test:
+  enabled: false
+```
 
 ```bash
-# Add Grafana Helm repository
+# Add the Grafana community Helm repository (home of the Loki chart)
+helm repo add grafana-community https://grafana-community.github.io/helm-charts
+helm repo update
+
+helm install loki grafana-community/loki \
+  --version 18.17.1 \
+  --namespace monitoring \
+  --values loki-values.yaml
+
+kubectl wait --for=condition=ready pod/loki-0 -n monitoring --timeout=300s
+```
+
+The chart creates a `loki-gateway` service on port 80. Alloy pushes logs to it, and Grafana queries it.
+
+#### Collect logs with Grafana Alloy
+
+Alloy reads container logs through the Kubernetes API, so it needs no host mounts. One replica can collect logs for the whole cluster; running it as a DaemonSet with this config would send every line once per node.
+
+```yaml
+# alloy-values.yaml
+controller:
+  type: deployment
+  replicas: 1
+alloy:
+  configMap:
+    content: |
+      // Find every pod in the cluster.
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // Keep namespace, pod and container as Loki labels.
+      discovery.relabel "pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+      }
+
+      // Tail container logs through the Kubernetes API.
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.pods.output
+        forward_to = [loki.write.default.receiver]
+      }
+
+      loki.write "default" {
+        endpoint {
+          url = "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
+        }
+      }
+```
+
+```bash
+# Add the Grafana Helm repository (home of the Alloy chart)
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 
-# Install Loki stack (Loki + Promtail)
-helm install loki grafana/loki-stack \
+helm install alloy grafana/alloy \
+  --version 1.13.1 \
   --namespace monitoring \
-  --set grafana.enabled=false \
-  --set promtail.enabled=true
+  --values alloy-values.yaml
 ```
 
-> **Note:** The `loki-stack` chart is deprecated, and [Promtail reached end of life on March 2, 2026](https://grafana.com/docs/loki/latest/send-data/promtail/). The chart still installs, so it is fine for a short lab. For a new setup, install Loki with the [monolithic Helm chart](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/) and collect logs with [Grafana Alloy](https://grafana.com/docs/alloy/latest/).
+The chart's default RBAC already lets Alloy list pods and read `pods/log`.
+
+#### Add Loki to Grafana
+
+The Grafana that comes with kube-prometheus-stack loads any ConfigMap labelled `grafana_datasource: "1"` in its namespace:
+
+```yaml
+# loki-datasource.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-datasource
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+data:
+  loki-datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.monitoring.svc.cluster.local
+```
+
+```bash
+kubectl apply -f loki-datasource.yaml
+```
 
 ### 5. PrometheusRule for Alerts
 
@@ -353,6 +482,21 @@ counter.labels('GET', '200').inc();
 #### 2. Logs (Loki)
 
 **What:** Event records with timestamps
+
+**How it flows here:** Alloy tails each container's log through the Kubernetes API, adds the `namespace`, `pod` and `container` labels, and pushes the lines to Loki. Loki indexes only those labels, not the text, so a query picks streams by label first and then filters the lines:
+
+```logql
+# All lines from the demo app
+{namespace="demo-app"}
+
+# Only warnings
+{namespace="demo-app"} |= "WARN"
+
+# Lines per second, per pod
+sum by (pod) (rate({namespace="demo-app"}[5m]))
+```
+
+Keep labels few and bounded. A label such as a user ID creates a new stream for every value.
 
 **Best practices:**
 ```javascript
@@ -476,7 +620,9 @@ kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
 # In Grafana: Dashboards > Browse
 # Should see imported dashboards
 
-# 5. Logs are collected (if Loki installed)
+# 5. Logs are collected
+kubectl get pods -n monitoring -l app.kubernetes.io/name=alloy
+kubectl get pods -n monitoring -l app.kubernetes.io/name=loki
 # In Grafana: Explore > Loki
 # Query: {namespace="demo-app"}
 
@@ -572,6 +718,8 @@ alertmanager:
 - [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Operator](https://prometheus-operator.dev/)
 - [Loki Documentation](https://grafana.com/docs/loki/latest/)
+- [Install Loki in monolithic mode](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/)
+- [Grafana Alloy Documentation](https://grafana.com/docs/alloy/latest/)
 - [PromQL Tutorial](https://prometheus.io/docs/prometheus/latest/querying/basics/)
 - [Grafana Dashboards](https://grafana.com/grafana/dashboards/)
 

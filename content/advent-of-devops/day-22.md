@@ -4,7 +4,7 @@ day: 22
 excerpt: 'Set up a local Kubernetes cluster with Minikube or Kind for development and testing without cloud costs.'
 description: 'Learn to run local Kubernetes clusters using Minikube, Kind, or k3d for fast development, testing, and learning.'
 publishedAt: '2025-12-22T00:00:00Z'
-updatedAt: '2026-10-17T00:00:00Z'
+updatedAt: '2026-10-18T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Kubernetes'
 tags:
@@ -27,14 +27,14 @@ Set up a local Kubernetes cluster for development.
 - Create a functional cluster
 - Deploy test application
 - Configure local development workflow
-- Set up ingress controller
+- Route traffic to the app with the Gateway API
 
 ## Target
 
 - ✅ Local cluster running
 - ✅ kubectl configured
 - ✅ Application deployed and accessible
-- ✅ Ingress controller working
+- ✅ Gateway routing `hello.local` to the app
 - ✅ Fast development iteration
 
 ## Sample App
@@ -82,24 +82,43 @@ spec:
     targetPort: 8080
   type: ClusterIP
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+# A Gateway is the entry point. The controller you install in the
+# solution creates an NGINX proxy for it.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: hello-gateway
+  namespace: demo
+spec:
+  gatewayClassName: nginx
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+---
+# The HTTPRoute sends requests for hello.local to the hello Service.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: hello
   namespace: demo
 spec:
+  parentRefs:
+  - name: hello-gateway
+    sectionName: http
+  hostnames:
+  - hello.local
   rules:
-  - host: hello.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: hello
-            port:
-              number: 80
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: hello
+      port: 80
 ```
+
+> **Why not Ingress?** Ingress NGINX was retired in March 2026 and gets no more security fixes. The [Gateway API](https://gateway-api.sigs.k8s.io/) is the newer Kubernetes routing API that succeeds Ingress: a `Gateway` owns the listener, and `HTTPRoute`s attach to it. The `Gateway` and `HTTPRoute` kinds only exist after you install the Gateway API CRDs in the solution.
 
 ## Solution
 
@@ -120,8 +139,7 @@ minikube start \
   --disk-size=50g \
   --driver=docker
 
-# Enable addons
-minikube addons enable ingress
+# Enable addons (the Gateway controller is installed in step 4)
 minikube addons enable metrics-server
 minikube addons enable dashboard
 
@@ -145,23 +163,16 @@ chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
 
 # Create cluster configuration
+# Port 80 on your machine goes to NodePort 30080 on the control-plane node,
+# where the Gateway's NGINX proxy listens (see step 4).
 cat <<EOF > kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
 - role: control-plane
-  kubeadmConfigPatches:
-  - |
-    kind: InitConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
   extraPortMappings:
-  - containerPort: 80
+  - containerPort: 30080
     hostPort: 80
-    protocol: TCP
-  - containerPort: 443
-    hostPort: 443
     protocol: TCP
 - role: worker
 - role: worker
@@ -172,17 +183,6 @@ kind create cluster --config kind-config.yaml --name dev-cluster
 
 # Verify
 kubectl cluster-info --context kind-dev-cluster
-
-# Install ingress controller
-# Note: Ingress NGINX was retired in March 2026 and gets no more security fixes.
-# It is fine for a local lab. For real clusters, use a Gateway API controller.
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-
-# Wait for ingress to be ready
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=90s
 ```
 
 ### 3. k3d Setup
@@ -192,11 +192,14 @@ kubectl wait --namespace ingress-nginx \
 curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 
 # Create cluster
+# k3s ships Traefik, which would also claim port 80. Turn it off so the
+# Gateway's proxy gets port 80 behind k3d's load balancer.
 k3d cluster create dev \
   --agents 2 \
   --port "8080:80@loadbalancer" \
   --port "8443:443@loadbalancer" \
-  --api-port 6443
+  --api-port 6443 \
+  --k3s-arg "--disable=traefik@server:*"
 
 # Verify
 kubectl cluster-info
@@ -205,7 +208,56 @@ kubectl cluster-info
 k3d cluster list
 ```
 
-### 4. Local Development Workflow
+### 4. Gateway API Controller
+
+This lab uses [NGINX Gateway Fabric](https://docs.nginx.com/nginx-gateway-fabric/) 2.8.0. It supports Kubernetes 1.32 and later, including the v1.37 node image that kind v0.33 uses, and it implements Gateway API v1.6.3.
+
+```bash
+# 1. Install the Gateway API CRDs (standard channel, the version this release supports)
+kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.8.0" \
+  | kubectl apply -f -
+```
+
+The controller creates one NGINX proxy (a Deployment and a Service) for each Gateway. How that Service is exposed depends on your cluster.
+
+```bash
+# 2a. kind: expose the proxy on NodePort 30080, the port mapped to localhost:80.
+# externalTrafficPolicy=Cluster lets the control-plane node forward to the
+# proxy pod even when it runs on a worker.
+helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+  --version 2.8.0 \
+  --namespace nginx-gateway \
+  --create-namespace \
+  --set nginx.service.type=NodePort \
+  --set nginx.service.externalTrafficPolicy=Cluster \
+  --set-json 'nginx.service.nodePorts=[{"port":30080,"listenerPort":80}]'
+
+# 2b. Minikube or k3d: keep the default LoadBalancer Service.
+# Minikube gives it an IP through `minikube tunnel`; k3d through its built-in
+# load balancer, which can send traffic to any node.
+helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+  --version 2.8.0 \
+  --namespace nginx-gateway \
+  --create-namespace \
+  --set nginx.service.externalTrafficPolicy=Cluster
+
+# 3. Wait for the controller, then check the GatewayClass it created
+kubectl wait --timeout=5m -n nginx-gateway \
+  deployment/ngf-nginx-gateway-fabric --for=condition=Available
+kubectl get gatewayclass nginx
+# ACCEPTED should be True
+```
+
+After you apply `test-app.yaml`, the controller creates the proxy for `hello-gateway` as `hello-gateway-nginx` in the `demo` namespace:
+
+```bash
+kubectl get gateway,httproute -n demo
+# The Gateway should show PROGRAMMED True
+
+kubectl get svc hello-gateway-nginx -n demo
+```
+
+### 5. Local Development Workflow
 
 #### Skaffold Configuration
 
@@ -286,7 +338,7 @@ docker_build('myapp', '.',
 tilt up
 ```
 
-### 5. Local Registry
+### 6. Local Registry
 
 #### For Kind
 
@@ -318,7 +370,7 @@ docker build -t myapp:latest .
 kubectl set image deployment/myapp myapp=myapp:latest
 ```
 
-### 6. Helper Scripts
+### 7. Helper Scripts
 
 #### start-cluster.sh
 
@@ -329,6 +381,8 @@ set -euo pipefail
 
 CLUSTER_NAME="${1:-dev}"
 TOOL="${2:-kind}"
+
+NGF_VERSION="2.8.0"
 
 echo "Starting local Kubernetes cluster..."
 echo "Tool: $TOOL"
@@ -342,8 +396,8 @@ case $TOOL in
       --memory=8192 \
       --kubernetes-version=v1.37.0
 
-    minikube addons enable ingress -p $CLUSTER_NAME
     minikube addons enable metrics-server -p $CLUSTER_NAME
+    GATEWAY_SERVICE_ARGS=()
     ;;
 
   kind)
@@ -351,13 +405,19 @@ case $TOOL in
       --name=$CLUSTER_NAME \
       --config=kind-config.yaml
 
-    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+    # NodePort 30080 is mapped to localhost:80 in kind-config.yaml
+    GATEWAY_SERVICE_ARGS=(
+      --set nginx.service.type=NodePort
+      --set-json 'nginx.service.nodePorts=[{"port":30080,"listenerPort":80}]'
+    )
     ;;
 
   k3d)
     k3d cluster create $CLUSTER_NAME \
       --agents 2 \
-      --port "8080:80@loadbalancer"
+      --port "8080:80@loadbalancer" \
+      --k3s-arg "--disable=traefik@server:*"
+    GATEWAY_SERVICE_ARGS=()
     ;;
 
   *)
@@ -366,6 +426,18 @@ case $TOOL in
     exit 1
     ;;
 esac
+
+echo "Installing the Gateway API CRDs and NGINX Gateway Fabric $NGF_VERSION..."
+kubectl kustomize "https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v$NGF_VERSION" \
+  | kubectl apply -f -
+helm install ngf oci://ghcr.io/nginx/charts/nginx-gateway-fabric \
+  --version "$NGF_VERSION" \
+  --namespace nginx-gateway \
+  --create-namespace \
+  --set nginx.service.externalTrafficPolicy=Cluster \
+  ${GATEWAY_SERVICE_ARGS[@]+"${GATEWAY_SERVICE_ARGS[@]}"}  # empty-array safe on macOS bash 3.2
+kubectl wait --timeout=5m -n nginx-gateway \
+  deployment/ngf-nginx-gateway-fabric --for=condition=Available
 
 echo "✅ Cluster created successfully"
 kubectl cluster-info
@@ -449,13 +521,18 @@ With live reload:
 ### Start Cluster and Deploy
 
 ```bash
-# Start Kind cluster
-kind create cluster --name dev
+# Start a kind cluster with the port mapping from step 2
+kind create cluster --name dev --config kind-config.yaml
 
 # Verify
 kubectl get nodes
 # NAME                STATUS   ROLES           AGE   VERSION
 # dev-control-plane   Ready    control-plane   1m    v1.37.0
+# dev-worker          Ready    <none>          1m    v1.37.0
+# dev-worker2         Ready    <none>          1m    v1.37.0
+
+# Install the Gateway API CRDs and the controller (step 4, kind variant)
+# before the app: test-app.yaml contains a Gateway and an HTTPRoute.
 
 # Deploy application
 kubectl apply -f test-app.yaml
@@ -478,18 +555,32 @@ curl http://localhost:8080
 # Version: 1.0.0
 ```
 
-### Use with Ingress
+### Use with the Gateway
 
 ```bash
-# Add to /etc/hosts
+# Kind: localhost:80 is mapped to the proxy's NodePort
+curl -H "Host: hello.local" http://localhost/
+
+# Or add a hosts entry and use the name
 echo "127.0.0.1 hello.local" | sudo tee -a /etc/hosts
-
-# Access via ingress (Minikube)
-minikube tunnel  # Run in separate terminal
 curl http://hello.local
 
-# Access via ingress (Kind)
-curl http://hello.local
+# k3d: the load balancer listens on localhost:8080
+curl -H "Host: hello.local" http://localhost:8080/
+
+# Minikube: run the tunnel in a separate terminal, then use the external IP
+minikube tunnel
+EXTERNAL_IP=$(kubectl get svc hello-gateway-nginx -n demo \
+  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+curl -H "Host: hello.local" "http://$EXTERNAL_IP/"
+
+# Any cluster: port-forward the proxy
+kubectl port-forward -n demo svc/hello-gateway-nginx 8081:80
+curl -H "Host: hello.local" http://localhost:8081/
+
+# A request for another host name gets a 404 from the proxy,
+# because no HTTPRoute matches it
+curl -i -H "Host: other.local" http://localhost/
 ```
 
 ## Validation
@@ -533,7 +624,7 @@ kubectl delete pod test dnstest
 
 1. **Allocate enough resources**: 4GB RAM minimum
 2. **Use local registry**: Faster image loading
-3. **Enable ingress**: Test routing locally
+3. **Run a Gateway**: Test routing locally with the same Gateway API resources you use in production
 4. **Use namespace**: Organize resources
 5. **Regular cleanup**: Delete unused resources
 6. **Version pin**: Match production K8s version
@@ -551,6 +642,8 @@ kubectl delete pod test dnstest
 - [Minikube](https://minikube.sigs.k8s.io/)
 - [Kind](https://kind.sigs.k8s.io/)
 - [k3d](https://k3d.io/)
+- [Gateway API](https://gateway-api.sigs.k8s.io/)
+- [NGINX Gateway Fabric](https://docs.nginx.com/nginx-gateway-fabric/)
 - [Skaffold](https://skaffold.dev/)
 - [Tilt](https://tilt.dev/)
 
