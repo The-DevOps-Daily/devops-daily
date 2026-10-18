@@ -165,6 +165,18 @@ export default async function AdventOfDevOpsPage() {
         <InlineSponsors variant="banner" />
       </div>
 
+      {/* Sister event */}
+      <div className="container mx-auto px-4">
+        <p className="mx-auto max-w-4xl text-center text-muted-foreground">
+          Prefer SQL? Try{' '}
+          <Link href="/advent-of-postgres" className="font-medium text-primary hover:underline">
+            Advent of Postgres
+          </Link>
+          : 24 SQL puzzles, one a day from 1 to 24 December, on a free Postgres database in your
+          browser.
+        </p>
+      </div>
+
       {/* CTA */}
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">

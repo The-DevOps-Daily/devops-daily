@@ -3,17 +3,24 @@ import type { Metadata } from 'next';
 import { Database } from 'lucide-react';
 import { getPostgresAdventDays, summarize } from '@/lib/advent-postgres';
 import { PostgresAdventCalendar } from '@/components/advent-postgres/calendar';
+import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
 
-const title = 'Advent of Postgres 2026';
+const title = 'Advent of Postgres 2026: 24 Daily SQL Puzzles';
 const description =
-  '24 SQL puzzles from 1 to 24 December, solved on a real Postgres database you get for free in the browser. Window functions, ranges, JSONB, recursive queries and more, one ops story a day.';
+  '24 SQL puzzles, one a day from 1 to 24 December, solved on a free Postgres database in your browser. Window functions, JSONB, recursive queries and more.';
+const image = {
+  url: '/images/advent/advent-of-postgres.png',
+  width: 1200,
+  height: 630,
+  alt: 'Advent of Postgres 2026: 24 SQL puzzles, 1 to 24 December',
+};
 
 export const metadata: Metadata = {
   title,
   description,
   alternates: { canonical: '/advent-of-postgres' },
-  openGraph: { type: 'website', title, description, url: '/advent-of-postgres' },
-  twitter: { card: 'summary_large_image', title, description },
+  openGraph: { type: 'website', title, description, url: '/advent-of-postgres', images: [image] },
+  twitter: { card: 'summary_large_image', title, description, images: [image.url] },
 };
 
 const faq = [
@@ -44,6 +51,13 @@ export default async function AdventOfPostgresPage() {
 
   return (
     <div className="container mx-auto px-4 py-12 md:py-16">
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Advent of Postgres', url: '/advent-of-postgres' },
+        ]}
+      />
+      <FAQSchema questions={faq.map((f) => ({ question: f.q, answer: f.a }))} />
       <header className="mx-auto mb-12 max-w-3xl text-center">
         <p className="mb-3 font-mono text-xs text-muted-foreground">{'// advent-of-postgres'}</p>
         <h1 className="mb-5 text-4xl font-bold tracking-tight sm:text-5xl">

@@ -10,6 +10,8 @@ import { getPostgresAdventDay, getPostgresAdventDays } from '@/lib/advent-postgr
 
 export const dynamicParams = false;
 
+const SHARE_IMAGE = '/images/advent/advent-of-postgres.png';
+
 export async function generateStaticParams() {
   return (await getPostgresAdventDays()).map((d) => ({ slug: d.slug }));
 }
@@ -32,8 +34,14 @@ export async function generateMetadata({
       title,
       description: day.excerpt,
       url: `/advent-of-postgres/${day.slug}`,
+      images: [{ url: SHARE_IMAGE, width: 1200, height: 630, alt: 'Advent of Postgres 2026' }],
     },
-    twitter: { card: 'summary_large_image', title, description: day.excerpt },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: day.excerpt,
+      images: [SHARE_IMAGE],
+    },
   };
 }
 

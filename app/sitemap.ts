@@ -10,6 +10,7 @@ import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
 import { interviewQuestions, getAllTopics } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
+import { getPostgresAdventDays } from '@/lib/advent-postgres';
 import { getAllComparisons } from '@/lib/comparisons';
 import { getAllNewsletters } from '@/lib/newsletters';
 import { getAllHacktoberfestDays } from '@/lib/hacktoberfest';
@@ -51,6 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     newsletters,
     checklists,
     hacktoberfestDays,
+    postgresAdventDays,
   ] = await Promise.all([
     getAllPosts(),
     getAllCategories(),
@@ -65,6 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getAllNewsletters(),
     getAllChecklists(),
     getAllHacktoberfestDays(),
+    getPostgresAdventDays(),
   ]);
 
   const latestPostDate = posts[0] ? postLastModified(posts[0]) : undefined;
@@ -243,6 +246,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Advent of Postgres routes. A day joins the sitemap once it opens, so the
+  // next build after its date adds it.
+  const postgresAdventRoutes = postgresAdventDays
+    .filter((day) => new Date(day.publishedAt).getTime() <= Date.now())
+    .map((day) => ({
+      url: `${baseUrl}/advent-of-postgres/${day.slug}`,
+      ...withLastModified(day.publishedAt),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    }));
+
   // Hacktoberfest routes
   const hacktoberfestRoutes = hacktoberfestDays.map((day) => ({
     url: `${baseUrl}/hacktoberfest/${day.slug}`,
@@ -275,6 +289,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/checklists',
     '/interview-questions',
     '/advent-of-devops',
+    '/advent-of-postgres',
     '/hacktoberfest',
     '/comparisons',
     '/newsletters',
@@ -321,6 +336,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...interviewRoutes,
     ...interviewTopicRoutes,
     ...adventRoutes,
+    ...postgresAdventRoutes,
     ...hacktoberfestRoutes,
     ...comparisonRoutes,
     ...newsletterRoutes,
