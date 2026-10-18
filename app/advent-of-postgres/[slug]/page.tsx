@@ -6,7 +6,7 @@ import { MarkdownContent } from '@/components/markdown-content';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { PostgresWorkbench } from '@/components/advent-postgres/workbench';
 import { PostgresDayGate } from '@/components/advent-postgres/calendar';
-import { getPostgresAdventDay, getPostgresAdventDays } from '@/lib/advent-postgres';
+import { getPostgresAdventDay, getPostgresAdventDays, openAtBuild } from '@/lib/advent-postgres';
 
 export const dynamicParams = false;
 
@@ -24,22 +24,26 @@ export async function generateMetadata({
   const { slug } = await params;
   const day = await getPostgresAdventDay(slug);
   if (!day) return {};
-  const title = `${day.title} | Advent of Postgres`;
+  const open = openAtBuild(day);
+  const title = `${open ? day.title : `Day ${day.day}`} | Advent of Postgres`;
+  const description = open
+    ? day.excerpt
+    : `Day ${day.day} of Advent of Postgres opens on ${day.day} December at 00:00 UTC.`;
   return {
     title: { absolute: title },
-    description: day.excerpt,
+    description,
     alternates: { canonical: `/advent-of-postgres/${day.slug}` },
     openGraph: {
       type: 'article',
       title,
-      description: day.excerpt,
+      description,
       url: `/advent-of-postgres/${day.slug}`,
       images: [{ url: SHARE_IMAGE, width: 1200, height: 630, alt: 'Advent of Postgres 2026' }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
-      description: day.excerpt,
+      description,
       images: [SHARE_IMAGE],
     },
   };
@@ -54,6 +58,7 @@ export default async function AdventOfPostgresDay({
   const day = await getPostgresAdventDay(slug);
   if (!day) notFound();
   const days = await getPostgresAdventDays();
+  const open = openAtBuild(day);
   const prev = days.find((d) => d.day === day.day - 1);
   const next = days.find((d) => d.day === day.day + 1);
 
@@ -75,49 +80,55 @@ export default async function AdventOfPostgresDay({
 
       <header className="mb-8">
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
-          {day.difficulty && (
+          {open && day.difficulty && (
             <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">
               {day.difficulty}
             </span>
           )}
-          {day.skills?.map((s) => (
-            <span
-              key={s}
-              className="rounded-full border border-border px-3 py-1 text-muted-foreground"
-            >
-              {s}
-            </span>
-          ))}
+          {open &&
+            day.skills?.map((s) => (
+              <span
+                key={s}
+                className="rounded-full border border-border px-3 py-1 text-muted-foreground"
+              >
+                {s}
+              </span>
+            ))}
         </div>
-        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{day.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+          {open ? day.title : `Day ${day.day}`}
+        </h1>
       </header>
 
-      <PostgresDayGate publishedAt={day.publishedAt} day={day.day}>
-        <MarkdownContent content={day.content} />
-        {day.hint && (
-          <details className="mt-6 rounded-md border border-border px-4 py-3 text-sm">
-            <summary className="cursor-pointer font-medium">Stuck? Show a hint</summary>
-            <p className="mt-2 text-muted-foreground">{day.hint}</p>
-          </details>
-        )}
-        <PostgresWorkbench
-          day={day.day}
-          schema={day.schema}
-          answerHash={day.answerHash}
-          answerFormat={day.answerFormat}
-          starterSql={day.starter ?? 'select 1;'}
-        />
-        <p className="text-sm text-muted-foreground">
-          <a
-            href={`/advent-of-postgres/seeds/${day.schema}.sql`}
-            className="inline-flex items-center gap-1 underline underline-offset-4"
-            download
-          >
-            <Download className="h-3.5 w-3.5" /> Download today&apos;s data as SQL
-          </a>{' '}
-          to solve it on your own Postgres (14 or later).
-        </p>
-      </PostgresDayGate>
+      {!open && <PostgresDayGate publishedAt={day.publishedAt} day={day.day} builtLocked />}
+      {open && (
+        <PostgresDayGate publishedAt={day.publishedAt} day={day.day}>
+          <MarkdownContent content={day.content} />
+          {day.hint && (
+            <details className="mt-6 rounded-md border border-border px-4 py-3 text-sm">
+              <summary className="cursor-pointer font-medium">Stuck? Show a hint</summary>
+              <p className="mt-2 text-muted-foreground">{day.hint}</p>
+            </details>
+          )}
+          <PostgresWorkbench
+            day={day.day}
+            schema={day.schema}
+            answerHash={day.answerHash}
+            answerFormat={day.answerFormat}
+            starterSql={day.starter ?? 'select 1;'}
+          />
+          <p className="text-sm text-muted-foreground">
+            <a
+              href={`/advent-of-postgres/seeds/${day.schema}.sql`}
+              className="inline-flex items-center gap-1 underline underline-offset-4"
+              download
+            >
+              <Download className="h-3.5 w-3.5" /> Download today&apos;s data as SQL
+            </a>{' '}
+            to solve it on your own Postgres (14 or later).
+          </p>
+        </PostgresDayGate>
+      )}
 
       <nav className="mt-12 flex justify-between border-t border-border pt-6 text-sm">
         {prev ? (
