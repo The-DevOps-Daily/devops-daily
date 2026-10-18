@@ -63,6 +63,14 @@ export function openAtBuild(
   return isPreviewBuild() || Date.parse(day.publishedAt) - BUILD_LEAD_MS <= now;
 }
 
+/** The day had fully opened (00:00 UTC on its date) when this build ran. */
+export function openedBeforeBuild(
+  day: Pick<PostgresAdventDay, 'publishedAt'>,
+  now = Date.now()
+): boolean {
+  return isPreviewBuild() || Date.parse(day.publishedAt) <= now;
+}
+
 /** The puzzle text and metadata the browser needs, without the markdown body. */
 export type PostgresAdventDaySummary = Omit<PostgresAdventDay, 'content'> & { locked?: boolean };
 
