@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: '/experts',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/experts.jpg',
         width: 1200,
         height: 630,
         alt: 'Hire DevOps Experts',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Hire DevOps Experts - Professional Consulting',
     description: 'Connect with experienced DevOps professionals for consulting, training, and implementation services.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/experts.jpg'],
   },
 };
 
