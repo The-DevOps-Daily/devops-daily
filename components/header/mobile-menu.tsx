@@ -145,12 +145,31 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                         target={item.external ? '_blank' : undefined}
                         rel={item.external ? 'noopener noreferrer' : undefined}
                       >
-                        <div className="p-3 border rounded-2xl bg-linear-to-br from-muted to-muted/50 border-border/50">
-                          {item.icon && <item.icon className="w-6 h-6 text-muted-foreground" />}
+                        <div
+                          className={cn(
+                            'p-3 rounded-2xl border',
+                            item.featured
+                              ? 'bg-linear-to-br from-primary/20 to-purple-500/20 border-primary/30'
+                              : 'bg-linear-to-br from-muted to-muted/50 border-border/50'
+                          )}
+                        >
+                          {item.icon && (
+                            <item.icon
+                              className={cn(
+                                'w-6 h-6',
+                                item.featured ? 'text-primary' : 'text-muted-foreground'
+                              )}
+                            />
+                          )}
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span>{item.label}</span>
+                            {item.badge && (
+                              <span className="px-3 py-1 text-xs font-bold text-white rounded-full bg-linear-to-r from-primary to-purple-600">
+                                {item.badge}
+                              </span>
+                            )}
                             {item.external && (
                               <ExternalLink className="w-4 h-4 text-muted-foreground" />
                             )}

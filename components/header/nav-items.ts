@@ -22,6 +22,7 @@ import {
   Scale,
   GitPullRequest,
   Shirt,
+  Database,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -265,6 +266,14 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           icon: Gift,
           featured: true,
           badge: '2026',
+        },
+        {
+          label: 'Advent of Postgres',
+          href: '/advent-of-postgres',
+          description: '24 SQL puzzles on a free Postgres database',
+          icon: Database,
+          featured: true,
+          badge: 'New',
         },
       ],
     },
