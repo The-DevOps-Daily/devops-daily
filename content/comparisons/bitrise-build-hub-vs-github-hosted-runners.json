@@ -1,0 +1,346 @@
+{
+  "id": "bitrise-build-hub-vs-github-hosted-runners",
+  "slug": "bitrise-build-hub-vs-github-hosted-runners",
+  "title": "Bitrise Build Hub vs GitHub-Hosted Runners",
+  "description": "Bitrise Build Hub runs your GitHub Actions jobs on M4 Macs and AMD Linux machines. Compare it with GitHub-hosted runners on price per minute, macOS hardware, concurrency, images, caching and billing, and see which jobs are worth moving.",
+  "category": "CI/CD",
+  "tags": ["GitHub Actions", "Bitrise", "CI/CD", "macOS", "iOS", "Runners", "DevOps"],
+  "createdDate": "2026-10-14T09:00:00Z",
+  "updatedDate": "2026-10-16T09:00:00Z",
+  "estimatedReadTime": "12 min read",
+  "sponsorCampaign": "bitrise",
+  "introduction": "This is not a choice between two CI systems. Bitrise Build Hub keeps GitHub Actions as the orchestrator. Your workflows, triggers, secrets and logs stay on GitHub. Build Hub only supplies the machines: you install a GitHub App, create a machine pool, and change runs-on for the jobs you want to move. So the real question is where each job should run.\n\nThe answer depends mostly on the operating system. On macOS, the gap is large. GitHub's standard macOS runner is a 3 vCPU M1 with 7 GB of RAM at $0.062 a minute, and its biggest Apple silicon runner is a 5 vCPU M2 Pro at $0.102. Build Hub's smallest Mac is a 5 vCPU M4 with 14 GB at $0.03 a minute from the plan budget. Per vCPU, that is under a third of GitHub's price, on newer hardware.\n\nWe measured this on a real app. The Wikipedia iOS app's build and unit tests took a median 5.4 minutes per job on a Build Hub M4 Large and 17.1 minutes on GitHub's standard macOS runner. Rounded up to whole minutes at list price, that is $0.18 against $1.12 a run. The compile step was 3.7 times faster and the tests 4.3 times faster.\n\nOn Linux, the prices are close. Build Hub charges $0.003125 per vCPU minute on every size, and GitHub charges $0.003 for its x64 runners and less for arm64. Build Hub's smallest Linux machine has 4 vCPU, so a short lint job costs more there than on a 2-core GitHub runner. Linux jobs only get cheaper on Build Hub if they finish much faster, and that depends on the job. On the Thunderbird Android app, the 16 vCPU Linux XLarge ran the build and the unit tests about twice as fast as GitHub's 4 vCPU runner. It costs four times as much per minute, so each Linux job cost about twice as much: on Linux, what you buy is time.\n\nFor a mobile team, the two results add up. We ran one pull request pipeline, the iOS build and tests plus the Android build and the Android tests, started together. With a Linux pool that can run two machines at once, it finished in a median 18.5 minutes on Build Hub over seven runs, against 43.5 minutes on GitHub over 17 runs. At list price a run cost about the same: a median $1.69 on Build Hub against $1.79 on GitHub, over 17 runs each, and the ranges overlap. The Macs save money and the 16 vCPU Linux machines cost more per minute, so the two roughly cancel out. The iOS job alone was 2.7 times faster on Build Hub and cost about a fifth as much. Set the pool maximum to at least the number of Linux jobs that start together. In our first ten runs the Linux pool maximum was 1, so the second Android job waited a median 15 minutes for the first, and the pipeline took a median 35 minutes.\n\nThe billing models also differ. GitHub bills each job per minute, rounded up, against included minutes. Build Hub sells a monthly tier, and the tier fee becomes your compute budget. The tier also sets how many Macs can run at the same time.\n\nThis page compares the two on hardware, price, concurrency, images, caching, security and setup. Prices are list prices from each vendor's pricing page, checked on 14 October 2026. Bitrise reviewed the page for accuracy as part of a sponsorship, and the comparison and verdict are ours.",
+  "toolA": {
+    "name": "Bitrise Build Hub",
+    "icon": "Hammer",
+    "website": "https://bitrise.io/platform/build-hub",
+    "description": "Managed runners for GitHub Actions from Bitrise, the mobile CI company. M4 Macs and AMD EPYC Linux machines register with GitHub as self-hosted runners, so workflows stay on GitHub and only the runs-on label changes. Sold as monthly tiers whose fee becomes a shared macOS and Linux compute budget.",
+    "color": "#7a0bc0",
+    "pros": [
+      "M4 Macs from $0.03 a minute (5 vCPU, 14 GB), under a third of GitHub's macOS price per vCPU",
+      "Up to 10 vCPU and 28 GB of RAM per Mac on self-serve plans, against 5 vCPU and 14 GB on GitHub",
+      "Workflows stay in GitHub Actions: switching a job is a runs-on change after the GitHub App and machine pool are set up",
+      "Mobile build stacks with Xcode, Android SDK, Flutter and React Native, and Bitrise states that new Xcode versions arrive within 24 hours of release",
+      "A co-located GitHub Actions cache backend, plus an optional remote build cache for Gradle, Bazel and Xcode",
+      "Ephemeral VMs, SOC 2 Type II, US or EU region locking, and SSH or VNC access to a running job",
+      "One budget covers both macOS and Linux jobs"
+    ],
+    "cons": [
+      "Linux costs about the same per vCPU as GitHub, and dedicated Linux runner vendors are cheaper",
+      "The smallest Linux machine is 4 vCPU, so light jobs cost more than on a 1 or 2-core GitHub runner",
+      "No Windows, no Linux arm64 and no GPU machines",
+      "When the monthly budget runs out, builds stop until the next cycle (pay-as-you-go overage is announced but not live)",
+      "Low tiers cap how many Macs run at once (2 M4 Large machines on Basic Tier 1)",
+      "Bitrise stacks are not GitHub's runner images, so jobs that rely on preinstalled tools may need setup steps",
+      "M4 Pro and M5 Pro Macs are only on the Enterprise plan"
+    ]
+  },
+  "toolB": {
+    "name": "GitHub-Hosted Runners",
+    "icon": "Github",
+    "website": "https://docs.github.com/en/actions/concepts/runners/github-hosted-runners",
+    "description": "The runners GitHub provides for GitHub Actions: Linux, Windows and macOS, x64 and arm64, from 1-core containers to 96-core larger runners and GPU machines. Billed per job minute, rounded up, with included minutes on every plan and free standard runners for public repositories.",
+    "color": "#24292f",
+    "pros": [
+      "Nothing to set up: runs-on: ubuntu-latest works in every repository",
+      "Free standard runners for public repositories, and 2,000 to 50,000 included minutes a month by plan",
+      "Every operating system and architecture, including Windows, arm64 and GPU runners",
+      "Small and cheap options for light jobs, such as ubuntu-slim at $0.002 a minute",
+      "The actions/runner-images images are the reference that most actions and examples assume",
+      "Pay-as-you-go billing with no prepaid budget to run out"
+    ],
+    "cons": [
+      "macOS is expensive: $0.062 a minute for a 3 vCPU M1, about 10 times the Linux rate",
+      "The largest Apple silicon runner is a 5 vCPU M2 Pro with 14 GB of RAM",
+      "Every job is rounded up to a whole minute, which adds up across matrix builds",
+      "Free, Pro and Team plans run at most 5 macOS jobs at the same time",
+      "Included minutes do not apply to larger runners",
+      "The free cache is 10 GB per repository, and entries not used for 7 days are evicted"
+    ]
+  },
+  "features": [
+    {
+      "name": "What it replaces",
+      "category": "Architecture",
+      "toolA": {
+        "value": "Only the machines. GitHub Actions still schedules jobs, stores logs and holds secrets",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Built into GitHub Actions",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Setup",
+      "category": "Operations",
+      "toolA": {
+        "value": "Install the Build Hub GitHub App, create a machine pool, then change runs-on per job",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "None",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "macOS hardware",
+      "category": "Performance",
+      "toolA": {
+        "value": "M4 Large (5 vCPU, 14 GB) and M4 XLarge (10 vCPU, 28 GB); M4 Pro on Enterprise",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "M1 (3 vCPU, 7 GB) standard; M2 Pro (5 vCPU, 14 GB) as the largest Apple silicon runner",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "macOS price",
+      "category": "Cost",
+      "toolA": {
+        "value": "$0.03/min (M4 Large) and $0.06/min (M4 XLarge) from the plan budget",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "$0.062/min (M1) and $0.102/min (M2 Pro)",
+        "rating": "bad"
+      }
+    },
+    {
+      "name": "Measured: iOS app build and unit tests",
+      "category": "Performance",
+      "toolA": {
+        "value": "Wikipedia iOS, median job time: 5.4 min on M4 Large ($0.18 a run), 4.9 min on M4 XLarge ($0.30), 4.2 min on M4 Pro XLarge (Enterprise)",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "17.1 min on the standard M1 runner ($1.12 a run at the private repository price; free for public repositories)",
+        "rating": "bad"
+      }
+    },
+    {
+      "name": "Measured: Android app build and unit tests",
+      "category": "Performance",
+      "toolA": {
+        "value": "Thunderbird on Linux XLarge (16 vCPU), median job time: build 23.2 min ($1.20 a run), unit tests 8.2 min ($0.45)",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "On the 4 vCPU runner: build 49.1 min ($0.60 a run), unit tests 16.0 min ($0.19), at the private repository price",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Linux price",
+      "category": "Cost",
+      "toolA": {
+        "value": "$0.003125 per vCPU minute; smallest machine 4 vCPU at $0.0125/min",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "$0.003 per vCPU minute on x64 (2-core $0.006/min); arm64 from $0.005/min; ubuntu-slim $0.002/min",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Operating systems and architectures",
+      "category": "Features",
+      "toolA": {
+        "value": "macOS (Apple silicon) and Linux x64 (AMD EPYC)",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Linux, Windows and macOS; x64 and arm64; GPU runners",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Billing model",
+      "category": "Cost",
+      "toolA": {
+        "value": "Monthly tier ($15 to $810); the fee is the compute budget for both macOS and Linux. Builds stop when it runs out",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Per job minute, rounded up, after the plan's included minutes",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "macOS concurrency",
+      "category": "Performance",
+      "toolA": {
+        "value": "Set by tier: 10 macOS vCPU on Basic Tier 1 up to 90 on Pro Tier 4",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "5 macOS jobs on Free, Pro and Team; 50 on Enterprise",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Runner images",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Bitrise stacks for Xcode and Linux, at least 100 GB of free disk",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "actions/runner-images, the images most actions are tested on; 14 GB SSD on standard runners",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Caching",
+      "category": "Performance",
+      "toolA": {
+        "value": "Co-located GitHub Actions cache backend; remote build cache for Gradle, Bazel and Xcode as a paid add-on",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "10 GB per repository free, more at $0.07/GB-month; entries evicted after 7 days without use",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Isolation and compliance",
+      "category": "Security",
+      "toolA": {
+        "value": "Ephemeral VM per job; SOC 2 Type II; US or EU region locking",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Fresh VM per job (ubuntu-slim jobs run in a container on a shared VM); covered by GitHub's compliance reports",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Debugging a running job",
+      "category": "Operations",
+      "toolA": {
+        "value": "SSH, and VNC screen sharing on images that support it",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "No built-in access; third-party actions open a tmate session",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Trying it",
+      "category": "Cost",
+      "toolA": {
+        "value": "14-day free trial",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Included minutes every month; free standard runners for public repositories",
+        "rating": "good"
+      }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "An iOS team spends most of its Actions bill on macOS minutes",
+      "recommendation": "toolA",
+      "explanation": "This is where Build Hub is clearly cheaper. A 5 vCPU M4 at $0.03 a minute replaces a 3 vCPU M1 at $0.062 or a 5 vCPU M2 Pro at $0.102. In our test of the Wikipedia iOS app, one build and test job took a median 5.4 minutes on the M4 Large and 17.1 minutes on GitHub's M1, so each run cost $0.18 instead of $1.12. The M4 XLarge was only about 10% faster than the M4 Large on this app, so start with the M4 Large. Check that the tier you pick has enough macOS concurrency for your busiest hour."
+    },
+    {
+      "scenario": "A mobile team builds Android and iOS from the same repository",
+      "recommendation": "toolA",
+      "explanation": "One Build Hub budget pays for both the Macs and the Linux machines, and the stacks come with the Android SDK, Xcode, Flutter and React Native. In our test, a pipeline with the Wikipedia iOS build and tests plus the Thunderbird Android build and tests, started together, finished in a median 18.5 minutes on Build Hub (M4 Large and Linux XLarge) against 43.5 minutes on GitHub's standard runners. At list price a run cost about the same, a median $1.69 against $1.79. Set the Linux pool maximum to at least 2: with a maximum of 1, the two Android jobs ran one after the other and the pipeline took a median 35 minutes. The Macs save money and the Linux machine saves time. Keep short Linux jobs, such as linting, on GitHub's small runners, where they cost less."
+    },
+    {
+      "scenario": "A backend team runs only Linux jobs: tests, Docker builds and linters",
+      "recommendation": "toolB",
+      "explanation": "Build Hub's Linux price per vCPU is about the same as GitHub's, and its smallest machine has 4 vCPU. Unless your heavy jobs finish much faster on Build Hub's AMD EPYC machines, you will not save money. Measure a few heavy jobs on both before you move them. If price is the main goal, dedicated Linux runner providers cost less than both."
+    },
+    {
+      "scenario": "An open source project with public repositories",
+      "recommendation": "toolB",
+      "explanation": "Standard GitHub-hosted runners are free for public repositories, including 4 vCPU Linux machines and macOS. A paid runner only makes sense if a specific job, such as a large iOS build, is too slow."
+    },
+    {
+      "scenario": "A team that also builds and tests on Windows",
+      "recommendation": "toolB",
+      "explanation": "Build Hub has no Windows machines. You can still move macOS jobs to Build Hub and keep Windows jobs on GitHub, because runs-on is set per job."
+    },
+    {
+      "scenario": "A company that needs builds to run in the EU, with SOC 2 evidence from the runner vendor",
+      "recommendation": "either",
+      "explanation": "Build Hub can lock jobs to US or EU data centers and has a SOC 2 Type II report. GitHub-hosted runners are covered by GitHub's own compliance reports, and larger runners with Azure private networking run in the region of your subnet. Check which jobs and data each option covers before you decide."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Do I have to leave GitHub Actions to use Build Hub?",
+      "answer": "No. Build Hub machines register with GitHub as self-hosted runners. Your workflow files, triggers, secrets and logs stay on GitHub. After you install the GitHub App and create a machine pool, you move a job by changing its runs-on label, and you can move it back the same way."
+    },
+    {
+      "question": "Is Build Hub cheaper than GitHub-hosted runners?",
+      "answer": "On macOS, yes, by a wide margin at list price: $0.03 a minute for a 5 vCPU M4, against $0.062 for GitHub's 3 vCPU M1 and $0.102 for its 5 vCPU M2 Pro. On Linux, the price per vCPU is about the same as GitHub's. Remember that you pay the tier fee every month, whether or not you use the whole budget."
+    },
+    {
+      "question": "What happens when the Build Hub budget runs out?",
+      "answer": "According to the Bitrise pricing FAQ in October 2026, you cannot run more builds until the monthly cycle resets. Bitrise says a pay-as-you-go overage option is coming. Pick a tier with some headroom, or move only the jobs whose minutes you can predict."
+    },
+    {
+      "question": "Are Build Hub images the same as GitHub's runner images?",
+      "answer": "No. Build Hub uses Bitrise stacks, not actions/runner-images. Most mobile tooling is preinstalled, but a job that expects a tool from GitHub's image may need a setup action first. Run your workflows on a test pool before you switch a busy branch."
+    },
+    {
+      "question": "Is Build Hub faster than GitHub-hosted runners?",
+      "answer": "For iOS, yes. We ran the Wikipedia iOS app's build and unit tests at a pinned commit on both. The median compile step took 145 seconds on a Build Hub M4 Large (5 vCPU) and 538 seconds on GitHub's standard M1 runner (3 vCPU), and the tests took 86 against 370 seconds. We did not test GitHub's 5 vCPU M2 Pro runner, which costs $0.102 a minute. Bitrise's published 54% iOS speed-up compares a 14 vCPU M4 Pro, which is Enterprise only, with that M2 Pro, so it is not a like-for-like result. In our test the M4 Pro XLarge finished the job in a median 4.2 minutes. For Android, the Thunderbird app's Gradle build step took a median 21 minutes on the 16 vCPU Linux XLarge against 46 minutes on GitHub's 4 vCPU runner, and its unit tests took 5.6 against 12.3 minutes. A 32 vCPU machine was not faster than the 16 vCPU one for the build, so more cores do not always help."
+    },
+    {
+      "question": "Does GitHub charge for self-hosted runners such as Build Hub?",
+      "answer": "Not today. GitHub announced a $0.002 per minute platform charge for self-hosted runners in December 2025, then postponed it. GitHub's docs say Actions usage is free on self-hosted runners. GitHub called it a postponement, not a cancellation, so check the current billing docs."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Most of your Actions bill is macOS minutes",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need more than 5 vCPU or 14 GB of RAM on a Mac without an Enterprise contract",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Developers wait more than 20 minutes for an Android or iOS pipeline",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want SSH or VNC access to a running build",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your jobs run only on Linux",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You build on Windows or need arm64 or GPU runners",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Your repositories are public",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want zero setup and pure pay-as-you-go billing",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You build Android and iOS apps from one pipeline",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "Treat Build Hub as a place to send some of your GitHub Actions jobs, not as a full switch. For macOS it is the stronger choice: newer M4 hardware, up to 28 GB of RAM on self-serve plans, and in our test an iOS build and test job that ran 3.2 times faster for a sixth of the price. For Linux, Build Hub's 16 vCPU machine finished our Android build and tests in about half the time, but GitHub's own runners cost less per job, have smaller sizes for light jobs, and cover Windows, arm64 and GPU. Because runs-on is set per job, the setup that saves the most is usually a mix: macOS on Build Hub, heavy Linux jobs on Build Hub when waiting time matters, and light Linux jobs on GitHub.",
+    "toolAScore": 4.2,
+    "toolBScore": 4,
+    "recommendation": "Choose Bitrise Build Hub for iOS and other macOS jobs, and for mobile teams that build Android and iOS together. Keep GitHub-hosted runners for Linux, Windows and public repositories, and for light jobs where a 1 or 2-core runner is enough."
+  },
+  "relatedTags": ["GitHub Actions", "CI/CD", "macOS", "iOS", "Bitrise", "DevOps"]
+}
