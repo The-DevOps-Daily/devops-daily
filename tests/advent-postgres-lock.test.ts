@@ -7,11 +7,11 @@ const at = (iso: string) => Date.parse(iso);
 describe('Advent of Postgres build-time lock', () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it('opens a day 90 minutes before 00:00 UTC on its date, not earlier', () => {
+  it('opens a day 20 minutes before 00:00 UTC on its date, not earlier', () => {
     vi.stubEnv('CF_PAGES_BRANCH', 'main');
     vi.stubEnv('ADVENT_PREVIEW', '');
-    expect(openAtBuild(day, at('2026-12-04T22:29:00Z'))).toBe(false);
-    expect(openAtBuild(day, at('2026-12-04T22:30:00Z'))).toBe(true);
+    expect(openAtBuild(day, at('2026-12-04T23:39:00Z'))).toBe(false);
+    expect(openAtBuild(day, at('2026-12-04T23:40:00Z'))).toBe(true);
     expect(openAtBuild(day, at('2026-12-06T10:00:00Z'))).toBe(true);
   });
 

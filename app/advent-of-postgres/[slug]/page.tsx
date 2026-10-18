@@ -6,7 +6,12 @@ import { MarkdownContent } from '@/components/markdown-content';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { PostgresWorkbench } from '@/components/advent-postgres/workbench';
 import { PostgresDayGate } from '@/components/advent-postgres/calendar';
-import { getPostgresAdventDay, getPostgresAdventDays, openAtBuild } from '@/lib/advent-postgres';
+import {
+  getPostgresAdventDay,
+  getPostgresAdventDays,
+  isPreviewBuild,
+  openAtBuild,
+} from '@/lib/advent-postgres';
 
 export const dynamicParams = false;
 
@@ -102,7 +107,7 @@ export default async function AdventOfPostgresDay({
 
       {!open && <PostgresDayGate publishedAt={day.publishedAt} day={day.day} builtLocked />}
       {open && (
-        <PostgresDayGate publishedAt={day.publishedAt} day={day.day}>
+        <PostgresDayGate publishedAt={day.publishedAt} day={day.day} preview={isPreviewBuild()}>
           <MarkdownContent content={day.content} />
           {day.hint && (
             <details className="mt-6 rounded-md border border-border px-4 py-3 text-sm">

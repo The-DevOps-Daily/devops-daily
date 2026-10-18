@@ -8,17 +8,23 @@ import type { PostgresAdventDaySummary } from '@/lib/advent-postgres';
 
 const TOTAL_DAYS = 24;
 
-export function PostgresAdventCalendar({ days }: { days: PostgresAdventDaySummary[] }) {
+export function PostgresAdventCalendar({
+  days,
+  preview = false,
+}: {
+  days: PostgresAdventDaySummary[];
+  preview?: boolean;
+}) {
   const [solved, setSolved] = useState<number[]>([]);
   const [open, setOpen] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     const t = setTimeout(() => {
       setSolved(loadSolved());
-      setOpen(Object.fromEntries(days.map((d) => [d.day, isUnlocked(d.publishedAt)])));
+      setOpen(Object.fromEntries(days.map((d) => [d.day, preview || isUnlocked(d.publishedAt)])));
     }, 0);
     return () => clearTimeout(t);
-  }, [days]);
+  }, [days, preview]);
 
   const byDay = new Map(days.map((d) => [d.day, d]));
 
@@ -77,22 +83,27 @@ export function PostgresDayGate({
   publishedAt,
   day,
   builtLocked = false,
+  preview = false,
   children,
 }: {
   publishedAt: string;
   day: number;
   builtLocked?: boolean;
+  /** A preview build of another branch: every day is open. */
+  preview?: boolean;
   children?: React.ReactNode;
 }) {
   const [unlocked, setUnlocked] = useState<boolean | null>(null);
   useEffect(() => {
     const t = setTimeout(
       () =>
-        setUnlocked(builtLocked ? Date.now() >= Date.parse(publishedAt) : isUnlocked(publishedAt)),
+        setUnlocked(
+          builtLocked ? Date.now() >= Date.parse(publishedAt) : preview || isUnlocked(publishedAt)
+        ),
       0
     );
     return () => clearTimeout(t);
-  }, [publishedAt, builtLocked]);
+  }, [publishedAt, builtLocked, preview]);
   if (unlocked === null) return null;
   if (builtLocked && unlocked) {
     return (

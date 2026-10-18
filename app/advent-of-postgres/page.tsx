@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Database } from 'lucide-react';
-import { getPostgresAdventDays, summarize } from '@/lib/advent-postgres';
+import { getPostgresAdventDays, isPreviewBuild, summarize } from '@/lib/advent-postgres';
 import { PostgresAdventCalendar } from '@/components/advent-postgres/calendar';
 import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
 
@@ -114,7 +114,7 @@ export default async function AdventOfPostgresPage() {
         <h2 id="calendar-title" className="mb-6 text-2xl font-semibold">
           The calendar
         </h2>
-        <PostgresAdventCalendar days={days} />
+        <PostgresAdventCalendar days={days} preview={isPreviewBuild()} />
       </section>
 
       <section aria-labelledby="faq" className="mx-auto max-w-3xl">

@@ -1,12 +1,12 @@
 // Advent of Postgres: remove the data of days that have not opened yet from the
 // built site, so it cannot be downloaded early. Same rule as openAtBuild() in
-// lib/advent-postgres.ts: open from 90 minutes before 00:00 UTC on the day, and
+// lib/advent-postgres.ts: open from 20 minutes before 00:00 UTC on the day, and
 // every day on preview builds of other branches.
 const fs = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
 
-const BUILD_LEAD_MS = 90 * 60 * 1000;
+const BUILD_LEAD_MS = 20 * 60 * 1000;
 const branch = process.env.CF_PAGES_BRANCH;
 if (process.env.ADVENT_PREVIEW === '1' || (branch && branch !== 'main')) {
   console.log('Advent of Postgres seeds: preview build, every day kept');

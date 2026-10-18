@@ -45,11 +45,11 @@ export async function getPostgresAdventDay(slug: string): Promise<PostgresAdvent
 }
 
 // A day's puzzle goes into the built pages only once it opens, so the page
-// source cannot give it away early. The December builds run before midnight
-// UTC, so a day counts as open from BUILD_LEAD_MS before its time; the browser
-// still hides it until 00:00 UTC. Preview builds of other branches open every
-// day, for review.
-const BUILD_LEAD_MS = 90 * 60 * 1000;
+// source cannot give it away early. The December rebuild starts at 23:50 UTC
+// and takes about 3 minutes, so a day counts as open from BUILD_LEAD_MS before
+// its time; the browser still hides it until 00:00 UTC. Preview builds of other
+// branches open every day, for review.
+const BUILD_LEAD_MS = 20 * 60 * 1000;
 
 export function isPreviewBuild(): boolean {
   const branch = process.env.CF_PAGES_BRANCH;
