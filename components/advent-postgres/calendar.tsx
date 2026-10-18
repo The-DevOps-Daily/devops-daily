@@ -4,18 +4,32 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   Award,
+  Braces,
+  CalendarRange,
+  ChartColumn,
   CheckCircle2,
   ChevronRight,
+  Clock,
+  Database,
+  Filter,
+  GitBranch,
+  GitMerge,
+  Globe,
   Lock,
+  Network,
   RotateCcw,
+  Search,
+  Sigma,
   Target,
+  TrendingUp,
   Trophy,
   Zap,
+  type LucideIcon,
 } from 'lucide-react';
 import { isUnlocked, loadSolved, saveSolved } from '@/lib/advent-postgres-client';
 import type { PostgresAdventDaySummary } from '@/lib/advent-postgres';
 import { AdventProgressBar } from '@/components/advent-hero-progress';
-import { AdventSectionHeader } from '@/components/advent-hero';
+import { AdventCardIcon, AdventSectionHeader } from '@/components/advent-hero';
 
 const TOTAL_DAYS = 24;
 
@@ -24,6 +38,28 @@ const difficultyColors: Record<string, string> = {
   Intermediate: 'from-yellow-500/20 to-yellow-600/20 border-yellow-500/30 text-yellow-400',
   Advanced: 'from-red-500/20 to-red-600/20 border-red-500/30 text-red-400',
 };
+
+// An icon for the day's main SQL topic, from its first skill. Locked days get the
+// database icon, so the icon gives nothing away.
+const TOPIC_ICONS: [RegExp, LucideIcon][] = [
+  [/neon|branch/i, GitBranch],
+  [/time zone/i, Globe],
+  [/generate_series|time series/i, Clock],
+  [/recursive|graph|path/i, Network],
+  [/jsonb/i, Braces],
+  [/full-text|tsvector/i, Search],
+  [/merge|upsert/i, GitMerge],
+  [/distinct|dedup/i, Filter],
+  [/percentile|regr_|forecast/i, TrendingUp],
+  [/window|lag|row_number|running|session/i, ChartColumn],
+  [/range|availability/i, CalendarRange],
+  [/group by|aggregate|mode\(\)|having/i, Sigma],
+];
+
+function topicIcon(day?: PostgresAdventDaySummary): LucideIcon {
+  const skill = day?.skills?.[0] ?? '';
+  return TOPIC_ICONS.find(([re]) => re.test(skill))?.[1] ?? Database;
+}
 
 /** Which days are open in this browser (?preview, or a preview build, opens all). */
 function useOpenDays(days: PostgresAdventDaySummary[], preview: boolean): Record<number, boolean> {
@@ -106,9 +142,7 @@ export function PostgresAdventCalendar({
                       >
                         {n}
                       </div>
-                      <div className="text-3xl" aria-hidden="true">
-                        🐘
-                      </div>
+                      <AdventCardIcon icon={unlocked ? topicIcon(day) : Database} />
                     </div>
                     <div className="flex items-center gap-2">
                       {done && (

@@ -128,3 +128,12 @@ export function AdventSectionHeader({
     </div>
   );
 }
+
+/** The small icon tile next to the day number on an Advent card. */
+export function AdventCardIcon({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted/40">
+      <Icon className="h-5 w-5 text-primary" strokeWidth={1.5} aria-hidden="true" />
+    </div>
+  );
+}
