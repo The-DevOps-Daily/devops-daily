@@ -19,7 +19,7 @@ export const metadata = {
     url: '/guides',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/guides.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Guides',
@@ -30,7 +30,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'DevOps Guides - In-Depth Resources',
     description: 'Explore comprehensive guides on DevOps practices, tools, and methodologies.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/guides.jpg'],
   },
 };
 

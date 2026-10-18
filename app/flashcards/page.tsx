@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     url: '/flashcards',
     images: [
       {
-        url: '/images/flashcards/flashcards-og.png',
+        url: '/images/pages/flashcards.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Flashcards',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     title: 'DevOps Flashcards - DevOps Daily',
     description:
       'Master DevOps concepts with interactive flashcards covering Kubernetes, Docker, Terraform, Git, and more.',
-    images: ['/images/flashcards/flashcards-og.png'],
+    images: ['/images/pages/flashcards.jpg'],
   },
 }
 

@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   locale: 'en_US',
   images: [
     {
-      url: '/images/checklists/checklists-og.png',
+      url: '/images/pages/checklists.jpg',
       width: 1200,
       height: 630,
       alt: 'DevOps & Security Checklists',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   creator: '@TheDevOpsDaily',
   title: 'DevOps & Security Checklists - The DevOps Daily',
   description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
-  images: ['/images/checklists/checklists-og.png'],
+  images: ['/images/pages/checklists.jpg'],
  },
 };
 

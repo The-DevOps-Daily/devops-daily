@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     url: '/books',
     images: [
       {
-        url: '/images/pages/books-og.png',
+        url: '/images/pages/books.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Books',
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     title: 'DevOps Books | DevOps Daily',
     description:
       'Curated collection of the best DevOps, SRE, and Cloud Engineering books. From beginner guides to advanced practices.',
-    images: ['/images/pages/books-og.png'],
+    images: ['/images/pages/books.jpg'],
   },
 };
 

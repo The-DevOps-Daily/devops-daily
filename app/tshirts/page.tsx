@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     url: '/tshirts',
     images: [
       {
-        url: '/images/pages/tshirts.png',
+        url: '/images/pages/tshirts.jpg',
         width: 1200,
         height: 630,
         alt: 'Free DevOps T-Shirt Designs',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: 'Free DevOps T-Shirt Designs - DevOps Daily',
     description:
       'Print-ready developer and DevOps t-shirt designs. Download the SVG or PNG and print your own, free.',
-    images: ['/images/pages/tshirts.png'],
+    images: ['/images/pages/tshirts.jpg'],
   },
 };
 

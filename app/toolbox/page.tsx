@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     url: '/toolbox',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/toolbox.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Toolbox',
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     title: 'DevOps Toolbox - Essential Tools & Resources',
     description:
       'Browse our curated collection of essential DevOps tools, resources, and services to enhance your workflow and productivity.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/toolbox.jpg'],
   },
 };
 

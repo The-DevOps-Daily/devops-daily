@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://devops-daily.com/images/roadmaps-og.png',
+        url: 'https://devops-daily.com/images/pages/roadmaps.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Roadmaps - Learning Paths',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     images: [
       {
-        url: 'https://devops-daily.com/images/roadmaps-og.png',
+        url: 'https://devops-daily.com/images/pages/roadmaps.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Roadmaps - Learning Paths',
