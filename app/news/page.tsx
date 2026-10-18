@@ -23,7 +23,7 @@ export const metadata = {
     url: '/news',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/news.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Weekly Digest',
@@ -35,7 +35,7 @@ export const metadata = {
     title: 'DevOps Weekly Digest',
     description:
       'Weekly curated DevOps news digests featuring updates from Kubernetes, cloud native tooling, CI/CD, IaC, observability, and security.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/news.jpg'],
   },
 };
 

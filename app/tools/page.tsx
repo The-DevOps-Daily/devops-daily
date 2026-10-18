@@ -16,13 +16,13 @@ export const metadata: Metadata = {
       'Free browser-based DevOps utilities: CIDR, JWT, base64, UUID, cron, and more.',
     url: '/tools',
     type: 'website',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'DevOps Tools' }],
+    images: [{ url: '/images/pages/tools.jpg', width: 1200, height: 630, alt: 'DevOps Tools' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'DevOps Tools and Calculators',
     description: 'Free browser-based DevOps utilities.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/tools.jpg'],
   },
 };
 

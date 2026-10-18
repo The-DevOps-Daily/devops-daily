@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     images: [
       {
-        url: '/images/interview-questions/interview-questions-og.png',
+        url: '/images/pages/interview-questions.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Interview Questions',
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     title: 'DevOps Interview Questions - The DevOps Daily',
     description:
       'Practice real DevOps interview questions with hidden answers, code examples, and explanations.',
-    images: ['/images/interview-questions/interview-questions-og.png'],
+    images: ['/images/pages/interview-questions.jpg'],
   },
 };
 

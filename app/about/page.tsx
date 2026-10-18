@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     url: '/about',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/about.jpg',
         width: 1200,
         height: 630,
         alt: 'About DevOps Daily',
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: 'About DevOps Daily',
     description:
       'DevOps Daily is a community-driven education platform providing tutorials, guides, exercises, and news for DevOps engineers and cloud practitioners.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/about.jpg'],
   },
 };
 

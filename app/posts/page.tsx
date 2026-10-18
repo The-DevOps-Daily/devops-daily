@@ -20,7 +20,7 @@ export const metadata = {
     url: '/posts',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/posts.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Articles',
@@ -32,7 +32,7 @@ export const metadata = {
     title: 'DevOps Articles - All Posts',
     description:
       'Explore our complete collection of DevOps articles, tutorials, and guides. Stay updated with the latest trends and best practices in DevOps.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/posts.jpg'],
   },
 };
 
