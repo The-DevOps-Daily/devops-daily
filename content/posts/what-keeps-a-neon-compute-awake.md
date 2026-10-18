@@ -52,7 +52,7 @@ The answer is in the compute's own code. Every compute runs `compute_ctl`, and i
 
 1. The totals in `pg_stat_database` change: the summed `active_time` (time spent running queries) or the number of `sessions`, across all databases except `postgres` and the templates. This catches a query that started and finished between two checks, and every new connection. The code calls this path experimental but says it is on for everyone.
 2. Any client backend is in a state other than `idle`. That includes `active` (a query is running) and `idle in transaction` (a transaction is open but doing nothing). Backends of Neon's own `cloud_admin` role are left out here.
-3. An idle backend changed state recently: the latest `state_change` among idle backends counts as the last activity ([the backend check](https://github.com/neondatabase/neon/blob/f3a0e4f255/compute_tools/src/monitor.rs#L444-L497)). A connection that ran a query 20 seconds ago and went idle moves the clock; one that has sat idle since it connected does not.
+3. An idle backend changed state recently: the latest `state_change` among idle backends counts as the last activity ([the backend check](https://github.com/neondatabase/neon/blob/f3a0e4f255/compute_tools/src/monitor.rs#L444-L497)). A connection that ran a query 20 seconds ago and went idle moves the clock to then. Connecting moves it once too, but a connection that then just sits idle does not keep moving it.
 4. A logical replication walsender exists, an active logical replication subscription exists, or an autovacuum worker is running.
 
 The control plane reads the last activity time and suspends the compute once the timeout has passed. This is the open-source code at commit `f3a0e4f255`; the version running in production may differ, which is one more reason to measure.
@@ -178,7 +178,7 @@ Monitoring agents such as `postgres_exporter` keep a connection open and run que
 
 The compute stayed awake for the whole 6-minute window and suspended 63 seconds after the agent stopped. One run only, but it matches the code: each query moves the connection's `state_change`, and the backend check counts that whichever database the query runs in. Only the `pg_stat_database` totals leave the `postgres` database out.
 
-So a database scrape every 15 or 30 seconds keeps the compute awake around the clock. If you want monitoring and scale to zero together, scrape less often than the suspend timeout and accept gaps, or read compute state from the Neon API, which does not wake the compute. That is how every number in this post was collected.
+So a database scrape every 15 or 30 seconds keeps the compute awake around the clock. If you want monitoring and scale to zero together, scrape less often than the suspend timeout and accept gaps, or read compute state from the Neon API, which does not wake the compute. That is how we watched compute state for this post without adding database activity.
 
 ## Health checks: the interval decides everything
 
@@ -249,13 +249,13 @@ For a health check, an extra second does not matter. For the first user request 
 
 Neon bills compute in CU-hours: compute size times the hours it runs. A compute kept awake by a light pattern like these sits at its minimum size, so the cost is the minimum CU times the hours awake (real load can scale it up, which costs more). With list prices from [Neon's pricing page](https://neon.com/pricing) ($0.106 per CU-hour on Launch, $0.222 on Scale) and the Free plan's 100 CU-hours per project per month, for one 0.25 CU compute over 30 days with nothing else using it:
 
-| What keeps it awake                             | Awake                         | CU-hours per 30 days at 0.25 CU | Launch       | Scale        | Free plan                                       |
-| ----------------------------------------------- | ----------------------------- | ------------------------------- | ------------ | ------------ | ----------------------------------------------- |
-| Health check every 1 or 5 min, default timeout  | 100%                          | 180                             | $19.08       | $39.96       | allowance used up after 400 hours, about day 17 |
-| Health check every 6 min, default timeout       | 90.6%                         | 163                             | $17.28       | $36.19       | used up around day 19                           |
-| Health check every 10 min, default timeout      | 52.1%                         | 94                              | $9.94        | $20.82       | fits, with 6 CU-hours left for real traffic     |
-| Leaked transaction, monitoring agent every 20 s | 100% while it lasts           | up to 180                       | up to $19.08 | up to $39.96 | as above                                        |
-| Idle connections, `LISTEN`                      | no keep-awake after a suspend | none beyond the normal timeout  | $0 extra     | $0 extra     | no extra use                                    |
+| What keeps it awake                             | Awake               | CU-hours per 30 days at 0.25 CU | Launch       | Scale        | Free plan                                       |
+| ----------------------------------------------- | ------------------- | ------------------------------- | ------------ | ------------ | ----------------------------------------------- |
+| Health check every 1 or 5 min, default timeout  | 100%                | 180                             | $19.08       | $39.96       | allowance used up after 400 hours, about day 17 |
+| Health check every 6 min, default timeout       | 90.6%               | 163                             | $17.28       | $36.19       | used up around day 19                           |
+| Health check every 10 min, default timeout      | 52.1%               | 94                              | $9.94        | $20.82       | fits, with 6 CU-hours left for real traffic     |
+| Leaked transaction, monitoring agent every 20 s | 100% while it lasts | up to 180                       | up to $19.08 | up to $39.96 | as above                                        |
+| Idle connections, `LISTEN`                      | suspended normally  | no sustained cost observed      | none seen    | none seen    | none seen                                       |
 
 On the Free plan, Neon's plans page says that when a project runs out of CU-hours, its compute is suspended until the next billing period. A 5-minute health check on a Free project, starting the month with the full allowance and nothing else using it, does not cost money; it takes the database down for the last 13 days of a 30-day month.
 
@@ -280,7 +280,7 @@ That matches Neon's own description. The operations page says the check verifies
 3. **Set `idle_in_transaction_session_timeout` at the database level.** It ends leaked transactions, which otherwise keep the compute awake for as long as they stay open, and they are a bug anyway.
 4. **Scrape metrics less often than the timeout, or not from the database.** A monitoring agent that queries every 15 to 30 seconds turns scale to zero off.
 5. **Expect connections to drop.** Idle and `LISTEN` connections, direct or pooled, were closed when the compute suspended. Use a pool, handle its `error` event, retry only statements that are safe to repeat, and re-run `LISTEN` after a reconnect.
-6. **If you want it awake, say so.** On paid plans you can raise the suspend timeout or turn scale to zero off. For a production database with steady traffic, that is often the right call, and it is cheaper to decide it on purpose than to pay for it by accident through a health check.
+6. **If you want it awake, say so.** On paid plans you can raise the suspend timeout or turn scale to zero off. For a production database with steady traffic, that is often the right call. The compute bill is the same either way, but a setting you chose is explicit and predictable, and a health check that happens to keep the compute up is neither.
 
 ## What we could not conclude
 
