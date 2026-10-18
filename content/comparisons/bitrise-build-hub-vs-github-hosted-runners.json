@@ -6,10 +6,10 @@
   "category": "CI/CD",
   "tags": ["GitHub Actions", "Bitrise", "CI/CD", "macOS", "iOS", "Runners", "DevOps"],
   "createdDate": "2026-10-14T09:00:00Z",
-  "updatedDate": "2026-10-16T09:00:00Z",
+  "updatedDate": "2026-10-18T09:00:00Z",
   "estimatedReadTime": "12 min read",
   "sponsorCampaign": "bitrise",
-  "introduction": "This is not a choice between two CI systems. Bitrise Build Hub keeps GitHub Actions as the orchestrator. Your workflows, triggers, secrets and logs stay on GitHub. Build Hub only supplies the machines: you install a GitHub App, create a machine pool, and change runs-on for the jobs you want to move. So the real question is where each job should run.\n\nThe answer depends mostly on the operating system. On macOS, the gap is large. GitHub's standard macOS runner is a 3 vCPU M1 with 7 GB of RAM at $0.062 a minute, and its biggest Apple silicon runner is a 5 vCPU M2 Pro at $0.102. Build Hub's smallest Mac is a 5 vCPU M4 with 14 GB at $0.03 a minute from the plan budget. Per vCPU, that is under a third of GitHub's price, on newer hardware.\n\nWe measured this on a real app. The Wikipedia iOS app's build and unit tests took a median 5.4 minutes per job on a Build Hub M4 Large and 17.1 minutes on GitHub's standard macOS runner. Rounded up to whole minutes at list price, that is $0.18 against $1.12 a run. The compile step was 3.7 times faster and the tests 4.3 times faster.\n\nOn Linux, the prices are close. Build Hub charges $0.003125 per vCPU minute on every size, and GitHub charges $0.003 for its x64 runners and less for arm64. Build Hub's smallest Linux machine has 4 vCPU, so a short lint job costs more there than on a 2-core GitHub runner. Linux jobs only get cheaper on Build Hub if they finish much faster, and that depends on the job. On the Thunderbird Android app, the 16 vCPU Linux XLarge ran the build and the unit tests about twice as fast as GitHub's 4 vCPU runner. It costs four times as much per minute, so each Linux job cost about twice as much: on Linux, what you buy is time.\n\nFor a mobile team, the two results add up. We ran one pull request pipeline, the iOS build and tests plus the Android build and the Android tests, started together. With a Linux pool that can run two machines at once, it finished in a median 18.5 minutes on Build Hub over seven runs, against 43.5 minutes on GitHub over 17 runs. At list price a run cost about the same: a median $1.69 on Build Hub against $1.79 on GitHub, over 17 runs each, and the ranges overlap. The Macs save money and the 16 vCPU Linux machines cost more per minute, so the two roughly cancel out. The iOS job alone was 2.7 times faster on Build Hub and cost about a fifth as much. Set the pool maximum to at least the number of Linux jobs that start together. In our first ten runs the Linux pool maximum was 1, so the second Android job waited a median 15 minutes for the first, and the pipeline took a median 35 minutes.\n\nThe billing models also differ. GitHub bills each job per minute, rounded up, against included minutes. Build Hub sells a monthly tier, and the tier fee becomes your compute budget. The tier also sets how many Macs can run at the same time.\n\nThis page compares the two on hardware, price, concurrency, images, caching, security and setup. Prices are list prices from each vendor's pricing page, checked on 14 October 2026. Bitrise reviewed the page for accuracy as part of a sponsorship, and the comparison and verdict are ours.",
+  "introduction": "This is not a choice between two CI systems. Bitrise Build Hub keeps GitHub Actions as the orchestrator. Your workflows, triggers, secrets and logs stay on GitHub. Build Hub only supplies the machines: you install a GitHub App, create a machine pool, and change runs-on for the jobs you want to move. So the real question is where each job should run.\n\nThe answer depends mostly on the operating system. On macOS, the gap is large. GitHub's standard macOS runner is a 3 vCPU M1 with 7 GB of RAM at $0.062 a minute, and its biggest Apple silicon runner is a 5 vCPU M2 Pro at $0.102. Build Hub's smallest Mac is a 5 vCPU M4 with 14 GB at $0.03 a minute from the plan budget. Per vCPU, that is under a third of GitHub's price, on newer hardware.\n\nWe measured this on a real app. Over 17 runs, the Wikipedia iOS app's build and unit tests took a median 5.6 minutes per job on a Build Hub M4 Large and 15.4 minutes on GitHub's standard macOS runner, 2.7 times faster. Rounded up to whole minutes at list price, that is $0.18 against $0.99 a run, about a fifth of the cost.\n\nOn Linux, the prices are close. Build Hub charges $0.003125 per vCPU minute on every size, and GitHub charges $0.003 for its x64 runners and less for arm64. Build Hub's smallest Linux machine has 4 vCPU, so a short lint job costs more there than on a 2-core GitHub runner. Linux jobs only get cheaper on Build Hub if they finish much faster, and that depends on the job. On the Thunderbird Android app, the 16 vCPU Linux XLarge ran the build and the unit tests about twice as fast as GitHub's 4 vCPU runner. It costs four times as much per minute, so each Linux job cost about twice as much: on Linux, what you buy is time.\n\nFor a mobile team, the two results add up. We ran one pull request pipeline, the iOS build and tests plus the Android build and the Android tests, started together. With a Linux pool that can run two machines at once, it finished in a median 18.5 minutes on Build Hub over seven runs, against 43.5 minutes on GitHub over 17 runs. At list price a run cost about the same: a median $1.69 on Build Hub against $1.79 on GitHub, over 17 runs each, and the ranges overlap. The Macs save money and the 16 vCPU Linux machines cost more per minute, so the two roughly cancel out. Set the pool maximum to at least the number of Linux jobs that start together. In our first ten runs the Linux pool maximum was 1, so the second Android job waited a median 15 minutes for the first, and the pipeline took a median 35 minutes. Part of the later drop came from faster Android builds, not only from the setting.\n\nThe billing models also differ. GitHub bills each job per minute, rounded up, against included minutes. Build Hub sells a monthly tier, and the tier fee becomes your compute budget. The tier also sets how many Macs can run at the same time.\n\nThis page compares the two on hardware, price, concurrency, images, caching, security and setup. Prices are list prices from each vendor's pricing page, checked on 18 October 2026. Bitrise reviewed the page for accuracy as part of a sponsorship, and the comparison and verdict are ours.",
   "toolA": {
     "name": "Bitrise Build Hub",
     "icon": "Hammer",
@@ -111,11 +111,11 @@
       "name": "Measured: iOS app build and unit tests",
       "category": "Performance",
       "toolA": {
-        "value": "Wikipedia iOS, median job time: 5.4 min on M4 Large ($0.18 a run), 4.9 min on M4 XLarge ($0.30), 4.2 min on M4 Pro XLarge (Enterprise)",
+        "value": "Wikipedia iOS, median job time over 17 runs: 5.6 min on M4 Large ($0.18 a run). In separate runs, the M4 XLarge took about 9% less time ($0.30 a run) and the M4 Pro XLarge (Enterprise) about 23% less",
         "rating": "good"
       },
       "toolB": {
-        "value": "17.1 min on the standard M1 runner ($1.12 a run at the private repository price; free for public repositories)",
+        "value": "15.4 min on the standard M1 runner ($0.99 a run at the private repository price; free for public repositories)",
         "rating": "bad"
       }
     },
@@ -123,11 +123,11 @@
       "name": "Measured: Android app build and unit tests",
       "category": "Performance",
       "toolA": {
-        "value": "Thunderbird on Linux XLarge (16 vCPU), median job time: build 23.2 min ($1.20 a run), unit tests 8.2 min ($0.45)",
+        "value": "Thunderbird on Linux XLarge (16 vCPU), median job time over 17 runs: build 20.7 min ($1.05 a run), unit tests 7.8 min ($0.40)",
         "rating": "good"
       },
       "toolB": {
-        "value": "On the 4 vCPU runner: build 49.1 min ($0.60 a run), unit tests 16.0 min ($0.19), at the private repository price",
+        "value": "On the 4 vCPU runner: build 43.4 min ($0.53 a run), unit tests 16.1 min ($0.20), at the private repository price",
         "rating": "neutral"
       }
     },
@@ -244,7 +244,7 @@
     {
       "scenario": "An iOS team spends most of its Actions bill on macOS minutes",
       "recommendation": "toolA",
-      "explanation": "This is where Build Hub is clearly cheaper. A 5 vCPU M4 at $0.03 a minute replaces a 3 vCPU M1 at $0.062 or a 5 vCPU M2 Pro at $0.102. In our test of the Wikipedia iOS app, one build and test job took a median 5.4 minutes on the M4 Large and 17.1 minutes on GitHub's M1, so each run cost $0.18 instead of $1.12. The M4 XLarge was only about 10% faster than the M4 Large on this app, so start with the M4 Large. Check that the tier you pick has enough macOS concurrency for your busiest hour."
+      "explanation": "This is where Build Hub is clearly cheaper. A 5 vCPU M4 at $0.03 a minute replaces a 3 vCPU M1 at $0.062 or a 5 vCPU M2 Pro at $0.102. In our test of the Wikipedia iOS app, one build and test job took a median 5.6 minutes on the M4 Large and 15.4 minutes on GitHub's M1 over 17 runs, so each run cost $0.18 instead of $0.99. In separate runs, the M4 XLarge was only about 10% faster than the M4 Large on this app, so start with the M4 Large. Check that the tier you pick has enough macOS concurrency for your busiest hour."
     },
     {
       "scenario": "A mobile team builds Android and iOS from the same repository",
@@ -291,7 +291,7 @@
     },
     {
       "question": "Is Build Hub faster than GitHub-hosted runners?",
-      "answer": "For iOS, yes. We ran the Wikipedia iOS app's build and unit tests at a pinned commit on both. The median compile step took 145 seconds on a Build Hub M4 Large (5 vCPU) and 538 seconds on GitHub's standard M1 runner (3 vCPU), and the tests took 86 against 370 seconds. We did not test GitHub's 5 vCPU M2 Pro runner, which costs $0.102 a minute. Bitrise's published 54% iOS speed-up compares a 14 vCPU M4 Pro, which is Enterprise only, with that M2 Pro, so it is not a like-for-like result. In our test the M4 Pro XLarge finished the job in a median 4.2 minutes. For Android, the Thunderbird app's Gradle build step took a median 21 minutes on the 16 vCPU Linux XLarge against 46 minutes on GitHub's 4 vCPU runner, and its unit tests took 5.6 against 12.3 minutes. A 32 vCPU machine was not faster than the 16 vCPU one for the build, so more cores do not always help."
+      "answer": "For iOS, yes. We ran the Wikipedia iOS app's build and unit tests at a pinned commit, 17 times on each side. The job took a median 337 seconds on a Build Hub M4 Large (5 vCPU) and 922 seconds on GitHub's standard M1 runner (3 vCPU), so it was 2.7 times faster. We did not test GitHub's 5 vCPU M2 Pro runner, which costs $0.102 a minute. In separate runs, the M4 Pro XLarge, which is Enterprise only, took about 23% less time than the M4 Large. For Android, the Thunderbird app's build job took a median 20.7 minutes on the 16 vCPU Linux XLarge against 43.4 minutes on GitHub's 4 vCPU runner, and its unit test job took 7.8 against 16.1 minutes. In separate runs, a 32 vCPU machine was not faster than the 16 vCPU one for the build, so more cores do not always help."
     },
     {
       "question": "Does GitHub charge for self-hosted runners such as Build Hub?",
@@ -337,7 +337,7 @@
     }
   ],
   "verdict": {
-    "summary": "Treat Build Hub as a place to send some of your GitHub Actions jobs, not as a full switch. For macOS it is the stronger choice: newer M4 hardware, up to 28 GB of RAM on self-serve plans, and in our test an iOS build and test job that ran 3.2 times faster for a sixth of the price. For Linux, Build Hub's 16 vCPU machine finished our Android build and tests in about half the time, but GitHub's own runners cost less per job, have smaller sizes for light jobs, and cover Windows, arm64 and GPU. Because runs-on is set per job, the setup that saves the most is usually a mix: macOS on Build Hub, heavy Linux jobs on Build Hub when waiting time matters, and light Linux jobs on GitHub.",
+    "summary": "Treat Build Hub as a place to send some of your GitHub Actions jobs, not as a full switch. For macOS it is the stronger choice: newer M4 hardware, up to 28 GB of RAM on self-serve plans, and in our test an iOS build and test job that ran 2.7 times faster for about a fifth of the price. For Linux, Build Hub's 16 vCPU machine finished our Android build and tests in about half the time, but GitHub's own runners cost less per job, have smaller sizes for light jobs, and cover Windows, arm64 and GPU. Because runs-on is set per job, the setup that saves the most is usually a mix: macOS on Build Hub, heavy Linux jobs on Build Hub when waiting time matters, and light Linux jobs on GitHub.",
     "toolAScore": 4.2,
     "toolBScore": 4,
     "recommendation": "Choose Bitrise Build Hub for iOS and other macOS jobs, and for mobile teams that build Android and iOS together. Keep GitHub-hosted runners for Linux, Windows and public repositories, and for light jobs where a 1 or 2-core runner is enough."
