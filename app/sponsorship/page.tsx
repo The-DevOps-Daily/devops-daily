@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/sponsorship.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Daily Sponsorship',
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     title: 'Sponsor DevOps Daily - Reach 550,000+ Monthly Page Views',
     description:
       'Partner with DevOps Daily to reach DevOps engineers, SREs, and technical decision-makers.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/sponsorship.jpg'],
   },
 };
 
