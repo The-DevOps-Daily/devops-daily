@@ -4,9 +4,9 @@ excerpt: 'Neon Realtime turns a SQL query into a live subscription. We rebuilt o
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-10-16'
-publishedAt: '2026-10-16T09:00:00Z'
-updatedAt: '2026-10-16T09:00:00Z'
+date: '2026-10-19'
+publishedAt: '2026-10-19T09:00:00Z'
+updatedAt: '2026-10-19T09:00:00Z'
 readingTime: '24 min read'
 author:
   name: 'DevOps Daily Team'
