@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     url: '/hacktoberfest',
     images: [
       {
-        url: '/images/hacktoberfest/hacktoberfest-og.png',
+        url: '/images/hacktoberfest/hacktoberfest-2026.jpg',
         width: 1200,
         height: 630,
         alt: 'Hacktoberfest 2026 - DevOps Daily',
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: 'Hacktoberfest 2026 - 7-Day DevOps Contribution Challenge',
     description:
       'Join the DevOps Daily Hacktoberfest 2026 challenge! 7 days of beginner-friendly open source contributions.',
-    images: ['/images/hacktoberfest/hacktoberfest-og.png'],
+    images: ['/images/hacktoberfest/hacktoberfest-2026.jpg'],
   },
 };
 

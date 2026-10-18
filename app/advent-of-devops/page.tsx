@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     url: '/advent-of-devops',
     images: [
       {
-        url: '/images/advent/advent-of-devops.png',
+        url: '/images/advent/advent-of-devops-2026.jpg',
         width: 1200,
         height: 630,
         alt: PAGE_TITLE,
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     title: PAGE_TITLE,
     description:
       'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more.',
-    images: ['/images/advent/advent-of-devops.png'],
+    images: ['/images/advent/advent-of-devops-2026.jpg'],
   },
 };
 

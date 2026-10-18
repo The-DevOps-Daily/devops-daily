@@ -9,7 +9,7 @@ const title = 'Advent of Postgres 2026: 24 Daily SQL Puzzles';
 const description =
   '24 SQL puzzles, one a day from 1 to 24 December, solved on a free Postgres database in your browser. Window functions, JSONB, recursive queries and more.';
 const image = {
-  url: '/images/advent/advent-of-postgres.png',
+  url: '/images/advent/advent-of-postgres-2026.jpg',
   width: 1200,
   height: 630,
   alt: 'Advent of Postgres 2026: 24 SQL puzzles, 1 to 24 December',

@@ -39,7 +39,7 @@ export async function generateMetadata({
       title: day.title,
       description: day.excerpt,
       url: `/hacktoberfest/${slug}`,
-      images: [{ url: '/images/hacktoberfest/hacktoberfest-og.png', width: 1200, height: 630 }],
+      images: [{ url: '/images/hacktoberfest/hacktoberfest-2026.jpg', width: 1200, height: 630 }],
     },
   };
 }
