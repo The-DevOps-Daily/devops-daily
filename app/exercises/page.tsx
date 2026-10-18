@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://devops-daily.com/images/exercises-og-image.png',
+        url: 'https://devops-daily.com/images/pages/exercises.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Exercises & Labs',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: 'DevOps Exercises & Labs - Hands-On Learning | DevOps Daily',
     description:
       'Practice real-world DevOps skills with our comprehensive collection of hands-on exercises and labs.',
-    images: ['https://devops-daily.com/images/exercises-og-image.png'],
+    images: ['https://devops-daily.com/images/pages/exercises.jpg'],
   },
 };
 

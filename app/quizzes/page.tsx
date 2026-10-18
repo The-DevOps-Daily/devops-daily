@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     url: '/quizzes',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/quizzes.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Quizzes',
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     title: 'DevOps Quizzes & Tests - DevOps Daily',
     description:
       'Test your DevOps knowledge with interactive quizzes covering Git, Docker, Kubernetes, Terraform, and more.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/quizzes.jpg'],
   },
 };
 
