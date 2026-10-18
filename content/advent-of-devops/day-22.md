@@ -574,13 +574,13 @@ EXTERNAL_IP=$(kubectl get svc hello-gateway-nginx -n demo \
   -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 curl -H "Host: hello.local" "http://$EXTERNAL_IP/"
 
-# Any cluster: port-forward the proxy
+# Any cluster: port-forward the proxy (keep it running in a separate terminal)
 kubectl port-forward -n demo svc/hello-gateway-nginx 8081:80
 curl -H "Host: hello.local" http://localhost:8081/
 
 # A request for another host name gets a 404 from the proxy,
 # because no HTTPRoute matches it
-curl -i -H "Host: other.local" http://localhost/
+curl -i -H "Host: other.local" http://localhost:8081/
 ```
 
 ## Validation
