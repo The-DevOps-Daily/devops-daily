@@ -2,10 +2,20 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { CheckCircle2, ChevronRight, Lock, RotateCcw } from 'lucide-react';
+import {
+  Award,
+  CheckCircle2,
+  ChevronRight,
+  Lock,
+  RotateCcw,
+  Target,
+  Trophy,
+  Zap,
+} from 'lucide-react';
 import { isUnlocked, loadSolved, saveSolved } from '@/lib/advent-postgres-client';
 import type { PostgresAdventDaySummary } from '@/lib/advent-postgres';
 import { AdventProgressBar } from '@/components/advent-hero-progress';
+import { AdventSectionHeader } from '@/components/advent-hero';
 
 const TOTAL_DAYS = 24;
 
@@ -58,87 +68,100 @@ export function PostgresAdventCalendar({
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:col-span-9 xl:grid-cols-3">
-        {Array.from({ length: TOTAL_DAYS }, (_, i) => i + 1).map((n) => {
-          const day = byDay.get(n);
-          const unlocked = !!day && !!open[n];
-          const done = solved.includes(n);
-          const body = (
-            <>
-              <div className="absolute inset-0 bg-linear-to-br from-card via-card to-primary/5 opacity-90" />
-              {!unlocked && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-                  <div className="text-center">
-                    <Lock
-                      className="mx-auto mb-2 h-8 w-8 text-muted-foreground"
-                      strokeWidth={1.5}
-                    />
-                    <div className="font-mono text-sm text-muted-foreground">Opens Dec {n}</div>
+      <div className="lg:col-span-9">
+        <AdventSectionHeader
+          id="calendar-title"
+          label="daily puzzles"
+          title="Daily Puzzles"
+          description="A new puzzle opens at 00:00 UTC each day. Your progress is saved in this browser."
+        />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: TOTAL_DAYS }, (_, i) => i + 1).map((n) => {
+            const day = byDay.get(n);
+            const unlocked = !!day && !!open[n];
+            const done = solved.includes(n);
+            const body = (
+              <>
+                <div className="absolute inset-0 bg-linear-to-br from-card via-card to-primary/5 opacity-90" />
+                {!unlocked && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                    <div className="text-center">
+                      <Lock
+                        className="mx-auto mb-2 h-8 w-8 text-muted-foreground"
+                        strokeWidth={1.5}
+                      />
+                      <div className="font-mono text-sm text-muted-foreground">Opens Dec {n}</div>
+                    </div>
                   </div>
-                </div>
-              )}
-              <div className="relative p-6">
-                <div className="mb-4 flex items-start justify-between">
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-full border text-xl font-bold ${
-                      done
-                        ? 'border-green-500/50 bg-green-500/20 text-green-500'
-                        : 'border-primary/30 bg-linear-to-br from-primary/20 to-blue-500/20'
-                    }`}
-                  >
-                    {n}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {done && (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" aria-label="Solved" />
-                    )}
-                    {unlocked && day?.difficulty && (
+                )}
+                <div className="relative p-6">
+                  <div className="mb-4 flex items-start justify-between">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`rounded-md border bg-linear-to-br px-2 py-1 text-xs font-medium ${
-                          difficultyColors[day.difficulty] ?? difficultyColors.Intermediate
+                        className={`flex h-12 w-12 items-center justify-center rounded-full border text-xl font-bold ${
+                          done
+                            ? 'border-green-500/50 bg-green-500/20 text-green-500'
+                            : 'border-primary/30 bg-linear-to-br from-primary/20 to-blue-500/20'
                         }`}
                       >
-                        {day.difficulty}
+                        {n}
                       </div>
+                      <div className="text-3xl" aria-hidden="true">
+                        🐘
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {done && (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" aria-label="Solved" />
+                      )}
+                      {unlocked && day?.difficulty && (
+                        <div
+                          className={`rounded-md border bg-linear-to-br px-2 py-1 text-xs font-medium ${
+                            difficultyColors[day.difficulty] ?? difficultyColors.Intermediate
+                          }`}
+                        >
+                          {day.difficulty}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary">
+                    {unlocked && day ? day.title.replace(/^Day \d+: /, '') : `Day ${n}`}
+                  </h3>
+                  {unlocked && day?.excerpt && (
+                    <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{day.excerpt}</p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    {unlocked && day?.skills?.[0] ? (
+                      <div className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                        {day.skills[0]}
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+                    {unlocked && (
+                      <ChevronRight className="h-5 w-5 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
                     )}
                   </div>
                 </div>
-                <h3 className="mb-2 line-clamp-2 text-lg font-bold transition-colors group-hover:text-primary">
-                  {unlocked && day ? day.title.replace(/^Day \d+: /, '') : `Day ${n}`}
-                </h3>
-                {unlocked && day?.excerpt && (
-                  <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{day.excerpt}</p>
-                )}
-                <div className="flex items-center justify-between">
-                  {unlocked && day?.skills?.[0] ? (
-                    <div className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                      {day.skills[0]}
-                    </div>
-                  ) : (
-                    <span />
-                  )}
-                  {unlocked && (
-                    <ChevronRight className="h-5 w-5 text-primary opacity-0 transition-opacity group-hover:opacity-100" />
-                  )}
-                </div>
+              </>
+            );
+            const cls = `group relative block overflow-hidden rounded-md border transition-colors ${
+              unlocked
+                ? 'cursor-pointer border-border hover:border-primary/40 hover:bg-muted/30'
+                : 'pointer-events-none cursor-not-allowed border-border/50 opacity-60'
+            } ${done ? 'ring-2 ring-green-500/50' : ''}`;
+            return unlocked && day ? (
+              <Link key={n} href={`/advent-of-postgres/${day.slug}`} className={cls}>
+                {body}
+              </Link>
+            ) : (
+              <div key={n} aria-disabled="true" className={cls}>
+                {body}
               </div>
-            </>
-          );
-          const cls = `group relative block overflow-hidden rounded-md border transition-colors ${
-            unlocked
-              ? 'cursor-pointer border-border hover:border-primary/40 hover:bg-muted/30'
-              : 'pointer-events-none cursor-not-allowed border-border/50 opacity-60'
-          } ${done ? 'ring-2 ring-green-500/50' : ''}`;
-          return unlocked && day ? (
-            <Link key={n} href={`/advent-of-postgres/${day.slug}`} className={cls}>
-              {body}
-            </Link>
-          ) : (
-            <div key={n} aria-disabled="true" className={cls}>
-              {body}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
       <aside className="order-first lg:order-none lg:col-span-3">
         <div className="lg:sticky lg:top-8">
@@ -155,11 +178,26 @@ export function PostgresAdventCalendar({
   );
 }
 
+const MILESTONES = [
+  { threshold: 5, label: 'Getting Started', icon: Zap, color: 'text-blue-500' },
+  { threshold: 10, label: 'Making Progress', icon: Target, color: 'text-yellow-500' },
+  { threshold: 20, label: 'Almost There', icon: Trophy, color: 'text-orange-500' },
+  { threshold: TOTAL_DAYS, label: 'Champion', icon: Award, color: 'text-green-500' },
+];
+
 function PostgresProgressStats({ solved, onReset }: { solved: number; onReset: () => void }) {
   const pct = Math.round((solved / TOTAL_DAYS) * 100);
+  const milestone = MILESTONES.filter((m) => solved >= m.threshold).pop() || MILESTONES[0];
+  const Icon = milestone.icon;
   return (
     <div className="rounded-xl border border-border bg-card/50 p-6 backdrop-blur">
-      <h3 className="mb-4 text-lg font-semibold">Your Progress</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Your Progress</h3>
+        <div className="flex items-center gap-2">
+          <Icon className={`h-5 w-5 ${milestone.color}`} />
+          <span className="text-sm font-medium text-muted-foreground">{milestone.label}</span>
+        </div>
+      </div>
       <div className="mb-4">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Puzzles Solved</span>

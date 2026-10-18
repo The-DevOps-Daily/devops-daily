@@ -115,15 +115,7 @@ export default async function AdventOfPostgresPage() {
           <SectionSeparator command="ls /advent-of-postgres/days" />
         </div>
         <section aria-labelledby="calendar-title" className="container mx-auto px-4 py-8">
-          <div className="mx-auto max-w-5xl">
-            <AdventSectionHeader
-              id="calendar-title"
-              label="daily puzzles"
-              title="Daily Puzzles"
-              description="A new puzzle opens at 00:00 UTC each day. Your progress is saved in this browser."
-            />
-            <PostgresAdventCalendar days={days} preview={preview} />
-          </div>
+          <PostgresAdventCalendar days={days} preview={preview} />
         </section>
       </div>
 
