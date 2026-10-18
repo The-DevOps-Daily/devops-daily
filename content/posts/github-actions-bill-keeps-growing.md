@@ -217,7 +217,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # List the files this pull request changes, without a checkout.
-          # A failed API call fails the step instead of skipping iOS.
+          # A failed API call fails this job, so make it a required check too.
           files=$(gh pr diff ${{ github.event.pull_request.number }} -R ${{ github.repository }} --name-only)
           if grep -q '^ios/' <<< "$files"; then
             echo "ios=true" >> "$GITHUB_OUTPUT"
@@ -233,7 +233,7 @@ jobs:
       # ... build and test
 ```
 
-The `changes` job bills one Linux minute. Skipping one standard macOS job of 15 minutes saves $0.93.
+Make both `changes` and `ios` required checks. If `changes` fails, `ios` is skipped, and a skipped job counts as passed. The `changes` job bills one Linux minute. Skipping one standard macOS job of 15 minutes saves $0.93.
 
 **Set `timeout-minutes` on every job.** The default limit is 6 hours. One hung macOS job that runs to the limit bills 360 minutes, which is $22.32 at $0.062.
 
