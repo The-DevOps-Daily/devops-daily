@@ -88,7 +88,7 @@ export function getSocialImagePath(
     | 'checklists'
     | 'tools'
 ): string {
-  return getExistingImagePath(type, slug, ['png'], true) || '/og-image.png';
+  return getExistingImagePath(type, slug, ['png'], true) || '/og-image.jpg';
 }
 
 export function getImagePath(

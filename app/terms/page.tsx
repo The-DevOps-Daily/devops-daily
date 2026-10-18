@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     url: '/terms',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Daily Terms of Service',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     title: 'Terms of Service - DevOps Daily',
     description:
       'Read the terms and conditions for using DevOps Daily website and services. This page outlines the rules and regulations for using our site, including user contributions, acceptable use, and limitations of liability.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

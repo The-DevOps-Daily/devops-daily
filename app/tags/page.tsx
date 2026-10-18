@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Tags - Browse All Topics',
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     title: 'Tags - DevOps Topics and Technologies',
     description:
       'Browse all DevOps topics and tags. Discover articles, tutorials, and guides organized by technology and practice. Stay updated with the latest trends in DevOps.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

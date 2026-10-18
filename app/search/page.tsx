@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     url: '/search',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Daily Search',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Search | DevOps Daily',
     description: 'Search across DevOps Daily posts, guides, quizzes, games, flashcards, comparisons, and tools to find content on Docker, Kubernetes, AWS, CI/CD, and more.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

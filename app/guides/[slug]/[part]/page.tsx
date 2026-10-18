@@ -66,7 +66,7 @@ export async function generateMetadata({
       type: 'article',
       images: [
         {
-          url: socialImage || '/og-image.png',
+          url: socialImage || '/og-image.jpg',
           width: 1200,
           height: 630,
           alt: guide.title,
@@ -77,7 +77,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${part.title} - ${guide.title}`,
       description: part.description || guide.description,
-      images: [socialImage || '/og-image.png'],
+      images: [socialImage || '/og-image.jpg'],
     },
   };
 }

@@ -18,7 +18,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Categories - Browse All Topics',
@@ -29,7 +29,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Categories - DevOps Articles and Tutorials',
     description: 'Browse all DevOps categories and discover articles, tutorials, and guides.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

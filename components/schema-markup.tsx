@@ -115,7 +115,7 @@ export function ArticleSchema({
       : `${SITE_URL}${imageUrl}`
     : post?.image
       ? `${SITE_URL}${post.image}`
-      : `${SITE_URL}/og-image.png`;
+      : `${SITE_URL}/og-image.jpg`;
   const articlePublished = publishedDate || post?.publishedAt || post?.date;
   const articleModified = modifiedDate || post?.updatedAt || post?.date;
   const articleAuthor = authorName || post?.author?.name || 'DevOps Daily Team';
@@ -193,7 +193,7 @@ export function TechArticleSchema({
     ? imageUrl.startsWith('http')
       ? imageUrl
       : `${SITE_URL}${imageUrl}`
-    : `${SITE_URL}/og-image.png`;
+    : `${SITE_URL}/og-image.jpg`;
 
   const articleAuthor = authorName || 'DevOps Daily Team';
 

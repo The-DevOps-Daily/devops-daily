@@ -56,7 +56,7 @@ export async function generateMetadata({
       url: `/advent-of-devops/${day.slug}`,
       images: [
         {
-          url: socialImage || day.image || '/og-image.png',
+          url: socialImage || day.image || '/og-image.jpg',
           width: 1200,
           height: 630,
           alt: day.title,
@@ -71,7 +71,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: day.title,
       description: day.excerpt || day.description,
-      images: [socialImage || day.image || '/og-image.png'],
+      images: [socialImage || day.image || '/og-image.jpg'],
     },
   };
 }
@@ -104,7 +104,7 @@ export default async function AdventDayPage({ params }: { params: Promise<{ slug
         description={day.excerpt || day.description || ''}
         publishedDate={day.publishedAt}
         modifiedDate={day.updatedAt || day.publishedAt}
-        imageUrl={day.image || '/og-image.png'}
+        imageUrl={day.image || '/og-image.jpg'}
         url={`/advent-of-devops/${day.slug}`}
         articleSection={day.category || 'Advent of DevOps'}
         keywords={day.tags}

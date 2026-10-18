@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       type: 'website',
       images: [
         {
-          url: '/og-image.png',
+          url: '/og-image.jpg',
           width: 1200,
           height: 630,
           alt: `${tagName} - DevOps Articles and Tutorials`,
@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
       card: 'summary_large_image',
       title: `${tagName} - DevOps Articles and Tutorials`,
       description: `Browse all articles, tutorials, and guides about ${tagName}. Learn the latest DevOps practices and techniques.`,
-      images: ['/og-image.png'],
+      images: ['/og-image.jpg'],
     },
   };
 }

@@ -53,7 +53,7 @@ export async function generateMetadata({
     path: `/posts/${post.slug}`,
     title: post.title,
     description: truncateMetaDescription(post.excerpt),
-    image: socialImage || post.image || '/og-image.png',
+    image: socialImage || post.image || '/og-image.jpg',
     article: {
       publishedTime: post.publishedAt || post.date,
       modifiedTime: post.updatedAt || post.date,

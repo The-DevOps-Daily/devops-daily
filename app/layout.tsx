@@ -54,7 +54,7 @@ export const metadata: Metadata = {
       'Stay up to date with the latest DevOps practices, tools, and techniques. Dive into our comprehensive guides and tutorials to level up your skills.',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Daily',
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     title: 'DevOps Daily - The latest DevOps news, tutorials, and guides',
     description:
       'Stay up to date with the latest DevOps practices, tools, and techniques. Dive into our comprehensive guides and tutorials to level up your skills.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
     creator: '@thedevopsdaily',
     site: '@thedevopsdaily',
   },

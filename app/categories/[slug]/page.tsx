@@ -56,7 +56,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: '/og-image.png',
+          url: '/og-image.jpg',
           width: 1200,
           height: 630,
           alt: `${category.name} - DevOps Articles and Tutorials`,
@@ -67,7 +67,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `Category: ${category.name} - DevOps Articles and Tutorials`,
       description,
-      images: ['/og-image.png'],
+      images: ['/og-image.jpg'],
     },
   };
 }

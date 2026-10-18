@@ -45,7 +45,7 @@ export async function generateMetadata({
       path: `/news/${digest.slug}`,
       title: digest.title,
       description: digest.excerpt || digest.summary,
-      image: socialImage || digest.image || '/og-image.png',
+      image: socialImage || digest.image || '/og-image.jpg',
       article: {
         publishedTime: digest.publishedAt || digest.date,
         section: 'DevOps News',
@@ -96,7 +96,7 @@ export default async function NewsDigestPage({
         description={digest.excerpt || digest.summary || ''}
         publishedDate={digest.publishedAt || digest.date}
         modifiedDate={digest.date || digest.publishedAt}
-        imageUrl={digest.image || '/og-image.png'}
+        imageUrl={digest.image || '/og-image.jpg'}
         authorName="DevOps Daily"
         url={`/news/${digest.slug}`}
         articleSection="DevOps News"

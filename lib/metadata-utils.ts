@@ -14,7 +14,7 @@ export interface DetailPageMetadataInput {
   /** Absolute <title>. Detail pages skip the layout's brand suffix. */
   title: string;
   description?: string;
-  /** Social card image URL (callers resolve fallbacks like '/og-image.png'). */
+  /** Social card image URL (callers resolve fallbacks like '/og-image.jpg'). */
   image: string;
   /** og:image alt text; defaults to the title. */
   imageAlt?: string;

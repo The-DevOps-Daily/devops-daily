@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: '/privacy',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Daily Privacy Policy',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Privacy Policy - DevOps Daily',
     description: 'Learn how DevOps Daily collects, uses, and protects your personal information.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 

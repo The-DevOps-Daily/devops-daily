@@ -46,7 +46,7 @@ export async function generateMetadata({
     path: `/guides/${slug}`,
     title: guide.seoTitle || guide.title,
     description: truncateMetaDescription(guide.description),
-    image: socialImage || guide.image || '/og-image.png',
+    image: socialImage || guide.image || '/og-image.jpg',
     imageAlt: guide.title,
     article: {
       publishedTime: guide.publishedAt,

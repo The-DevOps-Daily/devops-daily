@@ -28,7 +28,7 @@ export async function generateMetadata({
   const ogImage = `/images/newsletters/${slug}-og.png`;
   const ogExists = await import('fs/promises')
     .then((fs) => fs.access(`${process.cwd()}/public${ogImage}`).then(() => true).catch(() => false));
-  const image = ogExists ? ogImage : '/og-image.png';
+  const image = ogExists ? ogImage : '/og-image.jpg';
 
   // Prefer a per-issue description from the newsletter's frontmatter so each
   // page has its own, distinct meta description (Bing flagged the previous

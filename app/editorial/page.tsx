@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     url: '/editorial',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
         alt: 'DevOps Daily Editorial Standards',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: 'Editorial Standards & Correction Policy - DevOps Daily',
     description:
       'How DevOps Daily creates, reviews, and maintains technical content.',
-    images: ['/og-image.png'],
+    images: ['/og-image.jpg'],
   },
 };
 
