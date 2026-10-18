@@ -1,7 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, CheckCircle2, Lock } from 'lucide-react';
+import {
+  Activity,
+  AppWindow,
+  Bot,
+  CheckCircle2,
+  ChevronRight,
+  Cloud,
+  Container,
+  FileText,
+  Gauge,
+  Layers,
+  Lock,
+  ShieldCheck,
+  ShipWheel,
+  Target,
+  Workflow,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
+import { AdventCardIcon } from './advent-hero';
 import { useAdventProgress } from './advent-progress-provider';
 import type { AdventDay } from '@/lib/advent';
 
@@ -16,18 +35,19 @@ const difficultyColors = {
   Advanced: 'from-red-500/20 to-red-600/20 border-red-500/30 text-red-400',
 };
 
-const categoryIcons: Record<string, string> = {
-  Docker: '🐳',
-  'CI/CD': '🔄',
-  Kubernetes: '☸️',
-  'Infrastructure as Code': '🏗️',
-  Observability: '👁️',
-  Security: '🔒',
-  Cloud: '☁️',
-  Serverless: '⚡',
-  Automation: '🤖',
-  Performance: '⚡',
-  Career: '📝',
+const categoryIcons: Record<string, LucideIcon> = {
+  Docker: Container,
+  'CI/CD': Workflow,
+  Kubernetes: ShipWheel,
+  'Infrastructure as Code': Layers,
+  Observability: Activity,
+  Security: ShieldCheck,
+  Cloud,
+  Serverless: Zap,
+  Automation: Bot,
+  Performance: Gauge,
+  Career: FileText,
+  Application: AppWindow,
 };
 
 export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps) {
@@ -41,7 +61,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
         const difficultyColor =
           difficultyColors[day.difficulty as keyof typeof difficultyColors] ||
           difficultyColors.Intermediate;
-        const categoryIcon = categoryIcons[day.category || ''] || '🎯';
+        const categoryIcon = categoryIcons[day.category || ''] || Target;
 
         const cardClassName = `group relative block rounded-md border transition-colors overflow-hidden ${
           isUnlocked
@@ -77,7 +97,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
                   >
                     {day.day}
                   </div>
-                  <div className="text-3xl">{categoryIcon}</div>
+                  <AdventCardIcon icon={categoryIcon} />
                 </div>
                 <div className="flex items-center gap-2">
                   {completed && (

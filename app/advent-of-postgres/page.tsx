@@ -1,11 +1,17 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { Database } from 'lucide-react';
+import { Calendar, Database, Target } from 'lucide-react';
 import { getPostgresAdventDays, isPreviewBuild, summarize } from '@/lib/advent-postgres';
-import { PostgresAdventCalendar } from '@/components/advent-postgres/calendar';
+import { AdventHero, AdventSectionHeader } from '@/components/advent-hero';
+import { SectionSeparator } from '@/components/section-separator';
+import {
+  PostgresAdventCalendar,
+  PostgresHeroProgress,
+} from '@/components/advent-postgres/calendar';
 import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
 
-const title = 'Advent of Postgres 2026: 24 Daily SQL Puzzles';
+const YEAR = 2026;
+const title = `Advent of Postgres ${YEAR}: 24 Daily SQL Puzzles`;
 const description =
   '24 SQL puzzles, one a day from 1 to 24 December, solved on a free Postgres database in your browser. Window functions, JSONB, recursive queries and more.';
 const image = {
@@ -48,9 +54,10 @@ const faq = [
 
 export default async function AdventOfPostgresPage() {
   const days = (await getPostgresAdventDays()).map(summarize);
+  const preview = isPreviewBuild();
 
   return (
-    <div className="container mx-auto px-4 py-12 md:py-16">
+    <>
       <BreadcrumbSchema
         items={[
           { name: 'Home', url: '/' },
@@ -58,78 +65,122 @@ export default async function AdventOfPostgresPage() {
         ]}
       />
       <FAQSchema questions={faq.map((f) => ({ question: f.q, answer: f.a }))} />
-      <header className="mx-auto mb-12 max-w-3xl text-center">
-        <p className="mb-3 font-mono text-xs text-muted-foreground">{'// advent-of-postgres'}</p>
-        <h1 className="mb-5 text-4xl font-bold tracking-tight sm:text-5xl">
-          Advent of Postgres 2026
-        </h1>
-        <p className="mx-auto max-w-2xl text-lg leading-relaxed text-muted-foreground">
-          24 SQL puzzles, one a day from 1 to 24 December. Each one is a small problem from the
-          North Pole platform team: failed deploys, error budgets, on-call rotas, outages. You solve
-          it on a real Postgres database that you get for free, right in the browser.
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link
-            href="#calendar"
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            <Database className="h-4 w-4" /> See the calendar
-          </Link>
+
+      <AdventHero
+        label="advent-of-postgres"
+        dates={`December 1-24, ${YEAR}`}
+        name="Advent of Postgres"
+        year={YEAR}
+        description="24 SQL puzzles, one a day from 1 to 24 December. Each one is a small problem from the North Pole platform team: failed deploys, error budgets, on-call rotas, outages. You solve it on a real Postgres database that you get for free, right in the browser."
+        stats={[
+          { icon: Calendar, text: '24 days' },
+          { icon: Database, text: 'SQL puzzles' },
+          { icon: Target, text: 'Free Postgres database' },
+        ]}
+        cta={{ href: '#calendar', label: 'See the calendar' }}
+        progress={<PostgresHeroProgress days={days} preview={preview} />}
+      />
+
+      <div className="container mx-auto px-4 py-8">
+        <SectionSeparator command="cat how-it-works.md" />
+        <section aria-labelledby="how" className="mx-auto max-w-5xl">
+          <AdventSectionHeader id="how" label="how it works" title="How It Works" />
+          <ol className="grid gap-4 sm:grid-cols-3">
+            {[
+              [
+                'Open the day',
+                'A new puzzle opens at 00:00 UTC each day. Read the story and the tables.',
+              ],
+              [
+                'Write SQL',
+                'Create your free database with one click. The day’s data loads by itself, and you run queries on the page or with psql.',
+              ],
+              [
+                'Submit the answer',
+                'One answer per day. The early days are short; the later ones need window functions, ranges and recursive queries.',
+              ],
+            ].map(([h, p], i) => (
+              <li key={h} className="rounded-md border border-border bg-card p-4">
+                <p className="mb-1 font-mono text-xs text-muted-foreground">Step {i + 1}</p>
+                <p className="mb-1 font-medium">{h}</p>
+                <p className="text-sm text-muted-foreground">{p}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      </div>
+
+      <div id="calendar" className="scroll-mt-20">
+        <div className="container mx-auto px-4">
+          <SectionSeparator command="ls /advent-of-postgres/days" />
         </div>
-      </header>
+        <section aria-labelledby="calendar-title" className="container mx-auto px-4 py-8">
+          <PostgresAdventCalendar days={days} preview={preview} />
+        </section>
+      </div>
 
-      <section aria-labelledby="how" className="mx-auto mb-14 max-w-4xl">
-        <h2 id="how" className="mb-6 text-2xl font-semibold">
-          How it works
-        </h2>
-        <ol className="grid gap-4 sm:grid-cols-3">
-          {[
-            [
-              'Open the day',
-              'A new puzzle opens at 00:00 UTC each day. Read the story and the tables.',
-            ],
-            [
-              'Write SQL',
-              'Create your free database with one click. The day’s data loads by itself, and you run queries on the page or with psql.',
-            ],
-            [
-              'Submit the answer',
-              'One answer per day. The early days are short; the later ones need window functions, ranges and recursive queries.',
-            ],
-          ].map(([h, p], i) => (
-            <li key={h} className="rounded-md border border-border p-4">
-              <p className="mb-1 font-mono text-xs text-muted-foreground">Step {i + 1}</p>
-              <p className="mb-1 font-medium">{h}</p>
-              <p className="text-sm text-muted-foreground">{p}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <div className="container mx-auto px-4 py-8">
+        <SectionSeparator command="cat faq.md" />
+        <section aria-labelledby="faq" className="mx-auto max-w-5xl">
+          <AdventSectionHeader id="faq" label="questions" title="Questions" />
+          <dl className="max-w-3xl space-y-5">
+            {faq.map((f) => (
+              <div key={f.q}>
+                <dt className="font-medium">{f.q}</dt>
+                <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      </div>
 
-      <section
-        id="calendar"
-        aria-labelledby="calendar-title"
-        className="mx-auto mb-14 max-w-5xl scroll-mt-20"
-      >
-        <h2 id="calendar-title" className="mb-6 text-2xl font-semibold">
-          The calendar
-        </h2>
-        <PostgresAdventCalendar days={days} preview={isPreviewBuild()} />
-      </section>
+      {/* Sister event */}
+      <div className="container mx-auto px-4">
+        <p className="mx-auto max-w-4xl text-center text-muted-foreground">
+          Prefer infrastructure? Try{' '}
+          <Link href="/advent-of-devops" className="font-medium text-primary hover:underline">
+            Advent of DevOps
+          </Link>
+          : 25 hands-on challenges with Docker, Kubernetes, CI/CD and Terraform, one a day through
+          December.
+        </p>
+      </div>
 
-      <section aria-labelledby="faq" className="mx-auto max-w-3xl">
-        <h2 id="faq" className="mb-6 text-2xl font-semibold">
-          Questions
-        </h2>
-        <dl className="space-y-5">
-          {faq.map((f) => (
-            <div key={f.q}>
-              <dt className="font-medium">{f.q}</dt>
-              <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{f.a}</dd>
+      {/* CTA */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          <div className="rounded-md border bg-primary/5 px-8 py-10 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Ready for December?</h2>
+            <p className="text-muted-foreground mb-6">
+              Day 1 opens on 1 December at 00:00 UTC. Share your answers with{' '}
+              <a
+                href="https://x.com/thedevopsdaily"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                @thedevopsdaily
+              </a>
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/advent-of-postgres/day-1"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Database className="h-4 w-4" strokeWidth={1.5} />
+                Open Day 1
+              </Link>
+              <Link
+                href="#calendar"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-md border border-border hover:border-primary/50 hover:bg-muted/30 font-medium transition-colors"
+              >
+                <Calendar className="h-4 w-4" strokeWidth={1.5} />
+                See the calendar
+              </Link>
             </div>
-          ))}
-        </dl>
-      </section>
-    </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
