@@ -7,7 +7,7 @@ category:
 date: '2026-10-19'
 publishedAt: '2026-10-19T09:00:00Z'
 updatedAt: '2026-10-19T09:00:00Z'
-readingTime: '18 min read'
+readingTime: '20 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -23,11 +23,11 @@ tags:
 sponsorCampaign: 'bitrise'
 ---
 
-A GitHub Actions bill rarely grows because of one decision. It grows a minute at a time: every job is rounded up to a whole minute, every matrix leg pays for its own checkout and setup, macOS minutes cost about ten times as much as Linux minutes, and artifacts stay in storage for 90 days unless you say otherwise. For a mobile team, the largest single line is usually the slowest job in the pipeline: the iOS build.
+A GitHub Actions bill rarely grows because of one decision. It grows a minute at a time: every job is rounded up to a whole minute, every matrix leg pays for its own checkout and setup, macOS minutes cost about ten times as much as Linux minutes, and artifacts stay in storage for 90 days unless you say otherwise. For a mobile team, the most expensive job is often the iOS build. In the pipeline we tested, it was a median 57% of GitHub's cost per run, although the Android build took longer.
 
 We measured both halves of the problem. First, a read-only script that shows where one repository's minutes went in the last 30 days, and the free changes that act on what it finds. Then the runner question. We ran one mobile pull request pipeline (the iOS build and unit tests, the Android build and the Android unit tests, all started together) 17 times on GitHub-hosted runners and 17 times on [Bitrise Build Hub](https://bitrise.io/platform/build-hub), which runs GitHub Actions jobs on its own M4 Macs and AMD Linux machines.
 
-**Same money, less than half the wait.** With the Build Hub Linux pool allowed to run two machines at once, the pipeline finished in a median 18.5 minutes on Build Hub over 7 runs, against 43.5 minutes on GitHub over 17 runs. At list price, a run cost a median $1.69 on Build Hub and $1.79 on GitHub, over 17 runs each, and the ranges overlap. The iOS job is where the money moves: it ran 2.7 times faster on a 5 vCPU M4 and cost about a fifth as much per job. The two Android jobs ran about twice as fast on a 16 vCPU Linux machine and cost about twice as much per job.
+**About the same cost at list price, less than half the wait.** With the Build Hub Linux pool allowed to run two machines at once, the pipeline finished in a median 18.5 minutes on Build Hub over 7 runs, against 43.5 minutes on GitHub over 17 runs. At list price, a run cost a median $1.69 on Build Hub and $1.79 on GitHub, over 17 runs each, and the ranges overlap. The iOS job is where the money moves: it ran 2.7 times faster on a 5 vCPU M4 and cost about a fifth as much per job. The two Android jobs ran about twice as fast on a 16 vCPU Linux machine and cost about twice as much per job.
 
 :::note
 Bitrise sponsored this article and provided the Build Hub workspace we tested on. Bitrise checked the article for factual accuracy. What we measured, how we measured it, and the conclusions are ours. The workflows and every run are public in the benchmark repository linked below.
@@ -39,7 +39,7 @@ Bitrise sponsored this article and provided the Build Hub workspace we tested on
 - Free fixes inside GitHub Actions: cancel superseded runs, filter by path inside the job (not at the workflow level, or required checks hang), set `timeout-minutes`, merge tiny jobs, and set `retention-days` on artifacts.
 - macOS jobs are the clearest case for a different runner. The Wikipedia iOS app's build and tests took a median 922 s on GitHub's `macos-26` (3 vCPU M1) and 337 s on a Build Hub M4 Large (5 vCPU M4): $0.99 against $0.18 per job at list price.
 - Heavy Linux jobs got faster on a bigger machine, not cheaper. The Thunderbird Android build took 2,604 s on GitHub's 4 vCPU runner and 1,244 s on Build Hub's 16 vCPU Linux XLarge, at $0.53 against $1.05 per job.
-- Set the machine pool maximum to at least the number of jobs that start together. With a Linux pool maximum of 1, our second Android job waited a median 15 minutes, and the pipeline took 35.3 minutes instead of 18.5.
+- Set the machine pool maximum to at least the number of jobs that start together. With a Linux pool maximum of 1, our second Android job waited a median 15 minutes for the first one, and the pipeline took a median 35.3 minutes.
 
 ## Prerequisites
 
@@ -57,7 +57,7 @@ GitHub bills hosted runners per job, per minute, at a rate set by the machine. T
 | Per-job rounding | "GitHub rounds the minutes and partial minutes each job uses up to the nearest whole minute." A 20-leg matrix of 35-second jobs bills 20 minutes for 11.7 minutes of work.                                                                                                                                                                |
 | Matrix fan-out   | Each leg repeats checkout, toolchain setup and cache restore, and pays its own rounding.                                                                                                                                                                                                                                                  |
 | Larger runners   | Billed from the first minute. Included minutes do not apply to them, and they are not free in public repositories.                                                                                                                                                                                                                        |
-| Re-runs          | "Re-run all jobs" pays for every job again. "Re-run failed jobs" pays only for the jobs that failed.                                                                                                                                                                                                                                      |
+| Re-runs          | "Re-run all jobs" pays for every job again. "Re-run failed jobs" pays only for the failed jobs and the jobs that depend on them.                                                                                                                                                                                                          |
 | Artifact storage | $0.25 per GB-month, accrued hourly, with a 90-day default retention. Deleting an artifact does not refund what it has already accrued.                                                                                                                                                                                                    |
 | Cache            | 10 GB per repository is free, and entries not used for 7 days are evicted. Since [20 November 2025](https://github.blog/changelog/2025-11-20-github-actions-cache-size-can-now-exceed-10-gb-per-repository/) you can pay for more at $0.07 per GB-month. A cache that is too small keeps evicting itself, and every miss is a cold build. |
 | AI review        | Copilot code review [uses Actions minutes](https://github.blog/changelog/2026-04-27-github-copilot-code-review-will-start-consuming-github-actions-minutes-on-june-1-2026/) in private repositories since 1 June 2026.                                                                                                                    |
@@ -128,9 +128,15 @@ const rows = ran.map((j) => {
   };
 });
 
+if (rows.length === 0) {
+  console.log(`${repo}: no jobs ran in the last ${days} days`);
+  process.exit(0);
+}
+
 const sum = (xs, f) => xs.reduce((s, x) => s + f(x), 0);
 const pct = (q, xs) =>
   [...xs].sort((a, b) => a - b)[Math.min(xs.length - 1, Math.floor(q * xs.length))];
+const queues = rows.map((r) => r.queue);
 const used = sum(rows, (r) => r.used);
 const billed = sum(rows, (r) => r.billed);
 const rerun = sum(
@@ -150,15 +156,7 @@ console.log(
 console.log(
   `re-run attempts: ${rows.filter((r) => r.rerun).length} jobs, ${rerun} billed minutes (${((rerun / billed) * 100).toFixed(1)}%)`
 );
-console.log(
-  `queue: median ${pct(
-    0.5,
-    rows.map((r) => r.queue)
-  ).toFixed(0)} s, p90 ${pct(
-    0.9,
-    rows.map((r) => r.queue)
-  ).toFixed(0)} s`
-);
+console.log(`queue: median ${pct(0.5, queues).toFixed(0)} s, p90 ${pct(0.9, queues).toFixed(0)} s`);
 console.log(`macOS jobs: ${rows.filter((r) => r.os === 'macOS').length}`);
 const byWorkflow = Object.entries(Object.groupBy(rows, (r) => r.workflow))
   .map(([name, rs]) => [name, sum(rs, (r) => r.billed), rs.length])
@@ -183,9 +181,9 @@ We ran it on the repository behind this site on 18 October 2026:
 }
 ```
 
-The repository is public and runs only Linux jobs, so all of this was free, but the shape is common. Rounding added 438 minutes, a 24% markup on the 1,796 minutes the jobs used. The jobs are short: just under 2 minutes each on average, and 125 of them finished in under a minute and billed a full one. Re-runs were 0.3% of the billed minutes, and jobs waited 3 seconds for a runner. Both workflows that bill the most already cancel superseded runs. So on this repository, the only fix with a real effect is fewer, longer jobs. Billed at the 2-core private-repository rate of $0.006, the rounding would be $2.63 of a $13.40 month. That is small money, but the same 24% applies to a bill a hundred times larger.
+The repository is public and runs only Linux jobs, so all of this was free, but the shape is common. Rounding added 438 minutes, a 24% markup on the 1,796 minutes the jobs used. The jobs are short: just under 2 minutes each on average, and 125 of them finished in under a minute and billed a full one. Re-runs were 0.3% of the billed minutes, and jobs waited 3 seconds for a runner. Both workflows that bill the most already cancel superseded runs. So of the things this script measures, rounding is the one worth fixing here, with fewer and longer jobs. Billed at the 2-core private-repository rate of $0.006, the rounding would be $2.63 of a $13.40 month. That is small money, but a repository with the same mix of short jobs and a bill a hundred times larger pays the same 24%.
 
-Two limits of the script. It uses the job's start and end times, which is what GitHub bills, but it cannot see your plan's included minutes or discounts, so treat its numbers as list-price minutes. It also counts runs on self-hosted runners as if they were billed; filter them out by label if you have any.
+Some limits of the script. It uses the job's start and end times, which is what GitHub bills, but it cannot see your plan's included minutes or discounts, so treat its numbers as list-price minutes. It selects runs by the day they were created, so a re-run attempt counts on the day of the original run, and a day with more than 1,000 runs is cut at 1,000. It does not look at artifact storage or cache hit rates. And it counts runs on self-hosted runners as if they were billed; filter them out by label if you have any.
 
 ## Free fixes inside GitHub Actions
 
@@ -203,6 +201,11 @@ concurrency:
 **Filter by path inside the job, not at the workflow level.** A workflow-level `paths:` filter skips the whole workflow, and then [its checks stay "Pending"](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax), which blocks a pull request that requires them. A job skipped by its `if:` condition reports success instead, so put the decision in a small first job:
 
 ```yaml
+# In a workflow that runs on pull_request.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   changes:
     runs-on: ubuntu-24.04
@@ -214,7 +217,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # List the files this pull request changes, without a checkout.
-          if gh pr diff ${{ github.event.pull_request.number }} -R ${{ github.repository }} --name-only | grep -q '^ios/'; then
+          # A failed API call fails the step instead of skipping iOS.
+          files=$(gh pr diff ${{ github.event.pull_request.number }} -R ${{ github.repository }} --name-only)
+          if grep -q '^ios/' <<< "$files"; then
             echo "ios=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -252,7 +257,7 @@ At the 90-day default, an artifact accrues 18 times the GB-hours it accrues at 5
 
 ## Moving the slow jobs to a faster runner
 
-Some jobs are slow because the machine is small, and no workflow change fixes that. GitHub's standard macOS runner is a 3 vCPU M1 with 7 GB of memory, and its largest Apple silicon runner is a 5 vCPU M2 Pro. For an iOS build, that is the ceiling inside GitHub's own runner fleet.
+Some jobs are slow because the machine is small, and no workflow change fixes that. GitHub's standard macOS runner is a 3 vCPU M1 with 7 GB of memory. Its largest Apple silicon runner is a 5 vCPU M2 Pro with 14 GB.
 
 Bitrise Build Hub keeps GitHub Actions as the orchestrator and supplies the machines. The jobs still appear in the Actions tab, with the same logs, secrets and triggers. Setup has three parts:
 
@@ -271,8 +276,8 @@ jobs:
 
 Three things are different from GitHub-hosted runners, and all three mattered in our test:
 
-- **The images are Bitrise stacks**, not GitHub's runner images. The Xcode 26.5 stack had the same Xcode build (17F42) and the same iPhone 17 simulator that we used on GitHub. The Ubuntu 24.04 Linux image did not have the Android SDK command-line tools or the OpenGL and X11 libraries that Thunderbird's Compose UI tests load, so our workflow installs them when they are missing: 3 to 7 seconds for the SDK tools and 9 to 14 seconds for four packages. Both steps run inside the job, so their time is in our results and in the cost.
-- **The pool maximum is a setting you own.** A pool starts machines on demand, up to its maximum. With the Android pool at a maximum of 1, the two Android jobs of each pipeline ran one after the other. That cost us 15 minutes a run until we found it (more on this below).
+- **The images are Bitrise stacks**, not GitHub's runner images. The Xcode 26.5 stack had the same Xcode build (17F42) and the same iPhone 17 simulator that we used on GitHub. The Ubuntu 24.04 Linux image did not have the Android SDK command-line tools or the OpenGL and X11 libraries that Thunderbird's Compose UI tests load, so our workflow installs them when they are missing: 2 to 7 seconds for the SDK tools and 9 to 14 seconds for four packages. Both steps run inside the job, so their time is in our results and in the cost.
+- **The pool maximum is a setting you own.** A pool starts machines on demand, up to its maximum. With the Android pool at a maximum of 1, the two Android jobs of each pipeline ran one after the other, and the second one waited a median 15 minutes for the first (more on this below).
 - **Billing is a monthly budget.** A Build Hub tier fee becomes your compute budget, and jobs use it at a per-minute rate per machine type. On 18 October 2026 the pricing FAQ said that when the budget runs out, "You won't be able to run more builds until the monthly cycle resets", and that pay-as-you-go overage is coming. Size the tier from your run count, and watch the balance.
 
 The machines register like self-hosted runners, so the usual hygiene applies. Restrict the runner group to the repositories that need it, and require approval before workflows from forks run.
@@ -309,9 +314,9 @@ We wanted a test that looks like a real team's pull request, not a synthetic com
 | GitHub-hosted                    | `macos-26`: Apple M1 (virtual), 3 vCPU, 7 GB. $0.062 a minute | `ubuntu-24.04`: 4 vCPU, 16 GB. $0.012 a minute (the 4-core rate in a private repository) |
 | Build Hub, self-serve Pro Tier 1 | M4 Large: Apple M4 (virtual), 5 vCPU, 14 GB. $0.03 a minute   | Linux XLarge: AMD EPYC Genoa, 16 vCPU, 64 GB. $0.05 a minute                             |
 
-These are not same-size pairs, and that is on purpose: each side runs the jobs on the machine a team would pick. On GitHub that is the standard macOS runner and a 4 vCPU Linux runner. On Build Hub it is the smallest M4 and the largest self-serve Linux machine. Cost per run shows what the size difference costs. Build Hub prices are the rates at which jobs use the plan budget, read from [bitrise.io/pricing](https://bitrise.io/pricing) on 18 October 2026, unchanged since we first read them on 10 October.
+These are not same-size pairs. On GitHub we used the standard macOS runner and a 4 vCPU Linux runner, which a team gets without a larger-runner plan. On Build Hub we used the smallest M4 and the largest self-serve Linux machine. The Build Hub machines have more CPU and memory, and the results hold for these configurations only. Cost per run shows what the size difference costs. Build Hub prices are the rates at which jobs use the plan budget, read from [bitrise.io/pricing](https://bitrise.io/pricing) on 18 October 2026, unchanged since we first read them on 10 October.
 
-**How we ran it.** One workflow, `bench-mobile-pipeline.yml`, starts the three jobs together. We dispatched the GitHub and Build Hub runs in pairs, most of them seconds apart: 10 pairs from 16 October 15:24 to 17 October 12:15 UTC, then 7 more from 17 October 15:44 to 21:25 UTC. Every iOS job ran all 503 tests with no failures, and every Android build succeeded. One Android test job on GitHub failed on a network error: Robolectric could not download a dependency, and Gradle stopped after about 10 minutes. We kept that run. Leaving it out makes GitHub's medians slightly worse (45.1 minutes and $1.80 a run), so keeping it is the conservative choice. Pipeline time is from the moment the run is created to the end of its last job, so queueing and machine start-up count, as they do for the developer who waits. Cost is each job's time, rounded up to a whole minute, times the list price, added up per run. Bitrise does not publish how it rounds Build Hub usage, so we applied GitHub's rule to both sides. Three tiny planning jobs run on GitHub's runner on both sides and are left out of the cost.
+**How we ran it.** One workflow, `bench-mobile-pipeline.yml`, starts the three jobs together. We dispatched the GitHub and Build Hub runs in pairs, most of them seconds apart: 10 pairs from 16 October 15:24 to 17 October 12:15 UTC, then 7 more from 17 October 15:44 to 21:25 UTC. Every iOS job ran all 503 tests with no failures, and every Android build succeeded. One Android test task on GitHub (run 38985488530) failed on a network error: Robolectric could not download a dependency, and Gradle stopped after about 10 minutes. Actions still shows that job as green, because our workflow records a failed Gradle task in its result file instead of failing the job. So 16 of 17 GitHub test jobs and all 17 Build Hub test jobs ran the full suite. We kept that run. Leaving it out makes GitHub's medians slightly worse (45.1 minutes and $1.80 a run), so keeping it is the conservative choice. Pipeline time is from the moment the run is created to the end of its last job, so queueing and machine start-up count, as they do for the developer who waits. Cost is each job's time, rounded up to a whole minute, times the list price, added up per run. Bitrise does not publish how it rounds Build Hub usage, so we applied GitHub's rule to both sides. Three tiny planning jobs run on GitHub's runner on both sides and are left out of the cost.
 
 ```github
 https://github.com/The-DevOps-Daily/gha-runner-benchmark
@@ -333,11 +338,11 @@ https://github.com/The-DevOps-Daily/gha-runner-benchmark
 }
 ```
 
-With the Android pool at a maximum of 2, the pipeline took a median 18.5 minutes (17.0 to 29.4) on Build Hub, against 43.5 minutes (32.8 to 60.8) on GitHub. That is 2.3 times faster. We compare with all 17 GitHub runs because it is the conservative choice: the 7 GitHub runs paired with the pool-maximum-2 runs had a median of 49.8 minutes.
+With the Android pool at a maximum of 2, the pipeline took a median 18.5 minutes (17.0 to 29.4) on Build Hub, against 43.5 minutes (32.8 to 60.8) on GitHub. That is about 2.4 times faster. We compare with all 17 GitHub runs because it is the conservative choice: the 7 GitHub runs paired with the pool-maximum-2 runs had a median of 49.8 minutes.
 
 ### The pool maximum mistake
 
-Our first 10 Build Hub runs had the Android pool maximum at 1, a setting we chose and did not check. The first Android job started after a median 34 seconds. The second waited for the first to finish: a median 886 seconds, and up to 2,646 seconds. The pipeline took a median 35.3 minutes. After we set the maximum to 2, both Android jobs started after 32 to 34 seconds in every run.
+Our first 10 Build Hub runs had the Android pool maximum at 1, a setting we chose and did not check. The first Android job started after a median 34 seconds. The second waited for the first to finish: a median 886 seconds, and up to 2,646 seconds. The pipeline took a median 35.3 minutes. After we set the maximum to 2, both Android jobs started after 32 to 34 seconds in every run. Not all of the drop to 18.5 minutes came from the setting: the Android builds were also faster in the later runs, a median 1,070 seconds against 1,592.
 
 The rule: set each pool's maximum to at least the number of its jobs that start at the same time, and remember that a matrix starts all of its legs at once.
 
@@ -351,7 +356,7 @@ The rule: set each pool's maximum to at least the number of its jobs that start 
 
 The job times are from all 17 runs per side. The pool maximum changes how long a job waits, not how long it runs, so it does not affect these numbers. Queue time is separate: on GitHub, jobs started after a median 3 seconds on Linux and 8 seconds on macOS. On Build Hub, where each pool starts a machine when a job arrives, they started after a median 33 to 34 seconds on Linux (at pool maximum 2) and 38 seconds on macOS.
 
-The GitHub Android times move a lot. In the 17 runs, GitHub's 4 vCPU runner reported three different CPU models for the build and five for the tests. The two builds on an AMD EPYC 9V45 host took 1,780 and 1,892 seconds for the Gradle task, and the twelve on an EPYC 7763 took 1,979 to 3,426 seconds, so the host explains part of the spread but not all of it. Build Hub's Android build varied too, from 981 to 2,581 seconds for the job, on machines that all reported the same CPU. More cores did not always help on Build Hub either: a 32 vCPU machine from the Enterprise plan built the app in 1,561 to 2,448 seconds over three runs, no faster than the 16 vCPU Linux XLarge.
+The GitHub Android times move a lot. In the 17 runs, GitHub's 4 vCPU runner reported three different CPU models for the build and five for the tests. The two builds on an AMD EPYC 9V45 host took 1,780 and 1,892 seconds for the Gradle task, and the twelve on an EPYC 7763 took 1,979 to 3,426 seconds, so the host explains part of the spread but not all of it. Build Hub's Android build varied too, from 981 to 2,581 seconds for the job, on machines that all reported the same CPU. More cores did not always help on Build Hub either: in separate runs, a 32 vCPU machine from the Enterprise plan took 1,561 to 2,448 seconds for the Gradle build task, against 1,231 to 1,463 seconds on the 16 vCPU Linux XLarge (three runs each).
 
 ### Cost per run
 
@@ -368,9 +373,11 @@ The GitHub Android times move a lot. In the 17 runs, GitHub's 4 vCPU runner repo
 }
 ```
 
-A run cost a median $1.69 on Build Hub (range $1.46 to $2.78) and $1.79 on GitHub ($1.41 to $2.03). The means point the other way, $1.84 on Build Hub against $1.74 on GitHub, because of a few slow Android builds on Build Hub: the $2.78 run had a 2,581-second build. So the honest summary is "about the same", not "cheaper".
+A run cost a median $1.69 on Build Hub (range $1.46 to $2.78) and $1.79 on GitHub ($1.41 to $2.03). The means point the other way, $1.84 on Build Hub against $1.74 on GitHub, because of a few slow Android builds on Build Hub: the $2.78 run had a 2,581-second build. So "about the same" is the right summary, not "cheaper".
 
-We used all 17 Build Hub runs for cost because the pool maximum changes queue time, not billed minutes. The 7 runs at pool maximum 2 alone had a median cost of $1.51, but only because their Android builds happened to be faster. Using that number would flatter Build Hub.
+These are list prices for the compute each run used, not two invoices. Build Hub is sold as a monthly tier, so budget you do not use makes the real price per run higher. Our GitHub runs cost nothing, because the repository is public. In a private repository, standard macOS minutes can come out of your plan's included minutes, while the 4-core Linux runner, a larger runner, is billed from the first minute.
+
+We used all 17 Build Hub runs for cost because the pool maximum changes queue time, not billed minutes. The 7 runs at pool maximum 2 alone had a median cost of $1.51, mostly because their Android builds were faster (a median 1,070 seconds, against 1,592 seconds in the first 10 runs). Using that number would flatter Build Hub.
 
 The cost per job shows where the money goes:
 
@@ -382,7 +389,7 @@ The cost per job shows where the money goes:
 
 The Macs save money and the 16 vCPU Linux machines cost more per job, and in this pipeline the two roughly cancel out. Each column is a median of its own, so the rows do not add up to the per-run medians above. A run used a median 79 billed minutes on GitHub and 37 on Build Hub: fewer minutes, at a higher price per Linux minute.
 
-For budget sizing: at our median $1.69 a run, Pro Tier 1's $210 monthly budget covers about 124 runs of this pipeline.
+For budget sizing, use the mean, not the median: at $1.84 a run, Pro Tier 1's $210 monthly budget covers about 114 runs of this pipeline. Leave headroom, because builds stop when the budget runs out.
 
 ## What we could not conclude
 
@@ -391,7 +398,7 @@ For budget sizing: at our median $1.69 a run, Pro Tier 1's $210 monthly budget c
 - **An 8 vCPU machine might be the better buy for Android.** Build Hub's Linux Large costs half the XLarge rate. We did not test it.
 - **Cold builds only.** Both sides ran without a Gradle or Xcode cache. Teams with a warm cache will see shorter jobs on both sides, and we did not measure how the gap changes.
 - **Our repository is public.** GitHub runs in public repositories are free, and its standard Linux runner there has 4 vCPU. In a private repository, `ubuntu-latest` has 2 vCPU at $0.006, and a 4 vCPU runner is a larger runner at $0.012 with no included minutes. We priced the GitHub side at the 4-core rate, the same size we ran.
-- **Billing rounding on Build Hub is our assumption.** If Bitrise bills per second, its cost per run is a little lower than shown.
+- **Build Hub costs are our estimate.** Bitrise does not publish which interval it bills (job time, or machine time including start-up) or how it rounds, so we applied GitHub's rule to the job time. Our pools had a minimum of 0, so no machine waited idle between runs. Treat the Build Hub cost per run as an estimate until Bitrise confirms its billing.
 - **Seven runs at pool maximum 2, in one evening.** The 18.5-minute median comes from 7 runs between 15:44 and 21:25 UTC on 17 October. The job times come from all 17 runs, spread over two days.
 - **One app per platform.** Wikipedia and Thunderbird are real, busy projects, but two apps are not every app. Run the benchmark on your own slowest job before you move it.
 
@@ -399,7 +406,7 @@ For budget sizing: at our median $1.69 a run, Pro Tier 1's $210 monthly budget c
 
 The decision is per job, and `runs-on` makes it a one-line change.
 
-- **iOS and other macOS jobs: move them first.** This is where the test shows both faster and cheaper: 2.7 times faster and about a fifth of the cost per job, on a newer and larger Mac than GitHub's standard runner.
+- **iOS and other macOS jobs: move them first.** This is where the test was both faster and cheaper: 2.7 times faster and about a fifth of the cost per job, on a newer and larger Mac than GitHub's standard runner.
 - **Heavy Linux jobs, such as Android Gradle builds: move them if waiting costs you more than the minutes.** On a 16 vCPU machine they ran about twice as fast at about twice the cost per job. Measure an 8 vCPU machine too.
 - **Light Linux jobs: keep them on GitHub.** Build Hub's smallest Linux machine has 4 vCPU at $0.0125 a minute. A lint or labeler job is cheaper on `ubuntu-slim` at $0.002 or a 2-core runner at $0.006.
 - **Before any of that, run the audit.** Rounding, re-runs and storage are free to fix, and they shrink whatever runner bill you end up with.
@@ -408,6 +415,6 @@ For the full feature-by-feature view, including concurrency limits, images, cach
 
 ## Summary
 
-A GitHub Actions bill grows from small, measurable things: whole-minute rounding, runs nobody needed, artifacts kept for 90 days, and macOS minutes at about ten times the Linux price. The audit script shows which of these your repository has, and most of the fixes are a few lines of YAML.
+A GitHub Actions bill grows from small, measurable things: whole-minute rounding, runs nobody needed, artifacts kept for 90 days, and macOS minutes at about ten times the Linux price. The audit script shows what rounding and re-runs cost your repository, and most of the fixes are a few lines of YAML.
 
-When the slow job is slow because the machine is small, a faster runner changes the picture. In our mobile pipeline, Build Hub cut the wait from a median 43.5 minutes to 18.5 minutes at about the same cost per run. The iOS job was cheaper and faster. The Android jobs were faster and more expensive. Set the pool maximum to match the jobs that start together, measure your own slowest job on both sides, and move the jobs where the numbers say so.
+When the slow job is slow because the machine is small, a faster runner changes the picture. In our mobile pipeline, Build Hub cut the wait from a median 43.5 minutes to 18.5 minutes at about the same list-price cost per run. The iOS job was cheaper and faster. The Android jobs were faster and more expensive. Set the pool maximum to match the jobs that start together, measure your own slowest job on both sides, and move the jobs where the numbers say so.
