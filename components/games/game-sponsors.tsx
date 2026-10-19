@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { sponsorHref, sponsors } from '@/lib/sponsors';
+import { sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface GameSponsorsProps {
@@ -33,7 +33,7 @@ export function GameSponsors({ className }: GameSponsorsProps) {
               key={sponsor.name}
               href={sponsorHref(sponsor, 'simulator')}
               target="_blank"
-              rel="noopener noreferrer sponsored"
+              rel={sponsorRel(sponsor)}
               title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
               className="group flex h-14 min-w-0 items-center justify-center bg-background/60 px-3 transition-colors hover:bg-muted/60"
             >

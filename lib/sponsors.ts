@@ -25,6 +25,11 @@ export interface Sponsor {
    * must exist in the sponsor-links worker first, or the link returns 404.
    */
   goSlug?: string;
+  /**
+   * One of our own products. It links direct and without rel="sponsored",
+   * so the link counts for search; paid sponsors keep both.
+   */
+  ownProduct?: boolean;
 }
 
 export const GO_LINKS_ORIGIN = 'https://go.devops-daily.com';
@@ -35,8 +40,13 @@ export const GO_LINKS_ORIGIN = 'https://go.devops-daily.com';
  * path when a reader clicks it.
  */
 export function sponsorHref(sponsor: Sponsor, placement: string): string {
-  if (!sponsor.goSlug) return sponsor.url;
+  if (!sponsor.goSlug || sponsor.ownProduct) return sponsor.url;
   return `${GO_LINKS_ORIGIN}/${sponsor.goSlug}?p=${encodeURIComponent(placement)}`;
+}
+
+/** The rel for a sponsor link: our own products are plain links. */
+export function sponsorRel(sponsor: Pick<Sponsor, 'ownProduct'>): string {
+  return sponsor.ownProduct ? 'noopener' : 'noopener noreferrer sponsored';
 }
 
 export const sponsors: Sponsor[] = [
@@ -82,6 +92,7 @@ export const sponsors: Sponsor[] = [
     logo: '/smtpfast.svg',
     url: 'https://smtpfa.st',
     goSlug: 'smtpfast',
+    ownProduct: true,
     tagline: 'Developer-first email API',
     description:
       'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
@@ -113,7 +124,7 @@ export function getSponsors(): Sponsor[] {
  */
 export const sponsorHistory: Pick<
   Sponsor,
-  'name' | 'logo' | 'darkLogo' | 'className' | 'url' | 'goSlug'
+  'name' | 'logo' | 'darkLogo' | 'className' | 'url' | 'goSlug' | 'ownProduct'
 >[] = [
   // className sets each logo's height so the wordmarks look the same size.
   {
@@ -183,5 +194,6 @@ export const sponsorHistory: Pick<
     className: 'h-[26px]',
     url: 'https://smtpfa.st',
     goSlug: 'smtpfast',
+    ownProduct: true,
   },
 ];
