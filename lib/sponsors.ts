@@ -83,6 +83,7 @@ export const sponsors: Sponsor[] = [
     logo: '/devdojo.svg?height=60&width=120',
     url: 'https://devdojo.com',
     goSlug: 'devdojo',
+    ownProduct: true,
     tagline: 'Developer community & tools',
     description: 'Join a community of developers sharing knowledge and tools',
     className: 'fill-current text-red-500',
@@ -103,6 +104,7 @@ export const sponsors: Sponsor[] = [
     logo: '/quizapi.svg',
     url: 'https://quizapi.io?ref=devops-daily',
     goSlug: 'quizapi',
+    ownProduct: true,
     tagline: 'Developer-first quiz platform',
     description:
       'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
@@ -186,6 +188,7 @@ export const sponsorHistory: Pick<
     className: 'h-[24px]',
     url: 'https://devdojo.com',
     goSlug: 'devdojo',
+    ownProduct: true,
   },
   {
     name: 'SMTPfast',

@@ -3,8 +3,10 @@ import { sponsorHistory, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsor
 
 describe('sponsor links', () => {
   it('links our own products direct and without rel="sponsored", so they count for search', () => {
-    for (const s of [...sponsors, ...sponsorHistory].filter((s) => s.name === 'SMTPfast')) {
-      expect(sponsorHref(s, 'sidebar')).toBe('https://smtpfa.st');
+    const own = [...sponsors, ...sponsorHistory].filter((s) => s.ownProduct);
+    expect(new Set(own.map((s) => s.name))).toEqual(new Set(['SMTPfast', 'DevDojo', 'QuizAPI']));
+    for (const s of own) {
+      expect(sponsorHref(s, 'sidebar')).toBe(s.url);
       expect(sponsorRel(s)).not.toContain('sponsored');
     }
   });
