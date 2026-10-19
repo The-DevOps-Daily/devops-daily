@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment, useState } from 'react';
 import { CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FeatureComparison, ToolInfo } from '@/lib/comparison-types';
@@ -34,9 +35,13 @@ function ratingBg(rating: 'good' | 'neutral' | 'bad') {
 }
 
 export function FeatureComparisonTable({ features, toolA, toolB }: FeatureComparisonTableProps) {
+  const [onlyDifferences, setOnlyDifferences] = useState(false);
+  const differing = features.filter((f) => f.toolA.rating !== f.toolB.rating);
+  const shown = onlyDifferences ? differing : features;
+
   // Group features by category
   const groupedFeatures: Record<string, FeatureComparison[]> = {};
-  for (const feature of features) {
+  for (const feature of shown) {
     if (!groupedFeatures[feature.category]) {
       groupedFeatures[feature.category] = [];
     }
@@ -45,6 +50,31 @@ export function FeatureComparisonTable({ features, toolA, toolB }: FeatureCompar
 
   return (
     <div>
+      {differing.length > 0 && differing.length < features.length && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground tabular-nums">
+            The ratings differ on {differing.length} of {features.length} features.
+          </p>
+          <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={onlyDifferences}
+              onClick={() => setOnlyDifferences((v) => !v)}
+              className={`relative h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                onlyDifferences ? 'bg-primary' : 'bg-muted-foreground/30'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-background shadow transition-transform motion-reduce:transition-none ${
+                  onlyDifferences ? 'translate-x-4' : ''
+                }`}
+              />
+            </button>
+            Only differences
+          </label>
+        </div>
+      )}
       {/* Desktop Table */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full border-collapse">
@@ -71,9 +101,9 @@ export function FeatureComparisonTable({ features, toolA, toolB }: FeatureCompar
           </thead>
           <tbody>
             {Object.entries(groupedFeatures).map(([category, categoryFeatures]) => (
-              <>
+              <Fragment key={category}>
                 {/* Category Header */}
-                <tr key={`cat-${category}`}>
+                <tr>
                   <td
                     colSpan={3}
                     className="py-3 px-4 font-semibold text-xs uppercase tracking-wider text-muted-foreground bg-muted/50 border-y border-border"
@@ -102,7 +132,7 @@ export function FeatureComparisonTable({ features, toolA, toolB }: FeatureCompar
                     </td>
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>
