@@ -3,6 +3,12 @@ import { ToolIcon, toolText, toolVars } from './tool-style';
 
 type Counts = { good: number; neutral: number; bad: number };
 
+// Muted on purpose: the bars sit in rows, and full-strength green and red
+// side by side are hard on the eye.
+const STRONG = 'bg-emerald-500/60 dark:bg-emerald-400/45';
+const MIXED = 'bg-zinc-300 dark:bg-zinc-700';
+const WEAK = 'bg-rose-400/55 dark:bg-rose-400/40';
+
 function count(features: FeatureComparison[], side: 'toolA' | 'toolB'): Counts {
   const c = { good: 0, neutral: 0, bad: 0 };
   for (const f of features) c[f[side].rating] += 1;
@@ -15,14 +21,20 @@ function RatingBar({ counts, label }: { counts: Counts; label: string }) {
   const part = (n: number) => `${(n / total) * 100}%`;
   return (
     <div
-      className="flex h-2 overflow-hidden rounded-full bg-muted"
+      className="flex h-1.5 gap-0.5 overflow-hidden rounded-full"
       role="img"
       aria-label={`${label}: ${counts.good} strong, ${counts.neutral} mixed, ${counts.bad} weak`}
       title={`${counts.good} strong, ${counts.neutral} mixed, ${counts.bad} weak`}
     >
-      <div className="bg-green-500 dark:bg-green-400" style={{ width: part(counts.good) }} />
-      <div className="bg-zinc-400 dark:bg-zinc-500" style={{ width: part(counts.neutral) }} />
-      <div className="bg-red-500 dark:bg-red-400" style={{ width: part(counts.bad) }} />
+      {counts.good > 0 && (
+        <div className={`rounded-full ${STRONG}`} style={{ width: part(counts.good) }} />
+      )}
+      {counts.neutral > 0 && (
+        <div className={`rounded-full ${MIXED}`} style={{ width: part(counts.neutral) }} />
+      )}
+      {counts.bad > 0 && (
+        <div className={`rounded-full ${WEAK}`} style={{ width: part(counts.bad) }} />
+      )}
     </div>
   );
 }
@@ -90,13 +102,13 @@ export function CategoryScoreboard({
       </dl>
       <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-green-500 dark:bg-green-400" /> strong
+          <span className={`h-2 w-2 rounded-full ${STRONG}`} /> strong
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-zinc-400 dark:bg-zinc-500" /> mixed
+          <span className={`h-2 w-2 rounded-full ${MIXED}`} /> mixed
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-red-500 dark:bg-red-400" /> weak
+          <span className={`h-2 w-2 rounded-full ${WEAK}`} /> weak
         </span>
       </p>
     </div>
