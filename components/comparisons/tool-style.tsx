@@ -68,10 +68,20 @@ import { readableOn } from '@/lib/color-contrast';
  * colors such as GitHub's near-black disappear on a dark page without this.
  */
 export function toolVars(color: string): CSSProperties {
+  // A near-gray brand color (GitHub's #181717) reads as a dull gray once
+  // lightened, so it follows the page's own text color instead.
+  if (isNeutral(color)) return { '--tool': '#18181b', '--tool-dark': '#f4f4f5' } as CSSProperties;
   return {
     '--tool': readableOn(color, '#ffffff'),
     '--tool-dark': readableOn(color, '#09090b'),
   } as CSSProperties;
+}
+
+function isNeutral(hex: string): boolean {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!m) return false;
+  const [r, g, b] = m.slice(1).map((v) => parseInt(v, 16));
+  return Math.max(r, g, b) - Math.min(r, g, b) < 24;
 }
 
 /** Classes that use the variables from toolVars(). */
