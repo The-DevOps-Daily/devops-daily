@@ -4,9 +4,9 @@ excerpt: 'We sent 867 requests with a long on-call runbook as the system prompt 
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-10-23'
-publishedAt: '2026-10-23T09:00:00Z'
-updatedAt: '2026-10-23T09:00:00Z'
+date: '2026-10-19'
+publishedAt: '2026-10-19T09:00:00Z'
+updatedAt: '2026-10-19T09:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
