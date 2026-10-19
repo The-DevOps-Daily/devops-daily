@@ -4,9 +4,9 @@ excerpt: 'We pointed a small evidence collector at a repository whose main branc
 category:
   name: 'Security'
   slug: 'security'
-date: '2026-10-22'
-publishedAt: '2026-10-22T09:00:00Z'
-updatedAt: '2026-10-22T09:00:00Z'
+date: '2026-10-19'
+publishedAt: '2026-10-19T09:00:00Z'
+updatedAt: '2026-10-19T09:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
