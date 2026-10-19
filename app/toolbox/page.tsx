@@ -433,6 +433,20 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Kestra',
+    description:
+      'Open-source declarative orchestrator for event-driven workflows, data pipelines, and infrastructure automation.',
+    href: 'https://kestra.io/',
+    category: 'cicd',
+    icon: Workflow,
+    isNew: true,
+    badges: [
+      { text: 'Orchestration', variant: 'outline' },
+      { text: 'Event-Driven', variant: 'secondary' },
+      { text: 'Open Source', variant: 'default' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
