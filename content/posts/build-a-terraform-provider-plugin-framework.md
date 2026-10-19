@@ -18,6 +18,7 @@ tags:
   - IaC
   - DevOps
   - APIs
+sponsorCampaign: 'house'
 ---
 
 If your product has a REST API, there is a good chance your users want to manage it with Terraform. Teams that run everything as code do not want to click around a dashboard to add a domain or rotate an API key. They want it in a `.tf` file, in a pull request, next to the rest of their infrastructure.

@@ -18,6 +18,7 @@ tags:
   - AI
   - SMTP
   - Agents
+sponsorCampaign: 'house'
 ---
 
 If you want an AI agent to send email, the wrong way is obvious: paste your SMTP credentials into a prompt and hope. The right way now has a standard: the **Model Context Protocol**, which lets an agent discover and call an email provider's tools (send, list domains, check suppressions) through one typed interface, with the provider's own auth in front.

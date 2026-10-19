@@ -18,6 +18,7 @@ tags:
   - SMTP
   - DevOps
   - Linux
+sponsorCampaign: 'house'
 ---
 
 Every email your application sends is, underneath the library and the API, a short text conversation between two servers. You can have that conversation yourself: open a socket to a mail server, type a handful of commands, and a real message lands in a real inbox. Doing it once, by hand, teaches you more about email than any amount of reading, because it shows you exactly what your `send()` call is doing on your behalf.

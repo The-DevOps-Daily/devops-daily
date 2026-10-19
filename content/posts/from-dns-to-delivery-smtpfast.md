@@ -20,6 +20,7 @@ tags:
   - DNS
   - Cloudflare
   - Webhooks
+sponsorCampaign: 'house'
 ---
 
 Your application gets a `200 OK` and an email ID. If you record that receipt as delivered, you have skipped the part where delivery actually happens. The provider still has to queue the message, hand it to a relay, negotiate with the receiving server, and report whether that server accepted or rejected it.
