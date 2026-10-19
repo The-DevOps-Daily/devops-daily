@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { ensureContrastOnDark } from '@/lib/color-contrast';
+import { ToolIcon, toolBorderLeft, toolText, toolVars } from './tool-style';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { ReportIssue } from '@/components/report-issue';
 import { FeatureComparisonTable } from './feature-comparison-table';
@@ -70,12 +70,18 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              <span style={{ color: ensureContrastOnDark(comparison.toolA.color) }}>{comparison.toolA.name}</span>
-              <span className="text-muted-foreground mx-3 text-2xl sm:text-3xl lg:text-4xl font-normal">vs</span>
-              <span style={{ color: ensureContrastOnDark(comparison.toolB.color) }}>{comparison.toolB.name}</span>
+              <span style={toolVars(comparison.toolA.color)} className={toolText}>
+                {comparison.toolA.name}
+              </span>
+              <span className="text-muted-foreground mx-3 text-2xl sm:text-3xl lg:text-4xl font-normal">
+                vs
+              </span>
+              <span style={toolVars(comparison.toolB.color)} className={toolText}>
+                {comparison.toolB.name}
+              </span>
             </h1>
 
-            <p className="text-lg text-muted-foreground mb-4">{comparison.description}</p>
+            <p className="text-lg text-muted-foreground mb-4 max-w-3xl">{comparison.description}</p>
 
             <div className="flex flex-wrap gap-1.5">
               {comparison.tags.map((tag) => (
@@ -91,13 +97,14 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
             {[comparison.toolA, comparison.toolB].map((tool) => (
               <Card
                 key={tool.name}
-                className="overflow-hidden"
-                style={{ borderLeftColor: tool.color, borderLeftWidth: '4px' }}
+                className={`overflow-hidden ${toolBorderLeft}`}
+                style={toolVars(tool.color)}
               >
                 <CardContent className="p-5">
-                  <h3 className="text-lg font-bold mb-2" style={{ color: tool.color }}>
-                    {tool.name}
-                  </h3>
+                  <div className="flex items-center gap-3 mb-2">
+                    <ToolIcon name={tool.icon} color={tool.color} />
+                    <h3 className={`text-lg font-bold ${toolText}`}>{tool.name}</h3>
+                  </div>
                   <p className="text-sm text-muted-foreground mb-3">{tool.description}</p>
                   <a
                     href={tool.website}
@@ -113,9 +120,11 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
             ))}
           </div>
 
+          <AtAGlance comparison={comparison} />
+
           {/* Section 3: Introduction */}
           <section className="mb-10">
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm dark:prose-invert max-w-3xl">
               {comparison.introduction.split('\n\n').map((paragraph, i) => (
                 <p key={i} className="text-muted-foreground leading-relaxed mb-4">
                   {paragraph}
@@ -139,7 +148,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
           </section>
 
           {/* Section 4: Feature Comparison Table */}
-          <section className="mb-10">
+          <section id="feature-comparison" className="mb-10 scroll-mt-24">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-6">
               <TableProperties className="w-6 h-6 text-primary" />
               Feature Comparison
@@ -156,7 +165,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
           </section>
 
           {/* Section 5: Pros and Cons */}
-          <section className="mb-10">
+          <section id="pros-and-cons" className="mb-10 scroll-mt-24">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-6">
               <div className="flex items-center gap-1">
                 <ThumbsUp className="w-5 h-5 text-green-600" />
@@ -168,14 +177,12 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
           </section>
 
           {/* Section 6: Decision Matrix */}
-          <section className="mb-10">
+          <section id="decision-matrix" className="mb-10 scroll-mt-24">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-2">
               <GitCompare className="w-6 h-6 text-primary" />
               Decision Matrix
             </h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              Pick this if...
-            </p>
+            <p className="text-sm text-muted-foreground mb-6">Pick this if...</p>
             <DecisionMatrix
               items={comparison.decisionMatrix}
               toolA={comparison.toolA}
@@ -184,7 +191,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
           </section>
 
           {/* Section 7: Use Cases */}
-          <section className="mb-10">
+          <section id="use-cases" className="mb-10 scroll-mt-24">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-6">
               <Lightbulb className="w-6 h-6 text-amber-500" />
               Use Cases
@@ -197,7 +204,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
           </section>
 
           {/* Section 8: Verdict */}
-          <section className="mb-10">
+          <section id="verdict" className="mb-10 scroll-mt-24">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-6">
               <Award className="w-6 h-6 text-primary" />
               Verdict
@@ -210,7 +217,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
           </section>
 
           {/* Section 9: FAQ */}
-          <section className="mb-10">
+          <section id="faq" className="mb-10 scroll-mt-24">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-6">
               <HelpCircle className="w-6 h-6 text-primary" />
               Frequently Asked Questions
@@ -220,10 +227,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
 
           {/* Section 11: Related Content */}
           <section className="mb-10">
-            <RelatedContent
-              currentSlug={comparison.slug}
-              comparisons={allComparisons}
-            />
+            <RelatedContent currentSlug={comparison.slug} comparisons={allComparisons} />
           </section>
 
           {/* Report Issue */}
@@ -272,5 +276,58 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
         </aside>
       </div>
     </div>
+  );
+}
+
+/** The answer up front: both scores, how many decision points go to each tool, and the recommendation. */
+function AtAGlance({ comparison }: { comparison: Comparison }) {
+  const { toolA, toolB, verdict, decisionMatrix } = comparison;
+  const picks = (rec: 'toolA' | 'toolB') =>
+    decisionMatrix.filter((d) => d.recommendation === rec).length;
+  const rows = [
+    { tool: toolA, score: verdict.toolAScore, wins: picks('toolA') },
+    { tool: toolB, score: verdict.toolBScore, wins: picks('toolB') },
+  ];
+  return (
+    <section aria-labelledby="at-a-glance" className="mb-10 rounded-md border bg-card p-5">
+      <p className="mb-4 font-mono text-xs text-muted-foreground" id="at-a-glance">
+        {'// at a glance'}
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {rows.map(({ tool, score, wins }) => (
+          <div key={tool.name} style={toolVars(tool.color)} className="flex items-center gap-3">
+            <ToolIcon name={tool.icon} color={tool.color} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className={`truncate font-semibold ${toolText}`}>{tool.name}</span>
+                <span className="font-mono text-sm font-semibold tabular-nums">
+                  {score.toFixed(1)} / 5
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-[var(--tool)] dark:bg-[var(--tool-dark)]"
+                  style={{ width: `${(score / 5) * 100}%` }}
+                />
+              </div>
+              {decisionMatrix.length > 0 && (
+                <p className="mt-1.5 text-xs text-muted-foreground tabular-nums">
+                  Best pick in {wins} of {decisionMatrix.length} situations
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 flex items-start gap-2 border-t pt-4 text-sm leading-relaxed">
+        <Award className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+        <span>
+          {verdict.recommendation}{' '}
+          <a href="#verdict" className="whitespace-nowrap font-medium text-primary hover:underline">
+            Read the verdict
+          </a>
+        </span>
+      </p>
+    </section>
   );
 }

@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Lightbulb } from 'lucide-react';
+import { toolBg, toolVars } from './tool-style';
 import type { UseCase, ToolInfo } from '@/lib/comparison-types';
 
 interface UseCasesSectionProps {
@@ -23,15 +24,16 @@ export function UseCasesSection({ useCases, toolA, toolB }: UseCasesSectionProps
     }
   }
 
-  function getRecommendationColor(rec: 'toolA' | 'toolB' | 'either') {
-    switch (rec) {
-      case 'toolA':
-        return toolA.color;
-      case 'toolB':
-        return toolB.color;
-      case 'either':
-        return '#6B7280';
-    }
+  // Tool picks use the tool's color, adjusted per theme; "Either" stays neutral.
+  function recommendationStyle(rec: 'toolA' | 'toolB' | 'either') {
+    if (rec === 'either')
+      return { style: undefined, bg: 'bg-zinc-500 text-white', accent: 'bg-zinc-500' };
+    const tool = rec === 'toolA' ? toolA : toolB;
+    return {
+      style: toolVars(tool.color),
+      bg: toolBg,
+      accent: 'bg-[var(--tool)] dark:bg-[var(--tool-dark)]',
+    };
   }
 
   return (
@@ -42,8 +44,8 @@ export function UseCasesSection({ useCases, toolA, toolB }: UseCasesSectionProps
             <div className="flex flex-col sm:flex-row">
               {/* Recommendation indicator */}
               <div
-                className="sm:w-1.5 h-1.5 sm:h-auto shrink-0"
-                style={{ backgroundColor: getRecommendationColor(useCase.recommendation) }}
+                className={`sm:w-1.5 h-1.5 sm:h-auto shrink-0 ${recommendationStyle(useCase.recommendation).accent}`}
+                style={recommendationStyle(useCase.recommendation).style}
               />
               <div className="p-5 flex-1">
                 <div className="flex items-start justify-between gap-3 mb-3">
@@ -52,8 +54,8 @@ export function UseCasesSection({ useCases, toolA, toolB }: UseCasesSectionProps
                     <h4 className="font-semibold text-sm">{useCase.scenario}</h4>
                   </div>
                   <Badge
-                    className="shrink-0 text-white text-xs"
-                    style={{ backgroundColor: getRecommendationColor(useCase.recommendation) }}
+                    className={`shrink-0 text-xs ${recommendationStyle(useCase.recommendation).bg}`}
+                    style={recommendationStyle(useCase.recommendation).style}
                   >
                     {getRecommendationLabel(useCase.recommendation)}
                   </Badge>

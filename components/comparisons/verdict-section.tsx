@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Award, ArrowRight } from 'lucide-react';
 import type { Verdict, ToolInfo } from '@/lib/comparison-types';
-import { ensureContrastOnDark } from '@/lib/color-contrast';
+import { toolText, toolVars } from './tool-style';
 
 interface VerdictSectionProps {
   verdict: Verdict;
@@ -11,19 +11,31 @@ interface VerdictSectionProps {
   toolB: ToolInfo;
 }
 
-function ScoreBar({ score, maxScore, color, label }: { score: number; maxScore: number; color: string; label: string }) {
+function ScoreBar({
+  score,
+  maxScore,
+  color,
+  label,
+}: {
+  score: number;
+  maxScore: number;
+  color: string;
+  label: string;
+}) {
   const percentage = (score / maxScore) * 100;
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5" style={toolVars(color)}>
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium" style={{ color: ensureContrastOnDark(color) }}>{label}</span>
-        <span className="font-bold">{score.toFixed(1)} / {maxScore}</span>
+        <span className={`font-medium ${toolText}`}>{label}</span>
+        <span className="font-bold">
+          {score.toFixed(1)} / {maxScore}
+        </span>
       </div>
       <div className="h-3 bg-muted rounded-full overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-1000 ease-out"
-          style={{ width: `${percentage}%`, backgroundColor: color }}
+          className="h-full rounded-full bg-[var(--tool)] transition-all duration-1000 ease-out dark:bg-[var(--tool-dark)]"
+          style={{ width: `${percentage}%` }}
         />
       </div>
     </div>

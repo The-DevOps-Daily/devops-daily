@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, ArrowRight } from 'lucide-react';
 import type { Comparison } from '@/lib/comparison-types';
-import { ensureContrastOnDark } from '@/lib/color-contrast';
+import { toolText, toolTint, toolVars } from './tool-style';
 
 interface ComparisonCardProps {
   comparison: Comparison;
@@ -29,8 +29,8 @@ export function ComparisonCard({ comparison }: ComparisonCardProps) {
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 text-right">
               <div
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
-                style={{ backgroundColor: `${comparison.toolA.color}15`, color: ensureContrastOnDark(comparison.toolA.color) }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold ${toolTint} ${toolText}`}
+                style={toolVars(comparison.toolA.color)}
               >
                 {comparison.toolA.name}
               </div>
@@ -42,8 +42,8 @@ export function ComparisonCard({ comparison }: ComparisonCardProps) {
             </div>
             <div className="flex-1 text-left">
               <div
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
-                style={{ backgroundColor: `${comparison.toolB.color}15`, color: ensureContrastOnDark(comparison.toolB.color) }}
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold ${toolTint} ${toolText}`}
+                style={toolVars(comparison.toolB.color)}
               >
                 {comparison.toolB.name}
               </div>

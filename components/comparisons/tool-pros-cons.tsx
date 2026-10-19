@@ -3,6 +3,7 @@
 import { CheckCircle2, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { ToolInfo } from '@/lib/comparison-types';
+import { ToolIcon, toolBorderLeft, toolText, toolVars } from './tool-style';
 
 interface ToolProsConsProps {
   toolA: ToolInfo;
@@ -11,9 +12,10 @@ interface ToolProsConsProps {
 
 function ToolCard({ tool }: { tool: ToolInfo }) {
   return (
-    <Card className="h-full" style={{ borderLeftColor: tool.color, borderLeftWidth: '4px' }}>
+    <Card className={`h-full ${toolBorderLeft}`} style={toolVars(tool.color)}>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg" style={{ color: tool.color }}>
+        <CardTitle className={`flex items-center gap-2 text-lg ${toolText}`}>
+          <ToolIcon name={tool.icon} color={tool.color} size="sm" />
           {tool.name}
         </CardTitle>
       </CardHeader>
@@ -35,9 +37,7 @@ function ToolCard({ tool }: { tool: ToolInfo }) {
 
         {/* Cons */}
         <div>
-          <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">
-            Weaknesses
-          </h4>
+          <h4 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-2">Weaknesses</h4>
           <ul className="space-y-2">
             {tool.cons.map((con, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">

@@ -3,7 +3,7 @@
 import { CheckCircle2, MinusCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FeatureComparison, ToolInfo } from '@/lib/comparison-types';
-import { ensureContrastOnDark } from '@/lib/color-contrast';
+import { toolText, toolTint, toolVars } from './tool-style';
 
 interface FeatureComparisonTableProps {
   features: FeatureComparison[];
@@ -53,16 +53,16 @@ export function FeatureComparisonTable({ features, toolA, toolB }: FeatureCompar
               <th className="text-left py-3 px-4 font-semibold text-sm w-1/4">Feature</th>
               <th className="text-left py-3 px-4 font-semibold text-sm w-[37.5%]">
                 <span
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm"
-                  style={{ backgroundColor: `${toolA.color}15`, color: ensureContrastOnDark(toolA.color) }}
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm ${toolTint} ${toolText}`}
+                  style={toolVars(toolA.color)}
                 >
                   {toolA.name}
                 </span>
               </th>
               <th className="text-left py-3 px-4 font-semibold text-sm w-[37.5%]">
                 <span
-                  className="inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm"
-                  style={{ backgroundColor: `${toolB.color}15`, color: ensureContrastOnDark(toolB.color) }}
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-md text-sm ${toolTint} ${toolText}`}
+                  style={toolVars(toolB.color)}
                 >
                   {toolB.name}
                 </span>
@@ -117,16 +117,14 @@ export function FeatureComparisonTable({ features, toolA, toolB }: FeatureCompar
             </h4>
             <div className="space-y-3">
               {categoryFeatures.map((feature) => (
-                <div
-                  key={feature.name}
-                  className="border rounded-lg overflow-hidden border-border"
-                >
-                  <div className="px-4 py-2 bg-muted/50 font-medium text-sm">
-                    {feature.name}
-                  </div>
+                <div key={feature.name} className="border rounded-lg overflow-hidden border-border">
+                  <div className="px-4 py-2 bg-muted/50 font-medium text-sm">{feature.name}</div>
                   <div className="divide-y divide-border/50">
                     <div className={cn('px-4 py-3', ratingBg(feature.toolA.rating))}>
-                      <div className="text-xs font-semibold mb-1" style={{ color: ensureContrastOnDark(toolA.color) }}>
+                      <div
+                        className={`text-xs font-semibold mb-1 ${toolText}`}
+                        style={toolVars(toolA.color)}
+                      >
                         {toolA.name}
                       </div>
                       <div className="flex items-start gap-2">
@@ -135,7 +133,10 @@ export function FeatureComparisonTable({ features, toolA, toolB }: FeatureCompar
                       </div>
                     </div>
                     <div className={cn('px-4 py-3', ratingBg(feature.toolB.rating))}>
-                      <div className="text-xs font-semibold mb-1" style={{ color: ensureContrastOnDark(toolB.color) }}>
+                      <div
+                        className={`text-xs font-semibold mb-1 ${toolText}`}
+                        style={toolVars(toolB.color)}
+                      >
                         {toolB.name}
                       </div>
                       <div className="flex items-start gap-2">
