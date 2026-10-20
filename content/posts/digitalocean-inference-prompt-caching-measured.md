@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-10-19'
 publishedAt: '2026-10-19T09:00:00Z'
-updatedAt: '2026-10-19T09:00:00Z'
+updatedAt: '2026-10-20T09:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
@@ -140,6 +140,8 @@ Here is what that does to the input bill, per 1,000 requests at list prices:
 ```
 
 On list price, `gpt-oss-120b` is the cheap one: $0.10 per million input tokens against $0.30 for DeepSeek V4.1 Flash. With a stable prefix the order flips, because DeepSeek's cached tokens cost almost nothing and it hit far more often. If most of your tokens are a repeated prompt, compare models on cached cost and measured hit rate, not on the input price. Output is a separate sum: both models spent most of their 48 output tokens on reasoning in our runs, and DeepSeek's output costs $1.20 per million against $0.70.
+
+The invoice agrees: the next day, the input, cache read input and output lines on our invoice preview had grown by exactly the token counts the API reported, for all three models (`results/bill-check.txt` in the repo).
 
 ## What breaks it
 
@@ -308,7 +310,6 @@ The DigitalOcean control panel shows the hit rate per model too (Serverless Infe
 - **One afternoon, one account.** All 867 recorded requests ran between 12:48 and 13:55 UTC on 19 October 2026. Hit rates and eviction depend on load: the share of `gpt-oss-120b`'s prompt served from cache went from 68 to 36 percent between two runs about an hour apart.
 - **Small samples where it hurts.** The idle table is one request per cell, and the latency table is 5 misses and at most 5 hits per cell. They show direction, not exact values.
 - **No view of replicas.** The response does not say which replica served it, so the DeepSeek second-request pattern and the `gpt-oss-120b` misses are described, not explained.
-- **The bill check is not done yet.** The repo compares the token counts from the API with the change in the invoice preview. A snapshot taken right after the last request, 68 minutes after the first one, showed no change yet (it is in the repo), so this post uses list prices and the cache read rates from our invoice, not a measured bill.
 - **First streamed token, not first answer word.** For the two reasoning models, the latency numbers measure the first reasoning token.
 - **Synthetic prompts, ungraded answers.** The runbook is generated, and answers were capped at 48 tokens. This measures input caching, not answer quality.
 
