@@ -7,7 +7,7 @@ category:
 date: '2026-10-21'
 publishedAt: '2026-10-21T09:00:00Z'
 updatedAt: '2026-10-21T09:00:00Z'
-readingTime: '17 min read'
+readingTime: '18 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -61,9 +61,9 @@ The timeline, all on 21 October unless noted (UTC):
 - **02:29**: VirusTotal saw the first submission of a [leaked archive](https://blog.virustotal.com/2026/10/sizing-php-exposure-window-for-cve-2026.html) with technical details.
 - **13:34**: the GitHub advisories were published. Ubuntu's [USN-8948-1](https://ubuntu.com/security/notices/USN-8948-1) followed at 13:56.
 - **14:00**: the scheduled release time. The php.net [announcements](https://www.php.net/archive/2026.php#2026-10-21-5) carry no time of day; NVD published both CVEs at 14:17.
-- **16:03**: the last of the rebuilt official `php` images for 8.2 to 8.5 was built. Docker Hub showed the new version tags as pushed between 16:48 and 17:31.
+- **16:03**: the last of the 16 official `php` tags we scanned for 8.2 to 8.5 (linux/amd64) was built with a fixed PHP. Docker Hub showed the new version tags as pushed between 16:48 and 17:31.
 
-The first report took about ten weeks to reach a release. [Calif](https://calif.io/php2shell/), one of the three groups credited with finding the bugs alongside OpenAI and Wiz, says its audit started on 1 August 2026, the first bug reached PHP on 11 August and the second on 21 August. Calif traces the earliest affected code path to PHP 5.4.0, and says a related out-of-memory issue found in a 2024 audit was left unfixed because exploitation was not proven. In OpenAI's account, Greg Brockman [wrote](https://x.com/gdb/status/2112921529650688312) that OpenAI had spent the past two months "leading a coalition to mitigate" the bug, found as part of its Patch the Planet initiative. OpenAI's own write-up is [here](https://openai.com/index/coordinated-disclosure-of-critical-vulnerabilities/).
+The first report took about ten weeks to reach a release. [Calif](https://calif.io/php2shell/), which credits the discovery to Calif, OpenAI and Wiz, dates discovery to 1 August 2026, the first report to PHP to 11 August and the second to 21 August. Calif traces the earliest affected code path to PHP 5.4.0, and says a related out-of-memory issue found in a 2024 audit was left unfixed because exploitation was not proven. In OpenAI's account, Greg Brockman [wrote](https://x.com/gdb/status/2112921529650688312) that OpenAI had spent the past two months "leading a coalition to mitigate" the bug, found as part of its Patch the Planet initiative. OpenAI's own write-up is [here](https://openai.com/index/coordinated-disclosure-of-critical-vulnerabilities/).
 
 ## Who is really exposed
 
@@ -74,11 +74,11 @@ PHP's [advisory](https://www.php.net/archive/2026.php#2026-10-21-5) lists "all P
 | Apache mod_php    | Highest risk. Unauthenticated RCE validated over HTTP with default limits, before any application code runs.                                                                                                                                                                                                                                                              |
 | PHP-FPM           | At risk. The CVE-2026-109619 session path was validated against FPM, but it needs a suitable application operation. For CVE-2026-109618, source analysis says FPM is susceptible, but no complete FPM exploit was shown. The advisory also names per-request settings sent by the web server (`PHP_VALUE` or `PHP_ADMIN_VALUE`) that produce a warning as a risk for FPM. |
 | php-cgi           | Listed as at risk by php.net. The advisories do not discuss it separately.                                                                                                                                                                                                                                                                                                |
-| FrankenPHP        | Listed. Source analysis says it is likely susceptible to CVE-2026-109618 in the same way as mod_php.                                                                                                                                                                                                                                                                      |
+| FrankenPHP        | Listed. Source analysis says that, like mod_php, it is likely susceptible to CVE-2026-109618.                                                                                                                                                                                                                                                                             |
 | LiteSpeed (LSAPI) | Listed. Application-specific exploits are described as likely but not validated.                                                                                                                                                                                                                                                                                          |
 | CLI               | Not named. The bugs are in web request handling. But `php -S` serves HTTP from the CLI binary, and the CLI usually comes from the same source package as FPM and mod_php, so an old CLI is a sign of what else on the host is old.                                                                                                                                        |
 
-Red Hat [rates both bugs Important, not Critical](https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-109618.json), because "Standard Red Hat Enterprise Linux deployments use PHP-FPM rather than mod_php." That is a statement about the default, not about your server. If you run mod_php on RHEL, the higher rating applies to you.
+Red Hat [rates both bugs Important, not Critical](https://security.access.redhat.com/data/csaf/v2/vex/2026/cve-2026-109618.json), because "Standard Red Hat Enterprise Linux deployments use PHP-FPM rather than mod_php." That is a statement about the default, not about your server. PHP names mod_php as the highest-risk setup, so if you run mod_php on RHEL, put it first even though Red Hat's rating is Important.
 
 :::note
 **The sources disagree on the affected range.** PHP's advisories and the CVE.org records list only 8.2 to 8.5. NVD marks every version below 8.2.35 as vulnerable, with no lower bound. Google Cloud says "All versions of PHP from 5.4 through 8.5.11", and PHP itself shipped source backports for 7.4, 8.0 and 8.1. Treat every PHP older than the fixed releases as affected, including end-of-life branches.
@@ -103,53 +103,59 @@ To show this with real packages, the repo's `scripts/ubuntu-backport-demo.sh` do
 }
 ```
 
-Both binaries carry the same version. Only the package version and its changelog tell them apart. This is what the fixed packages looked like on the evening of 21 October:
+Both binaries carry the same version. Only the package version and its changelog say which one has the fix. This is what the fixed packages looked like on the evening of 21 October:
 
-| System                          | Fixed package                                                                                       | Does `php -v` change? |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------- |
-| Debian 12 bookworm              | php8.2 8.2.35-1~deb12u1 ([DLA-4848-1](https://security-tracker.debian.org/tracker/CVE-2026-109618)) | Yes, to 8.2.35        |
-| Debian 13 trixie                | php8.4 8.4.27-1~deb13u1 (DSA-6574-1)                                                                | Yes, to 8.4.27        |
-| Ubuntu 26.04                    | php8.5 8.5.4-0ubuntu1.5 ([USN-8948-1](https://ubuntu.com/security/notices/USN-8948-1))              | No, stays 8.5.4       |
-| Ubuntu 24.04                    | php8.3 8.3.6-0ubuntu0.24.04.13                                                                      | No, stays 8.3.6       |
-| Ubuntu 22.04                    | php8.1 8.1.2-1ubuntu2.28                                                                            | No, stays 8.1.2       |
-| Ubuntu 14.04 to 20.04 (ESM)     | php5, php7.0, php7.2, php7.4 ([USN-8948-2](https://ubuntu.com/security/notices/USN-8948-2))         | No                    |
-| RHEL 8.10, php:7.4 module       | php-7.4.33-8.module+el8.10.0+25117+30337cca (RHSA-2026:87080)                                       | No, stays 7.4.33      |
-| RHEL 8 php:8.2, RHEL 9, RHEL 10 | No fix listed at 16:49 UTC                                                                          |                       |
-| packages.sury.org (Debian 12)   | Still at 8.2.34, 8.3.35, 8.4.26 and 8.5.11 at about 18:10 UTC                                       | Yes, when it lands    |
-| rpms.remirepo.net               | php.net: "The repo will not have updates today"                                                     | Yes, when it lands    |
+| System                               | Fixed package                                                                                       | Does `php -v` change? |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------- | --------------------- |
+| Debian 12 bookworm                   | php8.2 8.2.35-1~deb12u1 ([DLA-4848-1](https://security-tracker.debian.org/tracker/CVE-2026-109618)) | Yes, to 8.2.35        |
+| Debian 13 trixie                     | php8.4 8.4.27-1~deb13u1 (DSA-6574-1)                                                                | Yes, to 8.4.27        |
+| Ubuntu 26.04                         | php8.5 8.5.4-0ubuntu1.5 ([USN-8948-1](https://ubuntu.com/security/notices/USN-8948-1))              | No, stays 8.5.4       |
+| Ubuntu 24.04                         | php8.3 8.3.6-0ubuntu0.24.04.13                                                                      | No, stays 8.3.6       |
+| Ubuntu 22.04                         | php8.1 8.1.2-1ubuntu2.28                                                                            | No, stays 8.1.2       |
+| Ubuntu 14.04 to 20.04 (ESM)          | php5, php7.0, php7.2, php7.4 ([USN-8948-2](https://ubuntu.com/security/notices/USN-8948-2))         | No                    |
+| RHEL 8.10 EUS, php:7.4 module        | php-7.4.33-8.module+el8.10.0+25117+30337cca (RHSA-2026:87080)                                       | No, stays 7.4.33      |
+| RHEL 8 php:8.2, RHEL 9, RHEL 10      | No fix listed at 16:49 UTC                                                                          |                       |
+| packages.sury.org (Debian 12, arm64) | Still at 8.2.34, 8.3.35, 8.4.26 and 8.5.11 at about 18:10 UTC                                       | Yes, when it lands    |
+| rpms.remirepo.net                    | php.net: "The repo will not have updates today"                                                     | Yes, when it lands    |
 
-The same trap works in the other direction. A version scanner that only reads `php -v` flags every fixed Ubuntu and RHEL server as vulnerable, and teams learn to ignore it.
+The same trap works in the other direction. A scanner that compares only the upstream version reports fixed Ubuntu and RHEL packages as vulnerable.
 
-The right check compares the package version with the distribution's fixed version, or finds the CVE IDs in the changelog of the package that owns the binary:
+The right check compares the package version with your distribution's fixed version for that package, or finds both CVE IDs in the changelog of the package that owns the binary. The examples use Ubuntu 24.04's php8.3-fpm; take the fixed version for your release and package from its USN, DSA or RHSA:
 
 ```bash
-# Debian and Ubuntu: compare with the fixed version from the USN or DSA
+# Ubuntu 24.04, php8.3-fpm from the Ubuntu archive (fixed in USN-8948-1)
 dpkg --compare-versions "$(dpkg-query -W -f='${Version}' php8.3-fpm)" ge 8.3.6-0ubuntu0.24.04.13 \
   && echo fixed || echo NOT fixed
 
 # Which package owns the binary that actually runs, and what its changelog says
 dpkg-query -S "$(readlink -f /usr/sbin/php-fpm8.3)"
 zcat /usr/share/doc/php8.3-fpm/changelog.Debian.gz | head -1
-zgrep -c -E 'CVE-2026-10961(8|9)' /usr/share/doc/php8.3-fpm/changelog.Debian.gz
+for id in CVE-2026-109618 CVE-2026-109619; do
+  zgrep -q "$id" /usr/share/doc/php8.3-fpm/changelog.Debian.gz && echo "$id listed" || echo "$id NOT listed"
+done
 
-# RHEL, AlmaLinux, Rocky Linux
-rpm -q php-fpm
-rpm -q --changelog php-fpm | grep -E 'CVE-2026-10961(8|9)'
+# RHEL, AlmaLinux, Rocky Linux: ask about the package that owns the binary
+rpm -qf "$(readlink -f /usr/sbin/php-fpm)"
+for id in CVE-2026-109618 CVE-2026-109619; do
+  rpm -qf --changelog "$(readlink -f /usr/sbin/php-fpm)" | grep -q "$id" && echo "$id listed" || echo "$id NOT listed"
+done
 
 # Alpine packages carry the upstream version
-apk info -v 2>/dev/null | grep -E '^php8[0-9]*-(fpm|cli|common)-'
+apk info -v | grep -E '^php[0-9]+(-fpm|-cgi|-apache2|-embed)?-[0-9]'
 ```
 
 Two details make the changelog check less simple than it looks:
 
 - **On Debian and Ubuntu, `/usr/share/doc/php8.3-fpm` is usually a symlink** to `php8.3-common`'s docs. If an upgrade was partial and `php8.3-fpm` was held back, you read the newer package's changelog and conclude the old FPM binary is fixed. Check that the first line of the changelog names the version that `dpkg-query -W php8.3-fpm` reports. The check script refuses a changelog whose top entry does not match the installed package.
 - **Container images often strip `/usr/share/doc`.** Then there is no changelog to read, and the package version against the distribution's tracker is the only evidence.
+- **A changelog line is a mention, not proof.** A fix that was later reverted would still be listed. Treat it as supporting evidence next to the package version.
 
 ## Restart, or the old code keeps running
 
 Upgrading the package replaces the files on disk. The PHP-FPM master and its workers, and every Apache child with mod_php loaded, still have the old binary mapped in memory. Linux marks a mapped file that has been replaced as `(deleted)`, which gives you a direct check:
 
 ```bash
+# Run as root, or processes owned by other users are not visible.
 # PHP-FPM, php-cgi, LiteSpeed and FrankenPHP processes on a replaced binary
 sudo ls -l /proc/[0-9]*/exe 2>/dev/null | grep -E '(php|frankenphp).*\(deleted\)'
 
@@ -157,7 +163,7 @@ sudo ls -l /proc/[0-9]*/exe 2>/dev/null | grep -E '(php|frankenphp).*\(deleted\)
 sudo grep -l 'libphp.*(deleted)' /proc/[0-9]*/maps 2>/dev/null
 ```
 
-Restart the service (`systemctl restart php8.3-fpm`, `systemctl restart apache2`), then run both commands again until they print nothing. `needrestart` on Debian and Ubuntu and `dnf needs-restarting` on RHEL report the same thing. PHP's own advice for the interim settings is to "restart every worker" as well, because a setting changed in php.ini does not reach a worker that is already running.
+Restart the service (`systemctl restart php8.3-fpm`, `systemctl restart apache2`), run both commands again until they print nothing, and then check the version or package of the binary the service runs. An empty result only says no replaced file is still mapped; it does not say the file on disk is the fixed one. `needrestart` on Debian and Ubuntu and `dnf needs-restarting` on RHEL also list processes that need a restart after an upgrade. PHP's own advice for the interim settings is to "restart every worker" as well, because a setting changed in php.ini does not reach a worker that is already running.
 
 ## Containers: rebuild, redeploy, then check what is running
 
@@ -174,17 +180,17 @@ If your Dockerfile pins a digest (`FROM php:8.4-fpm@sha256:...`), update the pin
 Then check the containers that are running, not the image you meant to deploy:
 
 ```bash
-# Docker or Podman hosts: the PHP in each running container
+# Docker hosts (use podman the same way): the PHP CLI version in each running container
 docker ps --format '{{.ID}} {{.Image}} {{.Names}}' | while read -r id image name; do
   printf '%-30s %-40s ' "$name" "$image"
-  docker exec "$id" php -r 'echo PHP_VERSION, PHP_EOL;' 2>/dev/null || echo "no php CLI"
+  docker exec "$id" php -r 'echo PHP_VERSION, PHP_EOL;' 2>&1 || echo "PHP CLI check failed"
 done
 
 # Kubernetes: the image digests your pods are actually running
 kubectl get pods -A -o jsonpath='{..imageID}' | tr ' ' '\n' | sort -u
 ```
 
-The repo's `registry_scan.py` takes those digests as arguments and reads the PHP version from each image's metadata without pulling it. That works for images built `FROM php`, which carry `ENV PHP_VERSION`. For images that install PHP from distribution packages, look inside a running container, because the version is not in the metadata.
+The CLI version is a first look, not proof for the web server: a container can have a fixed CLI and an older FPM or mod_php, so check the binary that serves requests (`php-fpm -v`, or its package) as well. The repo's `registry_scan.py` takes repository-qualified digests (`registry/repository@sha256:...`) as arguments and reads the PHP version from each image's metadata without pulling it. Some runtimes report `imageID` in other forms, such as a bare digest, which you need to map back to a repository first. That works for images built `FROM php`, which carry `ENV PHP_VERSION`. For images that install PHP from distribution packages, look inside a running container, because the version is not in the metadata.
 
 ## How fast the popular images were rebuilt
 
@@ -231,8 +237,8 @@ At 18:21 UTC, 4.4 hours after the scheduled release:
 }
 ```
 
-- **All 16 official `php` images for 8.2 to 8.5 were fixed**, built 1.8 to 2.1 hours after the scheduled release.
-- **8 images still shipped a vulnerable PHP**: `php:8.1-fpm` and `php:8.1-apache` (8.1.34, last built in December 2025, and they will not be rebuilt), `joomla:latest` (8.4.26), `nextcloud:latest` and `nextcloud:fpm` (8.5.11), `phpmyadmin:latest` (8.3.35), `yourls:latest` (8.5.11) and `laravelsail/php84-composer:latest` (8.4.1, built in November 2024). The Laravel image runs Composer in the Laravel docs rather than serving traffic, but it is a common base to copy from.
+- **All 16 official `php` tags we scanned for 8.2 to 8.5 reported a fixed PHP**, built 1.8 to 2.1 hours after the scheduled release.
+- **8 images still shipped a vulnerable PHP**: `php:8.1-fpm` and `php:8.1-apache` (8.1.34, last built in December 2025; there is no fixed 8.1 release to rebuild with), `joomla:latest` (8.4.26), `nextcloud:latest` and `nextcloud:fpm` (8.5.11), `phpmyadmin:latest` (8.3.35), `yourls:latest` (8.5.11) and `laravelsail/php84-composer:latest` (8.4.1, built in November 2024). The Laravel documentation uses that image to run Composer, not to serve traffic.
 - **2 images could not be judged from metadata**: `thecodingmachine/php:8.4-v5-fpm` sets `PHP_VERSION=8.4` without the patch level, and `linuxserver/nextcloud` installs PHP from Alpine packages and records no PHP version at all.
 
 ```chart
@@ -290,7 +296,7 @@ At 18:21 UTC, 4.4 hours after the scheduled release:
 }
 ```
 
-One result changes how you should read a registry. Docker Hub listed `joomla:latest` as pushed at 15:46 UTC, after the release. Its amd64 image was built at 01:52 UTC with PHP 8.4.26. The tag's push time moves when any architecture or attestation is pushed, so a fresh "last pushed" is not evidence of a fixed PHP. `nextcloud:latest` and `nextcloud:fpm` looked the same at 18:21; by 18:30 their amd64 images had moved to 8.5.12. We checked that the scan was not reading stale data: for those three images and two others, the platform digest from the Docker Hub API matched the registry's own index (`results/method-check-20261021T183037Z.txt`).
+One result changes how you should read a registry. Docker Hub listed `joomla:latest` as pushed at 15:46 UTC, after the release. Its amd64 image was built at 01:52 UTC with PHP 8.4.26. So a fresh "last pushed" time is not evidence that the image you pull has a fixed PHP. `nextcloud:latest` and `nextcloud:fpm` looked the same at 18:21; by 18:30 their amd64 images had moved to 8.5.12. To check the method, at 18:30 UTC we compared the amd64 digest from the Docker Hub API with the registry's own index for those three images and two others: they agreed for all five (`results/method-check-20261021T183037Z.txt`).
 
 ## The interim settings and their limits
 
@@ -318,18 +324,18 @@ php_admin_flag session.upload_progress.enabled off
 Then restart every worker. What this does and does not do, per the [advisory](https://github.com/php/php-src/security/advisories/GHSA-6wmf-4rv5-p3rp):
 
 - It "prevents the demonstrated early session producing and consuming operations. It does not mitigate the other lifecycle paths." `fatal_error_backtraces=0` "blocks the confirmed fatal backtrace path only."
-- It does nothing for CVE-2026-109618. For that bug PHP suggests enforcing `memory_limit=-1` so applications cannot override it, and warns that an underlying allocation failure can still reach the bug. With no PHP memory limit, use a container or cgroup limit as the availability boundary, and do not use `RLIMIT_AS` or `RLIMIT_DATA`, which can cause the failure you are trying to avoid.
-- Hiding warnings does not help. Changing `error_reporting`, `display_errors` or `log_errors`, or using `@`, does not protect against CVE-2026-109619. Remove per-request settings that produce warnings instead, including any `PHP_VALUE` your web server passes to FPM.
-- If your application does not accept file uploads, PHP suggests blocking `multipart/form-data` at the frontend, and keeping `post_max_size` low (8M without uploads, 32M with them).
-- Edge rules help but do not replace the update. Cloudflare deployed WAF rules for the known vectors to all plans, including Free, and its CTO said only updating PHP fully protects a site, according to [VirusTotal](https://blog.virustotal.com/2026/10/sizing-php-exposure-window-for-cve-2026.html) and [Help Net Security](https://www.helpnetsecurity.com/2026/10/21/php2shell-php-vulnerabilities-patched-cve-2026-109618-cve-2026-109619/).
+- PHP lists it under CVE-2026-109619 only. For CVE-2026-109618 PHP suggests enforcing `memory_limit=-1` so applications cannot override it, and warns that an underlying allocation failure can still reach the bug. With no PHP memory limit, use a container or cgroup limit as the availability boundary, and do not use `RLIMIT_AS` or `RLIMIT_DATA`, which can cause the failure you are trying to avoid.
+- Hiding warnings does not help. Changing `error_reporting`, `display_errors` or `log_errors`, or using `@`, does not protect against CVE-2026-109619. Instead, remove per-request settings that produce warnings or deprecation notices, including `PHP_VALUE` or `PHP_ADMIN_VALUE` lines your web server passes to FPM.
+- If your application does not use multipart form data, PHP suggests blocking it at the frontend. It also suggests a low `post_max_size` (8M for applications that do not need file uploads, 32M for those that do) and proxy limits that also cover requests without a usable Content-Length.
+- Edge rules help but do not replace the update. [Help Net Security](https://www.helpnetsecurity.com/2026/10/21/php2shell-php-vulnerabilities-patched-cve-2026-109618-cve-2026-109619/) reports that Cloudflare deployed WAF rules for the known exploit vectors to all customers, including Free, and [VirusTotal](https://blog.virustotal.com/2026/10/sizing-php-exposure-window-for-cve-2026.html) reports its CTO saying that only updating PHP fully protects a site.
 
-PHP also suggests keeping `session.upload_progress.enabled=0` after you patch if you do not use upload progress bars, because more people will now look for bugs in that code.
+PHP also suggests keeping `session.upload_progress.enabled=0` after you patch if you do not use upload progress bars, "as more attackers try to find flaws in this hardly-used and hardly-tested feature."
 
 ## PHP 8.1 and older
 
-The PHP project does not release fixes for 8.1 or older. It published minimal source backports for 7.4, 8.0 and 8.1 for people who build from source, and points everyone else to their vendor. Some vendors have shipped them: Ubuntu for 22.04's PHP 8.1 and, under ESM, for 14.04 to 20.04, and Red Hat for the RHEL 8 php:7.4 module.
+The PHP project does not release fixes for 8.1 or older. It published minimal source backports for 7.4, 8.0 and 8.1 for people who build from source, and points everyone else to their vendor. Some vendors have shipped them: Ubuntu for 22.04's PHP 8.1 and, under ESM, for 14.04 to 20.04, and Red Hat for the RHEL 8.10 EUS php:7.4 module.
 
-The official `php:8.1` images were not rebuilt and still contain 8.1.34 from December 2025. Google's [guidance](https://cloud.google.com/blog/products/identity-security/responding-to-core-php-vulnerabilities-cve-2026-109618-cve-2026-109619) says App Engine applications on PHP 5.5, 7.2, 7.3, 7.4 and 8.1 remain vulnerable and must move to 8.2 or newer. VirusTotal [counted](https://blog.virustotal.com/2026/10/sizing-php-exposure-window-for-cve-2026.html) about 758,000 internet-facing hosts that announce an end-of-life PHP version from 5.4 to 8.1, out of about 1.1 million that announce a version at all. That counts exposed PHP, not confirmed vulnerable hosts, but it shows how much of the long tail has no simple update.
+The official `php:8.1` tags we scanned still reported 8.1.34, built in December 2025. Google's [guidance](https://cloud.google.com/blog/products/identity-security/responding-to-core-php-vulnerabilities-cve-2026-109618-cve-2026-109619) says App Engine applications on PHP 5.5, 7.2, 7.3, 7.4 and 8.1 remain vulnerable and must move to 8.2 or newer. VirusTotal [counted](https://blog.virustotal.com/2026/10/sizing-php-exposure-window-for-cve-2026.html) about 758,000 internet-facing hosts that announce an end-of-life PHP version from 5.4 to 8.1, out of about 1.1 million that announce a version at all. That counts exposed PHP, not confirmed vulnerable hosts, but it shows how much of the long tail has no simple update.
 
 If you are on 8.2, the same applies on 31 December 2026, when it reaches end of life.
 
@@ -339,7 +345,7 @@ If you are on 8.2, the same applies on 31 December 2026, when it reaches end of 
 The-DevOps-Daily/php2shell-check
 ```
 
-`php2shell_check.py` is one file of standard-library Python, so you can copy it to a server and run it. For each PHP it finds, it reports the SAPI, the version compiled into the binary or Apache module (so mod_php is checked without running Apache), the package that owns the file, and whether that package's changelog names both CVEs. A changelog only counts if it belongs to the installed package and `dpkg --verify` or `rpm -V` confirms the binary still matches that package. It also reports the interim settings as `php -i` and the FPM pool files show them, and any web server lines that pass `PHP_VALUE`. Then it lists running PHP processes, marks any that still run a replaced binary, and runs the same checks inside each running Docker or Podman container that has a PHP process. The interim settings are reported only: they never turn a vulnerable result into a pass.
+`php2shell_check.py` is one file of standard-library Python, so you can copy it to a server and run it. For each PHP it finds, it reports the SAPI, the version compiled into the binary or Apache module (so mod_php is checked without running Apache), the package that owns the file, and whether that package's changelog names both CVEs. A changelog only counts if it belongs to the installed package and `dpkg --verify` or `rpm -V` confirms the binary still matches that package. It also reports the interim settings as a fresh `php -i` and the FPM pool files show them (a running service started with other options can differ), and any host web server lines that pass `PHP_VALUE`. Then it lists running PHP processes and marks any that still run a replaced binary. Through the first container CLI it finds (docker, then podman), it runs the version and package checks inside each running container that has a PHP process, and reports `unknown` when a PHP process in a container has no matching binary it could check. The interim settings are reported only: they never turn a vulnerable result into a pass.
 
 This is the real output on the Raspberry Pi we build on, which has the PHP 8.4.23 CLI from packages.sury.org and no web server:
 
@@ -363,7 +369,7 @@ This is the real output on the Raspberry Pi we build on, which has the PHP 8.4.2
 }
 ```
 
-The exit code is 0 when every PHP it found and inspected is patched, 1 when something is vulnerable or needs a restart, and 2 when something could not be checked. A missing CVE in one changelog, a pre-release build, an unreadable process or a container PHP process with no matching binary all give 2, not 0. It only knows the paths and names it searches, so a 0 means "nothing vulnerable found", not proof that no other PHP exists. To run it across hosts without copying it first:
+The exit code is 1 when anything is vulnerable or needs a restart. Otherwise it is 2 when anything could not be checked, and 0 when every PHP it found is patched or it found no PHP at all (it says which). A changelog that lists only one of the two CVEs, a pre-release build, an unreadable process or a container PHP process with no matching binary give 2, not 0. It only knows the paths and names it searches, so a 0 means "nothing vulnerable found", not proof that no other PHP exists. To run it across hosts without copying it first:
 
 ```bash
 for h in web1 web2 web3; do
@@ -380,17 +386,17 @@ For each host, keep evidence of all of these, not just the first:
 
 1. **Package**: the upstream version is at or above the fixed release, or the package version is at or above your distribution's fixed version.
 2. **Processes**: no PHP-FPM, php-cgi, LiteSpeed or FrankenPHP process runs a `(deleted)` binary, and no Apache process maps a `(deleted)` libphp.
-3. **Containers**: `php -v` inside each running container shows a fixed version, or the container's package is the fixed one. The image you deployed is the one running.
-4. **Images**: every image you build FROM a PHP base has been rebuilt since the fix, and the scan of its digest shows a fixed version.
-5. **Exposure while vulnerable**: if a host was internet-facing and unpatched, check it for compromise. The [NCSC](https://www.ncsc.gov.uk/news/critical-security-issue-affecting-php) asks for this, and [Wiz](https://www.wiz.io/blog/php2shell-php-rce) suggests looking for unusual multipart requests followed by memory-limit errors or repeated HTTP 500 responses, unexpectedly large or malformed `PHPSESSID` cookies, and unexplained worker churn.
+3. **Containers**: the binary that serves requests inside each running container (`php-fpm`, mod_php, FrankenPHP) has a fixed version or a fixed package, not just the CLI. The image digest you deployed is the one running.
+4. **Images**: every image you build FROM a PHP base has been rebuilt since the fix. The registry scan of its digest is a quick inventory check; the container check above is the proof.
+5. **Exposure while vulnerable**: if a host was internet-facing and unpatched, check it for compromise. The [NCSC](https://www.ncsc.gov.uk/news/critical-security-issue-affecting-php) asks for this, and [Wiz](https://www.wiz.io/blog/php2shell-php-rce) suggests looking for unusual multipart requests followed by memory-limit errors or repeated HTTP 500 responses, unexpectedly large or malformed `PHPSESSID` response cookies, and unexplained worker churn.
 
 ## What we could not check
 
 - **Containers on a real host.** The Pi we build on has no Docker, so the container checks are covered by the test fixtures only. The registry scan read real images.
 - **Web servers.** The Pi runs PHP from the command line only. mod_php and FPM detection are covered by the tests.
 - **Whether the interim settings block anything.** We did not test any part of the bugs, and the tool does not. PHP's own text is the source for what the settings cover.
-- **Later distribution updates.** The distribution table is as of the evening of 21 October. RHEL, sury.org and Remi updates had not landed when we checked.
-- **Other architectures.** The registry scan reads linux/amd64 only. The nextcloud images show that architectures can be rebuilt at different times.
+- **Later distribution updates.** The distribution table is as of the evening of 21 October. At 16:49 UTC Red Hat listed a fix only for the RHEL 8.10 EUS php:7.4 module, the Debian 12 arm64 index on packages.sury.org still had the old versions at about 18:10 UTC, and PHP said Remi would not have updates that day.
+- **Other architectures.** The registry scan reads linux/amd64 only. We did not measure arm64 images.
 - **Unusual install paths.** The script searches distribution paths, Remi, cPanel, Plesk, CloudLinux alt-php, LiteSpeed, aaPanel and `$PATH`. PHP elsewhere, `.htaccess` overrides and stopped containers are not covered.
 
 ## Checklist
@@ -398,7 +404,7 @@ For each host, keep evidence of all of these, not just the first:
 - [ ] Every host: PHP package updated, checked against the distribution's fixed version, not `php -v`
 - [ ] Every PHP-FPM pool, Apache, php-cgi, LiteSpeed and FrankenPHP service restarted, with no `(deleted)` PHP binaries left in `/proc`
 - [ ] Every image built FROM a PHP base rebuilt with `--pull` and redeployed by new tag or digest
-- [ ] Running containers checked with `docker exec ... php -v` or `kubectl` image digests
+- [ ] Running containers checked inside, including the binary that serves requests, and their image digests matched to what you deployed
 - [ ] PHP 8.1 and older: vendor backport installed or upgrade to 8.2+ scheduled, with interim settings in place until then
 - [ ] Interim settings applied where updates wait, in php.ini or the pool, with workers restarted
 - [ ] `session.upload_progress.enabled=0` kept where upload progress bars are not used
