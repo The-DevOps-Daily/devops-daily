@@ -7,7 +7,7 @@ category:
 date: '2026-10-21'
 publishedAt: '2026-10-21T09:00:00Z'
 updatedAt: '2026-10-21T09:00:00Z'
-readingTime: '18 min read'
+readingTime: '19 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -23,7 +23,7 @@ tags:
 
 On 21 October 2026 the PHP project released PHP 8.5.12, 8.4.27, 8.3.36 and 8.2.35 to fix CVE-2026-109618 and CVE-2026-109619, the pair now called PHP2Shell. Both are rated critical, CVSS v4.0 9.2. Unauthenticated remote code execution has been demonstrated against Apache with mod_php before any application code runs, and PHP says every installation that serves web requests is at risk.
 
-So update. The trouble is that "we updated" can be true while the server is still vulnerable. Ubuntu and RHEL fix PHP without changing the version number, so `php -v` says the same thing before and after. PHP-FPM and Apache keep running the old code until they restart. A fixed base image fixes nothing until your image is rebuilt and the old containers are gone. This post shows how to find every PHP you run, how to prove each one is fixed, and what the interim settings do and do not block. It comes with a read-only check script, and a registry scan we ran 4.4 hours after the scheduled release: by their own metadata, 8 of 39 popular PHP images still shipped a vulnerable PHP.
+So update. The trouble is that "we updated" can be true while the server is still vulnerable. Ubuntu and RHEL fix PHP without changing the version number, so `php -v` says the same thing before and after. PHP-FPM and Apache keep running the old code until they restart. A fixed base image fixes nothing until your image is rebuilt and the old containers are gone. This post shows how to find every PHP you run, how to prove each one is fixed, and what the interim settings do and do not block. It comes with a read-only check script, and a registry scan of 39 popular PHP images: by their own metadata, 8 still shipped a vulnerable PHP 4.4 hours after the scheduled release, and 3 still did at 5.5 hours.
 
 ## What to do now
 
@@ -196,13 +196,13 @@ The CLI version is a first look, not proof for the web server: a container can h
 
 We wanted to know how long "pull the new image" takes to become true, so `registry_scan.py` read the PHP version of 39 popular images from registry metadata only: the manifest and the image config, a few KB each, checked against their digests, never a layer. The version is the one the image declares in `ENV PHP_VERSION` (or Bitnami's `APP_VERSION`), which images built `FROM php` inherit. An image could replace PHP after that, so this is what the images report, not a look at the binary. The list is the official `php` image for 8.1 to 8.5, the official application images built on it, and widely used community images. `images.txt` in the repo says why each one is there. All results are for linux/amd64.
 
-At 18:21 UTC, 4.4 hours after the scheduled release:
+We ran the scan twice, at 18:21 UTC and at 19:32 UTC, 4.4 and 5.5 hours after the scheduled release:
 
 ```chart
 {
   "type": "bar",
   "title": "39 popular PHP images by the PHP version their metadata reports",
-  "caption": "linux/amd64. PHP version from ENV PHP_VERSION (or Bitnami APP_VERSION) in each image config, read without pulling layers. Fixed: 8.5.12, 8.4.27, 8.3.36, 8.2.35; 8.1 and older count as vulnerable. Unknown: no full version in the metadata. Files: results/scan-20261021T182129Z.json.",
+  "caption": "linux/amd64. PHP version from ENV PHP_VERSION (or Bitnami APP_VERSION) in each image config, read without pulling layers. Fixed: 8.5.12, 8.4.27, 8.3.36, 8.2.35; 8.1 and older count as vulnerable. Unknown: no full version in the metadata. Files: results/scan-20261021T182129Z.json, results/scan-20261021T193200Z.json.",
   "rows": [
     {
       "label": "18:21 UTC: vulnerable",
@@ -217,6 +217,21 @@ At 18:21 UTC, 4.4 hours after the scheduled release:
     {
       "label": "18:21 UTC: patched",
       "value": 29,
+      "series": "patched"
+    },
+    {
+      "label": "19:32 UTC: vulnerable",
+      "value": 3,
+      "series": "vulnerable"
+    },
+    {
+      "label": "19:32 UTC: unknown",
+      "value": 2,
+      "series": "unknown"
+    },
+    {
+      "label": "19:32 UTC: patched",
+      "value": 34,
       "series": "patched"
     }
   ],
@@ -237,16 +252,17 @@ At 18:21 UTC, 4.4 hours after the scheduled release:
 }
 ```
 
-- **All 16 official `php` tags we scanned for 8.2 to 8.5 reported a fixed PHP**, built 1.8 to 2.1 hours after the scheduled release.
-- **8 images still shipped a vulnerable PHP**: `php:8.1-fpm` and `php:8.1-apache` (8.1.34, last built in December 2025; there is no fixed 8.1 release to rebuild with), `joomla:latest` (8.4.26), `nextcloud:latest` and `nextcloud:fpm` (8.5.11), `phpmyadmin:latest` (8.3.35), `yourls:latest` (8.5.11) and `laravelsail/php84-composer:latest` (8.4.1, built in November 2024). The Laravel documentation uses that image to run Composer, not to serve traffic.
-- **2 images could not be judged from metadata**: `thecodingmachine/php:8.4-v5-fpm` sets `PHP_VERSION=8.4` without the patch level, and `linuxserver/nextcloud` installs PHP from Alpine packages and records no PHP version at all.
+- **All 16 official `php` tags we scanned for 8.2 to 8.5 reported a fixed PHP** in both runs, built 1.8 to 2.1 hours after the scheduled release.
+- **At 18:21, 8 images still shipped a vulnerable PHP**: `php:8.1-fpm` and `php:8.1-apache` (8.1.34, last built in December 2025; there is no fixed 8.1 release to rebuild with), `joomla:latest` (8.4.26), `nextcloud:latest` and `nextcloud:fpm` (8.5.11), `phpmyadmin:latest` (8.3.35), `yourls:latest` (8.5.11) and `laravelsail/php84-composer:latest` (8.4.1, built in November 2024). The Laravel documentation uses that image to run Composer, not to serve traffic.
+- **At 19:32, 3 were still vulnerable**: the two `php:8.1` tags and `laravelsail/php84-composer:latest`. `joomla`, both `nextcloud` tags, `phpmyadmin` and `yourls` had fixed images by then.
+- **2 images could not be judged from metadata** in either run: `thecodingmachine/php:8.4-v5-fpm` sets `PHP_VERSION=8.4` without the patch level, and `linuxserver/nextcloud` installs PHP from Alpine packages and records no PHP version at all.
 
 ```chart
 {
   "type": "dots",
   "title": "Hours from the scheduled 14:00 UTC release to the image build",
   "unit": " h",
-  "caption": "Patched images only, by the 'created' time in each linux/amd64 image config, from results/scan-20261021T182129Z.json. Images still on a vulnerable PHP are not on this chart.",
+  "caption": "Patched images only, by the 'created' time in each linux/amd64 image config, from results/scan-20261021T193200Z.json. This is when the image was built, not when the registry started serving it. Images still on a vulnerable PHP are not on this chart.",
   "series": [
     {
       "name": "Official php 8.2 to 8.5 (16)",
@@ -270,16 +286,21 @@ At 18:21 UTC, 4.4 hours after the scheduled release:
       ]
     },
     {
-      "name": "Official app images (8)",
+      "name": "Official app images (13)",
       "samples": [
+        2.47,
         2.5,
         2.5,
         2.52,
+        2.52,
         2.53,
         2.53,
+        2.61,
         2.62,
         2.65,
-        3.09
+        3.09,
+        4.03,
+        4.08
       ]
     },
     {
@@ -296,7 +317,7 @@ At 18:21 UTC, 4.4 hours after the scheduled release:
 }
 ```
 
-One result changes how you should read a registry. Docker Hub listed `joomla:latest` as pushed at 15:46 UTC, after the release. Its amd64 image was built at 01:52 UTC with PHP 8.4.26. So a fresh "last pushed" time is not evidence that the image you pull has a fixed PHP. `nextcloud:latest` and `nextcloud:fpm` looked the same at 18:21; by 18:30 their amd64 images had moved to 8.5.12. To check the method, at 18:30 UTC we compared the amd64 digest from the Docker Hub API with the registry's own index for those three images and two others: they agreed for all five (`results/method-check-20261021T183037Z.txt`).
+One result changes how you should read a registry. Docker Hub listed `joomla:latest` as pushed at 15:46 UTC, after the release. Its amd64 image was built at 01:52 UTC with PHP 8.4.26. So a fresh "last pushed" time is not evidence that the image you pull has a fixed PHP. The build time is not either: the fixed `joomla`, `phpmyadmin` and `yourls` images that the registry served at 19:32 were built between 16:28 and 16:36 UTC, but at 18:30 the registry still served the old ones for amd64. `nextcloud:latest` and `nextcloud:fpm` looked the same at 18:21; by 18:30 their amd64 images had moved to 8.5.12. To check the method, at 18:30 UTC we compared the amd64 digest from the Docker Hub API with the registry's own index for those three images and two others: they agreed for all five (`results/method-check-20261021T183037Z.txt`).
 
 ## The interim settings and their limits
 
