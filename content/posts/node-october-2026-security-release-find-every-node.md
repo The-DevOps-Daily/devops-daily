@@ -26,7 +26,7 @@ On 21 October 2026 the Node.js project released 22.23.4, 24.22.1 and 26.12.1. Th
 
 Patching Node is a one-line version bump. Finding every Node your servers actually run is the work. When we patched a small production box on release day, six Node apps under pm2 installed with nvm, installing the new version was the easy part. Then we found pm2 entries with the old binary written into them, a systemd unit with the old `PATH` hard-coded, child processes we had not thought about, and cron jobs on two other boxes that pointed at the old install by absolute path. None of them moved when the default version changed.
 
-This post covers what to do now, who is exposed (including every service that calls `fetch()` on a URL a user controls), the upgrade steps for nvm, pm2, systemd and containers with the traps we hit, how to verify with `/proc`, and a read-only audit script with its real output from one of our machines.
+This post covers what to do now, who is exposed (including services that call `fetch()` on a URL a user controls), the upgrade steps for nvm, pm2, systemd and containers with the traps we hit, how to verify with `/proc`, and a read-only audit script with its real output from one of our machines.
 
 ## What to do now
 
@@ -34,12 +34,12 @@ This post covers what to do now, who is exposed (including every service that ca
 2. **List every place Node runs or will start**: running processes, pm2 entries (live and saved), the pm2 daemon, systemd units, crontabs and helper scripts, and containers. Changing the nvm default moves none of them.
 3. **Move each one** with the steps below, then check the real binary of every process in `/proc`. Process names do not help: on our build machine `pgrep node` found 0 of 5 Node processes.
 4. **Rebuild images** with `--pull` and redeploy. The official `node:22`, `node:24` and `node:26` tags have the fix. `node:20`, `node:25` and `node:18` will not get it.
-5. **If a service cannot be upgraded today** and accepts Brotli data from strangers, close that path in front of it (details below). For outbound `fetch()`, asking for `Accept-Encoding: identity` does not help; only the upgrade does.
+5. **If a service cannot be upgraded today** and accepts Brotli data from strangers, close that path in front of it (details below). For outbound `fetch()` the fix is the upgrade; until then, turning off features that fetch user-supplied URLs is the way to close that path.
 6. **Run the audit script** on every host and keep the output.
 
 ## Prerequisites
 
-- Shell access to the hosts that run Node, and root if you want to see processes and crontabs of other users.
+- Shell access to the hosts that run Node, as the user that owns the Node processes. Root is not needed.
 - Python 3.8 or newer for the audit script. It uses only the standard library and only reads.
 - The `docker` or `podman` CLI on hosts that run Node in containers.
 
@@ -62,8 +62,8 @@ Two things the advisory does not give you yet. There is no technical detail on a
 
 The timeline in UTC, from the release metadata:
 
-- **21 Oct, 10:32 to 10:36**: the fixed binaries were on nodejs.org/dist. The GitHub releases followed at 10:38.
-- **10:48**: the update to the official Docker images was merged.
+- **21 Oct, 10:32 to 10:36**: the fixed binaries on nodejs.org/dist are dated in this window. The GitHub releases were published at 10:38.
+- **10:48**: the update to the official Docker images was committed.
 - **about 11:35**: the Debian-based official images were built. Docker Hub shows the amd64 and arm64 images as pushed at about 14:40.
 - **19:27**: the Brotli project released 1.2.1, 1.1.1 and 1.0.10, each with "CVE-2026-111497: out-of-bounds write permits remote code execution" in the notes. So the bug is in the Brotli decoder itself, and Node shipped the upstream fix as a cherry-picked commit.
 - **22:58 to 00:08**: the Alpine-based official images were built, about 12 to 13.5 hours after the release.
@@ -75,16 +75,16 @@ The timeline in UTC, from the release metadata:
 The decoder is compiled into the `node` binary and sits behind `node:zlib`. Every way into it counts, and three are common:
 
 1. **Your code decompresses Brotli directly**: `zlib.brotliDecompress()`, `brotliDecompressSync()` or `createBrotliDecompress()` on uploads, archives, cache entries or messages.
-2. **Your service fetches URLs.** `fetch()` in Node is the bundled undici, and it decodes any response that says `Content-Encoding: br` [with `zlib.createBrotliDecompress`](https://github.com/nodejs/node/blob/v24.22.1/deps/undici/src/lib/web/fetch/index.js#L2256-L2260). It only advertises `br` on HTTPS requests, but it picks the decoders from the response header alone, so a server can send Brotli to a client that did not ask for it. Setting `Accept-Encoding: identity` on your request does not protect you from a hostile server. axios in Node [does the same](https://github.com/axios/axios/blob/v1.20.0/lib/adapters/http.js#L1179-L1209) unless you pass `decompress: false`. Link previews, webhook testers, feed readers, "import from URL" features and AI agents that browse are all services that fetch a URL a user chose.
-3. **Your service accepts compressed request bodies.** body-parser 2 [decompresses `br` request bodies](https://github.com/expressjs/body-parser/blob/v2.3.0/lib/read.js#L190-L224) and its `inflate` option defaults to `true`. Express 5 ships body-parser 2, so `express.json()` on Express 5 decodes Brotli from any client that sends it. Express 4 uses body-parser 1.x, which handles only gzip and deflate.
+2. **Your service fetches URLs.** `fetch()` in Node is the bundled undici, and it decodes responses that say `Content-Encoding: br` [with `zlib.createBrotliDecompress`](https://github.com/nodejs/node/blob/v24.22.1/deps/undici/src/lib/web/fetch/index.js#L2256-L2260). It goes by the response's header, whatever the request asked for, so setting `Accept-Encoding: identity` does not keep Brotli away from a hostile server. axios in Node [does the same](https://github.com/axios/axios/blob/v1.20.0/lib/adapters/http.js#L1179-L1209) unless you pass `decompress: false`. Link previews, webhook testers, feed readers, "import from URL" features and AI agents that browse are all services that fetch a URL a user chose.
+3. **Your service accepts compressed request bodies.** body-parser 2 [decompresses `br` request bodies](https://github.com/expressjs/body-parser/blob/v2.3.0/lib/read.js#L190-L224) that it parses, and its `inflate` option defaults to `true`. Express 5 ships body-parser 2, so `express.json()` on Express 5 decodes Brotli bodies sent with a JSON content type, from any client. Express 4 uses body-parser 1.x, which handles only gzip and deflate.
 
-Because the decoder is in the binary, no npm update fixes it. Upgrading the `undici` package in your `package.json`, for example, still decodes through the old Node's zlib.
+Reaching the decoder is not the same as being exploitable, and the advisory does not say what input triggers the bug. These are the paths to upgrade or close first. Because the decoder is in the binary, no npm update fixes it. Upgrading the `undici` package in your `package.json`, for example, still decodes through the old Node's zlib.
 
 If you cannot upgrade a service today, the interim options close only the paths you control:
 
 ```js
 // Express 5: refuse compressed request bodies (415) until Node is upgraded.
-// This also refuses gzip and deflate bodies, which most JSON APIs never get.
+// This also refuses gzip and deflate request bodies.
 app.use(express.json({ inflate: false }));
 ```
 
@@ -168,7 +168,7 @@ To check each of those behaviors on its own, `lab/pm2-pin-lab.sh` in the repo st
 | `clustered` (cluster mode)   | old             | old                          | not recreated: old        | new                |
 | pm2 daemon                   | old             | old                          | old                       | new                |
 
-`pm2 update` gave every app a new PID in one go, which is why the production sites went down together. In the lab it took 2.3 seconds because the apps do nothing; real apps take as long as they take to start.
+`pm2 update` restarted every app in one command: all four PIDs changed. On the production box that was the step where the sites went down. In the lab the command took 2.3 seconds; that measures the command, not how long the apps were unavailable, and real apps take as long as they take to start.
 
 ## Upgrade steps: nvm, pm2 and systemd
 
@@ -242,9 +242,9 @@ docker ps --format '{{.ID}} {{.Names}}' | while read -r id name; do
 done
 ```
 
-`node --version` inside a container reports the `node` on the container's `PATH`, which is the one that matters in almost every image. If an image carries more than one Node, run the audit script as root on the host instead: it reads the binary of each container process directly.
+`node --version` inside a container reports the `node` on the container's `PATH`. If an image carries more than one Node, `docker exec <id> readlink /proc/1/exe` shows which binary the container's main process runs (when the image has `readlink`).
 
-The repo's `registry_scan.py` read the Node version of 24 official `node` tags for amd64 and arm64 from registry metadata only (manifest and image config, no layers) at 06:23 UTC on 22 October. Every 22, 24 and 26 tag, and the `latest`, `lts` and `alpine` aliases, shipped the fixed version. How long they took:
+The repo's `registry_scan.py` read the Node version of 24 official `node` tags for amd64 and arm64 from registry metadata only (manifest and image config, no layers) at 06:23 UTC on 22 October. Every 22, 24 and 26 tag we sampled, and the `latest`, `lts` and `alpine` aliases, shipped the fixed version. How long they took:
 
 ```chart
 {
@@ -301,9 +301,9 @@ An exe that ends in `(deleted)` means the file was replaced on disk after the pr
 The-DevOps-Daily/node-runtime-audit
 ```
 
-`node_runtime_audit.py` is one file of standard-library Python that only reads. For every running process it reads the real binary from `/proc/<pid>/exe` and the version compiled into that file, which works for deleted binaries and for processes inside containers. It never runs the binaries it finds, because the script is meant to run as root and those paths can belong to other users; `--exec-version` adds a `--version` cross-check that only runs a binary when nobody but root (or you, when you are not root) can change it or any directory above it. Command lines and container names are printed with control characters escaped. It lists pm2 entries from `pm2 jlist` and from the saved `dump.pm2`, with the interpreter, the script and the first `node` on each entry's saved `PATH` (or the daemon's Node for cluster mode), and the Node processes really running under each entry. It finds absolute Node paths in crontabs and systemd units, lists nvm, fnm, volta, asdf and n installs with their default alias, and runs `node --version` inside each running Docker or Podman container.
+`node_runtime_audit.py` is one file of standard-library Python that only reads. For every running process it reads the real binary from `/proc/<pid>/exe` and the version compiled into that file, which works for deleted binaries and for processes inside containers. It never runs a binary it finds on the host. Binaries and config files are opened with `O_PATH`, checked to be regular files with one link, and only then reopened for reading, so a FIFO, device or swapped file cannot stall or fool it. A version that only a directory name gives is a hint and stays unknown. Command lines and container names are printed with control characters escaped. Run it as the user that owns the Node processes; root is not needed. It lists pm2 entries from `pm2 jlist` and from the saved `dump.pm2`, with the interpreter, the script and the first `node` on each entry's saved `PATH` (or the daemon's Node for cluster mode), and the Node processes really running under each entry. It finds absolute Node paths in crontabs and systemd units, lists nvm, fnm, volta, asdf and n installs with their default alias, and runs `node --version` inside each running Docker or Podman container.
 
-This is the real output on the Raspberry Pi we build on, run as a normal user with `--redact`, which hides user names and app names. By the time of this run, the fnm default, the crontab and the pm2 systemd unit had already been moved to v24.22.1:
+This is the real output on the Raspberry Pi we build on, run as the user that owns the Node processes, with `--redact`, which hides user names and app names. By the time of this run, the fnm default, the crontab and the pm2 systemd unit had already been moved to v24.22.1:
 
 ```terminal
 {
@@ -312,11 +312,11 @@ This is the real output on the Raspberry Pi we build on, run as a normal user wi
   "autoplay": false,
   "steps": [
     {
-      "comment": "2026-10-22T06:39:27Z Raspberry Pi (Debian 12, aarch64), Node via fnm, pm2 6.0.14, run as a normal user"
+      "comment": "2026-10-22T06:55:09Z Raspberry Pi (Debian 12, aarch64), Node via fnm, pm2 6.0.14, run as the user that owns the Node processes"
     },
     {
       "cmd": "python3 node_runtime_audit.py --redact",
-      "output": "node-runtime-audit: Node.js security release of 2026-10-21, fixed releases v22.23.4, v24.22.1, v26.12.1\nlines without a fix (end-of-life) count as vulnerable\nnote: not root: only your own processes, crontab and pm2 are fully visible\n\nRunning Node processes (real binary from /proc/<pid>/exe)\n  [vulnerable]  pid 1883303  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: PM2 v6.0.14: God Daemon (/home/USER/.pm2)\n      parents: systemd(1)\n      why: v24.14.0 < v24.22.1\n  [vulnerable]  pid 1883371  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: node /home/USER/projects/app-1/node_modules/.bin/next dev\n      parents: bun(1883370) <- node(1883303) <- systemd(1)\n      why: v24.14.0 < v24.22.1\n  [vulnerable]  pid 1883390  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: next-server (v16.2.6)\n      parents: node(1883371) <- bun(1883370) <- node(1883303) <- systemd(1)\n      why: v24.14.0 < v24.22.1\n  [vulnerable]  pid 1884634  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: node /home/USER/projects/app-1/.next/dev/build/postcss.js 38963\n      parents: node(1883390) <- node(1883371) <- bun(1883370) <- node(1883303)\n      why: v24.14.0 < v24.22.1\n  178 other processes could not be inspected (run as root to see every user)\n\npm2 live list (pm2 jlist, PM2_HOME=/home/USER/.pm2)\n  [vulnerable]  daemon pid 1883303 v24.14.0 /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n  [vulnerable]  app-1  online pid 1883370\n      interpreter: none\n      script:      /home/USER/.bun/bin/bun\n      PATH node:   v24.14.0  /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin  (pinned)\n          vulnerable: v24.14.0 < v24.22.1\n      running:     3 Node process(es) in this entry's tree: v24.14.0\n\npm2 saved list (/home/USER/.pm2/dump.pm2, what a reboot or pm2 resurrect starts)\n  [vulnerable]  app-1  online\n      interpreter: none\n      script:      /home/USER/.bun/bin/bun\n      PATH node:   v24.14.0  /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin  (pinned)\n          vulnerable: v24.14.0 < v24.22.1\n\nInstalled Node versions (version managers)\n  fnm in /home/USER/.local/share/fnm\n      installed: v24.14.0 (vulnerable), v24.14.1 (vulnerable), v24.22.1 (patched)\n      [patched]     default alias -> v24.22.1\n  [patched]     `node` on this shell's PATH -> v24.22.1 /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin/node\n  old installs are fine to keep for rollback; they matter when something above points at them\n\nCrontabs: absolute Node paths\n  [patched]     crontab -l (USER):33\n      /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin/node -> v24.22.1  (pinned to one install)\n  [patched]     crontab -l (USER):53\n      /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin/node -> v24.22.1  (pinned to one install)\n\nsystemd units: absolute Node paths\n  [patched]     /etc/systemd/system/pm2-USER.service:12\n      /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin -> v24.22.1  (pinned to one install)\n      unit: pm2-USER.service ActiveState=inactive MainPID=0\n      note: the unit is not what runs pm2 now; its PATH applies at the next boot\n\nContainers\n  no docker or podman CLI found\n\nresult: VULNERABLE: something runs or will start an unfixed Node (exit 1)"
+      "output": "node-runtime-audit: Node.js security release of 2026-10-21, fixed releases v22.23.4, v24.22.1, v26.12.1\nlines without a fix (end-of-life) count as vulnerable\nnote: covers the processes, crontab and pm2 of USER; run it as each user that owns Node processes\n\nRunning Node processes (real binary from /proc/<pid>/exe)\n  [vulnerable]  pid 1883303  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: PM2 v6.0.14: God Daemon (/home/USER/.pm2)\n      parents: systemd(1)\n      why: v24.14.0 < v24.22.1\n  [vulnerable]  pid 1883371  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: node /home/USER/projects/app-1/node_modules/.bin/next dev\n      parents: bun(1883370) <- node(1883303) <- systemd(1)\n      why: v24.14.0 < v24.22.1\n  [vulnerable]  pid 1883390  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: next-server (v16.2.6)\n      parents: node(1883371) <- bun(1883370) <- node(1883303) <- systemd(1)\n      why: v24.14.0 < v24.22.1\n  [vulnerable]  pid 1884634  v24.14.0  USER       /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n      cmd: node /home/USER/projects/app-1/.next/dev/build/postcss.js 38963\n      parents: node(1883390) <- node(1883371) <- bun(1883370) <- node(1883303)\n      why: v24.14.0 < v24.22.1\n  177 processes of other users not inspected: run the script as their owner\n\npm2 live list (pm2 jlist, PM2_HOME=/home/USER/.pm2)\n  [unknown]     pm2 CLI /home/USER/.bun/bin/pm2 is writable by group or others (mode 777): not run, live list skipped\n  [vulnerable]  daemon pid 1883303 v24.14.0 /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin/node\n\npm2 saved list (/home/USER/.pm2/dump.pm2, what a reboot or pm2 resurrect starts)\n  [vulnerable]  app-1  online\n      interpreter: none\n      script:      /home/USER/.bun/bin/bun\n      PATH node:   v24.14.0  /home/USER/.local/share/fnm/node-versions/v24.14.0/installation/bin  (pinned)\n          vulnerable: v24.14.0 < v24.22.1\n\nInstalled Node versions (version managers)\n  fnm in /home/USER/.local/share/fnm\n      installed: v24.14.0 (vulnerable), v24.14.1 (vulnerable), v24.22.1 (patched)\n      [patched]     default alias -> v24.22.1\n  [patched]     `node` on this shell's PATH -> v24.22.1 /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin/node\n  old installs are fine to keep for rollback; they matter when something above points at them\n\nCrontabs: absolute Node paths\n  [patched]     crontab -l (USER):33\n      /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin/node -> v24.22.1  (pinned to one install)\n  [patched]     crontab -l (USER):53\n      /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin/node -> v24.22.1  (pinned to one install)\n\nsystemd units: absolute Node paths\n  [patched]     /etc/systemd/system/pm2-USER.service:12\n      /home/USER/.local/share/fnm/node-versions/v24.22.1/installation/bin -> v24.22.1  (pinned to one install)\n      unit: pm2-USER.service ActiveState=inactive MainPID=0\n      note: the unit is not what runs pm2 now; its PATH applies at the next boot\n\nContainers\n  no docker or podman CLI found\n\nresult: VULNERABLE: something runs or will start an unfixed Node (exit 1)"
     },
     {
       "cmd": "echo $?",
@@ -326,18 +326,20 @@ This is the real output on the Raspberry Pi we build on, run as a normal user wi
 }
 ```
 
-Everything that a config check would look at says v24.22.1: the fnm default, the shell's `node`, both cron jobs and the systemd unit. The four processes that run say v24.14.0. The pm2 daemon was started by hand after an earlier restart, so the unit we had fixed is not what runs it. The one pm2 app runs under `bun`, but `bun run dev` starts Next.js through `#!/usr/bin/env node`, and the entry's saved `PATH` begins with the v24.14.0 install, so all three Node processes under it are old. The saved list has the same `PATH`, so a reboot would bring the app back on v24.14.0 even with the fixed unit. The fix here is `pm2 restart <app> --update-env` from a fixed shell, then `pm2 save`, then moving the daemon.
+The fnm default, the shell's `node`, both cron jobs and the systemd unit say v24.22.1. The four processes that run say v24.14.0, and so does the PATH in the saved pm2 list. The pm2 daemon is not running under the systemd unit (ActiveState=inactive), so the unit we had fixed is not what started it. The one pm2 app runs `bun run dev`, which starts Next.js through the `next` script, whose first line is `#!/usr/bin/env node`; the entry's saved `PATH` begins with the v24.14.0 install, so all three Node processes under it are old. The saved list has the same `PATH`, so `pm2 resurrect` after a reboot would start the app with it; we did not reboot to confirm. The fix here is `pm2 restart <app> --update-env` from a fixed shell, then `pm2 save`, then moving the daemon.
 
-The exit code is 1 when anything runs or will start a vulnerable Node, otherwise 2 when anything could not be checked, and 0 when everything it found is patched. Unknown never counts as patched: a pre-release build, a distribution build linked to the system Brotli, a process it could not read, or a cron path to a Node that no longer exists all give 2. To run it across hosts without copying it first:
+The run found one more thing: the `pm2` CLI on that machine is world-writable (mode 777). The script will not run a CLI that someone else could have changed, so it skipped the live pm2 list and reported it as unknown. Check the permissions of your Node installs and global CLIs while you are in there.
+
+The exit code is 1 when anything runs or will start a vulnerable Node, otherwise 2 when anything could not be checked, and 0 when everything it found is patched. Unknown never counts as patched: a pre-release build, a distribution build linked to the system Brotli, a binary without an embedded version, a config file it could not read, a failed `pm2 jlist` or `docker ps`, or a cron path to a Node that no longer exists all give 2. It only sees what the user running it can see, so run it as each user that owns Node processes. To run it across hosts without copying it first:
 
 ```bash
-for h in web1 web2 web3; do
-  ssh "$h" 'sudo python3 - --json' < node_runtime_audit.py > "node-$h.json"
+for h in deploy@web1 deploy@web2 deploy@web3; do
+  ssh "$h" 'python3 - --json' < node_runtime_audit.py > "node-${h#*@}.json"
   echo "$h exit $?"
 done
 ```
 
-The tests build fake hosts with the cases a version check gets wrong: a fake `node` that would leave a marker file if the script ever ran it, a binary replaced while it runs, a container binary, a Debian-style build, a pm2 entry whose config is fixed but whose process was never restarted, npm pinned to the old install while its child gets the new one, a cluster-mode app, end-of-life and pre-release versions, and cron jobs on a removed version.
+The tests build fake hosts with the cases a version check gets wrong: a fake `node` that would leave a marker file if the script ever ran it, a binary replaced while it runs, a container binary, a Debian-style build, a pm2 entry whose config is fixed but whose process was never restarted, npm pinned to the old install while its child gets the new one, a cluster-mode app, an old binary in a directory named after a fixed version, end-of-life and pre-release versions, cron jobs on a removed version, and FIFOs, hard links and symlinks planted where a file is expected.
 
 ## Rollback
 
@@ -350,8 +352,9 @@ Once the audit shows nothing on the old version, `nvm uninstall 24.14.0`. Anythi
 - **The bugs themselves.** The advisory gives no technical detail, and we did not test whether any code path reaches the Brotli flaw. The exposure section is based on which code calls the decoder.
 - **Scores.** The CVE records were still reserved when we checked, so there is no CVSS score.
 - **Distribution packages.** Debian and Ubuntu had not published anything for CVE-2026-111497 when we checked. Check your distribution's `nodejs` and `brotli` advisories.
-- **Containers on a real host.** The Pi has no Docker, so the container checks are covered by the test fixtures only. The registry scan read real images.
+- **Containers on a real host.** The Pi has no Docker, so the container checks are covered by the test fixtures only. The registry scan read real image metadata.
 - **The downtime number.** "Under a minute" comes from the production upgrade. The lab's `pm2 update` took 2.3 seconds because its apps do nothing.
+- **Bare `node` in cron jobs and units.** The script checks absolute paths and `PATH=` lines; it does not resolve a bare `node` through the job's `PATH`.
 - **Other platforms.** The registry scan covers linux/amd64 and linux/arm64 only. The script needs Linux and `/proc`, and does not cover Kubernetes, stopped containers, or Node binaries renamed to something other than `node` (single executable applications, Electron).
 
 ## Checklist
@@ -364,6 +367,7 @@ Once the audit shows nothing on the old version, `nvm uninstall 24.14.0`. Anythi
 - [ ] Images rebuilt with `--pull` (Alpine-based ones checked after the late rebuild) and redeployed by new tag or digest
 - [ ] Services that fetch user-supplied URLs or accept compressed bodies upgraded first; interim measures where they cannot be
 - [ ] Every Node process checked by `/proc/<pid>/exe`, not by name, including child processes
+- [ ] Node installs and global CLIs (pm2, npm) writable only by their owner
 - [ ] Audit script output saved per host, and the old version uninstalled once it is clean
 
 Every fact in this post is listed with its source in the repo's `SOURCES.md`.
