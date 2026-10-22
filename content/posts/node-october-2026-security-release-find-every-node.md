@@ -4,9 +4,9 @@ excerpt: 'Node.js 22.23.4, 24.22.1 and 26.12.1 fix a Brotli decoder bug that the
 category:
   name: 'Linux'
   slug: 'linux'
-date: '2026-10-26'
-publishedAt: '2026-10-26T09:00:00Z'
-updatedAt: '2026-10-26T09:00:00Z'
+date: '2026-10-22'
+publishedAt: '2026-10-22T09:00:00Z'
+updatedAt: '2026-10-22T09:00:00Z'
 readingTime: '17 min read'
 author:
   name: 'DevOps Daily Team'
