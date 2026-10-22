@@ -2,6 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import sharp from 'sharp';
 import { getAllPosts } from '../lib/posts.js';
 import { getAllGuides } from '../lib/guides.js';
 import { getAllExercises } from '../lib/exercises.js';
@@ -51,6 +52,20 @@ const root = process.cwd();
 const force = process.argv.includes('--force');
 const preview = process.argv.includes('--preview');
 const check = process.argv.includes('--check');
+// --migrate replaces covers that are still PNG; --limit=N caps one run so the
+// migration can go in small batches.
+const migrate = process.argv.includes('--migrate');
+function numericFlag(name: string, fallback: number): number {
+  const argument = process.argv.find((value) => value.startsWith(`--${name}=`));
+  const value = argument ? Number(argument.slice(name.length + 3)) : fallback;
+  if (!Number.isInteger(value) || value < 1) throw new Error(`Invalid --${name}`);
+  return value;
+}
+const limit = numericFlag('limit', Number.MAX_SAFE_INTEGER);
+// One cover at a time by default: rendering is CPU-bound and this also runs
+// on small machines. CI can pass --workers=4.
+const workers = numericFlag('workers', 1);
+sharp.concurrency(workers);
 const onlyKeys = new Set(
   process.argv
     .filter((argument) => argument.startsWith('--only='))
@@ -297,16 +312,32 @@ function assertRenderedTitleBounds(item: CoverItem): void {
   }
 }
 
-async function writeCover(item: CoverItem): Promise<'generated' | 'skipped' | 'validated'> {
+function coverPaths(item: CoverItem) {
   const outputDirectory = path.join(root, 'public', 'images', item.directory);
   const baseName = `${item.slug}${item.ogSuffix ? '-og' : ''}`;
-  const jpgPath = path.join(outputDirectory, `${baseName}.jpg`);
+  return {
+    outputDirectory,
+    baseName,
+    jpgPath: path.join(outputDirectory, `${baseName}.jpg`),
+    pngPath: path.join(outputDirectory, `${baseName}.png`),
+  };
+}
+
+// Served paths of PNG covers this run replaced; each gets a 301 to the JPEG
+// because sent newsletters and cross-posts still link the old URL.
+const replacedPngs: string[] = [];
+
+async function writeCover(item: CoverItem): Promise<'generated' | 'skipped' | 'validated'> {
+  const { outputDirectory, baseName, jpgPath, pngPath } = coverPaths(item);
   if (check) {
     assertRenderedTitleBounds(item);
     return 'validated';
   }
-  // Keep an existing cover unless --force; a new item gets one on the next run.
-  if (!force && (await pathExists(jpgPath))) return 'skipped';
+  // Keep an existing cover, JPEG or older PNG, unless --force or --migrate
+  // asks for it; a new item gets one on the next run.
+  const hasJpg = await pathExists(jpgPath);
+  const hasPng = await pathExists(pngPath);
+  if (!force && (hasJpg || (hasPng && !migrate))) return 'skipped';
 
   await fs.mkdir(outputDirectory, { recursive: true });
   const jpg = await renderContentCoverJpeg({
@@ -336,7 +367,25 @@ async function writeCover(item: CoverItem): Promise<'generated' | 'skipped' | 'v
       fs.rm(path.join(outputDirectory, `${baseName}.${extension}`), { force: true })
     )
   );
+  if (hasPng) replacedPngs.push(`/images/${item.directory}/${baseName}.png`);
   return 'generated';
+}
+
+async function addPngRedirects(): Promise<number> {
+  if (replacedPngs.length === 0) return 0;
+  const redirectsPath = path.join(root, 'public', '_redirects');
+  const current = await fs.readFile(redirectsPath, 'utf8');
+  const existing = new Set(current.split('\n').map((line) => line.split(/\s+/)[0]));
+  const header = '# Content covers moved from PNG to JPEG (Oct 2026)';
+  const lines = [...new Set(replacedPngs)]
+    .filter((from) => !existing.has(from))
+    .sort()
+    .map((from) => `${from} ${from.replace(/\.png$/, '.jpg')} 301`);
+  if (lines.length === 0) return 0;
+  const prefix = current.endsWith('\n') ? '' : '\n';
+  const block = current.includes(header) ? lines : [header, ...lines];
+  await fs.appendFile(redirectsPath, `${prefix}${block.join('\n')}\n`);
+  return lines.length;
 }
 
 async function main(): Promise<void> {
@@ -355,17 +404,18 @@ async function main(): Promise<void> {
   let generated = 0;
   let skipped = 0;
   let validated = 0;
-  for (let index = 0; index < items.length; index += 8) {
-    const batch = items.slice(index, index + 8);
+  for (let index = 0; index < items.length && generated < limit; index += workers) {
+    const batch = items.slice(index, index + Math.min(workers, limit - generated));
     const results = await Promise.all(batch.map(writeCover));
     generated += results.filter((result) => result === 'generated').length;
     skipped += results.filter((result) => result === 'skipped').length;
     validated += results.filter((result) => result === 'validated').length;
   }
+  const redirects = await addPngRedirects();
 
   console.log(`Content cover inventory: ${inventory}.`);
   console.log(
-    `Content covers: ${generated} generated, ${skipped} skipped, ${validated} validated, ${items.length} selected (${allItems.length} total).`
+    `Content covers: ${generated} generated, ${skipped} skipped, ${validated} validated, ${items.length} selected (${allItems.length} total), ${redirects} PNG redirects added.`
   );
 }
 

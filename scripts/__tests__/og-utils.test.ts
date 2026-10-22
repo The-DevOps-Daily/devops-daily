@@ -239,6 +239,14 @@ describe('cover background selection', () => {
       selectCoverBackground({
         type: 'post',
         slug: 'x',
+        category: 'linux',
+        tags: ['Linux', 'OpenSSH', 'Ansible'],
+      })
+    ).toBe('linux-networking');
+    expect(
+      selectCoverBackground({
+        type: 'post',
+        slug: 'x',
         category: 'devops',
         tags: ['LLM', 'Docker'],
       })
@@ -246,6 +254,9 @@ describe('cover background selection', () => {
     expect(
       selectCoverBackground({ type: 'post', slug: 'x', category: 'docker', tags: ['AWS'] })
     ).toBe('containers');
+    expect(
+      selectCoverBackground({ type: 'interview', slug: 'x', category: 'SRE', tags: ['scheduling'] })
+    ).toBe('general');
   });
 
   it('sends Postgres, Neon, Lakebase and pgvector content to postgres', () => {

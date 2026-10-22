@@ -131,9 +131,9 @@ const TOPIC_RULES: ReadonlyArray<readonly [CoverBackground, RegExp]> = [
   ['cloud', /\b(cloud|aws|azure|gcp|google cloud|serverless|digitalocean|lambda)\b/],
   [
     'linux-networking',
-    /\b(networking|network|dns|tcp|udp|http|load balanc(ing|er)|reverse proxy|cdn|nginx)\b/,
+    /\b(networking|network|dns|tcp|udp|http|ssh|openssh|load balanc(ing|er)|reverse proxy|cdn|nginx)\b/,
   ],
-  ['automation', /\b(automation|ansible|configuration management|puppet|chef|cron|scheduling)\b/],
+  ['automation', /\b(automation|ansible|configuration management|puppet|chef|cron)\b/],
 ];
 
 function normalizeTopic(value: unknown): string {
@@ -283,15 +283,23 @@ function estimateLineWidth(words: string[], fontSize: number): number {
 }
 
 function splitLongWord(word: string, fontSize: number, maxWidth: number): string[] {
+  // Sum per-character widths (few distinct glyphs, so cached) instead of
+  // measuring every prefix of the token.
+  const scale = fontSize / 100;
   const chunks: string[] = [];
   let current = '';
+  let width = 0;
   for (const character of [...word]) {
-    const candidate = current + character;
-    if (current && estimateLineWidth([candidate], fontSize) > maxWidth) {
+    const characterWidth =
+      (measureCoverText(`x${character}x`, 100) - measureCoverText('xx', 100)) * scale +
+      TITLE_LETTER_SPACING;
+    if (current && width + characterWidth > maxWidth) {
       chunks.push(current);
       current = character;
+      width = characterWidth;
     } else {
-      current = candidate;
+      current += character;
+      width += characterWidth;
     }
   }
   if (current) chunks.push(current);
