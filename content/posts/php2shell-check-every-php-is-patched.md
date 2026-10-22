@@ -6,7 +6,7 @@ category:
   slug: 'linux'
 date: '2026-10-22'
 publishedAt: '2026-10-22T09:00:00Z'
-updatedAt: '2026-10-22T09:00:00Z'
+updatedAt: '2026-10-22T18:30:00Z'
 readingTime: '19 min read'
 author:
   name: 'DevOps Daily Team'
@@ -196,41 +196,56 @@ The CLI version is a first look, not proof for the web server: a container can h
 
 We wanted to know how long "pull the new image" takes to become true, so `registry_scan.py` read the PHP version of 39 popular images from registry metadata only: the manifest and the image config, a few KB each, checked against their digests, never a layer. The version is the one the image declares in `ENV PHP_VERSION` (or Bitnami's `APP_VERSION`), which images built `FROM php` inherit. An image could replace PHP after that, so this is what the images report, not a look at the binary. The list is the official `php` image for 8.1 to 8.5, the official application images built on it, and widely used community images. `images.txt` in the repo says why each one is there. All results are for linux/amd64.
 
-We ran the scan twice, at 18:21 UTC and at 19:32 UTC, 4.4 and 5.5 hours after the scheduled release:
+We ran the scan at 18:21 and 19:32 UTC on 21 October, 4.4 and 5.5 hours after the scheduled release, and again at 18:27 UTC on 22 October, about 24 hours later:
 
 ```chart
 {
   "type": "bar",
   "title": "39 popular PHP images by the PHP version their metadata reports",
-  "caption": "linux/amd64. PHP version from ENV PHP_VERSION (or Bitnami APP_VERSION) in each image config, read without pulling layers. Fixed: 8.5.12, 8.4.27, 8.3.36, 8.2.35; 8.1 and older count as vulnerable. Unknown: no full version in the metadata. Files: results/scan-20261021T182129Z.json, results/scan-20261021T193200Z.json.",
+  "caption": "linux/amd64. PHP version from ENV PHP_VERSION (or Bitnami APP_VERSION) in each image config, read without pulling layers. Fixed: 8.5.12, 8.4.27, 8.3.36, 8.2.35; 8.1 and older count as vulnerable. Unknown: no full version in the metadata. Files: results/scan-20261021T182129Z.json, results/scan-20261021T193200Z.json, results/scan-20261022T182715Z.json.",
   "rows": [
     {
-      "label": "18:21 UTC: vulnerable",
+      "label": "21 Oct 18:21: vulnerable",
       "value": 8,
       "series": "vulnerable"
     },
     {
-      "label": "18:21 UTC: unknown",
+      "label": "21 Oct 18:21: unknown",
       "value": 2,
       "series": "unknown"
     },
     {
-      "label": "18:21 UTC: patched",
+      "label": "21 Oct 18:21: patched",
       "value": 29,
       "series": "patched"
     },
     {
-      "label": "19:32 UTC: vulnerable",
+      "label": "21 Oct 19:32: vulnerable",
       "value": 3,
       "series": "vulnerable"
     },
     {
-      "label": "19:32 UTC: unknown",
+      "label": "21 Oct 19:32: unknown",
       "value": 2,
       "series": "unknown"
     },
     {
-      "label": "19:32 UTC: patched",
+      "label": "21 Oct 19:32: patched",
+      "value": 34,
+      "series": "patched"
+    },
+    {
+      "label": "22 Oct 18:27: vulnerable",
+      "value": 3,
+      "series": "vulnerable"
+    },
+    {
+      "label": "22 Oct 18:27: unknown",
+      "value": 2,
+      "series": "unknown"
+    },
+    {
+      "label": "22 Oct 18:27: patched",
       "value": 34,
       "series": "patched"
     }
@@ -252,10 +267,11 @@ We ran the scan twice, at 18:21 UTC and at 19:32 UTC, 4.4 and 5.5 hours after th
 }
 ```
 
-- **All 16 official `php` tags we scanned for 8.2 to 8.5 reported a fixed PHP** in both runs, built 1.8 to 2.1 hours after the scheduled release.
+- **All 16 official `php` tags we scanned for 8.2 to 8.5 reported a fixed PHP** in every run, built 1.8 to 2.1 hours after the scheduled release.
 - **At 18:21, 8 images still shipped a vulnerable PHP**: `php:8.1-fpm` and `php:8.1-apache` (8.1.34, last built in December 2025; there is no fixed 8.1 release to rebuild with), `joomla:latest` (8.4.26), `nextcloud:latest` and `nextcloud:fpm` (8.5.11), `phpmyadmin:latest` (8.3.35), `yourls:latest` (8.5.11) and `laravelsail/php84-composer:latest` (8.4.1, built in November 2024). The Laravel documentation uses that image to run Composer, not to serve traffic.
 - **At 19:32, 3 were still vulnerable**: the two `php:8.1` tags and `laravelsail/php84-composer:latest`. `joomla`, both `nextcloud` tags, `phpmyadmin` and `yourls` had fixed images by then.
-- **2 images could not be judged from metadata** in either run: `thecodingmachine/php:8.4-v5-fpm` sets `PHP_VERSION=8.4` without the patch level, and `linuxserver/nextcloud` installs PHP from Alpine packages and records no PHP version at all.
+- **About 24 hours later, at 18:27 UTC on 22 October, the same 3 were still vulnerable**: `php:8.1-fpm`, `php:8.1-apache` and `laravelsail/php84-composer:latest`. None of them had a new build.
+- **2 images could not be judged from metadata** in any run: `thecodingmachine/php:8.4-v5-fpm` sets `PHP_VERSION=8.4` without the patch level, and `linuxserver/nextcloud` installs PHP from Alpine packages and records no PHP version at all.
 
 ```chart
 {
