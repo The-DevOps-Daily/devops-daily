@@ -29,11 +29,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Generate SVG images
+      - name: Generate cover images
         run: pnpm generate:images
-
-      - name: Convert SVG to PNG
-        run: pnpm convert:svg-to-png
 
       - name: Get timestamp
         id: timestamp
@@ -56,8 +53,7 @@ jobs:
 
             ### 📊 What's Included
 
-            - **SVG Images**: Vector graphics for all content types
-            - **PNG Images**: Optimized 1200x630 social media images (OG tags)
+            - **JPEG covers**: 1200x630 social media images (OG tags) for all content types
 
             ### 📁 Content Types
 

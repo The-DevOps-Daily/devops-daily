@@ -157,8 +157,7 @@ Valid resource types: `documentation`, `tutorial`, `tool`, `reference`
 
 After creating the exercise, remind the user to generate the OG image:
 ```bash
-npm run generate:images:parallel
-npm run convert:svg-to-png:parallel
+pnpm generate:images
 ```
 
 ## Checklist

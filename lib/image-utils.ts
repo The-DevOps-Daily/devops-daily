@@ -1,11 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-// PNG first: the OG/card images are generated as PNG (the SVG sources are
-// pruned from the deploy to stay under Cloudflare Pages' file cap), so the
-// web display resolves to the PNG that actually ships. SVG remains a fallback
-// for assets that only exist as SVG (logos, placeholders).
-const WEB_IMAGE_EXTENSIONS = ['png', 'svg', 'jpg'];
+// JPEG first: content covers are generated as JPEG by
+// scripts/generate-content-og.ts. PNG and SVG remain fallbacks for hand-made
+// images and assets that only exist in those formats (logos, placeholders).
+const WEB_IMAGE_EXTENSIONS = ['jpg', 'png', 'svg'];
+
+// Social cards: the generated JPEG, or a hand-made PNG if one was added.
+const SOCIAL_IMAGE_EXTENSIONS = ['jpg', 'png'];
 
 // In production builds the public/ tree is immutable, so one readdir per
 // image directory replaces thousands of per-page existsSync calls during
@@ -88,7 +90,7 @@ export function getSocialImagePath(
     | 'checklists'
     | 'tools'
 ): string {
-  return getExistingImagePath(type, slug, ['png'], true) || '/og-image.jpg';
+  return getExistingImagePath(type, slug, SOCIAL_IMAGE_EXTENSIONS, true) || '/og-image.jpg';
 }
 
 export function getImagePath(

@@ -91,7 +91,7 @@ Check existing games for the pattern - they use React, Framer Motion, and Tailwi
 2. `lib/games.ts`: add an entry to the `games` array with `id: 'your-game'`, `href: '/games/your-game'`, a `description` of at least 50 characters, `tags`, and a `createdAt` date.
 3. `app/games/your-game/page.tsx`: the page for the game.
 4. `components/games/game-component-registry.ts`: import your component and add it to `GAME_COMPONENTS` under the same slug. The embed route uses this.
-5. `public/images/games/your-game-og.png`: a 1200x630 PNG social image.
+5. `public/images/games/your-game-og.jpg`: the 1200x630 social image. `pnpm generate:images` creates it from your `lib/games.ts` entry.
 
 Then run the game registry check. It fails if the `lib/games.ts` entry is incomplete, or if the page, the component registry entry, or the social image is missing:
 

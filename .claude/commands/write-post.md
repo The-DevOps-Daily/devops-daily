@@ -242,11 +242,10 @@ Keep diagrams to a handful of nodes so they stay readable, and validate the JSON
 
 After creating the post, remind the user to generate the OG image:
 ```bash
-npm run generate:images:parallel
-npm run convert:svg-to-png:parallel
+pnpm generate:images
 ```
 
-The OG image is auto-generated from the post title and category — no manual image creation needed. The social image will be at `/images/posts/<slug>.png` (1200x630px).
+The OG image is auto-generated from the post title, category and tags — no manual image creation needed. The social image will be at `/images/posts/<slug>.jpg` (1200x630 JPEG). The background illustration follows the rule documented at `selectCoverBackground` in `scripts/og-utils.ts`.
 
 ## Writing about Neon
 

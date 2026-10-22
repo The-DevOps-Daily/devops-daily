@@ -361,7 +361,7 @@ export function buildToolMetadata(slug: string) {
   if (!tool) {
     return { title: 'Tool | DevOps Daily' };
   }
-  const imagePath = `/images/tools/${tool.slug}.png`;
+  const imagePath = `/images/tools/${tool.slug}.jpg`;
   return {
     title: `${tool.title} | DevOps Daily`,
     description: tool.description,

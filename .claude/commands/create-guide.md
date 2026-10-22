@@ -141,11 +141,10 @@ The slug portion should be kebab-case and descriptive.
 
 After creating the guide, remind the user to generate the OG image:
 ```bash
-npm run generate:images:parallel
-npm run convert:svg-to-png:parallel
+pnpm generate:images
 ```
 
-The OG image is auto-generated from the guide title and category. The social image will be at `/images/guides/<guide-slug>.png` (1200x630px).
+The OG image is auto-generated from the guide title and category. The social image will be at `/images/guides/<guide-slug>.jpg` (1200x630 JPEG).
 
 ## Checklist
 

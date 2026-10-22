@@ -141,7 +141,7 @@ The project includes several utility scripts:
 - `pnpm build`: Build the production-ready site
 - `pnpm generate-feed`: Generate the RSS feed
 - `pnpm generate:images`: Generate the OG cover image for new content
-- `pnpm images:all`: Generate covers, convert them to PNG and prune the SVGs
+- `pnpm images:all`: Generate missing JPEG covers and prune leftover SVGs
 - `pnpm generate-search-index`: Rebuild the client-side search index
 
 `pnpm build` runs the image, markdown, search and feed steps for you, so you

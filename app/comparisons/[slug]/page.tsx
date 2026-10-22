@@ -4,6 +4,7 @@ import { ComparisonPageClient } from '@/components/comparisons/comparison-page-c
 import { BreadcrumbSchema, ArticleSchema } from '@/components/schema-markup';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { detailPageMetadata } from '@/lib/metadata-utils';
+import { getSocialImagePath } from '@/lib/image-utils';
 import type { Metadata } from 'next';
 import { toJsonLd } from '@/lib/json-ld';
 
@@ -34,7 +35,7 @@ export async function generateMetadata({
       comparison.seoTitle ??
       `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`,
     description: truncateMetaDescription(comparison.description),
-    image: `/images/comparisons/${comparison.slug}-og.png`,
+    image: getSocialImagePath(comparison.slug, 'comparisons'),
     imageAlt: `${comparison.toolA.name} vs ${comparison.toolB.name}`,
   });
 }

@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import path from 'path';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 
@@ -35,162 +36,258 @@ export const CONTENT_COVER_TYPES = [
 
 export type ContentCoverType = (typeof CONTENT_COVER_TYPES)[number];
 
+export const COVER_WIDTH = 1200;
+export const COVER_HEIGHT = 630;
+
+// Illustrated backgrounds live outside public/ so they are not deployed as
+// separate files; only the composed cover is.
+export const COVER_BACKGROUND_DIR = path.join(process.cwd(), 'scripts', 'assets', 'og-backgrounds');
+
+export const COVER_BACKGROUNDS = [
+  'ai',
+  'automation',
+  'ci-cd',
+  'cloud',
+  'cloud-finops',
+  'comparison',
+  'containers',
+  'databases',
+  'general',
+  'git',
+  'infrastructure-as-code',
+  'kubernetes',
+  'kubernetes-alt',
+  'linux-networking',
+  'news',
+  'postgres',
+  'quiz',
+  'security',
+  'simulator',
+] as const;
+
+export type CoverBackground = (typeof COVER_BACKGROUNDS)[number];
+
+const COVER_FONT_DIR = path.join(process.cwd(), 'public', 'fonts');
+export const COVER_FONT_FILES = [
+  path.join(COVER_FONT_DIR, 'Inter-Bold.ttf'),
+  path.join(COVER_FONT_DIR, 'Inter-Regular.ttf'),
+];
+// Only the bundled Inter files: system fallbacks differ between machines and
+// would change line widths between local runs and CI.
+const COVER_FONT_OPTIONS = {
+  fontFiles: COVER_FONT_FILES,
+  loadSystemFonts: false,
+  defaultFontFamily: 'Inter',
+};
+
+/**
+ * Background selection, in order:
+ *
+ * 1. Type: quiz -> quiz, game/simulator -> simulator, comparison -> comparison,
+ *    news -> news.
+ * 2. Postgres: a category or any tag that names Postgres, PostgreSQL, Neon,
+ *    Lakebase or pgvector -> postgres.
+ * 3. Category: the first TOPIC_RULES entry that matches the category.
+ * 4. Tags: when the category matched nothing (DevOps, Linux, Bash, Python,
+ *    SRE, unknown...), the first tag in frontmatter order that matches a rule.
+ * 5. Otherwise general.
+ *
+ * Kubernetes covers alternate between two illustrations by a hash of the slug,
+ * so the same item always gets the same one.
+ */
+const TYPE_BACKGROUNDS: Partial<Record<ContentCoverType, CoverBackground>> = {
+  quiz: 'quiz',
+  game: 'simulator',
+  comparison: 'comparison',
+  news: 'news',
+};
+
+const POSTGRES_PATTERN = /\b(postgres|postgresql|neon|lakebase|pgvector)\b/;
+
+// Matched against lowercase text with punctuation turned into spaces, so
+// "CI/CD", "ci-cd" and "Infrastructure as Code" all normalise predictably.
+const TOPIC_RULES: ReadonlyArray<readonly [CoverBackground, RegExp]> = [
+  ['ai', /\b(ai|ml|llms?|mlops|genai|machine learning|ai agents?|ai gateway|rag|mcp)\b/],
+  [
+    'kubernetes',
+    /\b(kubernetes|k8s|helm|kubectl|service mesh|istio|linkerd|container orchestration|openshift)\b/,
+  ],
+  ['containers', /\b(docker|containers?|podman|docker compose|container registr(y|ies))\b/],
+  [
+    'infrastructure-as-code',
+    /\b(terraform|opentofu|pulumi|iac|infrastructure as code|cloudformation|infrastructure)\b/,
+  ],
+  [
+    'ci-cd',
+    /\b(ci cd|cicd|github actions|gitlab ci|jenkins|gitops|argo ?cd|continuous (integration|delivery|deployment)|deployment strateg(y|ies)|artifact management)\b/,
+  ],
+  ['git', /\b(git|github|gitlab|version control|source control)\b/],
+  ['cloud-finops', /\b(finops|costs?|cost optimization|cost management)\b/],
+  [
+    'security',
+    /\b(security|devsecops|secrets?|vulnerabilit(y|ies)|cve|identity|iam|tls|ssl|supply chain)\b/,
+  ],
+  ['databases', /\b(databases?|sql|mysql|mariadb|redis|mongodb|sqlite|nosql|caching)\b/],
+  ['cloud', /\b(cloud|aws|azure|gcp|google cloud|serverless|digitalocean|lambda)\b/],
+  [
+    'linux-networking',
+    /\b(networking|network|dns|tcp|udp|http|load balanc(ing|er)|reverse proxy|cdn|nginx)\b/,
+  ],
+  ['automation', /\b(automation|ansible|configuration management|puppet|chef|cron|scheduling)\b/],
+];
+
+function normalizeTopic(value: unknown): string {
+  return cleanOgText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function matchTopic(value: string): CoverBackground | null {
+  if (!value) return null;
+  for (const [background, pattern] of TOPIC_RULES) {
+    if (pattern.test(value)) return background;
+  }
+  return null;
+}
+
+function stableHash(value: string): number {
+  // FNV-1a: stable across Node versions and machines.
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
+export interface CoverTopic {
+  type: ContentCoverType;
+  slug: string;
+  category?: string;
+  tags?: readonly unknown[];
+}
+
+export function selectCoverBackground(topic: CoverTopic): CoverBackground {
+  const byType = TYPE_BACKGROUNDS[topic.type];
+  if (byType) return byType;
+
+  const category = normalizeTopic(topic.category);
+  const tags = (topic.tags ?? []).map(normalizeTopic).filter(Boolean);
+  let background: CoverBackground;
+  if ([category, ...tags].some((value) => POSTGRES_PATTERN.test(value))) {
+    background = 'postgres';
+  } else {
+    background = matchTopic(category) ?? tags.map(matchTopic).find(Boolean) ?? 'general';
+  }
+  if (background === 'kubernetes' && stableHash(topic.slug) % 2 === 1) return 'kubernetes-alt';
+  return background;
+}
+
+export function coverBackgroundPath(background: CoverBackground): string {
+  return path.join(COVER_BACKGROUND_DIR, `${background}.jpg`);
+}
+
+const COVER_TYPE_LABELS: Record<ContentCoverType, string | null> = {
+  post: null,
+  guide: 'Guide',
+  exercise: 'Exercise',
+  news: 'News',
+  advent: 'Advent',
+  quiz: 'Quiz',
+  game: 'Simulator',
+  checklist: 'Checklist',
+  interview: 'Interview',
+  comparison: 'Comparison',
+  flashcard: 'Flashcards',
+  tool: 'Tool',
+};
+
 export interface ContentCoverOptions {
   type: ContentCoverType;
   title: string;
   category: string;
-  eyebrow?: string;
-  sectionLabel?: string;
+  /** Overrides the default type pill (e.g. "Game" or "Advent · Day 5"). */
+  typeLabel?: string;
+}
+
+export interface CoverPill {
+  label: string;
+  x: number;
+  width: number;
+  textWidth: number;
 }
 
 export interface ContentCoverLayout {
   lines: string[];
   fontSize: number;
   lineHeight: number;
+  titleX: number;
   titleY: number;
   maxWidth: number;
-  wide: boolean;
-  categoryFontSize: number;
-  categoryBadgeWidth: number;
-  categoryDisplay: string;
+  pillY: number;
+  pillFontSize: number;
+  pills: CoverPill[];
 }
 
-const CONTENT_COVER_STYLES: Record<
-  ContentCoverType,
-  { accent: string; pale: string; dark: string; label: string; section: string }
-> = {
-  post: {
-    accent: '#3b82f6',
-    pale: '#93c5fd',
-    dark: '#0d1b31',
-    label: 'DEVOPS ARTICLE',
-    section: 'ARTICLE / INSIGHT',
-  },
-  guide: {
-    accent: '#8b5cf6',
-    pale: '#c4b5fd',
-    dark: '#1b1431',
-    label: 'PRACTICAL GUIDE',
-    section: 'GUIDE / PATH',
-  },
-  exercise: {
-    accent: '#3b82f6',
-    pale: '#93c5fd',
-    dark: '#10182b',
-    label: 'HANDS-ON EXERCISE',
-    section: 'EXERCISE / LAB',
-  },
-  news: {
-    accent: '#06b6d4',
-    pale: '#67e8f9',
-    dark: '#09232c',
-    label: 'DEVOPS NEWS',
-    section: 'NEWS / DIGEST',
-  },
-  advent: {
-    accent: '#10b981',
-    pale: '#6ee7b7',
-    dark: '#0b1715',
-    label: 'ADVENT OF DEVOPS',
-    section: 'ADVENT / DAY',
-  },
-  quiz: {
-    accent: '#f59e0b',
-    pale: '#fbbf24',
-    dark: '#211508',
-    label: 'INTERACTIVE QUIZ',
-    section: 'QUIZ / CHALLENGE',
-  },
-  game: {
-    accent: '#ec4899',
-    pale: '#f9a8d4',
-    dark: '#291126',
-    label: 'INTERACTIVE LAB',
-    section: 'GAME / SIMULATOR',
-  },
-  checklist: {
-    accent: '#14b8a6',
-    pale: '#5eead4',
-    dark: '#09221e',
-    label: 'INTERACTIVE CHECKLIST',
-    section: 'CHECKLIST / PROGRESS',
-  },
-  interview: {
-    accent: '#6366f1',
-    pale: '#a5b4fc',
-    dark: '#15152f',
-    label: 'INTERVIEW QUESTION',
-    section: 'INTERVIEW / PREP',
-  },
-  comparison: {
-    accent: '#d97706',
-    pale: '#fbbf24',
-    dark: '#211508',
-    label: 'COMPARISON',
-    section: 'COMPARE / DECIDE',
-  },
-  flashcard: {
-    accent: '#f43f5e',
-    pale: '#fda4af',
-    dark: '#281019',
-    label: 'INTERACTIVE FLASHCARDS',
-    section: 'FLASHCARDS / RECALL',
-  },
-  tool: {
-    accent: '#10b981',
-    pale: '#6ee7b7',
-    dark: '#092218',
-    label: 'DEVOPS TOOL',
-    section: 'TOOL / UTILITY',
-  },
-};
+// Text stays left of x=560; the illustrations start around x=580.
+export const COVER_TEXT_X = 72;
+export const COVER_TEXT_MAX_WIDTH = 480;
+const TITLE_LETTER_SPACING = -1;
+const PILL_LETTER_SPACING = 1.2;
+const PILL_HEIGHT = 34;
+const PILL_GAP = 10;
+const TITLE_TIERS = [
+  { sizes: [56, 50, 44], maxLines: 3 },
+  { sizes: [40, 36], maxLines: 4 },
+  { sizes: [32, 30, 28], maxLines: 5 },
+];
 
-function buildContentCoverMotif(
-  type: ContentCoverType,
-  style: (typeof CONTENT_COVER_STYLES)[ContentCoverType]
-): string {
-  const motifs: Record<ContentCoverType, string> = {
-    post: `<path d="M57 39h62l26 26v101H57z" fill="${style.accent}" fill-opacity=".13" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="M119 39v27h26" fill="none" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="M77 92h49M77 116h49M77 140h32" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/>`,
-    guide: `<circle cx="101" cy="103" r="58" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><circle cx="101" cy="103" r="8" fill="${style.pale}"/><path d="M123 75 110 111 78 130l13-37z" fill="${style.accent}" fill-opacity=".34" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="m91 93 19 18" stroke="${style.pale}" stroke-width="3" stroke-linecap="round"/>`,
-    exercise: `<rect x="39" y="47" width="124" height="112" rx="17" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><path d="M39 72h124" stroke="${style.pale}" stroke-width="3"/><circle cx="55" cy="60" r="4" fill="${style.pale}"/><circle cx="69" cy="60" r="4" fill="${style.pale}" fill-opacity=".65"/><circle cx="83" cy="60" r="4" fill="${style.pale}" fill-opacity=".35"/><path d="m61 98 18 14-18 14M92 127h43" fill="none" stroke="${style.pale}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
-    news: `<rect x="43" y="43" width="116" height="120" rx="14" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><rect x="59" y="65" width="42" height="38" rx="7" fill="${style.accent}" fill-opacity=".3" stroke="${style.pale}" stroke-width="3"/><path d="M114 68h27M114 84h27M114 100h27M60 120h81M60 139h62" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/>`,
-    advent: `<rect x="45" y="47" width="112" height="115" rx="16" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><path d="M45 78h112M72 39v18M130 39v18" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/><path d="m101 94 7 14 15 2-11 11 3 16-14-8-14 8 3-16-11-11 15-2z" fill="${style.accent}" fill-opacity=".42" stroke="${style.pale}" stroke-width="2.5" stroke-linejoin="round"/>`,
-    quiz: `<circle cx="61" cy="57" r="20" fill="${style.accent}" fill-opacity=".24" stroke="${style.pale}" stroke-width="3"/><text x="61" y="68" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="${style.pale}" text-anchor="middle">?</text><path d="M94 51h53M94 65h36" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/><rect x="39" y="88" width="124" height="25" rx="12.5" fill="${style.accent}" fill-opacity=".08" stroke="${style.pale}" stroke-width="2"/><circle cx="55" cy="100.5" r="4" fill="${style.pale}"/><path d="M70 100.5h68" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/><rect x="39" y="124" width="124" height="25" rx="12.5" fill="${style.accent}" fill-opacity=".08" stroke="${style.pale}" stroke-width="2"/><circle cx="55" cy="136.5" r="4" fill="${style.pale}"/><path d="M70 136.5h53" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/><rect x="39" y="160" width="124" height="25" rx="12.5" fill="${style.accent}" fill-opacity=".24" stroke="${style.pale}" stroke-width="2"/><path d="m49 172 6 6 11-13" fill="none" stroke="${style.pale}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M76 172.5h62" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/>`,
-    game: `<path d="M62 73c10-10 23-15 39-15s29 5 39 15l17 58c5 18-16 28-27 15l-16-18H88l-16 18c-11 13-32 3-27-15z" fill="${style.accent}" fill-opacity=".13" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="M70 93v31M55 108h30" stroke="${style.pale}" stroke-width="6" stroke-linecap="round"/><circle cx="129" cy="98" r="6" fill="${style.pale}"/><circle cx="145" cy="115" r="6" fill="${style.pale}"/><path d="M89 78h24" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/>`,
-    checklist: `<rect x="43" y="38" width="116" height="130" rx="17" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><path d="m61 73 7 7 13-16M61 107l7 7 13-16M61 141l7 7 13-16" fill="none" stroke="${style.pale}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M94 74h45M94 108h45M94 142h45" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/>`,
-    interview: `<path d="M42 52h104a15 15 0 0 1 15 15v57a15 15 0 0 1-15 15H94l-28 22 7-22H57a15 15 0 0 1-15-15V67a15 15 0 0 1 15-15z" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><circle cx="76" cy="95" r="6" fill="${style.pale}"/><circle cx="101" cy="95" r="6" fill="${style.pale}" fill-opacity=".7"/><circle cx="126" cy="95" r="6" fill="${style.pale}" fill-opacity=".4"/>`,
-    comparison: `<rect x="38" y="50" width="50" height="108" rx="13" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3"/><rect x="114" y="50" width="50" height="108" rx="13" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3"/><text x="63" y="116" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="${style.pale}" text-anchor="middle">A</text><text x="139" y="116" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="${style.pale}" text-anchor="middle">B</text><path d="m91 78 10-10 10 10M111 68v72M111 140l-10-10-10 10" fill="none" stroke="${style.pale}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
-    flashcard: `<rect x="54" y="45" width="105" height="118" rx="15" fill="${style.accent}" fill-opacity=".08" stroke="${style.pale}" stroke-width="3" transform="rotate(7 106 104)"/><rect x="42" y="42" width="105" height="118" rx="15" fill="${style.accent}" fill-opacity=".16" stroke="${style.pale}" stroke-width="3"/><path d="M67 77h55M67 101h55M67 125h35" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/><path d="m116 137 8 8 14-16" fill="none" stroke="${style.pale}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
-    tool: `<path d="M51 65h100M51 103h100M51 141h100" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/><circle cx="83" cy="65" r="12" fill="${style.accent}" fill-opacity=".45" stroke="${style.pale}" stroke-width="3"/><circle cx="126" cy="103" r="12" fill="${style.accent}" fill-opacity=".45" stroke="${style.pale}" stroke-width="3"/><circle cx="72" cy="141" r="12" fill="${style.accent}" fill-opacity=".45" stroke="${style.pale}" stroke-width="3"/>`,
-  };
+const measureCache = new Map<string, number>();
 
-  return `<g data-cover-motif="${type}" transform="translate(918 207)" opacity=".28">
-    <rect x="0" y="0" width="202" height="206" rx="30" fill="${style.accent}" fill-opacity=".08" stroke="${style.pale}" stroke-width="2"/>
-    ${motifs[type]}
-  </g>`;
+/** Ink width of a single line of Inter, measured by resvg itself. */
+export function measureCoverText(
+  text: string,
+  fontSize: number,
+  { weight = 700, letterSpacing = 0 }: { weight?: number; letterSpacing?: number } = {}
+): number {
+  const key = `${weight}|${fontSize}|${letterSpacing}|${text}`;
+  const cached = measureCache.get(key);
+  if (cached !== undefined) return cached;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="4000" height="${fontSize * 3}"><text x="10" y="${fontSize * 2}" font-family="Inter" font-weight="${weight}" font-size="${fontSize}" letter-spacing="${letterSpacing}">${escapeXml(text)}</text></svg>`;
+  const box = new Resvg(svg, { font: COVER_FONT_OPTIONS }).getBBox();
+  const width = box ? box.width : 0;
+  measureCache.set(key, width);
+  return width;
 }
 
-function estimatedTextWidth(text: string, fontSize: number, weight = 800): number {
-  let em = 0;
-  for (const character of [...text]) {
-    if (character === ' ') em += 0.3;
-    else if (/[ilI|!.,:;'`]/.test(character)) em += 0.32;
-    else if (/[mwMW@%&]/.test(character)) em += 0.96;
-    else if (/[A-Z]/.test(character)) em += 0.72;
-    else if (/[0-9]/.test(character)) em += 0.61;
-    else if (/[a-z]/.test(character)) em += 0.58;
-    else if (/[-_+\/=()\[\]{}]/.test(character)) em += 0.5;
-    else em += 1;
+function cleanCoverTitle(title: unknown): string {
+  // Inter has no emoji; drop them rather than render empty boxes.
+  return cleanOgText(String(title ?? '').replace(/[\p{Extended_Pictographic}️‍]/gu, ''));
+}
+
+// Fast width estimate used while searching for line breaks: words are
+// measured once at 100px and scaled. The chosen lines are measured exactly.
+function estimateLineWidth(words: string[], fontSize: number): number {
+  const scale = fontSize / 100;
+  const space = measureCoverText('x x', 100) - measureCoverText('xx', 100);
+  let width = 0;
+  let characters = 0;
+  for (const word of words) {
+    width += measureCoverText(word, 100) * scale;
+    characters += [...word].length;
   }
-  return em * fontSize * (weight >= 800 ? 1.06 : 1.03);
+  width += (words.length - 1) * space * scale;
+  characters += words.length - 1;
+  return width + TITLE_LETTER_SPACING * Math.max(0, characters - 1);
 }
 
-function splitLongToken(token: string, fontSize: number, maxWidth: number): string[] {
+function splitLongWord(word: string, fontSize: number, maxWidth: number): string[] {
   const chunks: string[] = [];
   let current = '';
-  for (const character of [...token]) {
+  for (const character of [...word]) {
     const candidate = current + character;
-    if (current && estimatedTextWidth(candidate, fontSize) > maxWidth) {
+    if (current && estimateLineWidth([candidate], fontSize) > maxWidth) {
       chunks.push(current);
       current = character;
     } else {
@@ -201,123 +298,197 @@ function splitLongToken(token: string, fontSize: number, maxWidth: number): stri
   return chunks;
 }
 
-function wrapMeasured(text: string, fontSize: number, maxWidth: number): string[] {
-  const lines: string[] = [];
-  let current = '';
-  for (const rawWord of cleanOgText(text).split(' ').filter(Boolean)) {
-    const words =
-      estimatedTextWidth(rawWord, fontSize) > maxWidth
-        ? splitLongToken(rawWord, fontSize, maxWidth)
+function wrapByWidth(text: string, fontSize: number, maxWidth: number): string[] {
+  const lines: string[][] = [];
+  let current: string[] = [];
+  for (const rawWord of text.split(' ').filter(Boolean)) {
+    const pieces =
+      estimateLineWidth([rawWord], fontSize) > maxWidth
+        ? splitLongWord(rawWord, fontSize, maxWidth)
         : [rawWord];
-    for (const word of words) {
-      const candidate = current ? `${current} ${word}` : word;
-      if (current && estimatedTextWidth(candidate, fontSize) > maxWidth) {
+    for (const word of pieces) {
+      if (current.length && estimateLineWidth([...current, word], fontSize) > maxWidth) {
         lines.push(current);
-        current = word;
+        current = [word];
       } else {
-        current = candidate;
+        current.push(word);
       }
     }
   }
-  if (current) lines.push(current);
-  return lines;
+  if (current.length) lines.push(current);
+  return lines.map((line) => line.join(' '));
 }
 
-function fitCategory(
-  category: string
-): Pick<ContentCoverLayout, 'categoryFontSize' | 'categoryBadgeWidth' | 'categoryDisplay'> {
-  const clean = cleanOgText(category) || 'GENERAL';
-  for (const fontSize of [16, 15, 14, 13, 12]) {
-    const width = estimatedTextWidth(clean, fontSize, 700) + 54;
-    if (width <= 420) {
-      return {
-        categoryFontSize: fontSize,
-        categoryBadgeWidth: Math.max(150, Math.ceil(width)),
-        categoryDisplay: clean,
-      };
-    }
+// Narrowest wrap that keeps the same line count, so lines come out balanced
+// instead of leaving one word alone on the last line.
+function balanceLines(text: string, fontSize: number, maxWidth: number, lineCount: number) {
+  let low = 1;
+  let high = maxWidth;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (wrapByWidth(text, fontSize, middle).length <= lineCount) high = middle;
+    else low = middle + 1;
   }
-
-  let display = clean;
-  while (display.length > 3 && estimatedTextWidth(`${display}…`, 12, 700) + 54 > 420) {
-    display = display.slice(0, -1);
-  }
-  return { categoryFontSize: 12, categoryBadgeWidth: 420, categoryDisplay: `${display}…` };
+  return wrapByWidth(text, fontSize, high);
 }
 
-export function layoutContentCoverTitle(title: string, category: string): ContentCoverLayout {
-  const clean = cleanOgText(title);
+function fitTitleLines(text: string, fontSize: number, maxLines: number): string[] | null {
+  let limit = COVER_TEXT_MAX_WIDTH;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const greedy = wrapByWidth(text, fontSize, limit);
+    if (greedy.length > maxLines) return null;
+    const lines = balanceLines(text, fontSize, limit, greedy.length);
+    const widest = Math.max(
+      ...lines.map((line) =>
+        measureCoverText(line, fontSize, { letterSpacing: TITLE_LETTER_SPACING })
+      )
+    );
+    if (widest <= COVER_TEXT_MAX_WIDTH) return lines;
+    limit -= Math.ceil(widest - COVER_TEXT_MAX_WIDTH) + 2;
+  }
+  return null;
+}
+
+function layoutPills(labels: string[]): Pick<ContentCoverLayout, 'pillFontSize' | 'pills'> {
+  const upper = labels.map((label) => cleanOgText(label).toUpperCase()).filter(Boolean);
+  const build = (texts: string[], fontSize: number, padding: number) => {
+    let x = COVER_TEXT_X;
+    return texts.map((label) => {
+      const textWidth = measureCoverText(label, fontSize, { letterSpacing: PILL_LETTER_SPACING });
+      const pill = { label, x, width: Math.ceil(textWidth + padding * 2), textWidth };
+      x += pill.width + PILL_GAP;
+      return pill;
+    });
+  };
+  const totalWidth = (pills: CoverPill[]) =>
+    pills.length ? pills[pills.length - 1].x + pills[pills.length - 1].width - COVER_TEXT_X : 0;
+
+  for (const fontSize of [16, 15, 14]) {
+    const pills = build(upper, fontSize, fontSize >= 15 ? 22 : 18);
+    if (totalWidth(pills) <= COVER_TEXT_MAX_WIDTH) return { pillFontSize: fontSize, pills };
+  }
+  // Still too wide: drop whole words from the category (first pill), never
+  // from the type label.
+  const [category, ...rest] = upper;
+  const words = category.split(' ');
+  let pills = build(upper, 14, 18);
+  while (words.length > 1) {
+    words.pop();
+    const shortened = words.join(' ').replace(/[\s&·,/-]+$/, '');
+    pills = build([`${shortened}…`, ...rest], 14, 18);
+    if (totalWidth(pills) <= COVER_TEXT_MAX_WIDTH) break;
+  }
+  return { pillFontSize: 14, pills };
+}
+
+export function layoutContentCoverTitle(
+  title: string,
+  category = 'DevOps',
+  typeLabel?: string | null
+): ContentCoverLayout {
+  const clean = cleanCoverTitle(title);
   if (!clean) throw new Error('Cover title cannot be empty');
 
-  const attempts = [
-    { maxWidth: 780, sizes: [56, 52, 48, 44, 40], wide: false, maxLines: 3, titleY: 300 },
-    { maxWidth: 1040, sizes: [52, 48, 44, 40, 38, 36, 34], wide: true, maxLines: 3, titleY: 300 },
-    { maxWidth: 1040, sizes: [32, 30, 28], wide: true, maxLines: 4, titleY: 278 },
-  ];
-
-  for (const attempt of attempts) {
-    for (const fontSize of attempt.sizes) {
-      const lines = wrapMeasured(clean, fontSize, attempt.maxWidth);
-      if (
-        lines.length <= attempt.maxLines &&
-        lines.every((line) => estimatedTextWidth(line, fontSize) <= attempt.maxWidth)
-      ) {
-        return {
-          lines,
-          fontSize,
-          lineHeight: fontSize + 12,
-          titleY: attempt.titleY,
-          maxWidth: attempt.maxWidth,
-          wide: attempt.wide,
-          ...fitCategory(category),
-        };
-      }
+  for (const tier of TITLE_TIERS) {
+    for (const fontSize of tier.sizes) {
+      const lines = fitTitleLines(clean, fontSize, tier.maxLines);
+      if (!lines) continue;
+      const lineHeight = Math.round(fontSize * 1.16);
+      const titleY = Math.round(330 - (lines.length * lineHeight) / 2 + fontSize * 0.8);
+      return {
+        lines,
+        fontSize,
+        lineHeight,
+        titleX: COVER_TEXT_X,
+        titleY,
+        maxWidth: COVER_TEXT_MAX_WIDTH,
+        pillY: titleY - fontSize - 48,
+        ...layoutPills([cleanOgText(category) || 'DevOps', ...(typeLabel ? [typeLabel] : [])]),
+      };
     }
   }
 
   throw new Error(`Cover title cannot fit without truncation (${clean.length} characters)`);
 }
 
+export function coverTypeLabel(type: ContentCoverType, override?: string): string | null {
+  return cleanOgText(override) || COVER_TYPE_LABELS[type];
+}
+
+// Terminal mark from the site OG image: dark rounded square, green ">" and "_".
+const BRAND_MARK = `<g data-cover-brand="true">
+  <rect x="72" y="56" width="40" height="40" rx="9" fill="#0F1A14"/>
+  <path d="M82.5 68 90 75.5 82.5 83" fill="none" stroke="#22C55E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M94.5 84h9.5" stroke="#22C55E" stroke-width="4" stroke-linecap="round"/>
+  <text x="126" y="85" font-family="Inter" font-weight="700" font-size="26" letter-spacing="-0.4" fill="#0F1A14">DevOps <tspan fill="#16A34A">Daily</tspan></text>
+</g>`;
+
+/** Transparent 1200x630 overlay drawn on top of the illustrated background. */
 export function buildContentCoverSvg(options: ContentCoverOptions): string {
-  const title = cleanOgText(options.title);
-  const category = cleanOgText(options.category) || 'GENERAL';
-  const style = CONTENT_COVER_STYLES[options.type];
-  const layout = layoutContentCoverTitle(title, category);
-  const eyebrow = cleanOgText(options.eyebrow) || style.label;
-  const sectionLabel = cleanOgText(options.sectionLabel) || style.section;
+  const title = cleanCoverTitle(options.title);
+  const typeLabel = coverTypeLabel(options.type, options.typeLabel);
+  const layout = layoutContentCoverTitle(title, options.category, typeLabel);
+  const pillTextY = layout.pillY + Math.round(PILL_HEIGHT / 2 + layout.pillFontSize * 0.36);
+
+  const pills = layout.pills
+    .map((pill, index) => {
+      const isCategory = index === 0;
+      const rect = isCategory
+        ? `fill="#22C55E" fill-opacity="0.14" stroke="#16A34A" stroke-opacity="0.55"`
+        : `fill="#0F1A14" fill-opacity="0.04" stroke="#0F1A14" stroke-opacity="0.24"`;
+      const textFill = isCategory ? '#15803D' : '#33413A';
+      return `<g data-cover-pill="${isCategory ? 'category' : 'type'}">
+    <rect x="${pill.x + 0.5}" y="${layout.pillY + 0.5}" width="${pill.width - 1}" height="${PILL_HEIGHT - 1}" rx="${(PILL_HEIGHT - 1) / 2}" ${rect}/>
+    <text x="${(pill.x + pill.width / 2).toFixed(1)}" y="${pillTextY}" text-anchor="middle" font-family="Inter" font-weight="700" font-size="${layout.pillFontSize}" letter-spacing="${PILL_LETTER_SPACING}" fill="${textFill}">${escapeXml(pill.label)}</text>
+  </g>`;
+    })
+    .join('\n  ');
+
   const titleSvg = layout.lines
     .map(
       (line, index) =>
-        `<text data-cover-title-line="true" x="80" y="${layout.titleY + index * layout.lineHeight}" font-family="Arial, sans-serif" font-size="${layout.fontSize}" font-weight="800" letter-spacing="-1.1" fill="#fafafa">${escapeXml(line)}</text>`
+        `<text data-cover-title-line="true" x="${layout.titleX}" y="${layout.titleY + index * layout.lineHeight}" font-family="Inter" font-weight="700" font-size="${layout.fontSize}" letter-spacing="${TITLE_LETTER_SPACING}" fill="#0F1A14">${escapeXml(line)}</text>`
     )
-    .join('\n');
-  const motif = layout.wide ? '' : buildContentCoverMotif(options.type, style);
+    .join('\n  ');
 
-  return `<svg width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="${escapeXml(title)}" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse"><stop stop-color="#08090c"/><stop offset="1" stop-color="${style.dark}"/></linearGradient>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(1010 120) rotate(142) scale(520 400)" gradientUnits="userSpaceOnUse"><stop stop-color="${style.accent}" stop-opacity=".32"/><stop offset="1" stop-color="${style.accent}" stop-opacity="0"/></radialGradient>
-    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M44 0H0V44" fill="none" stroke="${style.pale}" stroke-opacity=".05"/><circle cx="22" cy="22" r="1.5" fill="${style.pale}" fill-opacity=".075"/></pattern>
-  </defs>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <rect width="1200" height="630" fill="url(#glow)"/>
-  <rect width="1200" height="630" fill="url(#grid)"/>
-  <rect x="28" y="28" width="1144" height="574" rx="32" fill="none" stroke="${style.pale}" stroke-opacity=".2"/>
-  ${motif}
-  <rect x="80" y="70" width="${layout.categoryBadgeWidth}" height="40" rx="20" fill="${style.accent}" fill-opacity=".14" stroke="${style.pale}" stroke-opacity=".76"/>
-  <circle cx="100" cy="90" r="4" fill="${style.pale}"/>
-  <text x="114" y="97" font-family="Arial, sans-serif" font-size="${layout.categoryFontSize}" font-weight="700" letter-spacing=".7" fill="${style.pale}">${escapeXml(layout.categoryDisplay)}</text>
-  <text x="1120" y="96" font-family="Menlo, Monaco, monospace" font-size="14" letter-spacing="1.4" fill="#a1a1aa" text-anchor="end">${escapeXml(sectionLabel)}</text>
-  <rect x="80" y="150" width="56" height="56" rx="16" fill="${style.accent}"/>
-  <circle cx="108" cy="178" r="15" fill="none" stroke="#081018" stroke-width="3"/>
-  <path d="M101 178h14m-7-7v14" stroke="#081018" stroke-width="3" stroke-linecap="round"/>
-  <text x="158" y="185" font-family="Menlo, Monaco, monospace" font-size="18" font-weight="700" letter-spacing="2" fill="${style.pale}">${escapeXml(eyebrow)}</text>
+  return `<svg width="${COVER_WIDTH}" height="${COVER_HEIGHT}" viewBox="0 0 ${COVER_WIDTH} ${COVER_HEIGHT}" role="img" aria-label="${escapeXml(title)}" xmlns="http://www.w3.org/2000/svg">
+  ${BRAND_MARK}
+  ${pills}
   ${titleSvg}
-  <line x1="80" y1="510" x2="1120" y2="510" stroke="#fafafa" stroke-opacity=".12"/>
-  <rect x="80" y="540" width="22" height="22" rx="7" fill="${style.accent}"/>
-  <text x="116" y="558" font-family="Arial, sans-serif" font-size="19" font-weight="800" fill="#fafafa">DevOps Daily</text>
-  <text x="1120" y="558" font-family="Menlo, Monaco, monospace" font-size="14" fill="#a1a1aa" text-anchor="end">DEVOPS-DAILY.COM</text>
+  <text x="${COVER_TEXT_X}" y="580" font-family="Inter" font-weight="400" font-size="18" fill="#5B6B62">devops-daily.com</text>
 </svg>`;
+}
+
+/** Renders an overlay SVG with the bundled fonts (transparent background). */
+export function renderCoverOverlay(svg: string) {
+  return new Resvg(svg, { font: COVER_FONT_OPTIONS, background: 'rgba(0,0,0,0)' }).render();
+}
+
+const backgroundCache = new Map<CoverBackground, Promise<Buffer>>();
+
+function loadBackground(background: CoverBackground): Promise<Buffer> {
+  let cached = backgroundCache.get(background);
+  if (!cached) {
+    cached = sharp(coverBackgroundPath(background))
+      .resize(COVER_WIDTH, COVER_HEIGHT, { fit: 'cover', position: 'right' })
+      .png()
+      .toBuffer();
+    backgroundCache.set(background, cached);
+  }
+  return cached;
+}
+
+export async function renderContentCoverJpeg(
+  options: ContentCoverOptions & { background: CoverBackground }
+): Promise<Buffer> {
+  const overlay = renderCoverOverlay(buildContentCoverSvg(options));
+  if (overlay.width !== COVER_WIDTH || overlay.height !== COVER_HEIGHT) {
+    throw new Error(`Invalid cover overlay size ${overlay.width}x${overlay.height}`);
+  }
+  return sharp(await loadBackground(options.background))
+    .composite([{ input: overlay.asPng() }])
+    .jpeg({ quality: 82, mozjpeg: true })
+    .toBuffer();
 }
 
 export function splitTitle(title: string, maxCharsPerLine = 30, maxLines = 3): string[] {

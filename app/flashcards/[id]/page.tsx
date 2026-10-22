@@ -11,6 +11,7 @@ import { FlashcardIcon } from '@/components/flashcard-icon'
 import { PageHero } from '@/components/page-hero'
 import { truncateMetaDescription } from '@/lib/meta-description'
 import { detailPageMetadata } from '@/lib/metadata-utils'
+import { getSocialImagePath } from '@/lib/image-utils'
 import { pickRelatedItems } from '@/lib/related-content'
 import { RelatedContent } from '@/components/related-content'
 import { RelatedAcrossTypes } from '@/components/related-across-types'
@@ -45,7 +46,7 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
     title: `${flashcardSet.title} - DevOps Flashcards`,
     socialTitle: `${flashcardSet.title} - DevOps Daily`,
     description: truncateMetaDescription(flashcardSet.description),
-    image: `/images/flashcards/${id}-og.png`,
+    image: getSocialImagePath(id, 'flashcards'),
     imageAlt: flashcardSet.title,
     ogType: 'website',
   })

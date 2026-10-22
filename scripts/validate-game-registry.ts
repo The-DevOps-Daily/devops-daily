@@ -43,6 +43,8 @@ function activePageExists(slug: string): boolean {
 
 function imagePathForSlug(slug: string): string | null {
   const candidates = [
+    path.join(GAME_IMAGES_DIR, `${slug}-og.jpg`),
+    path.join(GAME_IMAGES_DIR, `${slug}.jpg`),
     path.join(GAME_IMAGES_DIR, `${slug}.png`),
     path.join(GAME_IMAGES_DIR, `${slug}-og.png`),
   ];
@@ -50,29 +52,55 @@ function imagePathForSlug(slug: string): string | null {
   return candidates.find(exists) || null;
 }
 
-function pngDimensions(filePath: string): { width: number; height: number } | null {
+function imageDimensions(filePath: string): { width: number; height: number } | null {
   const buffer = fs.readFileSync(filePath);
-  if (buffer.length < 24 || buffer.toString('ascii', 1, 4) !== 'PNG') {
-    return null;
+  if (buffer.length >= 24 && buffer.toString('ascii', 1, 4) === 'PNG') {
+    return {
+      width: buffer.readUInt32BE(16),
+      height: buffer.readUInt32BE(20),
+    };
   }
 
-  return {
-    width: buffer.readUInt32BE(16),
-    height: buffer.readUInt32BE(20),
-  };
+  // JPEG: walk the segments to the start-of-frame marker.
+  if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
+    return null;
+  }
+  let offset = 2;
+  while (offset + 9 < buffer.length) {
+    if (buffer[offset] !== 0xff) return null;
+    const marker = buffer[offset + 1];
+    const isStartOfFrame =
+      marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+    if (isStartOfFrame) {
+      return {
+        height: buffer.readUInt16BE(offset + 5),
+        width: buffer.readUInt16BE(offset + 7),
+      };
+    }
+    offset += 2 + buffer.readUInt16BE(offset + 2);
+  }
+  return null;
 }
 
 function validateSocialImage(issues: ValidationIssue[], slug: string) {
   const imagePath = imagePathForSlug(slug);
   if (!imagePath) {
-    addIssue(issues, slug, 'Missing social image in public/images/games. Expected slug.png or slug-og.png.');
+    addIssue(
+      issues,
+      slug,
+      'Missing social image in public/images/games. Expected slug-og.jpg (pnpm generate:images).'
+    );
     return;
   }
 
-  if (imagePath.endsWith('.png')) {
-    const dimensions = pngDimensions(imagePath);
+  if (/\.(png|jpg)$/.test(imagePath)) {
+    const dimensions = imageDimensions(imagePath);
     if (!dimensions) {
-      addIssue(issues, slug, `Could not read PNG dimensions for ${path.relative(ROOT, imagePath)}`);
+      addIssue(
+        issues,
+        slug,
+        `Could not read image dimensions for ${path.relative(ROOT, imagePath)}`
+      );
       return;
     }
 
@@ -80,7 +108,7 @@ function validateSocialImage(issues: ValidationIssue[], slug: string) {
       addIssue(
         issues,
         slug,
-        `Social PNG should be 1200x630, got ${dimensions.width}x${dimensions.height} in ${path.relative(ROOT, imagePath)}`
+        `Social image should be 1200x630, got ${dimensions.width}x${dimensions.height} in ${path.relative(ROOT, imagePath)}`
       );
     }
   }

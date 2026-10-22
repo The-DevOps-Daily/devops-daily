@@ -6,6 +6,7 @@ import { PageHero } from '@/components/page-hero';
 import { ListChecks } from 'lucide-react';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { detailPageMetadata } from '@/lib/metadata-utils';
+import { getSocialImagePath } from '@/lib/image-utils';
 import { pickRelatedItems } from '@/lib/related-content';
 import { BreadcrumbSchema, LearningResourceSchema } from '@/components/schema-markup';
 import { RelatedContent } from '@/components/related-content';
@@ -37,7 +38,7 @@ export async function generateMetadata(
     title: checklist.title,
     socialTitle: `${checklist.title} - The DevOps Daily`,
     description: truncateMetaDescription(checklist.description),
-    image: `/images/checklists/${resolvedParams.slug}-og.png`,
+    image: getSocialImagePath(resolvedParams.slug, 'checklists'),
     ogType: 'website',
     siteName: 'The DevOps Daily',
     locale: 'en_US',

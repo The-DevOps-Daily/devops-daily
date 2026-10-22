@@ -40,22 +40,22 @@ These issues generate warnings but won't block your commit:
 | Title > 70 characters | Shorten title; longer titles get truncated on social platforms |
 | Description < 50 characters | Add more detail to the description |
 | Description > 200 characters | Consider shortening; descriptions are typically truncated at ~160 chars |
-| Missing OG image | Add an image at `public/images/{type}/{slug}.{svg,png}` |
+| Missing OG image | Run `pnpm generate:images` to create `public/images/{type}/{slug}.jpg` |
 
 ### OG Image Requirements
 
 Each content file should have a corresponding OG image:
 
 ```
-content/posts/my-post.md       → public/images/posts/my-post.svg (or .png)
-content/guides/my-guide.md     → public/images/guides/my-guide.svg (or .png)
-content/checklists/foo.json    → public/images/checklists/foo.svg (or .png) OR foo-og.svg
-content/news/2025/week-1.md    → public/images/news/week-1.svg (or .png)
+content/posts/my-post.md       → public/images/posts/my-post.jpg
+content/guides/my-guide.md     → public/images/guides/my-guide.jpg
+content/checklists/foo.json    → public/images/checklists/foo-og.jpg
+content/news/2025/week-1.md    → public/images/news/week-1.jpg
 ```
 
-SVG is preferred for smaller file sizes, but PNG is also supported.
+Covers are generated as JPEG by `pnpm generate:images`. A hand-made PNG or SVG with the same name is also accepted.
 
-**Note:** The validator also accepts the `-og` suffix pattern (e.g., `foo-og.svg` instead of `foo.svg`). This is used by some content types like checklists.
+**Note:** The validator also accepts the `-og` suffix pattern (e.g., `foo-og.jpg` instead of `foo.jpg`). This is used by some content types like checklists.
 
 ## Usage
 
@@ -153,7 +153,7 @@ ls -la .git/hooks/pre-commit
 
 ### False positives for OG images
 
-The validator looks for images in `public/images/{type}/{slug}.{svg,png}`. If your image has a different name or location, it will show as missing. Consider renaming to match the expected pattern.
+The validator looks for images in `public/images/{type}/{slug}.{jpg,png,svg}` (or `{slug}-og.*`). If your image has a different name or location, it will show as missing. Consider renaming to match the expected pattern.
 
 ## Configuration
 

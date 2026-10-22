@@ -4,7 +4,7 @@
  *
  * Validates:
  * - Required frontmatter fields (title, excerpt/description)
- * - OG images exist (PNG or SVG) in public/images/{type}/
+ * - OG images exist (JPEG, or a hand-made PNG/SVG) in public/images/{type}/
  *
  * Usage: tsx scripts/git-hooks/validate-og-data.ts [--staged-only]
  */
@@ -112,13 +112,13 @@ function getSlugFromFilename(filename: string): string {
 
 function ogImageExists(slug: string, imagesDir: string): boolean {
   const imageDir = path.join(PUBLIC_IMAGES_DIR, imagesDir);
-  const svgPath = path.join(imageDir, `${slug}.svg`);
-  const pngPath = path.join(imageDir, `${slug}.png`);
-  // Also check for -og suffix pattern (used by some content types like checklists)
-  const svgPathOg = path.join(imageDir, `${slug}-og.svg`);
-  const pngPathOg = path.join(imageDir, `${slug}-og.png`);
-
-  return fs.existsSync(svgPath) || fs.existsSync(pngPath) || fs.existsSync(svgPathOg) || fs.existsSync(pngPathOg);
+  // Covers are JPEG; PNG/SVG are accepted for hand-made images. The -og suffix
+  // is used by some content types like checklists.
+  return [slug, `${slug}-og`].some((name) =>
+    ['jpg', 'png', 'svg'].some((extension) =>
+      fs.existsSync(path.join(imageDir, `${name}.${extension}`))
+    )
+  );
 }
 
 function parseMarkdownFrontmatter(
@@ -246,13 +246,13 @@ function validateFile(
         const guideSlug = path.basename(path.dirname(filePath));
         if (!ogImageExists(guideSlug, config.imagesDir)) {
           warnings.push(
-            `Missing OG image. Expected: public/images/${config.imagesDir}/${guideSlug}.{svg,png}`
+            `Missing OG image. Expected: public/images/${config.imagesDir}/${guideSlug}.jpg`
           );
         }
       } else if (!filePath.endsWith('index.ts')) {
         // Skip index.ts files
         warnings.push(
-          `Missing OG image. Expected: public/images/${config.imagesDir}/${imageSlug}.{svg,png}`
+          `Missing OG image. Expected: public/images/${config.imagesDir}/${imageSlug}.jpg`
         );
       }
     }
