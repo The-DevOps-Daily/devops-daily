@@ -27,7 +27,7 @@ A GitHub Actions bill rarely grows because of one decision. It grows a minute at
 
 We measured both halves of the problem. First, a read-only script that shows where one repository's minutes went in the last 30 days, and the free changes that act on what it finds. Then the runner question. We ran one mobile pull request pipeline (the iOS build and unit tests, the Android build and the Android unit tests, all started together) 17 times on GitHub-hosted runners and 17 times on [Bitrise Build Hub](https://bitrise.io/platform/build-hub), which runs GitHub Actions jobs on its own M4 Macs and AMD Linux machines.
 
-**About the same cost at list price, less than half the wait.** With the Build Hub Linux pool allowed to run two machines at once, the pipeline finished in a median 18.5 minutes on Build Hub over 7 runs, against 43.5 minutes on GitHub over 17 runs. At list price, a run cost a median $1.77 on Build Hub and $1.79 on GitHub, over 17 runs each, and the ranges overlap. The iOS job is where the money moves: it ran 2.7 times faster on a 5 vCPU M4 and cost about a fifth as much per job. The two Android jobs ran about twice as fast on a 16 vCPU Linux machine and cost about twice as much per job.
+**About the same cost at list price, less than half the wait.** With the Build Hub Linux pool allowed to run two machines at once, the pipeline finished in a median 18.5 minutes on Build Hub over 7 runs, against 43.6 minutes on GitHub over 17 runs. At list price, a run cost a median $1.77 on Build Hub and $1.79 on GitHub, over 17 runs each, and the ranges overlap. The iOS job is where the money moves: it ran 2.7 times faster on a 5 vCPU M4 and cost about a fifth as much per job. The two Android jobs ran about twice as fast on a 16 vCPU Linux machine and cost about twice as much per job.
 
 ## TLDR
 
@@ -327,14 +327,14 @@ https://github.com/The-DevOps-Daily/gha-runner-benchmark
   "unit": " min",
   "caption": "Every run. GitHub: macos-26 + ubuntu-24.04, 17 runs, 16 to 17 Oct 2026. Build Hub: M4 Large + Linux XLarge, 10 runs with the Android pool maximum at 1, then 7 at 2. Source: results/mobile-pipeline.json.",
   "series": [
-    { "name": "GitHub (17 runs)", "samples": [52.9, 42.0, 55.8, 42.2, 47.7, 43.5, 32.8, 60.8, 41.2, 40.1, 51.8, 49.8, 56.9, 34.2, 55.1, 36.8, 42.4], "median": 43.5 },
+    { "name": "GitHub (17 runs)", "samples": [52.9, 42.1, 55.8, 42.2, 47.7, 43.6, 32.8, 60.8, 41.2, 40.1, 51.8, 49.8, 56.9, 34.2, 55.1, 36.8, 42.4], "median": 43.6 },
     { "name": "Build Hub, pool max 2 (7 runs)", "samples": [18.0, 18.5, 21.4, 29.4, 17.1, 17.0, 25.9], "median": 18.5 },
     { "name": "Build Hub, pool max 1 (10 runs)", "samples": [46.4, 34.2, 30.2, 27.4, 26.2, 41.0, 52.1, 28.1, 38.9, 36.4], "median": 35.3 }
   ]
 }
 ```
 
-With the Android pool at a maximum of 2, the pipeline took a median 18.5 minutes (17.0 to 29.4) on Build Hub, against 43.5 minutes (32.8 to 60.8) on GitHub. That is about 2.4 times faster. We compare with all 17 GitHub runs because it is the conservative choice: the 7 GitHub runs paired with the pool-maximum-2 runs had a median of 49.8 minutes.
+With the Android pool at a maximum of 2, the pipeline took a median 18.5 minutes (17.0 to 29.4) on Build Hub, against 43.6 minutes (32.8 to 60.8) on GitHub. That is about 2.4 times faster. We compare with all 17 GitHub runs because it is the conservative choice: the 7 GitHub runs paired with the pool-maximum-2 runs had a median of 49.8 minutes.
 
 ### The pool maximum mistake
 
@@ -352,7 +352,7 @@ The rule: set each pool's maximum to at least the number of its jobs that start 
 
 The job times are from all 17 runs per side. The pool maximum changes how long a job waits, not how long it runs, so it does not affect these numbers. Queue time is separate: on GitHub, jobs started after a median 3 seconds on Linux and 8 seconds on macOS. On Build Hub, where each pool starts a machine when a job arrives, they started after a median 33 to 34 seconds on Linux (at pool maximum 2) and 38 seconds on macOS.
 
-The GitHub Android times move a lot. In the 17 runs, GitHub's 4 vCPU runner reported three different CPU models for the build and five for the tests. The two builds on an AMD EPYC 9V45 host took 1,780 and 1,892 seconds for the Gradle task, and the twelve on an EPYC 7763 took 1,979 to 3,426 seconds, so the host explains part of the spread but not all of it. Build Hub's Android build varied too, from 981 to 2,581 seconds for the job, on machines that all reported the same CPU. More cores did not always help on Build Hub either: in separate runs, a 32 vCPU machine from the Enterprise plan took 1,561 to 2,448 seconds for the Gradle build task, against 1,231 to 1,463 seconds on the 16 vCPU Linux XLarge (three runs each).
+The GitHub Android times move a lot. In the 17 runs, GitHub's 4 vCPU runner reported three different CPU models for the build and five for the tests. The two builds on an AMD EPYC 9V45 host took 1,780 and 1,892 seconds for the Gradle task, and the twelve on an EPYC 7763 took 1,979 to 3,426 seconds, so the host explains part of the spread but not all of it. Build Hub's Android build varied too, from 981 to 2,581 seconds for the job, on machines that all reported the same CPU.
 
 ### More Mac sizes, including Enterprise
 
@@ -426,4 +426,4 @@ For the full feature-by-feature view, including concurrency limits, images, cach
 
 A GitHub Actions bill grows from small, measurable things: whole-minute rounding, runs nobody needed, artifacts kept for 90 days, and macOS minutes at about ten times the Linux price. The audit script shows what rounding and re-runs cost your repository, and most of the fixes are a few lines of YAML.
 
-When the slow job is slow because the machine is small, a faster runner changes the picture. In our mobile pipeline, Build Hub cut the wait from a median 43.5 minutes to 18.5 minutes at about the same list-price cost per run. The iOS job was cheaper and faster. The Android jobs were faster and more expensive. Set the pool maximum to match the jobs that start together, measure your own slowest job on both sides, and move the jobs where the numbers say so.
+When the slow job is slow because the machine is small, a faster runner changes the picture. In our mobile pipeline, Build Hub cut the wait from a median 43.6 minutes to 18.5 minutes at about the same list-price cost per run. The iOS job was cheaper and faster. The Android jobs were faster and more expensive. Set the pool maximum to match the jobs that start together, measure your own slowest job on both sides, and move the jobs where the numbers say so.
