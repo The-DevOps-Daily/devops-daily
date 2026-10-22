@@ -111,7 +111,7 @@ So the population this describes is narrow: root-level `catalog-info.yaml` files
 
 ## The run
 
-One pass makes about 1,700 GitHub API requests, cached on disk per token for 24 hours. `--redact` keeps people out of the output: user logins become `user:<redacted>`, and owner and team names become a hash with a key that is random per run, which is why you see `group:<1a76fb>` below and different hashes in the committed results. The results name organizations, repositories and services, never a person.
+One pass makes about 1,700 GitHub API requests, cached on disk per token for 24 hours. `--redact` keeps people out of the output: user logins become `user:<redacted>`, and owner and team names become a hash with a key that is random per run, which is why you see `group:<56b023>` below and different hashes in the committed results. The results name organizations, repositories and services, never a person.
 
 ```terminal
 {
@@ -131,7 +131,7 @@ One pass makes about 1,700 GitHub API requests, cached on disk per token for 24 
     },
     {
       "cmd": "awk '/^(DRIFT|WARN) /{p=($2==\"com.unity.services.samples.relationships\"||$2==\"changelog-github\"||$2==\"kaizen-design-system\"||$2==\"loopback4-microservice-catalog\")} p' report.txt",
-      "output": "DRIFT  com.unity.services.samples.relationships  (Unity-Technologies/com.unity.services.samples.friends:catalog-info.yaml)  owner group:<1a76fb>\n         repo       drift        Unity-Technologies/com.unity.services.samples.relationships moved to Unity-Technologies/com.unity.services.samples.friends\n         codeowners drift        CODEOWNERS line 2 names owners GitHub cannot resolve: @Unity-Technologies/<3b46dc>\nDRIFT  changelog-github  (cultureamp/changelog-github:catalog-info.yaml)  owner group:<91f2ed>\n         repo       drift        github.com/project-slug is not a valid owner/repo\nDRIFT  kaizen-design-system  (cultureamp/kaizen-design-system:catalog-info.yaml)  owner group:<29aad2>\n         codeowners drift        CODEOWNERS line 4 names owners GitHub cannot resolve: @cultureamp/<28c7b8>\n         links      drift        1 of 5 links dead: other https://cultureamp.design/<path 642625a6c6> (HTTP 404)\nDRIFT  loopback4-microservice-catalog  (sourcefuse/loopback4-microservice-catalog:catalog-info.yaml)  owner group:<ec1e44>\n         owner      warn         GitHub cannot resolve @sourcefuse/<ec1e44> in the CODEOWNERS files that name it (deleted, renamed, secret, or without write access)\n         codeowners drift        .github/CODEOWNERS line 5 names owners GitHub cannot resolve: @sourcefuse/<ec1e44>"
+      "output": "DRIFT  com.unity.services.samples.relationships  (Unity-Technologies/com.unity.services.samples.friends:catalog-info.yaml)  owner group:<56b023>\n         repo       drift        Unity-Technologies/com.unity.services.samples.relationships moved to Unity-Technologies/com.unity.services.samples.friends\n         codeowners drift        CODEOWNERS line 2 names owners GitHub cannot resolve: @Unity-Technologies/<072a85>\nDRIFT  changelog-github  (cultureamp/changelog-github:catalog-info.yaml)  owner group:<ffb463>\n         repo       drift        github.com/project-slug is not a valid owner/repo\nDRIFT  kaizen-design-system  (cultureamp/kaizen-design-system:catalog-info.yaml)  owner group:<159434>\n         codeowners drift        CODEOWNERS line 4 names owners GitHub cannot resolve: @cultureamp/<15544f>\n         links      drift        1 of 5 links dead: other https://cultureamp.design/<path 642625a6c6> (HTTP 404)\nDRIFT  loopback4-microservice-catalog  (sourcefuse/loopback4-microservice-catalog:catalog-info.yaml)  owner group:<046fce>\n         owner      warn         GitHub cannot resolve @sourcefuse/<046fce> in the CODEOWNERS files that name it (deleted, renamed, secret, or without write access)\n         codeowners drift        .github/CODEOWNERS line 5 names owners GitHub cannot resolve: @sourcefuse/<046fce>"
     }
   ]
 }
@@ -146,7 +146,7 @@ The exit code is 1 because drift was found, so the same command can fail a CI jo
   "type": "bar",
   "title": "What 217 public catalog entries got wrong",
   "unit": "%",
-  "caption": "Share of all 217 entries with each finding; an entry can have more than one. 30 GitHub organizations, 8 random repositories each, checked 2026-10-22. Source: results/summary-20261022T085822Z.json in the demo repository.",
+  "caption": "Share of all 217 entries with each finding; an entry can have more than one. 30 GitHub organizations, 8 random repositories each, checked 2026-10-22. Source: results/summary-20261022T091627Z.json in the demo repository.",
   "rows": [
     { "label": "CODEOWNERS names an owner GitHub cannot resolve (14)", "value": 6.5, "series": "Drift" },
     { "label": "Repository renamed, catalog has the old name (4)", "value": 1.8, "series": "Drift" },
@@ -174,7 +174,7 @@ Most findings are about who owns what. The clearest view is the 73 entries whose
   "title": "summarize.py",
   "steps": [
     {
-      "cmd": "python3 summarize.py results/run-20261022T085822Z.json | sed -n '/^catalog vs CODEOWNERS/,/Fisher/p'",
+      "cmd": "python3 summarize.py results/run-20261022T091627Z.json | sed -n '/^catalog vs CODEOWNERS/,/Fisher/p'",
       "output": "catalog vs CODEOWNERS: 73 entries with both; agree and resolve 37 (50.7%); unknown owners 14 (teams 8, users 6)\n  disagree:   4  catalog names a team, CODEOWNERS people\n  disagree:  11  different team names\n  disagree:   7  one team name contains the other\ndrift by file age: under 1 year {'entries': 112, 'drift': 9, 'pct': 8.0}, 1 year or more {'entries': 105, 'drift': 12, 'pct': 11.4}, Fisher p = 0.493"
     }
   ]
@@ -213,7 +213,7 @@ The owner field itself could be checked for only 58 entries (27%): 37 resolved i
 
 4 entries (1.8%) point at a repository by a name it no longer has. GitHub redirects the old name, so links and API calls keep working. But GitHub's documentation warns that if anyone creates a new repository with the old name, "redirects to the renamed repository will no longer work", and the catalog entry then points at someone else's code. 2 more entries set `github.com/project-slug` to a bare repository name without the owner, and 2 live in one repository but describe another, which is what a catalog file copied from a sibling repository and never edited looks like.
 
-We found no archived repositories. That is a gap in the sample, not good news: none of the 214 sampled repositories was archived, a code search with `archived:true` returned nothing (so archived repositories are probably missing from the index), and Backstage's [GitHub discovery](https://backstage.io/docs/integrations/github/discovery) skips them by default (`allowArchived` defaults to `false`).
+We found no archived repositories. That is a gap in the sample, not good news: none of the 211 repositories the checker read was archived (each entry records the flag), a code search we tried with `archived:true` returned nothing (so archived repositories are probably missing from the index), and Backstage's [GitHub discovery](https://backstage.io/docs/integrations/github/discovery) skips them by default (`allowArchived` defaults to `false`).
 
 ### Idle, but still "production"
 
@@ -251,14 +251,14 @@ A single snapshot also cannot see the worst decay. Entries that rotted badly eno
 The first version of the checker and of this post had problems, found by our own runs and by a second review of the code and the draft. Several changed numbers you just read, and some of the corrections made the result look worse, others better.
 
 1. **An unresolvable team was called a missing owner.** The first version reported a catalog owner as drift when GitHub could not resolve the team in a CODEOWNERS file, including one in another repository. But a team can exist and simply lack write access there. That is now a warning on the owner, and only the broken CODEOWNERS file counts as drift. Three entries moved from owner drift to a warning; two of them had no other drift.
-2. **An invalid repository reference was quietly replaced.** Two entries set `github.com/project-slug` to a repository name without its owner. The first version fell back to the repository the file lives in and reported nothing. It now reports the annotation as drift, which added the two entries back. The headline stayed at 21 by coincidence.
+2. **An invalid repository reference was quietly replaced.** Two entries set `github.com/project-slug` to a repository name without its owner. The first version fell back to the repository the file lives in and reported nothing. It now reports the annotation as drift, which added two drifted entries just as the first fix removed two. The headline stayed at 21 by coincidence.
 3. **A user ID that looks like a GitHub login.** One organization names users by an ID from its own directory, three letters and five digits, which is also a valid GitHub login. GitHub had no account by that name, and the first version reported a departed owner. A missing account is now a warning, unless you pass `--users-are-github-logins` for a catalog where you know users are GitHub logins.
 4. **GitHub's two error formats.** For a user, the CODEOWNERS error says `make sure @user exists`; for a team, `make sure the team @org/team exists, is publicly visible, ...`. The first version only parsed the user form, and for teams it fell back to marking every owner on the line as unknown. It changed no result in this sample, but on another catalog it would have.
 5. **A YAML reader that was too forgiving.** The checker has its own small YAML reader to stay dependency-free. One sampled file had `description:` at the wrong indentation, which swallowed the `annotations:` block below it. PyYAML rejects that file, and our reader accepted it. It now raises the same error, and a cross-check against PyYAML on all 240 files agrees on every field the checker reads, with the one invalid file rejected by both. The review also found that it decoded some escapes in quoted strings wrongly; it now handles them or refuses the file.
 6. **Too generous with links and CODEOWNERS.** Any page below an existing GitHub repository counted as a working link, a redirect loop counted as an answer, `docs/*` in CODEOWNERS also matched files in subdirectories (GitHub's own docs say it does not), and an unreadable CODEOWNERS validation could still report agreement. Each now reports "cannot tell" or matches GitHub's rules.
 7. **People in the output.** A bare owner such as `owner: someone` is treated as a team by Backstage, but it is sometimes a person's login, and one owner was an email address. An early run printed them. That file was deleted, and owner and team names are now hashed with a key that is never written down.
 
-Smaller fixes: a link with a space in it stopped an early run, cached answers now expire after a day and are kept per token, and an error in one entry makes the run exit with 2 instead of stopping or passing. Every superseded run that left a file is kept in `results/` with a note on what changed.
+Smaller fixes: a link with a space in it stopped an early run; cached answers now expire after a day and are kept per token; CODEOWNERS lines with invalid syntax are skipped, as GitHub skips them; a file link is not called dead when its ref might contain a slash; and an error in one entry, or a 401 or 5xx from GitHub, makes the run exit with 2 instead of stopping or passing. None of these changed a count in this sample. Every superseded run that left a file is kept in `results/` with a note on what changed.
 
 ## False positives, and what we could not check
 
@@ -346,7 +346,7 @@ gh api repos/OWNER/REPO/codeowners/errors \
   --jq '.errors[] | "line \(.line): \(.message | split("\n")[0])"'
 ```
 
-Loop it over every repository in your org once a month. Each line it prints is a review request that goes nowhere, and often a sign that the catalog owner is stale too.
+Loop it over every repository in your org once a month. Each line it prints is an owner or a rule GitHub cannot use, which can leave reviews without the reviewer you meant, and is often a sign that the catalog owner is stale too.
 
 ### Give the scorecard consequences
 
