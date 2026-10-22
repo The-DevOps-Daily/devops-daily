@@ -4,7 +4,7 @@ excerpt: 'Your FinOps team is probably a reporting bottleneck, not a cost optimi
 category:
   name: 'Cloud'
   slug: 'cloud'
-coverImage: '/images/posts/why-finops-initiatives-fail.png'
+coverImage: '/images/posts/why-finops-initiatives-fail.jpg'
 ogImage: '/images/posts/why-finops-initiatives-fail.svg'
 date: '2026-03-07'
 publishedAt: '2026-03-07T10:00:00Z'

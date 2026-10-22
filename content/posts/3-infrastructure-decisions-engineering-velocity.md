@@ -4,8 +4,8 @@ excerpt: "Provisioning model, environment strategy, and deployment surface. Ever
 category:
   name: "DevOps"
   slug: "devops"
-coverImage: "/images/posts/3-infrastructure-decisions-engineering-velocity.png"
-ogImage: "/images/posts/3-infrastructure-decisions-engineering-velocity.png"
+coverImage: "/images/posts/3-infrastructure-decisions-engineering-velocity.jpg"
+ogImage: "/images/posts/3-infrastructure-decisions-engineering-velocity.jpg"
 date: "2026-03-06"
 publishedAt: "2026-03-06T10:00:00Z"
 updatedAt: "2026-03-06T10:00:00Z"

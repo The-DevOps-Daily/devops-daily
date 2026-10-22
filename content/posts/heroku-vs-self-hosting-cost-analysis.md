@@ -4,8 +4,8 @@ excerpt: 'A transparent breakdown of Heroku costs versus self-hosting alternativ
 category:
   name: 'Cloud'
   slug: 'cloud'
-coverImage: '/images/posts/heroku-vs-self-hosting-cost-analysis.png'
-ogImage: '/images/posts/heroku-vs-self-hosting-cost-analysis.png'
+coverImage: '/images/posts/heroku-vs-self-hosting-cost-analysis.jpg'
+ogImage: '/images/posts/heroku-vs-self-hosting-cost-analysis.jpg'
 date: '2026-03-03'
 publishedAt: '2026-03-03T10:00:00Z'
 updatedAt: '2026-03-05T09:00:00Z'

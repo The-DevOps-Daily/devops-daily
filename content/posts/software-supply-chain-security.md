@@ -11,7 +11,7 @@ readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
-coverImage: '/images/posts/software-supply-chain-security.png'
+coverImage: '/images/posts/software-supply-chain-security.jpg'
 ogImage: '/images/posts/software-supply-chain-security.svg'
 tags:
   - Security

@@ -4,7 +4,7 @@ excerpt: 'A practical guide to dependency scanning with Snyk, Dependabot, and na
 category:
   name: 'Security'
   slug: 'security'
-coverImage: '/images/posts/dependency-scanning-guide.png'
+coverImage: '/images/posts/dependency-scanning-guide.jpg'
 ogImage: '/images/posts/dependency-scanning-guide.svg'
 date: '2025-01-24'
 publishedAt: '2025-01-24T09:00:00Z'

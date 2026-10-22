@@ -4,7 +4,7 @@ excerpt: 'Once a secret is committed to Git, it lives forever in the history. Pr
 category:
   name: 'Security'
   slug: 'security'
-coverImage: '/images/posts/pre-commit-hooks-security-guide.png'
+coverImage: '/images/posts/pre-commit-hooks-security-guide.jpg'
 ogImage: '/images/posts/pre-commit-hooks-security-guide.svg'
 date: '2025-01-24'
 publishedAt: '2025-01-24T09:00:00Z'

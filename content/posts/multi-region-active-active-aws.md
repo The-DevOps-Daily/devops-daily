@@ -4,8 +4,8 @@ excerpt: 'A practical walkthrough of building active-active multi-region apps on
 category:
   name: 'AWS'
   slug: 'aws'
-coverImage: '/images/posts/multi-region-active-active-aws.png'
-ogImage: '/images/posts/multi-region-active-active-aws.png'
+coverImage: '/images/posts/multi-region-active-active-aws.jpg'
+ogImage: '/images/posts/multi-region-active-active-aws.jpg'
 date: '2026-06-15'
 publishedAt: '2026-06-15T09:00:00Z'
 updatedAt: '2026-06-15T09:00:00Z'

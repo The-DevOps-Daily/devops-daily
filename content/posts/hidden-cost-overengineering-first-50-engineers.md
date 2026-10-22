@@ -4,8 +4,8 @@ excerpt: "Service meshes, multi-cloud strategies, and platform teams sound impre
 category:
   name: "DevOps"
   slug: "devops"
-coverImage: "/images/posts/hidden-cost-overengineering-first-50-engineers.png"
-ogImage: "/images/posts/hidden-cost-overengineering-first-50-engineers.png"
+coverImage: "/images/posts/hidden-cost-overengineering-first-50-engineers.jpg"
+ogImage: "/images/posts/hidden-cost-overengineering-first-50-engineers.jpg"
 date: "2026-03-04"
 publishedAt: "2026-03-04T10:00:00Z"
 updatedAt: "2026-03-04T10:00:00Z"

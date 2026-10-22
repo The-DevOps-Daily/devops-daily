@@ -8,7 +8,7 @@ date: '2025-01-24'
 publishedAt: '2025-01-24T09:00:00Z'
 updatedAt: '2025-01-24T09:00:00Z'
 readingTime: '10 min read'
-coverImage: '/images/posts/dast-integration-guide.png'
+coverImage: '/images/posts/dast-integration-guide.jpg'
 ogImage: '/images/posts/dast-integration-guide.svg'
 author:
   name: 'DevOps Daily Team'

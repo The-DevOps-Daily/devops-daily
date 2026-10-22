@@ -2,7 +2,7 @@
 title: 'Build vs Buy in 2026: What Still Makes Sense to Build In-House?'
 excerpt: 'A practical guide to infrastructure decisions: When building in-house makes sense, when it wastes resources, and how to calculate the true cost of engineering time.'
 category: {name: 'DevOps', slug: 'devops'}
-coverImage: '/images/posts/build-vs-buy-2026.png'
+coverImage: '/images/posts/build-vs-buy-2026.jpg'
 ogImage: '/images/posts/build-vs-buy-2026.svg'
 date: '2026-03-04'
 publishedAt: '2026-03-04T10:00:00Z'

@@ -4,7 +4,7 @@ excerpt: 'Why your AWS bill keeps growing despite cost optimization efforts. The
 category:
   name: 'Cloud'
   slug: 'cloud'
-coverImage: '/images/posts/cloud-bill-organizational-problem.png'
+coverImage: '/images/posts/cloud-bill-organizational-problem.jpg'
 ogImage: '/images/posts/cloud-bill-organizational-problem.svg'
 date: '2026-03-06'
 publishedAt: '2026-03-06T10:00:00Z'

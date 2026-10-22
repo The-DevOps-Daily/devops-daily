@@ -4,7 +4,7 @@ excerpt: 'Your CI/CD pipeline has access to source code, secrets, and production
 category:
   name: 'Security'
   slug: 'security'
-coverImage: '/images/posts/cicd-pipeline-hardening-guide.png'
+coverImage: '/images/posts/cicd-pipeline-hardening-guide.jpg'
 ogImage: '/images/posts/cicd-pipeline-hardening-guide.svg'
 date: '2025-01-24'
 publishedAt: '2025-01-24T09:00:00Z'

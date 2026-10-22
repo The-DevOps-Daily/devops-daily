@@ -4,7 +4,7 @@ excerpt: 'Learn how to review code with a security mindset. This guide covers co
 category:
   name: 'Security'
   slug: 'security'
-coverImage: '/images/posts/security-focused-code-reviews.png'
+coverImage: '/images/posts/security-focused-code-reviews.jpg'
 ogImage: '/images/posts/security-focused-code-reviews.svg'
 date: '2025-01-24'
 publishedAt: '2025-01-24T09:00:00Z'

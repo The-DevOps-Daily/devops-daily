@@ -4,7 +4,7 @@ excerpt: 'Credit card validation, username checks, autocomplete, URL shorteners 
 category:
   name: 'DevOps'
   slug: 'devops'
-coverImage: '/images/posts/how-does-it-work-so-fast.png'
+coverImage: '/images/posts/how-does-it-work-so-fast.jpg'
 ogImage: '/images/posts/how-does-it-work-so-fast.svg'
 date: '2026-04-15'
 publishedAt: '2026-04-15T14:00:00Z'

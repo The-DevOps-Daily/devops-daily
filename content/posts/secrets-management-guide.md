@@ -11,7 +11,7 @@ readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
-coverImage: '/images/posts/secrets-management-guide.png'
+coverImage: '/images/posts/secrets-management-guide.jpg'
 ogImage: '/images/posts/secrets-management-guide.svg'
 tags:
   - Security

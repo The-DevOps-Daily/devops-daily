@@ -8,7 +8,7 @@ date: '2025-01-24'
 publishedAt: '2025-01-24T09:00:00Z'
 updatedAt: '2025-01-24T09:00:00Z'
 readingTime: '11 min read'
-coverImage: '/images/posts/secure-coding-practices-guide.png'
+coverImage: '/images/posts/secure-coding-practices-guide.jpg'
 ogImage: '/images/posts/secure-coding-practices-guide.svg'
 author:
   name: 'DevOps Daily Team'

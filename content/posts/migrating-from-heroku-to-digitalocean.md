@@ -4,7 +4,7 @@ excerpt: 'A complete guide to migrating production applications from Heroku to D
 category:
   name: 'Cloud'
   slug: 'cloud'
-coverImage: '/images/posts/migrating-from-heroku-to-digitalocean.png'
+coverImage: '/images/posts/migrating-from-heroku-to-digitalocean.jpg'
 ogImage: '/images/posts/migrating-from-heroku-to-digitalocean.svg'
 date: '2026-03-08'
 publishedAt: '2026-03-08T10:00:00Z'

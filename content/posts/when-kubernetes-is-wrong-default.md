@@ -4,8 +4,8 @@ excerpt: "Most teams adopt Kubernetes too early. Here's a pragmatic framework fo
 category:
   name: "DevOps"
   slug: "devops"
-coverImage: "/images/posts/when-kubernetes-is-wrong-default.png"
-ogImage: "/images/posts/when-kubernetes-is-wrong-default.png"
+coverImage: "/images/posts/when-kubernetes-is-wrong-default.jpg"
+ogImage: "/images/posts/when-kubernetes-is-wrong-default.jpg"
 date: "2026-03-05"
 publishedAt: "2026-03-05T10:00:00Z"
 updatedAt: "2026-03-05T10:00:00Z"
