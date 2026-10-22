@@ -330,7 +330,11 @@ function wrapByWidth(text: string, fontSize: number, maxWidth: number): string[]
 // Narrowest wrap that keeps the same line count, so lines come out balanced
 // instead of leaving one word alone on the last line.
 function balanceLines(text: string, fontSize: number, maxWidth: number, lineCount: number) {
-  let low = 1;
+  // Never narrower than the widest word, or balancing would split words.
+  const widestWord = Math.max(
+    ...text.split(' ').map((word) => Math.ceil(estimateLineWidth([word], fontSize)))
+  );
+  let low = Math.min(maxWidth, widestWord);
   let high = maxWidth;
   while (low < high) {
     const middle = Math.floor((low + high) / 2);

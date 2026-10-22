@@ -119,6 +119,17 @@ describe('content cover renderer', () => {
     expect(renderedTitleRightEdge(type, title)).toBeLessThanOrEqual(TEXT_RIGHT_EDGE);
   });
 
+  it('balances lines without splitting words', () => {
+    for (const title of [
+      'Preview Environment Simulator',
+      'Infrastructure Observability Fundamentals',
+      'Kubernetes Configuration Management',
+    ]) {
+      const layout = layoutContentCoverTitle(title, 'DevOps', 'Simulator');
+      expect(layout.lines.join(' ')).toBe(title);
+    }
+  });
+
   it('splits a pathological unbroken token without truncating it', () => {
     const title = `Decode ${'VeryLongUnbrokenIdentifier'.repeat(5)}`;
     const layout = layoutContentCoverTitle(title, 'Developer Utilities');
