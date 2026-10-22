@@ -6,27 +6,27 @@
   "category": "Email",
   "tags": ["email", "smtp", "transactional-email", "api", "mcp"],
   "createdDate": "2026-08-28",
-  "updatedDate": "2026-10-03",
+  "updatedDate": "2026-10-22",
   "estimatedReadTime": "9 min",
   "introduction": "SMTPfast and Resend answer the same question: how does a developer send email through an API without fighting an enterprise dashboard from 2012? Both are API-first, both have generous free tiers of 3,000 emails a month, and both now ship hosted MCP servers so AI agents can send through them. Every number below is stated plainly so you can verify it against both public pricing pages.\n\nThe honest difference is shape. Resend is the larger, more mature product with a bigger ecosystem: official SDKs across many languages, React Email for templates, and SOC 2 compliance messaging aimed at scaling startups. SMTPfast is smaller and priced like it wants your side project and your startup's first two years: contacts, segments and broadcasts are included in every tier rather than sold as a separate marketing product, and the paid tiers undercut Resend at most volumes.\n\nThis comparison walks the numbers per volume tier, the feature surface (including the newer agent-facing pieces like hosted MCP servers and Terraform support), and the scenarios where each is the right call.",
   "toolA": {
     "name": "SMTPfast",
     "icon": "Zap",
     "website": "https://smtpfa.st",
-    "description": "A lean email API with transactional sending, inbound receiving, contacts, segments and broadcasts included. Free tier of 3,000 emails/month; paid plans from $9. Ships a hosted MCP server, an official Terraform provider and an Agent Skill.",
+    "description": "A lean email API with transactional sending, inbound receiving, contacts, segments and broadcasts included. Free tier of 3,000 emails/month; paid plans from $9. Ships official SDKs for Node.js, Python and Go, a hosted MCP server, an official Terraform provider and an Agent Skill.",
     "color": "#10B981",
     "pros": [
       "Lower price at most volumes: 50,000 emails for $19/month, 200,000 for $49/month",
       "Contacts, segments and broadcasts included in every tier, no separate marketing add-on",
       "Hosted newsletter signup forms included, no separate form tool needed",
-      "Hosted MCP server (8 scoped tools) plus an official Terraform provider",
+      "Hosted MCP server with scoped tools plus an official Terraform provider",
       "Free tier includes 3,000 emails/month, 1,000 contacts and broadcasts, no credit card",
       "Gradual sending warm-up for new accounts protects deliverability by default"
     ],
     "cons": [
       "Free tier is invite-gated: you request access or pay to skip the queue",
-      "Fewer official SDKs; the API is straightforward REST but you write more glue yourself",
-      "No inbound email receiving yet (planned)",
+      "Official SDKs cover only Node.js, Python and Go, and they are new (first released in October 2026); other languages call the REST API directly or use a Resend SDK pointed at SMTPfast",
+      "Inbound email only on paid plans",
       "Younger product with a smaller community and template ecosystem"
     ]
   },
@@ -175,11 +175,11 @@
       "name": "Official SDKs",
       "category": "Ecosystem",
       "toolA": {
-        "value": "REST plus OpenAPI spec; community SDKs",
+        "value": "Official Node.js/TypeScript, Python (sync and async) and Go SDKs, generated from the OpenAPI spec, with retries, an automatic Idempotency-Key on sends, typed errors, pagination and webhook signature checks. Resend's SDKs also work with SMTPfast's Resend-compatible endpoints",
         "rating": "neutral"
       },
       "toolB": {
-        "value": "SDKs for most major languages",
+        "value": "Official SDKs for Node.js, PHP, Python, Ruby, Go, Java, Rust and .NET",
         "rating": "good"
       }
     },
@@ -372,6 +372,10 @@
       "recommendation": "toolA"
     },
     {
+      "criteria": "Official SDK for Ruby, PHP, Java, Rust or .NET",
+      "recommendation": "toolB"
+    },
+    {
       "criteria": "SOC 2 for procurement",
       "recommendation": "toolB"
     },
@@ -385,10 +389,10 @@
     }
   ],
   "verdict": {
-    "summary": "Resend is the safer default for teams that want the biggest ecosystem: SDKs everywhere, React Email, and a compliance story for security reviews. SMTPfast is the value pick and the simpler one to reason about: contacts and broadcasts included everywhere, inbound email on paid plans with a Resend-compatible receiving API, meaningfully lower prices from 10k to 200k emails a month, scoped API keys, a scoped hosted MCP server, and an official Terraform provider. If you need React Email or a SOC 2 answer, pick Resend. If your bill is driven by volume, or you want transactional, newsletter and inbound in one product without a marketing-tier upsell, SMTPfast costs less at every step and does all three.",
+    "summary": "Resend is the safer default for teams that want the biggest ecosystem: official SDKs in more languages, React Email, and a compliance story for security reviews. SMTPfast is the value pick and the simpler one to reason about: contacts and broadcasts included everywhere, inbound email on paid plans with a Resend-compatible receiving API, meaningfully lower prices from 10k to 200k emails a month, scoped API keys, official SDKs for Node.js, Python and Go, a scoped hosted MCP server, and an official Terraform provider. If you need React Email or a SOC 2 answer, pick Resend. If your bill is driven by volume, or you want transactional, newsletter and inbound in one product without a marketing-tier upsell, SMTPfast costs less at every paid step and does all three.",
     "toolAScore": 4.5,
     "toolBScore": 4.4,
-    "recommendation": "Choose SMTPfast if your bill is volume-driven, you want transactional plus newsletter plus inbound on one plan, or you want a Terraform-managed setup with scoped keys and agent drafts that a person approves. Choose Resend if you need React Email templates, official SDKs in your language, or a SOC 2 answer for procurement. Both are REST APIs with hosted MCP servers and compatible receiving endpoints, so switching later is mostly DNS records and a changed base URL."
+    "recommendation": "Choose SMTPfast if your bill is volume-driven, you want transactional plus newsletter plus inbound on one plan, or you want a Terraform-managed setup with scoped keys and agent drafts that a person approves. Choose Resend if you need React Email templates, an official SDK for Ruby, PHP, Java, Rust or .NET, or a SOC 2 answer for procurement. Both are REST APIs with hosted MCP servers and compatible receiving endpoints, so switching later is mostly DNS records and a changed base URL."
   },
   "relatedTags": ["email", "smtp", "api", "mcp", "transactional-email"]
 }
