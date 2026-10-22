@@ -140,6 +140,49 @@
   }
 }
 
+/* Site logo (components/ui/logo.tsx): on hover or keyboard focus the ">" steps
+   right and the "_" cursor blinks twice, then rests. The translate is in SVG
+   user units, about 1.5px at header size. */
+@keyframes site-logo-cursor-blink {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  75%,
+  100% {
+    opacity: 1;
+  }
+}
+.site-logo-chevron {
+  transition: transform 150ms ease-out;
+}
+.site-logo:hover .site-logo-chevron,
+.site-logo:focus-visible .site-logo-chevron {
+  transform: translateX(1.25px);
+}
+.site-logo:hover .site-logo-cursor,
+.site-logo:focus-visible .site-logo-cursor {
+  animation: site-logo-cursor-blink 0.6s step-end 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-logo-chevron {
+    transition: none;
+  }
+  .site-logo:hover .site-logo-chevron,
+  .site-logo:focus-visible .site-logo-chevron {
+    transform: none;
+  }
+  .site-logo:hover .site-logo-cursor,
+  .site-logo:focus-visible .site-logo-cursor {
+    animation: none;
+  }
+}
+
 /* Syntax Highlighting for Light Mode */
 .hljs {
   @apply bg-muted text-foreground;

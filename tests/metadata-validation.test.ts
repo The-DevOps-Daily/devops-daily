@@ -74,6 +74,26 @@ describe('Metadata and OpenGraph Validation', () => {
       expect(fs.existsSync(path.join(publicDir, 'favicon.ico'))).toBe(true);
       expect(fs.existsSync(path.join(publicDir, 'favicon-32x32.png'))).toBe(true);
       expect(fs.existsSync(path.join(publicDir, 'apple-touch-icon.png'))).toBe(true);
+      expect(fs.existsSync(path.join(publicDir, 'icon.svg'))).toBe(true);
+    });
+
+    it('should have every manifest icon at its declared size', () => {
+      const publicDir = path.join(process.cwd(), 'public');
+      const manifest = JSON.parse(
+        fs.readFileSync(path.join(publicDir, 'site.webmanifest'), 'utf-8')
+      );
+      const icons: { src: string; sizes: string }[] = [
+        ...manifest.icons,
+        ...manifest.shortcuts.flatMap((shortcut: { icons?: unknown[] }) => shortcut.icons ?? []),
+      ];
+
+      for (const icon of icons) {
+        const file = path.join(publicDir, icon.src);
+        expect(fs.existsSync(file), icon.src).toBe(true);
+        // A PNG stores its width and height at bytes 16-23, in the IHDR chunk.
+        const png = fs.readFileSync(file);
+        expect(`${png.readUInt32BE(16)}x${png.readUInt32BE(20)}`, icon.src).toBe(icon.sizes);
+      }
     });
 
     it('should have OpenGraph image', () => {
