@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
+import { LOGO_MARK } from '../lib/logo-mark';
 
 export function cleanOgText(text: unknown): string {
   return String(text ?? '')
@@ -427,11 +428,16 @@ export function coverTypeLabel(type: ContentCoverType, override?: string): strin
   return cleanOgText(override) || COVER_TYPE_LABELS[type];
 }
 
-// Terminal mark from the site OG image: dark rounded square, green ">" and "_".
+// The site's terminal mark (same geometry as the header logo and favicons),
+// in the green of the default OG image, scaled from its 32-unit grid to 40px.
 const BRAND_MARK = `<g data-cover-brand="true">
-  <rect x="72" y="56" width="40" height="40" rx="9" fill="#0F1A14"/>
-  <path d="M82.5 68 90 75.5 82.5 83" fill="none" stroke="#22C55E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M94.5 84h9.5" stroke="#22C55E" stroke-width="4" stroke-linecap="round"/>
+  <g transform="translate(72 56) scale(1.25)">
+    <rect x="${LOGO_MARK.square.x}" y="${LOGO_MARK.square.y}" width="${LOGO_MARK.square.size}" height="${LOGO_MARK.square.size}" rx="${LOGO_MARK.square.radius}" fill="#0F1A14"/>
+    <g fill="none" stroke="#22C55E" stroke-width="${LOGO_MARK.strokeWidth}" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${LOGO_MARK.chevron}"/>
+      <path d="${LOGO_MARK.cursor}"/>
+    </g>
+  </g>
   <text x="126" y="85" font-family="Inter" font-weight="700" font-size="26" letter-spacing="-0.4" fill="#0F1A14">DevOps <tspan fill="#16A34A">Daily</tspan></text>
 </g>`;
 
