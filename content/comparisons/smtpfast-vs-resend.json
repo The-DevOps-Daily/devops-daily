@@ -13,7 +13,7 @@
     "name": "SMTPfast",
     "icon": "Zap",
     "website": "https://smtpfa.st",
-    "description": "A lean email API with transactional sending, inbound receiving, contacts, segments and broadcasts included. Free tier of 3,000 emails/month; paid plans from $9. Ships official SDKs for Node.js, Python and Go, a hosted MCP server, an official Terraform provider and an Agent Skill.",
+    "description": "A lean email API with transactional sending, inbound receiving, contacts, segments and broadcasts included. Free tier of 3,000 emails/month; paid plans from $9. Ships official SDKs for Node.js, Python, Go and PHP, a Laravel mail driver, a hosted MCP server, an official Terraform provider and an Agent Skill.",
     "color": "#10B981",
     "pros": [
       "Lower price at most volumes: 50,000 emails for $19/month, 200,000 for $49/month",
@@ -25,7 +25,7 @@
     ],
     "cons": [
       "Free tier is invite-gated: you request access or pay to skip the queue",
-      "Official SDKs cover only Node.js, Python and Go, and they are new (first released in October 2026); other languages call the REST API directly or use a Resend SDK pointed at SMTPfast",
+      "Official SDKs cover only Node.js, Python, Go and PHP (plus a Laravel mail driver), and they are new (first released in October 2026); other languages call the REST API directly or use a Resend SDK pointed at SMTPfast",
       "Inbound email only on paid plans",
       "Younger product with a smaller community and template ecosystem"
     ]
@@ -174,7 +174,7 @@
       "name": "Official SDKs",
       "category": "Ecosystem",
       "toolA": {
-        "value": "Official Node.js/TypeScript, Python (sync and async) and Go SDKs, generated from the OpenAPI spec, with retries, an automatic Idempotency-Key on sends, typed errors, pagination and webhook signature checks. Resend's SDKs also work with SMTPfast's Resend-compatible endpoints",
+        "value": "Official Node.js/TypeScript, Python (sync and async), Go and PHP SDKs plus a Laravel mail driver, generated from the OpenAPI spec, with retries, an automatic Idempotency-Key on sends, typed errors, pagination and webhook signature checks. Resend's SDKs also work with SMTPfast's Resend-compatible endpoints",
         "rating": "neutral"
       },
       "toolB": {
@@ -371,7 +371,7 @@
       "recommendation": "toolA"
     },
     {
-      "criteria": "Official SDK for Ruby, PHP, Java, Rust or .NET",
+      "criteria": "Official SDK for Ruby, Java, Rust or .NET",
       "recommendation": "toolB"
     },
     {
@@ -391,7 +391,7 @@
     "summary": "Resend is the safer default for teams that want the biggest ecosystem: official SDKs in more languages, React Email, and a compliance story for security reviews. SMTPfast is the value pick and the simpler one to reason about: contacts and broadcasts included everywhere, inbound email on paid plans with a Resend-compatible receiving API, meaningfully lower prices from 10k to 200k emails a month, scoped API keys, official SDKs for Node.js, Python and Go, a scoped hosted MCP server, and an official Terraform provider. If you need React Email or a SOC 2 answer, pick Resend. If your bill is driven by volume, or you want transactional, newsletter and inbound in one product without a marketing-tier upsell, SMTPfast costs less at every paid step and does all three.",
     "toolAScore": 4.5,
     "toolBScore": 4.4,
-    "recommendation": "Choose SMTPfast if your bill is volume-driven, you want transactional plus newsletter plus inbound on one plan, or you want a Terraform-managed setup with scoped keys and agent drafts that a person approves. Choose Resend if you need React Email templates, an official SDK for Ruby, PHP, Java, Rust or .NET, or a SOC 2 answer for procurement. Both are REST APIs with hosted MCP servers and compatible receiving endpoints, so switching later is mostly DNS records and a changed base URL."
+    "recommendation": "Choose SMTPfast if your bill is volume-driven, you want transactional plus newsletter plus inbound on one plan, or you want a Terraform-managed setup with scoped keys and agent drafts that a person approves. Choose Resend if you need React Email templates, an official SDK for Ruby, Java, Rust or .NET, or a SOC 2 answer for procurement. Both are REST APIs with hosted MCP servers and compatible receiving endpoints, so switching later is mostly DNS records and a changed base URL."
   },
   "relatedTags": ["email", "smtp", "api", "mcp", "transactional-email"]
 }
