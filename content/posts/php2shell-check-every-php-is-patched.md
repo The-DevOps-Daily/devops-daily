@@ -4,9 +4,9 @@ excerpt: 'PHP 8.5.12, 8.4.27, 8.3.36 and 8.2.35 fix two critical remote code exe
 category:
   name: 'Linux'
   slug: 'linux'
-date: '2026-10-21'
-publishedAt: '2026-10-21T09:00:00Z'
-updatedAt: '2026-10-21T09:00:00Z'
+date: '2026-10-22'
+publishedAt: '2026-10-22T09:00:00Z'
+updatedAt: '2026-10-22T09:00:00Z'
 readingTime: '19 min read'
 author:
   name: 'DevOps Daily Team'
