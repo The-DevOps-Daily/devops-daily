@@ -4,9 +4,9 @@ excerpt: 'We checked 217 public Backstage catalog entries from 30 organizations 
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-10-27'
-publishedAt: '2026-10-27T09:00:00Z'
-updatedAt: '2026-10-27T09:00:00Z'
+date: '2026-10-22'
+publishedAt: '2026-10-22T09:00:00Z'
+updatedAt: '2026-10-22T09:00:00Z'
 readingTime: '20 min read'
 author:
   name: 'DevOps Daily Team'
