@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { ArrowUp } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 
 export function BackToTop() {
   const [visible, setVisible] = useState(false)
+  // Guide parts have a fixed bottom bar on small screens; sit above it.
+  const onGuidePart = /^\/guides\/[^/]+\/[^/]+/.test(usePathname() ?? '')
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -40,8 +43,8 @@ export function BackToTop() {
      onClick={scrollToTop}
      onKeyDown={handleKeyDown}
      aria-label="Back to top"
-     className="
-       fixed bottom-8 right-8 z-50
+     className={`
+       fixed ${onGuidePart ? 'bottom-20 lg:bottom-8' : 'bottom-8'} right-8 z-50
        p-3 rounded-full
        bg-primary text-primary-foreground
        shadow-lg hover:shadow-xl
@@ -50,7 +53,7 @@ export function BackToTop() {
        animate-in
        focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
        motion-reduce:transition-none
-     "
+     `}
    >
      <ArrowUp size={20} className="stroke-[2.5]" />
     </button>
