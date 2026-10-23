@@ -70,7 +70,7 @@
         "rating": "good"
       },
       "toolB": {
-        "value": "$20/mo (Pro, includes 50k headroom)",
+        "value": "$20/mo (Pro, includes 50k emails)",
         "rating": "neutral"
       }
     },
@@ -78,7 +78,7 @@
       "name": "Price at 50,000 emails/mo",
       "category": "Cost",
       "toolA": {
-        "value": "$19/mo (Growth, includes 100k headroom)",
+        "value": "$19/mo (Growth, includes 100k emails)",
         "rating": "good"
       },
       "toolB": {
