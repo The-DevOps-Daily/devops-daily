@@ -1,570 +1,324 @@
 ---
-title: 'Attack Trees'
-description: 'Learn to visualize attack paths using attack trees. Understand how to construct, analyze, and use attack trees for systematic threat modeling.'
+title: 'Attack Trees: Map How an Attacker Reaches a Goal'
+description: 'Build an attack tree with AND and OR nodes for a real system, annotate the leaves, find the cheapest attack path and see which fix raises it most.'
 order: 3
 ---
 
-Attack trees are a visual methodology for analyzing how an attacker might achieve a goal. Invented by Bruce Schneier, they provide a structured way to think through all possible attack paths—helping you identify threats that might be missed with linear analysis.
+**TLDR**: An attack tree puts an attacker's goal at the root and breaks it down into the ways to reach it. An **OR** node needs any one child; an **AND** node needs all of them. Leaves are concrete actions you can estimate (hours, money, skill). Following Bruce Schneier's rule (an OR node costs as much as its cheapest child, an AND node the sum of its children), you can find the cheapest path to the goal, fix it, and see what the next cheapest path is. Trees also find threats that per-element methods such as STRIDE miss, because they follow the attacker's goal across components.
 
-Unlike STRIDE (which categorizes threats) or DREAD (which prioritizes them), attack trees show **how** attacks happen. The tree structure makes complex attack scenarios understandable and helps identify the weakest links in your defenses.
+Attack trees were described by Bruce Schneier in [Dr. Dobb's Journal in December 1999](https://www.schneier.com/academic/archives/1999/12/attack_trees.html). STRIDE ([Part 1](/guides/threat-modeling/01-stride)) asks what can go wrong with each element of a design; an attack tree asks how an attacker who wants one specific thing would get it, and chains individual threats into paths. That makes trees good at three jobs: finding gaps between components, explaining a risk to people who do not read data flow diagrams, and deciding which fix makes the biggest difference.
+
+In this part you build a tree for the ticket shop, annotate it, calculate the cheapest attack path before and after fixes, and find a threat the STRIDE session missed.
+
+## Prerequisites
+
+- The ticket shop and its threat register from [Part 1](/guides/threat-modeling/01-stride#h2-the-threat-register).
+- Python 3 if you want to run the path calculation.
 
 ## Anatomy of an Attack Tree
 
-An attack tree consists of:
+- **Root**: the attacker's goal, stated as something they want, not as a vulnerability. "Get tickets without paying full price", not "webhook not verified".
+- **Sub-goals**: the main approaches to the goal.
+- **Leaves**: actions concrete enough to estimate and to block with a specific control.
+- **OR nodes**: alternatives. Any one child achieves the parent. Most nodes are OR nodes.
+- **AND nodes**: steps that must all succeed. An AND node is as hard as all of its children together, which is why one control on any child blocks the whole node.
 
-- **Root node**: The attacker's ultimate goal
-- **Child nodes**: Sub-goals or steps needed to achieve the parent
-- **Leaf nodes**: Atomic attack actions
-- **AND/OR gates**: How sub-goals combine
+## Building the Tree for the Ticket Shop
 
-### Basic Structure
+### Step 1: Pick a goal an attacker actually wants
 
-```
-                    [Attacker Goal]
-                          |
-            +-------------+-------------+
-            |                           |
-       [Sub-goal A]               [Sub-goal B]
-            |                           |
-      +-----+-----+               +-----+-----+
-      |           |               |           |
-   [Step 1]   [Step 2]       [Step 3]   [Step 4]
-```
+Good goals are outcomes with a clear motive: get tickets without paying full price, take over a customer's account and resell their tickets, steal the customer database, stop an on-sale. Build one tree per goal. This part uses **get tickets without paying full price**, free tickets included, because it is the goal with the most direct money behind it.
 
-- **OR relationship** (default): Attacker needs to complete ANY child to achieve parent
-- **AND relationship**: Attacker must complete ALL children to achieve parent
+### Step 2: List the high-level approaches
 
-## Building Your First Attack Tree
+Ask "how could someone get tickets without paying full price?" and write down every answer at the same level of detail. For the ticket shop the session came up with five: fake the payment confirmation, pay less than the price, get tickets issued without going through payment, abuse staff access, and get a refund while keeping the ticket.
 
-Let's model a common scenario: compromising a web application's admin account.
+### Step 3: Break each approach down until the leaves are concrete
 
-### Step 1: Define the Root Goal
+Keep asking "how?" until a leaf is an action you could estimate and test. Each leaf below has the team's effort estimate and the threat ID from the register that blocks it. Hover or tap a node for details.
 
-Start with a clear, specific attacker objective:
-
-```
-Goal: Gain Admin Access to Web Application
-```
-
-### Step 2: Identify High-Level Approaches
-
-What are the main ways to achieve this goal?
-
-```
-                    [Gain Admin Access]
-                           |
-         +-----------------+------------------+
-         |                 |                  |
-   [Steal Admin      [Exploit App      [Social Engineer
-    Credentials]      Vulnerability]    Admin User]
-```
-
-### Step 3: Decompose Each Approach
-
-Break down each high-level approach into specific attack vectors:
-
-```
-                         [Gain Admin Access]
-                                |
-         +----------------------+----------------------+
-         |                      |                      |
-   [Steal Admin           [Exploit App           [Social Engineer
-    Credentials]           Vulnerability]         Admin User]
-         |                      |                      |
-    +----+----+            +----+----+            +----+----+
-    |         |            |         |            |         |
- [Phishing] [Keylogger] [SQLi]  [Auth     [Pretexting] [Baiting]
-                                 Bypass]
-```
-
-### Step 4: Continue Until Atomic Actions
-
-Expand until you reach actions that can't be meaningfully decomposed:
-
-```
-[Phishing]
-    |
-+---+---+
-|       |
-[Send   [Clone
- Email]  Login Page]
-   |         |
-   |    +----+----+
-   |    |         |
-   |  [Buy    [Setup
-   |   Domain] Hosting]
-   |
-+--+---+
-|      |
-[Craft [Buy Victim
- Lure]  Email List]
-```
-
-## Attack Tree Notation
-
-### Text-Based Notation
-
-For documentation and code reviews, use indented text:
-
-```
-Goal: Gain Admin Access
- OR
- |-- Steal Credentials
- |   OR
- |   |-- Phishing Attack
- |   |   AND
- |   |   |-- Create Fake Login Page
- |   |   |-- Send Convincing Email
- |   |   |-- Victim Enters Credentials
- |   |
- |   |-- Credential Stuffing
- |   |   AND
- |   |   |-- Obtain Leaked Password List
- |   |   |-- Admin Reuses Password
- |   |
- |   |-- Keylogger
- |       AND
- |       |-- Install Malware on Admin Machine
- |       |-- Admin Logs In
- |
- |-- Exploit Vulnerability
- |   OR
- |   |-- SQL Injection
- |   |   AND
- |   |   |-- Find Injectable Parameter
- |   |   |-- Extract Admin Password Hash
- |   |   |-- Crack Hash
- |   |
- |   |-- Authentication Bypass
- |       OR
- |       |-- JWT Algorithm Confusion
- |       |-- Session Fixation
- |
- |-- Social Engineering
-     OR
-     |-- Call IT Helpdesk
-     |   AND
-     |   |-- Impersonate Employee
-     |   |-- Request Password Reset
-     |
-     |-- Physical Access
-         AND
-         |-- Tailgate into Office
-         |-- Access Unlocked Workstation
-```
-
-### YAML Notation for Tooling
-
-```yaml
-attack_tree:
-  goal: "Gain Admin Access"
-  type: OR
-  children:
-    - name: "Steal Credentials"
-      type: OR
-      children:
-        - name: "Phishing Attack"
-          type: AND
-          cost: 500
-          skill: 3
-          children:
-            - name: "Create Fake Login Page"
-              leaf: true
-              cost: 100
-            - name: "Send Convincing Email"
-              leaf: true
-              cost: 50
-            - name: "Victim Enters Credentials"
-              leaf: true
-              probability: 0.15
-        
-        - name: "Credential Stuffing"
-          type: AND
-          cost: 200
-          children:
-            - name: "Obtain Leaked Password List"
-              leaf: true
-              cost: 100
-            - name: "Admin Reuses Password"
-              leaf: true
-              probability: 0.3
-    
-    - name: "Exploit Vulnerability"
-      type: OR
-      children:
-        - name: "SQL Injection"
-          type: AND
-          skill: 5
-          children:
-            - name: "Find Injectable Parameter"
-              leaf: true
-              time_hours: 4
-            - name: "Extract Admin Hash"
-              leaf: true
-            - name: "Crack Password Hash"
-              leaf: true
-              time_hours: 24
-```
-
-## Annotating Attack Trees
-
-Add attributes to nodes to enable quantitative analysis:
-
-### Common Attributes
-
-| Attribute | Description | Example Values |
-|-----------|-------------|----------------|
-| **Cost** | Resources needed (money, time) | $100, 4 hours |
-| **Skill** | Technical expertise required | 1-10 scale |
-| **Probability** | Likelihood of success | 0.0 - 1.0 |
-| **Detectability** | Chance of being caught | Low/Medium/High |
-| **Prerequisites** | What must happen first | "Network access" |
-
-### Annotated Example
-
-```python
-# Python representation for automated analysis
-attack_tree = {
-    'goal': 'Gain Admin Access',
-    'type': 'OR',
-    'children': [
-        {
-            'name': 'Phishing',
-            'type': 'AND',
-            'cost_usd': 500,
-            'time_hours': 8,
-            'skill_level': 3,
-            'success_probability': 0.15,
-            'detection_probability': 0.4,
-            'children': [
-                {'name': 'Setup fake domain', 'leaf': True, 'cost_usd': 15},
-                {'name': 'Clone login page', 'leaf': True, 'time_hours': 2},
-                {'name': 'Craft email', 'leaf': True, 'time_hours': 1},
-                {'name': 'Victim clicks link', 'leaf': True, 'probability': 0.3}
-            ]
-        },
-        {
-            'name': 'SQL Injection',
-            'type': 'AND',
-            'cost_usd': 0,
-            'time_hours': 12,
-            'skill_level': 6,
-            'success_probability': 0.8,  # If vuln exists
-            'detection_probability': 0.6,
-            'prerequisites': ['Vulnerable endpoint exists'],
-            'children': [
-                {'name': 'Find injectable param', 'leaf': True},
-                {'name': 'Extract hash', 'leaf': True},
-                {'name': 'Crack hash', 'leaf': True, 'time_hours': 24}
-            ]
-        },
-        {
-            'name': 'Insider Threat',
-            'type': 'AND',
-            'cost_usd': 10000,  # Bribe
-            'skill_level': 1,
-            'success_probability': 0.9,
-            'detection_probability': 0.2,
-            'children': [
-                {'name': 'Identify disgruntled employee', 'leaf': True},
-                {'name': 'Make offer', 'leaf': True},
-                {'name': 'Employee provides access', 'leaf': True}
-            ]
-        }
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "goal", "label": "Get tickets without paying full price", "sub": "OR: any branch", "icon": "lock", "tone": "accent", "detail": "The attacker's goal. Each branch below is an alternative way to reach it." }
+    ],
+    [
+      { "id": "pay", "label": "1. Fake the payment", "sub": "OR", "tone": "slate", "detail": "Make the shop believe a payment happened." },
+      { "id": "less", "label": "2. Pay less", "sub": "OR", "tone": "slate", "detail": "Pay, but less than the real price." },
+      { "id": "direct", "label": "3. Issue tickets directly", "sub": "OR", "tone": "slate", "detail": "Skip the payment flow and create tickets another way." },
+      { "id": "staff", "label": "4. Abuse staff access", "sub": "OR", "tone": "slate", "detail": "Use the comp ticket feature meant for staff." },
+      { "id": "refund", "label": "5. Refund, keep the ticket", "sub": "AND: 1 h, T4", "tone": "amber", "detail": "AND: buy a ticket and save the QR code (0.5 h), then get a refund while the ticket stays valid (0.5 h). The STRIDE session missed this one." }
+    ],
+    [
+      { "id": "hook", "label": "1.1 Forged webhook", "sub": "2 h, S1", "tone": "red", "detail": "POST a fake payment.succeeded event to /webhooks/payments." },
+      { "id": "url", "label": "1.2 Success URL", "sub": "0.5 h, S1", "tone": "red", "detail": "Open /checkout/success?order=1042 without paying, if that page marks the order paid." },
+      { "id": "price", "label": "2.1 Edit the price", "sub": "1 h, T1", "tone": "red", "detail": "Change the price in the order request with browser developer tools." },
+      { "id": "code", "label": "2.2 Discount code race", "sub": "3 h, T3", "tone": "red", "detail": "Send 20 parallel requests with one single-use code." },
+      { "id": "job", "label": "3.1 Push a queue job", "sub": "AND: 41 h, T2", "tone": "amber", "detail": "AND: get a foothold inside the private network (40 h), then write an issue-tickets job to Redis (1 h)." },
+      { "id": "sqli", "label": "3.2 SQL injection", "sub": "8 h, E2", "tone": "red", "detail": "Find an injectable parameter, set the order to paid and add its issue-tickets row to the outbox." },
+      { "id": "phish", "label": "4.1 Phish a staff admin", "sub": "16 h, S3", "tone": "red", "detail": "Phish a password and one-time code, then issue comp tickets." },
+      { "id": "route", "label": "4.2 Admin route as customer", "sub": "2 h, E1", "tone": "red", "detail": "Call /admin/comp-tickets with a customer session." }
     ]
+  ],
+  "edges": [
+    ["goal", "pay"], ["goal", "less"], ["goal", "direct"], ["goal", "staff"], ["goal", "refund"],
+    ["pay", "hook"], ["pay", "url"],
+    ["less", "price"], ["less", "code"],
+    ["direct", "job"], ["direct", "sqli"],
+    ["staff", "phish"], ["staff", "route"]
+  ]
 }
 ```
 
-## Analyzing Attack Trees
+### Step 4: Mark AND and OR
 
-### Finding the Cheapest Attack Path
+Most nodes are OR nodes. The two AND nodes are the interesting ones. Pushing a job to the queue (3.1) needs two things at once: a foothold inside the private network, such as a compromised dependency or a server-side request forgery (SSRF) bug whose HTTP client can be made to talk to Redis, and a queue that accepts the job.
 
-For OR nodes, take the minimum cost child. For AND nodes, sum all children:
-
-```python
-def calculate_min_cost(node):
-    """Calculate minimum cost to achieve this node."""
-    if node.get('leaf'):
-        return node.get('cost_usd', 0)
-    
-    child_costs = [calculate_min_cost(child) for child in node['children']]
-    
-    if node['type'] == 'OR':
-        return min(child_costs)
-    else:  # AND
-        return sum(child_costs)
-
-# For our example:
-# - Phishing: $500 (fixed campaign cost)
-# - SQL Injection: $0 (just needs skill)
-# - Insider: $10,000 (bribe)
-# Minimum: SQL Injection at $0
-```
-
-### Finding the Easiest Attack Path
-
-Consider both skill and success probability:
-
-```python
-def find_easiest_path(node, current_path=None):
-    """Find attack path with lowest skill requirement and highest success."""
-    current_path = current_path or []
-    
-    if node.get('leaf'):
-        return [node['name']], node.get('skill_level', 1)
-    
-    if node['type'] == 'OR':
-        # Find child with lowest skill requirement
-        best_path = None
-        best_skill = float('inf')
-        
-        for child in node['children']:
-            path, skill = find_easiest_path(child)
-            if skill < best_skill:
-                best_skill = skill
-                best_path = [child['name']] + path
-        
-        return best_path, best_skill
-    
-    else:  # AND - must do all, take max skill
-        all_paths = []
-        max_skill = 0
-        
-        for child in node['children']:
-            path, skill = find_easiest_path(child)
-            all_paths.extend(path)
-            max_skill = max(max_skill, skill)
-        
-        return all_paths, max_skill
-```
-
-### Identifying Critical Nodes
-
-Nodes that appear in all attack paths are critical—hardening them blocks multiple attacks:
-
-```python
-def find_all_paths(node, current_path=None):
-    """Generate all possible attack paths."""
-    current_path = current_path or []
-    
-    if node.get('leaf'):
-        yield current_path + [node['name']]
-        return
-    
-    if node['type'] == 'OR':
-        for child in node['children']:
-            yield from find_all_paths(child, current_path + [node['name']])
-    else:  # AND
-        # For AND, we need all children in the path
-        child_paths = [list(find_all_paths(c, [])) for c in node['children']]
-        # Combine all possibilities (Cartesian product)
-        from itertools import product
-        for combo in product(*child_paths):
-            combined = current_path + [node['name']]
-            for path in combo:
-                combined.extend(path)
-            yield combined
-
-def find_critical_nodes(attack_tree):
-    """Find nodes that appear in ALL attack paths."""
-    paths = list(find_all_paths(attack_tree))
-    
-    if not paths:
-        return set()
-    
-    # Start with all nodes in first path
-    critical = set(paths[0])
-    
-    # Intersect with all other paths
-    for path in paths[1:]:
-        critical &= set(path)
-    
-    return critical
-```
-
-## Attack Trees for Common Scenarios
-
-### Example 1: Data Exfiltration
-
-```
-Goal: Exfiltrate Customer Database
- OR
- |-- External Attack
- |   OR
- |   |-- Exploit Public-Facing App
- |   |   AND
- |   |   |-- Find RCE Vulnerability
- |   |   |-- Establish Reverse Shell
- |   |   |-- Locate Database
- |   |   |-- Exfil via Encrypted Channel
- |   |
- |   |-- Compromise Cloud Account
- |       AND
- |       |-- Obtain AWS Keys (leaked in repo)
- |       |-- Access S3 Backup Bucket
- |       |-- Download Database Dump
- |
- |-- Insider Threat
- |   OR
- |   |-- Malicious Admin
- |   |   AND
- |   |   |-- Admin Exports Data
- |   |   |-- Transfers to Personal Device
- |   |
- |   |-- Compromised Endpoint
- |       AND
- |       |-- Malware on Employee Laptop
- |       |-- Intercept Database Credentials
- |       |-- Connect via VPN
- |       |-- Query and Exfil Data
- |
- |-- Physical Access
-     AND
-     |-- Gain Building Access
-     |-- Find Unattended Workstation
-     |-- Connect USB Device
-     |-- Copy Database
-```
-
-### Example 2: Supply Chain Attack
-
-```
-Goal: Inject Malicious Code into Product
- OR
- |-- Compromise Source Repository
- |   OR
- |   |-- Steal Developer Credentials
- |   |   AND
- |   |   |-- Phish Developer
- |   |   |-- Bypass MFA (SIM swap/push fatigue)
- |   |   |-- Push Malicious Commit
- |   |
- |   |-- Compromise CI/CD Pipeline
- |       AND
- |       |-- Access Jenkins/GitHub Actions
- |       |-- Modify Build Script
- |       |-- Inject During Build
- |
- |-- Compromise Dependency
- |   OR
- |   |-- Typosquatting
- |   |   AND
- |   |   |-- Register Similar Package Name
- |   |   |-- Developer Makes Typo
- |   |
- |   |-- Compromise Legitimate Package
- |       AND
- |       |-- Take Over Maintainer Account
- |       |-- Push Malicious Update
- |
- |-- Compromise Build Infrastructure
-     AND
-     |-- Access Build Server
-     |-- Modify Compiler/Toolchain
-     |-- Inject at Compile Time
-```
-
-## Integrating Attack Trees with STRIDE/DREAD
-
-Use all three methodologies together:
-
-1. **STRIDE**: Categorize what types of threats exist
-2. **Attack Trees**: Model how each threat could be realized
-3. **DREAD**: Prioritize which attack paths to defend first
-
-```python
-# Combined threat model
-threat = {
-    'name': 'Admin Account Compromise',
-    'stride_category': 'Spoofing / Elevation of Privilege',
-    'attack_tree': attack_tree,  # From above
-    'dread': {
-        'damage': 9,
-        'reproducibility': 7,
-        'exploitability': 6,
-        'affected_users': 10,
-        'discoverability': 5
-    },
-    'analysis': {
-        'cheapest_path': 'SQL Injection',
-        'min_cost': 0,
-        'easiest_path': 'Phishing',
-        'critical_controls': [
-            'MFA on admin accounts',
-            'Input validation',
-            'Security awareness training'
-        ]
-    }
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "job", "label": "3.1 Push an issue-tickets job", "sub": "AND: 41 h", "tone": "amber", "detail": "Both children are needed. Blocking either one blocks this node." }
+    ],
+    [
+      { "id": "inside", "label": "Get a foothold in the private network", "sub": "40 h: bad dependency, SSRF", "tone": "red", "detail": "A compromised dependency or container gives code execution; an SSRF bug only helps if its HTTP client can talk to Redis. Hard, and no single control removes it completely." },
+      { "id": "write", "label": "Write a job to the queue", "sub": "1 h, blocked by T2", "tone": "red", "detail": "Easy if Redis has no password and the worker trusts every job." }
+    ]
+  ],
+  "edges": [["job", "inside", "and"], ["job", "write", "and"]]
 }
 ```
 
-## Tools for Attack Tree Modeling
+This shows why T2's mitigation (queue authentication and a worker that re-checks the order) is worth doing even though the first step is hard: you cannot rule out a foothold inside the network one day, but you can make sure it gains nothing from the queue.
 
-### Text-Based Tools
+## Writing Trees Down
 
-- **PlantUML**: Generate diagrams from text
-- **Mermaid**: Markdown-compatible diagrams
-- **Graphviz**: Powerful graph visualization
+Diagrams are good for discussion; text is better for review in a pull request and for keeping next to the code. An indented outline with the gate on each node is enough:
 
-### Mermaid Example
+```text
+Goal: Get tickets without paying full price             OR
+├── 1. Fake the payment confirmation                    OR
+│   ├── 1.1 Send a forged payment webhook               2 h     S1
+│   └── 1.2 Open the success URL without paying         0.5 h   S1
+├── 2. Pay less than the price                          OR
+│   ├── 2.1 Change the price in the order request       1 h     T1
+│   └── 2.2 Redeem one discount code in parallel        3 h     T3
+├── 3. Get tickets issued directly                      OR
+│   ├── 3.1 Push an issue-tickets job                   AND
+│   │   ├── 3.1.1 Get a foothold in the private network 40 h
+│   │   └── 3.1.2 Write a job to the queue              1 h     T2
+│   └── 3.2 Fake a paid order with SQL injection        8 h     E2
+├── 4. Abuse staff access                               OR
+│   ├── 4.1 Phish a staff admin                         16 h    S3
+│   └── 4.2 Call an admin endpoint as a customer        2 h     E1
+└── 5. Refund and keep the ticket                       AND
+    ├── 5.1 Buy a ticket and save the QR code           0.5 h
+    └── 5.2 Get a refund, the ticket stays valid        0.5 h   T4
+```
+
+If your repository host renders Mermaid in Markdown (GitHub and GitLab do), you can keep a drawable version in the same file. Mermaid has no AND or OR gate, so put the gate in the label:
 
 ```mermaid
-graph TD
-    A[Gain Admin Access] --> B[Steal Credentials]
-    A --> C[Exploit Vulnerability]
-    A --> D[Social Engineering]
-    
-    B --> B1[Phishing]
-    B --> B2[Credential Stuffing]
-    B --> B3[Keylogger]
-    
-    C --> C1[SQL Injection]
-    C --> C2[Auth Bypass]
-    
-    D --> D1[Helpdesk Call]
-    D --> D2[Physical Access]
+flowchart LR
+    goal["Get tickets without paying full price (OR)"]
+    pay["1. Fake the payment confirmation (OR)"]
+    hook["1.1 Forged payment webhook: 2 h, S1"]
+    url["1.2 Success URL without paying: 0.5 h, S1"]
+    refund["5. Refund and keep the ticket (AND)"]
+    buy["5.1 Buy a ticket, save the QR code: 0.5 h"]
+    keep["5.2 Refund, ticket stays valid: 0.5 h, T4"]
+    goal --> pay
+    pay --> hook
+    pay --> url
+    goal --> refund
+    refund --> buy
+    refund --> keep
 ```
 
-### Dedicated Attack Tree Tools
+## Annotating the Leaves
 
-- **ADTool**: Academic tool for attack-defense trees
-- **Threagile**: Code-based threat modeling
-- **Microsoft Threat Modeling Tool**: Free GUI tool
-- **OWASP Threat Dragon**: Open-source web app
+Annotations turn a picture into something you can reason about. Pick one or two attributes that fit the decision you need to make:
 
-## Best Practices
+| Attribute     | What it captures                              | Ticket shop example                                |
+| ------------- | --------------------------------------------- | -------------------------------------------------- |
+| Effort        | Attacker time, in hours or days               | 1.1 forged webhook: 2 hours                        |
+| Cost          | Money the attacker spends                     | 4.1 phishing: domains and a phishing kit           |
+| Skill         | Low, medium or high                           | 3.2 SQL injection: medium                          |
+| Access needed | None, customer account, staff account, inside | 4.2 admin route: a customer account                |
+| Detectability | Would you notice the attack while it happens? | 2.2 discount race: yes, if you alert on code reuse |
 
-### Do:
+The estimates are judgment, made in the session, and they only need to be good enough to compare paths. Avoid probabilities with two decimals: they suggest a precision nobody has, and they are hard to agree on.
 
-- Start with a clear, specific goal
-- Involve multiple perspectives (dev, ops, security)
-- Update trees as the system evolves
-- Focus on realistic attack scenarios
-- Annotate with costs and probabilities
+## Finding the Cheapest Path
 
-### Don't:
+Schneier's rule for a cost attribute: **OR nodes have the value of their cheapest child; AND nodes have the value of the sum of their children.** A rational attacker takes the cheapest path, so that is where a fix pays off first.
 
-- Make trees too detailed (keep manageable)
-- Forget about insider threats
-- Ignore physical attack vectors
-- Stop at theoretical—validate with pen testing
-- Create once and never update
+This script, saved as `attack_tree.py`, holds the same tree, lists every way to reach the goal with its total effort, and leaves out paths whose leaves are blocked by the mitigations you pass on the command line:
+
+```python
+"""List every way to reach the root of an attack tree, cheapest first.
+
+OR node: the attacker needs any one child.
+AND node: the attacker needs every child, so the costs add up.
+A leaf whose mitigation is applied is impossible.
+"""
+import sys
+
+# (kind, name, children) for OR and AND nodes; (LEAF, name, hours, mitigation) for leaves
+TREE = ("OR", "Get tickets without paying full price", [
+    ("OR", "Fake the payment confirmation", [
+        ("LEAF", "Send a forged payment webhook", 2, "S1"),
+        ("LEAF", "Open the success URL without paying", 0.5, "S1"),
+    ]),
+    ("OR", "Pay less than the price", [
+        ("LEAF", "Change the price in the order request", 1, "T1"),
+        ("LEAF", "Redeem one discount code in parallel", 3, "T3"),
+    ]),
+    ("OR", "Get tickets issued directly", [
+        ("AND", "Push an issue-tickets job", [
+            ("LEAF", "Get a foothold in the private network", 40, None),
+            ("LEAF", "Write a job to the queue", 1, "T2"),
+        ]),
+        ("LEAF", "Fake a paid order with SQL injection", 8, "E2"),
+    ]),
+    ("OR", "Abuse staff access", [
+        ("LEAF", "Phish a staff admin", 16, "S3"),
+        ("LEAF", "Call an admin endpoint as a customer", 2, "E1"),
+    ]),
+    ("AND", "Refund and keep the ticket", [
+        ("LEAF", "Buy a ticket and save the QR code", 0.5, None),
+        ("LEAF", "Get a refund, the ticket stays valid", 0.5, "T4"),
+    ]),
+])
+
+
+def scenarios(node, applied):
+    """Return (hours, leaves) for every minimal way to achieve this node."""
+    if node[0] == "LEAF":
+        _, name, hours, mitigation = node
+        return [] if mitigation in applied else [(hours, [name])]
+    kind, _, children = node
+    options = [scenarios(child, applied) for child in children]
+    if kind == "OR":
+        return [s for child in options for s in child]
+    combined = [(0, [])]
+    for child in options:
+        combined = [(h1 + h2, l1 + l2) for h1, l1 in combined for h2, l2 in child]
+    return combined
+
+
+applied = set(sys.argv[1:])
+print("mitigations applied:", " ".join(sorted(applied)) or "none")
+paths = sorted(scenarios(TREE, applied), key=lambda s: s[0])
+for hours, leaves in paths:
+    print(f"{hours:>5g} h  {' + '.join(leaves)}")
+if not paths:
+    print("no path to the goal is left in this tree")
+```
+
+When paths remain, the first one listed after the header line is the cheapest, the value Schneier's rule gives for the root. Run it for the design as it stands, then with the four fixes that are each a small code change (S1, T1, T4 and E1):
+
+```terminal
+{
+  "title": "cheapest attack paths",
+  "prompt": "$",
+  "steps": [
+    {
+      "comment": "the design before any mitigation",
+      "cmd": "python3 attack_tree.py",
+      "output": "mitigations applied: none\n  0.5 h  Open the success URL without paying\n    1 h  Change the price in the order request\n    1 h  Buy a ticket and save the QR code + Get a refund, the ticket stays valid\n    2 h  Send a forged payment webhook\n    2 h  Call an admin endpoint as a customer\n    3 h  Redeem one discount code in parallel\n    8 h  Fake a paid order with SQL injection\n   16 h  Phish a staff admin\n   41 h  Get a foothold in the private network + Write a job to the queue"
+    },
+    {
+      "comment": "after the four small fixes",
+      "cmd": "python3 attack_tree.py S1 T1 T4 E1",
+      "output": "mitigations applied: E1 S1 T1 T4\n    3 h  Redeem one discount code in parallel\n    8 h  Fake a paid order with SQL injection\n   16 h  Phish a staff admin\n   41 h  Get a foothold in the private network + Write a job to the queue"
+    },
+    {
+      "comment": "after every mitigation in the tree",
+      "cmd": "python3 attack_tree.py S1 T1 T4 E1 T3 E2 S3 T2",
+      "output": "mitigations applied: E1 E2 S1 S3 T1 T2 T3 T4\nno path to the goal is left in this tree"
+    }
+  ]
+}
+```
+
+Before any fix, the cheapest path takes half an hour and needs no skill. Four small fixes raise the cheapest path to 3 hours, and the next fixes to make are the discount code race (T3) and SQL injection (E2). With every mitigation in place, no path is left **in this tree**. That is not the same as secure: the tree only contains what the team thought of, which is why you revisit it when the design changes.
+
+## What the Tree Found That STRIDE Missed
+
+Branch 5, refund and keep the ticket, is not in the STRIDE register from Part 1. No single element is broken: the refund works, the ticket works, and the payment provider does what it should. The threat only appears when you follow the attacker's goal across the refund flow (DF2, DF3) and the ticket data in Postgres. It goes into the register as a new threat:
+
+| ID  | Element or flow    | Threat                                       | Mitigation                                                                                                                                                                                         | Status |
+| --- | ------------------ | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| T4  | DF2, DF3, Postgres | A refund leaves the ticket valid at the door | Record the refund and void its tickets in one Postgres transaction, then call the provider with an idempotency key; reconcile with the provider's refund events; check ticket status when scanning | Open   |
+
+The tree also clarified two priorities. It showed that S1 has two forms (the webhook and the success URL), both fixed by the same rule, and that T2 is only reachable after a 40-hour step, so it ranks below S1 even though a forged job has the same impact.
+
+## A Second Tree: Shipping Malicious Code Through CI/CD
+
+For a DevOps team, one of the most useful goals is "run my code in production". It covers the path from a developer's laptop to the running container, which a data flow diagram of the application usually leaves out:
+
+```text
+Goal: Run attacker code in the ticket shop's production API          OR
+├── 1. Change the code before it is merged                           OR
+│   ├── 1.1 Push directly to main                                    AND
+│   │   ├── Steal a developer's GitHub session or token
+│   │   └── main has no branch protection
+│   └── 1.2 Hide a change in a large pull request that gets approved
+├── 2. Change the build                                              OR
+│   ├── 2.1 Pull request code runs in a privileged workflow          AND
+│   │   ├── A workflow uses pull_request_target
+│   │   └── It checks out and runs the pull request's code
+│   └── 2.2 A third-party action pinned to a tag is compromised
+├── 3. Change a dependency                                           OR
+│   ├── 3.1 A typosquatted package is added by mistake
+│   └── 3.2 A maintainer account is taken over                       AND
+│       ├── The attacker publishes a malicious version
+│       └── The lockfile update is merged without review
+└── 4. Change the image after the build                              AND
+    ├── Get write access to the container registry
+    └── Production deploys by tag without verifying signatures
+```
+
+The leaves map to concrete controls: branch protection with required reviews, `pull_request_target` only for workflows that never run untrusted code, actions pinned to a full commit SHA, lockfiles with dependency review, and images signed in CI, verified at deploy time and deployed by digest. The [CI/CD pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) and [supply chain security post](/posts/software-supply-chain-security) cover each of them.
+
+## Attack-Defense Trees and Tools
+
+**Attack-defense trees** add defense nodes to the attack nodes, and attacker responses to the defenses, so you can model "the attacker phishes the password; we require a passkey; the attacker steals a session cookie instead". They are useful once a simple tree is not enough to explain why a control was chosen.
+
+You do not need special software. Options that teams use:
+
+- **A text outline or Mermaid** in the repository, reviewed like code. This is usually the best start.
+- **draw.io (diagrams.net)** or any whiteboard tool for the session itself.
+- **[Deciduous](https://www.deciduous.app/)**, a free web app by Kelly Shortridge and Ryan Petrich for security decision trees that show attacks, mitigations and how attackers respond.
+- **ADTool**, an academic tool for attack-defense trees with quantitative analysis.
+
+Data flow tools such as OWASP Threat Dragon and the Microsoft Threat Modeling Tool are built around DFDs and STRIDE, not attack trees. [Part 4](/guides/threat-modeling/04-practical-exercises) shows a tool that keeps the whole threat model as code.
+
+## Common Mistakes
+
+- **Starting from a vulnerability instead of a goal.** "SQL injection" is a leaf, not a root. Ask what the attacker wants.
+- **Going too deep too early.** Get the first two levels right for every branch before you detail any one of them.
+- **Stopping at generic leaves.** "Hack the server" cannot be estimated or blocked. Keep asking "how?".
+- **Forgetting AND nodes.** Many attacks need two things at once, and an AND node shows where one control blocks the whole branch.
+- **Treating the tree as complete.** It holds what the team thought of in one session. Revisit it when the design changes or after an incident.
 
 ## Summary
 
-Attack trees provide a visual, systematic way to model threats:
+- An attack tree has the attacker's goal at the root; OR nodes are alternatives, AND nodes are steps that must all succeed.
+- Break branches down until the leaves are concrete actions you can estimate and block.
+- Annotate leaves with effort, cost, skill or access, and use Schneier's rule (OR takes the cheapest child, AND sums the children) to find the cheapest path.
+- Fix the cheapest path first, then recalculate. For the ticket shop, four small fixes raised the cheapest attack from 0.5 to 3 hours.
+- Trees follow the attacker across components and find threats such as refund-and-keep that per-element STRIDE misses.
 
-- **Root node**: What does the attacker want?
-- **Child nodes**: How can they achieve it?
-- **OR gates**: Attacker needs any one path
-- **AND gates**: Attacker needs all sub-steps
-- **Annotations**: Cost, skill, probability for analysis
+In [Part 4](/guides/threat-modeling/04-practical-exercises), you practice all three methods on new features of the ticket shop, including an AI support assistant, and keep the threat model in the repository with pytm.
 
-Use attack trees to:
+## Keep Learning
 
-1. Discover attack paths you hadn't considered
-2. Identify critical controls that block multiple paths
-3. Communicate threats to non-technical stakeholders
-4. Prioritize security investments
-
-In the next section, we'll apply everything we've learned with hands-on threat modeling exercises.
+- [A10: Server-Side Request Forgery](/guides/owasp-top-10/10-ssrf), one way to reach internal services in branch 3
+- [Security-Focused Code Reviews](/posts/security-focused-code-reviews), where many of these leaves are caught
+- [Defense in depth](/guides/security-principles/02-defense-in-depth), the idea behind blocking AND nodes twice
+- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
