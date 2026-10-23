@@ -5,6 +5,24 @@
 # Canonical location for the CI/CD Stack Generator
 /tools/cicd-stack-generator /games/cicd-stack-generator 301
 
+# Short security guides converted to posts
+/guides/code-review-security /posts/security-focused-code-reviews 301
+/guides/code-review-security/* /posts/security-focused-code-reviews 301
+/guides/dast-integration /posts/dast-integration-guide 301
+/guides/dast-integration/* /posts/dast-integration-guide 301
+/guides/dependency-scanning /posts/dependency-scanning-guide 301
+/guides/dependency-scanning/* /posts/dependency-scanning-guide 301
+/guides/pipeline-hardening /posts/cicd-pipeline-hardening-guide 301
+/guides/pipeline-hardening/* /posts/cicd-pipeline-hardening-guide 301
+/guides/pre-commit-hooks /posts/pre-commit-hooks-security-guide 301
+/guides/pre-commit-hooks/* /posts/pre-commit-hooks-security-guide 301
+/guides/secrets-management /posts/secrets-management-guide 301
+/guides/secrets-management/* /posts/secrets-management-guide 301
+/guides/secure-coding-practices /posts/secure-coding-practices-guide 301
+/guides/secure-coding-practices/* /posts/secure-coding-practices-guide 301
+/guides/supply-chain-security /posts/software-supply-chain-security 301
+/guides/supply-chain-security/* /posts/software-supply-chain-security 301
+
 # Duplicate posts merged into the fuller version (Aug 2026)
 /posts/what-does-set-e-mean-in-bash /posts/what-does-set-e-mean-in-bash-script 301
 /posts/local-docker-images-minikube /posts/use-local-docker-images-minikube 301
