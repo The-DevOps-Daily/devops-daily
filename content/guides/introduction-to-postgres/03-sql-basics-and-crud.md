@@ -1,612 +1,681 @@
 ---
 title: SQL Basics and CRUD Operations
-description: Learn fundamental SQL commands for creating, reading, updating, and deleting data in PostgreSQL
+description: 'Hands-on PostgreSQL SQL tutorial: SELECT, WHERE, ORDER BY and LIMIT, INSERT with RETURNING and upserts, UPDATE, DELETE and GROUP BY, with real output.'
 order: 3
 ---
 
-**TLDR**: Use SELECT to retrieve data, INSERT to add rows, UPDATE to modify existing rows, and DELETE to remove rows. Filter with WHERE, sort with ORDER BY, limit results with LIMIT. Use aggregate functions (COUNT, SUM, AVG) to summarize data. These operations cover 90% of daily database work.
+**TLDR**: `SELECT` reads rows, `INSERT` adds them, `UPDATE` changes them and `DELETE` removes them. Filter with `WHERE`, sort with `ORDER BY`, page with `LIMIT`. Add `RETURNING` to get back the rows you changed, and `ON CONFLICT` to turn an insert into an upsert. Summarize with `count`, `avg` and `GROUP BY`. Test risky changes inside a transaction first.
 
-SQL (Structured Query Language) is how you interact with PostgreSQL. These fundamental commands let you manipulate data and retrieve exactly what you need.
+SQL is how you talk to PostgreSQL. This part covers the four operations behind almost every application, often called CRUD (create, read, update, delete), plus the filtering, sorting and aggregate functions you combine them with. Every output below comes from running the statements in `psql` against PostgreSQL 18.6, so you can type along and compare.
 
 ## Prerequisites
 
-Create a test database to follow along:
+You need a running PostgreSQL server and `psql` (see [How to Install PostgreSQL 18 and psql](/guides/introduction-to-postgres/02-installation-and-setup)). One example uses `RETURNING old` and `new`, which needs PostgreSQL 18.
+
+Create a practice database and a `users` table with some sample rows:
 
 ```sql
 CREATE DATABASE learn_sql;
 \c learn_sql
-
-CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(50) NOT NULL UNIQUE,
-  email VARCHAR(255) NOT NULL UNIQUE,
-  age INTEGER,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 ```
+
+```sql
+CREATE TABLE users (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username text NOT NULL UNIQUE,
+  email text NOT NULL UNIQUE,
+  age integer,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO users (username, email, age, created_at) VALUES
+  ('alice', 'alice@example.com', 28, '2026-09-01 09:15:00+00'),
+  ('bob',   'bob@example.com',   32, '2026-09-03 14:02:00+00'),
+  ('carol', 'carol@example.com', 24, '2026-09-10 08:30:00+00'),
+  ('dave',  'dave@example.com',  19, '2026-09-18 19:45:00+00'),
+  ('erin',  'erin@example.com',  NULL, '2026-10-02 11:20:00+00'),
+  ('frank', 'frank@example.com', 45, '2026-10-05 16:05:00+00'),
+  ('grace', 'grace@gmail.com',   32, '2026-10-12 10:00:00+00'),
+  ('heidi', 'heidi@gmail.com',   67, '2026-10-20 07:55:00+00');
+```
+
+Erin has no age on purpose. Missing values (`NULL`) behave differently from normal values, and you will see where that matters.
 
 ## SELECT: Retrieving Data
 
-SELECT fetches data from tables. It's the most common SQL operation.
+`SELECT` reads data. It is the statement you will run most.
 
 ### Basic SELECT
 
 ```sql
--- Get all columns from all rows
 SELECT * FROM users;
+```
 
--- Get specific columns
+```text
+ id | username |       email       | age |       created_at
+----+----------+-------------------+-----+------------------------
+  1 | alice    | alice@example.com |  28 | 2026-09-01 09:15:00+00
+  2 | bob      | bob@example.com   |  32 | 2026-09-03 14:02:00+00
+  3 | carol    | carol@example.com |  24 | 2026-09-10 08:30:00+00
+  4 | dave     | dave@example.com  |  19 | 2026-09-18 19:45:00+00
+  5 | erin     | erin@example.com  |     | 2026-10-02 11:20:00+00
+  6 | frank    | frank@example.com |  45 | 2026-10-05 16:05:00+00
+  7 | grace    | grace@gmail.com   |  32 | 2026-10-12 10:00:00+00
+  8 | heidi    | heidi@gmail.com   |  67 | 2026-10-20 07:55:00+00
+(8 rows)
+```
+
+`*` means every column. It is handy in `psql`, but name the columns in application code: you fetch less data, and adding a column later does not change what your code receives.
+
+```sql
+-- Only the columns you need
 SELECT username, email FROM users;
 
--- Get distinct values (no duplicates)
+-- Unique values only
 SELECT DISTINCT age FROM users;
 ```
 
-The `*` means "all columns". Avoid it in production code - specify columns explicitly for clarity and performance.
-
 ### Filtering with WHERE
 
-WHERE clauses filter which rows to return:
+`WHERE` keeps only the rows for which the condition is true:
 
 ```sql
--- Users with specific age
-SELECT * FROM users WHERE age = 25;
-
--- Users older than 25
-SELECT * FROM users WHERE age > 25;
-
--- Users between 18 and 30
-SELECT * FROM users WHERE age BETWEEN 18 AND 30;
-
--- Users with names starting with 'A'
-SELECT * FROM users WHERE username LIKE 'A%';
-
--- Multiple conditions with AND
-SELECT * FROM users WHERE age > 18 AND age < 65;
-
--- Either condition with OR
-SELECT * FROM users WHERE age < 18 OR age > 65;
-
--- Check for NULL
-SELECT * FROM users WHERE age IS NULL;
-
--- Check if value in list
-SELECT * FROM users WHERE age IN (18, 21, 25, 30);
+SELECT username, age FROM users WHERE age > 30;
 ```
 
-Common operators:
+```text
+ username | age
+----------+-----
+ bob      |  32
+ frank    |  45
+ grace    |  32
+ heidi    |  67
+(4 rows)
+```
 
-- `=`, `!=` (or `<>`): Equals, not equals
-- `>`, `<`, `>=`, `<=`: Comparison
-- `LIKE`, `ILIKE`: Pattern matching (ILIKE is case-insensitive)
-- `IN`: Value in a list
-- `BETWEEN`: Value in a range
-- `IS NULL`, `IS NOT NULL`: NULL checks
+Conditions combine with `AND`, `OR` and `NOT`, and PostgreSQL has the usual operators:
 
-Pattern matching wildcards:
+| Operator                 | Meaning                              |
+| ------------------------ | ------------------------------------ |
+| `=`, `<>` (or `!=`)      | Equal, not equal                     |
+| `<`, `>`, `<=`, `>=`     | Comparisons                          |
+| `BETWEEN 20 AND 30`      | Inclusive range                      |
+| `IN ('a', 'b')`          | Value is in a list                   |
+| `LIKE`, `ILIKE`          | Pattern match (`ILIKE` ignores case) |
+| `IS NULL`, `IS NOT NULL` | Missing or present value             |
 
-- `%`: Any number of characters
-- `_`: Exactly one character
+In `LIKE` patterns, `%` matches any number of characters and `_` matches exactly one:
 
 ```sql
--- Names starting with 'Jo'
-SELECT * FROM users WHERE username LIKE 'Jo%';  -- John, Joe, Joanna
+SELECT username, email FROM users WHERE email LIKE '%@gmail.com';
+```
 
--- Names with exactly 4 letters
-SELECT * FROM users WHERE username LIKE '____';
+```text
+ username |      email
+----------+-----------------
+ grace    | grace@gmail.com
+ heidi    | heidi@gmail.com
+(2 rows)
+```
 
--- Emails from gmail.com
-SELECT * FROM users WHERE email LIKE '%@gmail.com';
+```sql
+SELECT * FROM users WHERE age BETWEEN 20 AND 30;
+SELECT * FROM users WHERE username IN ('alice', 'bob');
+SELECT * FROM users WHERE username LIKE '____';      -- exactly four characters
+SELECT * FROM users WHERE age < 18 OR age > 65;
+```
+
+`NULL` means "unknown", so `age = NULL` is never true, not even for Erin. Use `IS NULL`:
+
+```terminal
+{
+  "title": "NULL needs IS NULL",
+  "prompt": "learn_sql=#",
+  "steps": [
+    {
+      "cmd": "SELECT username FROM users WHERE age = NULL;",
+      "output": " username\n----------\n(0 rows)"
+    },
+    {
+      "cmd": "SELECT username FROM users WHERE age IS NULL;",
+      "output": " username\n----------\n erin\n(1 row)"
+    }
+  ]
+}
 ```
 
 ### Sorting Results
 
-ORDER BY sorts query results:
+`ORDER BY` sorts the result. Ascending is the default; add `DESC` for descending. Watch where the `NULL` goes:
 
-```sql
--- Sort by age ascending (default)
-SELECT * FROM users ORDER BY age;
-
--- Sort by age descending
-SELECT * FROM users ORDER BY age DESC;
-
--- Sort by multiple columns
-SELECT * FROM users ORDER BY age DESC, username ASC;
-
--- Sort by column position (1-indexed)
-SELECT username, age FROM users ORDER BY 2 DESC;
+```terminal
+{
+  "title": "NULLs sort first in descending order",
+  "prompt": "learn_sql=#",
+  "steps": [
+    {
+      "cmd": "SELECT username, age FROM users ORDER BY age DESC;",
+      "output": " username | age\n----------+-----\n erin     |\n heidi    |  67\n frank    |  45\n bob      |  32\n grace    |  32\n alice    |  28\n carol    |  24\n dave     |  19\n(8 rows)"
+    },
+    {
+      "cmd": "SELECT username, age FROM users ORDER BY age DESC NULLS LAST;",
+      "output": " username | age\n----------+-----\n heidi    |  67\n frank    |  45\n bob      |  32\n grace    |  32\n alice    |  28\n carol    |  24\n dave     |  19\n erin     |\n(8 rows)"
+    }
+  ]
+}
 ```
+
+PostgreSQL treats `NULL` as larger than every value, so it comes last in ascending order and first in descending order. Add `NULLS LAST` or `NULLS FIRST` when the default is not what you want.
+
+Sort by several columns to break ties: `ORDER BY age DESC, username`.
 
 ### Limiting Results
 
-LIMIT restricts how many rows return:
+`LIMIT` caps the number of rows, and `OFFSET` skips rows first. Together with `ORDER BY` they give you pages:
 
 ```sql
--- First 10 users
-SELECT * FROM users LIMIT 10;
-
--- Skip first 10, get next 10 (pagination)
-SELECT * FROM users OFFSET 10 LIMIT 10;
-
--- Get oldest 5 users
-SELECT * FROM users ORDER BY created_at ASC LIMIT 5;
+SELECT id, username FROM users ORDER BY id LIMIT 3 OFFSET 3;
 ```
 
-For pagination, combine ORDER BY with LIMIT and OFFSET:
+```text
+ id | username
+----+----------
+  4 | dave
+  5 | erin
+  6 | frank
+(3 rows)
+```
+
+`OFFSET` still reads and throws away every skipped row, so page 10,000 is slow. For large tables, use **keyset pagination**: remember the last `id` you showed and ask for the rows after it. With an index on the sort column, every page costs the same:
 
 ```sql
--- Page 1 (rows 1-10)
-SELECT * FROM users ORDER BY id LIMIT 10 OFFSET 0;
+SELECT id, username FROM users WHERE id > 3 ORDER BY id LIMIT 3;
+```
 
--- Page 2 (rows 11-20)
-SELECT * FROM users ORDER BY id LIMIT 10 OFFSET 10;
-
--- Page 3 (rows 21-30)
-SELECT * FROM users ORDER BY id LIMIT 10 OFFSET 20;
+```text
+ id | username
+----+----------
+  4 | dave
+  5 | erin
+  6 | frank
+(3 rows)
 ```
 
 ## INSERT: Adding Data
 
-INSERT adds new rows to tables.
+`INSERT` adds rows.
 
 ### Basic INSERT
 
 ```sql
--- Insert one row
+-- One row
 INSERT INTO users (username, email, age)
-VALUES ('alice', 'alice@example.com', 28);
+VALUES ('judy', 'judy@example.com', 30);
 
--- Insert multiple rows at once
+-- Several rows in one statement (faster than one statement per row)
 INSERT INTO users (username, email, age)
 VALUES
-  ('bob', 'bob@example.com', 32),
-  ('carol', 'carol@example.com', 24),
-  ('dave', 'dave@example.com', 19);
+  ('mallory', 'mallory@example.com', 35),
+  ('oscar',   'oscar@example.com',   27);
 ```
 
-You don't need to specify every column. Columns with defaults or that allow NULL can be omitted:
-
-```sql
--- id and created_at are set automatically
-INSERT INTO users (username, email)
-VALUES ('eve', 'eve@example.com');
-```
+List the columns you insert. Columns you leave out get their default (`id` and `created_at` here) or `NULL`.
 
 ### Returning Data After INSERT
 
-Get values of inserted rows with RETURNING:
+`RETURNING` gives you values from the inserted rows, such as the generated `id`, without a second query:
 
 ```sql
 INSERT INTO users (username, email, age)
-VALUES ('frank', 'frank@example.com', 45)
-RETURNING id, created_at;
+VALUES ('ivan', 'ivan@example.com', 41)
+RETURNING id, username;
 ```
 
-Output:
+```text
+ id | username
+----+----------
+  9 | ivan
+(1 row)
 
+INSERT 0 1
 ```
- id |        created_at
-----+---------------------------
-  6 | 2024-02-14 14:23:11.234
-```
-
-This is useful for getting auto-generated IDs or timestamps.
 
 ### Handling Conflicts
 
-If you insert a row that violates a unique constraint:
+Inserting a value that breaks a unique constraint fails:
 
 ```sql
--- This fails because alice already exists
 INSERT INTO users (username, email)
 VALUES ('alice', 'alice2@example.com');
 ```
 
-Error:
-
+```text
+ERROR:  duplicate key value violates unique constraint "users_username_key"
+DETAIL:  Key (username)=(alice) already exists.
 ```
-ERROR: duplicate key value violates unique constraint "users_username_key"
-```
 
-Use ON CONFLICT to handle this:
+`ON CONFLICT` tells PostgreSQL what to do instead. `DO NOTHING` skips the row, so `INSERT 0 0` reports zero rows inserted:
 
 ```sql
--- Do nothing if username already exists
 INSERT INTO users (username, email, age)
 VALUES ('alice', 'alice2@example.com', 29)
 ON CONFLICT (username) DO NOTHING;
-
--- Update the row if it exists
-INSERT INTO users (username, email, age)
-VALUES ('alice', 'alice-new@example.com', 29)
-ON CONFLICT (username)
-DO UPDATE SET email = EXCLUDED.email, age = EXCLUDED.age;
 ```
 
-`EXCLUDED` refers to the values you tried to insert. This is an "upsert" - update if exists, insert if not.
+```text
+INSERT 0 0
+```
+
+`DO UPDATE` changes the existing row instead. This is an **upsert**: insert if new, update if it exists. `EXCLUDED` is the row you tried to insert:
+
+```sql
+INSERT INTO users (username, email, age)
+VALUES ('alice', 'alice@example.com', 29)
+ON CONFLICT (username)
+DO UPDATE SET age = EXCLUDED.age
+RETURNING id, username, age;
+```
+
+```text
+ id | username | age
+----+----------+-----
+  1 | alice    |  29
+(1 row)
+
+INSERT 0 1
+```
+
+The conflict target (`(username)`) must match a unique constraint or unique index. An upsert is atomic: two sessions running the same upsert at the same time cannot both insert.
 
 ## UPDATE: Modifying Data
 
-UPDATE changes existing rows.
+`UPDATE` changes existing rows.
 
 ### Basic UPDATE
 
 ```sql
--- Update one column
+-- One column
 UPDATE users SET age = 29 WHERE username = 'alice';
 
--- Update multiple columns
-UPDATE users SET email = 'newemail@example.com', age = 30
-WHERE username = 'bob';
+-- Several columns
+UPDATE users SET email = 'bob@example.org', age = 33 WHERE username = 'bob';
 
--- Update all rows (be careful!)
+-- Every row in the table (no WHERE)
 UPDATE users SET age = age + 1;
 ```
 
-Always use WHERE unless you really mean to update every row. Without WHERE, UPDATE affects all rows in the table.
+Without `WHERE`, `UPDATE` changes every row. `psql` reports the count (`UPDATE 8`), so read it before you commit anything important.
 
 ### UPDATE with Conditions
 
 ```sql
--- Give everyone under 18 an age of 18
-UPDATE users SET age = 18 WHERE age < 18;
+-- Normalize email addresses that are not lowercase yet
+UPDATE users SET email = lower(email) WHERE email <> lower(email);
 
--- Update based on another column
-UPDATE users SET email = LOWER(email) WHERE email != LOWER(email);
-
--- Conditional update
+-- Different values for different rows
 UPDATE users
 SET age = CASE
   WHEN age < 18 THEN 18
-  WHEN age > 65 THEN 65
+  WHEN age > 120 THEN NULL
   ELSE age
-END;
+END
+WHERE age IS NOT NULL;
 ```
 
 ### Returning Updated Rows
 
-Like INSERT, UPDATE supports RETURNING:
+`UPDATE` supports `RETURNING` too. Since PostgreSQL 18, you can return the value before and after the change with `old` and `new`, which is handy for audit logs:
 
 ```sql
-UPDATE users SET age = 33 WHERE username = 'bob'
-RETURNING id, username, age;
+UPDATE users SET age = age + 1
+WHERE username = 'bob'
+RETURNING username, old.age AS old_age, new.age AS new_age;
 ```
 
-This shows what changed, useful for logging or confirmation.
+```text
+ username | old_age | new_age
+----------+---------+---------
+ bob      |      32 |      33
+(1 row)
+
+UPDATE 1
+```
 
 ## DELETE: Removing Data
 
-DELETE removes rows from tables.
+`DELETE` removes rows.
 
 ### Basic DELETE
 
 ```sql
--- Delete specific user
-DELETE FROM users WHERE username = 'alice';
+-- One row
+DELETE FROM users WHERE username = 'judy';
 
--- Delete users matching criteria
-DELETE FROM users WHERE age < 18;
+-- Every row matching a condition
+DELETE FROM users WHERE created_at < now() - interval '2 years';
 
--- Delete all rows (dangerous!)
+-- Every row in the table
 DELETE FROM users;
 ```
 
-Never run DELETE without WHERE in production unless you genuinely want to empty the table.
+To empty a large table, `TRUNCATE users;` is much faster than `DELETE FROM users;` because it does not scan the rows. It takes a stronger lock, though, and it does not fire `ON DELETE` triggers.
 
 ### Safe Deletion Patterns
 
-Before deleting, check what will be affected:
+Run the same `WHERE` clause as a `SELECT` first, and check the rows and the count:
 
 ```sql
--- Preview what you'll delete
-SELECT * FROM users WHERE age < 18;
-
--- If that looks right, delete
-DELETE FROM users WHERE age < 18;
+SELECT id, username FROM users WHERE age < 25;
+-- If that is what you want to remove:
+DELETE FROM users WHERE age < 25;
 ```
 
-For important tables, use soft deletes instead:
+For data that people might want back, a **soft delete** marks rows instead of removing them:
 
 ```sql
--- Add deleted_at column
-ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN deleted_at timestamptz;
 
--- "Delete" by setting timestamp
-UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = 5;
+-- "Delete"
+UPDATE users SET deleted_at = now() WHERE id = 5;
 
--- Query only non-deleted users
+-- Normal queries skip deleted rows
 SELECT * FROM users WHERE deleted_at IS NULL;
 ```
 
-This preserves data while hiding it from normal queries. You can undelete or permanently remove later.
+Soft deletes make every query a bit more complex and keep personal data that privacy laws may require you to erase. Use them where undo matters, not everywhere.
 
 ### DELETE with RETURNING
 
+`RETURNING` shows exactly what you removed:
+
 ```sql
-DELETE FROM users WHERE age > 65
-RETURNING username, email;
+DELETE FROM users WHERE username = 'ivan'
+RETURNING id, username;
 ```
 
-Shows what you deleted, useful for audit logs.
+```text
+ id | username
+----+----------
+  9 | ivan
+(1 row)
+
+DELETE 1
+```
 
 ## Aggregate Functions
 
-Aggregates compute single values from multiple rows.
+Aggregate functions turn many rows into one value.
 
 ### COUNT
 
-Count rows:
-
 ```sql
--- Total users
-SELECT COUNT(*) FROM users;
-
--- Users with age set
-SELECT COUNT(age) FROM users;
-
--- Distinct ages
-SELECT COUNT(DISTINCT age) FROM users;
-
--- Users matching criteria
-SELECT COUNT(*) FROM users WHERE age >= 18;
-```
-
-`COUNT(*)` counts all rows. `COUNT(column)` counts non-NULL values in that column.
-
-### SUM, AVG, MIN, MAX
-
-```sql
--- Total age of all users (not very useful)
-SELECT SUM(age) FROM users;
-
--- Average age
-SELECT AVG(age) FROM users;
-
--- Age range
-SELECT MIN(age) AS youngest, MAX(age) AS oldest FROM users;
-
--- Multiple aggregates
-SELECT
-  COUNT(*) AS total_users,
-  AVG(age) AS avg_age,
-  MIN(age) AS min_age,
-  MAX(age) AS max_age
+SELECT count(*) AS all_rows,
+       count(age) AS with_age,
+       count(DISTINCT age) AS distinct_ages
 FROM users;
 ```
 
-Output:
+```text
+ all_rows | with_age | distinct_ages
+----------+----------+---------------
+        8 |        7 |             7
+(1 row)
+```
 
+`count(*)` counts rows. `count(age)` counts non-NULL values, which is why it is one lower: Erin has no age.
+
+### SUM, AVG, MIN, MAX
+
+`avg` of integers returns a `numeric` with many decimal places:
+
+```sql
+SELECT avg(age) FROM users;
 ```
- total_users | avg_age | min_age | max_age
--------------+---------+---------+---------
-         100 |   32.45 |      18 |      75
+
+```text
+         avg
+---------------------
+ 35.5714285714285714
+(1 row)
 ```
+
+Round it for display, and combine several aggregates in one query:
+
+```sql
+SELECT round(avg(age), 1) AS avg_age,
+       min(age) AS youngest,
+       max(age) AS oldest
+FROM users;
+```
+
+```text
+ avg_age | youngest | oldest
+---------+----------+--------
+    35.6 |       19 |     67
+(1 row)
+```
+
+Aggregates skip `NULL`. The average is over seven users, not eight. If a missing age should count as something else, say so explicitly with `coalesce(age, ...)`.
 
 ### GROUP BY
 
-GROUP BY groups rows before aggregating:
+`GROUP BY` splits the rows into groups and runs the aggregate once per group. Here, users per age decade:
 
 ```sql
--- Count users by age
-SELECT age, COUNT(*) AS user_count
+SELECT (age / 10) * 10 AS decade, count(*) AS users
 FROM users
-GROUP BY age
-ORDER BY age;
+WHERE age IS NOT NULL
+GROUP BY decade
+ORDER BY decade;
 ```
 
-Output:
-
+```text
+ decade | users
+--------+-------
+     10 |     1
+     20 |     2
+     30 |     2
+     40 |     1
+     60 |     1
+(5 rows)
 ```
- age | user_count
------+------------
-  18 |          5
-  19 |          8
-  20 |         12
-  21 |         10
-```
 
-You can only SELECT columns that are either in GROUP BY or used with an aggregate function:
+Every column in the select list must be either in `GROUP BY` or inside an aggregate. Otherwise PostgreSQL cannot know which of the group's values to show:
 
 ```sql
--- Valid
-SELECT age, COUNT(*) FROM users GROUP BY age;
+SELECT age, email, count(*) FROM users GROUP BY age;
+```
 
--- Valid
-SELECT age, username FROM users GROUP BY age, username;
-
--- Invalid - email not in GROUP BY
-SELECT age, email, COUNT(*) FROM users GROUP BY age;
+```text
+ERROR:  column "users.email" must appear in the GROUP BY clause or be used in an aggregate function
+LINE 1: SELECT age, email, count(*) FROM users GROUP BY age;
+                    ^
 ```
 
 ### HAVING
 
-WHERE filters before grouping. HAVING filters after:
+`WHERE` filters rows before grouping. `HAVING` filters groups after aggregation:
 
 ```sql
--- Ages with more than 10 users
-SELECT age, COUNT(*) AS user_count
+SELECT (age / 10) * 10 AS decade, count(*) AS users
 FROM users
-GROUP BY age
-HAVING COUNT(*) > 10;
-
--- Average age by decade, only decades with 5+ users
-SELECT
-  (age / 10) * 10 AS decade,
-  COUNT(*) AS user_count,
-  AVG(age) AS avg_age
-FROM users
+WHERE age IS NOT NULL
 GROUP BY decade
-HAVING COUNT(*) >= 5
+HAVING count(*) >= 2
 ORDER BY decade;
 ```
 
-Output:
-
-```
- decade | user_count | avg_age
---------+------------+---------
-     20 |         45 |   24.35
-     30 |         32 |   34.21
-     40 |         18 |   44.56
+```text
+ decade | users
+--------+-------
+     20 |     2
+     30 |     2
+(2 rows)
 ```
 
 ## String Functions
 
-Manipulate text in queries:
+```sql
+SELECT upper(username), lower(email) FROM users;
+SELECT username || ' <' || email || '>' AS contact FROM users;
+SELECT length(username) FROM users;
+SELECT split_part(email, '@', 2) AS domain FROM users;
+SELECT replace(email, '@example.com', '@example.org') FROM users;
+SELECT trim('  padded  ');
+```
 
 ```sql
--- Convert to uppercase/lowercase
-SELECT UPPER(username), LOWER(email) FROM users;
+SELECT username, upper(username), length(username), split_part(email, '@', 2) AS domain
+FROM users
+ORDER BY id
+LIMIT 3;
+```
 
--- Concatenate strings
-SELECT username || ' <' || email || '>' AS full_contact FROM users;
-
--- String length
-SELECT username, LENGTH(username) FROM users;
-
--- Extract substring
-SELECT SUBSTRING(email FROM '[^@]+') AS local_part FROM users;
-
--- Replace text
-SELECT REPLACE(email, '@example.com', '@newdomain.com') FROM users;
-
--- Trim whitespace
-SELECT TRIM(username) FROM users;
-
--- Check if string contains text
-SELECT * FROM users WHERE email LIKE '%gmail%';
-
--- Case-insensitive search
-SELECT * FROM users WHERE username ILIKE 'ALICE';
+```text
+ username | upper | length |   domain
+----------+-------+--------+-------------
+ alice    | ALICE |      5 | example.com
+ bob      | BOB   |      3 | example.com
+ carol    | CAROL |      5 | example.com
+(3 rows)
 ```
 
 ## Date and Time Functions
 
-Work with timestamps:
+`now()` returns the start time of the current transaction as a `timestamptz`. Intervals let you do date arithmetic:
 
 ```sql
--- Current timestamp
-SELECT CURRENT_TIMESTAMP;
+SELECT username, created_at, created_at + interval '7 days' AS week_later
+FROM users
+WHERE username = 'alice';
+```
 
--- Current date
-SELECT CURRENT_DATE;
+```text
+ username |       created_at       |       week_later
+----------+------------------------+------------------------
+ alice    | 2026-09-01 09:15:00+00 | 2026-09-08 09:15:00+00
+(1 row)
+```
 
--- Extract parts
-SELECT
-  EXTRACT(YEAR FROM created_at) AS year,
-  EXTRACT(MONTH FROM created_at) AS month,
-  EXTRACT(DAY FROM created_at) AS day
-FROM users;
+For date ranges, compare the column itself with a half-open range (`>=` start, `<` end). It catches every timestamp on the last day, and an index on `created_at` can serve it:
 
--- Format dates
-SELECT TO_CHAR(created_at, 'YYYY-MM-DD') AS formatted_date FROM users;
+```sql
+SELECT username FROM users
+WHERE created_at >= '2026-10-01' AND created_at < '2026-11-01';
+```
 
--- Date arithmetic
-SELECT created_at, created_at + INTERVAL '7 days' AS week_later FROM users;
+```text
+ username
+----------
+ erin
+ frank
+ grace
+ heidi
+(4 rows)
+```
 
--- Age calculation
-SELECT AGE(created_at) FROM users;
+`date_trunc` rounds timestamps down, which makes it the usual tool for "per day" or "per month" reports:
 
--- Users created in last 30 days
-SELECT * FROM users
-WHERE created_at > CURRENT_TIMESTAMP - INTERVAL '30 days';
-
--- Group by month
-SELECT
-  DATE_TRUNC('month', created_at) AS month,
-  COUNT(*) AS signups
+```sql
+SELECT date_trunc('month', created_at) AS month, count(*) AS signups
 FROM users
 GROUP BY month
 ORDER BY month;
 ```
 
+```text
+         month          | signups
+------------------------+---------
+ 2026-09-01 00:00:00+00 |       4
+ 2026-10-01 00:00:00+00 |       4
+(2 rows)
+```
+
+Other functions you will meet: `extract(year FROM created_at)`, `to_char(created_at, 'YYYY-MM-DD')`, `age(timestamp)` and `current_date`.
+
 ## Aliasing
 
-Use AS to give columns or tables readable names:
+`AS` renames a column or a table in the query result:
 
 ```sql
--- Column alias
-SELECT username AS user, email AS contact FROM users;
+SELECT username AS name, email AS contact FROM users;
 
--- Alias without AS (works but less clear)
-SELECT username user, email contact FROM users;
-
--- Table alias (useful for joins, covered later)
-SELECT u.username, u.email
-FROM users u
-WHERE u.age > 25;
-
--- Alias for expressions
-SELECT COUNT(*) AS total_users FROM users;
-
--- Alias required for complex expressions
-SELECT
-  age,
-  CASE
-    WHEN age < 18 THEN 'minor'
-    WHEN age < 65 THEN 'adult'
-    ELSE 'senior'
-  END AS age_group
-FROM users;
+-- Table aliases keep longer queries short (Part 6 uses them for joins)
+SELECT u.username, u.email FROM users AS u WHERE u.age > 25;
 ```
+
+An alias must be quoted if it has spaces or capitals: `AS "Signup Date"`. Unquoted identifiers are folded to lowercase.
 
 ## CASE Expressions
 
-Conditional logic in queries:
+`CASE` is the SQL `if`/`else`. The first matching `WHEN` wins:
 
 ```sql
-SELECT
-  username,
-  age,
+SELECT username, age,
   CASE
-    WHEN age < 18 THEN 'Minor'
-    WHEN age < 25 THEN 'Young Adult'
-    WHEN age < 65 THEN 'Adult'
-    ELSE 'Senior'
-  END AS age_category
-FROM users;
+    WHEN age IS NULL THEN 'unknown'
+    WHEN age < 25 THEN 'under 25'
+    WHEN age < 65 THEN '25-64'
+    ELSE '65+'
+  END AS age_group
+FROM users
+ORDER BY id;
+```
 
--- Simple CASE
-SELECT
-  username,
-  CASE age
-    WHEN 18 THEN 'Just turned adult'
-    WHEN 21 THEN 'Legal drinking age'
-    WHEN 65 THEN 'Retirement age'
-    ELSE 'Other age'
-  END AS age_note
-FROM users;
+```text
+ username | age | age_group
+----------+-----+-----------
+ alice    |  29 | 25-64
+ bob      |  33 | 25-64
+ carol    |  24 | under 25
+ dave     |  19 | under 25
+ erin     |     | unknown
+ frank    |  45 | 25-64
+ grace    |  32 | 25-64
+ heidi    |  67 | 65+
+(8 rows)
+```
 
--- CASE in aggregates
-SELECT
-  COUNT(CASE WHEN age < 18 THEN 1 END) AS minors,
-  COUNT(CASE WHEN age >= 18 AND age < 65 THEN 1 END) AS adults,
-  COUNT(CASE WHEN age >= 65 THEN 1 END) AS seniors
+Combine `CASE` with aggregates to count several categories in one pass:
+
+```sql
+SELECT count(*) FILTER (WHERE age < 25) AS under_25,
+       count(*) FILTER (WHERE age >= 25) AS age_25_plus,
+       count(*) FILTER (WHERE age IS NULL) AS unknown
 FROM users;
 ```
 
+`FILTER` is PostgreSQL's cleaner way to write `count(CASE WHEN ... THEN 1 END)`.
+
 ## NULL Handling
 
-NULL represents missing or unknown data. It behaves differently than other values:
+Any arithmetic or `||` with `NULL` gives `NULL`. `concat()` treats `NULL` as an empty string:
 
 ```sql
--- NULLs are not equal to anything, including NULL
-SELECT * FROM users WHERE age = NULL;  -- Returns nothing!
-SELECT * FROM users WHERE age IS NULL;  -- Correct way
+SELECT 5 + NULL AS sum, 'Hello ' || NULL AS concat_op, concat('Hello ', NULL) AS concat_fn;
+```
 
--- NULL in expressions
-SELECT 5 + NULL;  -- Returns NULL
-SELECT 'Hello ' || NULL;  -- Returns NULL
+```text
+ sum | concat_op | concat_fn
+-----+-----------+-----------
+     |           | Hello
+(1 row)
+```
 
--- COALESCE: Return first non-NULL value
-SELECT username, COALESCE(age, 0) AS age FROM users;
+psql shows `NULL` as an empty cell. Run `\pset null '(null)'` to make it visible.
 
--- NULLIF: Return NULL if two values equal
-SELECT NULLIF(age, 0) FROM users;  -- NULL if age is 0, otherwise age
+`coalesce` returns its first non-NULL argument, and `nullif(a, b)` returns `NULL` when `a = b`:
 
--- Count only non-NULL values
-SELECT COUNT(age) FROM users;  -- Excludes NULL ages
-SELECT COUNT(*) FROM users;    -- Includes all rows
+```sql
+SELECT username, coalesce(age, 0) AS age FROM users WHERE username IN ('dave', 'erin');
+```
+
+```text
+ username | age
+----------+-----
+ dave     |  19
+ erin     |   0
+(2 rows)
 ```
 
 ## Practical Examples
@@ -614,90 +683,125 @@ SELECT COUNT(*) FROM users;    -- Includes all rows
 ### User Registration Report
 
 ```sql
-SELECT
-  DATE_TRUNC('day', created_at) AS signup_date,
-  COUNT(*) AS new_users,
-  AVG(age) AS avg_age
+SELECT date_trunc('day', created_at) AS signup_day,
+       count(*) AS new_users,
+       round(avg(age), 1) AS avg_age
 FROM users
-WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
-GROUP BY signup_date
-ORDER BY signup_date DESC;
+WHERE created_at >= current_date - interval '30 days'
+GROUP BY signup_day
+ORDER BY signup_day DESC;
 ```
 
 ### Find Duplicates
 
+A unique constraint on `email` does not stop `Alice@Example.com` and `alice@example.com` from both existing. Find them case-insensitively:
+
 ```sql
-SELECT email, COUNT(*) AS count
+SELECT lower(email) AS email, count(*) AS copies
 FROM users
-GROUP BY email
-HAVING COUNT(*) > 1;
+GROUP BY lower(email)
+HAVING count(*) > 1;
 ```
 
 ### Clean Up Data
 
 ```sql
--- Standardize email addresses
-UPDATE users SET email = LOWER(TRIM(email));
+-- Trim and lowercase email addresses
+UPDATE users SET email = lower(trim(email))
+WHERE email <> lower(trim(email));
 
--- Fix null ages to 0
-UPDATE users SET age = 0 WHERE age IS NULL;
-
--- Remove old inactive users
+-- Remove soft-deleted accounts after 30 days
 DELETE FROM users
-WHERE created_at < CURRENT_DATE - INTERVAL '2 years'
-  AND deleted_at IS NOT NULL;
+WHERE deleted_at < now() - interval '30 days';
 ```
 
 ### Export Data
 
+`\copy` runs on the client, so it writes the file on your machine and needs no server file access:
+
 ```sql
--- Get data for CSV export
-SELECT
-  id,
-  username,
-  email,
-  age,
-  TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at
-FROM users
-ORDER BY id;
+\copy (SELECT id, username, email, created_at FROM users ORDER BY id) TO 'users.csv' WITH (FORMAT csv, HEADER)
 ```
 
 ## Common Mistakes
 
-**Forgetting WHERE in UPDATE/DELETE**: This affects all rows. Always double-check.
+**Forgetting WHERE in UPDATE or DELETE.** The statement changes every row. Write the `WHERE` clause first, or test inside a transaction (below).
 
-**NULL comparison with =**: Use `IS NULL`, not `= NULL`.
+**Comparing with `= NULL`.** It never matches. Use `IS NULL` and `IS NOT NULL`.
 
-**Not considering NULL in aggregates**: `AVG(age)` ignores NULL ages. If that's not what you want, use `COALESCE`.
+**Expecting a stable order without ORDER BY.** Rows come back in whatever order is cheapest. After the updates and deletes above, the same `LIMIT 3` query no longer starts with alice:
 
-**Selecting * in production**: Specify columns. Tables change over time.
+```sql
+SELECT username FROM users LIMIT 3;
+```
 
-**No ORDER BY for pagination**: OFFSET/LIMIT without ORDER BY gives unpredictable results.
+```text
+ username
+----------
+ carol
+ dave
+ erin
+(3 rows)
+```
 
-**Case sensitivity**: PostgreSQL is case-sensitive in strings. Use `ILIKE` for case-insensitive matching.
+Updated rows are written as new row versions further back in the table, so the physical order changed. Always add `ORDER BY` when order matters, especially for pagination.
+
+**Forgetting where NULLs sort.** `ORDER BY ... DESC` puts `NULL` first. Add `NULLS LAST` for "top 10" lists.
+
+**Paging with large OFFSET values.** Use keyset pagination for deep pages.
+
+**Ignoring NULL in aggregates.** `avg` and `count(column)` skip `NULL`. Decide whether that is what the report should mean.
+
+**Building SQL with string concatenation in application code.** Use parameters (`$1`, `%s`) so input can never become SQL.
 
 ## Testing Queries Safely
 
-Before running updates or deletes in production:
+Wrap a risky change in a transaction, look at the result, and roll back if it is wrong:
 
-```sql
--- Wrap in a transaction
-BEGIN;
-  DELETE FROM users WHERE age < 18;
-  -- Check what happened
-  SELECT * FROM users;
-  -- If wrong, rollback
-ROLLBACK;
-  -- If correct, commit
-  -- COMMIT;
+```terminal
+{
+  "title": "try it, check it, undo it",
+  "prompt": "learn_sql=#",
+  "steps": [
+    {
+      "cmd": "BEGIN;",
+      "output": "BEGIN"
+    },
+    {
+      "prompt": "learn_sql=*#",
+      "cmd": "DELETE FROM users WHERE age < 25;",
+      "output": "DELETE 2"
+    },
+    {
+      "prompt": "learn_sql=*#",
+      "cmd": "SELECT count(*) FROM users;",
+      "output": " count\n-------\n     6\n(1 row)"
+    },
+    {
+      "prompt": "learn_sql=*#",
+      "cmd": "ROLLBACK;",
+      "output": "ROLLBACK"
+    },
+    {
+      "cmd": "SELECT count(*) FROM users;",
+      "output": " count\n-------\n     8\n(1 row)"
+    }
+  ]
+}
 ```
 
-Or use a read-only transaction:
+The `*` in the `learn_sql=*#` prompt means a transaction is open. Nothing is visible to other sessions, or permanent, until you run `COMMIT`. [Part 8](/guides/introduction-to-postgres/08-transactions-and-concurrency) covers transactions in depth.
+
+For exploration on a production database, open a read-only transaction so a typo cannot change data:
 
 ```sql
 BEGIN TRANSACTION READ ONLY;
-  SELECT * FROM users WHERE age < 18;
+SELECT * FROM users WHERE age < 25;
 ROLLBACK;
 ```
 
-These basic SQL operations handle most daily database work. You can create tables, add data, query it, update it, and delete it. Next, we'll look at database design - how to structure tables and relationships so your data stays consistent and your queries stay fast.
+## Summary
+
+You can now read data with `SELECT`, filter it with `WHERE`, sort and page it, add rows with `INSERT` (including upserts and `RETURNING`), change them with `UPDATE`, remove them with `DELETE`, and summarize them with aggregates and `GROUP BY`. You also saw the `NULL` rules that cause most surprises.
+
+So far everything lived in one table. Next, in [Database Design and Schema Modeling](/guides/introduction-to-postgres/04-database-design-and-schemas), you will split data into related tables with primary and foreign keys, so it stays consistent as your application grows.

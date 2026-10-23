@@ -1,405 +1,681 @@
 ---
 title: Indexes and Query Performance
-description: Learn how to create indexes and optimize PostgreSQL queries for better performance
+description: 'Speed up PostgreSQL queries: read EXPLAIN ANALYZE plans and pick the right index (B-tree, GIN, GiST, BRIN, partial, expression or covering).'
 order: 7
 ---
 
-**TLDR**: Indexes speed up queries by creating sorted lookup structures. Create indexes on columns you frequently search, filter, or join on. Use EXPLAIN to see query plans. Too many indexes slow down writes. Index foreign keys and WHERE clause columns.
+**TLDR**: Without an index, PostgreSQL reads the whole table to find matching rows. A B-tree index on the filtered column turns that into a few page reads. Use `EXPLAIN ANALYZE` to see what a query really does. Index foreign keys and the columns in your most frequent `WHERE`, `JOIN` and `ORDER BY` clauses. Use partial, expression and covering indexes for special cases, GIN for `jsonb` and arrays, and BRIN for huge append-only tables. Every index slows down writes, so drop the ones nobody uses.
 
-Without indexes, PostgreSQL scans entire tables to find rows. With indexes, it jumps directly to matching rows.
+A query that takes a millisecond on your laptop can take seconds in production once the table holds millions of rows. Most of the time the fix is an index, and the tool that tells you which index is `EXPLAIN`. This part builds a table with one million rows and shows the real plans PostgreSQL 18 chooses before and after each index.
+
+## Prerequisites
+
+- PostgreSQL 18 and `psql` ([Part 2](/guides/introduction-to-postgres/02-installation-and-setup)). The plans look slightly different on older versions; the differences are noted.
+- Joins and `WHERE` clauses from [Part 3](/guides/introduction-to-postgres/03-sql-basics-and-crud) and [Part 6](/guides/introduction-to-postgres/06-advanced-queries-and-joins).
+- A scratch database with some free disk space (the test tables below use about 250 MB): `CREATE DATABASE perf;` then `\c perf`.
+
+:::note
+The plans in this part come from PostgreSQL 18.6 compiled to WebAssembly (PGlite) on a small ARM board, which is slower than a normal server. Compare the plan shapes, row counts and buffer numbers. Your milliseconds will differ.
+:::
 
 ## Understanding Indexes
 
-An index is like a book's index - instead of reading every page to find "PostgreSQL", you check the index which tells you exactly which pages mention it.
+An index works like the index at the back of a book: instead of reading every page to find "PostgreSQL", you look up the word and jump to the pages it lists. A PostgreSQL B-tree index stores the indexed values in sorted order, and each entry points to the row's physical location in the table (the heap):
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "WHERE email = ...", "sub": "the query", "icon": "activity", "tone": "slate" },
+    { "label": "B-tree root", "sub": "pick the right branch", "icon": "branch", "tone": "violet" },
+    { "label": "Leaf page", "sub": "value -> row location", "icon": "box", "tone": "blue" },
+    { "label": "Heap page", "sub": "read the row", "icon": "database", "tone": "green" }
+  ]
+}
+```
+
+Even for a million rows, the tree is only three or four levels deep, so a lookup reads a handful of 8 kB pages instead of thousands.
+
+Create a table with one million users to experiment on:
 
 ```sql
 CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  email VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email text NOT NULL,
+  status text NOT NULL,
+  created_at timestamptz NOT NULL
 );
 
--- Insert 1 million users
-INSERT INTO users (email)
-SELECT 'user' || n || '@example.com'
-FROM generate_series(1, 1000000) n;
+-- 1,000,000 users: 90% active, 8% pending, 2% banned, one every 30 seconds
+INSERT INTO users (email, status, created_at)
+SELECT 'user' || n || '@example.com',
+       CASE WHEN n % 50 = 0 THEN 'banned'
+            WHEN n % 10 = 0 THEN 'pending'
+            ELSE 'active' END,
+       timestamptz '2025-01-01' + n * interval '30 seconds'
+FROM generate_series(1, 1000000) AS n;
 
--- Without index: slow (scans all rows)
-SELECT * FROM users WHERE email = 'user500000@example.com';
-
--- Create index
-CREATE INDEX idx_users_email ON users(email);
-
--- With index: fast (direct lookup)
-SELECT * FROM users WHERE email = 'user500000@example.com';
+-- Update the planner statistics and the visibility map
+VACUUM ANALYZE users;
 ```
 
 ## Types of Indexes
 
+`CREATE INDEX` builds a B-tree unless you choose another method with `USING`.
+
 ### B-tree (Default)
 
-Good for most use cases:
+B-tree handles equality, ranges, sorting, `IS NULL` and prefix matches with `LIKE 'abc%'` (for the latter, the column needs the `C` collation or a `text_pattern_ops` index). It is the right choice for most columns:
 
 ```sql
-CREATE INDEX idx_users_created_at ON users(created_at);
+CREATE INDEX users_created_at_idx ON users (created_at);
 
--- Works for:
-SELECT * FROM users WHERE created_at = '2024-01-01';
-SELECT * FROM users WHERE created_at > '2024-01-01';
-SELECT * FROM users WHERE created_at BETWEEN '2024-01-01' AND '2024-12-31';
-SELECT * FROM users ORDER BY created_at;
+-- All of these can use it:
+SELECT * FROM users WHERE created_at = '2025-03-01';
+SELECT * FROM users WHERE created_at >= '2025-03-01' AND created_at < '2025-04-01';
+SELECT * FROM users ORDER BY created_at DESC LIMIT 20;
 ```
 
 ### Hash
 
-Only for equality comparisons:
+Hash indexes support only `=`. They can be smaller than a B-tree for long values such as URLs, but they cannot enforce uniqueness, sort or answer range queries. A B-tree is almost always the better default.
 
 ```sql
-CREATE INDEX idx_users_email_hash ON users USING HASH (email);
-
--- Fast
-SELECT * FROM users WHERE email = 'alice@example.com';
-
--- Doesn't use index
-SELECT * FROM users WHERE email LIKE 'alice%';
+CREATE INDEX users_email_hash_idx ON users USING hash (email);
 ```
-
-Rarely needed - B-tree works for equality too.
 
 ### GIN (Generalized Inverted Index)
 
-For full-text search, arrays, JSONB:
+GIN indexes the elements inside a value: the keys of a `jsonb` document, the items of an array, or the words of a text search vector. Use it for containment and search queries:
 
 ```sql
-CREATE TABLE posts (
-  id SERIAL PRIMARY KEY,
-  title TEXT,
-  tags TEXT[],
-  metadata JSONB
+CREATE TABLE articles (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title text NOT NULL,
+  tags text[] NOT NULL DEFAULT '{}',
+  metadata jsonb NOT NULL DEFAULT '{}'
 );
 
-CREATE INDEX idx_posts_tags ON posts USING GIN (tags);
-CREATE INDEX idx_posts_metadata ON posts USING GIN (metadata);
+CREATE INDEX articles_tags_idx ON articles USING gin (tags);
+CREATE INDEX articles_metadata_idx ON articles USING gin (metadata);
+CREATE INDEX articles_title_fts_idx ON articles USING gin (to_tsvector('english', title));
 
--- Fast array queries
-SELECT * FROM posts WHERE tags @> ARRAY['postgres'];
-
--- Fast JSONB queries
-SELECT * FROM posts WHERE metadata @> '{"status": "published"}';
+SELECT * FROM articles WHERE tags @> ARRAY['postgres'];
+SELECT * FROM articles WHERE metadata @> '{"status": "published"}';
+SELECT * FROM articles WHERE to_tsvector('english', title) @@ to_tsquery('english', 'index & tuning');
 ```
+
+GIN indexes are slower to update than B-trees, which matters on tables with heavy write traffic.
 
 ### GiST (Generalized Search Tree)
 
-For geometric data, full-text search, range types:
+GiST handles values that overlap or have a distance: ranges, geometric types, network addresses, and PostGIS geometries. It also powers **exclusion constraints**, which say "no two rows may overlap". This one stops double bookings:
 
 ```sql
-CREATE INDEX idx_posts_title_search ON posts USING GiST (to_tsvector('english', title));
-
--- Full-text search
-SELECT * FROM posts WHERE to_tsvector('english', title) @@ to_tsquery('postgres');
+CREATE TABLE room_bookings (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  during tstzrange NOT NULL,
+  EXCLUDE USING gist (during WITH &&)
+);
 ```
+
+```terminal
+{
+  "title": "an exclusion constraint",
+  "prompt": "perf=#",
+  "steps": [
+    {
+      "cmd": "INSERT INTO room_bookings (during) VALUES ('[2026-10-23 09:00+00, 2026-10-23 10:00+00)');",
+      "output": "INSERT 0 1"
+    },
+    {
+      "cmd": "INSERT INTO room_bookings (during) VALUES ('[2026-10-23 09:30+00, 2026-10-23 11:00+00)');",
+      "output": "ERROR:  conflicting key value violates exclusion constraint \"room_bookings_during_excl\"\nDETAIL:  Key (during)=([\"2026-10-23 09:30:00+00\",\"2026-10-23 11:00:00+00\")) conflicts with existing key (during)=([\"2026-10-23 09:00:00+00\",\"2026-10-23 10:00:00+00\"))."
+    }
+  ]
+}
+```
+
+To combine a range with an equality column (one booking per _room_), install the `btree_gist` extension and use `EXCLUDE USING gist (room_id WITH =, during WITH &&)`.
+
+### BRIN (Block Range Index)
+
+BRIN stores only the minimum and maximum value for each range of table pages. It is tiny, and it works well when the column's values follow the physical order of the table, as timestamps do in an append-only log:
+
+```sql
+CREATE TABLE page_views (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  path text NOT NULL,
+  viewed_at timestamptz NOT NULL
+);
+
+INSERT INTO page_views (path, viewed_at)
+SELECT '/posts/' || (n % 500), timestamptz '2026-01-01' + n * interval '10 seconds'
+FROM generate_series(1, 1000000) AS n;
+
+CREATE INDEX page_views_viewed_at_brin ON page_views USING brin (viewed_at);
+CREATE INDEX page_views_viewed_at_btree ON page_views (viewed_at);
+VACUUM ANALYZE page_views;
+```
+
+Compare the sizes of the two indexes on the same column:
+
+```sql
+SELECT indexrelname AS index,
+       pg_size_pretty(pg_relation_size(indexrelid)) AS size
+FROM pg_stat_user_indexes
+WHERE relname = 'page_views'
+ORDER BY pg_relation_size(indexrelid) DESC;
+```
+
+```text
+           index            | size
+----------------------------+-------
+ page_views_pkey            | 21 MB
+ page_views_viewed_at_btree | 21 MB
+ page_views_viewed_at_brin  | 24 kB
+(3 rows)
+```
+
+The B-tree on `viewed_at` takes 21 MB; the BRIN index takes 24 kB. After dropping the B-tree, the planner uses the BRIN index for a one-day range. The **lossy** heap blocks show the trade-off: BRIN only knows which page ranges _might_ contain matches, so PostgreSQL rechecks every row in those pages:
+
+```sql
+EXPLAIN ANALYZE
+SELECT count(*) FROM page_views
+WHERE viewed_at >= '2026-02-01' AND viewed_at < '2026-02-02';
+```
+
+```text
+                                                                             QUERY PLAN
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=7647.13..7647.14 rows=1 width=8) (actual time=62.364..62.375 rows=1.00 loops=1)
+   Buffers: shared hit=133
+   ->  Bitmap Heap Scan on page_views  (cost=14.17..7625.78 rows=8540 width=0) (actual time=6.704..40.112 rows=8640.00 loops=1)
+         Recheck Cond: ((viewed_at >= '2026-02-01 00:00:00+00'::timestamp with time zone) AND (viewed_at < '2026-02-02 00:00:00+00'::timestamp with time zone))
+         Rows Removed by Index Recheck: 8768
+         Heap Blocks: lossy=128
+         Buffers: shared hit=133
+         ->  Bitmap Index Scan on page_views_viewed_at_brin  (cost=0.00..12.03 rows=17241 width=0) (actual time=1.643..1.645 rows=1280.00 loops=1)
+               Index Cond: ((viewed_at >= '2026-02-01 00:00:00+00'::timestamp with time zone) AND (viewed_at < '2026-02-02 00:00:00+00'::timestamp with time zone))
+               Index Searches: 1
+               Buffers: shared hit=5
+ Planning:
+   Buffers: shared hit=18 read=1 written=1
+ Planning Time: 2.346 ms
+ Execution Time: 63.273 ms
+(15 rows)
+```
+
+If rows are inserted in random order, every page range covers almost every value and BRIN stops helping.
 
 ## EXPLAIN: Understanding Query Plans
 
-EXPLAIN shows how PostgreSQL executes queries:
+`EXPLAIN` shows the plan the planner picked, without running the query. Look for one user by email:
 
 ```sql
 EXPLAIN SELECT * FROM users WHERE email = 'user500000@example.com';
 ```
 
-Without index:
-```
-Seq Scan on users  (cost=0.00..18334.00 rows=1 width=45)
-  Filter: (email = 'user500000@example.com')
-```
-
-"Seq Scan" means scanning every row. Cost is high.
-
-With index:
-```
-Index Scan using idx_users_email on users  (cost=0.42..8.44 rows=1 width=45)
-  Index Cond: (email = 'user500000@example.com')
+```text
+                        QUERY PLAN
+----------------------------------------------------------
+ Seq Scan on users  (cost=0.00..21846.00 rows=1 width=45)
+   Filter: (email = 'user500000@example.com'::text)
+(2 rows)
 ```
 
-"Index Scan" - uses the index. Much lower cost.
+Read it like this:
+
+- **Seq Scan on users**: PostgreSQL reads the whole table.
+- **cost=0.00..21846.00**: the planner's estimated cost to return the first row and all rows, in arbitrary units (roughly "pages read"). Only compare costs between plans for the same query.
+- **rows=1**: the estimated number of result rows.
+- **width=45**: the estimated average row size in bytes.
 
 ### EXPLAIN ANALYZE
 
-Actually runs the query and shows real timing:
+`EXPLAIN ANALYZE` runs the query and adds what really happened. In PostgreSQL 18 it also reports buffer usage by default (on older versions, add `BUFFERS`):
 
 ```sql
 EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'user500000@example.com';
 ```
 
-Output:
-```
-Index Scan using idx_users_email on users  (cost=0.42..8.44 rows=1 width=45) (actual time=0.028..0.029 rows=1 loops=1)
-  Index Cond: (email = 'user500000@example.com')
-Planning Time: 0.123 ms
-Execution Time: 0.053 ms
+```text
+                                                QUERY PLAN
+-----------------------------------------------------------------------------------------------------------
+ Seq Scan on users  (cost=0.00..21846.00 rows=1 width=45) (actual time=322.333..552.750 rows=1.00 loops=1)
+   Filter: (email = 'user500000@example.com'::text)
+   Rows Removed by Filter: 999999
+   Buffers: shared hit=4644 read=4702 written=98
+ Planning Time: 0.292 ms
+ Execution Time: 552.858 ms
+(6 rows)
 ```
 
-Shows estimated cost and actual execution time.
+- **actual time=start..end**: milliseconds until the first and the last row.
+- **rows**: rows actually returned (PostgreSQL 18 prints two decimals because it averages over `loops`).
+- **Rows Removed by Filter: 999999**: the scan read a million rows to keep one. That line is your hint that an index is missing.
+- **Buffers: shared hit**: 8 kB pages found in PostgreSQL's cache. `read` means pages fetched from the operating system or disk.
+
+Now add an index and run the same query again:
+
+```terminal
+{
+  "title": "add the index",
+  "prompt": "perf=#",
+  "steps": [
+    {
+      "cmd": "CREATE INDEX users_email_idx ON users (email);",
+      "output": "CREATE INDEX"
+    },
+    {
+      "cmd": "EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'user500000@example.com';",
+      "output": "                                                        QUERY PLAN\n---------------------------------------------------------------------------------------------------------------------------\n Index Scan using users_email_idx on users  (cost=0.42..8.44 rows=1 width=45) (actual time=0.314..0.323 rows=1.00 loops=1)\n   Index Cond: (email = 'user500000@example.com'::text)\n   Index Searches: 1\n   Buffers: shared hit=1 read=3 written=3\n Planning:\n   Buffers: shared hit=16 read=1 written=1\n Planning Time: 2.682 ms\n Execution Time: 0.448 ms\n(8 rows)"
+    }
+  ]
+}
+```
+
+The plan switches to an **Index Scan**, reads 4 pages instead of more than 9,000, and the execution time drops from hundreds of milliseconds to under a millisecond. `Index Searches: 1` is new in PostgreSQL 18: it counts how many times the scan descended the index.
+
+:::warning
+`EXPLAIN ANALYZE` really executes the statement. For `INSERT`, `UPDATE` or `DELETE`, wrap it in a transaction and roll back: `BEGIN; EXPLAIN ANALYZE DELETE ...; ROLLBACK;`
+:::
+
+Other plan nodes you will meet:
+
+| Node                        | Meaning                                                                            |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| `Index Only Scan`           | All needed columns are in the index, so the table is not read                      |
+| `Bitmap Heap Scan`          | Collect matching row locations from an index first, then read pages in order       |
+| `Nested Loop`               | For each outer row, look up matching inner rows (good for few rows)                |
+| `Hash Join`                 | Build a hash table from one side, probe it with the other                          |
+| `Merge Join`                | Walk two sorted inputs together                                                    |
+| `Sort`, `Hash`, `Aggregate` | Sorting, hashing and grouping steps; watch for "external" sorts that spill to disk |
+
+When estimated and actual row counts differ by a lot, the planner is working with bad statistics. Run `ANALYZE table_name;` and check again.
 
 ## When to Create Indexes
 
 Create indexes for:
 
-**Foreign keys**:
+**Foreign keys**, which PostgreSQL does not index automatically:
+
 ```sql
-CREATE INDEX idx_posts_user_id ON posts(user_id);
+CREATE INDEX posts_user_id_idx ON posts (user_id);
 ```
 
-**Columns in WHERE clauses**:
+**Columns you filter on often**:
+
 ```sql
--- If you frequently query:
-SELECT * FROM orders WHERE status = 'pending';
--- Create:
-CREATE INDEX idx_orders_status ON orders(status);
+-- For: SELECT * FROM orders WHERE status = 'pending';
+CREATE INDEX orders_status_idx ON orders (status);
 ```
 
-**Columns in JOIN conditions**:
+**Join columns**:
+
 ```sql
--- For:
-SELECT * FROM orders o JOIN customers c ON o.customer_id = c.id;
--- Create:
-CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+-- For: SELECT ... FROM orders AS o JOIN customers AS c ON o.customer_id = c.id;
+CREATE INDEX orders_customer_id_idx ON orders (customer_id);
 ```
 
-**Columns in ORDER BY**:
+**Columns you sort and limit on**:
+
 ```sql
--- For:
-SELECT * FROM posts ORDER BY created_at DESC;
--- Create:
-CREATE INDEX idx_posts_created_at ON posts(created_at);
+-- For: SELECT * FROM posts ORDER BY created_at DESC LIMIT 20;
+CREATE INDEX posts_created_at_idx ON posts (created_at);
 ```
+
+A B-tree can be read in both directions, so one index serves `ASC` and `DESC`.
+
+Indexes rarely help when a query returns a large share of the table. For `WHERE status = 'active'` on a table that is 90% active, a sequential scan is cheaper, and the planner knows that.
+
+:::warning
+A plain `CREATE INDEX` blocks inserts, updates and deletes on the table until it finishes, which can take minutes on a large table. In production, use `CREATE INDEX CONCURRENTLY`. It takes longer and cannot run inside a transaction block, but writes continue. If it fails, it leaves an `INVALID` index behind: drop it and try again.
+:::
 
 ## Composite Indexes
 
-Index multiple columns:
+A composite index covers several columns, sorted by the first column, then by the second within each value of the first:
 
-```sql
-CREATE INDEX idx_posts_user_created ON posts(user_id, created_at);
-
--- Uses index efficiently
-SELECT * FROM posts WHERE user_id = 123 ORDER BY created_at;
-
--- Also uses index (leftmost column)
-SELECT * FROM posts WHERE user_id = 123;
-
--- Doesn't use index (missing leftmost column)
-SELECT * FROM posts WHERE created_at > '2024-01-01';
+```terminal
+{
+  "title": "a two-column index",
+  "prompt": "perf=#",
+  "steps": [
+    {
+      "cmd": "CREATE INDEX users_status_created_idx ON users (status, created_at);",
+      "output": "CREATE INDEX"
+    },
+    {
+      "cmd": "EXPLAIN ANALYZE\nSELECT id FROM users\nWHERE status = 'pending'\n  AND created_at >= '2025-06-01' AND created_at < '2025-06-02';",
+      "output": "                                                                                       QUERY PLAN\n-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n Index Scan using users_status_created_idx on users  (cost=0.42..617.35 rows=248 width=8) (actual time=0.383..2.468 rows=230.00 loops=1)\n   Index Cond: ((status = 'pending'::text) AND (created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))\n   Index Searches: 1\n   Buffers: shared read=32 written=32\n Planning:\n   Buffers: shared hit=19 read=1 written=1\n Planning Time: 1.113 ms\n Execution Time: 2.879 ms\n(8 rows)"
+    }
+  ]
+}
 ```
 
-Column order matters. Put columns used in WHERE before columns used only in ORDER BY.
+Put columns you compare with `=` first and the range or sort column last. That way the matching rows sit next to each other in the index, and one search finds them all.
+
+What if a query filters only on the second column? Before PostgreSQL 18, a B-tree could not jump into the middle of the sort order, so this query needed another index or a full scan. PostgreSQL 18 adds **skip scan**: when the first column has few distinct values, it searches the index once per value. Here `Index Searches: 7` shows it at work:
+
+```sql
+EXPLAIN ANALYZE
+SELECT id FROM users
+WHERE created_at >= '2025-06-01' AND created_at < '2025-06-02';
+```
+
+```text
+                                                                           QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on users  (cost=81.60..6523.79 rows=3112 width=8) (actual time=5.067..10.705 rows=2880.00 loops=1)
+   Recheck Cond: ((created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))
+   Heap Blocks: exact=28
+   Buffers: shared hit=42 read=22 written=22
+   ->  Bitmap Index Scan on users_status_created_idx  (cost=0.00..80.82 rows=3112 width=0) (actual time=4.957..4.959 rows=2880.00 loops=1)
+         Index Cond: ((created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))
+         Index Searches: 7
+         Buffers: shared hit=14 read=22 written=22
+ Planning Time: 0.467 ms
+ Execution Time: 14.389 ms
+(10 rows)
+```
+
+Skip scan is a fallback, not a design goal. If an important query filters on `created_at` alone, give it its own index.
 
 ## Partial Indexes
 
-Index only some rows:
+A partial index covers only the rows that match a `WHERE` clause. If you often query a small subset, such as banned users, the index stays small:
 
 ```sql
--- Only index active users
-CREATE INDEX idx_active_users ON users(email) WHERE deleted_at IS NULL;
-
--- Or only pending orders
-CREATE INDEX idx_pending_orders ON orders(customer_id) WHERE status = 'pending';
+CREATE INDEX users_banned_created_idx ON users (created_at)
+WHERE status = 'banned';
 ```
 
-Smaller, faster indexes when you frequently query a subset.
+```sql
+SELECT indexrelname AS index,
+       pg_size_pretty(pg_relation_size(indexrelid)) AS size
+FROM pg_stat_user_indexes
+WHERE relname = 'users'
+ORDER BY pg_relation_size(indexrelid) DESC;
+```
+
+```text
+          index           |  size
+--------------------------+--------
+ users_email_idx          | 39 MB
+ users_status_created_idx | 30 MB
+ users_pkey               | 21 MB
+ users_banned_created_idx | 456 kB
+(4 rows)
+```
+
+The planner uses it when the query's `WHERE` clause implies the index condition:
+
+```sql
+EXPLAIN SELECT email FROM users
+WHERE status = 'banned' AND created_at > '2025-12-01';
+```
+
+```text
+                                        QUERY PLAN
+------------------------------------------------------------------------------------------
+ Index Scan using users_banned_created_idx on users  (cost=0.29..36.83 rows=774 width=22)
+   Index Cond: (created_at > '2025-12-01 00:00:00+00'::timestamp with time zone)
+(2 rows)
+```
+
+Partial indexes are also the way to enforce "unique among active rows" (see soft deletes in [Part 4](/guides/introduction-to-postgres/04-database-design-and-schemas#h3-soft-deletes)).
 
 ## Unique Indexes
 
-Enforce uniqueness and speed up lookups:
+A unique index enforces uniqueness and speeds up lookups at the same time:
 
 ```sql
-CREATE UNIQUE INDEX idx_users_email_unique ON users(email);
-
--- Equivalent to UNIQUE constraint
-ALTER TABLE users ADD CONSTRAINT users_email_key UNIQUE (email);
+CREATE UNIQUE INDEX users_email_key ON users (email);
 ```
+
+A `UNIQUE` constraint creates exactly such an index. Prefer the constraint for plain uniqueness, because it documents intent and foreign keys can reference it. Use a unique index when you need an expression or a `WHERE` clause, for example `CREATE UNIQUE INDEX ON users (lower(email));`.
 
 ## Index Maintenance
 
 ### View Indexes
 
 ```sql
--- List indexes on a table
+-- In psql: the table description lists its indexes
 \d users
 
--- Or:
-SELECT indexname, indexdef
-FROM pg_indexes
-WHERE tablename = 'users';
+-- Or with SQL
+SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'users';
 ```
 
 ### Drop Indexes
 
 ```sql
-DROP INDEX idx_users_email;
+DROP INDEX CONCURRENTLY users_email_hash_idx;
 ```
 
 ### Reindex
 
-Rebuild indexes (rarely needed):
+Indexes can bloat over time when rows are updated and deleted often. Rebuild one without blocking writes:
 
 ```sql
-REINDEX TABLE users;
-REINDEX INDEX idx_users_email;
+REINDEX INDEX CONCURRENTLY users_email_idx;
+REINDEX TABLE CONCURRENTLY users;
 ```
+
+Plain `REINDEX` (without `CONCURRENTLY`) locks out writes while it runs. Most indexes never need a rebuild; check bloat before you schedule one.
 
 ## Query Optimization Techniques
 
 ### Use Indexes Wisely
 
+A function on the column hides it from a normal index:
+
 ```sql
--- Bad - function prevents index use
-SELECT * FROM users WHERE LOWER(email) = 'alice@example.com';
-
--- Good - index on expression
-CREATE INDEX idx_users_email_lower ON users(LOWER(email));
-SELECT * FROM users WHERE LOWER(email) = 'alice@example.com';
-
--- Or better - store lowercase
-UPDATE users SET email = LOWER(email);
-CREATE INDEX idx_users_email ON users(email);
-SELECT * FROM users WHERE email = 'alice@example.com';
+EXPLAIN SELECT * FROM users WHERE lower(email) = 'user500000@example.com';
 ```
+
+```text
+                         QUERY PLAN
+-------------------------------------------------------------
+ Seq Scan on users  (cost=0.00..24346.00 rows=5000 width=45)
+   Filter: (lower(email) = 'user500000@example.com'::text)
+(2 rows)
+```
+
+Index the expression itself:
+
+```terminal
+{
+  "title": "an expression index",
+  "prompt": "perf=#",
+  "steps": [
+    {
+      "cmd": "CREATE INDEX users_email_lower_idx ON users (lower(email));",
+      "output": "CREATE INDEX"
+    },
+    {
+      "cmd": "EXPLAIN SELECT * FROM users WHERE lower(email) = 'user500000@example.com';",
+      "output": "                                       QUERY PLAN\n-----------------------------------------------------------------------------------------\n Bitmap Heap Scan on users  (cost=139.18..8305.02 rows=5000 width=45)\n   Recheck Cond: (lower(email) = 'user500000@example.com'::text)\n   ->  Bitmap Index Scan on users_email_lower_idx  (cost=0.00..137.93 rows=5000 width=0)\n         Index Cond: (lower(email) = 'user500000@example.com'::text)\n(4 rows)"
+    },
+    {
+      "cmd": "ANALYZE users;",
+      "output": "ANALYZE"
+    },
+    {
+      "cmd": "EXPLAIN SELECT * FROM users WHERE lower(email) = 'user500000@example.com';",
+      "output": "                                     QUERY PLAN\n------------------------------------------------------------------------------------\n Index Scan using users_email_lower_idx on users  (cost=0.42..8.44 rows=1 width=45)\n   Index Cond: (lower(email) = 'user500000@example.com'::text)\n(2 rows)"
+    }
+  ]
+}
+```
+
+Right after `CREATE INDEX`, the planner has no statistics for the expression and guesses 5,000 rows. After `ANALYZE` it knows the values are unique, estimates 1 row and picks a plain index scan. Run `ANALYZE` after creating expression indexes.
+
+Simpler still: store emails in lowercase when you write them, and index the plain column.
 
 ### Avoid SELECT *
 
 ```sql
--- Slower
-SELECT * FROM posts;
+-- Reads and sends every column, including large text fields
+SELECT * FROM posts WHERE user_id = 42;
 
--- Faster
-SELECT id, title FROM posts;
+-- Reads only what the page shows
+SELECT id, title, created_at FROM posts WHERE user_id = 42;
 ```
 
-Fetching only needed columns reduces data transfer.
+Fewer columns mean less data over the network, and they make index-only scans possible.
 
 ### Use LIMIT
 
-```sql
--- Without LIMIT, fetches all rows
-SELECT * FROM posts ORDER BY created_at DESC;
+If you show 20 rows, ask for 20. With an index on the `ORDER BY` column, PostgreSQL stops after reading 20 index entries:
 
--- With LIMIT, stops after 10
-SELECT * FROM posts ORDER BY created_at DESC LIMIT 10;
+```sql
+SELECT id, title FROM posts ORDER BY created_at DESC LIMIT 20;
 ```
 
 ### Covering Indexes
 
-Include all needed columns in the index:
+`INCLUDE` adds columns to the index leaf entries without making them part of the key. If every column a query needs is in the index, PostgreSQL can answer from the index alone:
 
-```sql
-CREATE INDEX idx_posts_user_title ON posts(user_id) INCLUDE (title);
-
--- Index-only scan - doesn't touch table
-SELECT title FROM posts WHERE user_id = 123;
+```terminal
+{
+  "title": "an index-only scan",
+  "prompt": "perf=#",
+  "steps": [
+    {
+      "cmd": "CREATE INDEX users_email_status_idx ON users (email) INCLUDE (status);",
+      "output": "CREATE INDEX"
+    },
+    {
+      "cmd": "VACUUM users;",
+      "output": "VACUUM"
+    },
+    {
+      "cmd": "EXPLAIN ANALYZE SELECT status FROM users WHERE email = 'user42@example.com';",
+      "output": "                                                              QUERY PLAN\n--------------------------------------------------------------------------------------------------------------------------------------\n Index Only Scan using users_email_status_idx on users  (cost=0.42..4.44 rows=1 width=7) (actual time=0.717..0.729 rows=1.00 loops=1)\n   Index Cond: (email = 'user42@example.com'::text)\n   Heap Fetches: 0\n   Index Searches: 1\n   Buffers: shared hit=1 read=3 written=3\n Planning:\n   Buffers: shared hit=3\n Planning Time: 0.476 ms\n Execution Time: 0.983 ms\n(9 rows)"
+    }
+  ]
+}
 ```
+
+`Heap Fetches: 0` means the table was not touched. Index-only scans depend on the visibility map, which `VACUUM` (and autovacuum) keep up to date. On a table with many recent changes, you will see more heap fetches.
 
 ## Common Performance Issues
 
 ### N+1 Queries
 
-Bad (in application code):
+The most common performance bug lives in application code, not in SQL:
 
 ```python
-# Fetch users
-users = query("SELECT * FROM users")
-
-# For each user, fetch posts
+# 1 query for the users, then 1 more query per user: N+1 round trips
+users = db.execute("SELECT id, username FROM users LIMIT 100").fetchall()
 for user in users:
-    posts = query("SELECT * FROM posts WHERE user_id = ?", user.id)
+    posts = db.execute(
+        "SELECT title FROM posts WHERE user_id = %s", (user.id,)
+    ).fetchall()
 ```
 
-This runs N+1 queries (1 for users, N for each user's posts).
-
-Good:
+Each round trip adds network latency. Fetch everything in one query instead:
 
 ```python
-# One query with JOIN
-results = query("""
-    SELECT u.*, p.*
-    FROM users u
-    LEFT JOIN posts p ON p.user_id = u.id
-""")
+rows = db.execute("""
+    SELECT u.id, u.username, p.title
+    FROM users AS u
+    LEFT JOIN posts AS p ON p.user_id = u.id
+    WHERE u.id IN (SELECT id FROM users ORDER BY id LIMIT 100)
+""").fetchall()
 ```
+
+ORMs have a setting for this, usually called eager loading (`select_related`, `includes`, `joinedload`).
 
 ### Inefficient WHERE Clauses
 
 ```sql
--- Bad - scans all rows
-SELECT * FROM posts WHERE EXTRACT(YEAR FROM created_at) = 2024;
+-- Bad: the function hides created_at from the index
+SELECT * FROM posts WHERE extract(year FROM created_at) = 2025;
 
--- Good - uses index
+-- Good: a range on the bare column can use the index
 SELECT * FROM posts
-WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';
+WHERE created_at >= '2025-01-01' AND created_at < '2026-01-01';
 ```
+
+The same applies to casts and arithmetic on the column: `WHERE created_at::date = '2025-06-01'` cannot use a plain index on `created_at`.
 
 ### Missing Indexes on Foreign Keys
 
-Always index foreign keys:
-
-```sql
-ALTER TABLE posts ADD CONSTRAINT fk_posts_user
-  FOREIGN KEY (user_id) REFERENCES users(id);
-
-CREATE INDEX idx_posts_user_id ON posts(user_id);
-```
+Joins on an unindexed foreign key scan the child table, and so does every delete of a parent row. Find foreign keys without a matching index with the queries on the PostgreSQL wiki, or check each `REFERENCES` column when you review a migration.
 
 ## Monitoring Query Performance
 
 ### pg_stat_statements
 
-Track slow queries:
+`pg_stat_statements` records every query's call count and timing. It ships with PostgreSQL but must be loaded at server start. Add it to `postgresql.conf` and restart:
+
+```ini
+shared_preload_libraries = 'pg_stat_statements'
+```
+
+Then enable it in your database and look for the queries that cost the most time in total:
 
 ```sql
-CREATE EXTENSION pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
--- View slowest queries
-SELECT
-  query,
-  calls,
-  total_exec_time,
-  mean_exec_time,
-  max_exec_time
+SELECT left(query, 60) AS query,
+       calls,
+       round(total_exec_time::numeric, 1) AS total_ms,
+       round(mean_exec_time::numeric, 2) AS mean_ms,
+       rows
 FROM pg_stat_statements
-ORDER BY mean_exec_time DESC
+ORDER BY total_exec_time DESC
 LIMIT 10;
 ```
 
+Sort by `total_exec_time` first: a 5 ms query that runs a million times a day costs more than a 2-second report that runs once.
+
 ### Auto Explain
 
-Log slow query plans:
+`auto_explain` logs the plan of every query slower than a threshold, so you can see plans from production without guessing:
 
-```sql
--- In postgresql.conf or via SQL
-SET auto_explain.log_min_duration = 1000;  -- Log queries over 1 second
-SET auto_explain.log_analyze = true;
+```ini
+# postgresql.conf (needs a restart)
+shared_preload_libraries = 'pg_stat_statements,auto_explain'
+auto_explain.log_min_duration = '1s'
+auto_explain.log_analyze = on
 ```
+
+For a single session, `LOAD 'auto_explain';` followed by `SET auto_explain.log_min_duration = '1s';` works too (as a superuser). `log_analyze` adds timing overhead to every query, so keep the threshold high on busy servers.
 
 ## Practical Indexing Strategy
 
-1. **Start without indexes** (except primary keys and unique constraints)
-2. **Profile real queries** using EXPLAIN ANALYZE
-3. **Add indexes for slow queries** on columns in WHERE, JOIN, ORDER BY
-4. **Monitor index usage**:
+1. **Start with the indexes you know you need**: primary keys, unique constraints and foreign keys.
+2. **Find the slow queries** with `pg_stat_statements` and your application's metrics.
+3. **Read their plans** with `EXPLAIN ANALYZE` on production-like data. Look for sequential scans that remove most rows, and for estimates that are far off.
+4. **Add one index at a time** (`CONCURRENTLY` in production), and confirm the plan changed.
+5. **Remove indexes nobody uses**. Every index costs disk space, memory and time on every write:
 
 ```sql
-SELECT
-  schemaname,
-  tablename,
-  indexname,
-  idx_scan,
-  idx_tup_read,
-  idx_tup_fetch
+SELECT relname AS table_name,
+       indexrelname AS index_name,
+       idx_scan,
+       pg_size_pretty(pg_relation_size(indexrelid)) AS size
 FROM pg_stat_user_indexes
-ORDER BY idx_scan ASC;
+ORDER BY idx_scan, pg_relation_size(indexrelid) DESC;
 ```
 
-Indexes with `idx_scan = 0` are never used - consider dropping them.
+Indexes with `idx_scan = 0` since the last statistics reset are candidates for removal. Check replicas too (the counters are per server), and keep indexes that back a constraint.
 
-5. **Balance read vs write performance** - indexes speed up reads but slow down writes
+## Common Mistakes
 
-Proper indexing can turn a 10-second query into a 10-millisecond query. Next, we'll explore transactions - how to keep data consistent when multiple operations must succeed or fail together.
+- **Running a plain `CREATE INDEX` on a busy production table.** Use `CONCURRENTLY`.
+- **Indexing every column "just in case".** Writes slow down, and the planner gains nothing.
+- **Wrapping the indexed column in a function** (`lower(email)`, `created_at::date`). Use an expression index or rewrite the condition.
+- **Wrong column order in a composite index.** Equality columns first, range or sort column last.
+- **Testing on a tiny table.** With a few hundred rows, a sequential scan is the best plan, so `EXPLAIN` tells you nothing about production.
+- **Trusting stale statistics.** After a bulk load, run `ANALYZE`.
+
+## Summary
+
+You can now read `EXPLAIN` and `EXPLAIN ANALYZE` output, choose between B-tree, GIN, GiST and BRIN, and use composite, partial, expression and covering indexes. You also know how to find slow queries with `pg_stat_statements` and unused indexes with `pg_stat_user_indexes`.
+
+Fast queries are half of a healthy database. The other half is correctness when many sessions read and write at once. Next, in [Transactions and Concurrency Control](/guides/introduction-to-postgres/08-transactions-and-concurrency), you will see how PostgreSQL keeps data consistent under concurrent access.

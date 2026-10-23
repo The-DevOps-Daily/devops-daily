@@ -1,18 +1,23 @@
 ---
 title: Understanding Database Fundamentals
-description: 'Database fundamentals for developers: what relational databases solve, how tables, rows, and columns map to your data, and why integrity and ACID matter.'
+description: 'How relational databases like PostgreSQL work: tables, keys, relationships, ACID transactions, the write-ahead log, and how a query is planned and run.'
 order: 1
 ---
 
-**TLDR**: Databases store and organize data so applications can find it quickly. Relational databases like PostgreSQL use tables with rows and columns, enforce relationships between data, and guarantee data integrity. They handle concurrent access, support complex queries, and prevent data loss better than files or simple storage.
+**TLDR**: A database stores data so many users can read and change it safely and quickly. Relational databases like PostgreSQL keep data in tables of rows and columns, link tables with keys, and enforce rules about what data is valid. Transactions make groups of changes all-or-nothing, the write-ahead log makes committed data survive crashes, and the query planner finds a fast way to answer each question you ask in SQL.
 
-Before diving into PostgreSQL specifically, you need to understand what databases solve and why relational databases became the standard for most applications.
+Before you install PostgreSQL, it helps to know what problems a database solves and how a relational database is organized. This part explains the concepts the rest of the guide builds on: tables and keys, relationships, transactions, and what happens inside PostgreSQL when your application sends a query.
+
+## Prerequisites
+
+- No database experience. If you have used a spreadsheet, you already know rows and columns.
+- Some programming or command line experience helps you follow the examples, but you do not need to run anything in this part.
 
 ## What Problems Do Databases Solve?
 
 Imagine building a blog application. You could store posts in text files:
 
-```
+```text
 posts/
   post-1.txt
   post-2.txt
@@ -21,20 +26,13 @@ posts/
 
 This works until you need to:
 
-- Find all posts by a specific author
-- Show posts sorted by date
-- Count how many comments each post has
-- Handle multiple users writing posts simultaneously
-- Make sure you never lose data if the server crashes
+- find all posts by one author;
+- show posts sorted by date;
+- count the comments on each post;
+- let two people edit at the same time without overwriting each other;
+- make sure nothing is lost when the server crashes halfway through a save.
 
-File systems aren't built for these tasks. You'd end up writing code to:
-
-- Parse every file to search for authors
-- Track relationships between posts and comments
-- Lock files so two users don't overwrite each other's changes
-- Implement backup and recovery mechanisms
-
-Databases solve these problems. They're built specifically for storing, querying, and managing data reliably.
+With files, you would end up writing that code yourself: parsing every file to search it, tracking which comment belongs to which post, locking files, and building backup and recovery. A database does all of this for you, and it has been tested against far more failure cases than your own code ever will be.
 
 ## Relational Database Concepts
 
@@ -42,424 +40,494 @@ Relational databases organize data in tables, similar to spreadsheets but with s
 
 ### Tables, Rows, and Columns
 
-A table holds data about one type of thing. A row represents one item. Columns represent attributes of that item.
+A table holds one kind of thing. Each row is one item, and each column is one attribute of that item:
 
-```
-users table:
-┌────┬──────────┬─────────────────────┬─────────────────────┐
-│ id │ username │ email               │ created_at          │
-├────┼──────────┼─────────────────────┼─────────────────────┤
-│ 1  │ alice    │ alice@example.com   │ 2024-01-15 10:23:00 │
-│ 2  │ bob      │ bob@example.com     │ 2024-01-16 14:45:00 │
-│ 3  │ carol    │ carol@example.com   │ 2024-01-17 09:12:00 │
-└────┴──────────┴─────────────────────┴─────────────────────┘
+```text
+users
+ id | username | email             | created_at
+----+----------+-------------------+------------------------
+  1 | alice    | alice@example.com | 2026-01-15 10:23:00+00
+  2 | bob      | bob@example.com   | 2026-01-16 14:45:00+00
+  3 | carol    | carol@example.com | 2026-01-17 09:12:00+00
 
-posts table:
-┌────┬─────────┬────────────────────┬─────────────────────┐
-│ id │ user_id │ title              │ created_at          │
-├────┼─────────┼────────────────────┼─────────────────────┤
-│ 1  │ 1       │ Hello World        │ 2024-01-15 11:00:00 │
-│ 2  │ 1       │ PostgreSQL Basics  │ 2024-01-16 10:30:00 │
-│ 3  │ 2       │ My First Post      │ 2024-01-17 15:20:00 │
-└────┴─────────┴────────────────────┴─────────────────────┘
+posts
+ id | user_id | title             | created_at
+----+---------+-------------------+------------------------
+  1 |       1 | Hello World       | 2026-01-15 11:00:00+00
+  2 |       1 | PostgreSQL Basics | 2026-01-16 10:30:00+00
+  3 |       2 | My First Post     | 2026-01-17 15:20:00+00
 ```
 
-Each table has columns with specific data types. The `id` column holds numbers, `username` holds text, `created_at` holds timestamps. The database enforces these types - you can't accidentally put a date in the username column.
+Every column has a data type. `id` holds integers, `username` holds text, `created_at` holds timestamps. The database enforces the types: you cannot put a date into an integer column by accident.
 
 ### Primary Keys
 
-Every table needs a way to uniquely identify each row. This is the primary key.
+Every table needs a way to identify each row uniquely: its **primary key**. Here, `id` is the primary key of both tables. "The user with id 1" always means exactly one row.
 
-In the examples above, `id` is the primary key. No two users can have the same id. If you say "get user with id 1", the database knows exactly which row you mean.
+A primary key must be:
 
-Primary keys must be:
-- Unique (no duplicates)
-- Not null (every row must have one)
-- Unchanging (don't change a row's primary key)
+- unique (no two rows share a value);
+- not null (every row has one);
+- stable (you should never need to change it).
 
-Most tables use auto-incrementing integers for primary keys, but you can use other values like UUIDs or natural keys (email addresses, product codes).
+Most tables use a generated integer, a UUID, or occasionally a natural identifier such as an ISO country code. [Part 4](/guides/introduction-to-postgres/04-database-design-and-schemas#h2-primary-keys) compares the options.
 
 ### Foreign Keys
 
-Tables relate to each other through foreign keys. The `posts` table has a `user_id` column that references the `users` table's `id`.
+Tables refer to each other through **foreign keys**. The `user_id` column in `posts` refers to `id` in `users`:
 
+```text
+     users                          posts
+┌────────────────┐            ┌──────────────────┐
+│ id (PK)        │<───────────│ user_id (FK)     │
+│ username       │            │ id (PK)          │
+│ email          │            │ title            │
+└────────────────┘            └──────────────────┘
 ```
-     users                                posts
-┌────────────────┐                  ┌──────────────────┐
-│ id (PK)        │<─────────────────│ user_id (FK)     │
-│ username       │                  │ id (PK)          │
-│ email          │                  │ title            │
-└────────────────┘                  └──────────────────┘
-```
 
-This relationship means:
-- Each post belongs to one user
-- Users can have many posts
-- The database can verify that every `user_id` in posts points to a real user
+This means:
 
-If you try to delete a user who has posts, the database can prevent it or cascade the deletion to related posts. This maintains referential integrity - no orphaned data.
+- each post belongs to one user;
+- a user can have many posts;
+- the database refuses a post whose `user_id` does not match an existing user.
+
+If you try to delete a user who still has posts, the database can block the delete or delete the posts too, depending on how you define the key. Either way, you never end up with posts that point to nobody. This is called **referential integrity**.
 
 ### Relationships
 
 Tables connect in three ways:
 
-**One-to-Many**: One user has many posts. Most common relationship.
+**One-to-many**: one user has many posts. This is the most common relationship.
 
-```
+```text
 User (1) ──────< Posts (many)
 ```
 
-**Many-to-Many**: Posts have many tags, tags apply to many posts. Requires a join table.
+**Many-to-many**: a post has many tags, and a tag belongs to many posts. This needs a third table, often called a junction table, with one row per pair:
 
-```
+```text
 Posts >────┬────< Tags
            │
       post_tags
 ```
 
-**One-to-One**: A user has one profile. Less common, sometimes used to split large tables.
+**One-to-one**: a user has one profile. It is less common, and is used to split optional or rarely used columns into their own table.
 
-```
+```text
 User (1) ────── Profile (1)
 ```
 
 ## How Relational Databases Work
 
-Understanding the internals helps you use databases effectively.
+You can use PostgreSQL without knowing its internals, but a rough picture explains a lot of its behavior: why connections are expensive, why committed data survives a crash, and why indexes matter.
+
+### Processes and Memory
+
+PostgreSQL runs as a group of processes. A main server process accepts connections and starts one **backend process** per client connection. Background processes handle work that does not belong to any single query. They all share one block of memory that holds cached data pages (**shared buffers**) and recent log records:
+
+```diagram
+{
+  "type": "infra",
+  "flow": [
+    { "label": "Application", "sub": "one connection each", "icon": "box", "tone": "blue" },
+    { "label": "postgres", "sub": "main server process", "icon": "server", "tone": "violet" }
+  ],
+  "groups": [
+    {
+      "label": "Backend processes",
+      "sub": "one per client connection",
+      "icon": "cpu",
+      "tone": "blue",
+      "nodes": [
+        { "label": "backend", "sub": "runs your queries", "icon": "activity", "tone": "blue" },
+        { "label": "backend", "sub": "runs your queries", "icon": "activity", "tone": "blue" }
+      ]
+    },
+    {
+      "label": "Shared memory",
+      "sub": "used by every process",
+      "icon": "database",
+      "tone": "green",
+      "nodes": [
+        { "label": "shared buffers", "sub": "cached 8 kB pages", "icon": "database", "tone": "green" },
+        { "label": "WAL buffers", "sub": "recent log records", "icon": "queue", "tone": "green" }
+      ]
+    },
+    {
+      "label": "Background processes",
+      "sub": "housekeeping",
+      "icon": "gear",
+      "tone": "slate",
+      "nodes": [
+        { "label": "WAL writer", "icon": "gear", "tone": "slate" },
+        { "label": "checkpointer", "icon": "gear", "tone": "slate" },
+        { "label": "autovacuum", "icon": "gear", "tone": "slate" },
+        { "label": "I/O workers", "sub": "PostgreSQL 18", "icon": "gear", "tone": "slate" }
+      ]
+    }
+  ]
+}
+```
+
+Because every connection is a full operating system process, opening a new connection costs time and memory. That is why production setups use connection pools ([Part 10](/guides/introduction-to-postgres/10-production-best-practices#h3-connection-pooling)).
 
 ### Storage
 
-PostgreSQL stores data in files on disk. Each database is a directory, each table has files containing its rows.
+PostgreSQL stores each table and index in files inside its **data directory**. Each database is a directory under `base/`, and each table has at least one file:
 
-```
+```text
 data/
 └── base/
-    └── 16384/          # Database ID
-        ├── 16385       # Table file
-        ├── 16385_fsm   # Free space map
-        └── 16385_vm    # Visibility map
+    └── 16384/          # one database (named by its internal ID)
+        ├── 16385       # a table's data
+        ├── 16385_fsm   # its free space map
+        └── 16385_vm    # its visibility map
 ```
 
-Data is organized in 8KB pages. When you query a table, PostgreSQL reads pages from disk into memory (the buffer cache). Queries then work with in-memory data, which is much faster.
+You can ask PostgreSQL where a table lives and how big its pages are:
 
-Changes are first written to the Write-Ahead Log (WAL), then applied to data files. This ensures durability - even if PostgreSQL crashes mid-write, it can replay the WAL to recover.
+```sql
+SELECT pg_relation_filepath('users') AS file, current_setting('block_size') AS block_size;
+```
+
+```text
+     file     | block_size
+--------------+------------
+ base/5/16385 | 8192
+(1 row)
+```
+
+Files are divided into 8 kB **pages** (blocks). To read a row, PostgreSQL loads its page into shared buffers. Queries then work on the cached copy, which is much faster than going to disk every time.
+
+### Write-Ahead Logging
+
+When you change data, PostgreSQL does not rewrite the table file right away. It first records the change in the **write-ahead log (WAL)**, and at `COMMIT` it makes sure that log record is on disk. The changed page stays in memory and is written to the table file later, in the background:
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "INSERT / UPDATE", "sub": "your change", "icon": "activity", "tone": "blue" },
+    { "label": "Shared buffers", "sub": "page changed in memory", "icon": "database", "tone": "green" },
+    { "label": "WAL on disk", "sub": "flushed at COMMIT", "icon": "queue", "tone": "amber" },
+    { "label": "Checkpoint", "sub": "dirty pages written to files", "icon": "server", "tone": "violet" }
+  ]
+}
+```
+
+Writing the log sequentially is fast, and it makes commits durable: if the server crashes, PostgreSQL replays the WAL on startup and restores every committed change. The same log feeds replication and point-in-time recovery ([Part 9](/guides/introduction-to-postgres/09-backup-and-recovery)).
 
 ### Query Processing
 
-When you execute a query, PostgreSQL:
+When you send a query, PostgreSQL:
 
-1. **Parses** the SQL to check syntax
-2. **Plans** how to execute it (which indexes to use, in what order to join tables)
-3. **Optimizes** the plan based on statistics about your data
-4. **Executes** the plan and returns results
+1. **parses** the SQL text into a tree and checks the syntax;
+2. **rewrites** it, for example by expanding views into the queries behind them;
+3. **plans** it: the planner considers different ways to run the query (which index, which join order, which join method) and estimates the cost of each using statistics about your data;
+4. **executes** the cheapest plan and returns the rows.
 
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "SQL text", "icon": "activity", "tone": "slate" },
+    { "label": "Parser", "sub": "syntax and names", "icon": "gear", "tone": "blue" },
+    { "label": "Rewriter", "sub": "views and rules", "icon": "gear", "tone": "blue" },
+    { "label": "Planner", "sub": "cheapest plan", "icon": "branch", "tone": "violet" },
+    { "label": "Executor", "sub": "rows back", "icon": "rocket", "tone": "green" }
+  ]
+}
 ```
-SQL Query
-    │
-    ↓
-Parser ──→ Parse Tree
-    │
-    ↓
-Planner ──→ Query Plan
-    │
-    ↓
-Executor ──→ Results
-```
 
-The planner is smart. For "find all posts by user 123", it might:
-
-- Use an index on `user_id` if one exists (fast)
-- Scan the entire table if there's no index (slow for large tables)
-
-You can see the plan with `EXPLAIN`:
+For "find all posts by user 123", the planner might use an index on `user_id` if one exists, or read the whole table if it does not. `EXPLAIN` shows the plan it chose:
 
 ```sql
 EXPLAIN SELECT * FROM posts WHERE user_id = 123;
 ```
 
-This shows whether the query is efficient or needs optimization.
+```text
+                      QUERY PLAN
+-------------------------------------------------------
+ Seq Scan on posts  (cost=0.00..22.12 rows=5 width=56)
+   Filter: (user_id = 123)
+(2 rows)
+```
+
+`Seq Scan` means PostgreSQL reads every row of the table. On a large table, that is the signal to add an index. [Part 7](/guides/introduction-to-postgres/07-indexes-and-performance) teaches you to read these plans.
 
 ### Indexes
 
-Indexes are data structures that make lookups fast. Without an index, finding user 123's posts means reading every row.
+An index is a separate data structure that maps column values to the rows that contain them. Without an index on `user_id`, finding user 123's posts means reading every row. With one, PostgreSQL looks up 123 in the index and jumps straight to the matching rows:
 
-With an index on `user_id`:
-
-```
-Index on user_id:
-┌────────┬──────────────┐
-│ user_id│ row location │
-├────────┼──────────────┤
-│ 1      │ page 1, row 1│
-│ 1      │ page 1, row 2│
-│ 2      │ page 2, row 3│
-│ 123    │ page 5, row 7│
-│ 123    │ page 5, row 8│
-└────────┴──────────────┘
+```text
+index on posts.user_id
+ user_id | row location
+---------+--------------
+       1 | page 1, item 1
+       1 | page 1, item 2
+       2 | page 2, item 3
+     123 | page 5, item 7
+     123 | page 5, item 8
 ```
 
-PostgreSQL jumps directly to rows with `user_id = 123`. This is the difference between milliseconds and minutes on large tables.
-
-Indexes speed up reads but slow down writes (the index must be updated). You add indexes for columns you frequently search, sort, or join on.
+On large tables, this is the difference between milliseconds and seconds or minutes. The cost: every insert, update and delete must also update the index, and the index uses disk space. You add indexes for the columns you search, join and sort on most.
 
 ### Transactions
 
-Transactions group multiple operations into one atomic unit. Either all operations succeed or all fail.
+A transaction groups several changes into one unit that either completely happens or does not happen at all:
 
 ```sql
 BEGIN;
-  UPDATE accounts SET balance = balance - 100 WHERE id = 1;
-  UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
 COMMIT;
 ```
 
-If the second update fails (maybe account 2 doesn't exist), the first update rolls back. You never end up with money deducted but not added.
+If the second update fails, the first one is undone too. You never end up with money taken from one account and not added to the other.
 
-Transactions provide ACID guarantees:
+Transactions provide the **ACID** guarantees:
 
-- **Atomicity**: All or nothing
-- **Consistency**: Database moves from one valid state to another
-- **Isolation**: Concurrent transactions don't interfere
-- **Durability**: Committed changes survive crashes
+- **Atomicity**: all or nothing.
+- **Consistency**: the data moves from one valid state to another; constraints always hold.
+- **Isolation**: concurrent transactions do not see each other's unfinished work.
+- **Durability**: once committed, a change survives a crash.
 
-These guarantees make databases reliable for critical data like financial records, user accounts, and inventory.
+PostgreSQL implements isolation with **MVCC** (multiversion concurrency control): an update writes a new version of the row instead of overwriting it, so readers keep seeing a consistent snapshot and never wait for writers. [Part 8](/guides/introduction-to-postgres/08-transactions-and-concurrency) covers transactions and MVCC in detail.
 
 ## PostgreSQL vs Other Databases
 
-Understanding where PostgreSQL fits helps you choose the right tool.
+Knowing where PostgreSQL fits helps you choose the right tool.
 
 ### PostgreSQL vs MySQL
 
-Both are popular open-source relational databases.
+Both are mature, open source relational databases, and either can run a large production system.
 
 PostgreSQL strengths:
-- Stricter SQL standards compliance
-- More advanced features (arrays, JSON, full-text search)
-- Better handling of complex queries
-- More extension options
+
+- close adherence to the SQL standard and strict data validation;
+- rich data types: `jsonb`, arrays, ranges, UUIDs, network addresses;
+- advanced SQL: window functions, recursive queries, `RETURNING`, `MERGE`;
+- many index types (B-tree, GIN, GiST, BRIN) and a large extension ecosystem (PostGIS, pgvector, TimescaleDB);
+- transactional DDL: schema changes can be rolled back.
 
 MySQL strengths:
-- Simpler setup for basic use cases
-- Slightly better performance for simple read-heavy workloads
-- More common in older PHP applications
 
-For new projects, PostgreSQL is usually the better choice unless you have specific MySQL requirements.
+- a long history in web hosting and the LAMP stack, so many hosts and older applications expect it;
+- simple setup of basic replication;
+- some large companies run very large MySQL fleets and share their tooling.
+
+For a new project without a specific reason to use MySQL, PostgreSQL is a safe default.
 
 ### PostgreSQL vs MongoDB (NoSQL)
 
-MongoDB is a document database storing JSON-like objects instead of rows.
+MongoDB is a document database: it stores JSON-like documents instead of rows.
 
-Use MongoDB when:
-- Schema changes constantly and unpredictably
-- You're storing truly nested document structures
-- You need horizontal scaling out of the box
+MongoDB fits when:
 
-Use PostgreSQL when:
-- Data has clear relationships
-- You need complex queries and joins
-- Data integrity is critical
-- You want SQL's mature ecosystem
+- your data is naturally one nested document per item and rarely needs joins;
+- the structure changes often and differs between documents;
+- you want sharding across many machines built in.
 
-PostgreSQL's JSONB support blurs this line - you can store flexible JSON documents in PostgreSQL while keeping relational features for structured data.
+PostgreSQL fits when:
+
+- your data has clear relationships between entities;
+- you need joins, aggregates and ad-hoc queries;
+- data integrity matters (constraints, transactions across many rows and tables);
+- you want one system for both structured and semi-structured data.
+
+PostgreSQL's `jsonb` type blurs the line: you can store and index flexible JSON documents next to normal relational tables.
 
 ### PostgreSQL vs Redis
 
-Redis is an in-memory key-value store.
+Redis is an in-memory data store.
 
-Redis is for:
-- Caching
-- Session storage
-- Real-time counters
-- Pub/sub messaging
+Redis is good for:
 
-PostgreSQL is for:
-- Persistent data storage
-- Complex queries
-- Transactional integrity
+- caching;
+- sessions;
+- counters and rate limits;
+- simple queues and pub/sub messaging.
 
-Use both together - Redis for temporary fast data, PostgreSQL for permanent important data.
+PostgreSQL is good for:
+
+- the durable system of record;
+- complex queries;
+- transactional integrity.
+
+Many applications use both: Redis for fast, temporary data and PostgreSQL for the data that must not be lost.
 
 ## When to Use Relational Databases
 
-Relational databases like PostgreSQL excel when:
+Relational databases like PostgreSQL work best when:
 
-**Data has relationships**: Users have posts, posts have comments, comments have authors. Relational databases model this naturally.
+**Data has relationships**: users have posts, posts have comments, comments have authors.
 
-**Integrity matters**: Financial transactions, user accounts, inventory - data that must be accurate and consistent.
+**Integrity matters**: payments, accounts, inventory, anything that must be correct.
 
-**Complex queries needed**: "Show me last month's top 10 customers by total order value, grouped by region." SQL handles this elegantly.
+**Questions change**: "show last month's top 10 customers by order value, per region" is one SQL query, even if nobody planned for it when the schema was designed.
 
-**Multiple users**: Many people reading and writing simultaneously. Databases manage concurrency safely.
+**Many users write at once**: the database handles concurrency for you.
 
-**Ad-hoc analysis**: Business users running reports. SQL's flexibility lets them explore data without custom code.
+They are a weaker fit when:
 
-They're not ideal when:
+**You only need key-value lookups at huge scale**: a dedicated key-value store can be simpler to scale.
 
-**Massive scale with simple access patterns**: Billions of rows with only key-value lookups. NoSQL might be simpler.
+**The data is a stream of measurements**: time-series databases (or PostgreSQL extensions built for it) store and compress them more efficiently.
 
-**Constantly changing schema**: If structure changes daily, flexible document stores might fit better (though PostgreSQL's JSONB helps here).
-
-**Extreme write performance**: Logging millions of events per second. Time-series databases are optimized for this.
+**You need full-text search across a large document collection with complex relevance tuning**: PostgreSQL's built-in search works well for many applications, but a dedicated search engine offers more.
 
 ## Database Normalization
 
-Normalization is organizing data to reduce redundancy.
+Normalization means organizing data so each fact is stored once.
 
-Unnormalized (bad):
+Unnormalized:
 
-```
-orders table:
-┌────┬───────────┬────────────────┬────────────────────┐
-│ id │ customer  │ customer_email │ products           │
-├────┼───────────┼────────────────┼────────────────────┤
-│ 1  │ Alice     │ a@example.com  │ Widget, Gadget     │
-│ 2  │ Alice     │ a@example.com  │ Thing              │
-│ 3  │ Bob       │ b@example.com  │ Widget             │
-└────┴───────────┴────────────────┴────────────────────┘
+```text
+orders
+ id | customer | customer_email | products
+----+----------+----------------+----------------
+  1 | Alice    | a@example.com  | Widget, Gadget
+  2 | Alice    | a@example.com  | Thing
+  3 | Bob      | b@example.com  | Widget
 ```
 
 Problems:
-- Alice's email is duplicated (if it changes, must update multiple rows)
-- Products are stored as text (can't query individual products easily)
-- Can't add products without an order
 
-Normalized (good):
+- Alice's email is repeated; if it changes, you must update every row, and missing one leaves the data inconsistent.
+- Products are stored as text, so you cannot count how many widgets were sold.
+- You cannot store a product that nobody has ordered yet.
 
-```
-customers:
-┌────┬───────────┬────────────────┐
-│ id │ name      │ email          │
-├────┼───────────┼────────────────┤
-│ 1  │ Alice     │ a@example.com  │
-│ 2  │ Bob       │ b@example.com  │
-└────┴───────────┴────────────────┘
+Normalized:
 
-orders:
-┌────┬─────────────┐
-│ id │ customer_id │
-├────┼─────────────┤
-│ 1  │ 1           │
-│ 2  │ 1           │
-│ 3  │ 2           │
-└────┴─────────────┘
+```text
+customers
+ id | name  | email
+----+-------+---------------
+  1 | Alice | a@example.com
+  2 | Bob   | b@example.com
 
-products:
-┌────┬─────────┐
-│ id │ name    │
-├────┼─────────┤
-│ 1  │ Widget  │
-│ 2  │ Gadget  │
-│ 3  │ Thing   │
-└────┴─────────┘
+orders
+ id | customer_id
+----+-------------
+  1 |           1
+  2 |           1
+  3 |           2
 
-order_items:
-┌──────────┬────────────┐
-│ order_id │ product_id │
-├──────────┼────────────┤
-│ 1        │ 1          │
-│ 1        │ 2          │
-│ 2        │ 3          │
-│ 3        │ 1          │
-└──────────┴────────────┘
+products
+ id | name
+----+--------
+  1 | Widget
+  2 | Gadget
+  3 | Thing
+
+order_items
+ order_id | product_id
+----------+------------
+        1 |          1
+        1 |          2
+        2 |          3
+        3 |          1
 ```
 
-Benefits:
-- Each piece of data stored once
-- Easy to update (change Alice's email in one place)
-- Can query products independently
-- Maintains data integrity
-
-Normalization has levels (1NF, 2NF, 3NF). The key idea: don't repeat yourself. Store each fact once, reference it elsewhere.
+Now each fact lives in one place, changing Alice's email is a single update, and products exist on their own. Normalization has formal levels (1NF, 2NF, 3NF) that [Part 4](/guides/introduction-to-postgres/04-database-design-and-schemas#h2-normalization) walks through. The short version: store each fact once and refer to it by key everywhere else.
 
 ## SQL: The Language of Relational Databases
 
-SQL (Structured Query Language) is how you talk to relational databases. It's declarative - you describe what you want, not how to get it.
-
-Basic SQL operations:
+SQL (Structured Query Language) is how you talk to a relational database. It is **declarative**: you describe the result you want, and the planner decides how to get it.
 
 ```sql
 -- Create a table
 CREATE TABLE users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(50) NOT NULL,
-  email VARCHAR(255) NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  username text NOT NULL,
+  email text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Insert data
+-- Insert a row
 INSERT INTO users (username, email)
 VALUES ('alice', 'alice@example.com');
 
--- Query data
+-- Read rows
 SELECT username, email FROM users WHERE id = 1;
 
--- Update data
-UPDATE users SET email = 'newemail@example.com' WHERE id = 1;
+-- Change rows
+UPDATE users SET email = 'alice@example.org' WHERE id = 1;
 
--- Delete data
+-- Remove rows
 DELETE FROM users WHERE id = 1;
 ```
 
-SQL is powerful because the same concepts work across operations:
+A few building blocks combine into almost every query:
 
-- `WHERE` filters rows
-- `ORDER BY` sorts results
-- `JOIN` combines tables
-- `GROUP BY` aggregates data
+- `WHERE` filters rows;
+- `ORDER BY` sorts them;
+- `JOIN` combines tables;
+- `GROUP BY` summarizes them.
 
-Learn SQL once, use it everywhere. The syntax is similar across all relational databases.
+The core of SQL is the same across relational databases, so what you learn here transfers to MySQL, SQL Server or SQLite, with differences in data types and extra features.
 
 ## Understanding How Data Flows
 
-When your application uses a database:
+When your application uses PostgreSQL, a request follows this path:
 
-```
-Application                PostgreSQL
-    │                          │
-    │  1. Connection           │
-    ├─────────────────────────→│
-    │                          │
-    │  2. SQL Query            │
-    ├─────────────────────────→│
-    │                          │  3. Parse & Plan
-    │                          │  4. Execute
-    │                          │  5. Fetch Data
-    │                          │
-    │  6. Results              │
-    │←─────────────────────────┤
-    │                          │
-    │  7. More Queries         │
-    ├─────────────────────────→│
-    │←─────────────────────────┤
-    │                          │
-    │  8. Close Connection     │
-    ├─────────────────────────→│
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Application", "sub": "driver, e.g. psycopg or pg", "icon": "box", "tone": "blue" },
+    { "label": "Connection pool", "sub": "reuses open connections", "icon": "queue", "tone": "amber" },
+    { "label": "Backend process", "sub": "parse, plan, execute", "icon": "cpu", "tone": "violet" },
+    { "label": "Shared buffers", "sub": "pages from cache or disk", "icon": "database", "tone": "green" },
+    { "label": "Result rows", "sub": "sent back to the app", "icon": "check", "tone": "slate" }
+  ]
+}
 ```
 
-Applications typically:
-1. Connect to the database (often using a connection pool)
-2. Send SQL queries
-3. Process results
-4. Close the connection when done
+1. The application takes a connection from its pool (or opens one).
+2. It sends SQL, with values passed as separate parameters.
+3. The backend process parses, plans and executes the query, reading pages through shared buffers.
+4. The rows go back to the application, and the connection returns to the pool for the next request.
 
-Connection pooling reuses connections instead of creating new ones for each query. This is much faster.
+Opening a connection involves a network handshake, authentication and a new process, so reusing connections through a pool makes a big difference for busy applications.
 
 ## Common Database Terms
 
-**Schema**: The structure of your database (what tables exist, what columns they have). Also sometimes means a namespace within a database.
+**Cluster**: one PostgreSQL server instance with its data directory. A cluster holds many databases. (This is PostgreSQL's term; it does not mean several machines.)
 
-**Query**: A request for data (SELECT statement).
+**Database**: a named collection of schemas and tables inside a cluster. A connection always goes to one database.
 
-**Transaction**: A group of operations that execute together.
+**Schema**: either the overall structure of your tables, or, in PostgreSQL, a namespace inside a database that holds tables (the default one is called `public`).
 
-**Index**: A data structure for fast lookups.
+**Role**: a user or group that can own objects and be granted privileges.
 
-**Constraint**: A rule enforced by the database (unique emails, non-null usernames).
+**Query**: a request for data, usually a `SELECT`.
 
-**View**: A saved query that looks like a table.
+**Transaction**: a group of statements that succeed or fail together.
 
-**Trigger**: Code that runs automatically when data changes.
+**Index**: a data structure that speeds up lookups.
 
-**Stored Procedure**: A function stored in the database.
+**Constraint**: a rule the database enforces, such as "email is unique" or "price is not negative".
 
-Understanding these fundamentals gives you a foundation for working with PostgreSQL. Next, we'll install PostgreSQL and connect to it, seeing these concepts in practice.
+**View**: a saved query that you can select from like a table.
+
+**Trigger**: a function that runs automatically when rows change.
+
+**Function and procedure**: code stored in the database, in SQL, PL/pgSQL or other languages.
+
+**WAL**: the write-ahead log that makes commits durable and powers replication.
+
+**VACUUM**: maintenance that cleans up old row versions left behind by updates and deletes.
+
+## Common Mistakes
+
+- **Treating the database as a file store.** Putting lists into text columns or whole objects into one blob gives up the queries and integrity checks that make a database useful.
+- **Enforcing rules only in application code.** Another script, a migration or a manual fix will eventually bypass them. Put essential rules in constraints.
+- **Ignoring transactions.** Related changes that are not in one transaction can be left half-done by any error or crash.
+- **Choosing a database by trend.** Start from your data and its relationships, then pick the tool.
+
+## Summary
+
+You now know what a relational database does, how tables, keys and relationships organize data, and what happens inside PostgreSQL when a query arrives: a backend process plans it, reads pages through shared buffers, and commits changes durably through the write-ahead log.
+
+Next, in [How to Install PostgreSQL 18 and psql](/guides/introduction-to-postgres/02-installation-and-setup), you will install PostgreSQL on your machine (or only the `psql` client), connect to it, and create your first database.

@@ -1,412 +1,659 @@
 ---
 title: Transactions and Concurrency Control
-description: Learn how to use transactions to maintain data consistency and handle concurrent database access safely
+description: 'PostgreSQL transactions explained: BEGIN, COMMIT and ROLLBACK, savepoints, isolation levels, MVCC, row locks, SKIP LOCKED queues and deadlocks.'
 order: 8
 ---
 
-**TLDR**: Wrap related operations in transactions with BEGIN/COMMIT. Transactions guarantee all operations succeed together or all fail. PostgreSQL provides ACID guarantees. Use appropriate isolation levels to balance consistency and performance. Handle deadlocks gracefully.
+**TLDR**: Group statements that must succeed or fail together between `BEGIN` and `COMMIT`. After an error, PostgreSQL rejects every statement until you roll back. Thanks to MVCC, readers never block writers. The default isolation level, Read Committed, is right for most work; use Repeatable Read or Serializable when a transaction's decisions depend on data that others might change, and retry on serialization errors. Lock rows with `SELECT ... FOR UPDATE`, build job queues with `SKIP LOCKED`, take locks in a consistent order to avoid deadlocks, and keep transactions short.
 
-Transactions ensure data stays consistent even when multiple operations happen simultaneously or failures occur.
+A database with one user is easy. Real applications have hundreds of sessions reading and writing the same rows at once, and servers that crash at the worst moment. Transactions are how PostgreSQL keeps data correct in both cases. This part covers how they behave, how PostgreSQL isolates concurrent sessions, and the locking patterns you need for counters, queues and money transfers.
+
+## Prerequisites
+
+- SQL basics from [Part 3](/guides/introduction-to-postgres/03-sql-basics-and-crud) and constraints from [Part 5](/guides/introduction-to-postgres/05-data-types-and-constraints).
+- A scratch database (`CREATE DATABASE bank;` then `\c bank`), and two `psql` windows connected to it for the examples that show two sessions.
+
+The single-session examples below are real `psql` output from PostgreSQL 18.6. The two-session examples show the standard behavior and messages; run them in two windows to see them yourself.
 
 ## What Are Transactions?
 
-A transaction is a sequence of operations that execute as a single unit:
+A transaction is a group of statements that PostgreSQL treats as one unit: either all of their changes become visible and permanent, or none do.
 
 ```sql
-BEGIN;
-  UPDATE accounts SET balance = balance - 100 WHERE id = 1;
-  UPDATE accounts SET balance = balance + 100 WHERE id = 2;
-COMMIT;
+CREATE TABLE accounts (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  owner text NOT NULL UNIQUE,
+  balance numeric(12, 2) NOT NULL CHECK (balance >= 0)
+);
+
+INSERT INTO accounts (owner, balance) VALUES ('alice', 500.00), ('bob', 100.00);
 ```
 
-Either both updates happen or neither does. No partial transfers.
+Move 100 from Alice to Bob. Without a transaction, a crash between the two updates would destroy money:
+
+```terminal
+{
+  "title": "a transfer",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "BEGIN;",
+      "output": "BEGIN"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "UPDATE accounts SET balance = balance - 100 WHERE owner = 'alice';",
+      "output": "UPDATE 1"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "UPDATE accounts SET balance = balance + 100 WHERE owner = 'bob';",
+      "output": "UPDATE 1"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "COMMIT;",
+      "output": "COMMIT"
+    },
+    {
+      "cmd": "SELECT owner, balance FROM accounts ORDER BY id;",
+      "output": " owner | balance\n-------+---------\n alice |  400.00\n bob   |  200.00\n(2 rows)"
+    }
+  ]
+}
+```
+
+Until `COMMIT`, other sessions still see the old balances. After `COMMIT`, they see both changes at once, never just one.
 
 ## Basic Transaction Commands
 
-```sql
--- Start transaction
-BEGIN;
+| Command                      | What it does                              |
+| ---------------------------- | ----------------------------------------- |
+| `BEGIN`                      | Start a transaction                       |
+| `COMMIT`                     | Make all changes permanent and visible    |
+| `ROLLBACK`                   | Throw all changes away                    |
+| `SAVEPOINT name`             | Mark a point you can roll back to         |
+| `ROLLBACK TO SAVEPOINT name` | Undo the changes made after the savepoint |
 
--- Do work
-INSERT INTO users (username, email) VALUES ('alice', 'alice@example.com');
-INSERT INTO posts (user_id, title) VALUES (1, 'First Post');
-
--- If everything worked:
-COMMIT;
-
--- If something went wrong:
--- ROLLBACK;
-```
+Without `BEGIN`, every statement runs in its own transaction and commits automatically (**autocommit**). Most drivers behave the same way unless you start a transaction explicitly.
 
 ### Rollback on Error
 
-```sql
-BEGIN;
-  INSERT INTO users (username, email) VALUES ('bob', 'bob@example.com');
-  INSERT INTO users (username, email) VALUES ('bob', 'duplicate@example.com');  -- Fails (duplicate username)
-ROLLBACK;  -- Undo the first INSERT too
+When a statement fails inside a transaction, PostgreSQL marks the whole transaction as failed. It ignores every further statement, and `COMMIT` turns into a rollback:
+
+```terminal
+{
+  "title": "an aborted transaction",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "BEGIN;",
+      "output": "BEGIN"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "INSERT INTO accounts (owner, balance) VALUES ('carol', 50);",
+      "output": "INSERT 0 1"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "INSERT INTO accounts (owner, balance) VALUES ('carol', 75);",
+      "output": "ERROR:  duplicate key value violates unique constraint \"accounts_owner_key\"\nDETAIL:  Key (owner)=(carol) already exists."
+    },
+    {
+      "prompt": "bank=!#",
+      "cmd": "SELECT count(*) FROM accounts;",
+      "output": "ERROR:  current transaction is aborted, commands ignored until end of transaction block"
+    },
+    {
+      "prompt": "bank=!#",
+      "cmd": "COMMIT;",
+      "output": "ROLLBACK"
+    },
+    {
+      "cmd": "SELECT owner FROM accounts ORDER BY id;",
+      "output": " owner\n-------\n alice\n bob\n(2 rows)"
+    }
+  ]
+}
 ```
 
-PostgreSQL automatically rolls back if an error occurs and you don't handle it.
+The `!` in the prompt marks a failed transaction. Carol's first insert was valid, but it is gone: the transaction is all or nothing. Note the reply to `COMMIT`: it says `ROLLBACK`. Application code must check for errors and roll back explicitly instead of assuming the commit worked.
 
 ## ACID Properties
 
-Transactions provide ACID guarantees:
+Transactions give four guarantees, known as ACID.
 
 ### Atomicity
 
-All operations succeed or all fail. No partial execution.
-
-```sql
-BEGIN;
-  UPDATE inventory SET quantity = quantity - 5 WHERE product_id = 1;
-  INSERT INTO orders (product_id, quantity) VALUES (1, 5);
-COMMIT;
-```
-
-If either statement fails, both roll back. Inventory and orders stay in sync.
+All of a transaction's changes happen, or none do. You saw it above: one failed statement undid Carol's valid insert.
 
 ### Consistency
 
-Database moves from one valid state to another. Constraints are enforced.
-
-```sql
-BEGIN;
-  UPDATE accounts SET balance = balance - 100 WHERE id = 1;
-  UPDATE accounts SET balance = balance + 100 WHERE id = 2;
-COMMIT;
-
--- Total balance unchanged:
-SELECT SUM(balance) FROM accounts;  -- Same before and after
-```
+Every committed transaction leaves the data valid according to your constraints. The `CHECK (balance >= 0)` on `accounts` means no transaction can commit a negative balance, whatever the application does.
 
 ### Isolation
 
-Concurrent transactions don't interfere with each other.
-
-```sql
--- Transaction 1
-BEGIN;
-  SELECT balance FROM accounts WHERE id = 1;  -- Sees 500
-  -- ... do something ...
-COMMIT;
-
--- Transaction 2 (running simultaneously)
-BEGIN;
-  UPDATE accounts SET balance = 1000 WHERE id = 1;
-COMMIT;
-
--- Transaction 1 doesn't see Transaction 2's changes until it commits
-```
+Concurrent transactions do not see each other's uncommitted changes. How much they can see of each other's _committed_ changes depends on the isolation level, covered below.
 
 ### Durability
 
-Once committed, changes persist even if the system crashes.
+Once `COMMIT` returns, the change survives a crash or power loss. PostgreSQL first writes every change to the **write-ahead log (WAL)** and flushes the WAL to disk at commit. After a crash, it replays the WAL to restore every committed transaction.
 
-```sql
-BEGIN;
-  INSERT INTO critical_data (value) VALUES ('important');
-COMMIT;
--- Power failure here
--- On restart, the insert is still there
+`synchronous_commit = off` makes commits faster by returning before the WAL flush, at the risk of losing the last fraction of a second of commits after a crash (the data stays consistent). It can be set per transaction for data you can afford to lose, such as analytics events.
+
+## How PostgreSQL Isolates Transactions: MVCC
+
+PostgreSQL uses **multiversion concurrency control (MVCC)**. An `UPDATE` does not overwrite a row. It writes a new version of the row and marks the old version as replaced. Each transaction reads the versions that were committed when its **snapshot** was taken. That is why readers never wait for writers, and writers never wait for readers.
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "UPDATE", "sub": "a row changes", "icon": "activity", "tone": "blue" },
+    { "label": "New version", "sub": "xmin = this transaction", "icon": "box", "tone": "green" },
+    { "label": "Old version", "sub": "xmax = this transaction", "icon": "box", "tone": "amber" },
+    { "label": "Old snapshots", "sub": "still read the old version", "icon": "activity", "tone": "slate" },
+    { "label": "VACUUM", "sub": "frees it when no one needs it", "icon": "gear", "tone": "violet" }
+  ]
+}
 ```
 
-PostgreSQL writes to the Write-Ahead Log (WAL) before confirming commits, ensuring durability.
+You can see the versions through the hidden system columns `ctid` (the physical location), `xmin` (the transaction that created the version) and `xmax` (the transaction that deleted or replaced it):
+
+```terminal
+{
+  "title": "an update writes a new row version",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "SELECT ctid, xmin, xmax, owner, balance FROM accounts WHERE owner = 'alice';",
+      "output": " ctid  | xmin | xmax | owner | balance\n-------+------+------+-------+---------\n (0,3) |  754 |    0 | alice |  400.00\n(1 row)"
+    },
+    {
+      "cmd": "UPDATE accounts SET balance = balance + 1 WHERE owner = 'alice';",
+      "output": "UPDATE 1"
+    },
+    {
+      "cmd": "SELECT ctid, xmin, xmax, owner, balance FROM accounts WHERE owner = 'alice';",
+      "output": " ctid  | xmin | xmax | owner | balance\n-------+------+------+-------+---------\n (0,7) |  756 |    0 | alice |  401.00\n(1 row)"
+    }
+  ]
+}
+```
+
+After the update, the row lives at a new location with a new `xmin`. The old version is now a **dead tuple**. `VACUUM`, usually run by autovacuum, reclaims dead tuples once no open snapshot can see them. This is why long-running transactions cause table bloat: they keep old versions alive ([Part 10](/guides/introduction-to-postgres/10-production-best-practices) covers vacuum).
 
 ## Isolation Levels
 
-Control how transactions see each other's changes. Trade-off between consistency and concurrency.
+The isolation level decides which snapshot a transaction reads and which anomalies can happen:
+
+| Level                    | Dirty read         | Non-repeatable read | Phantom read       | Serialization anomaly |
+| ------------------------ | ------------------ | ------------------- | ------------------ | --------------------- |
+| Read Uncommitted         | No (in PostgreSQL) | Possible            | Possible           | Possible              |
+| Read Committed (default) | No                 | Possible            | Possible           | Possible              |
+| Repeatable Read          | No                 | No                  | No (in PostgreSQL) | Possible              |
+| Serializable             | No                 | No                  | No                 | No                    |
+
+Set the level when you start the transaction:
+
+```sql
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+-- ...
+COMMIT;
+```
+
+`SET TRANSACTION` also works, but only inside a transaction block. Outside one it does nothing except print a warning:
+
+```terminal
+{
+  "title": "SET TRANSACTION needs a transaction",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;",
+      "output": "WARNING:  SET TRANSACTION can only be used in transaction blocks\nSET"
+    },
+    {
+      "cmd": "BEGIN ISOLATION LEVEL REPEATABLE READ;",
+      "output": "BEGIN"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "SHOW transaction_isolation;",
+      "output": " transaction_isolation\n-----------------------\n repeatable read\n(1 row)"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "COMMIT;",
+      "output": "COMMIT"
+    }
+  ]
+}
+```
 
 ### Read Uncommitted
 
-Not supported in PostgreSQL (treated as Read Committed). Allows dirty reads in other databases.
+PostgreSQL accepts the name but runs the transaction as Read Committed. It never shows uncommitted data.
 
 ### Read Committed (Default)
 
-Sees only committed changes. Most common level.
+Each **statement** sees the data committed before that statement started. Two `SELECT`s in the same transaction can return different results if another session commits in between (example with two sessions):
 
-```sql
--- Transaction 1
+```text
+-- Session A                                   -- Session B
 BEGIN;
-  UPDATE products SET price = 100 WHERE id = 1;
-  -- Not committed yet
-
--- Transaction 2
-BEGIN;
-  SELECT price FROM products WHERE id = 1;  -- Sees old price
-  -- Wait for Transaction 1 to commit
-  SELECT price FROM products WHERE id = 1;  -- Now sees 100
+SELECT balance FROM accounts WHERE id = 1;
+-- 401.00
+                                               UPDATE accounts SET balance = 0 WHERE id = 1;
+                                               -- (autocommit)
+SELECT balance FROM accounts WHERE id = 1;
+-- 0.00: the second statement sees B's commit
 COMMIT;
 ```
+
+This is fine for most application work, where each statement stands on its own.
 
 ### Repeatable Read
 
-Queries see a consistent snapshot from transaction start.
+The whole **transaction** sees one snapshot, taken at its first statement. Repeated reads return the same data. If the transaction tries to update a row that another session changed after the snapshot, PostgreSQL stops it (example with two sessions):
 
-```sql
-SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
-BEGIN;
-  SELECT balance FROM accounts WHERE id = 1;  -- Sees 500
-
--- Another transaction updates the balance to 1000 and commits
-
-  SELECT balance FROM accounts WHERE id = 1;  -- Still sees 500 (snapshot)
-COMMIT;
-```
-
-Prevents non-repeatable reads but can cause serialization failures:
-
-```sql
--- Transaction 1
+```text
+-- Session A                                   -- Session B
 BEGIN ISOLATION LEVEL REPEATABLE READ;
-  SELECT * FROM products WHERE id = 1;
-  UPDATE products SET stock = stock - 1 WHERE id = 1;
-  -- Transaction 2 modified this row
-COMMIT;  -- ERROR: could not serialize access
+SELECT balance FROM accounts WHERE id = 1;
+-- 401.00
+                                               UPDATE accounts SET balance = 0 WHERE id = 1;
+SELECT balance FROM accounts WHERE id = 1;
+-- 401.00: still the same snapshot
+UPDATE accounts SET balance = balance - 10 WHERE id = 1;
+-- ERROR:  could not serialize access due to concurrent update
+ROLLBACK;
 ```
+
+Repeatable Read is a good fit for reports that run several queries and need them to agree with each other.
 
 ### Serializable
 
-Strongest isolation. Transactions execute as if they ran one after another.
+The strongest level. PostgreSQL guarantees that the result is the same as if the committed transactions had run one at a time, in some order. It tracks what each transaction read and aborts one when a conflict could produce a result that no serial order allows:
 
-```sql
-BEGIN ISOLATION LEVEL SERIALIZABLE;
-  -- ... operations ...
-COMMIT;
+```text
+ERROR:  could not serialize access due to read/write dependencies among transactions
+DETAIL:  Reason code: Canceled on identification as a pivot, during commit attempt.
+HINT:  The transaction might succeed if retried.
 ```
 
-Prevents all anomalies but causes more serialization failures. Use when consistency is critical.
+The hint is literal: with Repeatable Read and Serializable, your application **must** catch serialization failures (SQLSTATE `40001`) and retry the whole transaction. Serializable is the simplest way to get correct results for complex business rules, such as "a doctor may only go off call if another doctor stays on call", at the cost of more retries under load.
 
-Set default level:
+You can change the default per database or per role:
 
 ```sql
-ALTER DATABASE mydb SET default_transaction_isolation TO 'repeatable read';
+ALTER DATABASE bank SET default_transaction_isolation = 'repeatable read';
 ```
 
 ## Savepoints
 
-Partial rollbacks within transactions:
+A savepoint lets you undo part of a transaction without losing the rest:
 
-```sql
-BEGIN;
-  INSERT INTO users (username) VALUES ('alice');
-
-  SAVEPOINT before_posts;
-
-  INSERT INTO posts (user_id, title) VALUES (1, 'Post 1');
-  INSERT INTO posts (user_id, title) VALUES (1, 'Post 2');  -- Might fail
-
-  -- If post insert fails, rollback to savepoint
-  ROLLBACK TO before_posts;
-
-  -- User insert still committed
-COMMIT;
+```terminal
+{
+  "title": "roll back to a savepoint",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "BEGIN;",
+      "output": "BEGIN"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "INSERT INTO accounts (owner, balance) VALUES ('dave', 20);",
+      "output": "INSERT 0 1"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "SAVEPOINT before_risky_insert;",
+      "output": "SAVEPOINT"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "INSERT INTO accounts (owner, balance) VALUES ('erin', -5);",
+      "output": "ERROR:  new row for relation \"accounts\" violates check constraint \"accounts_balance_check\"\nDETAIL:  Failing row contains (6, erin, -5.00)."
+    },
+    {
+      "prompt": "bank=!#",
+      "cmd": "ROLLBACK TO SAVEPOINT before_risky_insert;",
+      "output": "ROLLBACK"
+    },
+    {
+      "prompt": "bank=*#",
+      "cmd": "COMMIT;",
+      "output": "COMMIT"
+    },
+    {
+      "cmd": "SELECT owner, balance FROM accounts ORDER BY id;",
+      "output": " owner | balance\n-------+---------\n alice |  401.00\n bob   |  200.00\n dave  |   20.00\n(3 rows)"
+    }
+  ]
+}
 ```
 
-Useful for complex operations where some parts can fail while others succeed.
+Dave's insert survived; Erin's failed insert was undone, and the transaction could continue. PostgreSQL has no nested transactions; savepoints are the way to get the same effect. Each savepoint has a cost, so do not create one per row in a large batch.
 
 ## Handling Concurrent Access
 
+MVCC handles readers and writers. When two transactions want to **write** the same row, the second one waits until the first commits or rolls back. Under Read Committed, it then re-reads the row and applies its change to the new version.
+
 ### Row-Level Locking
 
-SELECT FOR UPDATE locks rows:
+Sometimes you must read a row, decide, and then write, without anyone changing it in between. `SELECT ... FOR UPDATE` locks the rows it returns until the transaction ends:
 
 ```sql
 BEGIN;
-  SELECT * FROM inventory WHERE product_id = 1 FOR UPDATE;
-  -- Other transactions wait here
-  UPDATE inventory SET quantity = quantity - 1 WHERE product_id = 1;
+SELECT quantity FROM inventory WHERE product_id = 1 FOR UPDATE;
+-- Other transactions that try to lock or update this row wait here.
+-- The application checks the quantity, then:
+UPDATE inventory SET quantity = quantity - 1 WHERE product_id = 1;
 COMMIT;
 ```
 
-Prevents two transactions from decrementing the same inventory simultaneously.
+Without `FOR UPDATE`, two sessions could both read "1 left" and both sell it.
+
+When the decision fits in one statement, you do not need a lock at all. This update is atomic and cannot oversell:
+
+```sql
+UPDATE inventory SET quantity = quantity - 1
+WHERE product_id = 1 AND quantity > 0;
+-- UPDATE 0 means sold out
+```
 
 ### Lock Types
 
+| Clause              | Blocks                                              | Use it when                               |
+| ------------------- | --------------------------------------------------- | ----------------------------------------- |
+| `FOR UPDATE`        | All other row locks and updates                     | You will update or delete the row         |
+| `FOR NO KEY UPDATE` | Like `FOR UPDATE`, but lets foreign key checks pass | You will update non-key columns           |
+| `FOR SHARE`         | Updates and exclusive locks                         | The row must not change while you read it |
+| `FOR KEY SHARE`     | Only deletes and key changes                        | Taken by foreign key checks               |
+
+Two modifiers change what happens when a row is already locked:
+
 ```sql
--- Exclusive lock (blocks all other locks)
-SELECT * FROM products WHERE id = 1 FOR UPDATE;
-
--- Shared lock (blocks FOR UPDATE but allows FOR SHARE)
-SELECT * FROM products WHERE id = 1 FOR SHARE;
-
--- Skip locked rows
-SELECT * FROM queue WHERE processed = false FOR UPDATE SKIP LOCKED LIMIT 10;
-
--- Error if rows are locked
+-- Fail immediately instead of waiting
 SELECT * FROM products WHERE id = 1 FOR UPDATE NOWAIT;
+
+-- Skip locked rows and return the others
+SELECT * FROM jobs WHERE status = 'queued' FOR UPDATE SKIP LOCKED LIMIT 10;
 ```
 
-FOR UPDATE SKIP LOCKED is great for job queues - each worker gets different rows.
+`SKIP LOCKED` is the building block for job queues: each worker gets different rows instead of waiting for each other (see the pattern below).
 
 ### Advisory Locks
 
-Application-level locks using arbitrary numbers:
+Advisory locks lock an arbitrary number that your application chooses, not a row. Use them to make sure only one process runs a task, such as a cron job or a migration:
 
-```sql
--- Try to acquire lock 1234
-SELECT pg_try_advisory_lock(1234);
-
--- Do work
-UPDATE shared_resource SET value = value + 1;
-
--- Release lock
-SELECT pg_advisory_unlock(1234);
+```terminal
+{
+  "title": "advisory locks",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "SELECT pg_try_advisory_lock(42);",
+      "output": " pg_try_advisory_lock\n----------------------\n t\n(1 row)"
+    },
+    {
+      "cmd": "SELECT pg_advisory_unlock(42);",
+      "output": " pg_advisory_unlock\n--------------------\n t\n(1 row)"
+    }
+  ]
+}
 ```
 
-Useful for coordinating between applications.
+`pg_try_advisory_lock` returns `false` instead of waiting if another session holds the lock. Session-level advisory locks stay until you unlock them or disconnect, even across transactions. The transaction-level variant, `pg_advisory_xact_lock(42)`, releases itself at commit or rollback, so you cannot forget it. Through a connection pooler in transaction mode, use only the transaction-level variant.
 
 ## Deadlocks
 
-Two transactions wait for each other:
+A deadlock happens when two transactions each wait for a lock the other holds (example with two sessions):
+
+```text
+-- Session A                                   -- Session B
+BEGIN;
+UPDATE accounts SET balance = balance - 10
+  WHERE id = 1;
+                                               BEGIN;
+                                               UPDATE accounts SET balance = balance - 10
+                                                 WHERE id = 2;
+UPDATE accounts SET balance = balance + 10
+  WHERE id = 2;
+-- waits for B
+                                               UPDATE accounts SET balance = balance + 10
+                                                 WHERE id = 1;
+                                               -- waits for A: deadlock
+```
+
+After `deadlock_timeout` (1 second by default), PostgreSQL detects the cycle and aborts one of the transactions with an error like this:
+
+```text
+ERROR:  deadlock detected
+DETAIL:  Process 4242 waits for ShareLock on transaction 1001; blocked by process 4243.
+Process 4243 waits for ShareLock on transaction 1000; blocked by process 4242.
+HINT:  See server log for query details.
+```
+
+The other transaction continues. Handle deadlocks the same way as serialization failures: catch SQLSTATE `40P01` and retry the transaction.
+
+Prevent them by taking locks in the same order everywhere. For a transfer between two accounts, lock both rows in id order before changing either:
 
 ```sql
--- Transaction 1
-BEGIN;
-  UPDATE products SET price = 100 WHERE id = 1;
-  -- Waiting for Transaction 2
-
--- Transaction 2
-BEGIN;
-  UPDATE products SET price = 200 WHERE id = 2;
-  UPDATE products SET price = 150 WHERE id = 1;  -- Waits for Transaction 1
-
--- Transaction 1 continues
-  UPDATE products SET price = 250 WHERE id = 2;  -- Waits for Transaction 2
-  -- DEADLOCK
+SELECT id, owner FROM accounts WHERE id IN (2, 1) ORDER BY id FOR UPDATE;
 ```
 
-PostgreSQL detects deadlocks and aborts one transaction:
-
+```text
+ id | owner
+----+-------
+  1 | alice
+  2 | bob
+(2 rows)
 ```
-ERROR: deadlock detected
-DETAIL: Process 1234 waits for ShareLock on transaction 5678; blocked by process 5678.
-```
 
-Handle in application code:
+(Run inside a transaction, these locks last until `COMMIT`.)
+
+A retry loop in application code looks like this (Python with psycopg 3):
 
 ```python
-try:
-    execute_transaction()
-except DeadlockError:
-    retry_transaction()
-```
+import psycopg
+from psycopg import errors
 
-Prevent deadlocks by accessing resources in consistent order:
-
-```sql
--- Always update products in ID order
-BEGIN;
-  UPDATE products SET price = 100 WHERE id IN (1, 2, 5) ORDER BY id;
-COMMIT;
+def run_with_retry(conn, work, attempts=5):
+    for attempt in range(attempts):
+        try:
+            with conn.transaction():
+                return work(conn)
+        except (errors.SerializationFailure, errors.DeadlockDetected):
+            if attempt == attempts - 1:
+                raise
 ```
 
 ## Long-Running Transactions
 
-Avoid holding transactions open:
+Do not keep transactions open while you wait for something else:
 
 ```sql
--- Bad
+-- Bad: the transaction stays open while a user decides, or an API call runs
 BEGIN;
-  SELECT * FROM products;
-  -- User thinks for 10 minutes
-  UPDATE products SET ...;
+SELECT * FROM orders WHERE id = 42 FOR UPDATE;
+-- ... minutes pass ...
+UPDATE orders SET status = 'paid' WHERE id = 42;
 COMMIT;
 ```
 
-Long transactions:
-- Block other transactions
-- Prevent vacuum from cleaning up dead rows
-- Hold locks longer than necessary
+A long transaction:
 
-Keep transactions short:
+- holds its locks, so other sessions queue behind it;
+- keeps its snapshot, so `VACUUM` cannot remove any row version that became dead after it started, and tables bloat;
+- in the state **idle in transaction**, uses a connection slot while doing nothing.
+
+Do the slow work first, then open a short transaction for the writes. Set timeouts as a safety net, per role or in `postgresql.conf`:
 
 ```sql
--- Good
-SELECT * FROM products;
--- Let user decide
+ALTER ROLE app_user SET idle_in_transaction_session_timeout = '30s';
+ALTER ROLE app_user SET statement_timeout = '15s';
+ALTER ROLE app_user SET lock_timeout = '5s';
+ALTER ROLE app_user SET transaction_timeout = '5min';  -- PostgreSQL 17 and later
+```
 
--- When ready:
-BEGIN;
-  UPDATE products SET ...;
-COMMIT;
+All four are off (`0`) by default. Find transactions that are open too long:
+
+```sql
+SELECT pid, usename, state,
+       now() - xact_start AS xact_age,
+       left(query, 60) AS last_query
+FROM pg_stat_activity
+WHERE xact_start IS NOT NULL
+ORDER BY xact_start
+LIMIT 10;
 ```
 
 ## Practical Transaction Patterns
 
 ### Transfer Money
 
-```sql
-BEGIN;
-  UPDATE accounts SET balance = balance - 100
-  WHERE id = 1 AND balance >= 100;
+Put the rules in one place. This PL/pgSQL function checks the balance as part of the update and raises an error when a rule fails. The error aborts the caller's transaction, so a half-done transfer is impossible:
 
+```sql
+CREATE FUNCTION transfer(from_id bigint, to_id bigint, amount numeric)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE accounts SET balance = balance - amount
+  WHERE id = from_id AND balance >= amount;
   IF NOT FOUND THEN
-    ROLLBACK;
-    RAISE EXCEPTION 'Insufficient funds';
+    RAISE EXCEPTION 'insufficient funds in account %', from_id;
   END IF;
 
-  UPDATE accounts SET balance = balance + 100
-  WHERE id = 2;
-COMMIT;
+  UPDATE accounts SET balance = balance + amount WHERE id = to_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'account % does not exist', to_id;
+  END IF;
+END;
+$$;
 ```
+
+```terminal
+{
+  "title": "transfers that fail cleanly",
+  "prompt": "bank=#",
+  "steps": [
+    {
+      "cmd": "SELECT transfer(1, 2, 50);",
+      "output": " transfer\n----------\n\n(1 row)"
+    },
+    {
+      "cmd": "SELECT transfer(2, 1, 10000);",
+      "output": "ERROR:  insufficient funds in account 2\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 6 at RAISE"
+    },
+    {
+      "cmd": "SELECT transfer(1, 99, 10);",
+      "output": "ERROR:  account 99 does not exist\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 11 at RAISE"
+    },
+    {
+      "cmd": "SELECT owner, balance FROM accounts ORDER BY id;",
+      "output": " owner | balance\n-------+---------\n alice |  351.00\n bob   |  250.00\n dave  |   20.00\n(3 rows)"
+    }
+  ]
+}
+```
+
+The last call failed after it had already debited Alice, and the error undid that debit too: her balance shows only the first, successful transfer. `IF NOT FOUND` works only inside PL/pgSQL. In application code, check the row count that the driver returns for each `UPDATE` and roll back when it is zero.
 
 ### Process Queue Items
 
+A table-based job queue where many workers can claim jobs at the same time without blocking each other or taking the same job:
+
 ```sql
-BEGIN;
-  -- Lock and get next item
-  SELECT * FROM queue
-  WHERE processed = false
-  ORDER BY created_at
-  FOR UPDATE SKIP LOCKED
-  LIMIT 1;
+CREATE TABLE jobs (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  payload jsonb NOT NULL,
+  status text NOT NULL DEFAULT 'queued',
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-  -- Process item
-  -- ... do work ...
-
-  -- Mark processed
-  UPDATE queue SET processed = true WHERE id = ...;
-COMMIT;
+INSERT INTO jobs (payload) VALUES ('{"task": "send_email"}'), ('{"task": "resize_image"}');
 ```
 
-Multiple workers can process different items concurrently.
+```sql
+UPDATE jobs
+SET status = 'running'
+WHERE id = (
+  SELECT id FROM jobs
+  WHERE status = 'queued'
+  ORDER BY id
+  FOR UPDATE SKIP LOCKED
+  LIMIT 1
+)
+RETURNING id, payload;
+```
+
+```text
+ id |        payload
+----+------------------------
+  1 | {"task": "send_email"}
+(1 row)
+
+UPDATE 1
+```
+
+Each worker runs this statement, does the work, and then marks the job `done` (or back to `queued` on failure). Add a partial index on `(id) WHERE status = 'queued'` so claiming stays fast as finished jobs pile up.
 
 ### Atomic Counters
 
+A single `UPDATE` is already atomic. Concurrent increments queue on the row lock and none are lost, so no explicit transaction is needed:
+
 ```sql
-BEGIN;
-  UPDATE statistics
-  SET view_count = view_count + 1,
-      updated_at = CURRENT_TIMESTAMP
-  WHERE page_id = 123;
-COMMIT;
+UPDATE page_stats
+SET view_count = view_count + 1, updated_at = now()
+WHERE page_id = 123;
 ```
+
+The bug to avoid is read-modify-write in application code: `SELECT view_count`, add one in the app, then `UPDATE ... SET view_count = 43`. Two sessions doing that at once lose an increment.
 
 ## Transaction Best Practices
 
-**Keep transactions short**: Acquire locks, do work, commit. Don't hold transactions during user input or external API calls.
+**Keep transactions short.** Read, decide, write, commit. Never wait for user input or a network call inside one.
 
-**Handle errors**: Always have error handling that rolls back on failure.
+**Always handle errors.** Roll back on any error, and retry on `40001` and `40P01`.
 
-**Use appropriate isolation level**: Read Committed for most cases, Repeatable Read or Serializable when needed.
+**Use the default isolation level** unless a transaction's correctness depends on data that others can change between its statements.
 
-**Avoid nested transactions**: PostgreSQL doesn't support true nested transactions. Use savepoints instead.
+**Lock in a consistent order** to avoid deadlocks.
 
-**Retry serialization failures**: When using Repeatable Read or Serializable, retry on conflicts.
+**Prefer single atomic statements** (`UPDATE ... WHERE quantity > 0`, upserts) over read-then-write.
 
-**Index foreign keys**: Helps avoid lock waits during updates.
+**Index foreign keys.** Deleting a parent row, or changing its key, makes PostgreSQL look up the referencing child rows while holding locks. Without an index on the child column, that lookup is a full table scan.
 
-**Monitor lock waits**:
+**Watch for lock waits.** This query shows who is blocked and by whom:
 
 ```sql
-SELECT
-  pid,
-  usename,
-  pg_blocking_pids(pid) AS blocked_by,
-  query
+SELECT pid,
+       usename,
+       pg_blocking_pids(pid) AS blocked_by,
+       wait_event_type,
+       left(query, 60) AS query
 FROM pg_stat_activity
 WHERE cardinality(pg_blocking_pids(pid)) > 0;
 ```
 
-Transactions keep your data consistent even with concurrent access and failures. Next, we'll cover backup and recovery - how to protect your data and restore it when needed.
+## Common Mistakes
+
+- **Ignoring errors inside a transaction.** After one error, every statement fails and `COMMIT` rolls back. Check results and roll back explicitly.
+- **Not retrying serialization failures and deadlocks.** They are expected under Repeatable Read, Serializable and concurrent locking. Retry the whole transaction.
+- **Read-modify-write in application code.** Use a single `UPDATE` with an expression, or `SELECT ... FOR UPDATE`.
+- **Long or idle transactions.** They hold locks and block vacuum. Set `idle_in_transaction_session_timeout`.
+- **`SET TRANSACTION` before `BEGIN`.** It has no effect. Use `BEGIN ISOLATION LEVEL ...`.
+- **Session-level advisory locks behind a transaction-mode pooler.** The lock stays with a server connection that other clients reuse. Use `pg_advisory_xact_lock`.
+
+## Summary
+
+You now know how transactions make a group of statements all-or-nothing, how PostgreSQL's MVCC lets readers and writers work in parallel, what each isolation level guarantees, and how to lock rows, run job queues with `SKIP LOCKED`, and avoid or recover from deadlocks.
+
+Transactions protect data from concurrent sessions and crashes, but not from a dropped table, a bad migration or a failed disk. Next, in [Backup, Recovery, and Replication](/guides/introduction-to-postgres/09-backup-and-recovery), you will make copies you can restore from.
