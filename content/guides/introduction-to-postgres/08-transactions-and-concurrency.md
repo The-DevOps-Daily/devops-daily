@@ -75,7 +75,7 @@ Until `COMMIT`, other sessions still see the old balances. After `COMMIT`, they 
 | `SAVEPOINT name`             | Mark a point you can roll back to         |
 | `ROLLBACK TO SAVEPOINT name` | Undo the changes made after the savepoint |
 
-Without `BEGIN`, every statement runs in its own transaction and commits automatically (**autocommit**). Most drivers behave the same way unless you start a transaction explicitly.
+Without `BEGIN`, `psql` runs every statement in its own transaction and commits it automatically (**autocommit**). Drivers differ: node-postgres also autocommits each query, while psycopg opens a transaction implicitly and waits for you to call `commit()`. Check what yours does.
 
 ### Rollback on Error
 
@@ -144,7 +144,7 @@ Once `COMMIT` returns, the change survives a crash or power loss. PostgreSQL fir
 
 ## How PostgreSQL Isolates Transactions: MVCC
 
-PostgreSQL uses **multiversion concurrency control (MVCC)**. An `UPDATE` does not overwrite a row. It writes a new version of the row and marks the old version as replaced. Each transaction reads the versions that were committed when its **snapshot** was taken. That is why readers never wait for writers, and writers never wait for readers.
+PostgreSQL uses **multiversion concurrency control (MVCC)**. An `UPDATE` does not overwrite a row. It writes a new version of the row and marks the old version as replaced. Each transaction reads the versions that were committed when its **snapshot** was taken. That is why a plain `SELECT` never waits for a writer, and a writer never waits for a plain `SELECT`. (Locking reads such as `SELECT ... FOR UPDATE`, and schema changes that take an exclusive table lock, are the exceptions.)
 
 ```diagram
 {
@@ -195,6 +195,17 @@ The isolation level decides which snapshot a transaction reads and which anomali
 | Repeatable Read          | No                 | No                  | No (in PostgreSQL) | Possible              |
 | Serializable             | No                 | No                  | No                 | No                    |
 
+The two-session examples below use their own small table, so they do not disturb the accounts data used elsewhere in this part:
+
+```sql
+CREATE TABLE stock (
+  id integer PRIMARY KEY,
+  qty integer NOT NULL CHECK (qty >= 0)
+);
+
+INSERT INTO stock VALUES (1, 10), (2, 10);
+```
+
 Set the level when you start the transaction:
 
 ```sql
@@ -243,12 +254,12 @@ Each **statement** sees the data committed before that statement started. Two `S
 ```text
 -- Session A                                   -- Session B
 BEGIN;
-SELECT balance FROM accounts WHERE id = 1;
--- 401.00
-                                               UPDATE accounts SET balance = 0 WHERE id = 1;
+SELECT qty FROM stock WHERE id = 1;
+-- 10
+                                               UPDATE stock SET qty = 7 WHERE id = 1;
                                                -- (autocommit)
-SELECT balance FROM accounts WHERE id = 1;
--- 0.00: the second statement sees B's commit
+SELECT qty FROM stock WHERE id = 1;
+-- 7: the second statement sees B's commit
 COMMIT;
 ```
 
@@ -261,12 +272,12 @@ The whole **transaction** sees one snapshot, taken at its first statement. Repea
 ```text
 -- Session A                                   -- Session B
 BEGIN ISOLATION LEVEL REPEATABLE READ;
-SELECT balance FROM accounts WHERE id = 1;
--- 401.00
-                                               UPDATE accounts SET balance = 0 WHERE id = 1;
-SELECT balance FROM accounts WHERE id = 1;
--- 401.00: still the same snapshot
-UPDATE accounts SET balance = balance - 10 WHERE id = 1;
+SELECT qty FROM stock WHERE id = 1;
+-- 7
+                                               UPDATE stock SET qty = 5 WHERE id = 1;
+SELECT qty FROM stock WHERE id = 1;
+-- 7: still the same snapshot
+UPDATE stock SET qty = qty - 1 WHERE id = 1;
 -- ERROR:  could not serialize access due to concurrent update
 ROLLBACK;
 ```
@@ -358,7 +369,7 @@ COMMIT;
 
 Without `FOR UPDATE`, two sessions could both read "1 left" and both sell it.
 
-When the decision fits in one statement, you do not need a lock at all. This update is atomic and cannot oversell:
+When the decision fits in one statement, you do not need an explicit lock. This update locks the row only while it runs, and it cannot oversell:
 
 ```sql
 UPDATE inventory SET quantity = quantity - 1
@@ -417,16 +428,12 @@ A deadlock happens when two transactions each wait for a lock the other holds (e
 ```text
 -- Session A                                   -- Session B
 BEGIN;
-UPDATE accounts SET balance = balance - 10
-  WHERE id = 1;
+UPDATE stock SET qty = qty - 1 WHERE id = 1;
                                                BEGIN;
-                                               UPDATE accounts SET balance = balance - 10
-                                                 WHERE id = 2;
-UPDATE accounts SET balance = balance + 10
-  WHERE id = 2;
+                                               UPDATE stock SET qty = qty - 1 WHERE id = 2;
+UPDATE stock SET qty = qty + 1 WHERE id = 2;
 -- waits for B
-                                               UPDATE accounts SET balance = balance + 10
-                                                 WHERE id = 1;
+                                               UPDATE stock SET qty = qty + 1 WHERE id = 1;
                                                -- waits for A: deadlock
 ```
 
@@ -457,11 +464,13 @@ SELECT id, owner FROM accounts WHERE id IN (2, 1) ORDER BY id FOR UPDATE;
 
 (Run inside a transaction, these locks last until `COMMIT`.)
 
-A retry loop in application code looks like this (Python with psycopg 3):
+A retry loop in application code looks like this (Python with psycopg 3). The connection must be in autocommit mode, so that `conn.transaction()` starts a new transaction (and a fresh snapshot) on every attempt instead of a savepoint inside an older one:
 
 ```python
 import psycopg
 from psycopg import errors
+
+conn = psycopg.connect("postgresql://app_user@localhost/bank", autocommit=True)
 
 def run_with_retry(conn, work, attempts=5):
     for attempt in range(attempts):
@@ -517,7 +526,7 @@ LIMIT 10;
 
 ### Transfer Money
 
-Put the rules in one place. This PL/pgSQL function checks the balance as part of the update and raises an error when a rule fails. The error aborts the caller's transaction, so a half-done transfer is impossible:
+Put the rules in one place. This PL/pgSQL function rejects amounts that are not positive (otherwise a negative amount would move money the wrong way), checks the balance as part of the update, and raises an error when a rule fails. The error aborts the caller's transaction, so a half-done transfer is impossible:
 
 ```sql
 CREATE FUNCTION transfer(from_id bigint, to_id bigint, amount numeric)
@@ -525,6 +534,10 @@ RETURNS void
 LANGUAGE plpgsql
 AS $$
 BEGIN
+  IF amount <= 0 THEN
+    RAISE EXCEPTION 'amount must be positive, got %', amount;
+  END IF;
+
   UPDATE accounts SET balance = balance - amount
   WHERE id = from_id AND balance >= amount;
   IF NOT FOUND THEN
@@ -550,11 +563,15 @@ $$;
     },
     {
       "cmd": "SELECT transfer(2, 1, 10000);",
-      "output": "ERROR:  insufficient funds in account 2\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 6 at RAISE"
+      "output": "ERROR:  insufficient funds in account 2\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 10 at RAISE"
     },
     {
       "cmd": "SELECT transfer(1, 99, 10);",
-      "output": "ERROR:  account 99 does not exist\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 11 at RAISE"
+      "output": "ERROR:  account 99 does not exist\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 15 at RAISE"
+    },
+    {
+      "cmd": "SELECT transfer(1, 2, -50);",
+      "output": "ERROR:  amount must be positive, got -50\nCONTEXT:  PL/pgSQL function transfer(bigint,bigint,numeric) line 4 at RAISE"
     },
     {
       "cmd": "SELECT owner, balance FROM accounts ORDER BY id;",

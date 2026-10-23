@@ -14,6 +14,8 @@ Every column has a type, and the type decides what values are allowed, how much 
 - Tables, primary keys and foreign keys from [Part 4](/guides/introduction-to-postgres/04-database-design-and-schemas).
 - Any scratch database. Each example creates its own table.
 
+Run the blocks in order to get the same output as shown. Blocks that start with `-- Not part of the walkthrough` show other forms of a statement; skip them, or your later results will differ.
+
 ## Numeric Types
 
 ### Integers
@@ -482,6 +484,7 @@ You cannot write to a generated column, so the computed value can never disagree
 Change constraints and columns on existing tables with `ALTER TABLE`:
 
 ```sql
+-- Not part of the walkthrough
 -- Add a column (fast, even with a constant default)
 ALTER TABLE accounts ADD COLUMN phone text;
 
@@ -572,8 +575,11 @@ DETAIL:  Failing row contains (4, bob, not-an-email, null).
 Limit a column to a fixed set of values with a `CHECK`:
 
 ```sql
-ALTER TABLE orders ADD CONSTRAINT valid_status
-  CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled'));
+CREATE TABLE orders (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  status text NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'paid', 'shipped', 'delivered', 'cancelled'))
+);
 ```
 
 Or define an enum type. Enums are compact and sort in the order you declare them, but removing a value later is hard, while a `CHECK` is easy to replace:
@@ -602,8 +608,10 @@ LINE 1: INSERT INTO shipments (status) VALUES ('refunded');
 Store phone numbers as `text`, never as a number: leading zeros and `+` signs matter. A check can enforce the international E.164 format:
 
 ```sql
-ALTER TABLE accounts ADD CONSTRAINT valid_phone
-  CHECK (phone_number ~ '^\+[1-9][0-9]{1,14}$');
+CREATE TABLE contacts (
+  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  phone_number text CHECK (phone_number ~ '^\+[1-9][0-9]{1,14}$')
+);
 ```
 
 ## Common Mistakes

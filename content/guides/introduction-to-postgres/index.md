@@ -53,7 +53,7 @@ The guide has ten parts. Each one builds on the previous parts, but you can jump
 
 ## Which Version This Guide Uses
 
-The examples use **PostgreSQL 18**, the current major version in October 2026. Where a feature is new in version 18 (such as `uuidv7()`, `RETURNING old` and `new`, B-tree skip scans or virtual generated columns), the guide says so, and almost everything else works on PostgreSQL 14 and later. PostgreSQL 19 is in release candidate testing; once it is out, the commands here keep working.
+The examples use **PostgreSQL 18**, the current major version in October 2026. Where a feature is new in version 18 (such as `uuidv7()`, `RETURNING old` and `new`, B-tree skip scans or virtual generated columns), the guide says so, and almost everything else works on PostgreSQL 14 and later. PostgreSQL 19 is in release candidate testing, and almost everything here applies to it as well.
 
 The outputs shown in `psql` blocks come from running the commands against PostgreSQL 18.6.
 

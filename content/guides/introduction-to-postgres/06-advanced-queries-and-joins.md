@@ -307,7 +307,7 @@ It runs once per outer row, so on large tables a join with `GROUP BY` is usually
 
 ### Subquery in FROM
 
-A subquery in `FROM` acts like a temporary table. It needs an alias:
+A subquery in `FROM` acts like a temporary table. Since PostgreSQL 16 the alias is optional, but naming it keeps the outer query readable:
 
 ```sql
 SELECT stats.username, stats.post_count
@@ -348,7 +348,7 @@ ORDER BY total_views DESC, u.username;
 (3 rows)
 ```
 
-Since PostgreSQL 12, the planner can inline a CTE that is used once, so a CTE costs no more than the equivalent subquery. Add `AS MATERIALIZED` when you want it computed once and reused.
+Since PostgreSQL 12, the planner inlines a CTE that is referenced once, is not recursive and has no side effects, so such a CTE usually costs no more than the equivalent subquery. Add `AS MATERIALIZED` to force it to be computed once, or `AS NOT MATERIALIZED` to allow inlining of a CTE referenced several times.
 
 ### Recursive CTEs
 

@@ -88,7 +88,7 @@ pg_dump --data-only -Fc -f data.dump blog
     },
     {
       "cmd": "pg_restore -l blog.dump",
-      "output": ";\n; Archive created at 2026-10-23 13:49:19 UTC\n;     dbname: blog\n;     TOC Entries: 17\n;     Compression: gzip\n;     Dump Version: 1.16-0\n;     Format: CUSTOM\n;     Integer: 4 bytes\n;     Offset: 8 bytes\n;     Dumped from database version: 18.6\n;     Dumped by pg_dump version: 18.6 (Debian 18.6-1.pgdg12+2)\n;\n;\n; Selected TOC Entries:\n;\n222; 1259 16399 TABLE public posts postgres\n221; 1259 16398 SEQUENCE public posts_id_seq postgres\n220; 1259 16385 TABLE public users postgres\n219; 1259 16384 SEQUENCE public users_id_seq postgres\n2583; 0 16399 TABLE DATA public posts postgres\n2581; 0 16385 TABLE DATA public users postgres\n2591; 0 0 SEQUENCE SET public posts_id_seq postgres\n2592; 0 0 SEQUENCE SET public users_id_seq postgres\n2431; 2606 16408 CONSTRAINT public posts posts_pkey postgres\n2427; 2606 16395 CONSTRAINT public users users_pkey postgres\n2429; 2606 16397 CONSTRAINT public users users_username_key postgres\n2432; 2606 16409 FK CONSTRAINT public posts posts_user_id_fkey postgres"
+      "output": ";\n; Archive created at 2026-10-23 14:11:24 UTC\n;     dbname: blog\n;     TOC Entries: 17\n;     Compression: gzip\n;     Dump Version: 1.16-0\n;     Format: CUSTOM\n;     Integer: 4 bytes\n;     Offset: 8 bytes\n;     Dumped from database version: 18.6\n;     Dumped by pg_dump version: 18.6 (Debian 18.6-1.pgdg12+2)\n;\n;\n; Selected TOC Entries:\n;\n222; 1259 16399 TABLE public posts postgres\n221; 1259 16398 SEQUENCE public posts_id_seq postgres\n220; 1259 16385 TABLE public users postgres\n219; 1259 16384 SEQUENCE public users_id_seq postgres\n2583; 0 16399 TABLE DATA public posts postgres\n2581; 0 16385 TABLE DATA public users postgres\n2591; 0 0 SEQUENCE SET public posts_id_seq postgres\n2592; 0 0 SEQUENCE SET public users_id_seq postgres\n2431; 2606 16408 CONSTRAINT public posts posts_pkey postgres\n2427; 2606 16395 CONSTRAINT public users users_pkey postgres\n2429; 2606 16397 CONSTRAINT public users users_username_key postgres\n2432; 2606 16409 FK CONSTRAINT public posts posts_user_id_fkey postgres"
     }
   ]
 }
@@ -105,7 +105,7 @@ Plain SQL dumps start with a few settings and a `\restrict` line (added in 2025 
   "steps": [
     {
       "cmd": "pg_dump --schema-only blog | head -8",
-      "output": "--\n-- PostgreSQL database dump\n--\n\n\\restrict islJHkYBfP0EbWYVw5dPIWh0TqjAd0WRon0mwgGeq1m8Gz6X8rghqOqtQ24Pwfc\n\n-- Dumped from database version 18.6\n-- Dumped by pg_dump version 18.6 (Debian 18.6-1.pgdg12+2)"
+      "output": "--\n-- PostgreSQL database dump\n--\n\n\\restrict oLifcIFF4k85qZPPWQCLjEXKS1OfilbfZ8jgGmaEyZrhXcIfpfQEffE4lX0vXtW\n\n-- Dumped from database version 18.6\n-- Dumped by pg_dump version 18.6 (Debian 18.6-1.pgdg12+2)"
     }
   ]
 }
@@ -118,7 +118,8 @@ Use a `pg_dump` at least as new as the server. A newer `pg_dump` can dump older 
 ### Restoring from pg_dump
 
 ```bash
-# Plain SQL dump
+# Plain SQL dump (it does not create the database itself)
+createdb blog_restored
 psql -d blog_restored -f blog.sql
 
 # Custom or directory format: create the database, then restore in parallel
@@ -233,7 +234,7 @@ Take a base backup as shown above. It marks the starting point from which WAL ca
 pg_basebackup -h localhost -U replicator -D /backup/base_$(date +%F) -Ft -z -P
 ```
 
-Backup tools that copy files themselves use the low-level API: `SELECT pg_backup_start('label');`, copy the data directory, then `SELECT * FROM pg_backup_stop();` in the **same** session. PostgreSQL 15 renamed these functions from `pg_start_backup` and `pg_stop_backup` and removed the old exclusive backup mode, so older tutorials that call them no longer work.
+Backup tools that copy files themselves use the low-level API: `SELECT pg_backup_start('label');`, copy the data directory, then `SELECT * FROM pg_backup_stop();` in the **same** session. `pg_backup_stop()` returns the contents of a `backup_label` file (and a `tablespace_map` if you use tablespaces), which you must save into the backup; without them, it cannot be restored. PostgreSQL 15 renamed these functions from `pg_start_backup` and `pg_stop_backup` and removed the old exclusive backup mode, so older tutorials that call them no longer work.
 
 ### Restore to Point in Time
 
@@ -265,7 +266,7 @@ PostgreSQL fetches each WAL segment with `restore_command`, replays it, stops at
 
 1. Check the data: is the dropped table back, and is nothing newer than the target there?
 2. Remove `restore_command` and the `recovery_target_*` settings from `postgresql.conf`, so a later restart does not try to recover again.
-3. Take a new base backup: the server is now on a new **timeline**, and older backups cannot replay its WAL directly.
+3. Take a new base backup. The server is now on a new **timeline**. Older backups can still reach it only if the archive holds the timeline history file and every WAL segment in between, so a fresh base backup is the simpler starting point.
 
 The default `recovery_target_action` is `pause`, which stops at the target and keeps the server read-only, so you can check the data before you call `SELECT pg_wal_replay_resume();` to promote it.
 
@@ -387,8 +388,11 @@ mkdir -p "$DEST"
 # Roles and tablespaces
 pg_dumpall --globals-only -f "$DEST/globals.sql"
 
-# One custom-format dump per database
-for db in $(psql -At -c "SELECT datname FROM pg_database WHERE NOT datistemplate AND datname <> 'postgres'"); do
+# One custom-format dump per database. Fetch the list first, so a failing
+# psql stops the script (set -e does not see failures inside for ... in $(...))
+DBS=$(psql -At -c "SELECT datname FROM pg_database WHERE NOT datistemplate AND datname <> 'postgres'")
+[ -n "$DBS" ] || { echo "no databases found" >&2; exit 1; }
+for db in $DBS; do
   pg_dump -Fc -f "$DEST/$db.dump" "$db"
 done
 
@@ -396,10 +400,10 @@ done
 find "$BACKUP_ROOT" -mindepth 1 -maxdepth 1 -type d -mtime +14 -exec rm -rf {} +
 ```
 
-Schedule it with cron for the `postgres` user (`sudo crontab -u postgres -e`):
+Schedule it with cron for the `postgres` user (`sudo crontab -u postgres -e`). On Debian and Ubuntu, `/var/log/postgresql` is writable by that user:
 
 ```text
-0 2 * * * /usr/local/bin/pg-daily-backup.sh >> /var/log/pg-daily-backup.log 2>&1
+0 2 * * * /usr/local/bin/pg-daily-backup.sh >> /var/log/postgresql/pg-daily-backup.log 2>&1
 ```
 
 Alert when the job fails or when the newest backup is older than a day. A cron job that silently stopped working months ago is a common way to lose data.
@@ -418,7 +422,7 @@ aws s3 cp "$FILE" "s3://example-db-backups/postgres/$(basename "$FILE")"
 rm -f "$FILE"
 ```
 
-Turn on bucket versioning or object lock so that an attacker with the server's credentials cannot delete the backups, and set a lifecycle rule to expire old ones.
+Give the server's credentials permission to upload but not to delete, and turn on S3 Object Lock (or your provider's equivalent) so that nobody can delete or overwrite a backup during its retention period. Versioning alone is not enough: anyone allowed to delete object versions can still remove them. Set a lifecycle rule to expire old backups.
 
 ### Incremental Backups with pgBackRest
 
@@ -475,9 +479,11 @@ dropdb --if-exists restore_test
 createdb restore_test
 pg_restore --exit-on-error -d restore_test -j 4 "$LATEST/blog.dump"
 
-# Sanity checks: tables exist and contain recent data
-psql -d restore_test -At -c "SELECT count(*) FROM users"
-psql -d restore_test -At -c "SELECT max(created_at) FROM users"
+# Sanity checks: the table has rows, and the newest one is less than 2 days old
+ROWS=$(psql -d restore_test -At -c "SELECT count(*) FROM users")
+FRESH=$(psql -d restore_test -At -c "SELECT max(created_at) > now() - interval '2 days' FROM users")
+[ "$ROWS" -gt 0 ] || { echo "restore test failed: users is empty" >&2; exit 1; }
+[ "$FRESH" = "t" ] || { echo "restore test failed: newest user is too old" >&2; exit 1; }
 
 dropdb restore_test
 echo "restore test passed for $LATEST"

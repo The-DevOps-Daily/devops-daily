@@ -71,7 +71,7 @@ SELECT gen_random_uuid() AS v4, uuidv7() AS v7;
 ```text
                   v4                  |                  v7
 --------------------------------------+--------------------------------------
- ae1beccc-eaa0-44ff-a4f1-8a09da41cbff | 01a16903-6cdc-7000-8c16-61c362c565f4
+ 0f858735-b6c9-4a96-9e27-e0650403c533 | 01a16917-93d0-7fff-a1fd-190902082f20
 (1 row)
 ```
 
@@ -228,7 +228,7 @@ CREATE TABLE user_profiles (
 
 ## Normalization
 
-Normalization arranges columns so each fact is stored in exactly one place. The first three normal forms cover almost every practical case.
+Normalization arranges columns so each fact is stored in exactly one place. The first three normal forms cover almost every practical case. The examples in this section reuse table names from the shop schema later in this part, so read them, or try them in a separate database.
 
 ### First Normal Form (1NF)
 

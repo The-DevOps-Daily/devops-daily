@@ -21,20 +21,24 @@ If you use a managed service (Amazon RDS, Cloud SQL, Azure Database for PostgreS
 
 On Linux packages, the `postgres` superuser has no password and can only log in through the local socket with peer authentication. Keep it that way: administrators run `sudo -u postgres psql` on the server, and nothing connects as `postgres` over the network.
 
-Each application gets its own role with only the privileges it needs:
+Each application gets two roles: one that owns the schema and runs migrations, and one that the running application uses, with only the privileges it needs:
 
 ```sql
-CREATE ROLE app_user WITH LOGIN PASSWORD 'long-random-password-from-your-secret-manager';
-GRANT CONNECT ON DATABASE myapp TO app_user;
+CREATE ROLE app_migrator WITH LOGIN PASSWORD 'long-random-password-1';
+CREATE ROLE app_user WITH LOGIN PASSWORD 'long-random-password-2';
+GRANT CONNECT ON DATABASE myapp TO app_migrator, app_user;
 
 \c myapp
-GRANT USAGE ON SCHEMA public TO app_user;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO app_user;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
+CREATE SCHEMA app AUTHORIZATION app_migrator;
+GRANT USAGE ON SCHEMA app TO app_user;
+
+-- Tables that app_migrator creates from now on are readable and writable by app_user
+ALTER DEFAULT PRIVILEGES FOR ROLE app_migrator IN SCHEMA app
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app_user;
+ALTER ROLE app_user SET search_path = app;
 ```
 
-Run migrations with a separate role that owns the schema, so the everyday application role cannot drop tables. For read-only users, grant `pg_read_all_data`.
+Default privileges apply to objects created by the role named in `FOR ROLE` (without it, by the role running the command), so name the migration role explicitly. The application role cannot create, alter or drop tables. For read-only users, grant `pg_read_all_data`.
 
 New passwords are stored as SCRAM-SHA-256 hashes by default. MD5 is deprecated in PostgreSQL 18; find roles that still have an MD5 hash and reset their passwords:
 
@@ -129,7 +133,7 @@ SELECT * FROM documents;  -- only tenant 123's rows
 COMMIT;
 ```
 
-Table owners and superusers bypass RLS unless you also run `ALTER TABLE documents FORCE ROW LEVEL SECURITY;`. Use `SET LOCAL` (transaction scope) rather than `SET` when you connect through a pooler, so one client's tenant id cannot leak to the next client on the same server connection.
+Superusers and roles with `BYPASSRLS` always bypass RLS. Table owners bypass it too, unless you run `ALTER TABLE documents FORCE ROW LEVEL SECURITY;`. Use `SET LOCAL` (transaction scope) rather than `SET` when you connect through a pooler, so one client's tenant id cannot leak to the next client on the same server connection.
 
 ## Monitoring
 
@@ -140,7 +144,8 @@ Table owners and superusers bypass RLS unless you also run `ALTER TABLE document
 ```sql
 SELECT count(*) AS connections,
        current_setting('max_connections')::int AS max_connections
-FROM pg_stat_activity;
+FROM pg_stat_activity
+WHERE backend_type = 'client backend';
 
 -- What the connections are doing
 SELECT state, count(*) FROM pg_stat_activity GROUP BY state;
@@ -303,6 +308,8 @@ default_pool_size = 25
 
 `userlist.txt` holds one line per role: `"app_user" "SCRAM-SHA-256$4096:..."`, where the secret is the `rolpassword` value from `pg_authid` (or the plain-text password). Applications connect to port 6432 instead of 5432.
 
+PgBouncer connects to PostgreSQL from `127.0.0.1`, so `pg_hba.conf` needs a line for it, for example `host myapp app_user 127.0.0.1/32 scram-sha-256`. If clients reach PgBouncer over the network, turn on TLS between them as well (`client_tls_sslmode = require` plus `client_tls_cert_file` and `client_tls_key_file`); PgBouncer does not enable it by default.
+
 In **transaction** mode, a client holds a server connection only for the duration of a transaction. That gives the best reuse, but session state does not survive between transactions: `SET` (use `SET LOCAL`), session-level advisory locks, `LISTEN`, and temporary tables do not work as expected. PgBouncer 1.21 and later support protocol-level prepared statements in transaction mode (`max_prepared_statements`, 200 by default since 1.24).
 
 ### Vacuum and Analyze
@@ -310,12 +317,12 @@ In **transaction** mode, a client holds a server connection only for the duratio
 Because of MVCC ([Part 8](/guides/introduction-to-postgres/08-transactions-and-concurrency#h2-how-postgresql-isolates-transactions-mvcc)), every update and delete leaves a dead row version behind. `VACUUM` makes that space reusable and freezes old rows; `ANALYZE` refreshes the statistics the planner uses. **Autovacuum** does both in the background, and it must stay on.
 
 ```sql
-VACUUM (VERBOSE) users;    -- reclaim space for reuse, no blocking
+VACUUM (VERBOSE) users;    -- reclaim space for reuse; reads and writes continue
 ANALYZE users;             -- refresh statistics
 VACUUM (ANALYZE) users;    -- both
 ```
 
-`VACUUM FULL` rewrites the table to give space back to the operating system, but it holds an `ACCESS EXCLUSIVE` lock the whole time: nothing can read or write the table. On a live system, use the `pg_repack` extension instead.
+Plain `VACUUM` can briefly take a stronger lock at the end, to give empty pages at the end of the table back to the operating system; it skips that step if the lock is not free. `VACUUM FULL` rewrites the whole table to return space, but it holds an `ACCESS EXCLUSIVE` lock the whole time: nothing can read or write the table. On a live system, use the `pg_repack` extension instead.
 
 The default autovacuum thresholds start a vacuum when 20% of a table's rows are dead. On a table with 500 million rows, that is 100 million dead rows. PostgreSQL 18 adds a cap, `autovacuum_vacuum_max_threshold` (100 million by default). Tune big, busy tables individually:
 
@@ -452,9 +459,13 @@ postgresql:
     replication:
       username: replicator
       password: change-me
+  pg_hba:
+    - local all all peer
+    - hostssl replication replicator 10.0.1.0/24 scram-sha-256
+    - hostssl all all 10.0.1.0/24 scram-sha-256
 ```
 
-Use the `etcd3` section with current etcd releases; etcd 3.6 removed the old v2 API that the `etcd` section talks to. Patroni then owns the cluster: start and stop it through Patroni (`patronictl`), not through `systemctl` or `pg_ctlcluster`.
+Use the `etcd3` section with current etcd releases; etcd 3.6 removed the old v2 API that the `etcd` section talks to. Patroni then owns PostgreSQL: start and stop the Patroni service with `systemctl`, use `patronictl` for switchovers, restarts and configuration changes, and do not manage the PostgreSQL instance directly with `pg_ctlcluster`. The `pg_hba` list above lets the nodes replicate from each other; Patroni writes it into `pg_hba.conf` on every node.
 
 ### Load Balancers
 
@@ -612,7 +623,7 @@ sudo -u postgres /usr/pgsql-18/bin/pg_upgrade \
   --check
 ```
 
-Then run the same command without `--check`. Add `--link` (hard links) or, new in PostgreSQL 18, `--swap` (moves the data directories, usually the fastest) to avoid copying the data.
+Then run the same command without `--check`. Add `--link` (hard links) or, new in PostgreSQL 18, `--swap` (moves files from the old data directory into the new one) to avoid copying the data. Both are much faster than the default copy, but the old cluster cannot be used again afterwards (with `--swap`, as soon as the file transfer starts), so take a backup first.
 
 Things to know for an upgrade to PostgreSQL 18:
 

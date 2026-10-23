@@ -41,6 +41,8 @@ INSERT INTO users (username, email, age, created_at) VALUES
 
 Erin has no age on purpose. Missing values (`NULL`) behave differently from normal values, and you will see where that matters.
 
+Run the blocks in order to get the same output as shown. Blocks that start with `-- Not part of the walkthrough` show other forms of a statement; skip them, or your later results will differ.
+
 ## SELECT: Retrieving Data
 
 `SELECT` reads data. It is the statement you will run most.
@@ -208,6 +210,7 @@ SELECT id, username FROM users WHERE id > 3 ORDER BY id LIMIT 3;
 ### Basic INSERT
 
 ```sql
+-- Not part of the walkthrough
 -- One row
 INSERT INTO users (username, email, age)
 VALUES ('judy', 'judy@example.com', 30);
@@ -294,6 +297,7 @@ The conflict target (`(username)`) must match a unique constraint or unique inde
 ### Basic UPDATE
 
 ```sql
+-- Not part of the walkthrough
 -- One column
 UPDATE users SET age = 29 WHERE username = 'alice';
 
@@ -309,6 +313,7 @@ Without `WHERE`, `UPDATE` changes every row. `psql` reports the count (`UPDATE 8
 ### UPDATE with Conditions
 
 ```sql
+-- Not part of the walkthrough
 -- Normalize email addresses that are not lowercase yet
 UPDATE users SET email = lower(email) WHERE email <> lower(email);
 
@@ -348,13 +353,14 @@ UPDATE 1
 ### Basic DELETE
 
 ```sql
+-- Not part of the walkthrough
 -- One row
 DELETE FROM users WHERE username = 'judy';
 
 -- Every row matching a condition
 DELETE FROM users WHERE created_at < now() - interval '2 years';
 
--- Every row in the table
+-- Every row in the table (do not run this one on the practice data)
 DELETE FROM users;
 ```
 
@@ -365,6 +371,7 @@ To empty a large table, `TRUNCATE users;` is much faster than `DELETE FROM users
 Run the same `WHERE` clause as a `SELECT` first, and check the rows and the count:
 
 ```sql
+-- Not part of the walkthrough
 SELECT id, username FROM users WHERE age < 25;
 -- If that is what you want to remove:
 DELETE FROM users WHERE age < 25;
@@ -373,6 +380,7 @@ DELETE FROM users WHERE age < 25;
 For data that people might want back, a **soft delete** marks rows instead of removing them:
 
 ```sql
+-- Not part of the walkthrough
 ALTER TABLE users ADD COLUMN deleted_at timestamptz;
 
 -- "Delete"
@@ -480,7 +488,7 @@ ORDER BY decade;
 (5 rows)
 ```
 
-Every column in the select list must be either in `GROUP BY` or inside an aggregate. Otherwise PostgreSQL cannot know which of the group's values to show:
+Every column in the select list must be in `GROUP BY`, inside an aggregate, or functionally dependent on the grouped columns (grouping by a table's primary key lets you select its other columns). Otherwise PostgreSQL cannot know which of the group's values to show:
 
 ```sql
 SELECT age, email, count(*) FROM users GROUP BY age;
@@ -706,6 +714,7 @@ HAVING count(*) > 1;
 ### Clean Up Data
 
 ```sql
+-- Not part of the walkthrough
 -- Trim and lowercase email addresses
 UPDATE users SET email = lower(trim(email))
 WHERE email <> lower(trim(email));

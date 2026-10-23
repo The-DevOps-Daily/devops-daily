@@ -14,6 +14,8 @@ A query that takes a millisecond on your laptop can take seconds in production o
 - Joins and `WHERE` clauses from [Part 3](/guides/introduction-to-postgres/03-sql-basics-and-crud) and [Part 6](/guides/introduction-to-postgres/06-advanced-queries-and-joins).
 - A scratch database with some free disk space (the test tables below use about 250 MB): `CREATE DATABASE perf;` then `\c perf`.
 
+Run the blocks in order to get the same output as shown. Blocks that start with `-- Not part of the walkthrough` show other forms of a statement; skip them, or your later results will differ. That matters here: an extra index can change the plans you see.
+
 :::note
 The plans in this part come from PostgreSQL 18.6 compiled to WebAssembly (PGlite) on a small ARM board, which is slower than a normal server. Compare the plan shapes, row counts and buffer numbers. Your milliseconds will differ.
 :::
@@ -68,6 +70,7 @@ VACUUM ANALYZE users;
 B-tree handles equality, ranges, sorting, `IS NULL` and prefix matches with `LIKE 'abc%'` (for the latter, the column needs the `C` collation or a `text_pattern_ops` index). It is the right choice for most columns:
 
 ```sql
+-- Not part of the walkthrough
 CREATE INDEX users_created_at_idx ON users (created_at);
 
 -- All of these can use it:
@@ -81,6 +84,7 @@ SELECT * FROM users ORDER BY created_at DESC LIMIT 20;
 Hash indexes support only `=`. They can be smaller than a B-tree for long values such as URLs, but they cannot enforce uniqueness, sort or answer range queries. A B-tree is almost always the better default.
 
 ```sql
+-- Not part of the walkthrough
 CREATE INDEX users_email_hash_idx ON users USING hash (email);
 ```
 
@@ -188,21 +192,21 @@ WHERE viewed_at >= '2026-02-01' AND viewed_at < '2026-02-02';
 ```text
                                                                              QUERY PLAN
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Aggregate  (cost=7647.13..7647.14 rows=1 width=8) (actual time=62.364..62.375 rows=1.00 loops=1)
+ Aggregate  (cost=7647.37..7647.38 rows=1 width=8) (actual time=62.968..62.979 rows=1.00 loops=1)
    Buffers: shared hit=133
-   ->  Bitmap Heap Scan on page_views  (cost=14.17..7625.78 rows=8540 width=0) (actual time=6.704..40.112 rows=8640.00 loops=1)
+   ->  Bitmap Heap Scan on page_views  (cost=14.19..7625.80 rows=8625 width=0) (actual time=6.927..41.574 rows=8640.00 loops=1)
          Recheck Cond: ((viewed_at >= '2026-02-01 00:00:00+00'::timestamp with time zone) AND (viewed_at < '2026-02-02 00:00:00+00'::timestamp with time zone))
          Rows Removed by Index Recheck: 8768
          Heap Blocks: lossy=128
          Buffers: shared hit=133
-         ->  Bitmap Index Scan on page_views_viewed_at_brin  (cost=0.00..12.03 rows=17241 width=0) (actual time=1.643..1.645 rows=1280.00 loops=1)
+         ->  Bitmap Index Scan on page_views_viewed_at_brin  (cost=0.00..12.03 rows=17241 width=0) (actual time=1.623..1.626 rows=1280.00 loops=1)
                Index Cond: ((viewed_at >= '2026-02-01 00:00:00+00'::timestamp with time zone) AND (viewed_at < '2026-02-02 00:00:00+00'::timestamp with time zone))
                Index Searches: 1
                Buffers: shared hit=5
  Planning:
    Buffers: shared hit=18 read=1 written=1
- Planning Time: 2.346 ms
- Execution Time: 63.273 ms
+ Planning Time: 2.263 ms
+ Execution Time: 63.813 ms
 (15 rows)
 ```
 
@@ -242,12 +246,12 @@ EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'user500000@example.com';
 ```text
                                                 QUERY PLAN
 -----------------------------------------------------------------------------------------------------------
- Seq Scan on users  (cost=0.00..21846.00 rows=1 width=45) (actual time=322.333..552.750 rows=1.00 loops=1)
+ Seq Scan on users  (cost=0.00..21846.00 rows=1 width=45) (actual time=343.909..576.296 rows=1.00 loops=1)
    Filter: (email = 'user500000@example.com'::text)
    Rows Removed by Filter: 999999
    Buffers: shared hit=4644 read=4702 written=98
- Planning Time: 0.292 ms
- Execution Time: 552.858 ms
+ Planning Time: 0.291 ms
+ Execution Time: 576.408 ms
 (6 rows)
 ```
 
@@ -269,7 +273,7 @@ Now add an index and run the same query again:
     },
     {
       "cmd": "EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'user500000@example.com';",
-      "output": "                                                        QUERY PLAN\n---------------------------------------------------------------------------------------------------------------------------\n Index Scan using users_email_idx on users  (cost=0.42..8.44 rows=1 width=45) (actual time=0.314..0.323 rows=1.00 loops=1)\n   Index Cond: (email = 'user500000@example.com'::text)\n   Index Searches: 1\n   Buffers: shared hit=1 read=3 written=3\n Planning:\n   Buffers: shared hit=16 read=1 written=1\n Planning Time: 2.682 ms\n Execution Time: 0.448 ms\n(8 rows)"
+      "output": "                                                        QUERY PLAN\n---------------------------------------------------------------------------------------------------------------------------\n Index Scan using users_email_idx on users  (cost=0.42..8.44 rows=1 width=45) (actual time=0.310..0.320 rows=1.00 loops=1)\n   Index Cond: (email = 'user500000@example.com'::text)\n   Index Searches: 1\n   Buffers: shared hit=1 read=3 written=3\n Planning:\n   Buffers: shared hit=16 read=1 written=1\n Planning Time: 2.829 ms\n Execution Time: 0.480 ms\n(8 rows)"
     }
   ]
 }
@@ -348,7 +352,7 @@ A composite index covers several columns, sorted by the first column, then by th
     },
     {
       "cmd": "EXPLAIN ANALYZE\nSELECT id FROM users\nWHERE status = 'pending'\n  AND created_at >= '2025-06-01' AND created_at < '2025-06-02';",
-      "output": "                                                                                       QUERY PLAN\n-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n Index Scan using users_status_created_idx on users  (cost=0.42..617.35 rows=248 width=8) (actual time=0.383..2.468 rows=230.00 loops=1)\n   Index Cond: ((status = 'pending'::text) AND (created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))\n   Index Searches: 1\n   Buffers: shared read=32 written=32\n Planning:\n   Buffers: shared hit=19 read=1 written=1\n Planning Time: 1.113 ms\n Execution Time: 2.879 ms\n(8 rows)"
+      "output": "                                                                                       QUERY PLAN\n-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------\n Index Scan using users_status_created_idx on users  (cost=0.42..589.14 rows=232 width=8) (actual time=0.383..2.459 rows=230.00 loops=1)\n   Index Cond: ((status = 'pending'::text) AND (created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))\n   Index Searches: 1\n   Buffers: shared read=32 written=32\n Planning:\n   Buffers: shared hit=19 read=1 written=1\n Planning Time: 1.174 ms\n Execution Time: 2.891 ms\n(8 rows)"
     }
   ]
 }
@@ -356,7 +360,7 @@ A composite index covers several columns, sorted by the first column, then by th
 
 Put columns you compare with `=` first and the range or sort column last. That way the matching rows sit next to each other in the index, and one search finds them all.
 
-What if a query filters only on the second column? Before PostgreSQL 18, a B-tree could not jump into the middle of the sort order, so this query needed another index or a full scan. PostgreSQL 18 adds **skip scan**: when the first column has few distinct values, it searches the index once per value. Here `Index Searches: 7` shows it at work:
+What if a query filters only on the second column? Before PostgreSQL 18, a B-tree could not jump into the middle of the sort order, so this query needed another index or a full scan. PostgreSQL 18 adds **skip scan**: when the first column has few distinct values, the scan jumps from one value of `status` to the next and searches the `created_at` range within each. `Index Searches: 7` shows those repeated descents into the index (a normal index scan shows 1):
 
 ```sql
 EXPLAIN ANALYZE
@@ -367,16 +371,16 @@ WHERE created_at >= '2025-06-01' AND created_at < '2025-06-02';
 ```text
                                                                            QUERY PLAN
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
- Bitmap Heap Scan on users  (cost=81.60..6523.79 rows=3112 width=8) (actual time=5.067..10.705 rows=2880.00 loops=1)
+ Bitmap Heap Scan on users  (cost=79.18..6233.30 rows=2877 width=8) (actual time=4.453..9.835 rows=2880.00 loops=1)
    Recheck Cond: ((created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))
    Heap Blocks: exact=28
    Buffers: shared hit=42 read=22 written=22
-   ->  Bitmap Index Scan on users_status_created_idx  (cost=0.00..80.82 rows=3112 width=0) (actual time=4.957..4.959 rows=2880.00 loops=1)
+   ->  Bitmap Index Scan on users_status_created_idx  (cost=0.00..78.46 rows=2877 width=0) (actual time=4.343..4.346 rows=2880.00 loops=1)
          Index Cond: ((created_at >= '2025-06-01 00:00:00+00'::timestamp with time zone) AND (created_at < '2025-06-02 00:00:00+00'::timestamp with time zone))
          Index Searches: 7
          Buffers: shared hit=14 read=22 written=22
- Planning Time: 0.467 ms
- Execution Time: 14.389 ms
+ Planning Time: 0.468 ms
+ Execution Time: 13.905 ms
 (10 rows)
 ```
 
@@ -419,7 +423,7 @@ WHERE status = 'banned' AND created_at > '2025-12-01';
 ```text
                                         QUERY PLAN
 ------------------------------------------------------------------------------------------
- Index Scan using users_banned_created_idx on users  (cost=0.29..36.83 rows=774 width=22)
+ Index Scan using users_banned_created_idx on users  (cost=0.29..35.24 rows=740 width=22)
    Index Cond: (created_at > '2025-12-01 00:00:00+00'::timestamp with time zone)
 (2 rows)
 ```
@@ -431,6 +435,7 @@ Partial indexes are also the way to enforce "unique among active rows" (see soft
 A unique index enforces uniqueness and speeds up lookups at the same time:
 
 ```sql
+-- Not part of the walkthrough
 CREATE UNIQUE INDEX users_email_key ON users (email);
 ```
 
@@ -451,6 +456,7 @@ SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'users';
 ### Drop Indexes
 
 ```sql
+-- Not part of the walkthrough
 DROP INDEX CONCURRENTLY users_email_hash_idx;
 ```
 
@@ -459,6 +465,7 @@ DROP INDEX CONCURRENTLY users_email_hash_idx;
 Indexes can bloat over time when rows are updated and deleted often. Rebuild one without blocking writes:
 
 ```sql
+-- Not part of the walkthrough
 REINDEX INDEX CONCURRENTLY users_email_idx;
 REINDEX TABLE CONCURRENTLY users;
 ```
@@ -553,7 +560,7 @@ SELECT id, title FROM posts ORDER BY created_at DESC LIMIT 20;
     },
     {
       "cmd": "EXPLAIN ANALYZE SELECT status FROM users WHERE email = 'user42@example.com';",
-      "output": "                                                              QUERY PLAN\n--------------------------------------------------------------------------------------------------------------------------------------\n Index Only Scan using users_email_status_idx on users  (cost=0.42..4.44 rows=1 width=7) (actual time=0.717..0.729 rows=1.00 loops=1)\n   Index Cond: (email = 'user42@example.com'::text)\n   Heap Fetches: 0\n   Index Searches: 1\n   Buffers: shared hit=1 read=3 written=3\n Planning:\n   Buffers: shared hit=3\n Planning Time: 0.476 ms\n Execution Time: 0.983 ms\n(9 rows)"
+      "output": "                                                              QUERY PLAN\n--------------------------------------------------------------------------------------------------------------------------------------\n Index Only Scan using users_email_status_idx on users  (cost=0.42..4.44 rows=1 width=7) (actual time=1.180..1.202 rows=1.00 loops=1)\n   Index Cond: (email = 'user42@example.com'::text)\n   Heap Fetches: 0\n   Index Searches: 1\n   Buffers: shared hit=1 read=3 written=3\n Planning:\n   Buffers: shared hit=3\n Planning Time: 0.640 ms\n Execution Time: 1.609 ms\n(9 rows)"
     }
   ]
 }
@@ -644,7 +651,7 @@ auto_explain.log_min_duration = '1s'
 auto_explain.log_analyze = on
 ```
 
-For a single session, `LOAD 'auto_explain';` followed by `SET auto_explain.log_min_duration = '1s';` works too (as a superuser). `log_analyze` adds timing overhead to every query, so keep the threshold high on busy servers.
+For a single session, `LOAD 'auto_explain';` followed by `SET auto_explain.log_min_duration = '1s';` works too (as a superuser). `log_analyze` instruments every query, not only the slow ones it logs, so a high threshold does not remove the overhead. On busy servers, set `auto_explain.log_timing = off` or log only a sample with `auto_explain.sample_rate`.
 
 ## Practical Indexing Strategy
 

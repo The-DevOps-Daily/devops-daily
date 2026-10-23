@@ -154,7 +154,7 @@ Many people only need `psql` (and often `pg_dump`) to connect to a server that r
     {
       "label": "Windows",
       "lang": "powershell",
-      "code": "# Chocolatey: client tools only (psql, pg_dump, pg_dumpall, pg_restore)\nchoco install psql\n\n# Or run the EDB installer and select only \"Command Line Tools\""
+      "code": "# Chocolatey: PostgreSQL 18 client tools only\n# (psql, pg_dump, pg_dumpall, pg_restore)\nchoco install psql18\n\n# Or run the EDB installer and select only \"Command Line Tools\""
     },
     {
       "label": "Docker",
@@ -292,6 +292,8 @@ A first session looks like this. `\conninfo` shows where you are connected, and 
 }
 ```
 
+This capture comes from a test server that accepts local TCP connections without a password, so `Password Used` is `false`. With the default `scram-sha-256` rules, `psql` first prints `Password for user postgres:`, and the row reads `true`.
+
 ### psql Basics
 
 Commands that start with a backslash are **meta-commands**. psql handles them itself; they are not SQL, and they do not need a semicolon. Everything else is SQL and runs when you end it with `;`.
@@ -382,7 +384,7 @@ Insert a few rows and read them back:
     },
     {
       "cmd": "SELECT id, title, created_at FROM posts;",
-      "output": " id |    title    |         created_at\n----+-------------+----------------------------\n  1 | First post  | 2026-10-23 13:46:07.476+00\n  2 | Second post | 2026-10-23 13:46:07.476+00\n  3 | Third post  | 2026-10-23 13:46:07.476+00\n(3 rows)"
+      "output": " id |    title    |        created_at\n----+-------------+---------------------------\n  1 | First post  | 2026-10-23 14:08:08.85+00\n  2 | Second post | 2026-10-23 14:08:08.85+00\n  3 | Third post  | 2026-10-23 14:08:08.85+00\n(3 rows)"
     }
   ]
 }
