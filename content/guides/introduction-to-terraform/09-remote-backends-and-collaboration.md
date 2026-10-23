@@ -86,6 +86,8 @@ terraform {
 }
 ```
 
+> **Tip:** Starting in Terraform 1.10, the S3 backend supports native S3 state locking with `use_lockfile = true` (using S3 conditional writes to create a `.tflock` file alongside your state). On Terraform 1.10+, you can set `use_lockfile = true` instead of `dynamodb_table` to get state locking without provisioning and maintaining a separate DynamoDB table.
+
 Initialize to migrate existing local state:
 
 ```bash
