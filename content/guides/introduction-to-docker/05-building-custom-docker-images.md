@@ -1,387 +1,459 @@
 ---
-title: Building Custom Docker Images
-description: 'Build custom Docker images with Dockerfiles. Covers FROM, COPY, RUN, CMD, ENTRYPOINT, layer caching, multi-stage builds, and shrinking final image size.'
+title: 'How to Write a Dockerfile and Build a Docker Image'
+description: 'Write a Dockerfile for a Python API, build it with BuildKit, order layers for caching, lint with hadolint, and use multi-stage builds and a non-root user.'
 order: 5
 ---
 
-Using pre-built images from Docker Hub is a great way to get started, but you'll eventually need to create custom images for your own applications. This is where Dockerfiles come in, they provide a script-like way to define exactly how an image should be built.
+Official images get you a web server or a database. For your own application, you write a **Dockerfile**: a text file with the steps that turn your source code into an image. In this part you containerize a small Python web API, starting with the Dockerfile most tutorials show and fixing it step by step until it builds fast, runs as a non-root user and ships only what it needs.
 
-## Understanding Dockerfiles
+The same app, called **hello-api**, runs through the rest of the guide: it gets a Postgres database in [Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes) and [Part 7](/guides/introduction-to-docker/07-networking-in-docker), a `compose.yaml` in [Part 8](/guides/introduction-to-docker/08-docker-compose), hardening in [Part 9](/guides/introduction-to-docker/09-docker-best-practices) and a CI pipeline in [Part 10](/guides/introduction-to-docker/10-docker-in-production).
 
-A Dockerfile is a text file containing instructions for building a Docker image. Each instruction creates a layer in the image, which helps with caching and efficiency during builds.
+## Prerequisites
 
-Let's start with a basic example for a simple Node.js application:
+- Docker Engine 23 or newer, or Docker Desktop, so that `docker build` uses BuildKit ([Part 2](/guides/introduction-to-docker/02-docker-installation)).
+- Basic Python is helpful but not required; the app is about 65 lines.
+
+## The Example App
+
+Create a project directory with two files. `app.py` is a [Flask](https://flask.palletsprojects.com/) API with four routes: a greeting, a liveness check, a readiness check that needs the database, and a visit counter stored in Postgres:
+
+```python
+import os
+import socket
+
+import psycopg
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+
+def conninfo():
+    # Read the password from a file when one is mounted (Docker secrets), else from the environment
+    password = os.environ.get("DB_PASSWORD", "")
+    password_file = os.environ.get("DB_PASSWORD_FILE")
+    if password_file:
+        with open(password_file) as f:
+            password = f.read().strip()
+    return psycopg.conninfo.make_conninfo(
+        host=os.environ.get("DB_HOST", "db"),
+        port=os.environ.get("DB_PORT", "5432"),
+        dbname=os.environ.get("DB_NAME", "hello"),
+        user=os.environ.get("DB_USER", "hello"),
+        password=password,
+        connect_timeout=3,
+    )
+
+
+@app.get("/")
+def index():
+    return jsonify(message="Hello from Docker", hostname=socket.gethostname())
+
+
+@app.get("/health")
+def health():
+    # Liveness: the process answers. Used by the Dockerfile HEALTHCHECK.
+    return jsonify(status="ok")
+
+
+@app.get("/ready")
+def ready():
+    # Readiness: the database answers too.
+    try:
+        with psycopg.connect(conninfo()) as conn:
+            conn.execute("SELECT 1")
+    except psycopg.Error:
+        return jsonify(status="database unavailable"), 503
+    return jsonify(status="ready")
+
+
+@app.get("/visits")
+def visits():
+    try:
+        with psycopg.connect(conninfo()) as conn:
+            if conn.execute("SELECT to_regclass('visits')").fetchone()[0] is None:
+                # First visit: create the table, one worker at a time
+                conn.execute("SELECT pg_advisory_xact_lock(4242)")
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS visits ("
+                    " id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,"
+                    " visited_at timestamptz NOT NULL DEFAULT now())"
+                )
+            conn.execute("INSERT INTO visits DEFAULT VALUES")
+            count = conn.execute("SELECT count(*) FROM visits").fetchone()[0]
+    except psycopg.Error:
+        return jsonify(error="database unavailable"), 503
+    return jsonify(visits=count)
+```
+
+`requirements.txt` pins the three dependencies: Flask, the gunicorn web server and the psycopg Postgres driver:
+
+```text
+flask==3.1.3
+gunicorn==26.2.0
+psycopg[binary]==3.3.6
+```
+
+The first visit creates the `visits` table. Two gunicorn workers (and later several containers) can get their first request at the same moment, and `CREATE TABLE IF NOT EXISTS` is not safe against that race in PostgreSQL, so the app takes a transaction-level advisory lock while it creates the table. Real applications create their tables with a migration tool before they start serving.
+
+The app reads its database settings from environment variables, so the same image works on a laptop, in CI and in production. That is the main rule for containerized apps: configuration comes from the environment, not from files baked into the image.
+
+## A First Dockerfile
+
+This is the Dockerfile you find in many tutorials. It works, but it has problems:
 
 ```dockerfile
-FROM node:18-alpine
+FROM python:3.14
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
 COPY . .
-EXPOSE 3000
-CMD ["node", "index.js"]
+RUN pip install -r requirements.txt
+EXPOSE 8000
+CMD gunicorn --bind 0.0.0.0:8000 app:app
 ```
 
-Let's break down each instruction:
+**hadolint** is a Dockerfile linter that checks for these problems before you build. This is its real output for the file above:
 
-- `FROM node:18-alpine`: Starts with the Node.js 18 Alpine Linux base image
-- `WORKDIR /app`: Sets the working directory inside the container
-- `COPY package*.json ./`: Copies package.json and package-lock.json first (for better caching)
-- `RUN npm install`: Runs npm install to install dependencies
-- `COPY . .`: Copies the rest of your application code
-- `EXPOSE 3000`: Documents that the container listens on port 3000
-- `CMD ["node", "index.js"]`: Specifies the command to run when the container starts
-
-## Creating Your First Dockerfile
-
-Let's create a simple web application with Express.js to demonstrate building a custom image.
-
-1. Create a project directory and navigate to it:
-
-```bash
-mkdir docker-express-app
-cd docker-express-app
+```terminal
+{
+  "title": "hadolint 2.15.1 on the first Dockerfile (real run)",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "hadolint Dockerfile",
+      "output": "Dockerfile:4 DL3042 warning: Avoid use of cache directory with pip. Use `pip install --no-cache-dir <package>`\nDockerfile:6 DL3025 warning: Use arguments JSON notation for CMD and ENTRYPOINT arguments"
+    }
+  ]
+}
 ```
 
-2. Initialize a Node.js project and install Express:
+hadolint catches two of the problems. Here is the full list:
 
-```bash
-npm init -y
-npm install express
-```
+1. **The base image is the full `python:3.14`**, 1.14 GB unpacked, with compilers the app never uses ([Part 3](/guides/introduction-to-docker/03-working-with-docker-images) has the numbers).
+2. **`COPY . .` comes before `pip install`.** Every code change invalidates the layer cache, so every build reinstalls all dependencies.
+3. **pip keeps its download cache in the image**, which adds megabytes for nothing (hadolint DL3042).
+4. **The shell form of `CMD`** runs `/bin/sh -c "gunicorn ..."`. The shell becomes process 1 and does not pass `SIGTERM` to gunicorn, so `docker stop` waits 10 seconds and then kills it in the middle of requests (hadolint DL3025).
+5. **It runs as root.** A bug in the app gives an attacker root inside the container.
+6. **Without a `.dockerignore` file**, `COPY . .` copies everything in the directory into the image: your `.git` directory, local virtual environments, and any `.env` file with secrets.
 
-3. Create a simple `index.js` file:
+## How a Build Works
 
-```javascript
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
+`docker build` sends the **build context** (the directory you name, usually `.`) to BuildKit, which runs the Dockerfile instructions in order:
 
-app.get('/', (req, res) => {
-  res.send('Hello from Docker!');
-});
+- `FROM` picks the base image, whose layers become the bottom of yours.
+- `RUN`, `COPY` and `ADD` change files and create new layers. `WORKDIR` creates its directory if it does not exist.
+- `ENV`, `USER`, `EXPOSE`, `CMD`, `ENTRYPOINT`, `HEALTHCHECK` and `LABEL` change only the image config.
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-```
+BuildKit caches every step. For each instruction it checks whether it has run the same instruction on the same parent before, and for `COPY` and `ADD` whether the copied files changed. The first step that misses the cache is rebuilt, and so is **every step after it**. That is why the order of instructions matters so much: put what changes rarely (the base image, system packages, dependencies) at the top, and what changes on every commit (your code) at the bottom.
 
-4. Create a Dockerfile in the same directory:
+## Add a .dockerignore File
 
-```dockerfile
-FROM node:18-alpine
+`.dockerignore` lists files that never enter the build context. It makes builds faster and keeps secrets and junk out of the image:
 
-# Create app directory
-WORKDIR /usr/src/app
-
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-COPY package*.json ./
-
-RUN npm install
-
-# Bundle app source
-COPY . .
-
-# The app binds to port 3000
-EXPOSE 3000
-
-# Define the command to run your app
-CMD ["node", "index.js"]
-```
-
-## Building Your Docker Image
-
-To build an image from your Dockerfile, use the `docker build` command:
-
-```bash
-docker build -t my-express-app .
-```
-
-The `-t` flag tags your image with a name, and the `.` specifies that the Dockerfile is in the current directory.
-
-You'll see output showing each instruction being executed:
-
-```
-Sending build context to Docker daemon  4.096kB
-Step 1/7 : FROM node:18-alpine
- ---> d483e6f712c5
-Step 2/7 : WORKDIR /usr/src/app
- ---> Using cache
- ---> 8d7ab9c161c1
-Step 3/7 : COPY package*.json ./
- ---> 65d2a7add184
-Step 4/7 : RUN npm install
- ---> Running in 2c75e3941dba
-...
-```
-
-Once the build completes, your image is ready to use:
-
-```bash
-docker images
-```
-
-```
-REPOSITORY        TAG       IMAGE ID       CREATED         SIZE
-my-express-app    latest    8c1a23e0b311   5 seconds ago   173MB
-```
-
-## Running Your Custom Image
-
-Run a container from your new image:
-
-```bash
-docker run -d -p 3000:3000 --name my-app my-express-app
-```
-
-Now you can access your application at http://localhost:3000.
-
-## Understanding Dockerfile Instructions
-
-Let's explore the most common Dockerfile instructions:
-
-### FROM
-
-Specifies the base image. This is always the first instruction.
-
-```dockerfile
-FROM ubuntu:22.04
-```
-
-You can use minimal base images like Alpine Linux to keep your images small:
-
-```dockerfile
-FROM alpine:3.16
-```
-
-### WORKDIR
-
-Sets the working directory for subsequent instructions.
-
-```dockerfile
-WORKDIR /app
-```
-
-Using `WORKDIR` is preferable to using multiple `RUN cd /some/dir` commands.
-
-### COPY and ADD
-
-Both copy files from the build context to the image, but they have different capabilities:
-
-- `COPY` simply copies files and directories
-- `ADD` can also extract tar files and download files from URLs
-
-Best practice is to use `COPY` unless you specifically need `ADD`:
-
-```dockerfile
-COPY ./app /app
-```
-
-For URL downloads, prefer `RUN curl` or `RUN wget` instead of `ADD` for better control.
-
-### RUN
-
-Executes commands and creates a new layer:
-
-```dockerfile
-RUN apt-get update && \
-    apt-get install -y python3
-```
-
-Combining commands into a single `RUN` instruction reduces layers and image size.
-
-### ENV
-
-Sets environment variables:
-
-```dockerfile
-ENV NODE_ENV=production \
-    PORT=3000
-```
-
-Variables set with `ENV` persist when a container runs from the image.
-
-### EXPOSE
-
-Documents which ports the container listens on:
-
-```dockerfile
-EXPOSE 80 443
-```
-
-Note that `EXPOSE` is informational only, you still need to publish the ports with `-p` when running the container.
-
-### CMD and ENTRYPOINT
-
-These instructions define what happens when the container starts:
-
-- `CMD` provides default arguments for the container, which can be overridden
-- `ENTRYPOINT` specifies the executable that always runs when the container starts
-
-The most common pattern is to use `ENTRYPOINT` for the executable and `CMD` for default arguments:
-
-```dockerfile
-ENTRYPOINT ["nginx"]
-CMD ["-g", "daemon off;"]
-```
-
-This allows users to override the arguments but keeps nginx as the main process.
-
-## Dockerfile Best Practices
-
-### Use Official Base Images
-
-Start with official images from Docker Hub when possible. They're maintained, secure, and follow best practices.
-
-### Minimize Layers
-
-Each instruction creates a layer. Combine related commands into a single `RUN` instruction:
-
-```dockerfile
-# Good
-RUN apt-get update && apt-get install -y \
-    package1 \
-    package2 \
-    package3 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Avoid
-RUN apt-get update
-RUN apt-get install -y package1
-RUN apt-get install -y package2
-RUN apt-get install -y package3
-```
-
-### Order Instructions by Stability
-
-Place instructions that change less frequently at the top of your Dockerfile to leverage caching:
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-
-# Dependencies change less frequently than source code
-COPY package*.json ./
-RUN npm install
-
-# Source code changes most frequently
-COPY . .
-```
-
-### Use .dockerignore
-
-Create a `.dockerignore` file to exclude files and directories from the build context:
-
-```
-node_modules
-npm-debug.log
-Dockerfile
+```text
+# Version control and editor files
 .git
-.github
 .gitignore
+.vscode/
+# Python caches and local virtual environments
+__pycache__/
+*.pyc
+.venv/
+# Secrets and local settings: never send these to the builder
 .env
-.env.*
+secrets/
+# Docker files are not needed inside the image
+Dockerfile
+.dockerignore
+compose*.yaml
 ```
 
-This reduces the build context size and prevents sensitive files from being included.
+The syntax is like `.gitignore`. A line that starts with `!` adds an exception. If the build context is large, the build output says so in its first lines (`transferring context`); that is the moment to check this file.
 
-### Keep Images Small
+## A Better Dockerfile
 
-Use smaller base images (Alpine variants often work well) and remove unnecessary files:
-
-```dockerfile
-FROM node:18-alpine
-
-# Install dependencies and immediately clean up in the same layer
-RUN apk add --no-cache python3 make g++ \
-    && npm install \
-    && npm cache clean --force
-```
-
-### Use Multi-Stage Builds
-
-Multi-stage builds allow you to use multiple FROM statements in your Dockerfile. Each FROM statement begins a new stage that can selectively copy artifacts from previous stages:
+This version fixes the problems:
 
 ```dockerfile
-# Build stage
-FROM node:18 AS build
+# syntax=docker/dockerfile:1
+FROM python:3.14-slim
+
+# No .pyc files in the image, and log lines appear immediately
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
 
-# Production stage
-FROM nginx:alpine
-COPY --from=build /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Dependencies first: this layer is rebuilt only when requirements.txt changes
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Then the code, which changes on every commit
+COPY app.py .
+
+# An unprivileged system user without a home directory
+RUN useradd --system --uid 10001 --no-create-home app
+# Switch by UID, so the host and Kubernetes can verify it is not root
+USER 10001
+
+EXPOSE 8000
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--worker-tmp-dir", "/dev/shm", "--no-control-socket", "app:app"]
 ```
 
-This results in a much smaller final image with only the necessary files.
-
-## Tagging and Versioning Images
-
-When building images for production, use specific tags for versioning:
-
-```bash
-docker build -t myapp:1.0.0 .
+```terminal
+{
+  "title": "hadolint on the better Dockerfile (real run)",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "hadolint Dockerfile && echo \"no findings\"",
+      "output": "no findings"
+    }
+  ]
+}
 ```
 
-You can also apply multiple tags to the same build:
+What changed, line by line:
 
-```bash
-docker build -t myapp:1.0.0 -t myapp:latest .
-```
+- **`# syntax=docker/dockerfile:1`** tells BuildKit to use the latest stable 1.x Dockerfile syntax, which it downloads at build time. You get new Dockerfile features without upgrading Docker.
+- **`python:3.14-slim`** instead of the full image.
+- **`ENV`** sets two Python options. `PYTHONUNBUFFERED=1` matters in containers: without it, Python buffers stdout and `docker logs` shows lines late or not at all.
+- **`COPY requirements.txt` before `COPY app.py`** keeps the dependency layer cached when only the code changes.
+- **`--no-cache-dir`** keeps pip's cache out of the image.
+- **`useradd` and `USER 10001`** run the app as an unprivileged user. `COPY` creates files owned by root unless you pass `--chown`, so the app can read its code but cannot change it. Use the numeric UID in `USER`: a name like `app` exists only inside the image, so the host and tools such as Kubernetes' `runAsNonRoot` cannot check that it is not root. hadolint 2.15 reports the name form as DL3066.
+- **The exec form of `CMD`** (a JSON array) runs gunicorn directly as process 1, so it receives `SIGTERM` from `docker stop` and shuts down cleanly.
+- **The gunicorn flags**: `--worker-tmp-dir /dev/shm` keeps gunicorn's worker heartbeat files in memory instead of on the container's overlay filesystem, and `--no-control-socket` turns off the control socket that gunicorn 26 creates in the user's home directory. The `app` user has no home directory, and without this flag gunicorn logs `Control server error: [Errno 13] Permission denied` at startup (it keeps serving, but the error is noise).
 
-## Working with Private Registries
+### CMD vs ENTRYPOINT
 
-If you're hosting your images in a private registry, you'll need to log in before pushing:
+Both define what runs when the container starts:
 
-```bash
-docker login registry.example.com
-docker build -t registry.example.com/myapp:1.0.0 .
-docker push registry.example.com/myapp:1.0.0
-```
-
-For cloud-based container registries, DigitalOcean Container Registry offers a secure, private place to store your Docker images. [Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) and get $200 in free credits to try their Container Registry service.
-
-## Real-World Example: Building a Full-Stack Application
-
-Here's an example of a more complex Dockerfile for a React application with a Node.js backend:
+- **`CMD`** is the default command. Arguments to `docker run IMAGE ...` replace it completely: `docker run hello-api:1.0 python -c 'print(1)'` runs Python instead of gunicorn.
+- **`ENTRYPOINT`** is the fixed executable. Arguments to `docker run` are appended to it, and `CMD` provides default arguments.
 
 ```dockerfile
-# Build stage for React frontend
-FROM node:18-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm install
-COPY frontend/ ./
-RUN npm run build
-
-# Build stage for Node.js backend
-FROM node:18-alpine AS backend-build
-WORKDIR /app/backend
-COPY backend/package*.json ./
-RUN npm install
-COPY backend/ ./
-
-# Production stage
-FROM node:18-alpine
-WORKDIR /app
-COPY --from=backend-build /app/backend ./
-COPY --from=frontend-build /app/frontend/build ./public
-ENV NODE_ENV=production
-EXPOSE 4000
-CMD ["node", "server.js"]
+FROM hello-api:1.0
+ENTRYPOINT ["gunicorn", "app:app"]
+CMD ["--bind", "0.0.0.0:8000", "--workers", "2"]
+# docker run IMAGE --workers 4  ->  gunicorn app:app --workers 4
 ```
 
-This Dockerfile uses three stages:
+Use `CMD` alone for applications, and `ENTRYPOINT` when the image is a tool (like `hadolint` or `crane`) or when an entrypoint script must prepare something before the main process, as in the nginx and postgres images. An entrypoint script should end with `exec "$@"` so that the main process replaces the script as process 1.
 
-1. Build the React frontend
-2. Prepare the Node.js backend
-3. Create a final production image with only the necessary files
+### COPY vs ADD, ARG vs ENV
 
-In the next section, we'll explore Docker volumes for persistent data storage.
+- **`COPY`** copies files from the build context. Use it by default.
+- **`ADD`** can also download URLs and unpack local tar archives. Use it when you want that, with `--checksum=sha256:...` for downloads, so a changed file fails the build.
+- **`ARG`** is a variable that exists only during the build (`docker build --build-arg VERSION=1.2 .`).
+- **`ENV`** is set during the build **and** in every container from the image.
+
+Never pass secrets through `ARG` or `ENV`: their values end up in the image history or config, where anyone who pulls the image can read them. Use a secret mount instead, shown below.
+
+## Build and Run
+
+Build the image and give it a name and tag with `-t`:
+
+```bash
+docker build -t hello-api:1.0 .
+```
+
+BuildKit prints one line per step and the time each step took. Example output of a first build, cut in the middle:
+
+```text
+[+] Building 21.4s (12/12) FINISHED                                    docker:default
+ => [internal] load build definition from Dockerfile                             0.0s
+ => => transferring dockerfile: 733B                                             0.0s
+ => resolve image config for docker-image://docker.io/docker/dockerfile:1        1.2s
+ => [internal] load metadata for docker.io/library/python:3.14-slim              0.9s
+ => [internal] load .dockerignore                                                0.0s
+ => => transferring context: 295B                                                0.0s
+ => [1/6] FROM docker.io/library/python:3.14-slim@sha256:0514bc76712d64f8bb48a  3.1s
+ ...
+ => [3/6] COPY requirements.txt .                                                0.0s
+ => [4/6] RUN pip install --no-cache-dir -r requirements.txt                     9.8s
+ => [5/6] COPY app.py .                                                          0.0s
+ => [6/6] RUN useradd --system --uid 10001 --no-create-home app                  0.4s
+ => exporting to image                                                           1.6s
+ => => naming to docker.io/library/hello-api:1.0                                 0.0s
+```
+
+Run it. The app has no database yet, so only the routes that do not need one work:
+
+```bash
+docker run -d --name hello-api -p 8000:8000 hello-api:1.0
+curl -s localhost:8000/
+curl -s localhost:8000/health
+curl -s -w ' %{http_code}\n' localhost:8000/visits
+```
+
+Example output:
+
+```text
+{"hostname":"6e0b3a1f9d42","message":"Hello from Docker"}
+{"status":"ok"}
+{"error":"database unavailable"}
+ 503
+```
+
+Flask ends each JSON response with a newline, so curl prints the status code from `-w` on the next line.
+
+The `hostname` is the container ID, which shows which container answered (useful when you run several copies in Part 8). `docker logs hello-api` shows gunicorn starting as process 1 (example output in gunicorn 26's format):
+
+```text
+[2026-10-23 20:52:10 +0000] [1] [INFO] Starting gunicorn 26.2.0
+[2026-10-23 20:52:10 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+[2026-10-23 20:52:10 +0000] [1] [INFO] Using worker: sync
+[2026-10-23 20:52:10 +0000] [7] [INFO] Booting worker with pid: 7
+[2026-10-23 20:52:10 +0000] [8] [INFO] Booting worker with pid: 8
+```
+
+When you stop the container, the log ends with `Handling signal: term` and `Shutting down: Master` within a second, instead of after the 10-second timeout. That is the exec form of `CMD` at work. Remove the container before you continue:
+
+```bash
+docker rm -f hello-api
+```
+
+### Rebuilds Use the Cache
+
+Change a line in `app.py` and build again. Only the `COPY app.py` step and the steps after it run; example output, cut:
+
+```text
+ => CACHED [2/6] WORKDIR /app                                                    0.0s
+ => CACHED [3/6] COPY requirements.txt .                                         0.0s
+ => CACHED [4/6] RUN pip install --no-cache-dir -r requirements.txt              0.0s
+ => [5/6] COPY app.py .                                                          0.0s
+ => [6/6] RUN useradd --system --uid 10001 --no-create-home app                  0.3s
+```
+
+The `useradd` step runs again because it comes after the changed `COPY`. Move steps that never change, like creating the user, above the first `COPY` of your code. The final Dockerfile below does that. To force a full rebuild, use `docker build --no-cache`; add `--pull` to also fetch a newer base image.
+
+## Multi-Stage Builds
+
+A **multi-stage build** uses several `FROM` instructions. Each starts a new stage, and the final image contains only the last stage plus whatever you copy into it with `COPY --from`. Build tools, caches and intermediate files stay behind.
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Stage build", "sub": "python:3.14-slim + venv + pip install", "icon": "gear", "tone": "slate" },
+    { "label": "COPY --from=build", "sub": "only /opt/venv", "icon": "box", "tone": "accent" },
+    { "label": "Final image", "sub": "slim + venv + app.py, user app", "icon": "rocket", "tone": "green" }
+  ]
+}
+```
+
+This is the Dockerfile the rest of the guide uses. It installs the dependencies into a virtual environment in a `build` stage and copies only that environment into the final stage. It also caches pip downloads between builds and adds a health check:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+
+# Stage 1: install the dependencies into a virtual environment
+FROM python:3.14-slim AS build
+WORKDIR /build
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY requirements.txt .
+# Keep pip's download cache between builds, outside the image
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
+
+# Stage 2: the image you ship
+FROM python:3.14-slim
+ENV PATH="/opt/venv/bin:$PATH" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+RUN useradd --system --uid 10001 --no-create-home app
+WORKDIR /app
+COPY --from=build /opt/venv /opt/venv
+COPY app.py .
+USER 10001
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--worker-tmp-dir", "/dev/shm", "--no-control-socket", "app:app"]
+```
+
+```terminal
+{
+  "title": "hadolint on the multi-stage Dockerfile (real run)",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "hadolint Dockerfile && echo \"no findings\"",
+      "output": "no findings"
+    }
+  ]
+}
+```
+
+- **`RUN --mount=type=cache`** mounts a directory that BuildKit keeps between builds but never puts in the image. pip finds its downloads there when `requirements.txt` changes, so you do not need `--no-cache-dir` in this stage. Cache mounts live in the builder, so a fresh CI runner starts with an empty cache ([Part 10](/guides/introduction-to-docker/10-docker-in-production) covers CI caching).
+- **The virtual environment** gives the app its own `site-packages` that `COPY --from=build` can move as one directory. Both stages use the same base image, so the venv's links to `/usr/local/bin/python3.14` stay valid.
+- **`HEALTHCHECK`** calls `/health` with Python's standard library, because the slim image has no `curl` ([Part 4](/guides/introduction-to-docker/04-creating-your-first-container) showed which tools each image ships). `/health` does not touch the database, so the container stays healthy when Postgres restarts; the `/ready` route is the one that checks the database.
+
+Build it with the same command as before, `docker build -t hello-api:1.0 .`. Parts 6 to 8 use this image.
+
+For this app the gain from two stages is modest, because `psycopg[binary]` ships compiled wheels and nothing needs a compiler. The pattern pays off when you compile code: a Go or Rust binary, a frontend bundle built with Node.js, or Python packages with C extensions that need `gcc`. The build stage then has the toolchain, and the final image has only the result. The [multi-stage build exercise](/exercises/docker-multi-stage-build) practices this with a larger example.
+
+### Other BuildKit Features Worth Knowing
+
+- **Secret mounts** pass a secret to one `RUN` step without storing it in any layer:
+
+  ```dockerfile
+  # syntax=docker/dockerfile:1
+  FROM python:3.14-slim
+  COPY requirements.txt .
+  # The token exists only while this step runs, as the environment variable PIP_INDEX_TOKEN
+  RUN --mount=type=secret,id=pip_token,env=PIP_INDEX_TOKEN \
+      pip install --no-cache-dir --index-url "https://__token__:${PIP_INDEX_TOKEN}@pypi.example.com/simple" -r requirements.txt
+  ```
+
+  Build it with `docker build --secret id=pip_token,env=PIP_INDEX_TOKEN .`. The `env=` option of the mount needs Dockerfile syntax 1.10 or newer, which `docker/dockerfile:1` gives you.
+
+- **`COPY --link`** copies files into an independent layer that does not depend on the layers below it. When the base image changes, BuildKit can reuse that layer instead of copying again. It is safe when you do not rely on symlinks in the destination path.
+- **`COPY --exclude=*.md`** and **`COPY --parents`** filter what you copy and keep directory structure.
+- **Build checks**: `docker build --check .` runs BuildKit's own Dockerfile rules (such as `JSONArgsRecommended` for the shell-form `CMD` above) without building. It needs a BuildKit builder, so it does not work without a running daemon; hadolint does.
+- **Multi-platform builds**: `docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/my-org/hello-api:1.0 --push .` builds one image for both architectures and pushes the image index ([Part 10](/guides/introduction-to-docker/10-docker-in-production)).
+
+## Tag and Push the Image
+
+To use the image on another machine, push it to a registry. Tag it with the registry's name, log in and push. For GitHub Container Registry:
+
+```bash
+docker tag hello-api:1.0 ghcr.io/my-org/hello-api:1.0
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u my-user --password-stdin
+docker push ghcr.io/my-org/hello-api:1.0
+```
+
+`--password-stdin` keeps the token out of your shell history and the process list. The push prints the digest of what it uploaded (`1.0: digest: sha256:...`). Record it: that digest identifies exactly this image, even if someone pushes a new `1.0` later.
+
+Tag every build with something unique, such as the version (`1.0.3`) or the Git commit (`git-3f9c2ab`). Moving tags like `latest` or `1.0` are fine as extra names, but deploy by the unique tag or the digest ([Part 10](/guides/introduction-to-docker/10-docker-in-production)).
+
+## Generate a Starting Point with docker init
+
+Docker Desktop includes `docker init`, which asks a few questions about your project (Python, Node, Go, Java, Rust, PHP, ASP.NET Core) and writes a `Dockerfile`, a `.dockerignore`, a `compose.yaml` and a `README.Docker.md`. The result follows most of the practices in this part, so it is a quick start for a new project. Read what it generates before you commit it: it does not know your app's real start command or health endpoint. On Docker Engine without Docker Desktop, the command is not available.
+
+## Common Mistakes
+
+- **`COPY . .` at the top.** Every change rebuilds everything. Copy dependency manifests first.
+- **`apt-get update` in its own `RUN`.** The cached layer keeps an old package index, and a later `apt-get install` fails or installs old versions. Always run `apt-get update && apt-get install -y --no-install-recommends ... && rm -rf /var/lib/apt/lists/*` in one `RUN`.
+- **Secrets in `ARG`, `ENV` or copied files.** They stay in the image. Use secret mounts at build time and environment variables or secrets at run time.
+- **Shell-form `CMD` or `ENTRYPOINT`.** The app never receives `SIGTERM`. Use the JSON form, or `exec` in entrypoint scripts.
+- **Running as root.** Add a user and switch to it with `USER`.
+- **Huge images.** Use a slim base and multi-stage builds, and check the size with `docker image ls`.
+
+## Summary
+
+- A Dockerfile builds an image step by step, and BuildKit caches every step until the first one that changed.
+- Order instructions from least to most frequently changed, and keep the build context small with `.dockerignore`.
+- Use a slim base, the exec form of `CMD`, a non-root `USER` and a `HEALTHCHECK`.
+- Multi-stage builds keep build tools out of the final image; cache and secret mounts speed up builds without leaking into layers.
+- Lint Dockerfiles with hadolint in CI.
+
+The app needs a database. Next, give Postgres storage that survives container restarts in [Docker Volumes and Bind Mounts](/guides/introduction-to-docker/06-working-with-docker-volumes).
+
+## Keep Learning
+
+- [Understanding the Difference Between CMD and ENTRYPOINT in Dockerfiles](/posts/difference-between-cmd-and-entrypoint-in-dockerfiles)
+- [Understanding the Difference Between COPY and ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands)
+- [How to Force Docker for a Clean Build of an Image](/posts/force-docker-clean-build)
+- [How Can I Inspect the File System of a Failed Docker Build?](/posts/inspect-filesystem-of-failed-docker-build)
+- Exercise: [Docker Multi-Stage Build Optimization](/exercises/docker-multi-stage-build)
+- Interview question: [Dockerfile best practices](/interview-questions/junior/dockerfile-best-practices)

@@ -1,408 +1,237 @@
 ---
-title: Networking in Docker
-description: Learn how to configure communication between containers and external networks
+title: 'Docker Networking: Bridge Networks, Port Publishing and DNS'
+description: 'Connect containers with Docker networks: user-defined bridges with DNS, port publishing and its firewall trap, host and none networks, and debugging.'
 order: 7
 ---
 
-Docker networking enables containers to communicate with each other and with the outside world. Understanding Docker's networking capabilities is essential for building multi-container applications. In this section, we'll explore Docker's network types, how to configure them, and best practices for container communication.
+hello-api needs to reach its Postgres database, and your browser needs to reach hello-api. Both are networking problems, and Docker solves them with two different tools: **networks** connect containers to each other, and **published ports** connect the outside world to a container. In this part you put hello-api and its database on a user-defined network, reach them by name, publish only what must be public, and learn how to debug a container that cannot connect.
 
-## Docker Network Basics
+## Prerequisites
 
-Docker provides several network drivers, each with different capabilities:
+- The `hello-db` container from [Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes), still running, and the `hello-api:1.0` image from [Part 5](/guides/introduction-to-docker/05-building-custom-docker-images).
+- Port 8000 free on your machine.
 
-1. **bridge**: The default network driver. Containers can communicate with each other on the same bridge network.
-2. **host**: Removes network isolation between the container and the host. The container uses the host's networking directly.
-3. **none**: Disables all networking for a container.
-4. **overlay**: Connects multiple Docker daemons across hosts, enabling Swarm services to communicate.
-5. **macvlan**: Assigns a MAC address to a container, making it appear as a physical device on your network.
-6. **ipvlan**: Similar to macvlan but uses IP addresses instead of MAC addresses.
-7. **custom network plugins**: Allows you to use third-party network plugins.
+The commands in this part need a running daemon, so their output is shown as examples; IDs and addresses differ on your machine.
 
-## Listing Docker Networks
+## Network Drivers
 
-To see all networks on your system:
+Every container joins one or more networks. A **driver** decides what kind of network it is:
+
+| Driver              | What it does                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `bridge`            | A private virtual network on one host, with NAT to the outside. The default.       |
+| `host`              | No network isolation: the container uses the host's interfaces and ports directly. |
+| `none`              | Only a loopback interface.                                                         |
+| `overlay`           | A network that spans several Docker hosts in a Swarm cluster.                      |
+| `macvlan`, `ipvlan` | The container gets its own address on your physical LAN, like another machine.     |
+
+A fresh installation has three networks:
 
 ```bash
 docker network ls
 ```
 
-Example output:
-
-```
+```text
 NETWORK ID     NAME      DRIVER    SCOPE
-7ddf8d0d099a   bridge    bridge    local
-69f9f6aa8de7   host      host      local
-aabb90487e7c   none      null      local
+1d3f0a6c2b8e   bridge    bridge    local
+7a2c94e1f05d   host      host      local
+c4b8e2d19a70   none      null      local
 ```
 
-## The Default Bridge Network
-
-When you install Docker, it creates a default bridge network named `bridge`. Unless you specify otherwise, new containers connect to this network.
-
-To inspect the bridge network:
-
-```bash
-docker network inspect bridge
-```
-
-This returns a JSON object with details about the network, including subnet information and connected containers.
-
-## Creating a Custom Bridge Network
-
-The default bridge network is fine for simple setups, but custom bridge networks offer several advantages:
-
-- Automatic DNS resolution between containers
-- Better isolation
-- Containers can be connected and disconnected from networks on the fly
-
-To create a custom bridge network:
-
-```bash
-docker network create my-network
-```
-
-You can specify additional options:
-
-```bash
-docker network create --driver bridge \
-  --subnet 172.18.0.0/16 \
-  --gateway 172.18.0.1 \
-  my-custom-network
-```
-
-## Connecting Containers to Networks
-
-### At Container Creation
-
-To start a container connected to a specific network:
-
-```bash
-docker run -d --name web --network my-network nginx:latest
-```
-
-### Adding Running Containers to Networks
-
-To connect an existing container to a network:
-
-```bash
-docker network connect my-network db
-```
-
-### Removing a Container from a Network
-
-To disconnect a container from a network:
-
-```bash
-docker network disconnect my-network db
-```
-
-## Container Name Resolution
-
-One of the most powerful features of custom bridge networks is automatic DNS resolution. Containers on the same custom network can reach each other using their container names.
-
-Let's demonstrate with a simple example:
-
-```bash
-# Create a network
-docker network create app-network
-
-# Start a container
-docker run -d --name db --network app-network postgres:13
-
-# Start another container and connect to the first one using its name
-docker run -d --name web --network app-network -p 8080:80 nginx:latest
-```
-
-Now, inside the `web` container, you can connect to the `db` container using the hostname `db`:
-
-```bash
-docker exec -it web bash
-ping db
-```
-
-The ping should succeed, showing that the containers can resolve each other by name.
-
-## Using the Host Network
-
-Sometimes, you want a container to share the host's network stack, completely removing network isolation:
-
-```bash
-docker run -d --name host-nginx --network host nginx:latest
-```
-
-In this case, the container uses the host's IP address and ports directly. If nginx listens on port 80 inside the container, it will be available on the host's port 80. This means you don't need to use port mapping.
-
-The host network is useful for:
-
-- Maximum performance (no network overhead)
-- When a container needs to handle a large range of ports
-- When the container needs access to local network services
-
-**Note**: The host network driver only works on Linux hosts.
-
-## Using the None Network
-
-For maximum isolation, you can disable networking for a container:
-
-```bash
-docker run -d --name isolated --network none alpine sleep infinity
-```
-
-This container has only a loopback interface and cannot communicate with the outside world or other containers.
-
-## Port Mapping
-
-For containers on bridge networks, port mapping is needed to make services accessible from outside Docker:
-
-```bash
-docker run -d --name web -p 8080:80 nginx:latest
-```
-
-This maps port 80 in the container to port 8080 on the host.
-
-You can also specify the host IP to bind to:
-
-```bash
-docker run -d --name web -p 127.0.0.1:8080:80 nginx:latest
-```
-
-This only exposes the port on localhost, not on all host interfaces.
-
-For a random host port, use:
-
-```bash
-docker run -d --name web -p 127.0.0.1::80 nginx:latest
-```
-
-Docker assigns a random available port. To see which port was assigned:
-
-```bash
-docker port web
-```
-
-## Network Inspection and Troubleshooting
-
-To see which containers are connected to a network:
-
-```bash
-docker network inspect my-network
-```
-
-For containers with connectivity issues, you can look at their network settings:
-
-```bash
-docker inspect --format='{{json .NetworkSettings}}' web | jq
-```
-
-This uses `jq` to format the JSON output (install it if you don't have it).
-
-## Container-to-Container Communication Example
-
-Let's build a practical example with a web application that connects to a database:
-
-```bash
-# Create a network
-docker network create webapp-network
-
-# Start a MongoDB container
-docker run -d \
-  --name mongo \
-  --network webapp-network \
-  -e MONGO_INITDB_ROOT_USERNAME=admin \
-  -e MONGO_INITDB_ROOT_PASSWORD=password \
-  mongo:latest
-
-# Start a Node.js application that connects to MongoDB
-docker run -d \
-  --name nodeapp \
-  --network webapp-network \
-  -p 3000:3000 \
-  -e MONGO_URL=mongodb://admin:password@mongo:27017/myapp \
-  myapp:latest
-```
-
-In this example:
-
-1. Both containers join the `webapp-network`
-2. The Node.js application uses `mongo` as the hostname to connect to MongoDB
-3. Only the Node.js application exposes a port to the host
-
-## Docker Networking with Compose
-
-Docker Compose simplifies networking for multi-container applications. We'll cover this in depth in the next section, but here's a preview of how networking works in Compose:
-
-```yaml
-version: '3'
-services:
-  web:
-    image: nginx:latest
-    ports:
-      - '8080:80'
-  db:
-    image: postgres:13
-    environment:
-      POSTGRES_PASSWORD: example
-```
-
-When you run `docker-compose up`, Compose automatically:
-
-1. Creates a default network for the composition
-2. Connects all services to this network
-3. Sets up name resolution between services
-
-## Overlay Networks for Multi-Host Communication
-
-If you're running Docker in Swarm mode (a cluster of Docker hosts), overlay networks allow containers on different hosts to communicate as if they were on the same host:
-
-```bash
-# Initialize a swarm
-docker swarm init
-
-# Create an overlay network
-docker network create --driver overlay my-overlay-network
-
-# Create a service using this network
-docker service create \
-  --name my-service \
-  --network my-overlay-network \
-  --replicas 2 \
-  nginx:latest
-```
-
-## Exposing Container Services to the Outside World
-
-For production applications, you often need to expose services to external clients. Here are common patterns:
-
-### Direct Port Mapping
-
-The simplest approach is port mapping, as we've seen:
-
-```bash
-docker run -d -p 80:80 -p 443:443 --name web nginx:latest
-```
-
-### Using a Reverse Proxy
-
-For more sophisticated setups, a reverse proxy like Nginx or Traefik can route traffic to different containers:
-
-```bash
-# Create a network
-docker network create proxy-network
-
-# Run backend services
-docker run -d --name api1 --network proxy-network myapi:latest
-docker run -d --name api2 --network proxy-network myotherapi:latest
-
-# Run the reverse proxy
-docker run -d \
-  --name nginx-proxy \
-  --network proxy-network \
-  -p 80:80 \
-  -v $(pwd)/nginx.conf:/etc/nginx/conf.d/default.conf \
-  nginx:latest
-```
-
-With a configuration like:
-
-```nginx
-server {
-    listen 80;
-
-    location /api1 {
-        proxy_pass http://api1:8000;
+## The Default Bridge vs a User-Defined Bridge
+
+Containers you start without `--network` join the network called `bridge` (the `docker0` interface on the host, usually `172.17.0.0/16`). It works, but it is the legacy option:
+
+- **No DNS for container names.** Containers on the default bridge can reach each other only by IP address, and addresses change when containers restart.
+- **No isolation between unrelated apps.** Everything you start without `--network` shares it.
+
+A **user-defined bridge network** fixes both. Docker runs an embedded DNS server (at `127.0.0.11` inside each container) that resolves container names and network aliases to their current addresses, and only containers you attach to the network can reach each other. Always create your own network for an application.
+
+## Connect hello-api to Postgres
+
+```diagram
+{
+  "type": "infra",
+  "flow": [
+    { "label": "curl / browser", "icon": "globe", "tone": "slate" },
+    { "label": "127.0.0.1:8000", "sub": "published port", "icon": "net", "tone": "amber" },
+    { "label": "hello-api :8000", "icon": "box", "tone": "blue" },
+    { "label": "hello-db :5432", "icon": "database", "tone": "violet" }
+  ],
+  "groups": [
+    {
+      "label": "Docker host",
+      "icon": "server",
+      "tone": "slate",
+      "groups": [
+        {
+          "label": "hello-net",
+          "sub": "user-defined bridge, DNS by container name",
+          "icon": "net",
+          "tone": "accent",
+          "nodes": [
+            { "label": "hello-api", "sub": "DB_HOST=hello-db", "icon": "box", "tone": "blue" },
+            { "label": "hello-db", "sub": "postgres:18, no published port", "icon": "database", "tone": "violet" }
+          ]
+        }
+      ]
     }
-
-    location /api2 {
-        proxy_pass http://api2:8000;
-    }
+  ]
 }
 ```
 
-## Network Security Considerations
-
-When designing Docker networks, consider these security best practices:
-
-1. **Use custom bridge networks** for better isolation between container groups.
-
-2. **Limit exposed ports** to only what's necessary.
-
-3. **Use host-private interfaces** when possible:
-
-   ```bash
-   docker run -d -p 127.0.0.1:8080:80 --name web nginx:latest
-   ```
-
-4. **Remove the default bridge network** from containers that don't need external access.
-
-5. **Implement network policies** if using Kubernetes or Docker Enterprise.
-
-## Network Performance Considerations
-
-For applications where network performance is critical:
-
-1. **Use the host network** when maximum performance is required:
-
-   ```bash
-   docker run -d --network host --name fast-app my-performance-app
-   ```
-
-2. **Consider non-bridge drivers** like macvlan for near-native performance.
-
-3. **Enable IPv6** if your environment supports it:
-
-   ```bash
-   docker network create --ipv6 --subnet fd00::/80 ipv6-network
-   ```
-
-4. **Tune MTU settings** for your containers if working in environments with non-standard MTU:
-   ```bash
-   docker network create --opt com.docker.network.driver.mtu=1400 lowmtu-network
-   ```
-
-## Running Containers in the Cloud
-
-When deploying containerized applications to the cloud, networking is a crucial consideration. DigitalOcean provides robust networking features for container-based applications, including private networks between Droplets.
-
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and deploy your networked container applications in a production-ready environment.
-
-## Network Troubleshooting Tools
-
-When debugging network issues, these commands are helpful:
+Create the network and attach the running database to it. `docker network connect` works on running containers, so the database keeps running:
 
 ```bash
-# Check network connectivity from inside a container
-docker exec -it container-name ping other-container
-
-# Examine container network interfaces
-docker exec -it container-name ip addr show
-
-# Trace network path
-docker exec -it container-name traceroute other-container
-
-# Analyze network traffic
-docker exec -it container-name tcpdump -i eth0
+docker network create hello-net
+docker network connect hello-net hello-db
 ```
 
-For containers without these tools installed, you can use a network troubleshooting container:
+Start hello-api on the same network. It finds the database by its container name, `hello-db`, which is why the app reads `DB_HOST` from the environment:
 
 ```bash
-docker run --rm -it --network container:target-container nicolaka/netshoot
+docker run -d --name hello-api \
+  --network hello-net \
+  -p 127.0.0.1:8000:8000 \
+  -e DB_HOST=hello-db \
+  -e DB_USER=hello -e DB_NAME=hello -e DB_PASSWORD=change-me \
+  hello-api:1.0
 ```
 
-This gives you a container with networking tools that shares the target container's network namespace.
-
-## Clean Up Networks
-
-To remove an unused network:
+Try it (example output):
 
 ```bash
-docker network rm my-network
+curl -s localhost:8000/ready
+curl -s localhost:8000/visits
+curl -s localhost:8000/visits
 ```
 
-To remove all unused networks:
+```text
+{"status":"ready"}
+{"visits":1}
+{"visits":2}
+```
+
+The database has no published port, so nothing outside the host can reach it, and hello-api still can, over `hello-net`. Check name resolution from inside the app container. The slim image has no `ping` or `dig`, but `getent` (part of the C library tools) is always there:
 
 ```bash
-docker network prune
+docker exec hello-api getent hosts hello-db
+docker network inspect hello-net \
+  --format '{{range .Containers}}{{.Name}} {{.IPv4Address}}{{"\n"}}{{end}}'
 ```
 
-In the next section, we'll explore Docker Compose, which simplifies the management of multi-container applications including their networking configuration.
+Example output:
+
+```text
+172.18.0.2      hello-db
+hello-db 172.18.0.2/16
+hello-api 172.18.0.3/16
+```
+
+hello-db is still on the default `bridge` network too, from when you started it in Part 6. Disconnect it to keep it off the shared network: `docker network disconnect bridge hello-db`.
+
+**Aliases.** A container can have extra DNS names on a network. Set them when you connect the container, for example `docker network connect --alias db hello-net hello-db` instead of the plain `connect` above, or with `--network-alias db` on `docker run`. A second `connect` to a network the container is already on fails, so to add an alias later, disconnect and connect again. Compose gives every service its service name as an alias, which is why the app's default `DB_HOST` is `db` ([Part 8](/guides/introduction-to-docker/08-docker-compose)).
+
+## Publishing Ports
+
+A published port forwards traffic from a host address to a container port. `-p 127.0.0.1:8000:8000` above publishes on the loopback address only: you can reach hello-api from the host, but not from other machines. Compare the forms:
+
+| Flag                        | Reachable from                                                                                                             |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `-p 8000:8000`              | Every interface of the host, IPv4 and IPv6: the whole network                                                              |
+| `-p 127.0.0.1:8000:8000`    | Only the host itself                                                                                                       |
+| `-p 192.168.1.20:8000:8000` | Only that host address                                                                                                     |
+| no `-p`                     | Containers on the same Docker network, and with rootful Docker on Linux the host itself through the container's IP address |
+
+Publish the minimum. A database almost never needs a published port in production: the app reaches it over the Docker network, and you can use `docker exec hello-db psql ...` for admin work.
+
+:::warning
+**Published ports bypass `ufw` and `firewalld`.** Docker writes iptables rules that send traffic for published ports to containers before the host firewall's rules see it. `ufw deny 8000` does not block `-p 8000:8000`. Publish on `127.0.0.1` when only the host needs the port, put a reverse proxy in front of the services that must be public, or, with Docker's default iptables backend, add your own rules to the `DOCKER-USER` chain, which Docker evaluates first. With that backend Docker supports `iptables-nft` and `iptables-legacy`, and rules you write with `nft` directly are not supported. The experimental nftables backend in Engine 29 has no `DOCKER-USER` chain; there you put your rules in your own nftables tables.
+:::
+
+Docker Engine 28 tightened the defaults: other hosts can no longer reach a container's unpublished ports by routing to its IP address, and ports published on `127.0.0.1` are no longer reachable from neighboring machines on the LAN. If an old setup relied on either behavior, it stops working after the upgrade, which is the safer outcome. Docker Engine 29 adds an experimental `nftables` firewall backend (`"firewall-backend": "nftables"` in `daemon.json`).
+
+## Reach the Host from a Container
+
+`localhost` inside a container is the container itself. To reach a service on the host, such as a database you run outside Docker:
+
+- **Docker Desktop**: use the name `host.docker.internal`, which always points to the host.
+- **Linux**: add it yourself with `--add-host=host.docker.internal:host-gateway`, and make sure the host service listens on an address the container can reach (the bridge gateway, or `0.0.0.0` with a firewall), not only on `127.0.0.1`.
+
+## Host and None Networks
+
+```bash
+docker run --rm --network host nginx:1.30      # nginx listens on the host's port 80 directly
+docker run --rm --network none alpine:3.24 ip addr   # only "lo"
+```
+
+**Host networking** removes the network namespace: no NAT, no port mapping (`-p` is ignored with a warning), and the container's ports are the host's ports. Use it for tools that need to see the host's interfaces, or for rare cases where NAT overhead matters. On Docker Desktop it works from version 4.34 when you turn it on in **Settings > Resources > Network**, with limits (TCP and UDP only, Linux containers only). **None** gives a container no network at all, which suits batch jobs that process local files and must not reach anything.
+
+## Isolate Backends with Internal Networks
+
+An `--internal` network has no route to the outside world. Put a database on an internal network and the app on both, and the database cannot reach the internet even if it is compromised:
+
+```bash
+docker network create --internal hello-backend
+docker network connect hello-backend hello-db
+docker network connect hello-backend hello-api
+docker network disconnect hello-net hello-db
+```
+
+hello-api now reaches `hello-db` over `hello-backend`, and the outside world over `hello-net`. [Part 8](/guides/introduction-to-docker/08-docker-compose) declares the same split in a Compose file.
+
+## Networks Across Hosts
+
+A bridge network exists on one host. To connect containers on several hosts, you need an orchestrator: Docker Swarm's `overlay` driver or a Kubernetes network plugin ([Part 10](/guides/introduction-to-docker/10-docker-in-production)). `macvlan` and `ipvlan` are different: they put containers directly on your LAN with their own IP addresses, for appliances that must look like separate machines. They need cooperation from your network: `macvlan` gives each container its own MAC address, which some switches and most cloud networks refuse on one port, while `ipvlan` shares the host's MAC address but still needs addresses and routes that fit your network. Since Engine 29, `macvlan` and L2 `ipvlan` networks get no default gateway unless you set `--gateway`.
+
+## Debug Network Problems
+
+Slim images contain almost no network tools. Instead of installing tools into the app's image, run a toolbox container **in the app container's network namespace**:
+
+```bash
+docker run --rm -it --network container:hello-api nicolaka/netshoot:v0.16
+# inside: dig hello-db, nc -zv hello-db 5432, curl localhost:8000/health, ss -ltnp, tcpdump -i eth0
+```
+
+The netshoot container shares hello-api's interfaces, DNS settings and `localhost`, so you test exactly what the app sees. A checklist for "the app cannot connect":
+
+1. **Same network?** `docker inspect hello-api --format '{{json .NetworkSettings.Networks}}'` must list a network that the database is on too.
+2. **Right name?** Use the container name or alias, never `localhost` (that is the app container itself).
+3. **Right port?** Use the **container** port (`5432`), not a published host port.
+4. **Listening on all interfaces?** A service inside a container that listens on `127.0.0.1` cannot be reached from other containers. It must listen on `0.0.0.0`, which is why hello-api's gunicorn binds `0.0.0.0:8000`.
+5. **Started yet?** The database may still be initializing. Compose health checks handle this ([Part 8](/guides/introduction-to-docker/08-docker-compose)).
+
+## Clean Up
+
+```bash
+docker rm -f hello-api hello-db
+docker network rm hello-net hello-backend
+docker network prune        # removes every network no container uses
+```
+
+The `hello-db-data` volume survives the cleanup. Part 8 starts a separate database with Compose, so you can remove the old volume there.
+
+## Common Mistakes
+
+- **`localhost` in a connection string.** Inside a container it means the container. Use the service or container name.
+- **Relying on the default bridge network.** No DNS by name. Create a network.
+- **Publishing database ports to the world.** `-p 5432:5432` on a server with a public IP is reachable from the internet, regardless of `ufw`.
+- **Assuming `EXPOSE` publishes anything.** It documents the port; `-p` publishes it.
+- **Using `--link`.** Legacy, and it no longer injects environment variables since Engine 29. Use user-defined networks.
+
+## Summary
+
+- Create a user-defined bridge network per application: containers on it reach each other by name through Docker's DNS.
+- Publish only the ports clients need, on `127.0.0.1` when the host is the only client; published ports bypass host firewalls.
+- `host` and `none` networks remove or disable isolation; `--internal` networks block outbound traffic.
+- Debug with a toolbox container in the app's network namespace.
+
+Next, replace all of these commands with one file in [Docker Compose](/guides/introduction-to-docker/08-docker-compose).
+
+## Keep Learning
+
+- [Docker: Connect to the Host's localhost from a Container](/posts/connect-to-host-localhost-from-docker)
+- [What is the Difference Between "Expose" and "Publish" in Docker?](/posts/expose-vs-publish-docker)
+- [How to Get a Docker Container's IP Address from the Host](/posts/how-to-get-docker-container-ip-from-host)
+- [Docker - Ubuntu - bash: ping: command not found](/posts/docker-ubuntu-ping-not-found)
+- Guide: [Networking Fundamentals](/guides/networking-fundamentals)
