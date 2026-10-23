@@ -1,1248 +1,673 @@
 ---
-title: 'Linux System Administration Basics'
-description: 'Learn essential system administration tasks including maintenance, monitoring, security, and troubleshooting.'
+title: 'Linux System Administration Basics: systemd, Logs, Updates and Security'
+description: 'Run services and timers with systemd, read logs with journalctl, automate updates, back up with rsync, harden SSH and fix full disks and failed boots.'
 order: 10
 ---
 
-System administration is the art and science of keeping computer systems running smoothly, securely, and efficiently. As a Linux system administrator, you'll be responsible for installation, configuration, maintenance, and troubleshooting of Linux servers and workstations.
+System administration is the work that keeps a Linux machine useful after the installation: services that start at boot and come back after a crash, jobs that run on schedule, logs you can search, updates that arrive without you, backups you have actually restored, an SSH server that only lets the right people in, and the habit of checking the same few things first when something breaks.
 
-In this final part of our Linux guide, we'll explore the essential skills and knowledge needed for effective system administration.
+This last part puts the earlier parts together on one server. The lab web site from Part 7 becomes a systemd service, the backup script from Part 9 runs every night from a timer, and you harden SSH, automate updates and practise the most common repairs.
 
-## System Monitoring and Performance
+## Prerequisites
 
-### Monitoring System Resources
+- A Linux server or VM where you have `sudo`: Ubuntu 24.04 LTS or Debian 13 for the examples, Fedora or RHEL 10 where noted.
+- The earlier parts, especially [users](/guides/introduction-to-linux/06-user-management), [processes and systemd](/guides/introduction-to-linux/07-process-management) and the [backup script](/guides/introduction-to-linux/09-shell-scripting).
+- A fresh `~/lab` from [Part 3](/guides/introduction-to-linux/03-command-line-interface#h2-set-up-the-practice-directory) for the log rotation and backup examples.
 
-#### CPU Usage
+Output that needs systemd, `sshd` or `logrotate` comes from a Debian 12 machine (systemd 252, OpenSSH 9.2), checked against unit and configuration files in a test directory; the blocks say so. The rest comes from Ubuntu 24.04.5 LTS. Commands that change a running system are shown with example output.
 
-Monitor CPU usage with these tools:
+## Run Your Own Service With systemd
 
-```bash
-# Overall CPU usage
-top
-htop
-uptime
+A **unit file** tells systemd how to run a service. This one runs the lab site as the `notes-site` system account created in Part 6, restarts it if it crashes, and uses systemd's sandboxing options so that a bug in the web server cannot change system files or read anyone's home directory. Create a working directory with `mkdir -p ~/units` and save the file as `~/units/notes-site.service`:
 
-# Detailed CPU statistics
-mpstat -P ALL 2
-```
-
-Key metrics to watch:
-
-- User time: Time spent running user processes
-- System time: Time spent in kernel operations
-- IO wait: Time waiting for I/O operations
-- Idle time: Unused CPU capacity
-
-#### Memory Usage
-
-Monitor memory with:
-
-```bash
-# Overview of memory usage
-free -h
-
-# Detailed memory information
-cat /proc/meminfo
-
-# Process memory usage
-ps aux --sort=-%mem | head
-```
-
-Key metrics:
-
-- Total vs. available memory
-- Swap usage
-- Buffer/cache memory (can be reclaimed if needed)
-
-#### Disk Usage
-
-Monitor disk space and I/O:
-
-```bash
-# Disk space
-df -h
-
-# Directory sizes
-du -sh /var/*
-
-# Disk I/O
-iostat -xz 2
-```
-
-Key metrics:
-
-- Available disk space
-- Inode usage: `df -i`
-- Read/write operations per second
-- Disk utilization percentage
-
-#### Network Usage
-
-Monitor network traffic:
-
-```bash
-# Basic network interface statistics
-ip -s link
-
-# Network traffic by interface
-iftop -i eth0
-
-# Network connections
-ss -tuln
-```
-
-### System Logging
-
-#### Systemd Journal
-
-Modern systems use the systemd journal:
-
-```bash
-# View all logs
-journalctl
-
-# View kernel messages
-journalctl -k
-
-# View logs for a specific service
-journalctl -u nginx.service
-
-# View logs since yesterday
-journalctl --since="yesterday"
-
-# Follow logs in real-time
-journalctl -f
-```
-
-#### Traditional Logs
-
-Traditional log files are in `/var/log/`:
-
-```bash
-# System messages
-less /var/log/syslog     # Debian/Ubuntu
-less /var/log/messages   # RHEL/CentOS
-
-# Authentication logs
-less /var/log/auth.log   # Debian/Ubuntu
-less /var/log/secure     # RHEL/CentOS
-
-# Kernel logs
-dmesg
-```
-
-#### Log Rotation
-
-Configure log rotation to manage log files:
-
-```bash
-# Configuration in
-ls -l /etc/logrotate.d/
-
-# Example rotation configuration for a custom application
-cat > /etc/logrotate.d/myapp << EOF
-/var/log/myapp/*.log {
-    daily
-    missingok
-    rotate 14
-    compress
-    delaycompress
-    notifempty
-    create 0640 myapp myapp
-    sharedscripts
-    postrotate
-        systemctl reload myapp
-    endscript
-}
-EOF
-```
-
-### Automated Monitoring Tools
-
-For comprehensive monitoring, consider these tools:
-
-#### Prometheus and Grafana
-
-A powerful monitoring and visualization stack:
-
-```bash
-# Install Prometheus (example for Ubuntu)
-apt-get update
-apt-get install -y prometheus prometheus-node-exporter
-
-# Install Grafana
-apt-get install -y apt-transport-https software-properties-common
-add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
-wget -q -O - https://packages.grafana.com/gpg.key | apt-key add -
-apt-get update
-apt-get install -y grafana
-
-# Start and enable services
-systemctl enable prometheus prometheus-node-exporter grafana-server
-systemctl start prometheus prometheus-node-exporter grafana-server
-```
-
-Then configure Grafana (http://localhost:3000) to use Prometheus as a data source.
-
-#### Nagios/Icinga
-
-Classic monitoring systems for service and server availability:
-
-```bash
-# Install Icinga2 (Nagios successor)
-apt-get install -y icinga2 icinga2-ido-mysql icingaweb2
-```
-
-Follow the web-based setup at http://localhost/icingaweb2/
-
-## System Management and Maintenance
-
-### System Updates
-
-Keeping systems updated is critical for security and stability:
-
-#### Debian/Ubuntu
-
-```bash
-# Update package lists
-sudo apt update
-
-# Apply updates
-sudo apt upgrade
-
-# Full distribution upgrade
-sudo apt dist-upgrade
-
-# Automatic security updates
-sudo apt install unattended-upgrades
-sudo dpkg-reconfigure -plow unattended-upgrades
-```
-
-#### RHEL/CentOS/Fedora
-
-```bash
-# Update all packages
-sudo dnf upgrade
-
-# Apply only security updates
-sudo dnf upgrade --security
-
-# Automatic updates
-sudo dnf install dnf-automatic
-sudo systemctl enable --now dnf-automatic.timer
-```
-
-### Service Management with systemd
-
-Modern Linux systems use systemd to manage services:
-
-```bash
-# List all services
-systemctl list-units --type=service
-
-# Check service status
-systemctl status nginx
-
-# Start, stop, restart services
-systemctl start nginx
-systemctl stop nginx
-systemctl restart nginx
-
-# Enable/disable at boot
-systemctl enable nginx
-systemctl disable nginx
-
-# View service logs
-journalctl -u nginx
-```
-
-Configure custom systemd services:
-
-```bash
-# Create a custom service
-cat > /etc/systemd/system/myapp.service << EOF
+```ini
+# /etc/systemd/system/notes-site.service
 [Unit]
-Description=My Custom Application
-After=network.target
+Description=Notes site (static files over HTTP)
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=myapp
-WorkingDirectory=/opt/myapp
-ExecStart=/usr/bin/node /opt/myapp/server.js
+User=notes-site
+Group=notes-site
+WorkingDirectory=/srv/notes-site
+ExecStart=/usr/bin/python3 -m http.server 8080 --bind 127.0.0.1 --directory /srv/notes-site
 Restart=on-failure
-RestartSec=5s
+RestartSec=5
+
+# Sandboxing: read-only system, no access to /home, a private /tmp
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+# Resource limits (cgroup v2, Part 7)
+MemoryMax=256M
+TasksMax=50
 
 [Install]
 WantedBy=multi-user.target
-EOF
-
-# Reload systemd to recognize the new service
-systemctl daemon-reload
-
-# Enable and start the service
-systemctl enable --now myapp
 ```
 
-### Managing Scheduled Tasks
+Python's `http.server` is fine for a lab, not for production; for a real site, the same unit pattern runs nginx, Caddy or your application. The important lines:
 
-#### Cron Jobs
+- `[Unit]`: a description and ordering. `After=` only orders the start; `Wants=` pulls the other unit in.
+- `[Service]`: give `ExecStart=` an absolute path (systemd also searches a short fixed list of directories for a bare name, but a full path removes any doubt). `Restart=on-failure` restarts the service when it exits with an error code, crashes or times out; a clean stop, including `systemctl stop` or a plain `kill` with SIGTERM, does not trigger a restart. `User=` drops root.
+- `[Install]`: `WantedBy=multi-user.target` is what `systemctl enable` hooks into, so the service starts at boot.
 
-Schedule regular tasks with cron:
+Check a unit file before you install it. `systemd-analyze verify` takes a path, so you can check files in your working directory, and it catches typos in option names and values (output from a Debian 12 machine):
+
+```terminal
+{
+  "title": "verify unit files (Debian 12)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "systemd-analyze verify ~/units/notes-site.service && echo \"notes-site.service: OK\"",
+      "output": "notes-site.service: OK"
+    },
+    {
+      "comment": "a unit with two mistakes",
+      "cmd": "cat ~/units/broken.service",
+      "output": "[Unit]\nDescription=A unit with mistakes\n\n[Service]\nExecStart=python3 -m http.server\nRestart=sometimes\nRestartSecs=5"
+    },
+    {
+      "cmd": "systemd-analyze verify ~/units/broken.service",
+      "output": "/home/dev/units/broken.service:6: Failed to parse service restart specifier, ignoring: sometimes\n/home/dev/units/broken.service:7: Unknown key 'RestartSecs' in section [Service], ignoring."
+    }
+  ]
+}
+```
+
+Install and start it (these commands change the system, so the output is an example):
 
 ```bash
-# Edit user crontab
-crontab -e
-
-# System-wide cron directories
-ls -la /etc/cron.{daily,hourly,weekly,monthly}
+sudo mkdir -p /srv/notes-site && sudo cp -r ~/lab/site/. /srv/notes-site/
+sudo cp ~/units/notes-site.service /etc/systemd/system/
+sudo systemctl daemon-reload                  # re-read unit files after every change
+sudo systemctl enable --now notes-site.service
+systemctl status notes-site.service --no-pager
 ```
 
-Example crontab entries:
-
+```text
+● notes-site.service - Notes site (static files over HTTP)
+     Loaded: loaded (/etc/systemd/system/notes-site.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-10-24 09:12:40 UTC; 4s ago
+   Main PID: 4211 (python3)
+      Tasks: 1 (limit: 50)
+     Memory: 9.1M (max: 256.0M available: 246.8M peak: 9.3M)
+        CPU: 98ms
+     CGroup: /system.slice/notes-site.service
+             └─4211 /usr/bin/python3 -m http.server 8080 --bind 127.0.0.1 --directory /srv/notes-site
 ```
-# Run at 3:30 AM every day
-30 3 * * * /path/to/backup.sh
 
-# Run every 15 minutes
-*/15 * * * * /path/to/check.sh
+To change a packaged unit, never edit the file under `/usr/lib/systemd/system/`: the next package update overwrites it. Run `sudo systemctl edit nginx.service` instead. It opens an editor for a **drop-in** file, `/etc/systemd/system/nginx.service.d/override.conf`, whose settings are added on top of the original, and it reloads systemd for you. `systemctl cat nginx.service` shows the original and every drop-in together.
 
-# Run on the first of every month
-0 0 1 * * /path/to/monthly-report.sh
+## Schedule Jobs With Timers or cron
+
+### systemd Timers
+
+A timer starts a service on a schedule. You need two units: a service that does the work once (`Type=oneshot`), and a timer with the same name that says when.
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "backup-site.timer", "sub": "OnCalendar 02:30", "icon": "activity", "tone": "violet" },
+    { "label": "backup-site.service", "sub": "Type=oneshot", "icon": "gear", "tone": "blue" },
+    { "label": "/usr/local/bin/backup-site", "sub": "script from Part 9", "icon": "box", "tone": "amber" },
+    { "label": "journal", "sub": "journalctl -u backup-site", "icon": "database", "tone": "green" }
+  ]
+}
 ```
 
-#### Systemd Timers
-
-Modern alternative to cron:
-
-```bash
-# Create a timer unit
-cat > /etc/systemd/system/backup.timer << EOF
+```ini
+# /etc/systemd/system/backup-site.service
 [Unit]
-Description=Daily backup timer
+Description=Back up /srv/notes-site
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup-site --keep 7 /srv/notes-site /var/backups/notes-site
+Nice=19
+IOSchedulingClass=idle
+```
+
+```ini
+# /etc/systemd/system/backup-site.timer
+[Unit]
+Description=Nightly backup of /srv/notes-site
 
 [Timer]
-OnCalendar=*-*-* 03:30:00
+OnCalendar=*-*-* 02:30:00
+RandomizedDelaySec=15min
 Persistent=true
 
 [Install]
 WantedBy=timers.target
-EOF
-
-# Create the matching service unit
-cat > /etc/systemd/system/backup.service << EOF
-[Unit]
-Description=Daily backup service
-
-[Service]
-Type=oneshot
-ExecStart=/path/to/backup.sh
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enable and start the timer
-systemctl daemon-reload
-systemctl enable --now backup.timer
-
-# List active timers
-systemctl list-timers
 ```
 
-### System Boot Process
+`Persistent=true` runs a missed job at the next boot if the machine was off at 02:30, which cron cannot do. `RandomizedDelaySec` spreads the start over 15 minutes, so a hundred servers do not all hit the backup storage at the same second. `Nice=19` and `IOSchedulingClass=idle` keep the backup from slowing down the site.
 
-Understanding the boot process helps with troubleshooting:
+Save both in `~/units` as well. `systemd-analyze verify` also checks that `ExecStart=` points to an executable file, so install the backup script from Part 9 first with `sudo install -m 0755 ~/scripts/backup-site /usr/local/bin/backup-site`. `systemd-analyze calendar` shows when an expression fires next, which saves a lot of guessing (output from a Debian 12 machine):
 
-1. **BIOS/UEFI**: Initial hardware checks
-2. **Boot loader** (GRUB): Loads the kernel
-3. **Kernel initialization**: Loads drivers and mounts root filesystem
-4. **Systemd initialization**: Brings system to the desired state
+```terminal
+{
+  "title": "check the schedule (Debian 12)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "systemd-analyze verify ~/units/backup-site.service ~/units/backup-site.timer && echo \"units: OK\"",
+      "output": "units: OK"
+    },
+    {
+      "cmd": "systemd-analyze calendar '*-*-* 02:30:00'",
+      "output": "Normalized form: *-*-* 02:30:00\n    Next elapse: Sat 2026-10-24 02:30:00 UTC\n       From now: 5h 1min left"
+    },
+    {
+      "comment": "Monday to Friday at 08:00, and every 15 minutes",
+      "cmd": "systemd-analyze calendar --iterations=2 'Mon..Fri 08:00' '*:0/15'",
+      "output": "  Original form: Mon..Fri 08:00\nNormalized form: Mon..Fri *-*-* 08:00:00\n    Next elapse: Mon 2026-10-26 08:00:00 UTC\n       From now: 2 days left\n       Iter. #2: Tue 2026-10-27 08:00:00 UTC\n       From now: 3 days left\n\n  Original form: *:0/15\nNormalized form: *-*-* *:00/15:00\n    Next elapse: Fri 2026-10-23 21:30:00 UTC\n       From now: 1min 27s left\n       Iter. #2: Fri 2026-10-23 21:45:00 UTC\n       From now: 16min left"
+    }
+  ]
+}
+```
 
-#### Boot Loader Configuration
-
-Configure GRUB:
+Install the two units, enable the **timer** (not the service), and run the service once by hand to test it (example output):
 
 ```bash
-# Edit GRUB configuration
-sudo nano /etc/default/grub
-
-# Apply changes
-sudo update-grub
+sudo cp ~/units/backup-site.service ~/units/backup-site.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now backup-site.timer
+sudo systemctl start backup-site.service          # run it once now
+journalctl -u backup-site.service --no-pager -n 6
 ```
 
-Boot into rescue mode:
+```text
+Oct 24 09:20:11 devbox systemd[1]: Starting backup-site.service - Back up /srv/notes-site...
+Oct 24 09:20:11 devbox backup-site[4380]: 2026-10-24T09:20:11Z backup-site: archiving /srv/notes-site to /var/backups/notes-site/notes-site-20261024-092011.tar.gz
+Oct 24 09:20:11 devbox backup-site[4380]: 2026-10-24T09:20:11Z backup-site: created 4.0K archive
+Oct 24 09:20:11 devbox backup-site[4380]: 2026-10-24T09:20:11Z backup-site: done, 1 archive(s) kept
+Oct 24 09:20:11 devbox systemd[1]: backup-site.service: Deactivated successfully.
+Oct 24 09:20:11 devbox systemd[1]: Finished backup-site.service - Back up /srv/notes-site.
+```
 
-1. Restart the system
-2. At the GRUB menu, select "Advanced options"
-3. Choose a recovery or single-user mode option
+The script's messages on standard error ended up in the journal with no extra work. `systemctl list-timers` shows every timer, when it last ran and when it runs next. These are the timers on a Debian 12 machine:
 
-### Storage Management
+```terminal
+{
+  "title": "systemctl list-timers (Debian 12)",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "systemctl list-timers --no-pager",
+      "output": "NEXT                        LEFT          LAST                        PASSED       UNIT                         ACTIVATES\nFri 2026-10-23 22:43:37 UTC 1h 40min left Fri 2026-10-23 05:06:05 UTC 15h ago      apt-daily.timer              apt-daily.service\nSat 2026-10-24 02:21:41 UTC 5h 18min left Fri 2026-10-23 04:06:56 UTC 16h ago      man-db.timer                 man-db.service\nSat 2026-10-24 03:01:29 UTC 5h 58min left Fri 2026-10-23 03:38:36 UTC 17h ago      apt-daily-upgrade.timer      apt-daily-upgrade.service\nSat 2026-10-24 10:17:46 UTC 13h left      Fri 2026-10-23 10:17:46 UTC 10h ago      systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service\nSat 2026-10-24 21:00:00 UTC 23h left      Fri 2026-10-23 21:00:01 UTC 2min 48s ago dpkg-db-backup.timer         dpkg-db-backup.service\nSat 2026-10-24 21:00:00 UTC 23h left      Fri 2026-10-23 21:00:01 UTC 2min 48s ago logrotate.timer              logrotate.service\nSun 2026-10-25 00:10:56 UTC 1 day 3h left Sun 2026-10-18 00:11:05 UTC 5 days ago   e2scrub_all.timer            e2scrub_all.service\nSun 2026-10-25 22:36:09 UTC 2 days left   Sun 2026-10-18 21:05:16 UTC 4 days ago   fstrim.timer                 fstrim.service\n\n8 timers listed.\nPass --all to see loaded but inactive timers, too."
+    }
+  ]
+}
+```
 
-#### Filesystem Management
+Packages ship their own timers: `logrotate.timer` rotates logs, `apt-daily.timer` and `apt-daily-upgrade.timer` drive unattended upgrades, and `fstrim.timer` trims SSDs.
 
-Check and repair filesystems:
+### cron
+
+cron is older, simpler and still everywhere. Edit your own schedule with `crontab -e` (jobs run as you) or root's with `sudo crontab -e`; each line is five time fields and a command:
+
+```text
+# minute  hour  day-of-month  month  day-of-week  command
+*/15 * * * *    /home/alice/bin/check-disk
+0 8 * * 1-5     /home/alice/bin/report
+@reboot         /home/alice/bin/warm-cache
+```
+
+System-wide jobs live in files under `/etc/cron.d/`, with an extra field for the user. The nightly backup as a cron job would be:
+
+```text
+# /etc/cron.d/backup-site
+30 2 * * *  root  /usr/local/bin/backup-site --keep 7 /srv/notes-site /var/backups/notes-site 2>&1 | logger -t backup-site
+```
+
+- `*` means every value, `*/15` every 15th, `1-5` a range (Monday to Friday), and `1,15` a list.
+- cron runs commands with a minimal `PATH` (`/usr/bin:/bin`), no login files, and your crontab's time zone is the system's. Use absolute paths, and test the command with `env -i /bin/sh -c '...'` to see what cron sees.
+- cron does not log a job's output; it tries to mail it to the user. Redirect it to the journal yourself: `... 2>&1 | logger -t backup-site`. cron's own messages go to `journalctl -u cron` (`crond` on Fedora and RHEL).
+- Executable scripts dropped into `/etc/cron.daily/` (and `cron.hourly`, `cron.weekly`, `cron.monthly`) run on that schedule as root.
+
+Use timers for new jobs on systemd machines: you get logs in the journal, `Persistent=`, randomized delays, resource limits and dependencies. Use cron when a crontab line is all you need or when the job must also run on systems without systemd. Try expressions in the [cron expression simulator](/games/cron-expression-simulator).
+
+## Logs: journalctl and /var/log
+
+systemd's **journal** collects the output of every service, the kernel's messages and the classic syslog stream in one indexed store. The options you will use daily:
+
+| Command                                    | Shows                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------- |
+| `journalctl -u nginx`                      | one unit's log (add `-u` several times for more units)              |
+| `journalctl -u nginx -f`                   | follow new lines live                                               |
+| `journalctl -u nginx --since "1 hour ago"` | a time window; also `--since 2026-10-24 --until "2026-10-24 12:00"` |
+| `journalctl -p err -b`                     | priority error and worse since the current boot                     |
+| `journalctl -b -1`                         | the previous boot, after a crash or unexpected reboot               |
+| `journalctl -k`                            | kernel messages (like `dmesg`)                                      |
+| `journalctl -n 50 --no-pager`              | the last 50 lines, without the pager, for scripts                   |
+| `journalctl -o json-pretty -n 1`           | one entry with all its fields                                       |
+
+Output from a Debian 12 machine:
+
+```terminal
+{
+  "title": "journalctl (Debian 12)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "journalctl -u logrotate.service -n 6 --no-pager",
+      "output": "Oct 22 21:00:02 devbox systemd[1]: Starting logrotate.service - Rotate log files...\nOct 22 21:00:03 devbox systemd[1]: logrotate.service: Deactivated successfully.\nOct 22 21:00:03 devbox systemd[1]: Finished logrotate.service - Rotate log files.\nOct 23 21:00:01 devbox systemd[1]: Starting logrotate.service - Rotate log files...\nOct 23 21:00:02 devbox systemd[1]: logrotate.service: Deactivated successfully.\nOct 23 21:00:02 devbox systemd[1]: Finished logrotate.service - Rotate log files."
+    },
+    {
+      "cmd": "journalctl --disk-usage",
+      "output": "Archived and active journals take up 125.6M in the file system."
+    }
+  ]
+}
+```
+
+The journal keeps itself to a size limit (by default 10% of the file system, at most 4 GiB). To set your own limit, add a drop-in and restart the journal:
+
+```ini
+# /etc/systemd/journald.conf.d/size.conf
+[Journal]
+SystemMaxUse=500M
+```
+
+Then run `sudo systemctl restart systemd-journald`. `sudo journalctl --vacuum-size=200M` trims old entries right away. If `/var/log/journal/` does not exist, the journal lives only in memory and is lost at reboot; current Debian, Ubuntu and Fedora create it, so logs are persistent.
+
+Text log files in `/var/log` still matter:
+
+- **Ubuntu** installs rsyslog, which copies journal messages into `/var/log/syslog` and `/var/log/auth.log` (logins, sudo, SSH).
+- **Debian 12 and 13** no longer install rsyslog by default: use `journalctl`, or install `rsyslog` if a tool needs the files.
+- **Fedora** logs to the journal only; **RHEL** keeps rsyslog with `/var/log/messages` and `/var/log/secure`.
+- Applications such as nginx, Apache and PostgreSQL write their own files under `/var/log/<name>/`.
+
+### Rotate Log Files With logrotate
+
+Files that applications write grow forever unless something rotates them. **logrotate** runs daily from `logrotate.timer` and reads `/etc/logrotate.conf` and `/etc/logrotate.d/`. Here is a configuration for the lab logs; create its directory with `mkdir -p ~/logrotate-test` first.
+
+Save it as `~/logrotate-test/lab.conf`:
+
+```text
+/home/dev/lab/logs/*.log {
+    daily
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+}
+```
+
+- `daily` and `rotate 14` keep two weeks; `missingok` and `notifempty` avoid errors and empty archives.
+- `compress` gzips old files; `delaycompress` leaves the newest rotated file uncompressed, because a program may still be writing to it.
+- For a service that keeps its log file open, add `postrotate` with `systemctl reload <service>` (or use `copytruncate` when the program cannot reopen its log).
+
+Test a configuration with `-d` (debug, changes nothing) and force a rotation with `-f`. Packaged configurations need root, but your own configuration with a state file of your own works as a regular user. Debian does not put `/usr/sbin` on a regular user's `PATH`, so the commands use the full path (output from a Debian 12 machine):
+
+```terminal
+{
+  "title": "logrotate: test, then force a rotation (Debian 12)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "cd ~/logrotate-test"
+    },
+    {
+      "cmd": "/usr/sbin/logrotate -d -s state lab.conf 2>&1 | head -n 12",
+      "output": "warning: logrotate in debug mode does nothing except printing debug messages!  Consider using verbose mode (-v) instead if this is not what you want.\n\nreading config file lab.conf\nReading state from file: state\nstate file state does not exist\nAllocating hash table for state file, size 64 entries\n\nHandling 1 logs\n\nrotating pattern: /home/dev/lab/logs/*.log  after 1 days (14 rotations)\nempty log files are not rotated, old logs are removed\nconsidering log /home/dev/lab/logs/access.log"
+    },
+    {
+      "cmd": "/usr/sbin/logrotate -f -s state lab.conf"
+    },
+    {
+      "cmd": "ls ~/lab/logs",
+      "output": "access.log.1\nerror.log.1"
+    }
+  ]
+}
+```
+
+The current logs became `access.log.1` and `error.log.1`, uncompressed because of `delaycompress`; the next rotation compresses them. This configuration has no `create` line, so no new empty file appears: the application creates one when it writes again, or you add `create 0640 www-data adm` to have logrotate create it with the right owner.
+
+## Keep the System Updated
+
+Most break-ins on Linux servers use known vulnerabilities in software that was never updated. Automate security updates, and watch for the ones that need a restart.
+
+**Ubuntu** installs and enables **unattended-upgrades**, which installs security updates every day through `apt-daily-upgrade.timer`. The switches are in `/etc/apt/apt.conf.d/20auto-upgrades` and what it may install is in `/etc/apt/apt.conf.d/50unattended-upgrades`. Check what it would do with `sudo unattended-upgrade --dry-run --debug`, and read `/var/log/unattended-upgrades/` afterwards. Ubuntu 24.04 servers also run **needrestart** after upgrades: it restarts services that still use the old versions of updated libraries, and lists what it cannot restart, such as your own login session.
+
+**Debian** installs the same tool on request:
 
 ```bash
-# Check filesystem
-sudo fsck /dev/sda1
-
-# Check at next boot
-sudo touch /forcefsck
-
-# Tune filesystem parameters
-sudo tune2fs -c 30 /dev/sda1  # Check every 30 mounts
+sudo apt install unattended-upgrades
+sudo dpkg-reconfigure -plow unattended-upgrades      # answer Yes to enable it
 ```
 
-#### Managing Disk Partitions
-
-Work with disk partitions:
+**Fedora** uses `dnf5-plugin-automatic` and **RHEL 10** uses `dnf-automatic`. Set `apply_updates = yes` in `/etc/dnf/automatic.conf` (in the `[commands]` section) and enable the timer:
 
 ```bash
-# List partitions
-sudo fdisk -l
-
-# Create/modify partitions
-sudo fdisk /dev/sdb
-
-# Create filesystem
-sudo mkfs.ext4 /dev/sdb1
-
-# Add to fstab for auto-mounting
-echo "/dev/sdb1 /mnt/data ext4 defaults 0 2" | sudo tee -a /etc/fstab
+sudo dnf install dnf5-plugin-automatic && sudo systemctl enable --now dnf5-automatic.timer   # Fedora
+sudo dnf install dnf-automatic && sudo systemctl enable --now dnf-automatic.timer            # RHEL 10
 ```
 
-#### Logical Volume Management (LVM)
+A running program keeps using the old version of a library until it restarts, and a new kernel only runs after a reboot. On Ubuntu, the file `/var/run/reboot-required` appears when an update needs a reboot. On Debian, install `needrestart` and run `sudo needrestart -k`, which compares the running kernel with the newest installed one. On RHEL, `sudo dnf needs-restarting -r` (from `dnf-plugins-core`) tells you, and `sudo dnf needs-restarting -s` lists services to restart. Plan regular reboots, or use live kernel patching (Canonical Livepatch through Ubuntu Pro, which is free for personal use on a few machines, or `kpatch` on RHEL) for the time in between.
 
-LVM provides flexible storage management:
+Know when your release stops getting fixes. Ubuntu 24.04 LTS gets standard security updates until May 2029. Debian 13 is supported until August 2028 and through Debian LTS until June 2030. Debian 12 moved to LTS on 12 July 2026, which runs until 30 June 2028, so plan its upgrade to Debian 13. Upgrade Ubuntu releases with `sudo do-release-upgrade`, and Debian by changing the codename in the sources and running `sudo apt full-upgrade`, after reading the release notes and taking a backup.
 
-```bash
-# Create physical volume
-sudo pvcreate /dev/sdc
+## Back Up, and Test the Restore
 
-# Create volume group
-sudo vgcreate data_vg /dev/sdc
+A backup you have never restored is a hope, not a backup. The usual rule is **3-2-1**: three copies of the data, on two different kinds of storage, one of them off the machine and off the site.
 
-# Create logical volume
-sudo lvcreate -n data_lv -L 10G data_vg
+What to back up on a typical server:
 
-# Create filesystem
-sudo mkfs.ext4 /dev/data_vg/data_lv
+- `/etc` (configuration), `/home`, `/srv` and `/root`;
+- application data under `/var/lib/<app>`, taken with the application's own dump tool for databases (`pg_dump`, see the [Postgres guide](/guides/introduction-to-postgres/09-backup-and-recovery)), not by copying the live files;
+- the list of installed packages: `dpkg --get-selections` or `dnf repoquery --userinstalled`;
+- your infrastructure code, which lets you rebuild the rest.
 
-# Mount filesystem
-sudo mkdir -p /mnt/data
-echo "/dev/data_vg/data_lv /mnt/data ext4 defaults 0 2" | sudo tee -a /etc/fstab
-sudo mount /mnt/data
+The backup script from Part 9 makes full archives. `rsync` with `--link-dest` makes **snapshots** instead: every snapshot looks like a full copy, but files that did not change are hard links to the previous snapshot and take no extra space:
 
-# Extend logical volume
-sudo lvextend -L +5G /dev/data_vg/data_lv
-sudo resize2fs /dev/data_vg/data_lv
+```terminal
+{
+  "title": "space-saving snapshots with rsync --link-dest",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "mkdir -p ~/snapshots"
+    },
+    {
+      "comment": "the first snapshot is a full copy",
+      "cmd": "rsync -a ~/lab/site/ ~/snapshots/2026-10-22/"
+    },
+    {
+      "cmd": "echo '<p>News</p>' > ~/lab/site/news.html"
+    },
+    {
+      "comment": "the next one hard-links unchanged files to the previous snapshot",
+      "cmd": "rsync -a --link-dest=../2026-10-22 ~/lab/site/ ~/snapshots/2026-10-23/"
+    },
+    {
+      "comment": "same inode number: one copy on disk, two names",
+      "cmd": "ls -li ~/snapshots/*/index.html",
+      "output": "595318 -rw-rw-r-- 2 dev dev 221 Oct 23 21:28 /home/dev/snapshots/2026-10-22/index.html\n595318 -rw-rw-r-- 2 dev dev 221 Oct 23 21:28 /home/dev/snapshots/2026-10-23/index.html"
+    },
+    {
+      "comment": "du counts each hard-linked file once",
+      "cmd": "du -sh ~/snapshots/*",
+      "output": "24K\t/home/dev/snapshots/2026-10-22\n16K\t/home/dev/snapshots/2026-10-23"
+    },
+    {
+      "comment": "test the restore: compare the snapshot with the original",
+      "cmd": "diff -r ~/lab/site ~/snapshots/2026-10-23 && echo \"restore check: identical\"",
+      "output": "restore check: identical"
+    }
+  ]
+}
 ```
 
-### System Backup Strategies
+A path given to `--link-dest` is relative to the destination directory. Add `--delete` to mirror deletions, and `-e ssh` with a `host:path` destination to send the snapshot to another machine. For encrypted, deduplicated backups to object storage or another server, use **restic** or **BorgBackup**; both are packaged on every major distribution.
 
-Implement a comprehensive backup strategy:
+Whatever tool you use, put a restore on the calendar: pick a random file or a database dump, restore it to a scratch location, and check it.
 
-#### File-Level Backups
+## Harden the Server
 
-Use `rsync` for efficient incremental backups:
+### SSH
 
-```bash
-# Basic local backup
-rsync -av --delete /source/directory/ /backup/directory/
+SSH is the front door of almost every server. Put your settings in a drop-in file instead of editing `/etc/ssh/sshd_config`, so package updates do not conflict with them:
 
-# Remote backup
-rsync -avz --delete -e ssh /source/directory/ user@remote:/backup/directory/
-
-# Incremental backups with hard links
-rsync -av --delete --link-dest=/backup/daily.1 /source/ /backup/daily.0
-```
-
-#### Disk Imaging
-
-Create complete system images:
-
-```bash
-# Create an image of a partition
-sudo dd if=/dev/sda1 of=/path/to/sda1.img bs=4M status=progress
-
-# Compress the image
-sudo dd if=/dev/sda1 bs=4M | gzip > /path/to/sda1.img.gz
-
-# Restore from an image
-gunzip -c /path/to/sda1.img.gz | sudo dd of=/dev/sda1 bs=4M status=progress
-```
-
-#### Backup Automation and Rotation
-
-Implement a backup rotation scheme:
-
-```bash
-#!/bin/bash
-# Simple backup rotation script
-
-BACKUP_DIR="/backup"
-SOURCE_DIR="/data"
-DATE=$(date +%Y-%m-%d)
-DAY_OF_WEEK=$(date +%u)  # 1-7, Monday is 1
-
-# Create daily backup
-rsync -av --delete "$SOURCE_DIR/" "$BACKUP_DIR/daily.$DAY_OF_WEEK/"
-
-# Create weekly backup on Sunday
-if [ "$DAY_OF_WEEK" = "7" ]; then
-    WEEK_NUM=$(date +%U)
-    WEEK_OF_MONTH=$((WEEK_NUM % 4 + 1))
-    rsync -av --delete "$SOURCE_DIR/" "$BACKUP_DIR/weekly.$WEEK_OF_MONTH/"
-fi
-
-# Create monthly backup on the 1st
-if [ "$(date +%d)" = "01" ]; then
-    MONTH=$(date +%m)
-    rsync -av --delete "$SOURCE_DIR/" "$BACKUP_DIR/monthly.$MONTH/"
-fi
-```
-
-## Security and Hardening
-
-### System Updates and Patching
-
-Stay current with security updates:
-
-```bash
-# RHEL/CentOS: List security updates
-dnf updateinfo list security
-
-# Apply security updates
-dnf update --security
-
-# Debian/Ubuntu: Enable automatic security updates
-apt install unattended-upgrades
-dpkg-reconfigure -plow unattended-upgrades
-```
-
-### User and Password Policies
-
-Enforce strong passwords:
-
-```bash
-# Install password quality checking
-apt install libpam-pwquality
-
-# Edit PAM configuration
-nano /etc/security/pwquality.conf
-```
-
-Add these settings:
-
-```
-minlen = 12
-minclass = 3
-maxrepeat = 3
-gecoscheck = 1
-enforce_for_root
-```
-
-Configure password aging:
-
-```bash
-# Set maximum password age
-chage -M 90 username
-
-# Force password change on next login
-chage -d 0 username
-
-# Check current aging policy
-chage -l username
-```
-
-### Firewall Configuration
-
-Configure a host firewall:
-
-#### UFW (Ubuntu/Debian)
-
-```bash
-# Install UFW
-apt install ufw
-
-# Set default policies
-ufw default deny incoming
-ufw default allow outgoing
-
-# Allow SSH
-ufw allow ssh
-
-# Allow web server
-ufw allow 80/tcp
-ufw allow 443/tcp
-
-# Allow specific IP address
-ufw allow from 192.168.1.100
-
-# Enable firewall
-ufw enable
-```
-
-#### firewalld (RHEL/CentOS/Fedora)
-
-```bash
-# Check status
-firewall-cmd --state
-
-# Allow services
-firewall-cmd --permanent --add-service=ssh
-firewall-cmd --permanent --add-service=http
-firewall-cmd --permanent --add-service=https
-
-# Allow port
-firewall-cmd --permanent --add-port=8080/tcp
-
-# Reload to apply changes
-firewall-cmd --reload
-```
-
-### SSH Hardening
-
-Secure SSH access:
-
-```bash
-# Edit SSH configuration
-nano /etc/ssh/sshd_config
-```
-
-Recommended settings:
-
-```
-# Use SSH protocol 2
-Protocol 2
-
-# Change default port (optional)
-Port 2222
-
-# Disable root login
+```text
+# /etc/ssh/sshd_config.d/10-hardening.conf
 PermitRootLogin no
-
-# Use key authentication only
 PasswordAuthentication no
-PubkeyAuthentication yes
-
-# Limit users who can log in
-AllowUsers user1 user2
-
-# Idle timeout (5 minutes)
-ClientAliveInterval 300
-ClientAliveCountMax 0
-
-# Disable empty passwords
-PermitEmptyPasswords no
-
-# Disable X11 forwarding if not needed
+KbdInteractiveAuthentication no
+MaxAuthTries 3
 X11Forwarding no
+AllowGroups sudo ssh-users
+# on Fedora and RHEL the admin group is wheel:
+# AllowGroups wheel ssh-users
 ```
 
-Restart SSH after changes:
+- Turn off passwords only after your SSH key login works ([Part 6](/guides/introduction-to-linux/06-user-management)), and keep a session open while you test.
+- `AllowGroups` limits SSH to members of the listed groups; create `ssh-users` for people who need SSH but not `sudo`. Before you reload, check with `id` that your own account is in one of them.
+- Old guides add `Protocol 2` (removed from OpenSSH long ago; current versions only speak protocol 2) and `ClientAliveCountMax 0` as an idle timeout (since OpenSSH 8.2, `0` disables the check instead). Leave both out.
+
+**sshd uses the first value it finds** for most options, and Debian and Ubuntu read the drop-in files at the top of `sshd_config`, in alphabetical order. Cloud images often ship `50-cloud-init.conf` with `PasswordAuthentication yes`. Your `10-hardening.conf` is read first and wins; the same file named `60-hardening.conf` would lose. `sshd -t` checks the syntax and `sshd -T` prints the settings sshd would really use, so check both. You can try this safely as a normal user with a test configuration that copies that layout, because `sshd -t -f file` and `sshd -T -f file` only read files. `sshd` lives in `/usr/sbin`, which is not on a regular user's `PATH` on Debian, so the commands use the full path (output from a Debian 12 machine with OpenSSH 9.2):
+
+```terminal
+{
+  "title": "build a test configuration in ~/sshd-test",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "mkdir -p ~/sshd-test/sshd_config.d && cd ~/sshd-test"
+    },
+    {
+      "comment": "a host key for the test, so sshd can load the configuration",
+      "cmd": "ssh-keygen -q -t ed25519 -f ssh_host_ed25519_key -N ''"
+    },
+    {
+      "comment": "a main file that, like Debian and Ubuntu, reads the drop-ins first",
+      "cmd": "printf '%s\\n' \"Include $HOME/sshd-test/sshd_config.d/*.conf\" \"HostKey $HOME/sshd-test/ssh_host_ed25519_key\" 'KbdInteractiveAuthentication no' 'UsePAM yes' > sshd_config"
+    },
+    {
+      "comment": "what a cloud image ships",
+      "cmd": "echo 'PasswordAuthentication yes' > sshd_config.d/50-cloud-init.conf"
+    }
+  ]
+}
+```
+
+```terminal
+{
+  "title": "first match wins in sshd_config (Debian 12)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "cd ~/sshd-test && ls sshd_config.d",
+      "output": "50-cloud-init.conf"
+    },
+    {
+      "cmd": "printf 'PermitRootLogin no\\nPasswordAuthentication no\\nMaxAuthTries 3\\n' > sshd_config.d/60-hardening.conf"
+    },
+    {
+      "comment": "60-hardening.conf is read after 50-cloud-init.conf, so passwords stay on",
+      "cmd": "/usr/sbin/sshd -T -f sshd_config | grep -E '^(permitrootlogin|passwordauthentication|maxauthtries) '",
+      "output": "maxauthtries 3\npermitrootlogin no\npasswordauthentication yes"
+    },
+    {
+      "cmd": "mv sshd_config.d/60-hardening.conf sshd_config.d/10-hardening.conf"
+    },
+    {
+      "cmd": "/usr/sbin/sshd -T -f sshd_config | grep -E '^(permitrootlogin|passwordauthentication|maxauthtries) '",
+      "output": "maxauthtries 3\npermitrootlogin no\npasswordauthentication no"
+    },
+    {
+      "comment": "a typo: sshd -t refuses the configuration",
+      "cmd": "echo 'PermitRootLogn no' >> sshd_config.d/10-hardening.conf"
+    },
+    {
+      "cmd": "/usr/sbin/sshd -t -f sshd_config",
+      "output": "/home/dev/sshd-test/sshd_config.d/10-hardening.conf: line 4: Bad configuration option: PermitRootLogn\n/home/dev/sshd-test/sshd_config.d/10-hardening.conf: terminating, 1 bad configuration options"
+    }
+  ]
+}
+```
+
+On the server, run `sudo sshd -t` after every change and reload only if it prints nothing: `sudo systemctl reload ssh` on Debian and Ubuntu, `sudo systemctl reload sshd` on Fedora and RHEL.
+
+:::warning
+Ubuntu 24.04 starts SSH through **socket activation**: systemd, not sshd, listens on port 22. If you change `Port` or `ListenAddress` in `sshd_config`, run `sudo systemctl daemon-reload` and `sudo systemctl restart ssh.socket`, open the new port in the firewall first, and test from a second terminal before you close the first one.
+:::
+
+To slow down password-guessing bots, install **fail2ban**, which bans addresses after repeated failures. On Ubuntu, `sudo apt install fail2ban` with the default `sshd` jail is enough. Debian 12 and 13 log only to the journal, so also install `python3-systemd` and set `backend = systemd` for the `sshd` jail in `/etc/fail2ban/jail.local`. With password logins turned off, fail2ban mostly keeps the logs readable; the keys already stop the guessing. The [SSH hardening checklist](/checklists/ssh-hardening) has the complete list.
+
+### Firewall, Services and Accounts
+
+- Allow only the ports you need with ufw, firewalld or nftables, SSH first ([Part 8](/guides/introduction-to-linux/08-networking)).
+- List what listens with `sudo ss -tlnp`, and stop what you do not use: `sudo systemctl disable --now cups.service`.
+- Review who can log in and who has `sudo` (`getent group sudo`, or `wheel`), and lock accounts of people who left ([Part 6](/guides/introduction-to-linux/06-user-management)).
+
+### File Permissions and setuid Programs
+
+A setuid program runs with its owner's rights whoever starts it, and root-owned ones run as root (Part 4), so attackers look for them first. Know which ones you have; this is the full list on an Ubuntu 24.04 base image with `sudo` installed:
+
+```terminal
+{
+  "title": "setuid programs on Ubuntu 24.04",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "sudo find / -xdev -perm -4000 -type f 2>/dev/null | sort",
+      "output": "/usr/bin/chfn\n/usr/bin/chsh\n/usr/bin/gpasswd\n/usr/bin/mount\n/usr/bin/newgrp\n/usr/bin/passwd\n/usr/bin/su\n/usr/bin/sudo\n/usr/bin/umount"
+    }
+  ]
+}
+```
+
+Compare the list over time and investigate anything new. `sudo find / -xdev -type f -perm -o+w` lists world-writable files, which should be rare outside `/tmp`.
+
+### Mandatory Access Control: AppArmor and SELinux
+
+On top of normal permissions, Ubuntu and Debian confine many programs with **AppArmor** (`sudo aa-status` lists the loaded profiles), and Fedora and RHEL use **SELinux** (`getenforce` should print `Enforcing`). When SELinux blocks something, do not turn it off: read the denial with `sudo ausearch -m avc -ts recent`, and fix the file labels with `restorecon -Rv /path` or allow the specific case with `setsebool`.
+
+To review a whole machine, **Lynis** (`sudo apt install lynis`, then `sudo lynis audit system`) runs hundreds of checks and prints suggestions. Use it as a checklist, not as a score to maximise.
+
+## Troubleshooting
+
+When something breaks, start with the same four commands; they answer "what failed, when, and why" on most systems:
 
 ```bash
-systemctl restart sshd
+systemctl --failed                     # units that failed
+journalctl -p err -b --no-pager        # errors since this boot
+journalctl -k -b | tail -n 30          # recent kernel messages: disks, OOM killer, hardware
+df -h && df -i                         # space and inodes on every file system
 ```
 
-### File and Directory Permissions
+### The Disk Is Full, but du Cannot Find the Files
 
-Audit and fix permissions:
+A common puzzle: `df` says the disk is full, you delete a huge log file, and the space does not come back. A process still has the deleted file open, so the kernel cannot free it until that process closes it or exits. Here a `sleep` process plays the part of a daemon that keeps its log open:
 
-```bash
-# Find world-writable files
-find / -type f -perm -o+w -ls 2>/dev/null
-
-# Find SUID/SGID binaries
-find / -type f \( -perm -4000 -o -perm -2000 \) -ls 2>/dev/null
-
-# Fix permissions for sensitive files
-chmod 600 /etc/shadow
-chmod 640 /etc/gshadow
-chmod 644 /etc/passwd
-chmod 644 /etc/group
+```terminal
+{
+  "title": "find deleted files that still use space",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "sleep 600 > ~/big.log &"
+    },
+    {
+      "cmd": "head -c 30M /dev/zero > ~/big.log && ls -lh ~/big.log",
+      "output": "-rw-rw-r-- 1 dev dev 30M Oct 23 21:28 /home/dev/big.log"
+    },
+    {
+      "cmd": "rm ~/big.log"
+    },
+    {
+      "comment": "+L1: open files with fewer than one link, that is, deleted ones",
+      "cmd": "lsof +L1",
+      "output": "COMMAND PID USER   FD   TYPE DEVICE SIZE/OFF NLINK   NODE NAME\nsleep    22  dev    1w   REG    8,1 31457280     0 595369 /home/dev/big.log (deleted)"
+    },
+    {
+      "comment": "restart or stop the process that holds it, and the space is freed",
+      "cmd": "kill %1"
+    }
+  ]
+}
 ```
 
-### Security Auditing
+On a server, run `sudo lsof +L1`, then restart the service that holds the file (`sudo systemctl restart <service>`). To stop it happening, rotate logs with `copytruncate` or a `postrotate` reload, as shown above.
 
-Use security scanning tools:
+### High Load or Memory Pressure
 
-#### Lynis
+`vmstat` shows the whole system in one line per interval:
 
-Comprehensive security auditing tool:
-
-```bash
-# Install Lynis
-apt install lynis
-
-# Run a system audit
-lynis audit system
-
-# View detailed report
-cat /var/log/lynis.log
+```terminal
+{
+  "title": "vmstat: one line per second",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "vmstat 1 3",
+      "output": "procs -----------memory---------- ---swap-- -----io---- -system-- -------cpu-------\n r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st gu\n 2  1 1588588 1384480  44944 1395724    7   12   153    99  570    1  6  1 93  1  0  0\n 1  0 1588588 1384352  46204 1396464    4    0  2116    16 1958 2622 18  2 80  1  0  0\n 0  0 1588588 1385828  46204 1396464    0    0     0     0 1196 1727  5  2 94  0  0  0"
+    }
+  ]
+}
 ```
 
-#### OpenSCAP
-
-Security compliance checking:
-
-```bash
-# Install OpenSCAP
-dnf install openscap-scanner scap-security-guide
-
-# Run a scan with RHEL8 profile
-oscap xccdf eval --profile xccdf_org.ssgproject.content_profile_pci-dss \
-  --results scan-results.xml --report report.html \
-  /usr/share/xml/scap/ssg/content/ssg-rhel8-ds.xml
-```
-
-#### Intrusion Detection with Tripwire
-
-File integrity monitoring:
-
-```bash
-# Install Tripwire
-apt install tripwire
-
-# Initialize database
-sudo tripwire --init
-
-# Check for changes
-sudo tripwire --check
-```
-
-### System Auditing with auditd
-
-Monitor system calls and security events:
-
-```bash
-# Install audit daemon
-apt install auditd
-
-# Add rules for file access monitoring
-cat >> /etc/audit/rules.d/audit.rules << EOF
--w /etc/passwd -p wa -k passwd_changes
--w /etc/shadow -p wa -k shadow_changes
--w /etc/sudoers -p wa -k sudoers_changes
-EOF
-
-# Restart auditd
-systemctl restart auditd
-
-# Search for events
-ausearch -k passwd_changes
-```
-
-## Troubleshooting and Recovery
-
-### Boot Issues
-
-#### Rescue Mode
-
-Boot into rescue mode:
-
-1. Restart and interrupt GRUB
-2. Select "Advanced options"
-3. Choose recovery mode
-4. At the recovery menu, select "root shell"
-
-Repair common boot issues:
-
-```bash
-# Rebuild initramfs
-update-initramfs -u
-
-# Reinstall GRUB
-grub-install /dev/sda
-update-grub
-
-# Check and repair filesystem
-fsck -f /dev/sda1
-```
-
-#### Emergency Shell
-
-If you can't boot normally:
-
-```bash
-# Boot with emergency parameter
-# At GRUB prompt, press 'e' to edit
-# Add 'systemd.unit=emergency.target' to the kernel line
-# Press Ctrl+X to boot
-
-# Remount root filesystem as read-write
-mount -o remount,rw /
-```
-
-### File Recovery
-
-Recover deleted files:
-
-```bash
-# Install testdisk and photorec
-apt install testdisk
-
-# Run testdisk for partition recovery
-testdisk /dev/sda
-
-# Run photorec for file recovery
-photorec /dev/sda
-```
-
-### System Resource Issues
-
-#### High CPU Usage
-
-Diagnose high CPU:
-
-```bash
-# Find CPU-intensive processes
-top -c
-
-# Get process details
-ps aux | grep PID
-
-# Check if I/O related
-iostat -xz 1
-
-# Trace system calls
-strace -p PID
-```
-
-#### Memory Problems
-
-Diagnose memory issues:
-
-```bash
-# Check memory usage
-free -h
-vmstat 1
-
-# Find memory-hungry processes
-ps aux --sort=-%mem | head
-
-# Check for memory leaks
-valgrind --leak-check=full /path/to/program
-```
-
-#### Disk Space Issues
-
-Find large files and directories:
-
-```bash
-# Find directories using the most space
-du -h --max-depth=1 /var | sort -hr
-
-# Find large files
-find / -type f -size +100M -exec ls -lh {} \; | sort -k5 -rh
-
-# Find old log files
-find /var/log -name "*.log" -mtime +30
-```
-
-### Kernel Crash Analysis
-
-Analyze system crashes:
-
-```bash
-# Install crash analysis tools
-apt install linux-crashdump kdump-tools
-
-# Configure kdump
-dpkg-reconfigure kdump-tools
-
-# Enable crash dump collection
-systemctl enable kdump
-
-# Analyze a crash dump
-crash /usr/lib/debug/vmlinux /var/crash/dump_file
-```
-
-### Network Troubleshooting
-
-Diagnose network issues:
-
-```bash
-# Check network interface status
-ip link
-ip addr
-
-# Test connectivity
-ping -c 4 google.com
-
-# Trace network path
-traceroute google.com
-
-# Check listening services
-ss -tuln
-
-# Capture network traffic
-tcpdump -i eth0 -n
-```
-
-DNS troubleshooting:
-
-```bash
-# Test DNS resolution
-dig google.com
-
-# Check name servers
-cat /etc/resolv.conf
-
-# Flush DNS cache (systemd-resolved)
-systemd-resolve --flush-caches
-```
-
-## System Documentation
-
-### System Inventory
-
-Maintain a system inventory:
-
-```bash
-# Operating system information
-lsb_release -a || cat /etc/os-release
-
-# Kernel version
-uname -a
-
-# Hardware information
-lshw -short
-dmidecode
-
-# Installed software
-dpkg -l > installed_packages.txt  # Debian/Ubuntu
-rpm -qa > installed_packages.txt  # RHEL/CentOS/Fedora
-```
-
-### Configuration Management
-
-Document system configuration:
-
-```bash
-# Create a backup of important configuration files
-tar -czf config_backup.tar.gz /etc/ssh /etc/nginx /etc/fstab /etc/passwd /etc/group
-
-# Document network configuration
-ip addr > network_config.txt
-ip route >> network_config.txt
-cat /etc/netplan/* >> network_config.txt  # Ubuntu
-cat /etc/network/interfaces >> network_config.txt  # Debian
-
-# Document systemd services
-systemctl list-unit-files --state=enabled > enabled_services.txt
-```
-
-### Change Management
-
-Implement a change log:
-
-```bash
-# Create a simple change log file
-cat > /root/CHANGELOG.txt << EOF
-# System Change Log
-
-## $(date +%Y-%m-%d) - Initial Setup
-- Installed base OS
-- Configured network
-- Set up users
-
-## $(date +%Y-%m-%d) - Security Hardening
-- Configured firewall
-- Secured SSH
-- Implemented automatic updates
-EOF
-```
-
-## Advanced System Administration
-
-### Managing Storage with ZFS
-
-ZFS provides advanced storage features:
-
-```bash
-# Install ZFS
-apt install zfsutils-linux
-
-# Create a zpool
-zpool create tank /dev/sdb /dev/sdc
-
-# Create a ZFS dataset
-zfs create tank/data
-
-# Enable compression
-zfs set compression=lz4 tank/data
-
-# Create a snapshot
-zfs snapshot tank/data@backup-$(date +%Y%m%d)
-
-# List snapshots
-zfs list -t snapshot
-
-# Restore from a snapshot
-zfs rollback tank/data@backup-20250517
-```
-
-### Containerization with Docker
-
-Run applications in containers:
-
-```bash
-# Install Docker
-apt-get update
-apt-get install apt-transport-https ca-certificates curl software-properties-common
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-apt-get update
-apt-get install docker-ce docker-ce-cli containerd.io
-
-# Start and enable Docker
-systemctl enable --now docker
-
-# Run a container
-docker run --name nginx -d -p 80:80 nginx
-
-# List containers
-docker ps
-
-# Stop a container
-docker stop nginx
-
-# Remove a container
-docker rm nginx
-```
-
-### Virtualization with KVM
-
-Host virtual machines with KVM:
-
-```bash
-# Check if your CPU supports virtualization
-egrep -c '(vmx|svm)' /proc/cpuinfo
-
-# Install KVM
-apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
-
-# Add user to libvirt group
-usermod -aG libvirt $(whoami)
-usermod -aG kvm $(whoami)
-
-# Start and enable libvirt
-systemctl enable --now libvirtd
-
-# Create a virtual machine from command line
-virt-install --name ubuntu-vm --ram 2048 --vcpus 2 --disk path=/var/lib/libvirt/images/ubuntu-vm.qcow2,size=20 --os-type linux --os-variant ubuntu20.04 --network bridge=virbr0 --graphics none --console pty,target_type=serial --location 'http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/' --extra-args 'console=ttyS0,115200n8'
-```
-
-### Configuration Management with Ansible
-
-Automate configuration across multiple servers:
-
-```bash
-# Install Ansible
-apt install ansible
-
-# Create inventory file
-cat > /etc/ansible/hosts << EOF
-[webservers]
-web1.example.com
-web2.example.com
-
-[dbservers]
-db1.example.com
-db2.example.com
-EOF
-
-# Create a simple playbook
-cat > webserver.yml << EOF
----
-- hosts: webservers
-  become: yes
-  tasks:
-    - name: Install Nginx
-      apt:
-        name: nginx
-        state: present
-        update_cache: yes
-
-    - name: Start Nginx
-      service:
-        name: nginx
-        state: started
-        enabled: yes
-EOF
-
-# Run the playbook
-ansible-playbook webserver.yml
-```
-
-## Managing Linux in the Cloud
-
-Running Linux in the cloud requires specific considerations:
-
-### DigitalOcean Example
-
-Managing a Linux server on DigitalOcean:
-
-1. Create a Droplet (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
-
-2. Secure and optimize a cloud server:
-
-```bash
-#!/bin/bash
-# cloud_server_setup.sh - Initial setup for a new cloud server
-
-# Update system
-apt update && apt upgrade -y
-
-# Set timezone
-timedatectl set-timezone UTC
-
-# Install essential packages
-apt install -y fail2ban ufw unattended-upgrades logwatch
-
-# Configure firewall
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ssh
-ufw allow http
-ufw allow https
-ufw enable
-
-# Secure SSH
-sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
-sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
-systemctl restart sshd
-
-# Set up automatic security updates
-cat > /etc/apt/apt.conf.d/10periodic << EOF
-APT::Periodic::Update-Package-Lists "1";
-APT::Periodic::Download-Upgradeable-Packages "1";
-APT::Periodic::AutocleanInterval "7";
-APT::Periodic::Unattended-Upgrade "1";
-EOF
-
-# Configure fail2ban
-cat > /etc/fail2ban/jail.local << EOF
-[sshd]
-enabled = true
-port = ssh
-filter = sshd
-logpath = /var/log/auth.log
-maxretry = 5
-EOF
-systemctl restart fail2ban
-
-# Set up logwatch
-cat > /etc/cron.daily/00logwatch << EOF
-#!/bin/bash
-/usr/sbin/logwatch --output mail --mailto root --detail high
-EOF
-chmod +x /etc/cron.daily/00logwatch
-
-# Set up minimal monitoring
-apt install -y prometheus-node-exporter
-systemctl enable --now prometheus-node-exporter
-
-echo "Server initial setup complete!"
-```
-
-3. Create regular backups of your cloud server:
-
-```bash
-#!/bin/bash
-# cloud_backup.sh - Backup script for cloud server data
-
-# Configuration
-BACKUP_DIR="/var/backups/server"
-TIMESTAMP=$(date +%Y-%m-%d-%H%M)
-RETENTION_DAYS=7
-
-# Ensure backup directory exists
-mkdir -p "$BACKUP_DIR"
-
-# Create database dumps
-if command -v mysql &>/dev/null; then
-    mkdir -p "$BACKUP_DIR/mysql"
-    databases=$(mysql -e "SHOW DATABASES;" | grep -Ev "(Database|information_schema|performance_schema)")
-    for db in $databases; do
-        mysqldump --single-transaction "$db" | gzip > "$BACKUP_DIR/mysql/$db-$TIMESTAMP.sql.gz"
-    done
-fi
-
-# Backup important directories
-dirs_to_backup=(
-    "/etc"
-    "/var/www"
-    "/home"
-    "/opt/myapp"
-)
-
-for dir in "${dirs_to_backup[@]}"; do
-    if [ -d "$dir" ]; then
-        dir_name=$(echo "$dir" | sed 's/^\///' | sed 's/\//_/g')
-        tar -czf "$BACKUP_DIR/$dir_name-$TIMESTAMP.tar.gz" "$dir"
-    fi
-done
-
-# Remove old backups
-find "$BACKUP_DIR" -type f -name "*.tar.gz" -mtime +$RETENTION_DAYS -delete
-find "$BACKUP_DIR/mysql" -type f -name "*.sql.gz" -mtime +$RETENTION_DAYS -delete
-
-# Create backup report
-echo "Backup completed at $(date)" > "$BACKUP_DIR/backup-report-$TIMESTAMP.txt"
-du -sh "$BACKUP_DIR"/* >> "$BACKUP_DIR/backup-report-$TIMESTAMP.txt"
-
-# Optional: Copy backups to an external location
-# rsync -avz --delete "$BACKUP_DIR/" user@backup-server:/path/to/backups/
-```
-
-### Cloud-Specific Best Practices
-
-1. **Immutable Infrastructure**: Treat servers as disposable; recreate rather than repair
-2. **Configuration Management**: Use tools like Ansible to automate configuration
-3. **Monitoring**: Implement comprehensive monitoring for cloud resources
-4. **Security**: Follow cloud security best practices, including minimal access and network segmentation
-5. **Backups**: Automated, offsite backups for critical data
-6. **Scaling**: Design systems to scale horizontally
-
-## Final Thoughts and Next Steps
-
-Congratulations! You've completed our comprehensive introduction to Linux. Here's what you've learned:
-
-1. **Linux Basics**: Understanding what Linux is and how it works
-2. **Installation and Setup**: Getting Linux running on your system
-3. **Command Line**: Learning essential terminal commands
-4. **File System**: Navigating and managing files and permissions
-5. **Package Management**: Installing and updating software
-6. **User Management**: Creating and managing user accounts
-7. **Process Management**: Controlling running programs
-8. **Networking**: Configuring and troubleshooting networks
-9. **Shell Scripting**: Automating tasks with scripts
-10. **System Administration**: Maintaining and securing Linux systems
-
-### Where to Go From Here
-
-To continue your Linux journey, consider exploring:
-
-1. **Certification**: Pursue Linux certifications like RHCSA, LFCS, or CompTIA Linux+
-2. **Cloud Computing**: Learn how to deploy Linux in AWS, Azure, or Google Cloud
-3. **DevOps**: Explore CI/CD, Infrastructure as Code, and containerization
-4. **Cybersecurity**: Dive deeper into Linux security and hardening
-5. **Specialized Distributions**: Try security-focused distros like Kali or CentOS for servers
-
-### Keep Learning
-
-The Linux ecosystem is constantly evolving. Stay current by:
-
-1. Following Linux news sites and blogs
-2. Participating in Linux communities and forums
-3. Contributing to open-source projects
-4. Practicing your skills with real-world projects
-5. Teaching others what you've learned
-
-As you become more proficient with Linux, you'll discover that it's not just an operating system, it's a powerful set of tools and philosophies that can transform your approach to computing and problem-solving.
-
-Thank you for following along with this guide, and best of luck on your Linux journey!
+`r` is the number of runnable processes (compare with the CPU count), `b` processes blocked on I/O, `si`/`so` memory swapped in and out per second (anything steady above zero means too little RAM), and `wa` the CPU time spent waiting for disk. Then find the process with `top` or `ps` ([Part 7](/guides/introduction-to-linux/07-process-management)). `sysstat` adds `iostat -x 1` and `pidstat 1`, which show live disk and per-process load, and `sar`, which shows history once collection is on: after installing it, run `sudo dpkg-reconfigure sysstat` on Debian and Ubuntu (answer Yes) or `sudo systemctl enable --now sysstat` on Fedora and RHEL, and check that `sysstat-collect.timer` is active. History starts from that moment.
+
+### The System Does Not Boot
+
+- **A wrong line in `/etc/fstab`** usually drops you into **emergency mode** with a root password prompt. Log in, run `mount -o remount,rw /`, fix the line (or add `nofail`), and reboot. Cloud servers without a console password need the provider's recovery console.
+- **To get a minimal system** for repairs, hold **Shift** (BIOS) or press **Esc** (UEFI) at boot to reach the GRUB menu, press `e` on the entry, add `systemd.unit=rescue.target` (or `emergency.target`) to the line that starts with `linux`, and boot with **Ctrl+X**.
+- **After a crash**, `journalctl -b -1 -p warning` shows what the previous boot logged before it went down, if the journal is persistent.
+- `systemd-analyze blame` lists the services that took longest to start when the boot is just slow.
+
+## A Checklist for a New Server
+
+1. Update everything: `sudo apt update && sudo apt full-upgrade` (or `sudo dnf upgrade`), then reboot if asked.
+2. Create your own user with `sudo` and an SSH key; test it in a second session ([Part 6](/guides/introduction-to-linux/06-user-management)).
+3. Harden SSH with a drop-in file and check it with `sshd -t` and `sshd -T`.
+4. Enable the firewall with SSH allowed first ([Part 8](/guides/introduction-to-linux/08-networking)).
+5. Turn on automatic security updates.
+6. Set the time zone and check time sync: `timedatectl` (servers usually stay on UTC).
+7. Run each service as its own user with a hardened unit file.
+8. Set up backups, and restore one.
+9. Make sure the journal is persistent and you know where each application logs.
+10. Write down what you did, or better, put it in a script or an Ansible playbook so the next server is identical.
+
+The exercise [Securing your Linux server: essential first steps](/exercises/linux-server-security) walks through the same list on a real machine.
+
+## Common Mistakes
+
+- **Editing packaged unit files or `sshd_config` directly** instead of drop-ins; updates overwrite or conflict with your changes.
+- **Forgetting `systemctl daemon-reload`** after changing a unit file.
+- **Enabling the service of a timer** instead of the timer itself.
+- **cron jobs that rely on your `PATH`** or on output nobody reads.
+- **Turning off password logins before testing keys**, or restarting SSH without a second session open.
+- **Backups that were never restored**, or that live only on the same disk.
+- **Disabling SELinux or AppArmor** to make an error go away.
+- **Deleting big log files** that a process still holds open, instead of truncating or rotating them.
+
+## Summary
+
+- Write unit files with `User=`, `Restart=` and sandboxing options, verify them with `systemd-analyze verify`, and change packaged units with `systemctl edit`.
+- Schedule jobs with systemd timers (`OnCalendar`, `Persistent`) or cron; check calendars with `systemd-analyze calendar`.
+- Read logs with `journalctl -u`, `-p err -b` and `-f`; rotate application logs with logrotate.
+- Automate security updates (unattended-upgrades, dnf-automatic) and plan reboots and release upgrades.
+- Back up with archives or rsync snapshots following 3-2-1, and test restores.
+- Harden SSH with a drop-in, mind the first-match rule, and check with `sshd -t` and `sshd -T`.
+- Troubleshoot with `systemctl --failed`, `journalctl -p err -b`, `df`, `lsof +L1` and `vmstat`.
+
+## Where to Go From Here
+
+You now have the foundation that every other DevOps tool builds on. Good next steps:
+
+- **Automate what you did by hand**: the [Bash guide](/guides/introduction-to-bash) and the [Ansible guide](/guides/introduction-to-ansible).
+- **Containers**: the [Docker guide](/guides/introduction-to-docker) uses namespaces, cgroups and the networking from this guide, and the [Kubernetes guide](/guides/introduction-to-kubernetes) builds on Docker.
+- **Networks**: the [Networking Fundamentals guide](/guides/networking-fundamentals) goes deeper into TCP/IP, DNS and routing.
+- **Infrastructure as code**: the [Terraform guide](/guides/introduction-to-terraform) creates the servers you now know how to run.
+- **Certifications**: the Linux Foundation's LFCS, Red Hat's RHCSA and CompTIA Linux+ test exactly these skills in hands-on or exam form.
+
+## Keep Learning
+
+- [SSH Hardening Checklist](/checklists/ssh-hardening)
+- Exercise: [Securing your Linux server](/exercises/linux-server-security)
+- Interview questions: [Linux system logs](/interview-questions/junior/linux-system-logs)
+- [Linux Command Line Quiz](/quizzes/linux-quiz) and [Linux Fundamentals flashcards](/flashcards/linux-fundamentals)
+- [Let's Encrypt 64-day certificates: check your renewal](/posts/lets-encrypt-64-day-certificates-renewal-check)

@@ -1,297 +1,218 @@
 ---
-title: 'Getting Started with Linux'
-description: 'Install Linux and set up your environment through various methods, including dual-booting, virtual machines, and cloud platforms.'
+title: 'Getting Started: Install Linux in a VM, WSL, the Cloud or on Hardware'
+description: 'Get a Linux system to practise on: a virtual machine, WSL on Windows, a cloud server, a live USB or a dual boot, and the first steps after installing.'
 order: 2
 ---
 
-There are multiple ways to start using Linux, from creating a full installation on your hardware to spinning up a cloud server. In this part, we'll explore your options and help you choose the best approach for your needs.
+You learn Linux by using it, so the first step is a system where you can type commands, install software and break things without consequences. You do not have to replace your current operating system. A virtual machine or WSL gives you a full Linux environment in a few minutes, and a cloud server gives you the same kind of machine you will manage at work.
 
-## Choose Your Linux Distribution
+This part compares the options, walks through each one, and ends with the first things to do on a fresh install.
 
-Before installation, you'll need to decide which Linux distribution to use. For beginners, these distributions offer good starting points:
+## Prerequisites
 
-- **Ubuntu**: User-friendly with excellent documentation and community support
-- **Fedora**: Relatively user-friendly while staying current with latest technologies
-- **Linux Mint**: Familiar interface for Windows users with pre-installed multimedia codecs
-- **Pop!\_OS**: Optimized for developers and makers with a clean, minimalist approach
+- A computer with at least 8 GB of RAM and 30 GB of free disk space for a virtual machine, or any computer with an SSH client for a cloud server.
+- Administrator rights on that computer to install virtualization software or WSL.
+- For a cloud server: an account with a cloud provider and a payment method.
 
-For this guide, we'll use **Ubuntu** in our examples, as it's widely used and well-documented, but the concepts apply to most distributions.
+## Choose a Distribution and Version
 
-## Installation Options
+For this guide, install **Ubuntu 24.04 LTS** (the examples use it) or **Ubuntu 26.04 LTS**, the newest long-term release. LTS releases get security updates for five years, or ten with Ubuntu Pro, which is free for personal use on a few machines. Debian 13 and Fedora 44 work too; the guide points out where commands differ.
 
-You have several ways to run Linux:
+- **Ubuntu Server** has no desktop and is what you run in the cloud. It is the better choice for learning server work.
+- **Ubuntu Desktop** includes the GNOME desktop, a browser and a graphical terminal. It suits a laptop or a VM you use every day.
 
-1. **Dual boot**: Install Linux alongside your current operating system
-2. **Full installation**: Replace your current OS with Linux
-3. **Virtual machine**: Run Linux inside your current OS
-4. **Linux in the cloud**: Use a Linux server in the cloud
-5. **Windows Subsystem for Linux (WSL)**: Run Linux directly in Windows
-6. **Live USB**: Run Linux without installing anything
+Download images only from the distribution's own site (ubuntu.com, debian.org, fedoraproject.org). On a Mac with Apple Silicon, or any ARM computer, download the **ARM64** (also called `aarch64`) image; the usual `amd64` images do not run there.
 
-Let's look at each approach in more detail.
+## Your Options
 
-## Option 1: Dual Boot
+| Option                    | Setup time       | Cost                                      | Risk to your computer                         | Best for                                               |
+| ------------------------- | ---------------- | ----------------------------------------- | --------------------------------------------- | ------------------------------------------------------ |
+| Virtual machine           | 15 to 30 minutes | Free                                      | None                                          | Learning, experiments, snapshots before risky changes  |
+| WSL on Windows            | 5 minutes        | Free                                      | None                                          | Developers on Windows who want a Linux shell and tools |
+| Cloud server              | 2 minutes        | A few dollars a month, often free credits | None                                          | Practising real server administration over SSH         |
+| Live USB                  | 15 minutes       | A USB stick                               | None (nothing is installed)                   | Testing hardware compatibility before installing       |
+| Dual boot or full install | 1 hour           | Free                                      | Possible data loss if partitioning goes wrong | Using Linux as your main system                        |
 
-Dual booting lets you choose between Linux and your existing OS (like Windows) when you start your computer.
+You can also run `docker run -it --rm ubuntu:24.04 bash` to get an Ubuntu shell in seconds, but a container has no systemd, no kernel of its own and a minimal set of packages. It is fine for trying commands, not for learning to run a system.
 
-### Pros:
+## Option 1: A Virtual Machine
 
-- Full performance for both operating systems
-- Access to all hardware capabilities
-- Can use either OS at any time (but not simultaneously)
+A virtual machine (VM) runs a complete Linux system inside your current one. Give it 2 CPUs, 4 GB of RAM for a desktop (2 GB is enough for a server) and a 25 GB disk.
 
-### Cons:
-
-- Requires rebooting to switch between systems
-- More complicated setup
-- Small risk of data loss during partitioning
-
-### Basic Dual Boot Setup:
-
-1. Back up all important data on your existing system
-2. Download the Ubuntu ISO file from the [official website](https://ubuntu.com/download/desktop)
-3. Create a bootable USB drive using [Rufus](https://rufus.ie/) (Windows) or [Etcher](https://www.balena.io/etcher/) (macOS/Linux)
-4. Free up disk space by shrinking your existing partition
-5. Boot from the USB drive and follow the installation prompts
-6. Choose "Install alongside [existing OS]" when prompted
-
-This creates a boot menu that appears when you start your computer, letting you choose which operating system to use.
-
-## Option 2: Virtual Machine
-
-Virtual machines (VMs) let you run Linux inside your existing operating system.
-
-### Pros:
-
-- No need to repartition your drive
-- Can run alongside your regular OS
-- Easy to create, delete, or reset
-- Great for testing and learning
-
-### Cons:
-
-- Performance overhead
-- Limited access to hardware
-- Uses more system resources
-
-### Setting Up a Virtual Machine:
-
-1. Download and install virtualization software:
-
-   - [VirtualBox](https://www.virtualbox.org/) (free, works on Windows, macOS, and Linux)
-   - [VMware Workstation Player](https://www.vmware.com/products/workstation-player.html) (free for non-commercial use)
-
-2. Download an Ubuntu ISO file
-
-3. Create a new virtual machine:
-
-```
-# VirtualBox example commands (if using command line)
-VBoxManage createvm --name "Ubuntu" --ostype Ubuntu_64 --register
-VBoxManage modifyvm "Ubuntu" --memory 2048 --cpus 2
-VBoxManage createhd --filename "Ubuntu.vdi" --size 20000
-VBoxManage storagectl "Ubuntu" --name "SATA Controller" --add sata
-VBoxManage storageattach "Ubuntu" --storagectl "SATA Controller" --port 0 --device 0 --type hdd --medium "Ubuntu.vdi"
-```
-
-Most users will prefer the graphical interface, but these commands show what's happening behind the scenes.
-
-4. Start the VM and select your ISO file when prompted
-5. Follow the on-screen installation instructions
-
-## Option 3: Linux in the Cloud
-
-Cloud providers let you create Linux servers in minutes without needing physical hardware.
-
-### Pros:
-
-- No local hardware requirements
-- Accessible from anywhere
-- Easy to scale resources up or down
-- Perfect for hosting services or learning server administration
-
-### Cons:
-
-- Ongoing costs (though often inexpensive)
-- Requires internet connection
-- Not ideal for desktop applications
-
-### Setting Up a Cloud Linux Server:
-
-DigitalOcean provides one of the simplest ways to get started with a Linux server:
-
-1. Sign up for a DigitalOcean account (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
-2. Create a new Droplet (DigitalOcean's term for a virtual server)
-3. Select Ubuntu as the operating system
-4. Choose the smallest plan for learning ($4-5/month, or free with credits)
-5. Select a datacenter region close to you
-6. Add your SSH key (recommended) or choose password authentication
-7. Click "Create Droplet"
-
-Within a minute, you'll have a fully functional Linux server. Connect to it using SSH:
+The fastest route on any operating system is **Multipass**, Canonical's tool that creates Ubuntu VMs from the command line. Install it from canonical.com/multipass (on Linux: `sudo snap install multipass`), then:
 
 ```bash
-ssh root@your_server_ip
+multipass launch 24.04 --name lab --cpus 2 --memory 2G --disk 20G
+multipass list               # show VMs and their IP addresses
+multipass shell lab          # open a shell inside the VM; type exit to come back
 ```
 
-This approach is ideal for learning server administration or hosting web applications.
+When you no longer need the VM, run these on your own machine, not inside the VM:
 
-## Option 4: Windows Subsystem for Linux (WSL)
+```bash
+multipass stop lab
+multipass delete --purge lab # remove it completely
+```
 
-If you're using Windows 10 or 11, WSL lets you run a Linux environment without dual booting or virtual machines.
+If you prefer a graphical installer or another distribution, use the virtualization software for your system:
 
-### Pros:
+```tabs
+{
+  "title": "Virtualization software",
+  "tabs": [
+    {
+      "label": "Windows",
+      "lang": "text",
+      "code": "Hyper-V (Windows Pro and Enterprise): enable it in \"Turn Windows features on or off\",\n  then use Hyper-V Quick Create, which can download Ubuntu for you.\nVirtualBox (free, open source): create a VM, attach the ISO, start it.\nVMware Workstation Pro: free for personal and commercial use since November 2024.\n\nAll of them need hardware virtualization (Intel VT-x or AMD-V/SVM)\nenabled in the computer's firmware settings."
+    },
+    {
+      "label": "macOS",
+      "lang": "text",
+      "code": "UTM (free, open source): uses Apple's virtualization framework.\nVMware Fusion Pro: free for personal and commercial use.\nParallels Desktop: paid, with an easy Ubuntu installer.\nVirtualBox 7.2: runs ARM64 Linux guests on Apple Silicon; still experimental.\n\nOn Apple Silicon, use ARM64 images. x86 images only run under slow emulation."
+    },
+    {
+      "label": "Linux",
+      "lang": "bash",
+      "code": "# KVM with virt-manager (Ubuntu/Debian; on Fedora: sudo dnf install @virtualization)\nsudo apt install virt-manager qemu-system libvirt-daemon-system\nsudo usermod -aG libvirt,kvm \"$USER\"     # log out and back in afterwards\nvirt-manager\n\n# Or GNOME Boxes for a simpler interface\nsudo apt install gnome-boxes"
+    }
+  ]
+}
+```
 
-- Easy installation through Windows
-- Good integration with Windows file system
-- Better performance than most virtual machines
-- No rebooting required
+During a graphical installation, accept the defaults unless you have a reason not to: erase the virtual disk (it is only a file on your computer), create a user, and on Ubuntu Server tick **Install OpenSSH server** so you can connect from your own terminal later.
 
-### Cons:
+Take a **snapshot** of the VM after the installation. When an experiment goes wrong, you roll back in seconds instead of reinstalling.
 
-- Some limitations with system-level operations
-- Not a complete Linux system
-- Windows-specific solution
+## Option 2: WSL on Windows
 
-### Setting Up WSL:
-
-1. Open PowerShell as Administrator and run:
+The **Windows Subsystem for Linux** (WSL 2) runs a real Linux kernel in a lightweight VM that Windows manages for you. It works on Windows 11 and on Windows 10 version 2004 and later. Open **PowerShell as Administrator**:
 
 ```powershell
-wsl --install
+wsl --install                     # installs WSL and Ubuntu; restart if asked
+wsl --list --online               # distributions you can install
+wsl --install -d Ubuntu-24.04     # a specific distribution
+wsl --list --verbose              # installed distributions and their WSL version
+wsl --update                      # update the WSL kernel and tools
+wsl --shutdown                    # stop all distributions
 ```
 
-2. Restart your computer
-3. WSL will finish installing Ubuntu by default
-4. Create a username and password when prompted
+After the restart, Ubuntu opens and asks you to create a Linux username and password. They are separate from your Windows account; the password is what `sudo` asks for.
 
-You can now launch Ubuntu from the Start menu or by typing `wsl` in a command prompt.
+Things to know about WSL:
 
-## Option 5: Live USB
+- **systemd** is enabled in current Ubuntu images, so `systemctl` works. If an older distribution does not have it, add `[boot]` and `systemd=true` to `/etc/wsl.conf` and run `wsl --shutdown`.
+- **Files**: your Windows drives appear under `/mnt/c`, `/mnt/d` and so on, and Windows can open the Linux files at `\\wsl$\Ubuntu-24.04\home\<you>`. Keep your projects in the Linux home directory: file access across the boundary is much slower.
+- **Networking** is mostly automatic. Services you start in WSL are reachable from Windows at `localhost`.
+- WSL is great for development tools. To practise server administration (boot, disks, firewalls), a VM or a cloud server is closer to the real thing.
 
-A live USB lets you try Linux without installing anything on your computer.
+## Option 3: A Cloud Server
 
-### Pros:
+A small cloud VM costs a few dollars a month, often less while you have trial credits, and behaves exactly like the servers you will manage at work. Every provider follows the same steps:
 
-- No changes to your existing system
-- Good way to test compatibility
-- Useful for computer repair and recovery
+1. Create an account. New DigitalOcean accounts that sign up through [this referral link](https://m.do.co/c/2a9bba940f39) and add a payment method get a $200 credit valid for 60 days. AWS, Google Cloud, Azure, Hetzner and others have their own free tiers or credits.
+2. Create a server (DigitalOcean calls it a **Droplet**, AWS an **EC2 instance**) with **Ubuntu 24.04 LTS** and the smallest size.
+3. Pick a region close to you.
+4. Add your **SSH public key** instead of a password. If you do not have one yet, run `ssh-keygen -t ed25519` on your computer and paste the contents of `~/.ssh/id_ed25519.pub` ([Part 6](/guides/introduction-to-linux/06-user-management) explains keys).
+5. Create the server and copy its public IP address.
 
-### Cons:
-
-- Slower performance
-- Changes don't persist after reboot (unless configured with persistence)
-- Limited functionality for some tasks
-
-### Creating a Live USB:
-
-1. Download the Ubuntu ISO file
-2. Use Rufus (Windows) or Etcher (macOS/Linux) to create a bootable USB drive
-3. Boot your computer from the USB drive
-4. Select "Try Ubuntu" instead of "Install Ubuntu"
-
-This gives you a fully functional Ubuntu desktop running directly from the USB drive.
-
-## First Login and Desktop Environment
-
-After installation, you'll be greeted by the login screen. Enter the username and password you created during setup.
-
-Ubuntu uses the GNOME desktop environment by default, which includes:
-
-- A dock on the left (or bottom) for frequently used applications
-- Activities overview for accessing all applications
-- System tray with notifications and quick settings
-- Applications menu
-
-Other distributions might use different desktop environments:
-
-- **KDE Plasma**: Feature-rich, highly customizable
-- **XFCE**: Lightweight, traditional desktop
-- **Cinnamon**: Traditional layout similar to Windows
-- **MATE**: Classic GNOME 2 experience
-
-Most desktop environments share common elements like a panel, application menu, and system tray, but may organize them differently.
-
-## Essential First Steps After Installation
-
-Once you've installed Linux, consider these important next steps:
-
-### 1. Update Your System
-
-Open a terminal and run:
+Connect from your terminal (macOS, Linux, or Windows PowerShell, which includes an SSH client):
 
 ```bash
-sudo apt update
-sudo apt upgrade
+ssh root@203.0.113.10        # DigitalOcean and many others log you in as root
+ssh ubuntu@203.0.113.10      # AWS and some others use a default user called ubuntu
 ```
 
-This updates your package lists and installs the latest versions of all packages.
+The first time, SSH asks you to confirm the server's **host key fingerprint**; type `yes`. Then follow the [new server checklist](/guides/introduction-to-linux/10-system-administration) in Part 10: create your own user, turn off root and password logins, enable the firewall.
 
-### 2. Install Essential Software
+:::warning
+A cloud server is reachable from the whole internet from its first minute, and bots start trying passwords within minutes. Use SSH keys, keep the system updated, and **delete servers you no longer use**: they keep costing money, and nobody patches a forgotten server.
+:::
 
-Ubuntu includes most basics, but you might want to add:
+## Option 4: Live USB, Dual Boot or a Full Install
+
+To run Linux directly on a computer, write the installation image to a USB stick:
+
+1. Download the ISO and its `SHA256SUMS` file, and check the download. For example (example output):
+
+   ```bash
+   sha256sum -c SHA256SUMS --ignore-missing
+   ```
+
+   ```text
+   ubuntu-24.04.5-desktop-amd64.iso: OK
+   ```
+
+2. Write the image to a USB stick of 8 GB or more with **balenaEtcher** (Windows, macOS, Linux), **Rufus** (Windows) or **Fedora Media Writer**. On Linux, `sudo dd if=ubuntu.iso of=/dev/sdX bs=4M status=progress oflag=sync` works too; check the device name with `lsblk` first, because `dd` overwrites whatever you point it at.
+3. Restart the computer and open its boot menu (usually **F12**, **F10**, **F2** or **Esc** at power-on) to boot from the USB stick.
+4. Choose **Try Ubuntu** to run a live session without installing anything, which is a good way to check that Wi-Fi, graphics and sound work.
+
+For a **dual boot** next to Windows, prepare first:
+
+- Back up your data.
+- If the Windows drive uses **BitLocker** or device encryption, write down the recovery key before you change anything.
+- Turn off **Fast Startup** in Windows' power settings, so Windows does not keep the disk locked.
+- Leave **Secure Boot on**: Ubuntu, Fedora and Debian boot with it. Only some third-party drivers, such as NVIDIA's, need an extra step: the installer asks you to set a password and confirm it at the next boot (MOK enrollment).
+
+Then start the installer, choose **Install Ubuntu alongside Windows** (or shrink the Windows partition by hand), and finish the installation. At every boot, the GRUB menu lets you pick the system.
+
+## Desktop Environments
+
+On a desktop installation, the **desktop environment** decides how windows, menus and settings look. Ubuntu and Fedora Workstation use **GNOME**; Kubuntu and Fedora KDE use **KDE Plasma**; Linux Mint uses **Cinnamon**; **Xfce** is a light option for older hardware; Pop!\_OS uses **COSMIC**. The command line works the same on all of them. Open a terminal with **Ctrl+Alt+T** on Ubuntu, or search for "Terminal".
+
+## First Steps After Installing
+
+Whichever option you chose, open a terminal and do these once:
 
 ```bash
-sudo apt install build-essential git curl wget unzip
+# 1. Install all updates (Part 5 explains apt and dnf)
+sudo apt update && sudo apt full-upgrade        # Fedora/RHEL: sudo dnf upgrade
+sudo reboot                                     # if a kernel update was installed
+
+# 2. Check what you are running
+cat /etc/os-release
+uname -r
+
+# 3. Install tools this guide uses
+sudo apt install curl git htop tree jq python3-venv     # Fedora: sudo dnf install curl git htop tree jq
+
+# 4. Set the time zone (servers usually stay on UTC)
+timedatectl
+sudo timedatectl set-timezone Europe/Berlin     # pick yours from: timedatectl list-timezones
 ```
 
-For development tools, consider:
+On Ubuntu, security updates install automatically (unattended-upgrades); Part 10 shows how to check and configure that. On a server, continue with SSH keys and the firewall before anything else.
 
-```bash
-sudo apt install python3-pip nodejs npm
-```
+## Troubleshooting
 
-### 3. Configure System Settings
+**The VM does not start or is very slow.** Hardware virtualization is probably off. Enable **Intel VT-x** or **AMD-V** (sometimes called **SVM Mode**) in the firmware settings. On Windows, VirtualBox and VMware can run next to Hyper-V, but older versions could not; update them.
 
-Open the Settings application to:
+**WSL reports error 0x80370102.** Virtualization is disabled in the firmware, or the **Virtual Machine Platform** feature is off. Enable both and restart.
 
-- Connect to Wi-Fi networks
-- Configure displays
-- Set up language and regional formats
-- Customize appearance
+**The USB stick does not show up in the boot menu.** Re-create it with another tool, try another USB port, and check whether the firmware is set to boot UEFI devices.
 
-### 4. Explore the File Manager
+**Wi-Fi or graphics do not work after installing.** Connect with a cable if you can, then open **Software & Updates**, **Additional Drivers**, or run `sudo ubuntu-drivers install`, which installs the recommended proprietary drivers (for NVIDIA graphics, for example). As a temporary workaround for a black screen, add `nomodeset` to the kernel line in the GRUB menu.
 
-Navigate through your files using the file manager (Nautilus in Ubuntu). Key locations to explore:
+**The clock is wrong after booting Windows.** Linux stores UTC in the hardware clock and Windows stores local time. Run `timedatectl set-local-rtc 1` on Linux, or better, set Windows to use UTC.
 
-- `/home/yourusername` - Your personal files
-- `/etc` - System configuration files
-- `/usr` - Installed applications
+## Common Mistakes
 
-## Troubleshooting Common Installation Issues
+- **Downloading an `amd64` image for an ARM computer**, or the other way round.
+- **Installing without a backup** when you resize or overwrite partitions.
+- **Leaving password logins on** for a cloud server.
+- **Forgetting a cloud server** that keeps running and costing money.
+- **Doing everything as root.** Create a normal user and use `sudo` (Part 6).
 
-### Boot Issues
+## Summary
 
-If your system doesn't boot properly:
+- Practise on a VM (Multipass is the fastest), WSL on Windows, or a small cloud server; none of them risks your current system.
+- Use an LTS release such as Ubuntu 24.04 or 26.04, and the ARM64 image on ARM hardware.
+- For a real installation: verify the ISO, back up, keep the BitLocker recovery key, and leave Secure Boot on.
+- After installing: update, reboot if needed, install basic tools, and secure servers before anything else.
 
-- Verify that Secure Boot is disabled in BIOS/UEFI
-- Check boot order in BIOS settings
-- Try nomodeset boot option for graphics issues
+Next: [The Linux Command Line Interface](/guides/introduction-to-linux/03-command-line-interface), where you start using the terminal.
 
-### Wi-Fi Problems
+## Keep Learning
 
-If Wi-Fi isn't working:
-
-- Some wireless cards need proprietary drivers
-- Connect to Ethernet if possible and run:
-  ```bash
-  sudo ubuntu-drivers autoinstall
-  ```
-- Check Additional Drivers in Software & Updates
-
-### Graphics Issues
-
-For display problems:
-
-- Check for additional drivers
-- For NVIDIA graphics:
-  ```bash
-  sudo apt install nvidia-driver-xxx
-  ```
-  (replace xxx with the recommended version)
-
-## Moving Forward
-
-Now that you have Linux up and running, we've covered the installation basics to get you started. In the next part, we'll explore the Linux command line interface, which is where you'll unlock the true power of Linux.
-
-Whether you're using a desktop installation, virtual machine, or cloud server, the command line skills you'll learn will be applicable across all Linux environments.
+- Exercise: [Creating and connecting to your first Linux server](/exercises/cloud-server-setup)
+- [Linux Terminal simulator](/games/linux-terminal), if you want to try commands before you install anything
+- [Introduction to Docker](/guides/introduction-to-docker), once you have a Linux system to run it on

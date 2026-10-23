@@ -1,884 +1,502 @@
 ---
-title: 'Process Management'
-description: 'Learn how to monitor, control, and optimize processes running on your Linux system.'
+title: 'Linux Process Management: ps, top, kill, systemd and cgroups'
+description: 'See what runs on Linux with ps and top, stop processes with signals, change priorities, read load and memory, and manage services with systemd.'
 order: 7
 ---
 
-Understanding how to manage processes is essential for effectively administering Linux systems. Whether you're troubleshooting high CPU usage, identifying memory leaks, or simply checking what's running on your system, process management skills are indispensable.
+Every program that runs on Linux is a **process**: your shell, the web server, the SSH daemon, the `ls` you just typed. When a server is slow, a port is taken, or memory runs out, the answer is in the process list. This part shows how to find processes, read what they are doing, stop them cleanly, change their priority, and manage long-running services with systemd.
 
-In this part, we'll explore how processes work in Linux and learn the commands to monitor, control, and optimize them.
+## Prerequisites
 
-## Understanding Linux Processes
+- The command line basics from [Part 3](/guides/introduction-to-linux/03-command-line-interface) and users from [Part 6](/guides/introduction-to-linux/06-user-management).
+- Python 3, which Ubuntu, Debian and Fedora install by default. It runs a tiny web server as the example process.
+- A fresh `~/lab` from [Part 3](/guides/introduction-to-linux/03-command-line-interface#h2-set-up-the-practice-directory).
 
-### What is a Process?
+The output comes from Ubuntu 24.04.5 LTS, run inside a small lab container. A container has its own process list, so it shows only a handful of processes with low process IDs (PIDs); a real server lists hundreds. The `systemctl` output comes from a Debian 12 machine and says so.
 
-A process is a running instance of a program. Each process has:
+## What a Process Is
 
-- A unique Process ID (PID)
-- A parent process (PPID)
-- Allocated memory and resources
-- Process state (running, sleeping, stopped, etc.)
-- Owner and permissions
+Each process has:
 
-### Process Lifecycle
+- a **PID** (process ID) and a **PPID**, the PID of the parent that started it;
+- an owner (the user whose permissions it has);
+- a state: running, sleeping, stopped, or zombie;
+- its own memory, open files, environment variables and current directory.
 
-1. **Creation**: When a program is executed, the kernel creates a new process
-2. **Running**: The process uses CPU time to execute instructions
-3. **Waiting**: The process may wait for resources or input
-4. **Termination**: The process completes or is terminated
+New processes are created by existing ones, so all processes form a tree. At the root is PID 1: on almost every distribution that is **systemd**, which starts services at boot and adopts orphaned processes. On a typical Ubuntu server, a branch of `pstree` looks like this (example output):
 
-### Process Hierarchy
+```text
+systemd─┬─cron
+        ├─sshd───sshd───sshd───bash───python3
+        ├─systemd-journal
+        ├─systemd-logind
+        └─systemd-resolve
+```
 
-Linux processes form a tree structure:
+Inside a container, PID 1 is usually the application itself or a small init program, not systemd.
 
-- The `init` process (or `systemd` on modern systems) is the first process with PID 1
-- All other processes are descendants of this initial process
-- Each process (except PID 1) has a parent process
+## See What Is Running
 
-View the process tree with:
+Start a process to look at: a small web server that serves `~/lab/site` in the background. `&` puts it in the background and gives you the prompt back; `$!` holds its PID.
+
+```terminal
+{
+  "title": "start a background process and find it",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "cd ~/lab"
+    },
+    {
+      "cmd": "python3 -m http.server 8080 --bind 127.0.0.1 --directory site > logs/server.log 2>&1 &"
+    },
+    {
+      "cmd": "SERVER_PID=$!; echo $SERVER_PID",
+      "output": "11"
+    },
+    {
+      "comment": "-o chooses the columns",
+      "cmd": "ps -o pid,ppid,user,etime,cmd -p $SERVER_PID",
+      "output": "    PID    PPID USER         ELAPSED CMD\n     11       2 dev            00:00 python3 -m http.server 8080 --bind 127.0.0.1 --directory site"
+    },
+    {
+      "comment": "pgrep finds PIDs by name; -a shows the full command line",
+      "cmd": "pgrep -a python3",
+      "output": "11 python3 -m http.server 8080 --bind 127.0.0.1 --directory site"
+    },
+    {
+      "comment": "the processes started from this shell, as a tree",
+      "cmd": "pstree -p $$",
+      "output": "bash(2)-+-pstree(19)\n        `-python3(11)"
+    }
+  ]
+}
+```
+
+The two classic ways to list everything:
+
+- **`ps aux`** (BSD style): every process with `USER`, `PID`, `%CPU`, `%MEM`, `VSZ` (virtual memory), `RSS` (memory actually in RAM, in KiB), `TTY`, `STAT`, `START`, `TIME` (CPU time used) and `COMMAND`.
+- **`ps -ef`** (System V style): `UID`, `PID`, `PPID`, `C`, `STIME`, `TTY`, `TIME` and `CMD`. Use it when you need the parent PID.
+
+Add `--sort=-%cpu` or `--sort=-%mem` to sort, and `--forest` (with `-ef`) to draw the tree. To find a process by name, prefer `pgrep -a name` over `ps aux | grep name`, which also finds the `grep` itself.
+
+The **STAT** column shows the state:
+
+| Code | State                 | Meaning                                                                                                                               |
+| ---- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `R`  | Running               | On a CPU, or ready to run                                                                                                             |
+| `S`  | Sleeping              | Waiting for something, such as network input; most processes are here                                                                 |
+| `D`  | Uninterruptible sleep | Waiting for I/O, usually disk or NFS. Many `D` processes point to a storage problem, and they cannot be killed until the I/O finishes |
+| `T`  | Stopped               | Paused, for example with Ctrl+Z                                                                                                       |
+| `Z`  | Zombie                | Finished, but the parent has not collected its exit code yet                                                                          |
+
+Extra letters: `s` session leader, `l` multi-threaded, `+` in the foreground, `<` high priority, `N` low priority.
+
+## Look Inside a Process: /proc
+
+Everything `ps` shows comes from `/proc/<PID>/`. You can read it directly:
+
+```terminal
+{
+  "title": "what /proc knows about the web server",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "grep -E '^(Name|State|PPid|Uid|VmRSS|Threads)' /proc/$SERVER_PID/status",
+      "output": "Name:\tpython3\nState:\tS (sleeping)\nPPid:\t2\nUid:\t1000\t1000\t1000\t1000\nVmRSS:\t   18860 kB\nThreads:\t1"
+    },
+    {
+      "comment": "the command line, with NUL bytes between the arguments",
+      "cmd": "tr '\\0' ' ' < /proc/$SERVER_PID/cmdline; echo",
+      "output": "python3 -m http.server 8080 --bind 127.0.0.1 --directory site"
+    },
+    {
+      "comment": "its current directory and open file descriptors",
+      "cmd": "ls -l /proc/$SERVER_PID/cwd",
+      "output": "lrwxrwxrwx 1 dev dev 0 Oct 23 21:28 /proc/11/cwd -> /home/dev/lab"
+    },
+    {
+      "cmd": "ls -l /proc/$SERVER_PID/fd",
+      "output": "total 0\nlr-x------ 1 dev dev 64 Oct 23 21:28 0 -> /dev/null\nl-wx------ 1 dev dev 64 Oct 23 21:28 1 -> /home/dev/lab/logs/server.log\nl-wx------ 1 dev dev 64 Oct 23 21:28 2 -> /home/dev/lab/logs/server.log\nlrwx------ 1 dev dev 64 Oct 23 21:28 3 -> socket:[5185631]"
+    }
+  ]
+}
+```
+
+File descriptors 0, 1 and 2 are standard input, output and error: input comes from `/dev/null` and both outputs go to `server.log`, as the redirection asked. Descriptor 3 is the listening network socket.
+
+## Which Process Uses a Port or a File
+
+`ss` lists sockets and `lsof` lists open files. Both answer "who is using this?":
+
+```terminal
+{
+  "title": "who listens on port 8080?",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ss -ltnp",
+      "output": "State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\nLISTEN 0      5          127.0.0.1:8080      0.0.0.0:*    users:((\"python3\",pid=11,fd=3))"
+    },
+    {
+      "cmd": "curl -sI http://127.0.0.1:8080/ | head -n 1",
+      "output": "HTTP/1.0 200 OK"
+    },
+    {
+      "cmd": "lsof -i :8080",
+      "output": "COMMAND PID USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME\npython3  11  dev    3u  IPv4 5185631      0t0  TCP localhost:http-alt (LISTEN)"
+    }
+  ]
+}
+```
+
+`ss -ltnp` means: **l**istening sockets, **t**CP, **n**umeric addresses and ports, with the **p**rocess. You see processes of other users only with `sudo`. The usual "Address already in use" error when a service starts means another process already holds the port, and these commands tell you which one. See [how to kill a process running on a port](/posts/kill-process-running-on-port-linux).
+
+## Signals: Stopping and Reloading Processes
+
+You control a running process by sending it a **signal**. The most important ones:
+
+| Signal                | Number  | Default effect              | Used for                                                                   |
+| --------------------- | ------- | --------------------------- | -------------------------------------------------------------------------- |
+| `SIGTERM`             | 15      | Terminate                   | Polite stop request. The process can clean up first. The default of `kill` |
+| `SIGINT`              | 2       | Terminate                   | What **Ctrl+C** sends                                                      |
+| `SIGHUP`              | 1       | Terminate                   | Many daemons (nginx, sshd) reload their configuration on it instead        |
+| `SIGKILL`             | 9       | Terminate, cannot be caught | Last resort: no cleanup, files may be left half-written                    |
+| `SIGSTOP` / `SIGCONT` | 19 / 18 | Pause / resume              | What job control uses (**Ctrl+Z** sends the similar `SIGTSTP`)             |
+
+```terminal
+{
+  "title": "send signals",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "kill -0 sends nothing; it only checks that the process exists and you may signal it",
+      "cmd": "kill -0 $SERVER_PID && echo \"still running\"",
+      "output": "still running"
+    },
+    {
+      "comment": "ask it to stop (SIGTERM)",
+      "cmd": "kill $SERVER_PID"
+    },
+    {
+      "cmd": "sleep 1; ps -p $SERVER_PID || echo \"gone\"",
+      "output": "    PID TTY          TIME CMD\ngone"
+    },
+    {
+      "comment": "by name: pkill and pgrep take the same patterns",
+      "cmd": "sleep 600 & sleep 700 &"
+    },
+    {
+      "cmd": "pgrep -a sleep",
+      "output": "31 sleep 600\n32 sleep 700"
+    },
+    {
+      "cmd": "pkill -x sleep; sleep 0.5; pgrep -a sleep || echo \"no sleep processes left\"",
+      "output": "no sleep processes left"
+    }
+  ]
+}
+```
+
+Always try `SIGTERM` first and give the process a few seconds. Use `kill -9` only when it does not react. A process in state `D` ignores even `SIGKILL` until its I/O returns, and a zombie is already dead: to get rid of zombies, fix or restart the **parent**, which must collect them.
+
+`pkill pattern` matches against process names; `pkill -f pattern` matches the whole command line, which is powerful and easy to get wrong. Check what will match with `pgrep -a` (or `pgrep -af`) first. `killall name` (from `psmisc`) kills by exact name.
+
+## Foreground, Background and Jobs
+
+In an interactive shell:
+
+- **Ctrl+C** stops the foreground command.
+- **Ctrl+Z** pauses it. `bg` lets it continue in the background, `fg` brings it back.
+- `command &` starts it in the background directly. `jobs -l` lists the background jobs of this shell with their PIDs, and `kill %1` signals job number 1.
+
+```terminal
+{
+  "title": "background jobs",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "sleep 300 &"
+    },
+    {
+      "cmd": "jobs -l",
+      "output": "[1]+    37 Running                 sleep 300 &"
+    },
+    {
+      "cmd": "kill %1"
+    },
+    {
+      "cmd": "sleep 0.2; jobs -l"
+    }
+  ]
+}
+```
+
+Background jobs belong to your shell session. When you close the terminal or the SSH connection drops, the shell sends them `SIGHUP` and they usually die. For work that must keep running:
+
+- **`tmux`** or **`screen`**: a terminal session that survives disconnects. Run long jobs (upgrades, data migrations) inside one, and reattach with `tmux attach`.
+- **`nohup command &`**: ignores `SIGHUP`; output goes to `nohup.out`.
+- **A systemd service** (below and in Part 10): the right home for anything that should run permanently, restart on failure and start at boot.
+
+## Priorities: nice and renice
+
+The **nice** value tells the scheduler how generously to treat a process: from -20 (highest priority) to 19 (lowest), with 0 as the default. Regular users can only make their processes nicer (lower priority); only root can raise the priority.
+
+```terminal
+{
+  "title": "run a job with a lower priority (example output)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "nice -n 10 sleep 300 &"
+    },
+    {
+      "cmd": "JOB=$!; ps -o pid,ni,cmd -p $JOB",
+      "output": "    PID  NI CMD\n   4127  10 sleep 300"
+    },
+    {
+      "cmd": "renice -n 15 -p $JOB",
+      "output": "4127 (process ID) old priority 10, new priority 15"
+    },
+    {
+      "comment": "going back up needs root",
+      "cmd": "renice -n 0 -p $JOB",
+      "output": "renice: failed to set priority for 4127 (process ID): Permission denied"
+    },
+    {
+      "cmd": "kill $JOB"
+    }
+  ]
+}
+```
+
+Use `nice -n 19` for backups, compression and other batch jobs on a busy server. For disk-heavy jobs, `ionice -c 3 command` gives the process disk time only when nobody else needs it.
+
+## CPU, Load and Memory
+
+### Load Average
+
+```terminal
+{
+  "title": "load and CPU count",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "uptime",
+      "output": " 20:26:22 up 16 days, 10:31,  2 users,  load average: 0.50, 1.10, 1.40"
+    },
+    {
+      "cmd": "nproc",
+      "output": "4"
+    }
+  ]
+}
+```
+
+The three **load averages** are the average number of processes that were running or waiting to run (including `D` processes waiting for disk) over the last 1, 5 and 15 minutes. As a rule of thumb, compare them with the number of CPUs from `nproc`: on this 4-CPU machine, a sustained load of 4 from CPU-bound work keeps every CPU busy, and 8 means processes are queuing. Because processes waiting for disk count too, check the CPU usage in `top` before you blame the CPUs. A rising 1-minute value with a low 15-minute value means the load just started.
+
+### Find and Calm a CPU Hog
+
+`yes` prints `y` forever, which makes it a perfect runaway process:
+
+```terminal
+{
+  "title": "find the process that eats the CPU",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "yes > /dev/null &"
+    },
+    {
+      "cmd": "HOG=$!; sleep 3"
+    },
+    {
+      "comment": "sort by CPU usage, highest first",
+      "cmd": "ps -o pid,%cpu,etime,cmd --sort=-%cpu -p $HOG",
+      "output": "    PID %CPU     ELAPSED CMD\n     39 99.0       00:03 yes"
+    },
+    {
+      "comment": "give it the lowest priority while you investigate, then stop it",
+      "cmd": "renice -n 19 -p $HOG > /dev/null; kill $HOG"
+    }
+  ]
+}
+```
+
+`top` shows the same thing live. On a server, `top -b -n 1 -o %CPU | head -n 8` prints the summary and the busiest process (example output):
+
+```text
+top - 09:14:02 up 16 days,  3:05,  1 user,  load average: 1.12, 0.61, 0.38
+Tasks: 187 total,   2 running, 185 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 25.4 us,  0.8 sy,  0.0 ni, 73.6 id,  0.0 wa,  0.0 hi,  0.2 si,  0.0 st
+MiB Mem :   3796.8 total,   1767.6 free,   1026.5 used,   1080.1 buff/cache
+MiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   2770.3 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   4131 dev       20   0    2700   1500   1396 R 100.0   0.0   0:03.18 yes
+```
+
+In the header, the load averages repeat `uptime`, and on the `%Cpu(s)` line `us` is time spent in user programs, `sy` in the kernel, `wa` waiting for disk, and `st` (steal) time a virtual machine waited for the hypervisor. A high `wa` points to storage, not CPU. Inside interactive `top`, press `P` to sort by CPU, `M` by memory, `1` to show each CPU, `k` to kill a process and `q` to quit. `htop` and `btop` are friendlier alternatives in the package repositories.
+
+### Memory
+
+```terminal
+{
+  "title": "memory at a glance",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "free -h",
+      "output": "               total        used        free      shared  buff/cache   available\nMem:           3.7Gi       1.1Gi       1.3Gi       9.0Mi       1.4Gi       2.6Gi\nSwap:          2.0Gi       1.5Gi       496Mi"
+    }
+  ]
+}
+```
+
+Do not read the `free` column as "memory left". Linux uses idle RAM as a disk cache (`buff/cache`) and gives it back as soon as programs need it. The number that matters is **available**: how much memory programs can get without the system starting to swap. Per process, look at `RSS` in `ps` or `RES` in `top`.
+
+When memory runs out completely, the kernel's **OOM killer** ends the process it judges most expendable, often the biggest one. You find the evidence in the kernel log:
 
 ```bash
-pstree
+journalctl -k | grep -i -E 'out of memory|oom-kill'
 ```
 
-Or in a more detailed format:
+On kernels with **pressure stall information** (PSI), `/proc/pressure/cpu`, `/proc/pressure/memory` and `/proc/pressure/io` show how much of the time processes were stalled waiting for each resource, which is a clearer warning sign than raw usage. For example, `some avg10=12.50` in `/proc/pressure/memory` means at least one process waited for memory 12.5% of the last 10 seconds. Part 10 covers `vmstat` and the `sysstat` tools (`iostat`, `pidstat`, `sar`) for longer investigations.
+
+## Services With systemd
+
+Long-running programs (web servers, databases, agents) run as **services** managed by systemd. systemd starts them at boot in the right order, restarts them when they crash, collects their output in the journal and limits their resources. You control them with `systemctl`. Output from a Debian 12 machine:
+
+```terminal
+{
+  "title": "systemctl on a Debian 12 machine",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "systemctl status cron --no-pager --lines=0",
+      "output": "● cron.service - Regular background program processing daemon\n     Loaded: loaded (/lib/systemd/system/cron.service; enabled; preset: enabled)\n     Active: active (running) since Wed 2026-10-07 09:53:43 UTC; 2 weeks 2 days ago\n       Docs: man:cron(8)\n   Main PID: 600 (cron)\n      Tasks: 1 (limit: 3914)\n        CPU: 32min 52.931s\n     CGroup: /system.slice/cron.service\n             └─600 /usr/sbin/cron -f"
+    },
+    {
+      "cmd": "systemctl is-active cron; systemctl is-enabled cron",
+      "output": "active\nenabled"
+    },
+    {
+      "cmd": "systemctl list-units --type=service --state=failed --no-pager",
+      "output": "  UNIT LOAD ACTIVE SUB DESCRIPTION\n0 loaded units listed."
+    }
+  ]
+}
+```
+
+Read the status from the top: `Loaded` shows the unit file and whether the service starts at boot (`enabled`); `Active` shows whether it runs now and since when; `Main PID` and `CGroup` list its processes. On Ubuntu 24.04 and Debian 13, unit files that come with packages live in `/usr/lib/systemd/system/`; Debian 12 still uses `/lib/systemd/system/`, as above. Your own units go in `/etc/systemd/system/`.
+
+The commands you will use most:
 
 ```bash
-ps f -e
+sudo systemctl start nginx         # start now
+sudo systemctl stop nginx          # stop now
+sudo systemctl restart nginx       # stop, then start
+sudo systemctl reload nginx        # re-read the configuration without stopping (if supported)
+sudo systemctl enable --now nginx  # start at boot, and start now
+sudo systemctl disable nginx       # do not start at boot
+systemctl status nginx             # state, recent log lines, processes
+journalctl -u nginx -f             # follow the service's log
+systemctl list-units --type=service --state=running
 ```
 
-## Basic Process Monitoring
+Part 10 writes a complete unit file for the lab web server and schedules jobs with timers.
 
-### The ps Command
+## cgroups: Resource Limits for Groups of Processes
 
-`ps` is the most basic command for viewing processes:
+systemd puts every service in its own **control group** (cgroup), and the kernel accounts CPU, memory, I/O and process counts per cgroup. All current distributions use the unified **cgroup v2** hierarchy; systemd 258 and later no longer support the old v1 layout at all. Check yours:
 
-```bash
-ps
+```terminal
+{
+  "title": "cgroup v2 is mounted",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "stat -fc %T /sys/fs/cgroup",
+      "output": "cgroup2fs"
+    }
+  ]
+}
 ```
 
-This shows only processes in the current terminal. For more useful information, add options:
+You set limits in the unit file, and systemd writes them to the cgroup:
 
-```bash
-ps aux
-```
-
-The options mean:
-
-- `a`: Show processes from all users
-- `u`: Show detailed user-oriented format
-- `x`: Include processes without a controlling terminal
-
-Common columns in the output:
-
-- `USER`: Owner of the process
-- `PID`: Process ID
-- `%CPU`: CPU usage
-- `%MEM`: Memory usage
-- `VSZ`: Virtual memory size
-- `RSS`: Resident set size (physical memory)
-- `TTY`: Terminal associated with the process
-- `STAT`: Process state
-- `START`: Start time
-- `TIME`: CPU time used
-- `COMMAND`: Command with arguments
-
-Common process states:
-
-- `R`: Running
-- `S`: Sleeping (interruptible)
-- `D`: Uninterruptible sleep
-- `Z`: Zombie
-- `T`: Stopped
-
-List processes by a specific user:
-
-```bash
-ps -u username
-```
-
-Get detailed information about a specific process:
-
-```bash
-ps -fp PID
-```
-
-### The top Command
-
-`top` provides a dynamic real-time view of processes:
-
-```bash
-top
-```
-
-Key information displayed:
-
-- System summary (uptime, load averages, CPU usage, memory usage)
-- Process list sorted by CPU usage by default
-
-Useful `top` keyboard commands:
-
-- `q`: Quit
-- `h`: Show help
-- `k`: Kill a process (enter PID when prompted)
-- `r`: Renice a process (change priority)
-- `f`: Select fields to display
-- `o` or `O`: Change sort order
-- `u`: Filter by user
-- `M`: Sort by memory usage
-- `P`: Sort by CPU usage
-- `1`: Toggle individual CPU core stats
-
-### The htop Command
-
-`htop` is an improved version of `top` with a more user-friendly interface:
-
-```bash
-# Install if not available
-sudo apt install htop    # Debian/Ubuntu
-sudo dnf install htop    # Fedora/RHEL/CentOS
-
-# Run htop
-htop
-```
-
-Advantages of `htop`:
-
-- Color-coded output
-- Visual representation of CPU and memory usage
-- Mouse support
-- Horizontal and vertical scrolling
-- More intuitive user interface
-- Built-in ability to search, filter, and sort
-
-Key `htop` keyboard commands:
-
-- `F1-F10`: Functions shown at the bottom
-- `F5`: Tree view
-- `F6`: Sort by different columns
-- `F9`: Kill process
-- `/`: Search
-
-### Process States and Information
-
-Get a snapshot of current processes:
-
-```bash
-ps -eo pid,ppid,cmd,%cpu,%mem --sort=-%cpu | head
-```
-
-This shows the 10 most CPU-intensive processes.
-
-For a process's complete environment:
-
-```bash
-cat /proc/PID/environ | tr '\0' '\n'
-```
-
-View open files for a process:
-
-```bash
-lsof -p PID
-```
-
-Check what's using a specific file:
-
-```bash
-lsof /path/to/file
-```
-
-View process limits:
-
-```bash
-cat /proc/PID/limits
-```
-
-## Process Control
-
-### Sending Signals
-
-Processes communicate using signals. Common signals include:
-
-- `SIGTERM` (15): Graceful termination request
-- `SIGKILL` (9): Forceful termination
-- `SIGHUP` (1): Hang up, often used to reload configuration
-- `SIGINT` (2): Interrupt (what Ctrl+C sends)
-- `SIGSTOP` (19): Pause the process
-- `SIGCONT` (18): Resume a paused process
-
-Send signals with the `kill` command:
-
-```bash
-kill PID               # Send SIGTERM
-kill -9 PID            # Send SIGKILL
-kill -HUP PID          # Send SIGHUP
-```
-
-Send signals to processes by name with `pkill`:
-
-```bash
-pkill process_name     # Send SIGTERM
-pkill -9 process_name  # Send SIGKILL
-```
-
-Send signals to all processes of a user:
-
-```bash
-pkill -u username
-```
-
-### Foreground and Background Processes
-
-When running commands in a terminal:
-
-- Foreground processes occupy the terminal until completion
-- Background processes run without occupying the terminal
-
-Run a command in the background by appending `&`:
-
-```bash
-command &
-```
-
-Send a running foreground process to the background:
-
-1. Press `Ctrl+Z` to suspend the process
-2. Run `bg` to continue it in the background
-
-Bring a background process to the foreground:
-
-```bash
-fg %job_number
-```
-
-or simply:
-
-```bash
-fg
-```
-
-List background jobs:
-
-```bash
-jobs
-```
-
-### Process Priority with nice and renice
-
-Linux uses a niceness value from -20 (highest priority) to 19 (lowest priority) to determine process scheduling priority.
-
-Start a process with a specific niceness:
-
-```bash
-nice -n 10 command     # Start with lower priority
-```
-
-Change the niceness of a running process:
-
-```bash
-renice 10 -p PID       # Lower priority
-```
-
-Only root can set negative niceness values:
-
-```bash
-sudo nice -n -10 command     # Start with higher priority
-sudo renice -10 -p PID       # Increase priority
-```
-
-### Resource Limits with ulimit
-
-Limit the resources a process can use with `ulimit`:
-
-```bash
-# Show all limits
-ulimit -a
-
-# Set maximum file size (in KB)
-ulimit -f 1000
-
-# Set maximum number of open files
-ulimit -n 2048
-```
-
-Set permanent limits in `/etc/security/limits.conf`.
-
-## CPU Monitoring and Management
-
-### View CPU Information
-
-Get detailed CPU information:
-
-```bash
-lscpu
-```
-
-Or more detailed hardware info:
-
-```bash
-sudo dmidecode -t processor
-```
-
-Check CPU load averages:
-
-```bash
-uptime
-```
-
-The three numbers show the 1-minute, 5-minute, and 15-minute load averages. A load average close to the number of CPU cores indicates full utilization.
-
-### CPU Performance Analysis
-
-For detailed CPU usage analysis, use `mpstat`:
-
-```bash
-# Install if not available
-sudo apt install sysstat    # Debian/Ubuntu
-sudo dnf install sysstat    # Fedora/RHEL/CentOS
-
-# Show CPU statistics
-mpstat
-
-# Show per-CPU statistics every 2 seconds
-mpstat -P ALL 2
-```
-
-For process-specific CPU usage over time:
-
-```bash
-pidstat 2
-```
-
-### CPU Governor Control
-
-Modern CPUs support frequency scaling. Control the CPU governor:
-
-```bash
-# Show current CPU frequency
-cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq
-
-# Show available governors
-cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_available_governors
-
-# Set performance governor (requires root)
-echo performance | sudo tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor
-```
-
-## Memory Monitoring and Management
-
-### View Memory Information
-
-Get basic memory usage:
-
-```bash
-free -h
-```
-
-This shows:
-
-- Total memory
-- Used memory
-- Free memory
-- Shared memory
-- Buffer/cache
-- Available memory (free + reclaimable buffer/cache)
-
-For more detailed memory information:
-
-```bash
-cat /proc/meminfo
-```
-
-### Memory Usage by Process
-
-Find processes using the most memory:
-
-```bash
-ps -eo pid,ppid,cmd,%mem --sort=-%mem | head
-```
-
-For a specific process:
-
-```bash
-pmap PID
-```
-
-### Managing Swap
-
-View swap information:
-
-```bash
-swapon --show
-```
-
-Create and enable a swap file:
-
-```bash
-# Create a 2GB swap file
-sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-
-# Make it permanent by adding to /etc/fstab
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-```
-
-Adjust swap usage behavior:
-
-```bash
-# Show current swappiness (0-100, lower means less swap usage)
-cat /proc/sys/vm/swappiness
-
-# Set temporarily
-sudo sysctl vm.swappiness=10
-
-# Set permanently
-echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
-```
-
-## Disk I/O Monitoring
-
-### Basic I/O Statistics
-
-The `iostat` command provides disk I/O statistics:
-
-```bash
-# Install if not available (part of sysstat)
-sudo apt install sysstat    # Debian/Ubuntu
-sudo dnf install sysstat    # Fedora/RHEL/CentOS
-
-# Show I/O statistics
-iostat
-
-# Show extended stats every 2 seconds
-iostat -x 2
-```
-
-Key columns:
-
-- `r/s`, `w/s`: Reads and writes per second
-- `rkB/s`, `wkB/s`: Read and write kilobytes per second
-- `await`: Average time for I/O requests (milliseconds)
-- `%util`: Percentage of CPU time during which I/O requests were issued
-
-### I/O by Process
-
-Find which processes are doing I/O:
-
-```bash
-# Install if not available
-sudo apt install iotop    # Debian/Ubuntu
-sudo dnf install iotop    # Fedora/RHEL/CentOS
-
-# Run iotop
-sudo iotop
-```
-
-For a one-time display:
-
-```bash
-sudo iotop -b -n 1
-```
-
-Check I/O statistics for a specific process:
-
-```bash
-pidstat -d -p PID 1
-```
-
-### I/O Scheduling
-
-Check the current I/O scheduler:
-
-```bash
-cat /sys/block/sda/queue/scheduler
-```
-
-Change the scheduler temporarily:
-
-```bash
-echo deadline | sudo tee /sys/block/sda/queue/scheduler
-```
-
-Options typically include:
-
-- `cfq`: Completely Fair Queuing
-- `deadline`: Deadline scheduler
-- `noop`: No Operation scheduler
-- `mq-deadline`: Multi-queue deadline scheduler
-
-## Network Process Monitoring
-
-### Viewing Network Connections
-
-See which processes have network connections:
-
-```bash
-# Show all listening ports and their associated programs
-sudo netstat -tulpn
-
-# More modern alternative
-sudo ss -tulpn
-```
-
-Key options:
-
-- `t`: TCP connections
-- `u`: UDP connections
-- `l`: Listening sockets
-- `p`: Show process using the socket
-- `n`: Don't resolve hostnames or port names
-
-### Monitoring Network Traffic by Process
-
-Monitor network traffic by process:
-
-```bash
-# Install if not available
-sudo apt install nethogs    # Debian/Ubuntu
-sudo dnf install nethogs    # Fedora/RHEL/CentOS
-
-# Monitor network traffic by process
-sudo nethogs
-```
-
-For more comprehensive network monitoring:
-
-```bash
-# Install if not available
-sudo apt install iftop    # Debian/Ubuntu
-sudo dnf install iftop    # Fedora/RHEL/CentOS
-
-# Monitor traffic on a specific interface
-sudo iftop -i eth0
-```
-
-## Process Automation and Scheduling
-
-### Running Processes at Scheduled Times with cron
-
-The cron system runs commands at scheduled times.
-
-Edit a user's crontab:
-
-```bash
-crontab -e
-```
-
-Crontab format:
-
-```
-# minute hour day_of_month month day_of_week command
-0 2 * * * /path/to/backup.sh
-```
-
-This runs `backup.sh` at 2:00 AM every day.
-
-Common crontab shortcuts:
-
-- `@hourly`: Run once an hour
-- `@daily`: Run once a day
-- `@weekly`: Run once a week
-- `@monthly`: Run once a month
-- `@reboot`: Run at startup
-
-View cron logs:
-
-```bash
-grep CRON /var/log/syslog
-```
-
-### Running Tasks Once with at
-
-The `at` command schedules a one-time task:
-
-```bash
-# Install if not available
-sudo apt install at    # Debian/Ubuntu
-sudo dnf install at    # Fedora/RHEL/CentOS
-
-# Schedule a task for 2 hours from now
-at now + 2 hours
-> /path/to/command
-> Ctrl+D
-
-# List scheduled tasks
-atq
-
-# Remove a task
-atrm job_number
-```
-
-### Running Processes on a Schedule with systemd timers
-
-Modern Linux systems use systemd timers as an alternative to cron:
-
-```bash
-# List active timers
-systemctl list-timers
-
-# Create a timer (example)
-sudo nano /etc/systemd/system/backup.service
-```
-
-Content for the service file:
-
-```
-[Unit]
-Description=Backup Service
-
+```ini
 [Service]
-Type=oneshot
-ExecStart=/path/to/backup.sh
-
-[Install]
-WantedBy=multi-user.target
+# hard memory limit; the OOM killer acts inside the service only
+MemoryMax=512M
+# at most half of one CPU
+CPUQuota=50%
+# at most 100 processes and threads, which stops fork bombs
+TasksMax=100
+# a smaller share of disk time than other services (default 100)
+IOWeight=50
 ```
 
-Create the timer file:
+systemd only treats a line as a comment when `#` or `;` is its first character, so keep comments on their own lines: `MemoryMax=512M # limit` is an invalid value.
 
-```bash
-sudo nano /etc/systemd/system/backup.timer
+`systemd-cgtop` shows live usage per cgroup, and `systemd-cgls` the tree. Old tutorials use `MemoryLimit=` and write to paths such as `/sys/fs/cgroup/memory/`. Those come from cgroup v1: the paths do not exist on a cgroup v2 system, and `MemoryLimit=` is a deprecated name that newer systemd versions only translate for compatibility, so write `MemoryMax=`. To try a limit on a single command: `systemd-run --user --scope -p MemoryMax=200M -- ./big-job.sh`.
+
+## Namespaces: How Containers Isolate Processes
+
+cgroups limit what a group of processes may **use**. **Namespaces** limit what it can **see**: its own process list, network stack, mount table and hostname. Docker, Podman and Kubernetes combine both. You can try a PID namespace with `unshare`:
+
+```terminal
+{
+  "title": "a process list of its own",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "unshare --user --map-root-user --pid --fork --mount-proc ps -ef",
+      "output": "UID          PID    PPID  C STIME TTY          TIME CMD\nroot           1       0  0 21:28 ?        00:00:00 ps -ef"
+    }
+  ]
+}
 ```
 
-Content for the timer file:
+Inside the new namespace, `ps` is PID 1 and sees nothing else. On Ubuntu 23.10 and later, AppArmor blocks unprivileged user namespaces for most programs, so this command fails with `write failed /proc/self/uid_map: Operation not permitted`; run `sudo unshare --pid --fork --mount-proc ps -ef` there instead. The [Docker under the hood simulator](/games/docker-under-the-hood-simulator) walks through how a container runtime uses these features.
 
-```
-[Unit]
-Description=Run backup daily
+## Scheduled Jobs
 
-[Timer]
-OnCalendar=*-*-* 02:00:00
-Persistent=true
+Processes that should run at set times (backups, reports, cleanup) are started by **cron** or by **systemd timers**. [Part 10](/guides/introduction-to-linux/10-system-administration) covers both, with a timer for the backup script from Part 9.
 
-[Install]
-WantedBy=timers.target
-```
+## Common Mistakes
 
-Activate the timer:
+- **Reaching for `kill -9` first.** Send `SIGTERM`, wait, and only then `SIGKILL`.
+- **Killing zombies.** They are already dead; restart or fix the parent process.
+- **Reading `free` instead of `available`** and concluding the server is out of memory.
+- **Comparing load average with 1** on a multi-core machine. Compare it with `nproc`.
+- **Running long jobs in a plain SSH session.** Use `tmux`, or make it a service.
+- **`pkill -f` with a short pattern** that also matches other users' processes or your own shell. Check with `pgrep -af` first.
+- **Following cgroup v1 tutorials** (`MemoryLimit=`, `/sys/fs/cgroup/memory/...`); use `MemoryMax=` and the cgroup v2 files.
 
-```bash
-sudo systemctl enable --now backup.timer
-```
+## Summary
 
-## Advanced Process Management
+- Processes have a PID, a parent, an owner and a state; PID 1 is systemd on most systems.
+- `ps`, `pgrep -a`, `pstree`, `top` and `/proc/<PID>/` show what runs; `ss -ltnp` and `lsof` show who holds a port or a file.
+- `kill` sends `SIGTERM` by default; `SIGKILL` is the last resort; `pkill` and `killall` work by name.
+- `nice` and `renice` change CPU priority; only root can raise it.
+- Load average is compared with the CPU count; for memory, read `available`.
+- systemd manages services with `systemctl`, and cgroup v2 limits their resources.
 
-### Process Control Groups (cgroups)
+Next: [Networking in Linux](/guides/introduction-to-linux/08-networking), where you configure interfaces, follow routes and troubleshoot connections.
 
-Control groups allow limiting, accounting, and isolating resource usage of process groups:
+## Keep Learning
 
-```bash
-# Create a new cgroup (on systems with cgroupfs mounted)
-sudo mkdir /sys/fs/cgroup/memory/mygroup
-
-# Set memory limit (200MB)
-echo 209715200 | sudo tee /sys/fs/cgroup/memory/mygroup/memory.limit_in_bytes
-
-# Add a process to the cgroup
-echo PID | sudo tee /sys/fs/cgroup/memory/mygroup/cgroup.procs
-```
-
-On systems using systemd, use systemd-run:
-
-```bash
-# Run a command with memory limit
-sudo systemd-run --unit=myservice --property=MemoryLimit=200M /path/to/command
-```
-
-### Process Namespaces
-
-Namespaces isolate processes from each other. This is the technology behind containers.
-
-Run a process in a new namespace:
-
-```bash
-unshare --fork --pid --mount-proc /bin/bash
-```
-
-This gives the process its own PID namespace with its own process ID 1.
-
-### Running Processes with Specific Resources
-
-Use the `taskset` command to bind a process to specific CPU cores:
-
-```bash
-# Run on CPU 0
-taskset -c 0 command
-
-# Move running process to CPU 1
-taskset -pc 1 PID
-```
-
-Use `cpulimit` to restrict CPU usage:
-
-```bash
-# Install if not available
-sudo apt install cpulimit    # Debian/Ubuntu
-sudo dnf install cpulimit    # Fedora/RHEL/CentOS
-
-# Limit a process to 50% of one CPU core
-cpulimit -p PID -l 50
-```
-
-## Practical Process Management Examples
-
-### Finding and Fixing a CPU-Intensive Process
-
-Suppose your system is slow and you need to identify the cause:
-
-```bash
-# Check load average
-uptime
-
-# Identify CPU-intensive processes
-top -b -n 1 | head -n 20
-
-# Examine a specific process
-ps -fp PID
-
-# Check if it's in an infinite loop or stuck
-strace -p PID
-
-# If needed, reduce its priority
-sudo renice 19 -p PID
-
-# Or terminate if necessary
-sudo kill -15 PID
-```
-
-### Finding a Memory Leak
-
-For a system with decreasing free memory:
-
-```bash
-# Check memory usage
-free -h
-
-# Find memory-intensive processes
-ps -eo pid,ppid,cmd,%mem --sort=-%mem | head
-
-# Examine detailed memory usage
-sudo pmap -x PID | sort -k 3 -n | tail
-
-# Check for memory growth over time
-watch -n 10 'ps -o pid,vsz,rss,cmd -p PID'
-```
-
-### Troubleshooting High I/O Wait
-
-If your system is slow due to high I/O:
-
-```bash
-# Check load average and I/O wait
-top
-# Look for high wa% in CPU stats
-
-# Identify I/O-intensive processes
-sudo iotop -o
-
-# Check disk performance
-iostat -x 1
-
-# Find which files the process is accessing
-sudo lsof -p PID | grep REG
-```
-
-### Setting Up a Resource-Limited Service
-
-Create a service with resource limits:
-
-```bash
-sudo nano /etc/systemd/system/myapp.service
-```
-
-Service file content:
-
-```
-[Unit]
-Description=My Application
-After=network.target
-
-[Service]
-Type=simple
-User=myappuser
-WorkingDirectory=/opt/myapp
-ExecStart=/opt/myapp/myapp
-Restart=on-failure
-# Resource limits
-CPUQuota=25%
-MemoryLimit=500M
-IOWeight=500
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start the service:
-
-```bash
-sudo systemctl enable --now myapp
-```
-
-## Process Management in the Cloud
-
-When running Linux in cloud environments, efficient process management is crucial for controlling costs and ensuring performance.
-
-### Cloud Process Management Example
-
-For example, on a DigitalOcean Droplet (use [this link](https://m.do.co/c/2a9bba940f39) for $200 in credits):
-
-1. Choose a Droplet size appropriate for your workload
-2. Monitor resource usage to avoid over-provisioning
-
-```bash
-# Install monitoring tools
-sudo apt update
-sudo apt install htop iotop sysstat
-
-# Set up daily resource usage summary
-sudo nano /etc/cron.daily/resource-report
-```
-
-Script content:
-
-```bash
-#!/bin/bash
-DATE=$(date +%Y-%m-%d)
-REPORT="/root/resource-reports/report-$DATE.txt"
-mkdir -p /root/resource-reports/
-
-echo "System Resource Report for $DATE" > $REPORT
-echo "=================================" >> $REPORT
-
-echo -e "\nUptime and Load Averages:" >> $REPORT
-uptime >> $REPORT
-
-echo -e "\nMemory Usage:" >> $REPORT
-free -h >> $REPORT
-
-echo -e "\nDisk Usage:" >> $REPORT
-df -h >> $REPORT
-
-echo -e "\nTop CPU Processes:" >> $REPORT
-ps -eo pid,ppid,cmd,%cpu --sort=-%cpu | head -n 10 >> $REPORT
-
-echo -e "\nTop Memory Processes:" >> $REPORT
-ps -eo pid,ppid,cmd,%mem --sort=-%mem | head -n 10 >> $REPORT
-```
-
-Make the script executable:
-
-```bash
-sudo chmod +x /etc/cron.daily/resource-report
-```
-
-This script creates daily resource reports to help identify trends and optimize your cloud resource usage.
-
-## Moving Forward
-
-You now have a comprehensive understanding of Linux process management. These skills are essential for monitoring system health, troubleshooting performance issues, and optimizing resource usage.
-
-In the next part, we'll explore networking in Linux, covering network configuration, troubleshooting, security, and more.
-
-Process management is a core skill for any Linux user or administrator. Whether you're running a personal workstation, a server, or a container in the cloud, understanding how to monitor and control processes will help you maintain a healthy, efficient system.
+- [Kill processes by partial name](/posts/kill-processes-by-partial-name)
+- [Measure the actual memory usage of a process](/posts/measure-actual-memory-usage-of-process)
+- Exercise: [Linux performance tuning and troubleshooting](/exercises/linux-performance-troubleshooting)
+- Interview questions: [Linux process debugging](/interview-questions/senior/linux-process-debugging)
+- See what happens when processes multiply: [fork bomb simulator](/games/fork-bomb-simulator)

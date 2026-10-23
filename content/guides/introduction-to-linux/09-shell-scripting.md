@@ -1,1283 +1,826 @@
 ---
-title: 'Shell Scripting Basics'
-description: 'Learn how to automate tasks and create powerful tools using Bash shell scripts.'
+title: 'Bash Shell Scripting Basics for Beginners'
+description: 'Bash shell scripting basics with tested examples: variables, quoting, if and case, loops, functions, arguments, exit codes, error handling and ShellCheck.'
 order: 9
 ---
 
-Shell scripting is one of the most powerful skills you can develop as a Linux user. By automating repetitive tasks and combining commands into reusable scripts, you can save time, reduce errors, and create sophisticated tools using nothing but the shell.
+A shell script is a text file full of the commands you would otherwise type by hand. Scripts turn a ten-step procedure into one command, run the same way every time, and work at 3 a.m. from a timer without you. They glue the rest of a Linux system together: deployment steps, backups, health checks, container entrypoints, CI jobs.
 
-In this part, we'll explore the fundamentals of shell scripting, focusing on Bash (Bourne Again SHell), the most common shell in Linux distributions.
+This part teaches Bash scripting from the first line to a complete backup script that [Part 10](/guides/introduction-to-linux/10-system-administration) runs on a schedule. Every script here was run as shown, and the finished backup script passes ShellCheck without warnings.
 
-## Introduction to Shell Scripts
+## Prerequisites
 
-### What is a Shell Script?
+- The command line from [Part 3](/guides/introduction-to-linux/03-command-line-interface) and permissions from [Part 4](/guides/introduction-to-linux/04-file-system-hierarchy).
+- A text editor (`nano` is fine) and Bash 4 or newer. Ubuntu 24.04 has Bash 5.2, Debian 13 has 5.2, Fedora 44 has 5.3; macOS still ships Bash 3.2, so install a newer one with Homebrew there.
+- A fresh `~/lab` from [Part 3](/guides/introduction-to-linux/03-command-line-interface#h2-set-up-the-practice-directory), which some scripts read.
 
-A shell script is a text file containing a series of commands that the shell can execute. It allows you to:
+The output comes from Ubuntu 24.04.5 LTS (Bash 5.2.21). Create a directory for the scripts with `mkdir -p ~/scripts`, and save each one there under the name in its first comment line, for example with `nano ~/scripts/hello.sh`.
 
-- Automate repetitive tasks
-- Combine multiple commands into a single program
-- Create custom utilities
-- Perform system administration tasks
-- Process data and files
-
-### Creating Your First Script
-
-Let's create a simple "Hello, World!" script:
-
-1. Open a text editor:
-
-   ```bash
-   nano hello.sh
-   ```
-
-2. Enter the following text:
-
-   ```bash
-   #!/bin/bash
-
-   # This is a comment
-   echo "Hello, World!"
-   ```
-
-3. Save the file and exit
-
-4. Make the script executable:
-
-   ```bash
-   chmod +x hello.sh
-   ```
-
-5. Run the script:
-   ```bash
-   ./hello.sh
-   ```
-
-### Understanding the Shebang
-
-The first line `#!/bin/bash` is called a "shebang" or "hashbang." It tells the system which interpreter should execute the script. Common shebangs include:
-
-- `#!/bin/bash` - Bash shell
-- `#!/bin/sh` - POSIX-compliant shell
-- `#!/usr/bin/python3` - Python 3
-- `#!/usr/bin/perl` - Perl
-
-## Variables and Data Types
-
-### Defining Variables
-
-Variables store data that can be referenced and manipulated in a script:
+## Your First Script
 
 ```bash
-# Assign a value to a variable
-name="Alice"
+#!/usr/bin/env bash
+# hello.sh: print a greeting and some facts about this machine
 
-# Use the variable (note the $ prefix)
-echo "Hello, $name!"
+echo "Hello, $USER!"
+echo "Today is $(date +%A), and this is $(hostname)."
+echo "You are in $PWD."
 ```
 
-Variable naming rules:
-
-- Can include letters, numbers, and underscores
-- Cannot start with a number
-- Are case-sensitive
-- No spaces around the equals sign
-
-### Environment Variables
-
-Environment variables are available to all processes:
-
-```bash
-# Display environment variables
-echo "Your home directory is: $HOME"
-echo "Your username is: $USER"
-echo "Your path is: $PATH"
-
-# Set an environment variable for the current session
-export MY_VARIABLE="some value"
+```terminal
+{
+  "title": "make it executable and run it",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "mkdir -p ~/scripts && cd ~/scripts"
+    },
+    {
+      "cmd": "./hello.sh",
+      "output": "bash: ./hello.sh: Permission denied"
+    },
+    {
+      "cmd": "chmod +x hello.sh"
+    },
+    {
+      "cmd": "./hello.sh",
+      "output": "Hello, dev!\nToday is Friday, and this is devbox.\nYou are in /home/dev/scripts."
+    }
+  ]
+}
 ```
 
-### Command Substitution
+The first line is the **shebang**. It tells the kernel which interpreter runs the file. `#!/usr/bin/env bash` finds `bash` on the `PATH`, which also works on systems where Bash is not in `/bin`; `#!/bin/bash` is just as common on Linux. Lines that start with `#` are comments.
 
-Capture the output of a command in a variable:
+A script needs the execute bit (`chmod +x`) to run as `./hello.sh`. You can also run any script with `bash hello.sh`, which ignores the execute bit and the shebang.
+
+:::warning
+`sh` is not Bash. On Debian and Ubuntu, `/bin/sh` is **dash**, a small POSIX shell without arrays, `[[ ]]` or `{1..5}`. Running a Bash script with `sh script.sh` fails in confusing ways. Use a `#!/usr/bin/env bash` shebang and run the script directly. See [the difference between sh and Bash](/posts/difference-between-sh-and-bash).
+:::
+
+## Variables and Quoting
+
+Assign with `name=value`, with **no spaces** around `=`, and read with `$name` or `${name}`:
 
 ```bash
-# Using backticks (older style)
-current_date=`date`
+#!/usr/bin/env bash
+app="notes site"
+port=8080
+release=$(date +%Y%m%d)          # command substitution: the output of a command
+next_port=$((port + 1))          # arithmetic
 
-# Using $() syntax (preferred)
-current_date=$(date)
-
-echo "Current date and time: $current_date"
+echo "Deploying ${app} release ${release} on port ${port}"
+echo "The next free port is ${next_port}"
+echo "Unset variables are empty: [${missing}]"
+echo "Or use a default: ${LOG_LEVEL:-info}"
 ```
 
-### Special Variables
-
-Bash provides special variables for script information:
-
-```bash
-echo "Script name: $0"
-echo "First argument: $1"
-echo "Second argument: $2"
-echo "All arguments: $@"
-echo "Number of arguments: $#"
-echo "Process ID: $$"
-echo "Exit status of last command: $?"
+```terminal
+{
+  "title": "variables",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash vars.sh | sed \"s/release [0-9]*/release YYYYMMDD/\"",
+      "output": "Deploying notes site release YYYYMMDD on port 8080\nThe next free port is 8081\nUnset variables are empty: []\nOr use a default: info"
+    },
+    {
+      "comment": "spaces around = turn the line into a command called 'name'",
+      "cmd": "name = \"dev\"",
+      "output": "bash: name: command not found"
+    }
+  ]
+}
 ```
 
-## Input and Output
+The `sed` just hides today's date. ShellCheck flags the `${missing}` line (SC2154, a variable that is used but never assigned), which is exactly the typo this example shows. `${LOG_LEVEL:-info}` uses `info` when `LOG_LEVEL` is unset or empty; `${VAR:?message}` stops the script with an error instead, which is the safe choice for values a script cannot work without.
 
-### Command-Line Arguments
+### Always Quote Your Variables
 
-Process arguments passed to your script:
+When a variable is not in double quotes, the shell splits its value on spaces and expands wildcards in it. That is the most common bug in shell scripts:
+
+```terminal
+{
+  "title": "unquoted variables split on spaces",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "cd ~/scripts"
+    },
+    {
+      "cmd": "file=\"monthly report.txt\""
+    },
+    {
+      "cmd": "touch $file"
+    },
+    {
+      "cmd": "ls",
+      "output": "hello.sh\nmonthly\nreport.txt\nvars.sh"
+    },
+    {
+      "cmd": "touch \"$file\""
+    },
+    {
+      "cmd": "ls",
+      "output": "hello.sh\nmonthly\nmonthly report.txt\nreport.txt\nvars.sh"
+    },
+    {
+      "cmd": "rm monthly report.txt \"monthly report.txt\""
+    }
+  ]
+}
+```
+
+Without quotes, `touch` received two arguments and created two files. Write `"$var"` every time, unless you know you need the splitting. Single quotes keep everything literal: `'$HOME'` prints `$HOME`.
+
+### Environment Variables and export
+
+A plain variable exists only in the current shell. `export` makes it part of the **environment**, which child processes (including scripts you start) inherit:
+
+```terminal
+{
+  "title": "export passes a variable to child processes",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "greeting=\"hi\""
+    },
+    {
+      "cmd": "bash -c 'echo \"child sees: [$greeting]\"'",
+      "output": "child sees: []"
+    },
+    {
+      "cmd": "export greeting"
+    },
+    {
+      "cmd": "bash -c 'echo \"child sees: [$greeting]\"'",
+      "output": "child sees: [hi]"
+    },
+    {
+      "comment": "set a variable for one command only",
+      "cmd": "LOG_LEVEL=debug bash -c 'echo \"LOG_LEVEL=$LOG_LEVEL\"'",
+      "output": "LOG_LEVEL=debug"
+    }
+  ]
+}
+```
+
+## Arguments
+
+A script receives its command-line arguments in `$1`, `$2` and so on:
+
+| Variable               | Contains                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------------------- |
+| `$0`                   | The name the script was called with                                                       |
+| `$1` ... `$9`, `${10}` | The positional arguments                                                                  |
+| `$#`                   | How many arguments there are                                                              |
+| `"$@"`                 | All arguments, each one kept as a separate word (use this)                                |
+| `"$*"`                 | All arguments joined into one string, separated by the first character of `IFS` (a space) |
+| `$?`                   | Exit code of the last command                                                             |
+| `$$`                   | PID of the script                                                                         |
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+echo "script: $0, argument count: $#"
+echo "first: $1, second: $2"
+for arg in "$@"; do
+    echo "  arg: [$arg]"
+done
+shift                      # drop $1, move the rest down
+echo "after shift, first is: $1"
+```
 
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <name>"
+```terminal
+{
+  "title": "arguments",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "chmod +x args.sh"
+    },
+    {
+      "cmd": "./args.sh deploy \"notes site\" --verbose",
+      "output": "script: ./args.sh, argument count: 3\nfirst: deploy, second: notes site\n  arg: [deploy]\n  arg: [notes site]\n  arg: [--verbose]\nafter shift, first is: notes site"
+    }
+  ]
+}
+```
+
+`"$@"` kept `notes site` together as one argument. `$@` without quotes, or `$*`, would have split it.
+
+## Conditions: if, test and case
+
+`if` runs a command and checks its exit code: 0 is true, anything else is false. `[[ ... ]]` is Bash's test command:
+
+```bash
+#!/usr/bin/env bash
+# check.sh: describe a path given as the first argument
+path="${1:?usage: check.sh PATH}"
+
+if [[ -d "$path" ]]; then
+    if [[ ! -r "$path" || ! -x "$path" ]]; then
+        echo "$path is a directory, but you may not list it" >&2
+        exit 1
+    fi
+    entries=$(find -H "$path" -mindepth 1 -maxdepth 1 -printf . | wc -c)   # one dot per entry; -H follows a symlinked path
+    echo "$path is a directory with $entries entries"
+elif [[ -f "$path" ]]; then
+    if [[ ! -r "$path" ]]; then
+        echo "$path is a regular file, but you may not read it" >&2
+        exit 1
+    fi
+    size=$(stat -L -c %s -- "$path")                 # -L: the file a symlink points to
+    if (( size > 1024 )); then
+        echo "$path is a readable file, larger than 1 KiB ($size bytes)"
+    else
+        echo "$path is a readable file of $size bytes"
+    fi
+elif [[ -e "$path" ]]; then
+    echo "$path exists but is not a regular file or directory"
+else
+    echo "$path does not exist" >&2
     exit 1
 fi
-
-echo "Hello, $1!"
 ```
 
-Run it with:
-
-```bash
-./script.sh Alice
+```terminal
+{
+  "title": "if, elif, else",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "chmod +x check.sh"
+    },
+    {
+      "cmd": "./check.sh ~/lab/site",
+      "output": "/home/dev/lab/site is a directory with 4 entries"
+    },
+    {
+      "cmd": "./check.sh ~/lab/logs/access.log",
+      "output": "/home/dev/lab/logs/access.log is a readable file, larger than 1 KiB (7179 bytes)"
+    },
+    {
+      "cmd": "./check.sh /nope; echo \"exit code: $?\"",
+      "output": "/nope does not exist\nexit code: 1"
+    },
+    {
+      "cmd": "./check.sh",
+      "output": "./check.sh: line 3: 1: usage: check.sh PATH"
+    }
+  ]
+}
 ```
 
-### Reading User Input
+The tests you will use most:
 
-Get input from users interactively:
+| Test                                     | True when                                                     |
+| ---------------------------------------- | ------------------------------------------------------------- |
+| `-e path`                                | the path exists                                               |
+| `-f path` / `-d path`                    | it is a regular file / a directory                            |
+| `-r`, `-w`, `-x path`                    | you may read / write / execute it                             |
+| `-s path`                                | the file exists and is not empty                              |
+| `-z "$s"` / `-n "$s"`                    | the string is empty / not empty                               |
+| `"$a" == "$b"`, `!=`                     | strings are equal / different                                 |
+| `"$s" == deploy-*`                       | the string matches a glob pattern (inside `[[ ]]` only)       |
+| `"$s" =~ ^[0-9]+$`                       | the string matches a regular expression (inside `[[ ]]` only) |
+| `-eq`, `-ne`, `-lt`, `-le`, `-gt`, `-ge` | integer comparisons, or use `(( a > b ))`                     |
+| `a && b`, `a \|\| b`, `! a`              | and, or, not                                                  |
 
-```bash
-#!/bin/bash
+`[ ... ]` (the older `test` command) also works and is POSIX, but it needs more quoting and has no pattern matching. In Bash scripts, prefer `[[ ]]` for strings and files and `(( ))` for numbers.
 
-echo "What is your name?"
-read name
-
-echo "Hello, $name!"
-```
-
-Read with a prompt:
-
-```bash
-read -p "Enter your name: " name
-```
-
-Read a password (no echo):
+`case` compares one value against several patterns, which reads better than a long `elif` chain:
 
 ```bash
-read -sp "Enter your password: " password
-echo
-```
-
-### Redirecting Input and Output
-
-Redirect output to files:
-
-```bash
-# Overwrite file
-echo "Hello" > file.txt
-
-# Append to file
-echo "World" >> file.txt
-
-# Redirect error messages
-command 2> errors.log
-
-# Redirect both output and errors
-command > output.log 2>&1
-```
-
-Read input from a file:
-
-```bash
-while read line; do
-    echo "Line: $line"
-done < input.txt
-```
-
-## Conditional Statements
-
-### if-else Statements
-
-Make decisions in your scripts:
-
-```bash
-#!/bin/bash
-
-age=25
-
-if [ $age -lt 18 ]; then
-    echo "You are a minor."
-elif [ $age -ge 18 ] && [ $age -lt 65 ]; then
-    echo "You are an adult."
-else
-    echo "You are a senior."
-fi
-```
-
-### Comparison Operators
-
-For numbers:
-
-- `-eq` - Equal to
-- `-ne` - Not equal to
-- `-lt` - Less than
-- `-le` - Less than or equal to
-- `-gt` - Greater than
-- `-ge` - Greater than or equal to
-
-For strings:
-
-- `=` or `==` - Equal to
-- `!=` - Not equal to
-- `-z` - String is empty
-- `-n` - String is not empty
-
-For files:
-
-- `-e` - File exists
-- `-f` - Regular file exists
-- `-d` - Directory exists
-- `-r` - File is readable
-- `-w` - File is writable
-- `-x` - File is executable
-
-### Logical Operators
-
-Combine conditions:
-
-- `&&` - AND
-- `||` - OR
-- `!` - NOT
-
-```bash
-if [ $age -ge 18 ] && [ $has_id = "yes" ]; then
-    echo "You can enter."
-fi
-
-if [ ! -f config.txt ]; then
-    echo "Config file missing!"
-fi
-```
-
-### Case Statements
-
-An alternative to multiple if-else statements:
-
-```bash
-#!/bin/bash
-
-read -p "Enter a fruit: " fruit
-
-case $fruit in
-    "apple")
-        echo "Red fruit"
-        ;;
-    "banana")
-        echo "Yellow fruit"
-        ;;
-    "grape"|"blueberry")
-        echo "Purple fruit"
-        ;;
-    *)
-        echo "Unknown fruit"
-        ;;
+#!/usr/bin/env bash
+case "${1:-}" in
+    start|up)     echo "starting" ;;
+    stop|down)    echo "stopping" ;;
+    restart)      echo "restarting" ;;
+    status)       echo "running" ;;
+    *)            echo "usage: $0 {start|stop|restart|status}" >&2; exit 2 ;;
 esac
+```
+
+```terminal
+{
+  "title": "case",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "chmod +x service.sh && ./service.sh up",
+      "output": "starting"
+    },
+    {
+      "cmd": "./service.sh reload; echo \"exit code: $?\"",
+      "output": "usage: ./service.sh {start|stop|restart|status}\nexit code: 2"
+    }
+  ]
+}
 ```
 
 ## Loops
 
-### For Loops
-
-Iterate over a list of items:
-
 ```bash
-# Loop through a list
-for name in Alice Bob Charlie; do
-    echo "Hello, $name!"
+#!/usr/bin/env bash
+# over a list of words
+for env in dev staging prod; do
+    echo "deploying to $env"
 done
 
-# Loop through a range of numbers
-for i in {1..5}; do
-    echo "Number: $i"
+# over files: the glob keeps names with spaces intact
+for page in ~/lab/site/*.html; do
+    echo "page: $(basename "$page") ($(wc -c < "$page") bytes)"
 done
 
-# C-style for loop
-for ((i=1; i<=5; i++)); do
-    echo "Count: $i"
+# over a range, and C-style
+for i in {1..3}; do echo -n "$i "; done; echo
+for (( i = 10; i > 0; i -= 4 )); do echo -n "$i "; done; echo
+
+# until: retry until something succeeds, with a limit
+attempt=1
+until [[ -f /tmp/ready ]] || (( attempt > 3 )); do
+    echo "waiting for /tmp/ready (attempt $attempt)"
+    (( attempt == 2 )) && touch /tmp/ready
+    (( attempt++ ))
 done
 
-# Loop through files
-for file in *.txt; do
-    echo "Processing $file"
-done
+# read a file line by line
+while IFS= read -r line; do
+    [[ -z "$line" || "$line" == \#* ]] && continue    # skip blanks and comments
+    echo "server: $line"
+done <<'EOF'
+# web servers
+web-1.example.com
+
+web-2.example.com
+EOF
 ```
 
-### While Loops
-
-Execute commands while a condition is true:
-
-```bash
-#!/bin/bash
-
-count=1
-
-while [ $count -le 5 ]; do
-    echo "Count: $count"
-    ((count++))
-done
+```terminal
+{
+  "title": "for, until and while",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash loops.sh",
+      "output": "deploying to dev\ndeploying to staging\ndeploying to prod\npage: about.html (162 bytes)\npage: index.html (221 bytes)\n1 2 3\n10 6 2\nwaiting for /tmp/ready (attempt 1)\nwaiting for /tmp/ready (attempt 2)\nserver: web-1.example.com\nserver: web-2.example.com"
+    }
+  ]
+}
 ```
 
-Read a file line by line:
+Two habits prevent most loop bugs:
 
-```bash
-while read line; do
-    echo "Line: $line"
-done < input.txt
-```
+- **Loop over globs, not over `ls`.** `for f in *.log` handles every file name; `for f in $(ls *.log)` splits names with spaces.
+- **Read lines with `while IFS= read -r line`.** `IFS=` keeps leading spaces and `-r` keeps backslashes. `for line in $(cat file)` loops over words, not lines.
 
-### Until Loops
-
-Execute commands until a condition becomes true:
-
-```bash
-#!/bin/bash
-
-count=1
-
-until [ $count -gt 5 ]; do
-    echo "Count: $count"
-    ((count++))
-done
-```
-
-### Loop Control
-
-Control loop execution:
-
-- `break` - Exit the loop
-- `continue` - Skip to the next iteration
-
-```bash
-for i in {1..10}; do
-    if [ $i -eq 3 ]; then
-        continue  # Skip 3
-    fi
-
-    if [ $i -eq 8 ]; then
-        break     # Stop at 8
-    fi
-
-    echo "Number: $i"
-done
-```
+`break` leaves a loop and `continue` jumps to the next round. If a glob matches nothing, Bash passes the pattern itself (`*.log`) to the loop; add `shopt -s nullglob` at the top of the script to get no iterations instead.
 
 ## Functions
 
-### Defining Functions
-
-Group commands into reusable units:
+A function groups commands under a name. It takes arguments like a script (`$1`, `"$@"`) and returns an exit code; to return data, print it and capture the output with `$(...)`.
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Define a function
-greet() {
-    echo "Hello, $1!"
+log() {
+    # write timestamped messages to standard error, so stdout stays clean
+    printf '%s %s\n' "$(date -u +%H:%M:%S)" "$*" >&2
 }
 
-# Call the function
-greet "Alice"
-greet "Bob"
-```
-
-Alternative syntax:
-
-```bash
-function greet {
-    echo "Hello, $1!"
-}
-```
-
-### Return Values
-
-Functions can return status codes:
-
-```bash
-is_even() {
-    if [ $(($1 % 2)) -eq 0 ]; then
-        return 0  # Success (true)
-    else
-        return 1  # Failure (false)
-    fi
+is_port() {
+    local value="$1"                       # local: only visible inside the function
+    # digits only and no leading zero: Bash reads 080 as a (broken) octal number
+    [[ "$value" =~ ^[1-9][0-9]{0,4}$ ]] && (( value <= 65535 ))
 }
 
-if is_even 4; then
-    echo "4 is even"
-fi
-
-if ! is_even 7; then
-    echo "7 is not even"
-fi
-```
-
-For returning data, use output:
-
-```bash
-get_square() {
-    echo $(($1 * $1))
+file_age_days() {
+    local now modified
+    now=$(date +%s)
+    modified=$(stat -c %Y -- "$1") || return 1
+    echo $(( (now - modified) / 86400 ))
 }
 
-result=$(get_square 5)
-echo "Square of 5 is $result"
-```
-
-### Variable Scope
-
-Variables in Bash are global by default:
-
-```bash
-#!/bin/bash
-
-my_var="global"
-
-my_function() {
-    my_var="changed"  # Changes the global variable
-    local local_var="local"  # Local to the function
-}
-
-echo "Before: $my_var"
-my_function
-echo "After: $my_var"
-echo "Local: $local_var"  # This will be empty
-```
-
-Use `local` to create function-local variables.
-
-## Arrays
-
-### Creating and Accessing Arrays
-
-Work with lists of data:
-
-```bash
-# Create an array
-fruits=("apple" "banana" "cherry")
-
-# Access elements
-echo ${fruits[0]}  # First element
-echo ${fruits[1]}  # Second element
-
-# All elements
-echo ${fruits[@]}
-
-# Number of elements
-echo ${#fruits[@]}
-
-# Add an element
-fruits+=("orange")
-
-# Iterate through array
-for fruit in "${fruits[@]}"; do
-    echo "Fruit: $fruit"
+for p in 8080 70000 080 abc; do
+    if is_port "$p"; then log "$p is a valid port"; else log "$p is NOT a valid port"; fi
 done
+echo "access.log is $(file_age_days ~/lab/logs/access.log) days old"
 ```
 
-### Associative Arrays (Dictionaries)
-
-Key-value pairs (Bash 4.0+):
-
-```bash
-# Declare an associative array
-declare -A user
-
-# Assign values
-user[name]="Alice"
-user[age]=30
-user[city]="New York"
-
-# Access elements
-echo "Name: ${user[name]}"
-echo "Age: ${user[age]}"
-
-# All keys
-echo "Keys: ${!user[@]}"
-
-# All values
-echo "Values: ${user[@]}"
-
-# Iterate through key-value pairs
-for key in "${!user[@]}"; do
-    echo "$key: ${user[$key]}"
-done
-```
-
-## String Manipulation
-
-### String Operations
-
-Work with text data:
-
-```bash
-# String length
-string="Hello, World!"
-echo ${#string}  # 13
-
-# Substring extraction
-echo ${string:7:5}  # "World"
-
-# Replace substring
-echo ${string/World/Linux}  # "Hello, Linux!"
-
-# Replace all occurrences
-text="apple apple apple"
-echo ${text//apple/orange}  # "orange orange orange"
-
-# Remove prefix
-echo ${string#Hello, }  # "World!"
-
-# Remove suffix
-echo ${string%World!}  # "Hello, "
-```
-
-### String Comparison
-
-```bash
-if [ "$string1" = "$string2" ]; then
-    echo "Strings are equal"
-fi
-
-if [[ "$string" == *"World"* ]]; then
-    echo "String contains 'World'"
-fi
-
-if [[ "$string" =~ ^Hello ]]; then
-    echo "String starts with 'Hello'"
-fi
-```
-
-## Error Handling
-
-### Exit Codes
-
-Scripts return exit codes indicating success (0) or failure (non-zero):
-
-```bash
-#!/bin/bash
-
-# Exit with specific code
-if [ ! -f "$1" ]; then
-    echo "Error: File not found" >&2
-    exit 1
-fi
-
-# Process the file
-echo "Processing $1..."
-exit 0
-```
-
-### Error Checking
-
-Check command success:
-
-```bash
-if ! command; then
-    echo "Command failed" >&2
-    exit 1
-fi
-```
-
-Use `set -e` to exit on any error:
-
-```bash
-#!/bin/bash
-set -e  # Exit immediately if a command fails
-```
-
-### Trapping Signals
-
-Handle script interruption:
-
-```bash
-#!/bin/bash
-
-# Cleanup function
-cleanup() {
-    echo "Cleaning up temporary files..."
-    rm -f /tmp/tempfile*
-    exit 1
+```terminal
+{
+  "title": "functions",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash functions.sh 2>&1 | sed -E 's/^[0-9:]{8}/HH:MM:SS/'",
+      "output": "HH:MM:SS 8080 is a valid port\nHH:MM:SS 70000 is NOT a valid port\nHH:MM:SS 080 is NOT a valid port\nHH:MM:SS abc is NOT a valid port\naccess.log is 0 days old"
+    }
+  ]
 }
-
-# Set trap
-trap cleanup SIGINT SIGTERM
-
-# Create temp files
-touch /tmp/tempfile1 /tmp/tempfile2
-
-# Long-running process
-echo "Running... (Press Ctrl+C to interrupt)"
-sleep 30
-
-# Normal cleanup
-cleanup
 ```
 
-## Command-Line Parsing
+Declare variables inside functions with `local`; otherwise they change the global variable of the same name. Keep messages for humans on standard error (`>&2`), so a caller can capture the real output with `$(...)` without the noise.
 
-### Basic Argument Handling
-
-Parse arguments manually:
+## Arrays and String Operations
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+servers=("web-1" "web-2" "db-1")
+servers+=("cache-1")
+echo "count: ${#servers[@]}, first: ${servers[0]}, all: ${servers[*]}"
 
-if [ $# -lt 2 ]; then
-    echo "Usage: $0 <source> <destination>"
-    exit 1
-fi
+declare -A port=([web]=80 [db]=5432 [cache]=6379)     # associative array (Bash 4+)
+for name in web db cache; do echo "$name listens on ${port[$name]}"; done
 
-source=$1
-destination=$2
-
-echo "Copying from $source to $destination"
+path="/var/backups/site/site-20261023-0900.tar.gz"
+echo "file:      ${path##*/}"        # strip everything up to the last /
+echo "directory: ${path%/*}"         # strip from the last / to the end
+echo "no suffix: ${path%%.*}"        # strip from the first . to the end
+echo "replace:   ${path/site-/www-}"
+name="Notes Site"
+echo "lower: ${name,,}  upper: ${name^^}  length: ${#name}  slice: ${name:0:5}"
 ```
 
-### Parsing Options with getopts
-
-Handle command-line options:
-
-```bash
-#!/bin/bash
-
-usage() {
-    echo "Usage: $0 [-v] [-f filename] [-n number]"
-    exit 1
+```terminal
+{
+  "title": "arrays and parameter expansion",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash strings.sh",
+      "output": "count: 4, first: web-1, all: web-1 web-2 db-1 cache-1\nweb listens on 80\ndb listens on 5432\ncache listens on 6379\nfile:      site-20261023-0900.tar.gz\ndirectory: /var/backups/site\nno suffix: /var/backups/site/site-20261023-0900\nreplace:   /var/backups/site/www-20261023-0900.tar.gz\nlower: notes site  upper: NOTES SITE  length: 10  slice: Notes"
+    }
+  ]
 }
+```
+
+These **parameter expansions** run inside Bash, so they are much faster than calling `basename`, `dirname`, `sed` or `tr` in a loop.
+
+## Exit Codes and Error Handling
+
+By default, Bash keeps going after a command fails. For most scripts, that is the wrong default. Start them with **strict mode**:
+
+```bash
+set -euo pipefail
+```
+
+- `-e`: exit as soon as a command fails (with exceptions: inside `if`, `while`, `&&` and `||` conditions).
+- `-u`: treat an unset variable as an error instead of an empty string.
+- `-o pipefail`: a pipeline fails if **any** command in it fails, not only the last one.
+
+```bash
+#!/usr/bin/env bash
+echo "without pipefail:"
+grep "pattern" /no/such/file | sort
+echo "  pipeline exit code: $?"
+
+set -o pipefail
+echo "with pipefail:"
+grep "pattern" /no/such/file | sort
+echo "  pipeline exit code: $?"
+
+set -eu
+echo "with -u, a typo in a variable name stops the script:"
+echo "deploying to $DEPLOY_TARGT"
+echo "this line never runs"
+```
+
+```terminal
+{
+  "title": "what strict mode changes",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash strict.sh; echo \"script exit code: $?\"",
+      "output": "without pipefail:\ngrep: /no/such/file: No such file or directory\n  pipeline exit code: 0\nwith pipefail:\ngrep: /no/such/file: No such file or directory\n  pipeline exit code: 2\nwith -u, a typo in a variable name stops the script:\nstrict.sh: line 13: DEPLOY_TARGT: unbound variable\nscript exit code: 1"
+    }
+  ]
+}
+```
+
+`set -e` has surprising corners: a failure inside a function called from an `if` is ignored, and `local var=$(cmd)` hides the exit code of `cmd`. Treat strict mode as a safety net, and still check the commands that matter explicitly. See [what set -e means in a Bash script](/posts/what-does-set-e-mean-in-bash-script) for the details.
+
+To clean up temporary files however a script ends, use `trap` with a temporary directory from `mktemp`:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+workdir=$(mktemp -d)
+trap 'rm -rf "$workdir"; echo "cleaned up $workdir" >&2' EXIT   # runs on any exit
+
+echo "working in $workdir"
+cp ~/lab/logs/access.log "$workdir/"
+grep -c '" 404 ' "$workdir/access.log"
+false                                 # a failing command: set -e exits here
+echo "not reached"
+```
+
+```terminal
+{
+  "title": "trap EXIT cleans up even after a failure",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash tmpwork.sh; echo \"exit code: $?\"",
+      "output": "working in /tmp/tmp.JPT1BW2j1p\n9\ncleaned up /tmp/tmp.JPT1BW2j1p\nexit code: 1"
+    }
+  ]
+}
+```
+
+The `EXIT` trap ran after `false` stopped the script. Use the same pattern to release locks, stop helper processes or print a "failed at step X" message.
+
+## Options With getopts
+
+`getopts` parses short options such as `-v` and `-n 5`, so your script behaves like other Linux commands:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() { echo "usage: $0 [-v] [-n COUNT] NAME" >&2; exit 2; }
 
 verbose=false
-filename=""
-number=0
-
-while getopts ":vf:n:" opt; do
-    case ${opt} in
-        v )
-            verbose=true
-            ;;
-        f )
-            filename=$OPTARG
-            ;;
-        n )
-            number=$OPTARG
-            ;;
-        \? )
-            echo "Invalid option: $OPTARG" 1>&2
-            usage
-            ;;
-        : )
-            echo "Option -$OPTARG requires an argument." 1>&2
-            usage
-            ;;
+count=1
+while getopts ":vn:h" opt; do
+    case "$opt" in
+        v) verbose=true ;;
+        n) count="$OPTARG" ;;
+        h) usage ;;
+        :) echo "option -$OPTARG needs a value" >&2; usage ;;
+        *) echo "unknown option -$OPTARG" >&2; usage ;;
     esac
 done
-shift $((OPTIND -1))
+shift $((OPTIND - 1))          # what is left are the positional arguments
+(( $# == 1 )) || usage
 
-echo "Verbose: $verbose"
-echo "Filename: $filename"
-echo "Number: $number"
-echo "Remaining arguments: $@"
-```
-
-## Practical Scripting Examples
-
-Let's apply what we've learned with some useful scripts:
-
-### Backup Script
-
-```bash
-#!/bin/bash
-
-# Configuration
-backup_dir="/backup"
-source_dir="/home/user/documents"
-date_format=$(date +%Y-%m-%d)
-backup_file="backup-$date_format.tar.gz"
-
-# Ensure backup directory exists
-mkdir -p "$backup_dir"
-
-# Create backup
-echo "Creating backup of $source_dir..."
-tar -czf "$backup_dir/$backup_file" "$source_dir"
-
-# Check if backup was successful
-if [ $? -eq 0 ]; then
-    echo "Backup completed successfully: $backup_dir/$backup_file"
-
-    # List existing backups
-    echo "Existing backups:"
-    ls -lh "$backup_dir"
-
-    # Remove backups older than 30 days
-    find "$backup_dir" -name "backup-*.tar.gz" -mtime +30 -delete
-else
-    echo "Backup failed!" >&2
-    exit 1
-fi
-```
-
-### System Monitoring Script
-
-```bash
-#!/bin/bash
-
-# Function to display header
-print_header() {
-    echo "========================================"
-    echo "    System Monitoring - $(date)"
-    echo "========================================"
-}
-
-# Function to check disk usage
-check_disk() {
-    echo "DISK USAGE:"
-    df -h | grep -v "tmpfs" | grep -v "Filesystem"
-
-    # Alert if any partition is over 90% full
-    critical=$(df -h | grep -v "tmpfs" | awk '$5 > 90 {print $5 " - " $1}')
-
-    if [ ! -z "$critical" ]; then
-        echo "WARNING: The following partitions are nearly full:"
-        echo "$critical"
-    fi
-
-    echo
-}
-
-# Function to check memory usage
-check_memory() {
-    echo "MEMORY USAGE:"
-    free -h
-    echo
-}
-
-# Function to check load average
-check_load() {
-    echo "LOAD AVERAGE:"
-    uptime
-
-    # Get number of cores
-    cores=$(nproc)
-
-    # Get 5-minute load average
-    load_5min=$(uptime | awk -F'load average: ' '{print $2}' | awk -F', ' '{print $2}')
-
-    # Check if load exceeds number of cores
-    if (( $(echo "$load_5min > $cores" | bc -l) )); then
-        echo "WARNING: Load average ($load_5min) exceeds number of cores ($cores)"
-    fi
-
-    echo
-}
-
-# Function to check running processes
-check_processes() {
-    echo "TOP 5 CPU-INTENSIVE PROCESSES:"
-    ps aux --sort=-%cpu | head -6
-    echo
-
-    echo "TOP 5 MEMORY-INTENSIVE PROCESSES:"
-    ps aux --sort=-%mem | head -6
-    echo
-}
-
-# Main function
-main() {
-    print_header
-    check_disk
-    check_memory
-    check_load
-    check_processes
-
-    echo "Report completed at $(date)"
-}
-
-# Run the script
-main
-```
-
-### File Processing Script
-
-```bash
-#!/bin/bash
-
-# Check arguments
-if [ $# -ne 2 ]; then
-    echo "Usage: $0 <source_directory> <backup_directory>"
-    exit 1
-fi
-
-source_dir="$1"
-backup_dir="$2"
-
-# Validate directories
-if [ ! -d "$source_dir" ]; then
-    echo "Error: Source directory does not exist: $source_dir" >&2
-    exit 1
-fi
-
-# Create backup directory if it doesn't exist
-mkdir -p "$backup_dir"
-
-# Counter for processed files
-processed=0
-
-# Process each text file
-for file in "$source_dir"/*.txt; do
-    # Skip if no files match
-    [ -e "$file" ] || continue
-
-    filename=$(basename "$file")
-    echo "Processing: $filename"
-
-    # Create a backup
-    cp "$file" "$backup_dir/${filename}.bak"
-
-    # Convert to uppercase and save
-    tr '[:lower:]' '[:upper:]' < "$file" > "$backup_dir/${filename}.upper"
-
-    # Count words
-    word_count=$(wc -w < "$file")
-    echo "  Word count: $word_count" >> "$backup_dir/summary.log"
-
-    ((processed++))
+[[ "$count" =~ ^(0|[1-9][0-9]{0,3})$ ]] || { echo "COUNT must be a whole number from 0 to 9999" >&2; exit 2; }
+$verbose && echo "greeting $1, $count time(s)" >&2
+for (( i = 1; i <= count; i++ )); do
+    echo "Hello, $1"
 done
-
-echo "Processed $processed files. Summary saved to $backup_dir/summary.log"
 ```
 
-### Website Monitor Script
-
-```bash
-#!/bin/bash
-
-# Configuration
-websites=("https://www.example.com" "https://www.google.com" "https://www.github.com")
-log_file="/var/log/website_monitor.log"
-email="admin@example.com"
-
-# Function to check a website
-check_website() {
-    local url="$1"
-    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
-
-    # Get HTTP status code
-    status_code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
-
-    # Check if status code is 200 (OK)
-    if [ "$status_code" -eq 200 ]; then
-        echo "[$timestamp] SUCCESS: $url returned status code $status_code" | tee -a "$log_file"
-        return 0
-    else
-        echo "[$timestamp] ERROR: $url returned status code $status_code" | tee -a "$log_file"
-        return 1
-    fi
-}
-
-# Function to send email alert
-send_alert() {
-    local url="$1"
-    local status="$2"
-
-    echo "Website $url is down (Status: $status)" | mail -s "Website Down Alert" "$email"
-    echo "Alert sent to $email" | tee -a "$log_file"
-}
-
-# Main function
-main() {
-    echo "Starting website monitoring at $(date)" | tee -a "$log_file"
-
-    for site in "${websites[@]}"; do
-        echo "Checking $site..." | tee -a "$log_file"
-        if ! check_website "$site"; then
-            send_alert "$site" "$status_code"
-        fi
-
-        # Sleep between checks to avoid hammering the servers
-        sleep 2
-    done
-
-    echo "Monitoring completed at $(date)" | tee -a "$log_file"
-    echo "-----------------------------------------" | tee -a "$log_file"
-}
-
-# Create log file if it doesn't exist
-touch "$log_file"
-
-# Run the script
-main
-```
-
-## Beyond Bash: Alternative Shells
-
-While Bash is the most common shell, there are other options:
-
-### Zsh (Z Shell)
-
-A powerful shell with improved features:
-
-- Better tab completion
-- Spelling correction
-- Path expansion
-- Themeable prompts with Oh-My-Zsh
-
-Convert Bash script to Zsh:
-
-```bash
-#!/bin/zsh
-
-# Most Bash scripts work in Zsh
-# Zsh-specific features include:
-setopt extended_glob
-setopt null_glob
-
-# Array indices start at 1 in Zsh
-array=(one two three)
-echo ${array[1]}  # Prints "one" in Zsh (would be empty in Bash)
-```
-
-### Fish (Friendly Interactive Shell)
-
-A user-friendly shell with modern features:
-
-- Syntax highlighting
-- Auto-suggestions
-- Web-based configuration
-
-Fish script example:
-
-```bash
-#!/usr/bin/fish
-
-# Define a function
-function greet
-    echo "Hello, $argv[1]!"
-end
-
-# Call the function
-greet "World"
-
-# Fish-specific loop syntax
-for i in (seq 1 5)
-    echo "Number: $i"
-end
-```
-
-## Shell Script Best Practices
-
-### Script Organization
-
-- Start with a shebang (`#!/bin/bash`)
-- Add a descriptive comment block at the top
-- Define constants and configuration at the beginning
-- Create functions for reusable code
-- Include a `main` function to organize the script flow
-
-### Error Handling
-
-- Check return codes for commands
-- Use `set -e` to exit on errors
-- Provide helpful error messages with context
-- Clean up temporary files with trap
-
-### Security Considerations
-
-- Validate and sanitize input
-- Use full paths for commands when possible
-- Avoid using `eval` with user input
-- Set restrictive permissions on scripts
-- Use read-only variables when appropriate: `readonly PASSWORD="secret"`
-
-### Performance
-
-- Minimize external commands in loops
-- Use built-in commands when available
-- Use process substitution instead of pipes when appropriate
-- Consider using arrays instead of string parsing
-
-### Script Templates
-
-Here's a template for a well-structured script:
-
-```bash
-#!/bin/bash
-#
-# Script: example.sh
-# Description: A template for shell scripts
-# Author: Your Name
-# Date: 2025-05-17
-#
-# Usage: ./example.sh [options] <argument>
-
-# Exit on error
-set -e
-
-# Script constants
-readonly PROGNAME=$(basename "$0")
-readonly ARGS=("$@")
-
-# Configuration
-config_file="/etc/example.conf"
-temp_dir="/tmp/example_$$"
-
-# Function to display usage
-usage() {
-    cat << EOF
-Usage: $PROGNAME [OPTIONS] <argument>
-
-Options:
-  -h, --help      Display this help message
-  -v, --verbose   Enable verbose output
-  -f FILE         Specify input file
-
-Example:
-  $PROGNAME -v -f input.txt
-
-EOF
-}
-
-# Function to log messages
-log() {
-    local level="$1"
-    shift
-    echo "[$level] $*"
-}
-
-# Function to clean up temporary files
-cleanup() {
-    log "INFO" "Cleaning up..."
-    rm -rf "$temp_dir"
-}
-
-# Set up trap to clean up on exit
-trap cleanup EXIT
-
-# Function to process arguments
-process_args() {
-    # Create temp directory
-    mkdir -p "$temp_dir"
-
-    # Process the main argument
-    log "INFO" "Processing argument: $1"
-    # Main logic here...
-}
-
-# Main function
-main() {
-    # Parse options
-    local verbose=false
-    local file=""
-
-    while (( $# > 0 )); do
-        case "$1" in
-            -h|--help)
-                usage
-                exit 0
-                ;;
-            -v|--verbose)
-                verbose=true
-                shift
-                ;;
-            -f)
-                file="$2"
-                shift 2
-                ;;
-            -*)
-                log "ERROR" "Unknown option: $1"
-                usage
-                exit 1
-                ;;
-            *)
-                break
-                ;;
-        esac
-    done
-
-    if [[ $verbose == true ]]; then
-        log "INFO" "Verbose mode enabled"
-    fi
-
-    if [[ -n "$file" ]]; then
-        log "INFO" "Using file: $file"
-    fi
-
-    # Check for required arguments
-    if (( $# < 1 )); then
-        log "ERROR" "Missing required argument"
-        usage
-        exit 1
-    fi
-
-    # Process arguments
-    process_args "$1"
-
-    log "INFO" "Script completed successfully"
-}
-
-# Run the script
-main "${ARGS[@]}"
-```
-
-## Shell Scripting in the Cloud
-
-Shell scripts are extremely valuable for cloud automation. Here's an example of how you might use shell scripting on a DigitalOcean Droplet:
-
-1. Sign up for a DigitalOcean account (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
-2. Create a new Droplet
-3. Create this automation script:
-
-```bash
-#!/bin/bash
-#
-# server_setup.sh - Automate web server setup on a new DigitalOcean Droplet
-#
-
-set -e
-
-# Configuration
-APP_USER="webapp"
-DOMAIN="example.com"
-REPO_URL="https://github.com/yourusername/your-app.git"
-
-# Log function
-log() {
-    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1"
-}
-
-# Update system and install dependencies
-setup_system() {
-    log "Updating system packages..."
-    apt-get update
-    apt-get upgrade -y
-
-    log "Installing dependencies..."
-    apt-get install -y nginx nodejs npm certbot python3-certbot-nginx git
-
-    # Enable firewall
-    log "Configuring firewall..."
-    ufw allow OpenSSH
-    ufw allow 'Nginx Full'
-    ufw --force enable
-}
-
-# Create application user
-create_user() {
-    log "Creating application user..."
-    useradd -m -s /bin/bash "$APP_USER"
-
-    log "Setting up deployment directory..."
-    mkdir -p /var/www/$DOMAIN
-    chown -R "$APP_USER":"$APP_USER" /var/www/$DOMAIN
-}
-
-# Configure Nginx
-setup_nginx() {
-    log "Configuring Nginx..."
-    cat > /etc/nginx/sites-available/$DOMAIN << EOF
-server {
-    listen 80;
-    server_name $DOMAIN www.$DOMAIN;
-    root /var/www/$DOMAIN/public;
-
-    location / {
-        try_files \$uri \$uri/ /index.html;
+```terminal
+{
+  "title": "parse options",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "chmod +x greet.sh"
+    },
+    {
+      "cmd": "./greet.sh -v -n 2 Alice",
+      "output": "greeting Alice, 2 time(s)\nHello, Alice\nHello, Alice"
+    },
+    {
+      "cmd": "./greet.sh -x Alice; echo \"exit code: $?\"",
+      "output": "unknown option -x\nusage: ./greet.sh [-v] [-n COUNT] NAME\nexit code: 2"
+    },
+    {
+      "cmd": "./greet.sh -n; echo \"exit code: $?\"",
+      "output": "option -n needs a value\nusage: ./greet.sh [-v] [-n COUNT] NAME\nexit code: 2"
     }
+  ]
+}
+```
 
-    location /api {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
+`getopts` handles only single-letter options. For long options (`--count 5`), loop over `"$@"` with a `case` statement, as the backup script below does. See [parsing command-line arguments in Bash](/posts/parse-command-line-arguments-bash) for more patterns.
+
+## Debugging and Linting
+
+Three tools catch most problems before they bite:
+
+- `bash -n script.sh` checks the syntax without running anything.
+- `bash -x script.sh` (or `set -x` inside the script) prints each command, with variables expanded, before it runs.
+- **ShellCheck** reads a script and explains likely bugs, from missing quotes to commands that cannot work. Install it with `sudo apt install shellcheck` (Ubuntu 24.04 ships version 0.9.0; the run below uses 0.11.0) or `sudo dnf install ShellCheck`.
+
+```terminal
+{
+  "title": "trace a script with bash -x",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash -x ./greet.sh -n 2 Bob",
+      "output": "+ set -euo pipefail\n+ verbose=false\n+ count=1\n+ getopts :vn:h opt\n+ case \"$opt\" in\n+ count=2\n+ getopts :vn:h opt\n+ shift 2\n+ ((  1 == 1  ))\n+ [[ 2 =~ ^(0|[1-9][0-9]{0,3})$ ]]\n+ false\n+ (( i = 1 ))\n+ (( i <= count ))\n+ echo 'Hello, Bob'\nHello, Bob\n+ (( i++  ))\n+ (( i <= count ))\n+ echo 'Hello, Bob'\nHello, Bob\n+ (( i++  ))\n+ (( i <= count ))"
     }
+  ]
 }
-EOF
+```
 
-    ln -sf /etc/nginx/sites-available/$DOMAIN /etc/nginx/sites-enabled/
-    nginx -t
-    systemctl restart nginx
+Here is a short script with typical mistakes:
+
+```bash
+#!/bin/bash
+# cleanup.sh: delete old .log files in a directory (buggy on purpose)
+dir=$1
+cd $dir
+for f in $(ls *.log); do
+    if [ $f == "keep.log" ]; then continue; fi
+    rm $f
+done
+echo "Deleted logs in $dir"
+```
+
+```terminal
+{
+  "title": "shellcheck finds the bugs",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "shellcheck cleanup.sh",
+      "output": "In cleanup.sh line 4:\ncd $dir\n^-----^ SC2164 (warning): Use 'cd ... || exit' or 'cd ... || return' in case cd fails.\n   ^--^ SC2086 (info): Double quote to prevent globbing and word splitting.\n\nDid you mean:\ncd \"$dir\" || exit\n\n\nIn cleanup.sh line 5:\nfor f in $(ls *.log); do\n         ^---------^ SC2045 (error): Iterating over ls output is fragile. Use globs.\n              ^-- SC2035 (info): Use ./*glob* or -- *glob* so names with dashes won't become options.\n\n\nIn cleanup.sh line 6:\n    if [ $f == \"keep.log\" ]; then continue; fi\n         ^-- SC2086 (info): Double quote to prevent globbing and word splitting.\n\nDid you mean:\n    if [ \"$f\" == \"keep.log\" ]; then continue; fi\n\n\nIn cleanup.sh line 7:\n    rm $f\n       ^-- SC2086 (info): Double quote to prevent globbing and word splitting.\n\nDid you mean:\n    rm \"$f\"\n\nFor more information:\n  https://www.shellcheck.net/wiki/SC2045 -- Iterating over ls output is fragi...\n  https://www.shellcheck.net/wiki/SC2164 -- Use 'cd ... || exit' or 'cd ... |...\n  https://www.shellcheck.net/wiki/SC2035 -- Use ./*glob* or -- *glob* so name..."
+    }
+  ]
 }
+```
 
-# Deploy application
-deploy_app() {
-    log "Deploying application..."
-    su - "$APP_USER" -c "git clone $REPO_URL /var/www/$DOMAIN"
+Each warning has a code; `https://www.shellcheck.net/wiki/SC2164` explains SC2164, and so on. The `cd` warning is the dangerous one: if `cd` fails, the loop deletes `.log` files in whatever directory the script happens to be in. Run ShellCheck in your editor and in CI, so every script gets checked before it ships.
 
-    log "Installing dependencies and building application..."
-    cd /var/www/$DOMAIN
-    su - "$APP_USER" -c "cd /var/www/$DOMAIN && npm install && npm run build"
+## A Complete Script: Back Up the Lab Site
 
-    log "Setting up application service..."
-    cat > /etc/systemd/system/webapp.service << EOF
-[Unit]
-Description=Web Application
-After=network.target
+This script puts the pieces together. It archives a directory into a timestamped `.tar.gz`, keeps only the newest N archives, logs what it does, and fails loudly. Part 10 runs it every night with a systemd timer.
 
-[Service]
-Type=simple
-User=$APP_USER
-WorkingDirectory=/var/www/$DOMAIN
-ExecStart=/usr/bin/npm start
-Restart=on-failure
+```bash
+#!/usr/bin/env bash
+# backup-site: archive a directory and keep the newest N archives.
+# usage: backup-site [--keep N] SOURCE_DIR BACKUP_DIR
+set -euo pipefail
 
-[Install]
-WantedBy=multi-user.target
-EOF
+keep=7
 
-    systemctl enable webapp
-    systemctl start webapp
+log() { printf '%s backup-site: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; }
+die() { log "ERROR: $*"; exit 1; }
+usage() { echo "usage: ${0##*/} [--keep N] SOURCE_DIR BACKUP_DIR" >&2; exit 2; }
+
+while (( $# > 0 )); do
+    case "$1" in
+        --keep)
+            [[ "${2:-}" =~ ^[1-9][0-9]{0,3}$ ]] || die "--keep needs a number from 1 to 9999"
+            keep="$2"; shift 2 ;;
+        -h|--help) usage ;;
+        -*) die "unknown option: $1" ;;
+        *) break ;;
+    esac
+done
+(( $# == 2 )) || usage
+
+# remove trailing slashes, so "site/" and "site//" are treated like "site"
+strip_slashes() {
+    local path="$1"
+    while [[ "$path" == */ && "$path" != / ]]; do path="${path%/}"; done
+    printf '%s' "$path"
 }
-
-# Setup SSL
-setup_ssl() {
-    log "Setting up SSL with Let's Encrypt..."
-    certbot --nginx -d $DOMAIN -d www.$DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN
-}
-
-# Main function
-main() {
-    log "Starting server setup..."
-
-    setup_system
-    create_user
-    setup_nginx
-    deploy_app
-    setup_ssl
-
-    log "Setup completed successfully!"
-    log "Your application is now running at https://$DOMAIN"
-}
-
-# Check if root
-if [ "$(id -u)" -ne 0 ]; then
-    echo "This script must be run as root" >&2
-    exit 1
+source_dir="$(strip_slashes "$1")"
+backup_dir="$(strip_slashes "$2")"
+if [[ -L "$source_dir" ]]; then
+    die "source is a symlink; give the real directory: $source_dir"
 fi
+[[ -d "$source_dir" ]] || die "source directory not found: $source_dir"
+# a backup directory inside the source would end up in every new archive
+source_real="$(realpath -- "$source_dir")"
+backup_real="$(realpath -m -- "$backup_dir")"
+case "$backup_real/" in
+    "$source_real"/*) die "the backup directory must not be inside the source: $backup_dir" ;;
+esac
+mkdir -p "$backup_dir"
 
-# Run script
-main
+# one run at a time per backup directory
+exec 9> "$backup_dir/.backup-site.lock"
+flock -n 9 || die "another backup is running in $backup_dir"
+
+name="$(basename "$source_dir")"
+archive="$backup_dir/$name-$(date -u +%Y%m%d-%H%M%S).tar.gz"
+if [[ -e "$archive" ]]; then
+    die "archive already exists, try again in a second: $archive"
+fi
+partial="$(mktemp "$backup_dir/.$name-XXXXXX.partial")"
+trap 'rm -f "$partial"' EXIT          # never leave a half-written archive behind
+
+log "archiving $source_dir to $archive"
+tar -czf "$partial" -C "$(dirname "$source_dir")" -- "$name"
+mv "$partial" "$archive"
+log "created $(du -h "$archive" | cut -f1) archive"
+
+# only archives this script made (NAME-YYYYMMDD-HHMMSS.tar.gz); glob results come oldest first
+archives=("$backup_dir/$name"-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9].tar.gz)
+excess=$(( ${#archives[@]} - keep ))
+for (( i = 0; i < excess; i++ )); do
+    rm -f -- "${archives[i]}"
+    log "removed old archive ${archives[i]##*/}"
+done
+log "done, $(( excess > 0 ? keep : ${#archives[@]} )) archive(s) kept"
 ```
 
-This script automates the entire process of setting up a web server with Nginx, Node.js, and SSL certificates.
+```terminal
+{
+  "title": "run the backup script",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "shellcheck backup-site && echo \"shellcheck: no warnings\"",
+      "output": "shellcheck: no warnings"
+    },
+    {
+      "cmd": "chmod +x backup-site"
+    },
+    {
+      "cmd": "./backup-site ~/lab/site ~/backups",
+      "output": "2026-10-23T21:38:15Z backup-site: archiving /home/dev/lab/site to /home/dev/backups/site-20261023-213815.tar.gz\n2026-10-23T21:38:15Z backup-site: created 4.0K archive\n2026-10-23T21:38:15Z backup-site: done, 1 archive(s) kept"
+    },
+    {
+      "cmd": "./backup-site --keep 2 ~/lab/site ~/backups",
+      "output": "2026-10-23T21:38:16Z backup-site: archiving /home/dev/lab/site to /home/dev/backups/site-20261023-213816.tar.gz\n2026-10-23T21:38:16Z backup-site: created 4.0K archive\n2026-10-23T21:38:16Z backup-site: done, 2 archive(s) kept"
+    },
+    {
+      "cmd": "./backup-site --keep 2 ~/lab/site ~/backups",
+      "output": "2026-10-23T21:38:17Z backup-site: archiving /home/dev/lab/site to /home/dev/backups/site-20261023-213817.tar.gz\n2026-10-23T21:38:17Z backup-site: created 4.0K archive\n2026-10-23T21:38:17Z backup-site: removed old archive site-20261023-213815.tar.gz\n2026-10-23T21:38:17Z backup-site: done, 2 archive(s) kept"
+    },
+    {
+      "cmd": "ls -1 ~/backups",
+      "output": "site-20261023-213816.tar.gz\nsite-20261023-213817.tar.gz"
+    },
+    {
+      "comment": "check what is inside the newest archive",
+      "cmd": "tar -tzf \"$(ls -1t ~/backups/*.tar.gz | head -n 1)\"",
+      "output": "site/\nsite/about.html\nsite/css/\nsite/css/style.css\nsite/images/\nsite/index.html"
+    },
+    {
+      "comment": "errors exit with a non-zero code",
+      "cmd": "./backup-site ~/lab/nope ~/backups; echo \"exit code: $?\"",
+      "output": "2026-10-23T21:38:17Z backup-site: ERROR: source directory not found: /home/dev/lab/nope\nexit code: 1"
+    },
+    {
+      "cmd": "./backup-site --keep 0 ~/lab/site ~/backups; echo \"exit code: $?\"",
+      "output": "2026-10-23T21:38:18Z backup-site: ERROR: --keep needs a number from 1 to 9999\nexit code: 1"
+    }
+  ]
+}
+```
 
-## Moving Forward
+Install it for your user so it can be run from anywhere: `mkdir -p ~/.local/bin && cp backup-site ~/.local/bin/`. For a system-wide tool that a service runs, `sudo install -m 0755 backup-site /usr/local/bin/` is the usual place.
 
-You now have a solid foundation in shell scripting that will allow you to automate tasks and create powerful tools using the Linux command line.
+A few details are worth copying into your own scripts:
 
-In the next part, we'll explore Linux system administration basics, including user management, system monitoring, backups, and security.
+- The archive is written to a uniquely named `.partial` file from `mktemp` and renamed only when `tar` succeeded, so a half-written file never looks like a good backup. The `EXIT` trap removes the partial file on failure.
+- `flock` on a lock file lets only one run work in a backup directory at a time, and the script refuses to overwrite an archive with the same name, or to write backups inside the directory it archives.
+- A symlink as the source is refused: `tar` would archive the link, not the files behind it. Trailing slashes are removed first, so `site//` cannot slip past that check.
+- `--` before the directory name tells `tar` that no options follow, so a directory called `--help` is archived instead of being read as an option. `--keep` is limited to four digits, because Bash arithmetic silently wraps around on huge numbers.
+- All messages go to standard error with a UTC timestamp, which reads well in the systemd journal.
+- The pruning pattern matches only names this script creates, so another site's `site-assets-...` archives in the same directory are left alone. Better still, give each source its own backup directory. The UTC timestamp in the name sorts in time order, and Bash sorts glob results, so the array is oldest first and needs no `ls` parsing.
+- Bad input exits with code 2 (usage) or 1 (error), which systemd and CI tools report as a failure.
 
-Shell scripting is a skill that develops with practice. Start with simple scripts and gradually build more complex ones. The more you automate routine tasks, the more time you'll have for creative and strategic work.
+## Other Shells
+
+- **Zsh** is the default interactive shell on macOS and popular on Linux with frameworks such as Oh My Zsh. It runs most Bash syntax, with differences: arrays start at index 1 (Bash starts at 0) and unquoted variables are not split on spaces. Scripts still run with whatever their shebang says, so a `#!/usr/bin/env bash` script works the same from Zsh.
+- **Fish** has friendly autosuggestions and its own syntax (`set name value`, `end` instead of `done` and `fi`). It is not POSIX-compatible, so keep scripts in Bash even if you use Fish interactively.
+- **POSIX sh** (`dash` on Debian and Ubuntu, `ash` in Alpine and BusyBox images) is the lowest common denominator. Write `#!/bin/sh` scripts only when they must run where Bash is missing, for example in minimal container images, and check them with `shellcheck -s sh`.
+
+## When Not to Use a Shell Script
+
+Bash is excellent for gluing commands together. Once a script needs data structures, JSON or HTTP APIs, real error handling or more than a couple of hundred lines, a language such as Python or Go is easier to test and maintain. For configuring many servers the same way, use a configuration tool such as [Ansible](/guides/introduction-to-ansible) instead of SSH loops.
+
+## Common Mistakes
+
+- **Unquoted variables** (`rm $file`). Quote everything: `"$file"`.
+- **Spaces around `=`** in assignments.
+- **Parsing `ls` output** in loops instead of using globs.
+- **`cd` without a check** in a script that deletes files. Use `cd "$dir" || exit 1`, or `set -e`.
+- **Running a Bash script with `sh`.**
+- **Windows line endings.** A script saved with CRLF fails with `/usr/bin/env: 'bash\r': No such file or directory`. Convert it with `sed -i 's/\r$//' script.sh` or `dos2unix`.
+- **Secrets in scripts.** Read them from the environment or a file with restricted permissions, never hard-code them in a file that goes into Git.
+
+## Summary
+
+- Start scripts with `#!/usr/bin/env bash`, make them executable, and add `set -euo pipefail`.
+- Quote every variable, use `"$@"` for arguments, and `local` inside functions.
+- Use `[[ ]]` for tests, `(( ))` for arithmetic, `case` for many choices, globs for files, and `while IFS= read -r` for lines.
+- Return status with exit codes, data with output, and send messages to standard error.
+- Clean up with `trap ... EXIT`, debug with `bash -x`, and lint with ShellCheck.
+
+Next: [Linux System Administration Basics](/guides/introduction-to-linux/10-system-administration), where the backup script runs every night as a systemd timer.
+
+## Keep Learning
+
+- [Introduction to Bash guide](/guides/introduction-to-bash), which goes deeper into each topic
+- [Check if a variable is set in Bash](/posts/check-if-variable-set-bash)
+- [Loop through an array of strings in Bash](/posts/loop-through-array-strings-bash)
+- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)
