@@ -1,12 +1,12 @@
 ---
 title: 'Security Gates'
-seoTitle: 'Security Gates: Block Risky Deployments in CI/CD'
-description: 'Implement automated security gates that block deployments on critical vulnerabilities, policy violations, and security failures. Shift security left in your CI/CD pipeline.'
+seoTitle: 'Security Gates in CI/CD: Policy, CVE and Compliance Checks'
+description: 'What security gates are and how to add them to CI/CD: policy as code, CVE gates with KEV and EPSS, compliance checks and admission control, with real runs.'
 category:
   name: 'Security'
   slug: 'security'
 publishedAt: '2026-02-23'
-updatedAt: '2026-02-23'
+updatedAt: '2026-10-23'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -15,266 +15,147 @@ tags:
   - DevSecOps
   - CI/CD
   - Quality Gates
-  - Policy Enforcement
+  - Policy as Code
+  - Vulnerability Management
+  - Compliance
+  - Kubernetes
 ---
 
-Security gates are automated checkpoints in your CI/CD pipeline that block deployments when security standards aren't met. Instead of discovering vulnerabilities in production, you catch them early where they're cheaper and safer to fix.
+A **security gate** is an automated check in your delivery pipeline that can stop a change. It has three parts: a check (a scanner or a policy), a decision rule that says which results block, warn or pass, and an exception process for the cases where the rule is wrong. Gates run on pull requests, during the build, before a deployment and at the Kubernetes API server, so a known problem is found while it is still cheap to fix.
 
-This guide teaches you how to implement security gates using policy-as-code, automated scanning, and enforcement tools.
+This guide builds a full set of gates for one small service, `orders-api`, with real runs of the tools: OPA, Conftest, the Kyverno CLI, gator, OSV-Scanner, Trivy, Checkov, Gitleaks, actionlint, zizmor, cosign and the GitHub CLI. Every gate has a rule a team can live with, because a gate that blocks every build is switched off within a week.
 
-## Why Security Gates Matter
-
-**Without security gates:**
-- Critical vulnerabilities reach production
-- Security is an afterthought, not a requirement
-- Compliance violations discovered during audits
-- No consistent security standards
-
-**With security gates:**
-- Bad code never reaches production
-- Security failures block the pipeline
-- Compliance is automated and continuous
-- Clear security standards enforced everywhere
-
-### Real-World Impact
-
-**Target (2013)**: Payment data breach affected 40M+ customers. A security gate checking vendor credentials could have prevented the attack.
-
-**Equifax (2017)**: Unpatched Apache Struts vulnerability exposed 147M records. Security gates scanning for CVE-2017-5638 would have blocked deployment.
-
-**Capital One (2019)**: Misconfigured S3 bucket exposed 100M+ records. Infrastructure-as-code gates would have caught the SSRF vulnerability.
-
-## What You'll Learn
-
-This guide covers essential security gate implementations:
-
-1. **[Policy as Code](/guides/security-gates/01-policy-as-code)** — OPA, Kyverno, and admission control
-2. **[Vulnerability Gates](/guides/security-gates/02-vulnerability-gates)** — Fail builds on critical CVEs
-3. **[Compliance Gates](/guides/security-gates/03-compliance-gates)** — CIS benchmarks, PCI-DSS, SOC 2
-4. **[CI/CD Integration](/guides/security-gates/04-cicd-integration)** — Automated enforcement in your pipeline
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Pull request", "sub": "secrets, SAST, policy, IaC, new deps", "icon": "branch", "tone": "slate" },
+    { "label": "Build", "sub": "CVE gate, SBOM", "icon": "box", "tone": "blue" },
+    { "label": "Sign and attest", "sub": "provenance, SBOM", "icon": "lock", "tone": "violet" },
+    { "label": "Deploy", "sub": "verify signature, admission", "icon": "shield", "tone": "accent" },
+    { "label": "Run", "sub": "nightly SBOM rescans", "icon": "activity", "tone": "green" }
+  ]
+}
+```
 
 ## Types of Security Gates
 
-```plaintext
-Security Gate Categories
-├── Vulnerability Gates
-│   ├── Critical CVEs → BLOCK
-│   ├── High severity → WARN
-│   └── Medium/Low → ALLOW
-│
-├── Policy Gates
-│   ├── Container must run as non-root
-│   ├── Image must be signed
-│   └── No privileged containers
-│
-├── Compliance Gates
-│   ├── CIS Benchmarks
-│   ├── PCI-DSS requirements
-│   └── SOC 2 controls
-│
-└── Secret Detection Gates
-    ├── API keys → BLOCK
-    ├── Passwords → BLOCK
-    └── Private keys → BLOCK
-```
+| Gate                   | What it checks                                                  | Example tools                                                 | Where it runs                          | Covered in                                              |
+| ---------------------- | --------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------- |
+| Secrets                | API keys, tokens and private keys in code                       | Gitleaks, GitHub push protection                              | Pre-commit, pull request               | [Part 4](/guides/security-gates/04-cicd-integration)    |
+| Static analysis (SAST) | Injection, unsafe APIs and similar bugs in your code            | Semgrep, CodeQL                                               | Pull request                           | [SAST Tools guide](/guides/sast-tools)                  |
+| Policy                 | Kubernetes manifests, Dockerfiles, Terraform against your rules | OPA, Conftest, Kyverno, Gatekeeper, ValidatingAdmissionPolicy | Pull request and the API server        | [Part 1](/guides/security-gates/01-policy-as-code)      |
+| Vulnerabilities        | Known CVEs in dependencies and images                           | OSV-Scanner, Trivy, Grype, dependency review                  | Pull request, build, nightly           | [Part 2](/guides/security-gates/02-vulnerability-gates) |
+| Compliance             | Infrastructure code against CIS, PCI DSS and SOC 2 controls     | Checkov, KICS, Trivy                                          | Pull request, before `terraform apply` | [Part 3](/guides/security-gates/03-compliance-gates)    |
+| Supply chain           | Signatures, SBOMs and build provenance of artifacts             | cosign, GitHub artifact attestations                          | Build and deploy                       | [Part 4](/guides/security-gates/04-cicd-integration)    |
 
-## Quick Comparison
+## Block, Warn or Report
 
-| Tool | Purpose | When to Use |
-|------|---------|-------------|
-| **OPA** | General policy engine | Universal policy enforcement |
-| **Kyverno** | Kubernetes policies | K8s-specific validation |
-| **Trivy** | Vulnerability scanning | Container/IaC scanning |
-| **Snyk** | Vulnerability + policy | Commercial solution |
-| **Checkov** | IaC scanning | Terraform/CloudFormation |
-| **Gatekeeper** | K8s admission control | Enforce OPA policies in K8s |
+The decision rule matters more than the tool. Most teams end up with three outcomes:
 
-## Gate Severity Levels
+| Outcome    | Use it for                                                       | Examples from this guide                                                                                             |
+| ---------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Block**  | Findings that are exploited, easy to fix, or never acceptable    | A secret in the diff; a CVE in the CISA KEV catalog; a privileged container; a database open to the internet         |
+| **Warn**   | New rules during rollout, and accepted risks with an expiry date | A new policy in its first weeks; a critical CVE whose fix needs a major upgrade, with an exception until 31 December |
+| **Report** | Everything else, sent to a backlog or dashboard                  | High and medium CVEs without exploit activity; advisory IaC checks that do not map to a control                      |
 
-```yaml
-# Example gate configuration
-gates:
-  vulnerabilities:
-    critical: BLOCK    # Stop deployment
-    high: WARN         # Allow but notify
-    medium: INFO       # Log only
-    low: IGNORE        # No action
-  
-  policies:
-    must_have:
-      - image_signed
-      - no_root_user
-      - resource_limits
-    severity: BLOCK
-  
-  compliance:
-    frameworks:
-      - CIS-1.6
-      - PCI-DSS
-    failed_checks: BLOCK
-```
+Blocking on severity alone does not work for vulnerabilities. In part 2, a 2022-era lockfile has 66 known vulnerabilities, 6 of them critical. A gate that uses CISA KEV, EPSS and fix availability blocks 9 of them, each with a reason and a fixed version, and the team can actually clear that list.
 
-## Gate Decision Flow
+## A Minimal Gate Script
 
-```plaintext
-Code Commit
-  ↓
-Build Artifact
-  ↓
-[Gate 1] Secret Scan
-  ├─ PASS → Continue
-  └─ FAIL → Block + Notify
-       ↓
-[Gate 2] Vulnerability Scan  
-  ├─ Critical CVE? → BLOCK
-  ├─ High severity? → WARN + Continue
-  └─ Low/Medium → Continue
-       ↓
-[Gate 3] Policy Check
-  ├─ Signed image? → Continue
-  ├─ Runs as root? → BLOCK
-  └─ Resource limits? → Continue
-       ↓
-[Gate 4] Compliance Check
-  ├─ CIS pass? → Deploy
-  └─ CIS fail? → BLOCK
-```
-
-## Example: Simple Gate
+You can run a first set of gates from one script, locally or in any CI system. This is the script for `orders-api` once all four parts are in place; it stops at the first gate that fails:
 
 ```bash
-#!/bin/bash
-# Simple security gate script
+#!/usr/bin/env bash
+# Run the orders-api security gates in order of speed. Stop at the first failure.
+set -euo pipefail
 
-set -e
+echo "== 1/4 secrets"
+gitleaks dir . --no-banner --redact --ignore-gitleaks-allow
 
-echo "🔍 Running security gates..."
+echo "== 2/4 policy"
+conftest test --namespace kubernetes k8s/
+conftest test --namespace docker Dockerfile
 
-# Gate 1: Secret Detection
-echo "Gate 1/4: Secret detection"
-if gitleaks detect --no-git; then
-  echo "✅ No secrets found"
-else
-  echo "❌ GATE FAILED: Secrets detected!"
-  exit 1
-fi
+echo "== 3/4 vulnerabilities"
+rm -f osv.json
+# exit code 1 means "vulnerabilities found"; any other failure stops the script
+osv-scanner scan source --lockfile gradle.lockfile --format json --output-file osv.json 2> /dev/null || [ $? -eq 1 ]
+./scripts/enrich.sh osv.json
+conftest test findings.json --namespace vulns --data exceptions.yaml
 
-# Gate 2: Vulnerability Scan
-echo "Gate 2/4: Vulnerability scan"
-trivy image --severity CRITICAL,HIGH --exit-code 1 myapp:latest
+echo "== 4/4 compliance"
+checkov --directory terraform --config-file .checkov.yaml --output json > checkov.json
+conftest test checkov.json --namespace compliance --data compliance/controls.yaml
 
-# Gate 3: Policy Check
-echo "Gate 3/4: Policy validation"
-conftest test Dockerfile --policy policy/
-
-# Gate 4: SBOM Compliance
-echo "Gate 4/4: SBOM generation"
-syft myapp:latest -o cyclonedx-json > sbom.json
-grype sbom:sbom.json --fail-on critical
-
-echo "✅ All gates passed!"
+echo "all gates passed"
 ```
 
-## Best Practices
-
-### Start Simple
-
-Begin with high-impact, low-friction gates:
-
-1. **Week 1**: Secret detection only
-2. **Week 2**: Add critical CVE blocking
-3. **Week 3**: Add basic policy checks
-4. **Week 4**: Add compliance scanning
-
-### Balance Security and Velocity
-
-```yaml
-# Good: Graduated response
-vulnerabilities:
-  critical: BLOCK      # Can't deploy
-  high: WARN          # Deploy but notify
-  medium: INFO        # Log for tracking
-
-# Bad: Too strict
-vulnerabilities:
-  critical: BLOCK
-  high: BLOCK
-  medium: BLOCK       # Blocks everything
-  low: BLOCK
+```terminal
+{
+  "title": "./scripts/gates.sh",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "./scripts/gates.sh",
+      "output": "== 1/4 secrets\n7:19PM INF scanned ~213240 bytes (213.24 KB) in 8.52s\n7:19PM INF no leaks found\n== 2/4 policy\n\n6 tests, 6 passed, 0 warnings, 0 failures, 0 exceptions\n\n4 tests, 4 passed, 0 warnings, 0 failures, 0 exceptions\n== 3/4 vulnerabilities\n2 findings, 0 in KEV, 0 with EPSS >= 0.1\nWARN - findings.json - vulns - CVE-2026-47884 in org.springframework:spring-webmvc is accepted until 2026-12-31: orders-api does not use XsltView; the fix needs Spring Framework 7 (ORD-412)\nWARN - findings.json - vulns - CVE-2026-47890 in org.springframework:spring-webmvc is accepted until 2026-12-31: orders-api does not render view fragments over SSE; the fix needs Spring Framework 7 (ORD-412)\n\n6 tests, 4 passed, 2 warnings, 0 failures, 0 exceptions\n== 4/4 compliance\n\n4 tests, 4 passed, 0 warnings, 0 failures, 0 exceptions\nall gates passed"
+    }
+  ]
+}
 ```
 
-### Make Failures Actionable
+`osv-scanner` exits with code 1 whenever it finds a vulnerability, so the script accepts that code but stops on any other error, and `.checkov.yaml` sets `soft-fail`. The scanners report; the reviewed policies decide. The same pattern works for any scanner: collect the results as JSON, then make one reviewed policy the gate.
 
-**Bad error message:**
-```
-Security gate failed
-```
+## Make Failures Actionable
 
-**Good error message:**
-```
-❌ Security Gate Failed: Critical Vulnerability
+A developer who sees "security gate failed" opens a ticket with the platform team. A developer who sees this fixes the problem in a few minutes:
 
-Found: CVE-2024-1234 in base image nginx:1.21
-Severity: CRITICAL (CVSS 9.8)
-Fix: Update to nginx:1.22 or later
-
-Command to fix:
-  docker build --build-arg BASE_IMAGE=nginx:1.22 .
-
-More info: https://nvd.nist.gov/vuln/detail/CVE-2024-1234
+```text
+FAIL - findings.json - vulns - CVE-2022-22965 in org.springframework:spring-beans 5.3.17 is in the CISA KEV catalog (fix: 5.2.20.RELEASE or 5.3.18)
+FAIL - k8s/deployment.yaml - kubernetes - Deployment/orders-api: container "log-shipper" must not run privileged
 ```
 
-### Provide Override Mechanism
+Every message in this guide names the object, the rule and the fix. Link longer explanations from the message, and send results to the place developers already look: pull request annotations and the code scanning tab, as shown in [part 4](/guides/security-gates/04-cicd-integration).
 
-```yaml
-# Allow emergency overrides with approval
-gates:
-  strict_mode: true
-  override:
-    enabled: true
-    requires_approval: true
-    approvers:
-      - security-team
-      - senior-engineers
-    reason_required: true
-    audit_log: true
-```
+## Exceptions and Overrides
 
-## Common Pitfalls
+Every gate needs a way through for the cases where the rule is wrong or the fix has to wait. A good exception has:
 
-### ❌ Don't: Gate Everything Immediately
+- **an owner and a reason**, reviewed in a pull request like any other change;
+- **an expiry date**, after which the gate fails again (part 2 tests this with a mocked clock);
+- **a narrow scope**: one CVE in one package, or one policy for one namespace, never "skip the scanner".
 
-Starting with 50 gates creates friction and resistance.
+For a true emergency, keep a separate break-glass deployment workflow that runs only through a protected GitHub environment with required reviewers, so the override is approved by a named person and logged ([part 4](/guides/security-gates/04-cicd-integration#h2-overrides-without-bypasses)). Never let people bypass a gate by editing the pipeline in the same pull request.
 
-### ✅ Do: Gradual Rollout
+## Roll Out Gradually
 
-Start with 3-5 critical gates, add more as team adapts.
+1. **Report only.** Run every scanner and policy, publish the results, block nothing. You learn how noisy each check is.
+2. **Block the clear cases.** Secrets, KEV-listed CVEs and privileged containers. Nobody argues with these.
+3. **Add rules one at a time**, each first as a warning or in audit mode, then as a block.
+4. **Review the exceptions monthly.** A growing exceptions file means the rules or the backlog need attention.
 
-### ❌ Don't: Block on Low-Priority Issues
+## What Gates Would Have Changed
 
-Blocking on medium/low vulnerabilities slows development.
+- **Equifax (2017).** A fix for the Apache Struts vulnerability CVE-2017-5638 was published in March 2017. Attackers used it against Equifax from May, and the breach exposed data on about 147 million people. Exploitation in the wild started within days of the disclosure. The application was already in production, so a build-time gate alone would not have helped; a nightly rescan of what is deployed would have flagged the vulnerable Struts version as soon as the CVE was published ([part 2](/guides/security-gates/02-vulnerability-gates)).
+- **Capital One (2019).** An attacker used a server-side request forgery in a misconfigured web application firewall to get credentials for an IAM role, and that role could read far more S3 data than it needed. About 100 million people in the US and 6 million in Canada were affected. Policy and compliance gates on IAM and infrastructure code target exactly this kind of over-broad permission ([part 3](/guides/security-gates/03-compliance-gates)).
+- **The gate tools themselves (2026).** In March 2026, attackers force-pushed malicious commits to the version tags of `aquasecurity/trivy-action` and later of Checkmarx's KICS action, so pipelines that referenced those tags ran code that stole CI secrets. Pin every action to a commit SHA ([part 4](/guides/security-gates/04-cicd-integration#h2-pin-and-verify-the-gate-tools)).
 
-### ✅ Do: Use Severity-Based Actions
+## What You Will Learn
 
-Critical → BLOCK, High → WARN, Medium/Low → INFO
+1. **[Policy as Code](/guides/security-gates/01-policy-as-code)**: Rego v1 policies for Kubernetes manifests and Dockerfiles, unit tests with `opa test`, and admission control with ValidatingAdmissionPolicy, Kyverno and Gatekeeper.
+2. **[Vulnerability Gates](/guides/security-gates/02-vulnerability-gates)**: scan lockfiles and SBOMs, gate on CISA KEV, EPSS and fix availability, and manage expiring exceptions and VEX.
+3. **[Compliance Gates](/guides/security-gates/03-compliance-gates)**: check Terraform with Checkov, map checks to CIS, PCI DSS and SOC 2 controls, write custom checks and keep audit evidence.
+4. **[CI/CD Integration](/guides/security-gates/04-cicd-integration)**: a complete GitHub Actions pipeline checked with actionlint, SHA-pinned actions, code scanning, signed images with attestations, and a GitLab CI version.
 
-### ❌ Don't: Ignore False Positives
+## Prerequisites
 
-Teams will bypass gates if too many false alarms.
+- Basic knowledge of Git, a CI system (GitHub Actions or GitLab CI), Docker and Kubernetes manifests.
+- A Linux, macOS or Windows (WSL) machine to run the tools locally. Apart from kube-bench in part 3 and the pipeline in part 4, every command in this guide runs without a cloud account or a Kubernetes cluster.
 
-### ✅ Do: Maintain Suppression List
+## Keep Learning
 
-Document and track accepted risks/false positives.
-
-## Next Steps
-
-Start implementing security gates:
-
-1. **[Policy as Code](/guides/security-gates/01-policy-as-code)** — Write and enforce security policies
-2. **[Vulnerability Gates](/guides/security-gates/02-vulnerability-gates)** — Block critical CVEs
-3. **[Compliance Gates](/guides/security-gates/03-compliance-gates)** — Automate compliance checks
-4. **[CI/CD Integration](/guides/security-gates/04-cicd-integration)** — Integrate gates into your pipeline
-
----
-
-**Remember**: Security gates are not about saying "no" — they're about shifting security left and catching issues early when they're easier and cheaper to fix.
+- [SAST Tools guide](/guides/sast-tools) and [Threat Modeling guide](/guides/threat-modeling)
+- [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
+- [Pre-commit Hooks for Security: Stop Secrets Before They Hit Your Repository](/posts/pre-commit-hooks-security-guide)
+- [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup)
+- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
