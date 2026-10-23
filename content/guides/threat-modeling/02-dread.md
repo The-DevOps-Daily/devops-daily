@@ -220,6 +220,6 @@ In [Part 3](/guides/threat-modeling/03-attack-trees), you combine the threats in
 ## Keep Learning
 
 - [Security gates guide](/guides/security-gates), to turn severity decisions into CI/CD policies
-- [Vulnerability gates](/guides/security-gates/02-vulnerability-gates), which block builds by CVSS severity
+- [Vulnerability gates](/guides/security-gates/02-vulnerability-gates), which decide when a CVE blocks a build
 - [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide)
 - [Security Incident Response quiz](/quizzes/security-incident-response-quiz)
