@@ -1,324 +1,200 @@
 ---
 title: 'Getting Started with Your AWS Account'
-description: 'Create your first AWS account and learn to find your way around the console without getting lost. Covers signup, billing alerts, root account safety, and regions.'
+description: 'Create an AWS account, choose the free or paid plan, secure the root user with MFA, set a budget alert, pick a Region and install the AWS CLI v2.'
 order: 1
 ---
 
-Starting with AWS can feel like walking into a massive electronics store where everything looks important but you're not sure what anything does. The AWS console has hundreds of services, and it's easy to feel overwhelmed.
+**TLDR**: Sign up at aws.amazon.com, choose the free or paid plan, and add MFA to the root user straight away. Create a budget with an email alert before you build anything. Pick one Region and stay in it. Install AWS CLI v2 and check it with `aws --version`. In [Part 2](/guides/introduction-to-aws/02-iam-security) you create the user you work with every day, so you can stop using the root user.
 
-This section helps you get oriented and build confidence navigating AWS without getting lost.
+The first hour in a new AWS account decides a lot: whether a leaked password can take over everything, and whether a forgotten server shows up as a surprise on your card. This part sets up the account safely and gets you comfortable in the console and on the command line.
 
-## Creating Your AWS Account
+## Prerequisites
 
-Setting up an AWS account is straightforward, but there are a few important details to get right from the start.
+- An email address that you check and that you will keep. It becomes the root user's login.
+- A phone number for verification and a credit or debit card. On the free plan, the card is not charged.
+- A computer where you can install software, for the AWS CLI.
 
-### What You'll Need
+## Create Your Account
 
-- **Email address**: Use one you check regularly (AWS sends important notifications)
-- **Phone number**: For account verification and security
-- **Credit card**: Required even for free services (don't worry, we'll show you how to avoid charges)
+1. Go to [aws.amazon.com](https://aws.amazon.com/) and choose **Create an AWS account**.
+2. Enter the root user email address and an **account name**. Use something that tells you what the account is for, such as `alex-learning`. You can change it later.
+3. Verify the email address, then set a long, unique root user password in your password manager.
+4. Choose your **account plan**:
+   - **Free plan**: no charges for up to six months, paid for with USD 100 in sign-up credits (plus up to USD 100 more for completing activities). Some services are not available, and the account closes at the end unless you upgrade.
+   - **Paid plan**: every service, the same credits, then normal prices.
 
-### Choosing Your Account Name
+   The free plan is the safer choice for this guide: you cannot be charged, and you can upgrade at any time from the Billing console.
 
-Pick something meaningful like "John Smith Personal" or "MyCompany Development." You'll see this name throughout the console, so make it clear and professional.
+5. Enter your contact details, the card and the phone verification code.
+6. Choose **Basic support**. It is free and covers account and billing questions, which is all you need while learning. The paid plans (Business Support+ and above) add technical support cases with AWS engineers.
 
-### Support Plan Selection
+When the sign-up finishes, sign in to the [AWS Management Console](https://console.aws.amazon.com/) as the root user.
 
-AWS offers different support levels:
+:::note
+AWS is rolling out a new sign-up flow, [Sign up for AWS (new)](https://docs.aws.amazon.com/accounts/latest/reference/sign-in-new.html), to a limited number of customers. It signs you in with Google, GitHub, Apple or Amazon, organizes resources in **projects**, and adds people as team members instead of IAM users. This guide follows the standard sign-up. If you landed in the new experience, the console steps for services are the same, but follow the AWS documentation for users and access instead of the IAM user steps in Part 2.
+:::
 
-- **Basic Support**: Free, includes billing questions and basic troubleshooting
-- **Developer Support**: $29/month, includes technical support
-- **Business Support**: $100+/month, for production applications
+## Secure the Root User First
 
-For learning, Basic Support is perfect. You can always upgrade later.
+The root user can do anything, including closing the account and changing the payment method, and you cannot attach IAM policies to it to limit what it does. Protect it before you do anything else:
 
-## Understanding AWS Regions
+1. Open the account menu (your account name, top right) and choose **Security credentials**.
+2. Under **Multi-factor authentication (MFA)**, choose **Assign MFA device**. A passkey or a hardware security key is the strongest option; an authenticator app also works. AWS requires MFA on root users, so you are prompted to register a device anyway. Do it now rather than later.
+3. Check that there are no **access keys** for the root user. Never create them.
+4. Store the password and your MFA recovery details somewhere safe, not only on your phone.
 
-Before you start creating anything, you need to understand regions. AWS operates data centers around the world, grouped into regions like:
+After [Part 2](/guides/introduction-to-aws/02-iam-security), you sign in as root only for the handful of [tasks that require it](https://docs.aws.amazon.com/IAM/latest/UserGuide/root-user-tasks.html), such as changing the account's contact email or closing the account.
 
-- **US East (N. Virginia)**: Often cheapest, gets new features first
-- **US West (Oregon)**: Good alternative to US East
-- **Europe (Ireland)**: For European users
-- **Asia Pacific (Singapore)**: For Asian users
+## Set a Budget Before You Build
 
-**For this guide, choose US East (N. Virginia)** because:
+Create a budget now, while the account is empty:
 
-- Most examples use this region
-- It's typically the cheapest
-- All services are available there
-- Many AWS tutorials assume this region
+1. Open **Billing and Cost Management** and choose **Budgets**, then **Create budget**.
+2. Choose **Use a template (simplified)** and pick **Zero spend budget** (alerts you as soon as anything costs money) or **Monthly cost budget** (alerts you at a dollar amount you choose, for example USD 10).
+3. Enter the email addresses that should get the alerts and create the budget.
 
-You can change regions anytime using the dropdown in the top-right corner of the console.
+On the free plan, your credits pay for usage, so the **Credits** and **Free Tier** pages in the Billing console are where you watch how much is left. On the paid plan, the budget is your early warning. [Part 10](/guides/introduction-to-aws/10-cost-management) adds forecasts, Cost Explorer and anomaly detection.
 
-## Your First Look at the AWS Console
+:::warning
+Budgets alert you; they do not stop resources. A budget email that arrives at 2 a.m. still needs you to delete what is running.
+:::
 
-When you first log in, the AWS console might seem overwhelming. Here's how to make sense of it:
+## Choose a Region
 
-### The Services Menu
+A **Region** is a geographic location with its own copy of most AWS services. Resources you create in one Region do not appear in another, so pick one and stick with it while you learn.
 
-The main navigation lists AWS services by category:
+| Region code      | Name                      | Location      |
+| ---------------- | ------------------------- | ------------- |
+| `us-east-1`      | US East (N. Virginia)     | United States |
+| `us-east-2`      | US East (Ohio)            | United States |
+| `us-west-2`      | US West (Oregon)          | United States |
+| `eu-west-1`      | Europe (Ireland)          | Ireland       |
+| `eu-central-1`   | Europe (Frankfurt)        | Germany       |
+| `ap-southeast-1` | Asia Pacific (Singapore)  | Singapore     |
+| `ap-south-1`     | Asia Pacific (Mumbai)     | India         |
+| `sa-east-1`      | South America (São Paulo) | Brazil        |
 
-- **Compute**: Virtual servers and serverless functions
-- **Storage**: File storage and databases
-- **Networking**: Load balancers and content delivery
-- **Database**: Managed database services
-- **Security**: User management and encryption
+For real projects, choose by:
 
-Don't try to understand every service immediately. Focus on the core services you'll learn in this guide.
+- **Latency**: close to your users.
+- **Data rules**: some data must stay in a country or region.
+- **Service availability**: new services and instance types often launch in a few large Regions first.
+- **Price**: the same resource costs different amounts in different Regions.
 
-### The Search Bar
+This guide uses **`us-east-1`** in its examples. If you live far from it, use a closer Region and change the Region in the commands. Regions that AWS launched after March 2019 are **opt-in**: you enable them under **Account**, **AWS Regions** before you can use them.
 
-The fastest way to find services is the search bar at the top. Start typing "EC2" or "S3" and it will find what you need.
+## Find Your Way Around the Console
 
-### Recently Visited Services
+- **Search** (top bar, or Alt+S on Windows and Linux, Option+S on macOS) finds services, features and documentation. It is faster than the services menu.
+- The **Region selector** (top right) shows where you are working. When a resource seems to have vanished, check this first.
+- **Favorites** (the star next to a service) pins services to the top bar.
+- The **Console Home** page shows recently visited services, cost and usage, and the health of AWS services in your account.
+- **CloudShell** (the terminal icon in the top bar) opens a browser shell with the AWS CLI already signed in as your console user. It is free and handy when you are not on your own computer.
 
-AWS remembers which services you use most and shows them prominently. This makes navigation faster as you get familiar with your most-used services.
+## Install the AWS CLI
 
-## Setting Up Your Dashboard
+The AWS CLI lets you script everything you can click. Install **version 2**; version 1 is only kept for old scripts.
 
-The AWS console dashboard shows an overview of your account. Customize it to show information that matters to you:
-
-### Useful Widgets to Add
-
-- **Service Health**: Shows if any AWS services are having problems
-- **Billing**: Your current month's spending
-- **Cost and Usage**: Trends in your usage
-- **Trusted Advisor**: Recommendations for optimization
-
-### Personalizing Your Experience
-
-- **Pin frequently used services** to your toolbar
-- **Bookmark specific service pages** in your browser
-- **Set up browser bookmarks** for common tasks
-
-## Understanding the Billing Dashboard
-
-Before creating any resources, get familiar with billing. Even with the free tier, it's important to understand how AWS pricing works.
-
-### Key Billing Concepts
-
-**Free Tier**: Generous allowances for new accounts (12 months for most services)
-**Pay-as-you-go**: You're charged for what you actually use
-**Regional pricing**: Costs vary slightly by geographic region
-**Service-specific pricing**: Each AWS service has its own pricing model
-
-### Setting Up Billing Alerts
-
-This is crucial for beginners. Set up email alerts when your bill reaches:
-
-- **$1**: Early awareness of any charges
-- **$10**: Time to investigate what's causing costs
-- **$25**: Immediate action needed
-
-These alerts give you control and prevent surprise bills.
-
-## AWS CLI: Your Command-Line Friend
-
-While the web console is great for learning, many AWS tasks are faster from the command line. AWS provides a tool called the AWS CLI (Command Line Interface).
-
-### Why Use the Command Line?
-
-- **Faster for repetitive tasks**: Create multiple resources at once
-- **Automation**: Write scripts to set up environments
-- **Learning**: Understand what the console is doing behind the scenes
-- **Professional development**: Most AWS jobs expect CLI familiarity
-
-### AWS CloudShell: No Installation Required
-
-AWS CloudShell gives you a command line right in your browser:
-
-- Click the CloudShell icon in the AWS console
-- Wait a moment for it to load
-- You're ready to run AWS commands
-
-Try this simple command to see your account information:
-
-```bash
-aws sts get-caller-identity
+```tabs
+{
+  "title": "Install AWS CLI v2",
+  "tabs": [
+    {
+      "label": "Linux (x86_64)",
+      "lang": "bash",
+      "code": "curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o awscliv2.zip\nunzip awscliv2.zip\nsudo ./aws/install\n\n# Later, to update in place:\n# sudo ./aws/install --update"
+    },
+    {
+      "label": "Linux (ARM)",
+      "lang": "bash",
+      "code": "curl \"https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip\" -o awscliv2.zip\nunzip awscliv2.zip\nsudo ./aws/install\n\n# Without sudo, install into your home directory:\n# ./aws/install -i ~/.local/aws-cli -b ~/.local/bin"
+    },
+    {
+      "label": "macOS",
+      "lang": "bash",
+      "code": "# Official installer package\ncurl \"https://awscli.amazonaws.com/AWSCLIV2.pkg\" -o AWSCLIV2.pkg\nsudo installer -pkg AWSCLIV2.pkg -target /\n\n# Or with Homebrew\nbrew install awscli"
+    },
+    {
+      "label": "Windows",
+      "lang": "powershell",
+      "code": "# Official MSI installer\nmsiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi\n\n# Or with winget\nwinget install -e --id Amazon.AWSCLI"
+    }
+  ]
+}
 ```
 
-### Installing CLI on Your Computer (Optional)
-
-If you prefer working from your own computer:
-
-- **Mac**: `brew install awscli`
-- **Windows**: Download from AWS website
-- **Linux**: Usually available through your package manager
-
-## Organizing Your AWS Resources
-
-As you start creating resources, organization becomes important. AWS provides several tools to keep things tidy:
-
-### Naming Conventions
-
-Develop consistent naming patterns early:
-
-- **Environment-Service-Purpose**: `dev-web-server`
-- **Project-Environment-Service**: `blog-prod-database`
-- **Date-Project-Resource**: `2025-website-backup`
-
-Good names help you:
-
-- Find resources quickly
-- Understand what each resource does
-- Identify resources that can be deleted
-
-### Tagging Strategy
-
-Tags are labels you can attach to AWS resources. They're invisible to users but help you organize and track costs:
-
-**Common tags**:
-
-- `Environment`: development, staging, production
-- `Project`: which application or website
-- `Owner`: who created or manages the resource
-- `Cost Center`: for business cost allocation
-
-Start tagging resources from day one. It's much harder to add tags later when you have dozens of resources.
-
-## Security Best Practices from Day One
-
-Your AWS account starts with full administrative access, which is powerful but risky. Here are immediate security steps:
-
-### Enable Multi-Factor Authentication (MFA)
-
-MFA adds a second layer of security to your account:
-
-1. Go to "My Security Credentials" in your account menu
-2. Enable MFA using an app like Google Authenticator
-3. Test the setup to make sure it works
-
-This simple step prevents most account compromises.
-
-### Don't Use Root Account for Daily Work
-
-Your root account (the one you created initially) should only be used for:
-
-- Account setup and billing
-- Emergency access
-- Specific administrative tasks
-
-For daily work, you'll create separate user accounts (covered in the next section).
-
-## Understanding AWS Documentation
-
-AWS provides extensive documentation, but it can be overwhelming. Here's how to use it effectively:
-
-### Types of Documentation
-
-**Getting Started Guides**: Step-by-step tutorials for beginners
-**User Guides**: Comprehensive references for each service
-**API References**: Technical details for developers
-**Best Practices**: Recommendations from AWS experts
-
-### Finding What You Need
-
-Start with Getting Started guides, then move to User Guides for more detail. Don't feel like you need to read everything - use documentation to answer specific questions.
-
-### Community Resources
-
-Beyond official documentation:
-
-- **AWS Forums**: Community Q&A
-- **Stack Overflow**: Programming questions
-- **YouTube**: Video tutorials and walkthroughs
-- **Blogs**: Real-world experiences and tips
-
-## Console Shortcuts and Tips
-
-Speed up your AWS workflow with these time-savers:
-
-### Keyboard Shortcuts
-
-- **Alt + S**: Open services menu
-- **/** (forward slash): Focus search bar
-- **Ctrl/Cmd + Click**: Open links in new tabs
-
-### Browser Tips
-
-- **Bookmark frequently used service pages**: EC2 dashboard, S3 console, etc.
-- **Use multiple tabs**: Keep different services open simultaneously
-- **Pin the AWS console tab**: So you don't lose it among other tabs
-
-### Mobile Access
-
-AWS has mobile apps for monitoring and basic management:
-
-- **AWS Console Mobile App**: Basic management tasks
-- **AWS IoT Device Management**: For IoT projects
-- **Amazon WorkSpaces**: Access cloud desktops
-
-## Common Beginner Navigation Mistakes
-
-### Getting Lost in Service Lists
-
-**Problem**: Trying to understand every service at once
-**Solution**: Focus on the core services in this guide first
-
-### Ignoring Regions
-
-**Problem**: Creating resources in different regions accidentally
-**Solution**: Always check your current region in the top-right corner
-
-### Not Using Search
-
-**Problem**: Scrolling through long service lists
-**Solution**: Use the search bar for everything
-
-### Forgetting About Billing
-
-**Problem**: Not monitoring costs until the bill arrives
-**Solution**: Check billing dashboard weekly
-
-## When Things Go Wrong
-
-Even experienced AWS users sometimes get confused or make mistakes. Here's what to do:
-
-### Can't Find a Resource
-
-Check:
-
-1. **Correct region**: Resources only appear in the region where they were created
-2. **Service filters**: Some consoles have filters that might hide resources
-3. **Account permissions**: Make sure you have access to view the resource
-
-### Unexpected Charges
-
-Check:
-
-1. **Billing dashboard**: See exactly what's being charged
-2. **Resource cleanup**: Look for forgotten running instances
-3. **Free tier usage**: Verify you haven't exceeded free tier limits
-
-### Console Not Loading
-
-Try:
-
-1. **Refresh the page**: Simple but often effective
-2. **Clear browser cache**: Sometimes cached data causes issues
-3. **Try a different browser**: Isolate browser-specific problems
-4. **Check AWS Service Health**: Sometimes AWS services have outages
-
-## Your Learning Path
-
-Now that you're comfortable with the basics:
-
-1. **Explore the console** without pressure to understand everything
-2. **Set up billing alerts** to monitor costs
-3. **Create your first resources** following this guide
-4. **Practice navigation** by finding different services
-5. **Bookmark useful pages** for quick access
-
-## Building Confidence
-
-Remember that every AWS expert started exactly where you are now. The console becomes familiar with use, and you'll develop your own navigation patterns and preferences.
-
-Don't worry about memorizing everything immediately. Focus on understanding the big picture and knowing where to find information when you need it.
-
-## Next Steps
-
-With your account set up and navigation confidence building, you're ready to learn about AWS security through Identity and Access Management (IAM).
-
-IAM is arguably the most important AWS service because it controls access to everything else. Understanding IAM early prevents security issues and gives you confidence to explore other services safely.
-
-While IAM might seem complex at first, the core concepts are straightforward and essential for anyone serious about using AWS effectively.
+Open a new terminal and check the version. The run below is on a Linux ARM machine with no AWS credentials yet, which is also what you see right after installing:
+
+```terminal
+{
+  "title": "fresh install, no credentials",
+  "prompt": "$",
+  "steps": [
+    {
+      "comment": "the CLI is installed",
+      "cmd": "aws --version",
+      "output": "aws-cli/2.38.5 Python/3.14.8 Linux/6.12.62+rpt-rpi-v8 exe/aarch64.debian.12"
+    },
+    {
+      "comment": "no profile, keys or Region yet",
+      "cmd": "aws configure list",
+      "output": "NAME       : VALUE                    : TYPE             : LOCATION\nprofile    : <not set>                : None             : None\naccess_key : <not set>                : None             : None\nsecret_key : <not set>                : None             : None\nregion     : <not set>                : None             : None"
+    },
+    {
+      "comment": "any call that needs credentials fails",
+      "cmd": "aws sts get-caller-identity",
+      "output": "aws: [ERROR]: An error occurred (NoCredentials): Unable to locate credentials. You can configure credentials by running \"aws login\"."
+    }
+  ]
+}
+```
+
+`aws sts get-caller-identity` is the "who am I?" command. It works for any signed-in identity, needs no permissions, and is the first thing to run when something behaves strangely. The CLI even suggests `aws login`: that is how you connect it to your account in [Part 2](/guides/introduction-to-aws/02-iam-security), without creating access keys.
+
+:::note
+Many older tutorials start with `aws configure` and an access key ID and secret. Skip that. Long-lived access keys are the credentials that leak most often, and you do not need them for anything in this guide.
+:::
+
+Two settings save typing later:
+
+```bash
+# Default Region and output format for the default profile
+aws configure set region us-east-1
+aws configure set output json
+```
+
+## Name and Tag Everything
+
+Pick a naming pattern now and use it everywhere, for example `<project>-<environment>-<role>`: `photo-app-dev-web`, `photo-app-dev-db`.
+
+**Tags** are key and value labels on resources. They help you find things, and once you activate them as **cost allocation tags** in the Billing console, Cost Explorer can split your bill by them. Start with three:
+
+| Tag key       | Example value | Why                                       |
+| ------------- | ------------- | ----------------------------------------- |
+| `Project`     | `photo-app`   | Which application the resource belongs to |
+| `Environment` | `dev`         | Separates experiments from anything real  |
+| `Owner`       | `alex`        | Who to ask before deleting it             |
+
+## Common Mistakes
+
+- **Working as the root user.** Create your admin user in Part 2 and stop using root.
+- **No budget.** Create it before the first resource, not after the first bill.
+- **Resources in several Regions.** A forgotten instance in another Region keeps running. Check the Region selector, and use **EC2 Global View** or **Resource Explorer** to see resources across Regions.
+- **Creating access keys for the CLI.** Use `aws login` or IAM Identity Center instead (Part 2).
+- **Using a personal email that you might lose.** The root email is how you recover the account.
+
+## Summary
+
+- The account plan decides whether you can be charged: the free plan cannot, the paid plan can.
+- The root user gets MFA, no access keys, and almost no use.
+- A budget alerts you to spending; it does not stop it.
+- One Region, consistent names and three tags keep a learning account easy to clean up.
+- AWS CLI v2 is installed; `aws sts get-caller-identity` tells you who you are.
+
+Next: [IAM: Users, Roles and Policies](/guides/introduction-to-aws/02-iam-security), where you create your everyday admin user and connect the CLI.
+
+## Keep Learning
+
+- [Cloud Regions and Availability Zones interview questions](/interview-questions/junior/cloud-regions-availability-zones)
+- [How to Set Up Cloud Cost Allocation Tags Across AWS, GCP, and Azure](/posts/cloud-cost-allocation-tags-aws-gcp-azure)
+- [AWS Essentials flashcards](/flashcards/aws-essentials)

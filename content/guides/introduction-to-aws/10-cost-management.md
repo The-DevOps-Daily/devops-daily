@@ -1,329 +1,204 @@
 ---
 title: 'Managing Your AWS Costs'
-description: 'Keep your cloud spending predictable with simple monitoring and optimization strategies.'
+description: 'Keep your AWS bill predictable: budgets, Cost Explorer, anomaly detection, the usual surprise charges, Savings Plans, Spot and a cleanup checklist.'
 order: 10
 ---
 
-One of the biggest concerns for AWS beginners is cost control. Stories of surprise bills can be intimidating, but with basic monitoring and smart habits, you can use AWS affordably and predictably.
-
-## Understanding AWS Pricing
-
-AWS pricing follows a fundamentally different model than traditional hosting. Instead of paying a fixed monthly fee regardless of how much you actually use, AWS charges based on your actual consumption. This creates both opportunities and challenges.
-
-The major advantage is that you only pay for resources you're actively using. If your website gets busy, you scale up and pay more, but when traffic is light, you scale down and pay less. This can result in significant savings compared to traditional hosting where you pay for peak capacity even during quiet periods.
-
-However, this consumption-based model means that forgotten or misconfigured resources continue accumulating charges. Unlike traditional hosting where a forgotten server costs you a fixed amount, in AWS that same server could cost you hundreds of dollars if it accidentally gets configured with expensive options.
-
-## Setting Up Cost Alerts
-
-The most important step is knowing when you're spending money. AWS provides several ways to monitor costs:
-
-### Billing Alerts
-
-Set up email notifications when your bill reaches certain amounts:
-
-- $10 alert for awareness
-- $25 alert for attention
-- $50 alert for action
-
-These alerts give you time to investigate before costs become significant.
-
-### AWS Budgets
-
-Budgets are more sophisticated than simple alerts. You can:
-
-- Set monthly spending limits
-- Track specific services (like EC2 or S3)
-- Get forecasted cost warnings
-- Monitor usage against free tier limits
-
-For beginners, a simple $20 monthly budget catches most issues early.
-
-## Common Cost Surprises
-
-Here are the most frequent causes of unexpected AWS bills:
-
-### Forgetting Running Instances
-
-**The problem**: Leaving EC2 instances running when not needed
-**The cost**: $8-50+ per month per instance
-**The fix**: Stop instances when not in use, terminate when done
-
-### Data Transfer Charges
-
-**The problem**: Moving data between regions or to the internet
-**The cost**: $0.09 per GB for most transfers
-**The fix**: Keep related services in the same region
-
-### Storage Accumulation
-
-**The problem**: Files and backups accumulating in S3
-**The cost**: $0.023 per GB per month
-**The fix**: Delete unnecessary files, use lifecycle policies
-
-### Elastic IP Addresses
-
-**The problem**: Elastic IPs not attached to running instances
-**The cost**: $0.005 per hour when not in use
-**The fix**: Release unused Elastic IPs
-
-## Daily Cost Management Habits
-
-### Check Your Dashboard
-
-Spend 30 seconds each day checking:
-
-- Current month's spending
-- Any new services showing charges
-- Running EC2 instances
-
-### Use Tags for Organization
-
-Tag your resources with:
-
-- `Environment`: development, staging, production
-- `Project`: which application or experiment
-- `Owner`: who created it
-
-Tags help you identify what's costing money and why.
-
-### Clean Up Regularly
-
-Set a weekly reminder to:
-
-- Stop unused EC2 instances
-- Delete old S3 files
-- Remove unused Load Balancers
-- Check for orphaned resources
-
-## Free Tier Maximization
-
-AWS's free tier is generous for learning:
-
-**EC2**: 750 hours of t2.micro or t3.micro instances
-**S3**: 5GB of storage
-**RDS**: 750 hours of db.t2.micro database
-**Lambda**: 1 million requests per month
-
-To maximize free tier benefits:
-
-- Use only free tier eligible services
-- Monitor usage through the Billing console
-- Set up free tier usage alerts
-
-## Right-Sizing Your Resources
-
-Many beginners over-provision resources "just in case." This wastes money.
-
-### EC2 Instance Sizing
-
-Start small and grow:
-
-- **t3.micro** for learning and small websites
-- **t3.small** when you need more power
-- **t3.medium** for moderate traffic sites
-
-Monitor CPU usage through CloudWatch. If consistently under 20%, consider downsizing.
-
-### Storage Optimization
-
-Different data needs different storage:
-
-- **Frequently accessed files**: S3 Standard
-- **Backup files**: S3 Standard-IA (Infrequent Access)
-- **Archive data**: S3 Glacier
-
-Use S3 lifecycle policies to automatically move old files to cheaper storage.
-
-## Understanding Reserved Instances
-
-Once you know you'll use servers long-term, Reserved Instances offer significant savings:
-
-**1-year commitment**: 30-40% discount
-**3-year commitment**: 50-60% discount
-
-Only use Reserved Instances for predictable workloads. They're perfect for production databases or always-running web servers.
-
-## Spot Instances for Development
-
-For development and testing, Spot Instances can save 60-90% compared to regular pricing. AWS sells unused capacity at steep discounts.
-
-**Perfect for**: Development environments, batch processing, fault-tolerant applications
-**Not suitable for**: Production databases, always-available services
-
-## Cost Optimization Strategies
-
-### Use Serverless When Appropriate
-
-Lambda and other serverless services often cost less than running dedicated servers for intermittent workloads.
-
-**Example**: A contact form handler might cost $0.01/month with Lambda vs. $8/month with EC2.
-
-### Implement Auto-Scaling
-
-Auto-scaling automatically adjusts capacity based on demand:
-
-- Scale up during busy periods
-- Scale down during quiet times
-- Minimum capacity during off-hours
-
-This prevents over-provisioning while maintaining performance.
-
-### Choose the Right Region
-
-Pricing varies by region:
-
-- **US East (Virginia)**: Usually cheapest
-- **US West (Oregon)**: Slightly more expensive
-- **Asia Pacific regions**: Often most expensive
-
-For learning, use US East unless you have specific regional requirements.
-
-## Monitoring Tools
-
-### AWS Cost Explorer
-
-Cost Explorer shows spending patterns over time:
-
-- Which services cost the most
-- Daily vs. monthly trends
-- Forecasted spending
-
-Use it monthly to understand your usage patterns.
-
-### AWS Trusted Advisor
-
-Trusted Advisor provides cost optimization recommendations:
-
-- Unused resources
-- Right-sizing opportunities
-- Reserved Instance recommendations
-
-The basic version is free and includes important cost checks.
-
-## Setting Up Automated Cleanup
-
-Create simple automation to prevent waste:
-
-### Scheduled Instance Shutdown
-
-Use CloudWatch Events to automatically stop development instances at night and weekends.
-
-### S3 Lifecycle Policies
-
-Automatically delete old log files and move infrequently accessed data to cheaper storage.
-
-### Unused Resource Detection
-
-Set up weekly reports identifying:
-
-- Unattached EBS volumes
-- Unused Elastic IPs
-- Empty S3 buckets
-- Stopped instances
-
-## Cost-Effective Architecture Patterns
-
-### Separate Environments
-
-Don't run development, testing, and production in the same environment:
-
-- **Development**: Use smallest instances, shut down after hours
-- **Testing**: Scale up only during testing periods
-- **Production**: Use appropriate sizing and high availability
-
-### Share Resources When Possible
-
-For learning projects:
-
-- Use one database for multiple applications
-- Share S3 buckets across projects
-- Use the same VPC for related services
-
-## Emergency Cost Control
-
-If you notice unexpected charges:
-
-1. **Stop all running instances** immediately
-2. **Check for large data transfers** in the billing console
-3. **Look for services you don't recognize**
-4. **Contact AWS support** if charges seem incorrect
-
-AWS support is generally helpful with billing questions, especially for new accounts.
-
-## Building Cost-Aware Habits
-
-### Before Creating Resources
-
-Ask yourself:
-
-- Do I really need this?
-- What's the cheapest option that meets my needs?
-- How will I remember to clean this up?
-
-### Regular Reviews
-
-Monthly cost reviews help catch issues early:
-
-- Compare current month to previous months
-- Identify growing costs
-- Look for optimization opportunities
-
-### Learning vs. Production
-
-Keep learning experiments separate from production applications:
-
-- Use different AWS accounts if possible
-- Tag learning resources clearly
-- Set stricter budgets for experimental work
-
-## Long-Term Cost Planning
-
-As you grow more comfortable with AWS:
-
-### Understand Your Patterns
-
-Track which resources you actually use:
-
-- Are you consistently using the same instance types?
-- Do you need high availability for everything?
-- Which services provide the most value?
-
-### Plan for Growth
-
-Design applications that scale cost-effectively:
-
-- Use auto-scaling instead of over-provisioning
-- Choose managed services over self-managed when cost-effective
-- Plan data storage strategies early
-
-## Cost Optimization Isn't Just About Saving Money
-
-Effective cost management also means:
-
-- **Better resource utilization**: Getting more value from what you pay for
-- **Improved performance**: Right-sized resources often perform better
-- **Operational simplicity**: Fewer resources to manage and monitor
-
-## Final Thoughts on AWS Costs
-
-AWS costs are predictable when you:
-
-- Monitor spending regularly
-- Understand what you're paying for
-- Clean up unused resources
-- Start small and grow gradually
-
-Don't let cost concerns prevent you from learning. The skills you gain with AWS often lead to better job opportunities and more efficient applications.
-
-The key is building good habits early. With basic monitoring and regular cleanup, you can explore AWS confidently without worrying about surprise bills.
-
-Remember: every expert started as a beginner who learned to manage costs through experience. Start with simple monitoring, be consistent with cleanup, and your costs will remain manageable as you learn and grow.
-
-## Your AWS Journey Continues
-
-You now have the foundation to build and manage applications on AWS. The concepts you've learned - from security to scaling to cost management - apply whether you're building a simple website or a complex distributed system.
-
-The best way to deepen your understanding is to keep experimenting. Try new services, build projects that interest you, and don't be afraid to make mistakes. AWS's free tier gives you plenty of room to learn and explore.
-
-Welcome to the cloud - enjoy building amazing things!
+**TLDR**: Set budgets with alerts, enable Cost Explorer (which also turns on Cost Anomaly Detection), and tag everything. The usual surprises are NAT gateways, idle load balancers, public IPv4 addresses, leftover EBS volumes and snapshots, log groups without retention, and resources in another Region. Right-size before you commit; then cover steady usage with Savings Plans and use Spot for work that can be interrupted. When you finish the guide, delete everything in the order below.
+
+AWS bills for what exists and what moves, every hour, in every Region. That is what makes it cheap for small experiments and expensive for forgotten ones. This part shows how to see where the money goes, stop surprises early, pay less for what you keep, and clean up the photo app when you are done.
+
+## Prerequisites
+
+- The account and budget from [Part 1](/guides/introduction-to-aws/01-account-setup).
+- Whatever you built in Parts 3 to 9; the cleanup checklist covers all of it.
+
+## How AWS Bills You
+
+- **Pay as you go**: each service has its own meters, such as instance hours, GB-months stored, requests, GB transferred and LCUs.
+- **Monthly invoice**: charges accumulate during the month and are billed after it ends. Estimated charges in the console update at least once a day.
+- **Free plan accounts** (created on or after 15 July 2025) are never charged: credits pay for usage, and the account closes when the six months or the credits run out, unless you upgrade.
+- **Paid plan accounts** use credits first, then pay normal prices. Accounts created before 15 July 2025 had a 12-month Free Tier, which has ended for all of them; always-free allowances, such as Lambda's, continue for every account.
+
+On the free plan, the **Credits** page and the **Free Tier** page in the Billing console show how fast you are using up the credits. On the paid plan, the tools below are what keep the bill under control.
+
+## The Cost Tools
+
+| Tool                                                | What it does                                                                                                                               | Cost                                                                            |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **Budgets**                                         | Alerts when actual or forecast cost or usage crosses a threshold; budget actions can apply a policy or stop instances                      | Budgets without actions are free; the first two action-enabled budgets are free |
+| **Cost Explorer**                                   | Charts and tables of cost by service, Region, usage type, tag; up to 13 months of history plus the current month, and an 18-month forecast | Free in the console; the API is charged per request                             |
+| **Cost Anomaly Detection**                          | Machine-learning monitors that flag unusual spend and email a summary                                                                      | Free                                                                            |
+| **Cost Optimization Hub** and **Compute Optimizer** | Recommendations: idle resources, right-sizing, Graviton migration, Savings Plans                                                           | Free to opt in; some enhanced features are paid                                 |
+| **Trusted Advisor**                                 | Best-practice checks; on Basic Support, only service limit checks and selected security and fault tolerance checks, no cost checks         | Included with the support plan                                                  |
+
+**Enable Cost Explorer** now (Billing and Cost Management, **Cost Explorer**). It takes up to 24 hours to prepare data, and enabling it also configures Cost Anomaly Detection with a monitor for all AWS services and a daily email summary of anomalies.
+
+## Budgets That Help
+
+Part 1 created a zero-spend or small monthly budget. Add a forecast alert, so you hear about a problem early in the month rather than at the end:
+
+```json
+{
+  "BudgetName": "monthly-20-usd",
+  "BudgetLimit": { "Amount": "20", "Unit": "USD" },
+  "TimeUnit": "MONTHLY",
+  "BudgetType": "COST"
+}
+```
+
+```json
+[
+  {
+    "Notification": {
+      "NotificationType": "ACTUAL",
+      "ComparisonOperator": "GREATER_THAN",
+      "Threshold": 50,
+      "ThresholdType": "PERCENTAGE"
+    },
+    "Subscribers": [{ "SubscriptionType": "EMAIL", "Address": "you@example.com" }]
+  },
+  {
+    "Notification": {
+      "NotificationType": "FORECASTED",
+      "ComparisonOperator": "GREATER_THAN",
+      "Threshold": 100,
+      "ThresholdType": "PERCENTAGE"
+    },
+    "Subscribers": [{ "SubscriptionType": "EMAIL", "Address": "you@example.com" }]
+  }
+]
+```
+
+```bash
+aws budgets create-budget \
+  --account-id 111122223333 \
+  --budget file://budget.json \
+  --notifications-with-subscribers file://notifications.json
+```
+
+You get an email when actual spend passes USD 10 and when AWS forecasts that the month will end above USD 20. For teams, create budgets per project or environment with a tag filter, and send them to the people who own those resources.
+
+## Where the Money Goes
+
+In **Cost Explorer**, start with **Group by: Service**, then switch to **Usage type** for the service at the top. Usage types are specific: `USE1-NatGateway-Hours`, `USE1-PublicIPv4:InUseAddress`, `USE1-TimedStorage-ByteHrs`. They tell you exactly which meter is running.
+
+The same query from the CLI, reduced to one line per service with `--query` (example output):
+
+```bash
+aws ce get-cost-and-usage \
+  --time-period Start=2026-10-01,End=2026-10-23 \
+  --granularity MONTHLY \
+  --metrics UnblendedCost \
+  --group-by Type=DIMENSION,Key=SERVICE \
+  --query 'ResultsByTime[].Groups[].[Keys[0],Metrics.UnblendedCost.Amount]' \
+  --output text
+```
+
+```text
+Amazon Elastic Compute Cloud - Compute	4.1873216
+Amazon Virtual Private Cloud	2.64
+```
+
+In this example, the USD 2.64 under Amazon Virtual Private Cloud is what one public IPv4 address costs over 22 days (528 hours at USD 0.005 an hour): the kind of small, steady charge this part is about. Cost Explorer data is estimated until the month closes.
+
+If you activated the `Project` tag as a **cost allocation tag** (Billing, **Cost allocation tags**), you can also group by `Project` and see what the photo app costs on its own. Activation applies to new costs, and you can request a backfill of up to 12 months, but only for resources that already carried the tag at the time. That is why Part 1 started tagging early.
+
+## The Usual Surprise Charges
+
+| What                          | Why it surprises people                                                                             | What to do                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **NAT gateways**              | Billed every hour, plus per GB processed, even with no traffic                                      | Delete when not needed; use gateway endpoints for S3 and DynamoDB |
+| **Load balancers**            | Billed every hour, with or without targets                                                          | Delete test load balancers                                        |
+| **Public IPv4 addresses**     | Every public IPv4 is billed per hour, in use or idle, including Elastic IPs and the ALB's addresses | Release unused Elastic IPs; keep servers private; consider IPv6   |
+| **EBS volumes and snapshots** | Survive instance termination when not set to delete; snapshots and AMIs pile up                     | Delete `available` volumes, old snapshots and AMIs                |
+| **Stopped RDS instances**     | Restart on their own after seven days; storage is billed while stopped                              | Delete with a final snapshot instead                              |
+| **CloudWatch Logs**           | Log groups keep data forever by default                                                             | Set retention on every log group                                  |
+| **Data transfer**             | Out to the internet, between Regions, and between AZs                                               | Keep chatty components in one AZ where safe; use CloudFront       |
+| **Old database versions**     | RDS Extended Support adds charges after standard support ends                                       | Upgrade major versions on time                                    |
+| **Other Regions**             | Resources there do not show in your usual console view                                              | Check EC2 Global View and Resource Explorer                       |
+| **Leaked credentials**        | Someone else runs expensive instances on your account                                               | No access keys (Part 2), MFA everywhere, anomaly detection on     |
+
+A few CLI checks for the most common leftovers (they print nothing when you are clean):
+
+```bash
+# Elastic IPs not attached to anything
+aws ec2 describe-addresses --query 'Addresses[?AssociationId==null].PublicIp' --output text
+
+# EBS volumes not attached to an instance
+aws ec2 describe-volumes --filters Name=status,Values=available \
+  --query 'Volumes[].[VolumeId,Size,CreateTime]' --output text
+
+# Log groups without a retention period
+aws logs describe-log-groups \
+  --query 'logGroups[?retentionInDays==null].logGroupName' --output text
+```
+
+These check one Region at a time. Add `--region` or loop over Regions for a complete picture.
+
+## Pay Less for What You Keep
+
+Work through these in order. Committing before you right-size locks in waste.
+
+1. **Delete** what is not used. The cheapest resource is the one that does not exist.
+2. **Right-size**: Compute Optimizer compares instances, EBS volumes, Lambda functions and RDS with their actual use. An instance that never passes 10 percent CPU is a candidate to downsize; check its memory, network and disk needs before you do.
+3. **Pick efficient types**: Graviton (`g`) instances and current generations usually cost less for the same work; gp3 instead of gp2 volumes.
+4. **Schedule** non-production: stop development instances at night and at weekends with EventBridge Scheduler or the Instance Scheduler on AWS solution.
+5. **Commit** for steady usage ([Savings Plans types](https://docs.aws.amazon.com/savingsplans/latest/userguide/plan-types.html), checked 23 October 2026):
+   - **Compute Savings Plans** (one or three years) apply across EC2 instance families and Regions, Fargate and Lambda, at up to 66 percent off On-Demand.
+   - **EC2 Instance Savings Plans** (one or three years) are tied to one instance family in one Region, at up to 72 percent off.
+   - **Database Savings Plans** (launched December 2025, one-year term) cover RDS, Aurora, DynamoDB, ElastiCache and other database services, at up to 35 percent off.
+   - **Reserved Instances** still exist for several services, but Savings Plans are the more flexible choice where they apply.
+   - Free plan accounts cannot buy either; commitments are for production on the paid plan.
+6. **Use Spot** for work that can be interrupted: CI runners, batch jobs, stateless workers in an Auto Scaling group with several instance types. Spot uses spare capacity at a steep discount (up to 90 percent off On-Demand, per the [Spot Instances page](https://aws.amazon.com/ec2/spot/)), but AWS can reclaim it. The two-minute interruption notice is best effort, so design the work to survive a sudden stop.
+
+Serverless helps when usage is spiky: a Lambda function that runs a few thousand times a day costs a tiny fraction of a server that waits all day for the same requests. For constant high load, the reverse is often true.
+
+## Clean Up the Photo App
+
+When you have finished the guide, delete the resources in this order (dependencies first). Check each Region you used.
+
+1. **Auto Scaling group** `photo-app-web` (terminates its instances), then the **load balancer**, the **target group** and the **launch template**.
+2. **EC2 instances** you launched by hand (Part 3), then **Volumes**, **Snapshots** and **AMIs** you no longer need.
+3. **RDS**: delete `photo-app-db` (take a final snapshot only if you want to keep the data), then old manual snapshots. The managed master user secret is deleted with the instance; delete the application's own secret in **Secrets Manager** yourself.
+4. **NAT gateways** and **interface endpoints**, then **release Elastic IPs**.
+5. **Lambda** function `process-upload`, its execution role and its log group.
+6. **S3**: empty the bucket (including old versions) and delete it.
+7. **CloudWatch** alarms and dashboards, the **SNS** topic, and log groups.
+8. **VPC** `photo-app`: deleting the VPC from the console also removes its subnets, route tables, internet gateway, gateway endpoints and security groups.
+9. **IAM**: delete the `photo-app-web` role and any test users or policies. Keep your admin user.
+
+Then check **Cost Explorer** grouped by service for the last few days, and **EC2 Global View** for anything left in other Regions. Tools such as aws-nuke can delete everything in an account, which is useful for sandbox accounts and dangerous anywhere else; see [How to Nuke All AWS Resources in an AWS Account](/posts/nuke-all-aws-resources).
+
+If you will not use the account again, close it from the **Account** page. On the free plan, it closes by itself when the plan ends.
+
+## Habits That Keep Bills Boring
+
+- Tag everything with `Project`, `Environment` and `Owner`, and activate the tags for cost allocation.
+- Before creating something, know how you will delete it, ideally with infrastructure as code so `terraform destroy` removes it all.
+- Look at Cost Explorer once a week while learning; it takes a minute.
+- Keep experiments in a separate account from anything real. AWS Organizations makes extra accounts free to create, but joining an organization ends the account's Free Tier credits.
+- Treat a budget alert as an incident: find the resource and decide, the same day.
+
+## Summary
+
+- Budgets alert, Cost Explorer explains, Cost Anomaly Detection catches the unexpected; turn all three on.
+- The common surprises are hourly resources that sit idle: NAT gateways, load balancers, public IPv4 addresses, volumes, snapshots and log storage.
+- Delete, right-size and modernize before you commit to Savings Plans or Reserved Instances; use Spot for interruptible work.
+- Clean up in dependency order and check every Region.
+
+## Where to Go Next
+
+You now know the core of AWS: accounts and IAM, compute, storage, networking, databases, scaling, monitoring, serverless and cost. The next step is to stop clicking:
+
+- describe the whole photo app as code with the [Introduction to Terraform guide](/guides/introduction-to-terraform);
+- package the web app in containers with the [Introduction to Docker guide](/guides/introduction-to-docker);
+- build machine images for the launch template with the [Introduction to Packer guide](/guides/introduction-to-packer);
+- deploy it automatically with the [Introduction to CI/CD guide](/guides/introduction-to-cicd).
+
+## Keep Learning
+
+- [How to Set Up AWS Cost Explorer and Budgets for Teams](/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams)
+- [What Is FinOps? A Beginner's Guide to Cloud Cost Management](/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management)
+- [Cloud Cost Optimization Quiz](/quizzes/cloud-cost-optimization-quiz)
+- [AWS Well-Architected Review Checklist](/checklists/aws-well-architected)

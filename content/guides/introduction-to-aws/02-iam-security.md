@@ -1,323 +1,297 @@
 ---
-title: 'IAM - Securing Your AWS Account'
-description: 'Learn AWS security fundamentals and protect your account with proper user management and permissions.'
+title: 'IAM: Users, Roles and Policies'
+description: 'Learn AWS IAM: how policies are evaluated, how to sign in without long-lived access keys (aws login, IAM Identity Center), and how to use roles.'
 order: 2
 ---
 
-Identity and Access Management (IAM) is like being the security director for a large office building. You decide who gets keys to which rooms, who can use the elevator, and who has access to sensitive areas.
+**TLDR**: Lock the root user away. Sign in as an IAM user with MFA (one account, learning) or through IAM Identity Center (a team or several accounts). Use `aws login` or `aws sso login` for the CLI instead of access keys. Give servers and functions **roles**, never keys. Every request is denied unless a policy allows it, and an explicit deny always wins.
 
-While IAM might seem complex at first, understanding it early is crucial because it controls access to everything else in AWS. Get this right, and you'll have a secure foundation for all your future projects.
+AWS Identity and Access Management (IAM) decides who can do what in your account. Every API call from the console, the CLI or your code goes through it. If you get IAM right early, the rest of the guide is safer: a leaked password or a buggy script can only do what its permissions allow.
 
-## Why IAM Matters
+This part explains how IAM evaluates a request, how to read a policy, how humans and applications should sign in in 2026, and how to debug "access denied" errors.
 
-When you created your AWS account, you received "root" access to everything - essentially master keys to your entire cloud infrastructure. While this unlimited access is convenient for getting started, using it for daily work creates unnecessary risk. It's like using the master key to a building for every single task, from checking mail to accessing sensitive areas.
+## Prerequisites
 
-The principle is simple but important: if your credentials are compromised, an attacker has the same level of access you do. With root credentials, that means complete control over your entire AWS account, including the ability to delete everything and rack up enormous charges.
+- The AWS account and the AWS CLI from [Part 1](/guides/introduction-to-aws/01-account-setup), with MFA on the root user.
+- About 30 minutes. IAM is free; nothing in this part costs money.
 
-IAM solves this problem by allowing you to create specific users with carefully limited permissions. Instead of everyone having master keys, you give people only the access they need for their specific responsibilities.
+## The Building Blocks
 
-## Understanding IAM Components
+**Principals** are the identities that make requests:
 
-IAM has four main parts that work together:
+- **Root user**: the email address you signed up with. It can do everything, including closing the account, and you cannot attach IAM policies to it to restrict it.
+- **IAM users**: long-term identities with a password and, optionally, access keys. AWS now recommends them only where nothing better is available.
+- **IAM roles**: identities with no password or keys of their own. A person, an EC2 instance, a Lambda function or another account **assumes** a role and receives **temporary credentials** that expire, usually after one hour.
+- **IAM Identity Center users**: people managed in one place (or in your company's identity provider) who sign in to a portal and get roles in one or more accounts.
 
-### Users
+**Policies** are JSON documents that allow or deny actions:
 
-Individual people (or applications) that need AWS access. Think of users like employee ID cards - each person gets their own with their specific permissions.
+- **Identity-based policies** attach to a user, group or role and say what that identity may do.
+- **Resource-based policies** attach to a resource, such as an S3 bucket policy or a role's trust policy, and say who may use that resource.
+- **AWS managed policies** (for example `ReadOnlyAccess`) are written and updated by AWS. **Customer managed policies** are your own, reusable ones. **Inline policies** belong to exactly one identity.
 
-### Groups
+**Groups** collect IAM users so you attach a policy once instead of to every user.
 
-Collections of users who need similar permissions. Like departments in a company - all marketing people might need access to the same resources.
+## How IAM Decides
 
-### Roles
+IAM evaluates every request with the same simple logic:
 
-Temporary permissions that can be "assumed" by users or services. Think of roles like visitor badges - you can temporarily give someone access without creating a permanent user account.
-
-### Policies
-
-Documents that define what actions are allowed or denied. These are like detailed job descriptions that specify exactly what someone can and cannot do.
-
-## The Principle of Least Privilege
-
-The golden rule of IAM is: **give people the minimum permissions they need to do their job, nothing more**.
-
-This might seem restrictive, but it:
-
-- Prevents accidental damage (can't delete what you don't have access to)
-- Reduces security risks (compromised accounts have limited impact)
-- Makes troubleshooting easier (fewer moving parts to consider)
-- Follows industry best practices
-
-## Creating Your First IAM User
-
-Instead of using your root account for everything, let's create a dedicated user for daily work.
-
-### Why Create a Separate User?
-
-Your root account should be like a safe deposit box key - only used for important, rare tasks like:
-
-- Changing billing information
-- Creating your first IAM users
-- Emergency account recovery
-
-For daily work (launching servers, managing files, etc.), use a dedicated IAM user.
-
-### Setting Up an Administrative User
-
-In the IAM console, create a new user:
-
-- **Username**: Something like "john-admin" or "daily-admin"
-- **Access type**: Both "Console access" and "Programmatic access"
-- **Console password**: Set a strong password
-- **Permissions**: For now, attach the "AdministratorAccess" policy
-
-This gives you a powerful user account for learning without touching your root account.
-
-## Understanding Policies with Real Examples
-
-Policies define permissions using JSON documents, but don't worry - you don't need to write JSON to use IAM effectively. AWS provides pre-built policies for common scenarios.
-
-### Common Pre-Built Policies
-
-AWS provides several pre-built policies that cover common scenarios, saving you from writing complex permission documents from scratch:
-
-- **ReadOnlyAccess**: Allows viewing everything but prevents any changes - perfect for auditors, junior team members, or monitoring tools
-- **PowerUserAccess**: Provides almost complete control except for user management - ideal for developers and most daily work
-- **AmazonS3FullAccess**: Grants complete control over S3 storage services - useful for applications that manage file uploads
-- **AmazonEC2ReadOnlyAccess**: Allows viewing servers without modification privileges - great for monitoring and reporting tools
-
-## Multi-Factor Authentication (MFA)
-
-MFA adds a second security layer beyond passwords. Even if someone steals your password, they can't access your account without the second factor.
-
-### Setting Up MFA
-
-For your new IAM user:
-
-1. Go to the user's security credentials tab
-2. Click "Manage MFA device"
-3. Choose "Virtual MFA device"
-4. Use an app like Google Authenticator or Authy
-5. Scan the QR code and enter two consecutive codes
-
-Now logins require both your password and a code from your phone.
-
-### Why MFA Matters
-
-- **Prevents most account compromises**: Even if passwords leak, accounts stay secure
-- **Required by many companies**: Industry standard for sensitive systems
-- **AWS best practice**: Recommended for all users with console access
-- **Easy to set up**: Takes just a few minutes
-
-## Working with Groups
-
-As you add more users (teammates, applications, etc.), groups make permission management much easier.
-
-### Example Group Structure
-
-**Developers Group**:
-
-- Can create and manage EC2 instances
-- Can read and write to S3
-- Can view CloudWatch metrics
-- Cannot modify billing or create users
-
-**Read-Only Group**:
-
-- Can view all resources
-- Cannot make any changes
-- Good for auditors or new team members
-
-**Database Admins Group**:
-
-- Can manage RDS databases
-- Can view related monitoring
-- Cannot access other services
-
-### Benefits of Groups
-
-- **Easier management**: Change group permissions once, affects all members
-- **Consistency**: Everyone in a role gets the same permissions
-- **Auditing**: Easy to see who has what access
-- **Scalability**: Add new users to existing groups instead of setting individual permissions
-
-## Understanding Roles
-
-Roles are like temporary security badges that applications or users can "wear" to get specific permissions.
-
-### When to Use Roles
-
-**EC2 Instances**: Instead of storing credentials in your application, give the instance a role
-**Cross-Account Access**: Let users from another AWS account access specific resources
-**Temporary Access**: Give someone permissions for a limited time
-**Service Integration**: Let AWS services work together on your behalf
-
-### Example: EC2 Role for S3 Access
-
-Instead of this (insecure):
-
-```javascript
-// Don't do this - credentials in code
-const s3 = new AWS.S3({
-  accessKeyId: 'AKIA...',
-  secretAccessKey: 'abc123...',
-});
+```diagram
+{
+  "type": "branch",
+  "nodes": [
+    { "label": "Request", "sub": "principal, action, resource", "icon": "activity", "tone": "slate" },
+    { "label": "Explicit Deny?", "sub": "in any policy", "icon": "shield", "tone": "red" },
+    { "label": "Explicit Allow?", "sub": "in an applicable policy", "icon": "check", "tone": "amber" }
+  ],
+  "branch": [
+    { "label": "Denied (explicit deny or no allow)", "variant": "bad" },
+    { "label": "Allowed", "variant": "good" }
+  ]
+}
 ```
 
-Do this (secure):
+1. By default, everything is **denied**.
+2. If any applicable policy has an explicit `"Effect": "Deny"` that matches, the request is denied. Nothing can override it.
+3. Otherwise, if a policy has an `"Effect": "Allow"` that matches, the request is allowed.
+4. If nothing matches, the request stays denied (an **implicit deny**).
 
-```javascript
-// Good - uses role automatically
-const s3 = new AWS.S3(); // Uses IAM role attached to EC2 instance
+In an organization, guardrails such as service control policies (SCPs) and permission boundaries can only take permissions away: an action must be allowed by every layer that applies.
+
+## Read a Policy
+
+This customer managed policy lets an application list one bucket and read and write the objects under the `uploads/` prefix:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListUploadsPrefix",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::photo-app-uploads-example",
+      "Condition": {
+        "StringLike": { "s3:prefix": ["uploads/*"] }
+      }
+    },
+    {
+      "Sid": "ReadWriteUploads",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::photo-app-uploads-example/uploads/*"
+    }
+  ]
+}
 ```
 
-The role provides credentials automatically and securely.
+- `Version` is always `2012-10-17`, the current policy language version (it is not a date you update).
+- `Action` names an API action as `service:Operation`.
+- `Resource` is an **ARN** (Amazon Resource Name). Listing applies to the bucket ARN; reading and writing apply to object ARNs, which end in `/key`. Mixing these two up is the most common S3 policy mistake.
+- `Condition` narrows the statement further, here to keys that start with `uploads/`.
 
-## Common IAM Patterns
+When you write a policy in the IAM console, the editor runs **IAM Access Analyzer policy validation** and flags errors, security warnings and suggestions before you save.
 
-### Development Environment Setup
+## How People Should Sign In
 
-**Individual Developer Users**: Each person gets their own user account
-**Shared Development Role**: Applications use a role with limited permissions
-**Separate Environments**: Different IAM policies for dev, staging, and production
+Long-lived access keys (`AKIA...`) are the credentials that leak most often: pasted into code, committed to Git, left on a laptop. In 2026 you rarely need them, because both ways for people to sign in also work for the CLI with short-lived credentials:
 
-### Production Application Setup
+| Situation                           | Sign in to the console           | Use the CLI                               |
+| ----------------------------------- | -------------------------------- | ----------------------------------------- |
+| You alone, one account (this guide) | IAM user with a password and MFA | `aws login` (AWS CLI 2.32.0 or later)     |
+| A team, or several accounts         | IAM Identity Center user         | `aws configure sso`, then `aws sso login` |
 
-**Service Roles**: Each application component gets its own role with minimal permissions
-**Cross-Service Access**: Roles that allow services to communicate securely
-**Monitoring Access**: Read-only access for monitoring and alerting systems
+IAM Identity Center is AWS's recommended approach for people, but to give access to AWS accounts it needs AWS Organizations. When an account creates or joins an organization, its Free Tier credits expire immediately, and a free plan account is upgraded to the paid plan. For a single learning account, an IAM user with MFA and `aws login` is a sound, simple choice.
 
-## IAM Best Practices Made Simple
+### Create Your Admin User
 
-### For Individual Users
+Sign in as the root user one last time for this task:
 
-1. **Use strong, unique passwords** for each user
-2. **Enable MFA** on all users with console access
-3. **Regular access review**: Remove permissions that are no longer needed
-4. **Separate accounts for different purposes**: Don't use work AWS for personal projects
+1. Open the account menu, choose **Account**, find **IAM user and role access to Billing information**, choose **Edit** and select **Activate IAM Access**. Without this, IAM users cannot open the Billing pages (Budgets, Credits, Cost Explorer), even with `AdministratorAccess`.
+2. Open **IAM**, choose **User groups**, then **Create group**. Name it `Admins` and attach the AWS managed policy `AdministratorAccess`.
+3. Choose **Users**, then **Create user**. Enter a name such as `alex-admin`, select **Provide user access to the AWS Management Console**, choose **I want to create an IAM user**, and set a strong password.
+4. Add the user to the `Admins` group and create it. Do not create access keys.
+5. Note the account sign-in URL on the IAM dashboard (`https://<account-id>.signin.aws.amazon.com/console`). You can create an account alias to make it readable.
+6. Sign out, sign in with the new user, open **Security credentials** for your user, and assign an MFA device: a passkey or security key, or an authenticator app.
 
-### For Applications
+From now on you use `alex-admin` for daily work and the root user only for the few [tasks that need it](https://docs.aws.amazon.com/IAM/latest/UserGuide/root-user-tasks.html).
 
-1. **Use roles instead of users** whenever possible
-2. **Rotate access keys regularly** if you must use them
-3. **Never embed credentials in code** or version control
-4. **Use environment variables or role-based access** for configuration
+`AdministratorAccess` is broad. That is acceptable for the one person who owns a learning account. Everyone and everything else should get narrower permissions.
 
-### For Organizations
+### Connect the CLI
 
-1. **Principle of least privilege**: Start with minimal permissions and add as needed
-2. **Use groups for common permissions**: Don't set permissions on individual users
-3. **Regular permission audits**: Review who has access to what
-4. **Separate AWS accounts** for different environments or teams
+Both options write a profile to `~/.aws/config` and keep short-lived credentials in a cache. Pick the tab that matches how you sign in:
 
-## Troubleshooting IAM Issues
+```tabs
+{
+  "title": "Configure the AWS CLI without access keys",
+  "tabs": [
+    {
+      "label": "aws login (IAM user)",
+      "lang": "bash",
+      "code": "# Opens your browser; pick the console session to use\naws login --profile learn\n\n# On a machine without a browser (for example over SSH)\naws login --profile learn --remote\n\n# Test it, then sign out when you are done\naws sts get-caller-identity --profile learn\naws logout --profile learn"
+    },
+    {
+      "label": "IAM Identity Center",
+      "lang": "bash",
+      "code": "# One-time setup: asks for the start URL, Region, account and role\naws configure sso --profile learn-admin\n\n# Each day (sessions last up to the duration your admin set)\naws sso login --profile learn-admin\n\n# Test it\naws sts get-caller-identity --profile learn-admin"
+    }
+  ]
+}
+```
 
-### "Access Denied" Errors
+`aws login` needs the `SignInLocalDevelopmentAccess` permission, which `AdministratorAccess` already includes. The CLI refreshes the credentials for up to 12 hours, then you run `aws login` again.
 
-When you get permission errors:
+For Identity Center, `aws configure sso` writes an `sso-session` section and a profile that points to it, and signs you in once. When the cached token is missing or has expired, the CLI tells you so, and `aws sso login` signs you in again. This run uses a config file written by hand with example values, so there is no cached token yet:
 
-1. **Check the policy**: Does the user/role have the required permissions?
-2. **Check the resource**: Some resources have their own access policies
-3. **Check the action**: Make sure you're using the right permission name
-4. **Check the region**: IAM is global, but resources are region-specific
+```terminal
+{
+  "title": "AWS CLI 2.38.5, before aws sso login",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "cat ~/.aws/config",
+      "output": "[profile learn-admin]\nsso_session = my-sso\nsso_account_id = 111122223333\nsso_role_name = AdministratorAccess\nregion = us-east-1\noutput = json\n\n[sso-session my-sso]\nsso_start_url = https://d-1234567890.awsapps.com/start\nsso_region = us-east-1\nsso_registration_scopes = sso:account:access"
+    },
+    {
+      "cmd": "aws configure list-profiles",
+      "output": "learn-admin"
+    },
+    {
+      "cmd": "aws sts get-caller-identity --profile learn-admin",
+      "output": "aws: [ERROR]: Error loading SSO Token: Token for my-sso does not exist"
+    }
+  ]
+}
+```
 
-### Permission Debugging Tools
+After `aws sso login`, the same `get-caller-identity` call prints your account and the role you assumed (example output):
 
-**IAM Policy Simulator**: Test whether specific permissions will work
-**Access Advisor**: See which permissions users actually use
-**CloudTrail**: Log of all actions taken in your account
+```text
+{
+    "UserId": "AROAEXAMPLEID1234567:alex",
+    "Account": "111122223333",
+    "Arn": "arn:aws:sts::111122223333:assumed-role/AWSReservedSSO_AdministratorAccess_0123456789abcdef/alex"
+}
+```
 
-## Cost Implications of IAM
+Set `AWS_PROFILE=learn-admin` (or `learn`) in your shell so you do not have to type `--profile` on every command.
 
-IAM itself is free, but poor IAM practices can cost money:
+## Roles for Applications
 
-### How IAM Affects Costs
+Applications should never carry a password or an access key. They assume a role and the SDK picks up temporary credentials automatically.
 
-**Over-permissioned users** might accidentally create expensive resources
-**Unused access keys** create security risks that could lead to unauthorized usage
-**Poor resource management** due to unclear ownership and responsibility
+A role has two policies:
 
-### Cost-Saving IAM Practices
+- a **trust policy** (who may assume the role), and
+- one or more **permissions policies** (what the role may do).
 
-- **Clear resource ownership** through proper tagging and permissions
-- **Regular cleanup** of unused users and access keys
-- **Automated policies** that prevent expensive resource creation
-- **Budget alerts** configured to notify the right people
+This trust policy lets EC2 instances assume the role. You attach the role to an instance through an **instance profile**, which the console creates for you:
 
-## IAM for Different Use Cases
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "ec2.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
 
-### Personal Projects
+Attach the bucket policy from [Read a Policy](#h2-read-a-policy) as the permissions policy, and code on the instance can read and write `uploads/` with no credentials in the code or on disk. The [AssumeRole Service: ec2 explainer](/posts/assumerole-service-ec2) walks through this trust relationship in more detail.
 
-- Create one administrative user for yourself
-- Use roles for applications
-- Keep it simple with pre-built policies
+The SDKs find role credentials through the **default credential provider chain**: environment variables, the shared config files (including `aws login` and SSO profiles), then container and instance metadata. Write your code without credentials and it works on your laptop and on AWS. To use an `aws login` profile from Python, you need boto3 1.41.0 or later with the AWS Common Runtime (`pip install 'boto3[crt]'`):
 
-### Small Teams
+```tabs
+{
+  "title": "No credentials in code",
+  "tabs": [
+    {
+      "label": "Python (boto3)",
+      "lang": "python",
+      "code": "import boto3\n\n# No keys here: boto3 uses your profile locally and the\n# instance role on EC2 or the execution role on Lambda.\ns3 = boto3.client(\"s3\")\ns3.put_object(\n    Bucket=\"photo-app-uploads-example\",\n    Key=\"uploads/hello.txt\",\n    Body=b\"hello\",\n)"
+    },
+    {
+      "label": "JavaScript (SDK v3)",
+      "lang": "javascript",
+      "code": "import { S3Client, PutObjectCommand } from \"@aws-sdk/client-s3\";\n\n// No keys here: the default provider chain finds them.\nconst s3 = new S3Client({});\nawait s3.send(new PutObjectCommand({\n  Bucket: \"photo-app-uploads-example\",\n  Key: \"uploads/hello.txt\",\n  Body: \"hello\",\n}));"
+    }
+  ]
+}
+```
 
-- Individual users for each team member
-- Groups for common roles (developer, designer, etc.)
-- Shared roles for applications
+The old JavaScript SDK v2 (the `aws-sdk` package) has reached end of support. Use the modular v3 clients such as `@aws-sdk/client-s3` in new code.
 
-### Growing Organizations
+Other places roles replace keys:
 
-- Multiple AWS accounts for different environments
-- Cross-account roles for shared resources
-- Automated user provisioning and de-provisioning
-- Regular access reviews and audits
+- **Lambda**: every function has an **execution role** ([Part 9](/guides/introduction-to-aws/09-lambda-serverless)).
+- **CI/CD**: GitHub Actions, GitLab and others can assume a role through **OIDC federation**, so no AWS keys are stored in the CI system.
+- **Servers outside AWS**: **IAM Roles Anywhere** issues temporary credentials to machines that have an X.509 certificate.
 
-## Common Mistakes to Avoid
+If a third-party tool truly needs an access key, create a dedicated IAM user with the narrowest policy, store the key in a secrets manager, rotate it, and delete it when the tool goes away.
 
-### Security Mistakes
+## Managed Policies Worth Knowing
 
-**Using root account for daily work**: Creates unnecessary risk
-**Sharing user accounts**: Makes auditing impossible
-**Overly broad permissions**: Violates principle of least privilege
-**Not using MFA**: Leaves accounts vulnerable to password theft
+| Policy                | What it allows                                   | Typical use                          |
+| --------------------- | ------------------------------------------------ | ------------------------------------ |
+| `AdministratorAccess` | Everything                                       | The account owner, break-glass roles |
+| `PowerUserAccess`     | Everything except managing IAM and Organizations | Developers in a sandbox account      |
+| `ReadOnlyAccess`      | Read and list in almost every service            | Auditors, on-call dashboards         |
+| `ViewOnlyAccess`      | List and describe, without reading data          | Inventory tools                      |
 
-### Management Mistakes
+Service-wide policies such as `AmazonS3FullAccess` allow every action on every bucket in the account. Start from one of them while you explore, then replace it with a customer managed policy scoped to your resources. The post [Correct way to attach AWS managed policies to a role](/posts/correct-way-to-attach-aws-managed-policies-to-a-role) shows how to do that with Terraform.
 
-**Not using groups**: Makes permission management difficult as you scale
-**Unclear naming conventions**: Hard to understand who has what access
-**Not documenting permissions**: Future you won't remember why someone has access
-**Ignoring unused access**: Old permissions become security risks
+## Find Out What Is Used
 
-## IAM Tools and Features
+IAM gives you the data to remove permissions safely:
 
-### Access Management Tools
+- **Last accessed information** (on each user, role and policy) shows which services and actions were used and when.
+- **IAM Access Analyzer** finds resources shared outside your account or organization, validates policies, and can generate a policy from the actions a role used in CloudTrail.
+- The **credential report** is a CSV of every user with password age, MFA status and access key age.
+- **CloudTrail event history** shows the management API calls of the last 90 days in each Region, with who made them.
 
-**IAM Access Analyzer**: Identifies resources shared with external entities
-**Organizations**: Manage multiple AWS accounts centrally
-**Single Sign-On (SSO)**: Connect with corporate identity systems
-**Control Tower**: Automated governance for multi-account setups
+## Debug "Access Denied"
 
-### Security Tools
+Read the whole error message. AWS now tells you which kind of policy blocked the request (example output):
 
-**Credential Report**: CSV export of all users and their credential status
-**Access Advisor**: Shows which permissions users actually use
-**Policy Generator**: Helps create custom policies
-**IAM Simulator**: Test policies before applying them
+```text
+An error occurred (AccessDenied) when calling the ListBuckets operation: User: arn:aws:iam::111122223333:user/dev-ci is not authorized to perform: s3:ListAllMyBuckets because no identity-based policy allows the s3:ListAllMyBuckets action
+```
 
-## When to Get Help
+Then check, in order:
 
-IAM can be complex for sophisticated use cases. Consider getting help when:
+1. **Who am I?** Run `aws sts get-caller-identity`. Many "access denied" errors come from the wrong profile or an expired session.
+2. **Is the action allowed?** Look for the exact action name (`s3:ListAllMyBuckets`, not `s3:ListBuckets`) in the identity's policies.
+3. **Is it denied anywhere?** An explicit deny in an SCP, a permission boundary, a bucket policy or a session policy wins.
+4. **Is the resource ARN right?** Bucket ARN versus object ARN, the right Region and account in the ARN.
+5. **Does the resource policy agree?** For cross-account access, both the identity policy and the resource policy must allow it.
 
-- **Managing many users**: Organizations with 10+ users benefit from identity management expertise
-- **Compliance requirements**: Regulated industries often need specialized IAM setups
-- **Complex applications**: Multi-tier applications with many services interacting
-- **Security incidents**: If you suspect unauthorized access, get expert help immediately
+Some EC2 errors return an encoded message. Decode it with `aws sts decode-authorization-message --encoded-message <message>` (the caller needs `sts:DecodeAuthorizationMessage`).
 
-## Looking Ahead
+## Common Mistakes
 
-Once you're comfortable with basic IAM concepts, you can explore advanced features:
+- **Using the root user for daily work.** Keep it for root-only tasks, with MFA.
+- **Creating access keys "just for the CLI".** Use `aws login` or `aws sso login` instead.
+- **Sharing one user between people.** CloudTrail can no longer tell who did what.
+- **Attaching policies to individual users.** Use groups or roles, so permissions stay consistent.
+- **Granting `*` on actions or resources "for now".** Use last accessed information or Access Analyzer to narrow it once the app works.
+- **Embedding credentials in code, images or user data.** Use roles; anything in user data is readable by anyone who can describe the instance.
 
-- **Custom policies** for specific business needs
-- **Condition-based permissions** that depend on time, location, or other factors
-- **Federation** with external identity systems
-- **Automated permission management** using Infrastructure as Code
+## Summary
 
-## Next Steps
+- Every request is denied by default, allowed only by a matching `Allow`, and an explicit `Deny` always wins.
+- People sign in with MFA and get short-lived CLI credentials through `aws login` or IAM Identity Center.
+- Applications use roles: instance profiles on EC2, execution roles on Lambda, OIDC federation in CI.
+- Start broad while you learn, then narrow permissions with last accessed data and Access Analyzer.
 
-With IAM providing a secure foundation, you're ready to start building actual infrastructure. Your next step is launching virtual servers with EC2, where you'll see IAM in action as you securely connect services together.
+Next, you use a role for real: [launch your first EC2 server](/guides/introduction-to-aws/03-ec2-servers).
 
-Remember that security is not a one-time setup - it's an ongoing practice. As you learn more AWS services, always consider how IAM fits into the picture and how to maintain security while enabling functionality.
+## Keep Learning
 
-The habits you build now with IAM will serve you well throughout your cloud journey, whether you're building personal projects or enterprise applications.
+- [Cloud IAM Basics interview questions](/interview-questions/junior/cloud-iam-basics)
+- [How to Attach Multiple IAM Policies to IAM Roles Using Terraform](/posts/attach-multiple-iam-policies)
+- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/minimum-aws-permissions-for-terraform)
+- [AWS Security Checklist](/checklists/aws-security)

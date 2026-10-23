@@ -1,160 +1,293 @@
 ---
-title: 'EC2 - Your First Virtual Server'
-description: 'Launch your first virtual server in the cloud and understand how cloud computing replaces traditional hosting.'
+title: 'EC2: Launch Your First Virtual Server'
+description: 'Launch an Amazon EC2 instance step by step: pick an instance type (Graviton or x86) and AMI, use user data, connect without SSH keys, and require IMDSv2.'
 order: 3
 ---
 
-Think of EC2 (Elastic Compute Cloud) as renting a computer in Amazon's data center instead of buying one for your office. You get a virtual server that looks and acts like a real computer, but it exists in the cloud where Amazon handles all the physical maintenance.
+**TLDR**: An EC2 instance is a virtual server you rent by the second. Pick a free-tier eligible type such as `t4g.micro` (Graviton, ARM) or `t3.micro` (x86), the Amazon Linux 2023 AMI, a security group that allows HTTP, and an IAM role for Session Manager. Put your setup commands in **user data**. Connect with Session Manager or EC2 Instance Connect instead of opening SSH to the world. Every public IPv4 address costs money by the hour, and a stopped instance still pays for its disk.
 
-## Why Use Virtual Servers?
+Amazon Elastic Compute Cloud (EC2) gives you virtual machines in AWS data centers. You choose how much CPU and memory, which operating system, and which network it sits in, and you can have it running in under a minute. When you no longer need it, you terminate it and stop paying for it.
 
-Traditional web hosting comes with significant challenges. You typically need to buy expensive hardware upfront, which means guessing how much capacity you'll need months or years in advance. When hardware fails, you're responsible for fixing or replacing it yourself, often resulting in hours or days of downtime. Perhaps most frustrating of all, you're paying for servers 24/7 even when they're sitting idle.
+In this part you launch the first piece of the photo-sharing app: a web server that answers on port 80.
 
-Cloud servers solve these problems elegantly. You can start with small, inexpensive servers and grow them as your needs change. You only pay for what you actually use, which means no more paying for idle capacity during quiet periods. When hardware fails, AWS handles the replacement automatically, often without you even noticing. Most importantly, you can scale your capacity up during busy periods and back down when things are quiet, optimizing both performance and cost.
+## Prerequisites
 
-## Understanding Instance Types
+- Your admin user and a working CLI profile from [Part 2](/guides/introduction-to-aws/02-iam-security).
+- The Region you chose in [Part 1](/guides/introduction-to-aws/01-account-setup). The examples use `us-east-1`.
+- A budget alert, because an instance can cost money once your credits or the free tier run out.
 
-AWS offers different "flavors" of virtual servers called instance types. Think of them like different models of cars - some are economical, others are high-performance.
+## Why Virtual Servers
 
-For learning, you'll use **t3.micro** instances because they're:
+With your own hardware, you guess capacity months ahead, pay for it while it idles, and fix it when a disk dies. With EC2:
 
-- Free for your first year
-- Perfect for small websites and testing
-- Easy to upgrade later if needed
+- you start small and change the instance type later with a stop and start;
+- you pay per second for Linux instances (with a one-minute minimum) while they run;
+- AWS replaces failed hardware, and with the right setup (Part 7) a new instance replaces a failed one automatically;
+- you can create ten identical servers as easily as one.
 
-As your applications grow, you might need:
+## Choose an Instance Type
 
-- **t3.small** for slightly more power
-- **m5.large** for balanced performance
-- **c5.xlarge** for processing-heavy tasks
+An instance type sets the CPU, memory, network and storage options. The name tells you what you get:
 
-The naming might seem confusing at first, but you'll get used to it. For now, just remember that "micro" and "small" are perfect for learning.
+```text
+  m   8   g   .  large
+  |   |   |       |
+  |   |   |       +-- size: nano, micro, small, medium, large, xlarge, 2xlarge ...
+  |   |   +---------- processor and options: g = AWS Graviton (ARM), i = Intel, a = AMD,
+  |   |               d = local NVMe disk, n = more network bandwidth
+  |   +-------------- generation: higher is newer
+  +------------------ family: t = burstable, m = general purpose, c = compute, r = memory
+```
 
-## Launching Your First Server
+| Family                | Good for                                          | Current examples (October 2026)                    |
+| --------------------- | ------------------------------------------------- | -------------------------------------------------- |
+| `t` burstable         | Small websites, dev servers, anything mostly idle | `t4g` (Graviton2), `t3`, `t8i` (Intel)             |
+| `m` general purpose   | Application servers with steady load              | `m8g` (Graviton4), `m9g` (Graviton5), `m8i`, `m8a` |
+| `c` compute optimized | CPU-heavy work: builds, encoding, APIs            | `c8g`, `c9g`, `c8i`                                |
+| `r` memory optimized  | Databases, caches, in-memory analytics            | `r8g`, `r9g`, `r8i`                                |
 
-Let's create your first virtual server. We'll build a simple web server that displays a welcome message.
+**Graviton** instances use AWS's own ARM64 processors and usually give the best price for performance. Most Linux software runs on them, but you need an ARM64 (`arm64`) AMI and ARM64 builds of your binaries and container images. The x86 families (`i` for Intel, `a` for AMD) run anything built for `x86_64`.
 
-In the AWS Console, navigate to EC2 and click "Launch Instance." You'll see several options:
+**Burstable** (`t`) instances earn CPU credits while idle and spend them when busy. `t3` and `t4g` launch in **unlimited** mode by default: if the CPU stays high for long periods, you pay for the extra credits. For steady CPU load, an `m` or `c` instance is cheaper.
 
-### Choose Your Operating System
+### What is free
 
-AWS offers pre-built server images called AMIs (Amazon Machine Images). For this guide, select **Amazon Linux 2** because it:
+For accounts created on or after 15 July 2025, the instance types marked **Free tier eligible** are `t3.micro`, `t3.small`, `t4g.micro`, `t4g.small`, `c7i-flex.large` and `m7i-flex.large`, and since September 2026 also `t8i.micro` and `t8i.small`. Accounts created before that date had 750 hours a month of `t2.micro` or `t3.micro` for their first 12 months, an offer that has now ended for all of them. The list changes, so ask the API for your account:
 
-- Comes with useful tools pre-installed
-- Gets regular security updates from Amazon
-- Works well with other AWS services
-- Is free to use
+```bash
+aws ec2 describe-instance-types \
+  --filters Name=free-tier-eligible,Values=true \
+  --query "InstanceTypes[*].InstanceType" --output text
+```
 
-### Pick Your Server Size
+This guide uses **`t4g.micro`**. If you need x86, use `t3.micro` and the `x86_64` AMI instead.
 
-Select **t3.micro** - it's marked as "Free tier eligible" which means it won't cost you anything during your first year.
+## Choose an AMI
 
-### Configure the Basics
+An **Amazon Machine Image (AMI)** is the disk image the instance boots from: the operating system plus anything preinstalled.
 
-Most default settings work fine for learning, but pay attention to:
+- **Amazon Linux 2023** (AL2023) is AWS's own distribution, tuned for EC2, with the SSM Agent and EC2 Instance Connect preinstalled and IMDSv2 required by default. It uses `dnf`. This guide uses it.
+- **Ubuntu Server LTS**, **Debian**, **Red Hat Enterprise Linux** and **Windows Server** are available as official AMIs too.
 
-**Key Pairs**: This is how you'll securely connect to your server. Create a new key pair and download the file - you'll need it later. Think of this like a special password file.
+:::warning
+**Amazon Linux 2 reached end of support on 30 June 2026.** It no longer gets security updates. Tutorials that use `yum` and Amazon Linux 2 are out of date: use AL2023 and `dnf`.
+:::
 
-**Security Groups**: These act like a firewall for your server. For now, allow:
+AMI IDs differ per Region and change with every release. Instead of copying an ID, refer to the public SSM parameter that always points to the latest AL2023 image:
 
-- SSH (port 22) from your IP address for remote access
-- HTTP (port 80) from anywhere for web traffic
+```text
+/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64
+/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+```
 
-### Add Some Startup Code
+## Create a Role for Session Manager
 
-In the "User Data" section, you can tell your server to run commands when it first starts. Add this simple script:
+**Session Manager** (part of AWS Systems Manager) opens a shell on the instance through the SSM Agent, over HTTPS. You need no SSH key and no open inbound port, and every session can be logged.
+
+The instance needs permission to talk to Systems Manager:
+
+1. In **IAM**, choose **Roles**, then **Create role**.
+2. Trusted entity: **AWS service**, use case **EC2**.
+3. Attach the AWS managed policy `AmazonSSMManagedInstanceCore`.
+4. Name it `photo-app-web` and create it. The console also creates an **instance profile** with the same name.
+
+In [Part 4](/guides/introduction-to-aws/04-s3-storage) you add S3 permissions to this same role.
+
+## Launch the Instance
+
+In the EC2 console, choose **Launch instance** and fill in the form:
+
+1. **Name and tags**: `photo-app-dev-web`. Add the `Project`, `Environment` and `Owner` tags from Part 1.
+2. **Application and OS Images**: **Amazon Linux 2023**, architecture **64-bit (Arm)**.
+3. **Instance type**: `t4g.micro`.
+4. **Key pair**: choose **Proceed without a key pair** if you will use Session Manager or EC2 Instance Connect. Create or import one only if you need plain SSH (see below).
+5. **Network settings**: keep the default VPC and a public subnet with **Auto-assign public IP** enabled. Create a security group named `photo-app-web` that allows **HTTP (80) from anywhere**. Do not add SSH unless you need it, and then only from **My IP**.
+6. **Configure storage**: the default 8 GiB `gp3` root volume is enough.
+7. **Advanced details**: set **IAM instance profile** to `photo-app-web`, check that **Metadata version** is **V2 only (token required)**, and paste the script below into **User data**.
 
 ```bash
 #!/bin/bash
-yum update -y
-yum install -y httpd
-systemctl start httpd
-echo "<h1>Hello from the Cloud!</h1>" > /var/www/html/index.html
+# Runs once, as root, on the first boot (cloud-init).
+dnf install -y httpd
+systemctl enable --now httpd
+
+# Read the instance ID from the metadata service with IMDSv2.
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+INSTANCE_ID=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" \
+  http://169.254.169.254/latest/meta-data/instance-id)
+
+echo "<h1>Hello from photo-app on $INSTANCE_ID</h1>" > /var/www/html/index.html
 ```
 
-This tells your server to:
+**User data** runs only on the first boot, as root, through cloud-init. If the page does not appear, read `/var/log/cloud-init-output.log` on the instance: it shows every command's output and errors.
 
-1. Update its software
-2. Install a web server
-3. Start the web server
-4. Create a simple webpage
-
-## Connecting to Your Server
-
-Once your server is running (it takes a few minutes), you can connect to it from your computer.
-
-**On Mac or Linux:**
+Choose **Launch instance**. The same launch from the CLI looks like this (the security group ID is an example):
 
 ```bash
-ssh -i your-key-file.pem ec2-user@your-server-ip
+aws ec2 run-instances \
+  --image-id resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64 \
+  --instance-type t4g.micro \
+  --security-group-ids sg-0123456789abcdef0 \
+  --iam-instance-profile Name=photo-app-web \
+  --metadata-options HttpTokens=required,HttpEndpoint=enabled \
+  --user-data file://user-data.sh \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=photo-app-dev-web},{Key=Project,Value=photo-app}]'
 ```
 
-**On Windows:**
-Use PuTTY or the Windows Subsystem for Linux with the same command.
+`resolve:ssm:` tells EC2 to look up the current AMI ID from the SSM parameter at launch time.
 
-Replace "your-server-ip" with the actual IP address shown in the EC2 console.
+## Test the Web Server
 
-## Testing Your Web Server
+After a minute or two, the **Instance state** is **Running** and all **status checks** pass. Copy the **Public IPv4 address** and open `http://<public-ip>` in a browser, or use `curl` (example output):
 
-Open a web browser and visit your server's public IP address. You should see "Hello from the Cloud!" displayed on the page.
+```text
+$ curl http://203.0.113.25
+<h1>Hello from photo-app on i-0abc123def4567890</h1>
+```
 
-Congratulations! You've just created your first cloud server and published a website.
+Your browser may try `https://` first. There is no certificate yet, so use `http://` explicitly; Part 7 adds HTTPS on the load balancer.
 
-## Understanding the Console
+## Connect to the Instance
 
-The EC2 console shows important information about your server:
+```tabs
+{
+  "title": "Four ways to get a shell",
+  "tabs": [
+    {
+      "label": "Session Manager",
+      "lang": "bash",
+      "code": "# Console: select the instance, Connect, Session Manager tab, Connect.\n\n# CLI: needs the Session Manager plugin installed locally.\naws ssm start-session --target i-0abc123def4567890\n\n# No key pair, no inbound port 22, sessions can be logged."
+    },
+    {
+      "label": "EC2 Instance Connect",
+      "lang": "bash",
+      "code": "# Console: Connect, EC2 Instance Connect tab, Connect.\n# The browser-based client needs inbound 22 from the\n# EC2 Instance Connect IP range of your Region.\n\n# CLI: pushes a temporary key (valid 60 seconds) and runs ssh.\naws ec2-instance-connect ssh --instance-id i-0abc123def4567890"
+    },
+    {
+      "label": "SSH (macOS, Linux)",
+      "lang": "bash",
+      "code": "# Only if you launched with a key pair and allowed port 22 from your IP.\nchmod 400 ~/.ssh/aws-learn\nssh -i ~/.ssh/aws-learn ec2-user@203.0.113.25"
+    },
+    {
+      "label": "SSH (Windows)",
+      "lang": "powershell",
+      "code": "# Windows 10 and 11 include the OpenSSH client.\nssh -i $env:USERPROFILE\\.ssh\\aws-learn ec2-user@203.0.113.25\n\n# PuTTY needs the key in .ppk format (convert it with PuTTYgen)."
+    }
+  ]
+}
+```
 
-**Instance State**: Shows if your server is running, stopped, or being launched
-**Public IP**: The address people use to reach your server from the internet
-**Private IP**: The address used within AWS's network
-**Instance ID**: A unique identifier for your server (starts with "i-")
+The default user on Amazon Linux is `ec2-user`; on Ubuntu AMIs it is `ubuntu`.
 
-## Server Management Basics
+If you do want plain SSH, create the key on your own machine and import only the public half, so the private key never leaves your computer. EC2 supports ED25519 and RSA keys for Linux:
 
-Unlike a physical server, you can easily:
+```terminal
+{
+  "title": "create a key pair locally",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "ssh-keygen -t ed25519 -f aws-learn -N '' -C 'alex@laptop'",
+      "output": "Generating public/private ed25519 key pair.\nYour identification has been saved in aws-learn\nYour public key has been saved in aws-learn.pub\nThe key fingerprint is:\nSHA256:BT4msI43i28k4pTzgPtnKH+A3Bvhpml4PVhrY5vC1C0 alex@laptop\nThe key's randomart image is:\n+--[ED25519 256]--+\n|    .   .        |\n|     o . .       |\n|    . . + .      |\n|   +   o o       |\n|o.=.=.  S        |\n|+*+BEo.          |\n|+=OO+o           |\n|+=*+%.           |\n|.=oO++           |\n+----[SHA256]-----+"
+    }
+  ]
+}
+```
 
-**Stop and Start**: Like turning a computer off and on, but you keep your data
-**Terminate**: Permanently delete the server (be careful with this!)
-**Resize**: Change to a more powerful instance type
-**Create Images**: Save a snapshot of your server to reuse later
+```bash
+# Upload the public key as an EC2 key pair (example; needs your account)
+aws ec2 import-key-pair --key-name aws-learn \
+  --public-key-material fileb://aws-learn.pub
+```
 
-## The Magic of Elastic IPs
+In real use, protect the private key with a passphrase (drop `-N ''`) and keep it in `~/.ssh`. If you lose it, you cannot download it again; use Session Manager to get in and add a new public key.
 
-By default, your server gets a different IP address each time you stop and start it. For a real website, you want a permanent address.
+## The Instance Metadata Service and IMDSv2
 
-Elastic IP addresses solve this by giving you a static IP that stays with your server. They're free as long as they're attached to a running server.
+Code on an instance can ask the **Instance Metadata Service** (IMDS) at `169.254.169.254` about itself: the instance ID, Region, network details, and the temporary credentials of its IAM role. That last part is why it matters for security.
 
-## What This Costs
+**IMDSv2** requires a session token that the caller gets with an HTTP `PUT`. This blocks most server-side request forgery (SSRF) attacks, where an attacker tricks your web app into fetching a URL for them and reads your role's credentials. AL2023 AMIs require IMDSv2, and you can make it the default for the whole account and Region:
 
-During your first year, t3.micro instances are free for up to 750 hours per month. That's enough to run one server 24/7 without charges.
+```bash
+aws ec2 modify-instance-metadata-defaults \
+  --region us-east-1 \
+  --http-tokens required \
+  --http-put-response-hop-limit 2
+```
 
-After the free tier, expect to pay around $8-10 per month for a small server that's always running.
+On the instance, a metadata request looks like this (example output):
 
-## Common Beginner Mistakes
+```text
+[ec2-user@ip-172-31-20-15 ~]$ TOKEN=$(curl -sX PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+[ec2-user@ip-172-31-20-15 ~]$ curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/availability-zone
+us-east-1a
+[ec2-user@ip-172-31-20-15 ~]$ curl -s http://169.254.169.254/latest/meta-data/instance-id
+[ec2-user@ip-172-31-20-15 ~]$
+```
 
-**Forgetting to stop servers**: Unlike shared hosting, AWS charges for running time. Stop servers when you're not using them.
+The last request has no token, so IMDS answers `401 Unauthorized` and `curl -s` prints nothing. The SDKs and the AWS CLI handle the token for you.
 
-**Losing key files**: If you lose your key pair file, you can't access your server. Keep it safe!
+## Stop, Start, Terminate
 
-**Opening security groups too wide**: Only allow access from your IP address unless you need public access.
+```diagram
+{
+  "type": "flow",
+  "trace": false,
+  "nodes": [
+    { "label": "pending", "sub": "booting", "icon": "rocket", "tone": "slate" },
+    { "label": "running", "sub": "billed per second", "icon": "check", "tone": "green" },
+    { "label": "stopped", "sub": "disk still billed", "icon": "server", "tone": "amber" },
+    { "label": "terminated", "sub": "gone for good", "icon": "box", "tone": "red" }
+  ]
+}
+```
 
-**Not backing up data**: Servers can fail. Important data should be stored separately (we'll cover this in the storage section).
+- **Stop**: the instance shuts down. You stop paying for compute, but you still pay for its EBS volumes and any Elastic IP. On start, it usually moves to new hardware and gets a **new public IPv4 address**, unless it has an Elastic IP.
+- **Reboot**: same hardware, same addresses.
+- **Terminate**: the instance is deleted. Its root volume is deleted too by default. Turn on **termination protection** for anything you cannot lose.
+- **Change type**: stop, choose **Instance settings**, **Change instance type**, start. An ARM instance can only change to another ARM type.
+- **Create image**: saves the volumes as an AMI so you can launch copies. Part 7 uses a launch template instead.
 
-## Real-World Applications
+## What It Costs
 
-This simple setup might seem basic, but it's the foundation for:
+- **The instance**: per second while it runs. Prices differ by type and Region; check the [EC2 On-Demand pricing page](https://aws.amazon.com/ec2/pricing/on-demand/) or the [AWS Pricing Calculator](https://calculator.aws/).
+- **EBS volumes**: per GB-month, whether the instance runs or not, plus snapshots.
+- **Public IPv4 addresses**: since February 2024, every public IPv4 address costs money, whether it is attached to a running instance or idle. The [VPC pricing page](https://aws.amazon.com/vpc/pricing/) lists USD 0.005 per hour per address (checked 23 October 2026), about USD 3.65 for a 730-hour month. That applies to auto-assigned public IPs and to Elastic IPs alike. IPv6 addresses are free.
+- **Data transfer out** to the internet, beyond the free monthly allowance.
 
-- Small business websites
-- Development and testing environments
-- Learning platforms
-- Personal projects
+On the free plan, credits pay for all of this. On the paid plan, these small hourly charges add up across forgotten resources: Part 10 shows how to find them.
 
-Large applications use the same principles but with multiple servers, load balancers, and databases working together.
+## Elastic IP Addresses
 
-## Next Steps
+An **Elastic IP** is a static public IPv4 address that stays yours until you release it. Use one if something must reach the instance at a fixed address and you cannot use DNS or a load balancer. It costs the same as any public IPv4 address, attached or not. In Part 7, users reach the app through a load balancer's DNS name instead, and the web servers need no public addresses at all.
 
-Now that you have a server running, you'll want somewhere to store files, images, and backups. That's where S3 (Simple Storage Service) comes in.
+## Common Mistakes
 
-S3 is like having unlimited cloud storage that your servers can access instantly. It's perfect for everything from user profile pictures to application backups.
+- **SSH open to `0.0.0.0/0`.** Bots scan for port 22 within minutes. Use Session Manager, or allow only your IP.
+- **Wrong architecture.** An `arm64` AMI does not boot on `t3.micro`, and an `x86_64` AMI does not boot on `t4g.micro`. The launch fails with an architecture mismatch.
+- **Expecting user data to run again.** It runs on the first boot only. Change it, then launch a new instance.
+- **Stopping instead of terminating test instances.** A stopped instance still pays for its volumes.
+- **Storing important data only on the instance.** Instances are replaceable. Keep data in S3 (Part 4) or a database (Part 6).
+- **Forgetting other Regions.** Use **EC2 Global View** to list instances in every Region.
 
-In the next section, you'll learn how to use S3 and connect it to your EC2 server.
+## Clean Up
+
+If you continue to Part 4 today, keep the instance: you give it S3 access next. Otherwise, terminate it (**Instance state**, **Terminate instance**) and check that no Elastic IP or unattached volume is left behind.
+
+## Summary
+
+- Instance type names encode family, generation, processor and size. `t4g.micro` is a free-tier eligible Graviton instance.
+- Use Amazon Linux 2023 (`dnf`); Amazon Linux 2 is end of life.
+- User data configures the instance on first boot; its log is in `/var/log/cloud-init-output.log`.
+- Session Manager gives you a shell with no inbound port at all; EC2 Instance Connect needs port 22 open only to AWS's address range or your own IP.
+- IMDSv2 protects your role credentials; make it the account default.
+- Public IPv4 addresses and stopped instances' disks cost money.
+
+Next: [S3: Cloud Object Storage](/guides/introduction-to-aws/04-s3-storage), where the server gets somewhere durable to keep uploaded photos.
+
+## Keep Learning
+
+- Exercise: [Creating and Connecting to Your First Linux Server](/exercises/cloud-server-setup)
+- [What Does AssumeRole: Service: ec2 Do?](/posts/assumerole-service-ec2)
+- [SSH basics interview questions](/interview-questions/junior/ssh-basics)

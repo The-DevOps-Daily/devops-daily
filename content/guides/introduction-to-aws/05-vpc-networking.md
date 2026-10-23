@@ -1,359 +1,309 @@
 ---
-title: 'VPC - Building Your Private Network'
-description: 'Create isolated, secure networks in the cloud and understand why custom networking matters.'
+title: 'VPC: Build Your Private Network'
+description: 'Design an AWS VPC: plan CIDR ranges, create public and private subnets in two AZs, set up route tables, NAT gateways, security groups and VPC endpoints.'
 order: 5
 ---
 
-When you first started with AWS, your servers used a "default network" that Amazon set up for you. This works fine for learning, but real applications need custom networks designed for security, performance, and organization.
+**TLDR**: A VPC is your private network in one Region. Split it into subnets, one AZ each. A **public subnet** has a route to an internet gateway; a **private subnet** does not. Put load balancers in public subnets and servers and databases in private ones. Security groups are stateful firewalls on each resource and can reference each other. Private servers reach the internet through a NAT gateway (which costs money every hour) and reach S3 for free through a gateway endpoint.
 
-Virtual Private Cloud (VPC) lets you create your own private section of AWS where you control the networking rules, just like setting up a corporate network in an office building.
+Every AWS account comes with a **default VPC** in each Region: `172.31.0.0/16`, one public subnet per Availability Zone, and an internet gateway. Your Part 3 instance runs there. It is fine for experiments, but every instance in it gets a public address by default, and you did not design any of it.
 
-## Why Custom Networks Matter
+In this part you build the network the rest of the guide uses: a VPC with public and private subnets in two Availability Zones, so that only the load balancer faces the internet.
 
-Think of the default AWS network like a shared apartment building:
+## Prerequisites
 
-- Everyone uses the same hallways
-- You can't control who has access to what
-- Security relies on individual door locks
-- Limited ability to customize the layout
+- The CLI profile from [Part 2](/guides/introduction-to-aws/02-iam-security).
+- Basic IP addressing: an address like `10.0.1.25`, and CIDR notation such as `10.0.0.0/16` (the first 16 bits are fixed, the rest is yours).
 
-A custom VPC is like owning your own building:
+## The Pieces of a VPC
 
-- You design the floor plan
-- You control who can enter which areas
-- You can create private sections and public lobbies
-- You decide how different areas connect
+| Piece                | What it does                                                                 | Cost                                                 |
+| -------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **VPC**              | An isolated IP range (CIDR block) in one Region                              | Free                                                 |
+| **Subnet**           | A slice of the VPC's range in exactly one AZ                                 | Free                                                 |
+| **Route table**      | Decides where traffic leaving a subnet goes                                  | Free                                                 |
+| **Internet gateway** | Connects public subnets to the internet, both directions                     | Free (data transfer is billed)                       |
+| **NAT gateway**      | Lets private subnets start connections to the internet, not receive them     | Hourly plus per GB                                   |
+| **Security group**   | Stateful firewall on a network interface (instance, load balancer, database) | Free                                                 |
+| **Network ACL**      | Stateless firewall on a subnet                                               | Free                                                 |
+| **VPC endpoint**     | Private path to AWS services without the internet                            | Gateway type free; interface type hourly plus per GB |
 
-## Understanding Network Basics
+What makes a subnet "public" is only its route table: a route for `0.0.0.0/0` to an internet gateway. Instances in it also need a public IP address to be reachable.
 
-Before diving into VPC, let's review some networking fundamentals:
+## The Network You Will Build
 
-**Public vs. Private**:
-
-- Public networks connect to the internet
-- Private networks are isolated from direct internet access
-
-**Subnets**:
-
-- Smaller sections within a larger network
-- Like different floors or wings in a building
-
-**IP Addresses**:
-
-- Unique addresses for each device on the network
-- Private addresses (like 10.0.1.5) for internal use
-- Public addresses for internet communication
-
-## VPC Core Components
-
-A VPC consists of several pieces working together:
-
-### The VPC Itself
-
-This is your private network space with a range of IP addresses you control. You might choose something like 10.0.0.0/16, which gives you about 65,000 possible addresses.
-
-### Subnets
-
-Subnets divide your VPC into smaller sections. You typically create:
-
-- **Public subnets** for things that need internet access
-- **Private subnets** for databases and internal services
-
-### Internet Gateway
-
-This is like the front door to your building - it allows traffic between your VPC and the internet.
-
-### Route Tables
-
-These are like traffic signs that tell network traffic where to go. Different subnets can have different routing rules.
-
-### Security Groups
-
-Virtual firewalls that control traffic at the server level. Think of them as security guards for individual rooms.
-
-## Planning Your Network
-
-Before creating anything, sketch out your network design. A typical web application might look like:
-
-```
-Internet
-    |
-Internet Gateway
-    |
-Load Balancer (Public Subnet)
-    |
-Web Servers (Private Subnet)
-    |
-Database (Private Subnet)
+```diagram
+{
+  "type": "infra",
+  "flow": [
+    { "label": "Internet", "icon": "globe", "tone": "slate" },
+    { "label": "Internet gateway", "icon": "net", "tone": "amber" },
+    { "label": "Load balancer", "sub": "public subnets", "icon": "net", "tone": "green" },
+    { "label": "Web servers", "sub": "private subnets", "icon": "server", "tone": "blue" },
+    { "label": "Database", "sub": "private subnets", "icon": "database", "tone": "violet" }
+  ],
+  "groups": [
+    {
+      "label": "photo-app VPC",
+      "sub": "10.0.0.0/16, us-east-1",
+      "icon": "cloud",
+      "tone": "slate",
+      "groups": [
+        {
+          "label": "AZ us-east-1a",
+          "icon": "server",
+          "tone": "blue",
+          "nodes": [
+            { "label": "public-a", "sub": "10.0.0.0/24", "icon": "net", "tone": "green" },
+            { "label": "app-a", "sub": "10.0.10.0/24", "icon": "server", "tone": "blue" },
+            { "label": "db-a", "sub": "10.0.20.0/24", "icon": "database", "tone": "violet" }
+          ]
+        },
+        {
+          "label": "AZ us-east-1b",
+          "icon": "server",
+          "tone": "blue",
+          "nodes": [
+            { "label": "public-b", "sub": "10.0.1.0/24", "icon": "net", "tone": "green" },
+            { "label": "app-b", "sub": "10.0.11.0/24", "icon": "server", "tone": "blue" },
+            { "label": "db-b", "sub": "10.0.21.0/24", "icon": "database", "tone": "violet" }
+          ]
+        }
+      ]
+    }
+  ]
+}
 ```
 
-This design keeps your web servers and database hidden from direct internet access while still allowing your load balancer to serve traffic.
+Two AZs is the minimum for anything that should survive a data center problem: the load balancer (Part 7) and RDS Multi-AZ (Part 6) both require subnets in at least two AZs.
+
+## Plan the Address Space
+
+Pick a private range (RFC 1918) that does not overlap with your office network, your VPN or any other VPC you might connect later. `10.0.0.0/16` gives you 65,536 addresses, plenty of room for subnets. In every subnet, AWS reserves five addresses: the network address, the next three (VPC router, DNS, future use) and the last one.
+
+A few lines of Python check a plan before you create anything:
+
+```python
+import ipaddress
+
+vpc = ipaddress.ip_network("10.0.0.0/16")
+plan = {
+    "public-a": "10.0.0.0/24",
+    "public-b": "10.0.1.0/24",
+    "app-a": "10.0.10.0/24",
+    "app-b": "10.0.11.0/24",
+    "db-a": "10.0.20.0/24",
+    "db-b": "10.0.21.0/24",
+}
+
+print(f"VPC {vpc}: {vpc.num_addresses} addresses")
+nets = [ipaddress.ip_network(c) for c in plan.values()]
+for name, net in zip(plan, nets):
+    assert net.subnet_of(vpc), name
+    # AWS reserves the first four addresses and the last one in every subnet
+    print(f"{name:9} {str(net):14} {net.num_addresses - 5} usable")
+assert not any(a.overlaps(b) for i, a in enumerate(nets) for b in nets[i + 1:])
+print("no overlaps")
+```
+
+```terminal
+{
+  "title": "check the subnet plan",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "python3 subnets.py",
+      "output": "VPC 10.0.0.0/16: 65536 addresses\npublic-a  10.0.0.0/24    251 usable\npublic-b  10.0.1.0/24    251 usable\napp-a     10.0.10.0/24   251 usable\napp-b     10.0.11.0/24   251 usable\ndb-a      10.0.20.0/24   251 usable\ndb-b      10.0.21.0/24   251 usable\nno overlaps"
+    }
+  ]
+}
+```
+
+The gaps between `10.0.1.0/24` and `10.0.10.0/24` leave room for a third AZ or more subnets later. You cannot shrink or move a subnet after creating it, so err on the generous side.
+
+## Create the VPC
 
-## Creating Your First VPC
+The console's **VPC and more** wizard creates the VPC, subnets, route tables, internet gateway and endpoints in one go, and draws a preview of the result:
 
-Let's build a simple but secure network for a web application.
+1. Open **VPC**, choose **Create VPC**, then **VPC and more**.
+2. **Name tag auto-generation**: `photo-app`. **IPv4 CIDR block**: `10.0.0.0/16`.
+3. **Number of Availability Zones**: 2, and under **Customize AZs** pick `us-east-1a` and `us-east-1b`. **Number of public subnets**: 2. **Number of private subnets**: 4.
+4. Expand **Customize subnets CIDR blocks** and enter the six ranges from the plan.
+5. **NAT gateways**: **None** for now (see [NAT Gateways](#h2-nat-gateways) before you add one).
+6. **VPC endpoints**: **S3 Gateway**.
+7. Keep **Enable DNS hostnames** and **Enable DNS resolution** checked, and choose **Create VPC**.
 
-### Step 1: Create the VPC
+The wizard names subnets like `photo-app-subnet-public1-us-east-1a`. Rename the six subnets (select one, **Tags**, edit **Name**) to `public-a`, `public-b`, `app-a`, `app-b`, `db-a` and `db-b`, matching their CIDR ranges, so they match the names used in the rest of this guide.
 
-In the VPC console, create a new VPC with:
+The same core steps with the CLI show what the wizard does for you (IDs are examples):
 
-- **Name**: MyApp-VPC
-- **IPv4 CIDR**: 10.0.0.0/16
-- **IPv6**: Not needed for basic applications
+```bash
+# The VPC and one public subnet
+aws ec2 create-vpc --cidr-block 10.0.0.0/16 \
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=photo-app-vpc}]'
+aws ec2 create-subnet --vpc-id vpc-0abc1234def567890 \
+  --cidr-block 10.0.0.0/24 --availability-zone us-east-1a
 
-This gives you a private network with 65,000 possible IP addresses.
+# An internet gateway, attached to the VPC
+aws ec2 create-internet-gateway
+aws ec2 attach-internet-gateway --vpc-id vpc-0abc1234def567890 \
+  --internet-gateway-id igw-0abc1234def567890
 
-### Step 2: Create Subnets
+# A route table with a default route to the internet gateway,
+# associated with the public subnet
+aws ec2 create-route-table --vpc-id vpc-0abc1234def567890
+aws ec2 create-route --route-table-id rtb-0abc1234def567890 \
+  --destination-cidr-block 0.0.0.0/0 --gateway-id igw-0abc1234def567890
+aws ec2 associate-route-table --route-table-id rtb-0abc1234def567890 \
+  --subnet-id subnet-0abc1234def567890
+```
 
-Create two subnets in different availability zones for redundancy:
+In real projects you describe the network in code instead, with Terraform or CloudFormation, so it can be reviewed and rebuilt. The [AWS VPC with Terraform exercise](/exercises/terraform-aws-vpc) builds this layout.
 
-**Public Subnet**:
+## Route Tables
 
-- **Name**: Public-Subnet-A
-- **Availability Zone**: us-east-1a
-- **IPv4 CIDR**: 10.0.1.0/24 (256 addresses)
+Each subnet uses exactly one route table. After the wizard, they look like this (IDs are examples):
 
-**Private Subnet**:
+```text
+Public route table (public-a, public-b)
+  Destination      Target
+  10.0.0.0/16      local
+  0.0.0.0/0        igw-0abc1234def567890
+  pl-63a5400a      vpce-0abc1234def567890   (S3 gateway endpoint)
 
-- **Name**: Private-Subnet-A
-- **Availability Zone**: us-east-1a
-- **IPv4 CIDR**: 10.0.10.0/24 (256 addresses)
+Private route tables (the wizard creates several; each looks like this)
+  Destination      Target
+  10.0.0.0/16      local
+  pl-63a5400a      vpce-0abc1234def567890   (S3 gateway endpoint)
+```
 
-### Step 3: Set Up Internet Access
+The `local` route lets every subnet reach every other subnet in the VPC; you cannot remove it. The most specific route wins, so traffic to `10.0.x.x` stays local even when there is a `0.0.0.0/0` route. The `pl-` entry is the prefix list of S3 addresses in the Region (the ID differs per Region).
 
-Create an Internet Gateway and attach it to your VPC. This enables internet connectivity for your public subnet.
+## Security Groups
 
-### Step 4: Configure Routing
+A **security group** is a firewall attached to a network interface. Rules only **allow**; anything not allowed is dropped. Security groups are **stateful**: if a request is allowed in, the response is allowed out automatically, and the other way round.
 
-Create route tables that define how traffic flows:
+The best feature: a rule's source can be **another security group** instead of an IP range. The rule then follows the resources, whatever their addresses:
 
-- **Public Route Table**: Sends internet traffic to the Internet Gateway
-- **Private Route Table**: Keeps traffic internal (for now)
+| Security group  | Inbound rule       | Source                            |
+| --------------- | ------------------ | --------------------------------- |
+| `photo-app-alb` | HTTP 80, HTTPS 443 | `0.0.0.0/0` (and `::/0` for IPv6) |
+| `photo-app-web` | HTTP 80            | `photo-app-alb`                   |
+| `photo-app-db`  | PostgreSQL 5432    | `photo-app-web`                   |
 
-## Security Groups vs. NACLs
+Outbound, a new security group allows all traffic, which is usually fine. With these rules, the database can only be reached from the web servers, and the web servers only from the load balancer.
 
-AWS provides two types of network security:
+Create the three groups in the `photo-app` VPC (**VPC**, **Security groups**, **Create security group**) in the order of the table, because each rule refers to the group above it. Security group names only need to be unique within a VPC, so this `photo-app-web` is a new group, separate from the one you created in the default VPC in Part 3.
 
-### Security Groups (Recommended)
+The same for the database group with the CLI (IDs are examples):
 
-- Apply to individual instances
-- Stateful (automatically allow return traffic)
-- Easier to manage and understand
-- Default deny, explicitly allow what you need
+```bash
+aws ec2 create-security-group \
+  --group-name photo-app-db \
+  --description "photo-app database" \
+  --vpc-id vpc-0abc1234def567890
 
-### Network ACLs
+# Allow PostgreSQL only from members of the photo-app-web group
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-0db0000000000000a \
+  --protocol tcp --port 5432 \
+  --source-group sg-0eb0000000000000b
+```
 
-- Apply to entire subnets
-- Stateless (must explicitly allow both directions)
-- More complex but offer additional control
-- Good for compliance requirements
+## Move the Web Server into the New VPC
 
-For most applications, Security Groups provide sufficient security with less complexity.
+The Part 3 instance lives in the default VPC, which has no route to the new subnets. Launch its replacement inside `photo-app`:
 
-## Practical Security Group Setup
+1. In the EC2 console, select the Part 3 instance and choose **Actions**, **Images and templates**, **Launch more like this**. This copies the AMI, instance type, IAM role, tags and user data.
+2. Under **Network settings**, choose the `photo-app` VPC, subnet `public-a`, **Auto-assign public IP: Enable**, and the new `photo-app-web` security group.
+3. Launch it, check that it shows as connected in Session Manager, then terminate the Part 3 instance.
 
-Here's how you might configure security groups for a web application:
+This instance, `photo-app-dev-web`, is your way into the VPC for now: Part 6 tunnels to the database through it. Its security group only accepts HTTP from the load balancer, so you will not open the page in a browser until Part 7, where an Auto Scaling group in the private subnets replaces it.
 
-### Web Server Security Group
+## Network ACLs
 
-**Inbound Rules**:
+A **network ACL** filters traffic at the subnet boundary. It is **stateless** (return traffic needs its own rule, usually for the ephemeral ports 1024-65535), its rules are numbered and evaluated in order, and it can **deny**. The default network ACL allows everything. Leave it that way unless you need a subnet-wide deny, such as blocking an address range; security groups do the everyday work.
 
-- HTTP (port 80) from anywhere
-- HTTPS (port 443) from anywhere
-- SSH (port 22) from your IP only
+## NAT Gateways
 
-**Outbound Rules**:
+Servers in private subnets often need to start connections out: to download packages, call a payment API or reach AWS services that have no endpoint in your VPC. A **NAT gateway** lets them do that while nobody on the internet can connect in.
 
-- All traffic allowed (default)
+- A **zonal** NAT gateway lives in one public subnet and AZ. For high availability you create one per AZ and point each private route table at the gateway in its own AZ.
+- A **regional** NAT gateway (available since November 2025) spans the AZs where your workloads run, does not need a public subnet, and saves you the per-AZ setup.
 
-### Database Security Group
+Either way, NAT is one of the classic surprise charges. The [VPC pricing page](https://aws.amazon.com/vpc/pricing/) lists, for its US East (Ohio) example, USD 0.045 per NAT gateway hour plus USD 0.045 per GB processed (checked 23 October 2026), and a regional NAT gateway is billed per hour for each AZ it covers. That is more than USD 30 a month per gateway before any traffic.
 
-**Inbound Rules**:
+Ways to need less NAT:
 
-- MySQL (port 3306) from Web Server Security Group only
-- No direct internet access
+- **Gateway endpoints** for S3 and DynamoDB are free and keep that traffic off the NAT gateway.
+- **Interface endpoints** reach most other AWS services privately; they cost per hour per AZ, so they pay off for heavy traffic or strict isolation.
+- **IPv6** with an **egress-only internet gateway** gives outbound-only internet access for free.
+- **Amazon Linux 2023 package repositories are hosted in S3**, so `dnf install` works from a private subnet through the free S3 gateway endpoint, with no NAT gateway. The web servers in Part 7 rely on this. Third-party repositories still need internet access.
 
-This setup ensures your database only accepts connections from your web servers.
+:::note
+Session Manager also needs a path out from a private instance: either a NAT gateway or interface endpoints for Systems Manager. Without one, the instance shows as unmanaged. See [Use VPC endpoints for Systems Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/setup-create-vpc.html).
+:::
 
-## NAT Gateways for Private Subnets
+## IPv6
 
-Sometimes servers in private subnets need internet access for updates or external API calls, but you don't want them directly accessible from the internet.
+Because every public IPv4 address now costs money by the hour, IPv6 is worth knowing. A VPC can be **dual-stack**: add an Amazon-provided IPv6 block, give subnets IPv6 ranges, and route `::/0` to the internet gateway (public) or to an egress-only internet gateway (private). IPv6 addresses are free and globally unique, so there is no NAT. Load balancers support dual-stack too.
 
-A NAT Gateway acts like a one-way door:
+## See the Traffic: Flow Logs
 
-- Private servers can make outbound connections
-- Internet traffic can't initiate connections to private servers
+**VPC Flow Logs** record accepted and rejected connections for a VPC, subnet or network interface, and deliver them to CloudWatch Logs or S3. In the default format, a record looks like this (example from the AWS documentation):
 
-This is perfect for:
+```text
+2 123456789010 eni-1235b8ca123456789 172.31.16.139 172.31.16.21 20641 22 6 20 4249 1418530010 1418530070 ACCEPT OK
+```
 
-- Installing software updates
-- Calling external APIs
-- Downloading application dependencies
+The fields are: version, account, interface, source and destination address, source and destination port, protocol (6 is TCP), packets, bytes, start and end time, action and log status. A `REJECT` on the port you expect points at a security group or network ACL. **Reachability Analyzer** goes further: it checks the configured path between two resources and tells you which rule blocks it, without sending any traffic.
 
-## Multi-AZ Design for Reliability
+## Connect Networks
 
-For production applications, spread resources across multiple Availability Zones:
+- **VPC peering** connects two VPCs (also across accounts and Regions) privately. It is not transitive: A to B and B to C does not give A to C.
+- **Transit Gateway** is a hub that connects many VPCs and on-premises networks.
+- **Site-to-Site VPN** and **Direct Connect** connect your own data center or office.
 
-**Zone A**:
+All of them need non-overlapping CIDR ranges, which is why the planning step matters.
 
-- Public Subnet A
-- Private Subnet A
-- Web Server A
-- Database Primary
+## Troubleshooting
 
-**Zone B**:
+**Cannot reach an instance from the internet:**
 
-- Public Subnet B
-- Private Subnet B
-- Web Server B
-- Database Standby
+1. Is it in a subnet whose route table has `0.0.0.0/0` to an internet gateway?
+2. Does it have a public IPv4 address (or IPv6)?
+3. Does its security group allow the port from your address?
+4. Does a custom network ACL block the port or the ephemeral return ports?
+5. Is the service on the instance listening on that port (`ss -tlnp`)?
 
-This design survives the failure of an entire data center.
+**A private instance cannot reach the internet:** check for a NAT gateway route in its subnet's route table, and that the NAT gateway (zonal) sits in a public subnet.
 
-## Common VPC Patterns
+**Two resources in the VPC cannot talk:** check that the destination's security group allows the source's security group on the right port, and that DNS resolves (both DNS settings enabled on the VPC).
 
-### Single-Tier Architecture
+## Common Mistakes
 
-All resources in public subnets. Simple but less secure.
-**Good for**: Static websites, simple applications
-**Not ideal for**: Applications handling sensitive data
+- **Putting databases in public subnets** "to connect from my laptop". Use Session Manager port forwarding instead (Part 6).
+- **One AZ only.** Load balancers and Multi-AZ databases need two.
+- **Overlapping CIDR blocks** with networks you may connect later. Re-addressing a VPC means rebuilding it.
+- **A NAT gateway left running** in a learning account. It costs money every hour even with no traffic.
+- **Security group rules by IP address** between your own tiers. Reference security groups instead.
 
-### Two-Tier Architecture
+## Clean Up
 
-Web servers in public subnets, databases in private subnets.
-**Good for**: Most web applications
-**Security**: Moderate
+The VPC, subnets, route tables, internet gateway and gateway endpoint are free; you can keep them for the next parts. Delete NAT gateways and interface endpoints as soon as you are done with them, and release any Elastic IPs they used.
 
-### Three-Tier Architecture
+## Summary
 
-Load balancers in public subnets, web servers in private subnets, databases in isolated subnets.
-**Good for**: Production applications
-**Security**: High
+- A VPC is an IP range in one Region; subnets are slices of it in one AZ each.
+- The route table makes a subnet public or private.
+- Security groups are stateful, allow-only, and can reference each other; network ACLs are stateless and rarely needed.
+- NAT gateways cost money per hour and per GB; gateway endpoints for S3 and DynamoDB are free.
+- Flow logs and Reachability Analyzer show where traffic stops.
 
-## VPC Endpoints for AWS Services
+Next: [RDS: Managed Databases](/guides/introduction-to-aws/06-rds-databases), which goes into the private database subnets you just created.
 
-By default, when your EC2 instances access AWS services like S3, traffic goes over the internet. VPC Endpoints let you access AWS services privately within your VPC.
+## Keep Learning
 
-**Benefits**:
-
-- Improved security (traffic stays within AWS)
-- Better performance (no internet detour)
-- Reduced data transfer costs
-
-**Common endpoints**:
-
-- S3 for file storage
-- DynamoDB for databases
-- EC2 for instance management
-
-## Connecting Multiple VPCs
-
-As your applications grow, you might need multiple VPCs for:
-
-- Different environments (dev, staging, production)
-- Different teams or projects
-- Different regions
-
-VPC Peering connects VPCs so they can communicate privately. It's like building a private bridge between two buildings.
-
-## Monitoring Your Network
-
-CloudWatch provides network monitoring:
-
-- **VPC Flow Logs**: See all network traffic
-- **Network ACL metrics**: Monitor allowed/denied traffic
-- **NAT Gateway metrics**: Track usage and performance
-
-Flow logs are especially useful for security analysis and troubleshooting connectivity issues.
-
-## Common Networking Issues
-
-### Can't Connect to Instance
-
-Check:
-
-1. Security group allows the required port
-2. Route table has correct routes
-3. Instance is in the right subnet
-4. NACL allows traffic (if customized)
-
-### Instance Can't Reach Internet
-
-Check:
-
-1. Instance is in a public subnet, or
-2. Route table points to Internet Gateway (public) or NAT Gateway (private)
-3. Security group allows outbound traffic
-
-### Services Can't Talk to Each Other
-
-Check:
-
-1. Security groups allow traffic between services
-2. Both services are in the same VPC or connected VPCs
-3. DNS resolution is working
-
-## Cost Considerations
-
-VPC components have different cost implications:
-
-- **VPC, subnets, route tables**: Free
-- **Internet Gateway**: Free
-- **NAT Gateway**: ~$45/month plus data processing
-- **VPC Endpoints**: $7-22/month depending on type
-- **Data transfer**: Varies by amount and destination
-
-## Best Practices for Beginners
-
-### Start Simple
-
-Begin with a basic two-tier architecture and add complexity as needed.
-
-### Plan IP Address Space
-
-Choose CIDR blocks that won't conflict with your office network or other VPCs.
-
-### Use Consistent Naming
-
-Name resources clearly: "Production-Web-Subnet" is better than "Subnet-1".
-
-### Document Your Design
-
-Keep notes about why you made certain choices. Future you will thank you.
-
-### Test Security Rules
-
-Verify that your security groups work as expected before deploying applications.
-
-## When to Use Custom VPCs
-
-**Always use custom VPCs for**:
-
-- Production applications
-- Applications handling sensitive data
-- Multi-tier applications
-- Applications requiring specific network layouts
-
-**Default VPCs are fine for**:
-
-- Learning and experimentation
-- Simple, single-server applications
-- Quick prototypes
-
-## Migrating from Default VPC
-
-If you started with the default VPC and need to move to a custom VPC:
-
-1. Create your new VPC
-2. Launch new instances in the new VPC
-3. Migrate data and configuration
-4. Update DNS to point to new instances
-5. Terminate old instances
-
-This process avoids downtime and lets you test thoroughly.
-
-## Next Steps
-
-With your VPC providing a secure network foundation, you're ready to add managed database services with RDS. Databases benefit greatly from VPC security, and you'll see how to place them in private subnets while still allowing your applications to connect.
-
-Understanding networking makes you a more effective cloud architect. The concepts you've learned here apply not just to AWS, but to any cloud platform or traditional data center networking.
+- Try it in the browser: [AWS VPC simulator](/games/aws-vpc-simulator)
+- Exercise: [AWS VPC with Terraform](/exercises/terraform-aws-vpc)
+- [AWS VPC Networking Fundamentals interview questions](/interview-questions/junior/aws-vpc-networking)
