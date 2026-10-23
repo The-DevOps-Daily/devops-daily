@@ -1,681 +1,443 @@
 ---
-title: Organizing Code with Terraform Modules
-description: Learn how to create reusable infrastructure components with modules and use community modules
+title: 'Terraform Modules: Write, Use and Version Them'
+description: 'Build reusable Terraform modules: inputs and outputs, for_each on modules, registry and Git sources, version pinning, and moving resources into modules.'
 order: 7
 ---
 
-**TLDR**: Modules are reusable Terraform configurations. Put related resources in a directory with variables and outputs, then call that module multiple times with different inputs. Use modules to avoid repetition, enforce standards, and share infrastructure patterns across teams.
+**TLDR**: A module is a directory of `.tf` files. The directory you run Terraform in is the **root module**; it calls **child modules** with `module` blocks, passes values in as variables and reads results through outputs. Modules can come from a local path, the Terraform Registry, Git or other sources; pin remote modules to a version. Keep modules small and focused, never configure providers inside them, and use `moved` blocks when you move existing resources into a module.
 
-As your Terraform configurations grow, modules help organize code into reusable components. Instead of copying infrastructure definitions, package them as modules and use them wherever needed.
+Once a configuration grows past a few hundred lines, or once you build the same thing twice, modules are how you keep it under control. This part writes a module, calls it several ways, pulls modules from the registry and from Git, and refactors existing resources into a module without recreating them. Every output comes from real runs with Terraform 1.17.
 
-## What Are Modules?
+## Prerequisites
 
-Every Terraform configuration is a module. The files in your working directory form the "root module". When you create subdirectories with their own configurations, those become "child modules" that the root module can call.
+- Variables and outputs from [Part 6](/guides/introduction-to-terraform/06-variables-and-outputs).
+- No cloud account for the examples; the AWS snippets are optional.
 
-A module is just a directory containing:
+## What a Module Is
 
-- Resource definitions (`.tf` files)
-- Variable declarations (inputs)
-- Output declarations (return values)
-- Optionally: documentation, examples, tests
+Every Terraform configuration is a module. The files in your working directory form the **root module**. A `module` block calls another directory, a **child module**, and creates everything in it under its own address prefix:
 
-```
-project/
-├── main.tf              # Root module
-├── variables.tf
+```text
+modules-demo/
+├── main.tf                 # root module: calls the child module
 ├── outputs.tf
-└── modules/             # Child modules
-    ├── vpc/
-    │   ├── main.tf
-    │   ├── variables.tf
-    │   └── outputs.tf
-    └── web_server/
-        ├── main.tf
-        ├── variables.tf
-        └── outputs.tf
+└── modules/
+    └── site/               # child module
+        ├── main.tf         # resources
+        ├── variables.tf    # inputs
+        ├── outputs.tf      # return values
+        ├── versions.tf     # required providers
+        └── server.conf.tftpl
 ```
 
-## Creating Your First Module
+A child module only sees what you pass in. It cannot read the root module's variables or resources, and the root module can only read the child's outputs. That boundary is the point: the inputs and outputs are the module's interface, and everything else can change without breaking callers.
 
-Let's create a module for a web server with a security group.
+## Write a Module
 
-Create `modules/web_server/main.tf`:
+This module renders an Nginx server block for one site and gives it a random ID, standing in for whatever your real module creates (a server, a bucket, a DNS zone).
 
-```hcl
-# modules/web_server/main.tf
-resource "aws_security_group" "web" {
-  name        = "${var.name}-sg"
-  description = "Security group for ${var.name}"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTP from anywhere"
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "HTTPS from anywhere"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "All outbound traffic"
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.name}-sg"
-    }
-  )
-}
-
-resource "aws_instance" "web" {
-  ami                    = var.ami_id
-  instance_type          = var.instance_type
-  subnet_id              = var.subnet_id
-  vpc_security_group_ids = [aws_security_group.web.id]
-
-  user_data = var.user_data
-
-  root_block_device {
-    volume_size = var.disk_size
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = var.name
-    }
-  )
-}
-```
-
-Define inputs in `modules/web_server/variables.tf`:
+`modules/site/variables.tf` declares the inputs:
 
 ```hcl
-# modules/web_server/variables.tf
-variable "name" {
-  description = "Name for the web server"
+variable "domain" {
+  description = "Domain name the site answers on"
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID where resources will be created"
-  type        = string
-}
-
-variable "subnet_id" {
-  description = "Subnet ID for the instance"
-  type        = string
-}
-
-variable "ami_id" {
-  description = "AMI ID for the instance"
-  type        = string
-}
-
-variable "instance_type" {
-  description = "EC2 instance type"
-  type        = string
-  default     = "t3.micro"
-}
-
-variable "disk_size" {
-  description = "Root disk size in GB"
-  type        = number
-  default     = 20
-}
-
-variable "user_data" {
-  description = "User data script"
-  type        = string
-  default     = ""
-}
-
-variable "tags" {
-  description = "Tags to apply to resources"
-  type        = map(string)
-  default     = {}
-}
-```
-
-Define outputs in `modules/web_server/outputs.tf`:
-
-```hcl
-# modules/web_server/outputs.tf
-output "instance_id" {
-  description = "ID of the EC2 instance"
-  value       = aws_instance.web.id
-}
-
-output "instance_public_ip" {
-  description = "Public IP address"
-  value       = aws_instance.web.public_ip
-}
-
-output "instance_private_ip" {
-  description = "Private IP address"
-  value       = aws_instance.web.private_ip
-}
-
-output "security_group_id" {
-  description = "ID of the security group"
-  value       = aws_security_group.web.id
-}
-```
-
-## Using Modules
-
-Now use this module in your root configuration:
-
-```hcl
-# main.tf
-module "web_server" {
-  source = "./modules/web_server"
-
-  name          = "production-web"
-  vpc_id        = aws_vpc.main.id
-  subnet_id     = aws_subnet.public.id
-  ami_id        = data.aws_ami.ubuntu.id
-  instance_type = "t3.small"
-  disk_size     = 30
-
-  user_data = <<-EOF
-              #!/bin/bash
-              apt-get update
-              apt-get install -y nginx
-              systemctl start nginx
-              EOF
-
-  tags = {
-    Environment = "production"
-    Project     = "web-app"
-  }
-}
-
-# Access module outputs
-output "web_server_ip" {
-  value = module.web_server.instance_public_ip
-}
-```
-
-The `source` argument tells Terraform where to find the module. It can be:
-
-- Local path: `./modules/web_server`
-- Git repository: `git::https://github.com/user/terraform-modules.git//web_server?ref=v1.0.0`
-- Terraform Registry: `terraform-aws-modules/vpc/aws` (shown later)
-- HTTP URL: `https://example.com/terraform-modules/web_server.zip`
-
-When you run `terraform init`, Terraform downloads and caches modules from remote sources.
-
-## Multiple Module Instances
-
-Use the same module multiple times with different configurations:
-
-```hcl
-module "web_server_1" {
-  source = "./modules/web_server"
-
-  name          = "web-1"
-  vpc_id        = aws_vpc.main.id
-  subnet_id     = aws_subnet.public_a.id
-  ami_id        = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-
-  tags = {
-    Environment = "dev"
-    Role        = "web"
-  }
-}
-
-module "web_server_2" {
-  source = "./modules/web_server"
-
-  name          = "web-2"
-  vpc_id        = aws_vpc.main.id
-  subnet_id     = aws_subnet.public_b.id
-  ami_id        = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-
-  tags = {
-    Environment = "dev"
-    Role        = "web"
-  }
-}
-
-module "api_server" {
-  source = "./modules/web_server"
-
-  name          = "api"
-  vpc_id        = aws_vpc.main.id
-  subnet_id     = aws_subnet.private.id
-  ami_id        = data.aws_ami.ubuntu.id
-  instance_type = "t3.small"
-
-  tags = {
-    Environment = "dev"
-    Role        = "api"
-  }
-}
-```
-
-Each module call creates its own set of resources.
-
-## Module Count and For_Each
-
-Create multiple instances of an entire module:
-
-```hcl
-variable "web_servers" {
-  type = map(object({
-    subnet_id     = string
-    instance_type = string
-  }))
-
-  default = {
-    web-1 = {
-      subnet_id     = "subnet-abc123"
-      instance_type = "t3.micro"
-    }
-    web-2 = {
-      subnet_id     = "subnet-def456"
-      instance_type = "t3.micro"
-    }
-    api = {
-      subnet_id     = "subnet-ghi789"
-      instance_type = "t3.small"
-    }
-  }
-}
-
-module "servers" {
-  for_each = var.web_servers
-  source   = "./modules/web_server"
-
-  name          = each.key
-  vpc_id        = aws_vpc.main.id
-  subnet_id     = each.value.subnet_id
-  ami_id        = data.aws_ami.ubuntu.id
-  instance_type = each.value.instance_type
-
-  tags = {
-    Environment = "production"
-  }
-}
-
-# Access a specific module's output
-output "web_1_ip" {
-  value = module.servers["web-1"].instance_public_ip
-}
-
-# Access all module outputs
-output "all_server_ips" {
-  value = { for k, v in module.servers : k => v.instance_public_ip }
-}
-```
-
-## Using Public Modules
-
-The Terraform Registry hosts thousands of community modules. Let's use the popular AWS VPC module:
-
-```hcl
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "5.1.2"
-
-  name = "my-vpc"
-  cidr = "10.0.0.0/16"
-
-  azs             = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-
-  enable_nat_gateway = true
-  enable_vpn_gateway = false
-
-  tags = {
-    Environment = "dev"
-    Project     = "web-app"
-  }
-}
-
-# Use module outputs
-resource "aws_instance" "web" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-  subnet_id     = module.vpc.public_subnets[0]
-
-  vpc_security_group_ids = [aws_security_group.web.id]
-}
-
-resource "aws_security_group" "web" {
-  name   = "web-sg"
-  vpc_id = module.vpc.vpc_id
-
-  # ... rules ...
-}
-```
-
-Always pin module versions to avoid unexpected changes:
-
-```hcl
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"  # Allow 5.x but not 6.0
-
-  # ...
-}
-```
-
-Find modules at [registry.terraform.io](https://registry.terraform.io/browse/modules).
-
-## Nested Modules
-
-Modules can call other modules. Create a module for a complete application:
-
-```hcl
-# modules/web_app/main.tf
-module "vpc" {
-  source = "../vpc"
-
-  cidr_block = var.vpc_cidr
-  name       = "${var.name}-vpc"
-  tags       = var.tags
-}
-
-module "web_servers" {
-  source = "../web_server"
-
-  for_each = var.server_configs
-
-  name          = "${var.name}-${each.key}"
-  vpc_id        = module.vpc.vpc_id
-  subnet_id     = module.vpc.public_subnet_ids[0]
-  ami_id        = var.ami_id
-  instance_type = each.value.instance_type
-
-  tags = merge(var.tags, {
-    Server = each.key
-  })
-}
-
-module "database" {
-  source = "../rds"
-
-  name             = "${var.name}-db"
-  vpc_id           = module.vpc.vpc_id
-  subnet_ids       = module.vpc.private_subnet_ids
-  instance_class   = var.db_instance_class
-  allocated_storage = var.db_allocated_storage
-
-  tags = var.tags
-}
-```
-
-This "web_app" module orchestrates VPC, web server, and database modules.
-
-## Module Best Practices
-
-### Keep Modules Focused
-
-Each module should have a single, clear purpose:
-
-- Good: `vpc`, `web_server`, `rds_database`
-- Bad: `entire_infrastructure`
-
-Small, focused modules are easier to test, understand, and reuse.
-
-### Document Your Modules
-
-Add a `README.md` explaining what the module does, required inputs, and outputs:
-
-```markdown
-# Web Server Module
-
-Creates an EC2 instance with a security group configured for web traffic.
-
-## Usage
-
-\`\`\`hcl
-module "web" {
-  source = "./modules/web_server"
-
-  name      = "my-web-server"
-  vpc_id    = "vpc-abc123"
-  subnet_id = "subnet-def456"
-  ami_id    = "ami-0c55b159cbfafe1f0"
-}
-\`\`\`
-
-## Requirements
-
-- AWS provider >= 5.0
-- VPC must already exist
-- Subnet must be in the VPC
-
-## Inputs
-
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|----------|
-| name | Server name | string | - | yes |
-| vpc_id | VPC ID | string | - | yes |
-| instance_type | Instance type | string | t3.micro | no |
-
-## Outputs
-
-| Name | Description |
-|------|-------------|
-| instance_id | EC2 instance ID |
-| instance_public_ip | Public IP address |
-```
-
-### Provide Examples
-
-Include an `examples/` directory showing how to use the module:
-
-```
-modules/web_server/
-├── main.tf
-├── variables.tf
-├── outputs.tf
-├── README.md
-└── examples/
-    ├── basic/
-    │   └── main.tf
-    └── complete/
-        └── main.tf
-```
-
-### Version Your Modules
-
-If sharing modules across projects, version them with Git tags:
-
-```bash
-git tag -a v1.0.0 -m "Initial release"
-git push --tags
-```
-
-Reference specific versions:
-
-```hcl
-module "web_server" {
-  source = "git::https://github.com/yourorg/terraform-modules.git//web_server?ref=v1.0.0"
-
-  # ...
-}
-```
-
-### Avoid Hardcoded Values
-
-Make modules configurable with variables instead of hardcoding values:
-
-```hcl
-# Bad - hardcoded
-resource "aws_instance" "web" {
-  instance_type = "t3.micro"
-  # ...
-}
-
-# Good - configurable
-resource "aws_instance" "web" {
-  instance_type = var.instance_type
-  # ...
-}
-```
-
-### Use Sensible Defaults
-
-Provide defaults for optional variables:
-
-```hcl
-variable "instance_type" {
-  description = "EC2 instance type"
-  type        = string
-  default     = "t3.micro"
-}
-
-variable "disk_size" {
-  description = "Root disk size in GB"
-  type        = number
-  default     = 20
+variable "upstreams" {
+  description = "Backend addresses (host:port) that serve the site"
+  type        = list(string)
 
   validation {
-    condition     = var.disk_size >= 8 && var.disk_size <= 1000
-    error_message = "Disk size must be between 8 and 1000 GB."
+    condition     = length(var.upstreams) > 0
+    error_message = "A site needs at least one upstream."
   }
+}
+
+variable "output_dir" {
+  description = "Directory to write the configuration to"
+  type        = string
 }
 ```
 
-This makes modules easier to use while still allowing customization.
-
-## Practical Example: Complete Application
-
-Here's a realistic multi-module setup:
+`modules/site/main.tf` holds the resources, and the template sits next to it:
 
 ```hcl
-# Root main.tf
-terraform {
-  required_version = "~> 1.6.0"
+resource "random_id" "site" {
+  byte_length = 4
+}
 
+resource "local_file" "server" {
+  filename = "${var.output_dir}/${var.domain}.conf"
+  content = templatefile("${path.module}/server.conf.tftpl", {
+    domain    = var.domain
+    upstreams = var.upstreams
+    site_id   = random_id.site.hex
+  })
+}
+```
+
+```text
+# site ${site_id}
+upstream ${replace(domain, ".", "_")} {
+%{ for u in upstreams ~}
+    server ${u};
+%{ endfor ~}
+}
+
+server {
+    listen 80;
+    server_name ${domain};
+    location / {
+        proxy_pass http://${replace(domain, ".", "_")};
+    }
+}
+```
+
+Inside a module, `path.module` is the module's own directory, so the template is found wherever the module is used. The outputs and the provider requirements complete it:
+
+```hcl
+output "config_path" {
+  description = "Path of the generated configuration file"
+  value       = local_file.server.filename
+}
+
+output "site_id" {
+  description = "Random ID of the site"
+  value       = random_id.site.hex
+}
+```
+
+```hcl
+terraform {
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
+    local = {
+      source  = "hashicorp/local"
+      version = ">= 2.5"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = ">= 3.6"
     }
   }
 }
+```
 
-provider "aws" {
-  region = var.aws_region
-}
+The module declares which providers it needs, with a **minimum** version, but no `provider` blocks. The root module configures providers and pins exact ranges; a module that sets its own provider configuration cannot be used with `count` or `for_each` and is hard to remove later. Reusable modules should also avoid tight upper bounds, so callers can upgrade providers without waiting for a new module release.
 
-# VPC module
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "5.1.2"
+## Call the Module
 
-  name = "${var.project}-${var.environment}-vpc"
-  cidr = var.vpc_cidr
+The root module pins the provider versions for the whole configuration:
 
-  azs             = data.aws_availability_zones.available.names
-  private_subnets = var.private_subnet_cidrs
-  public_subnets  = var.public_subnet_cidrs
+```hcl
+terraform {
+  required_version = ">= 1.17"
 
-  enable_nat_gateway   = true
-  single_nat_gateway   = var.environment != "prod"
-  enable_dns_hostnames = true
-
-  tags = local.common_tags
-}
-
-# Web server module
-module "web_servers" {
-  source = "./modules/web_server"
-
-  for_each = var.web_server_configs
-
-  name          = "${var.project}-${var.environment}-${each.key}"
-  vpc_id        = module.vpc.vpc_id
-  subnet_id     = module.vpc.public_subnets[each.value.subnet_index]
-  ami_id        = data.aws_ami.ubuntu.id
-  instance_type = each.value.instance_type
-
-  tags = merge(local.common_tags, {
-    Role = "web"
-  })
-}
-
-# Database module
-module "database" {
-  source = "./modules/rds"
-
-  identifier        = "${var.project}-${var.environment}-db"
-  vpc_id            = module.vpc.vpc_id
-  subnet_ids        = module.vpc.private_subnets
-  instance_class    = var.environment == "prod" ? "db.t3.medium" : "db.t3.micro"
-  allocated_storage = var.environment == "prod" ? 100 : 20
-
-  allowed_security_groups = [
-    for server in module.web_servers : server.security_group_id
-  ]
-
-  tags = merge(local.common_tags, {
-    Role = "database"
-  })
-}
-
-# Load balancer module
-module "load_balancer" {
-  source = "./modules/alb"
-
-  name               = "${var.project}-${var.environment}-alb"
-  vpc_id             = module.vpc.vpc_id
-  subnet_ids         = module.vpc.public_subnets
-  target_instance_ids = [
-    for server in module.web_servers : server.instance_id
-  ]
-
-  tags = merge(local.common_tags, {
-    Role = "load-balancer"
-  })
-}
-
-# Outputs
-output "load_balancer_endpoint" {
-  description = "Application endpoint"
-  value       = "http://${module.load_balancer.dns_name}"
-}
-
-output "web_server_ips" {
-  description = "Web server IP addresses"
-  value       = { for k, v in module.web_servers : k => v.instance_public_ip }
-}
-
-output "database_endpoint" {
-  description = "Database connection string"
-  value       = module.database.endpoint
-  sensitive   = true
+  required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.9"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.9"
+    }
+  }
 }
 ```
 
-This setup demonstrates:
+Then it calls the module twice:
 
-- Using public registry modules (VPC)
-- Using custom local modules (web servers, database, load balancer)
-- Module for_each for multiple instances
-- Passing outputs between modules
-- Environment-specific configurations
-- Consistent tagging across all modules
+```hcl
+module "blog" {
+  source = "./modules/site"
 
-Modules are how you scale Terraform from simple configurations to complex, maintainable infrastructure. Next, we'll explore managing multiple environments with the same code.
+  domain     = "blog.example.com"
+  upstreams  = ["10.0.1.10:8080"]
+  output_dir = "${path.root}/out"
+}
+
+module "shop" {
+  source = "./modules/site"
+
+  domain     = "shop.example.com"
+  upstreams  = ["10.0.1.20:8080", "10.0.1.21:8080"]
+  output_dir = "${path.root}/out"
+}
+
+output "config_files" {
+  value = [module.blog.config_path, module.shop.config_path]
+}
+```
+
+`init` installs local modules too (it records where each one is), so run it whenever you add a `module` block. Terraform combines the constraints of the root module and every child module when it picks a provider version:
+
+```terminal
+{
+  "title": "init and apply",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform init",
+      "output": "Initializing the backend...\n\nInitializing modules...\n- blog in modules/site\n- shop in modules/site\n\nInitializing provider plugins...\n- Finding hashicorp/local versions matching \">= 2.5.0, ~> 2.9\"...\n- Finding hashicorp/random versions matching \">= 3.6.0, ~> 3.9\"...\n- Installing hashicorp/local v2.9.1...\n- Installed hashicorp/local v2.9.1 (signed by HashiCorp)\n- Installing hashicorp/random v3.9.1...\n- Installed hashicorp/random v3.9.1 (signed by HashiCorp)\n\nTerraform has created a lock file .terraform.lock.hcl to record the provider\nselections it made above. Include this file in your version control repository\nso that Terraform can guarantee to make the same selections by default when\nyou run \"terraform init\" in the future.\n\nTerraform has been successfully initialized!\n\nYou may now begin working with Terraform. Try running \"terraform plan\" to see\nany changes that are required for your infrastructure. All Terraform commands\nshould now work.\n\nIf you ever set or change modules or backend configuration for Terraform,\nrerun this command to reinitialize your working directory. If you forget, other\ncommands will detect it and remind you to do so if necessary."
+    },
+    {
+      "cmd": "terraform apply -auto-approve",
+      "output": "Apply complete! Resources: 4 added, 0 changed, 0 destroyed.\n\nOutputs:\n\nconfig_files = [\n  \"./out/blog.example.com.conf\",\n  \"./out/shop.example.com.conf\",\n]"
+    },
+    {
+      "cmd": "terraform state list",
+      "output": "module.blog.local_file.server\nmodule.blog.random_id.site\nmodule.shop.local_file.server\nmodule.shop.random_id.site"
+    },
+    {
+      "cmd": "cat out/shop.example.com.conf",
+      "output": "# site 6e3af234\nupstream shop_example_com {\n    server 10.0.1.20:8080;\n    server 10.0.1.21:8080;\n}\n\nserver {\n    listen 80;\n    server_name shop.example.com;\n    location / {\n        proxy_pass http://shop_example_com;\n    }\n}"
+    }
+  ]
+}
+```
+
+Each resource's address starts with its module: `module.shop.local_file.server`. You refer to a module's outputs as `module.<name>.<output>`, as the `config_files` output does.
+
+## Many Instances With for_each
+
+Two nearly identical `module` blocks are a hint to use `for_each`, which works on modules exactly as on resources:
+
+```hcl
+variable "sites" {
+  type = map(list(string))
+  default = {
+    "blog.example.com" = ["10.0.1.10:8080"]
+    "shop.example.com" = ["10.0.1.20:8080", "10.0.1.21:8080"]
+    "docs.example.com" = ["10.0.1.30:8080"]
+  }
+}
+
+module "site" {
+  source   = "./modules/site"
+  for_each = var.sites
+
+  domain     = each.key
+  upstreams  = each.value
+  output_dir = "${path.root}/out"
+}
+
+output "config_files" {
+  value = { for domain, s in module.site : domain => s.config_path }
+}
+```
+
+The two existing sites are already in the state as `module.blog` and `module.shop`. Without help, Terraform would destroy them and create `module.site["blog.example.com"]` and friends from scratch. Two `moved` blocks map the old addresses to the new ones:
+
+```hcl
+moved {
+  from = module.blog
+  to   = module.site["blog.example.com"]
+}
+
+moved {
+  from = module.shop
+  to   = module.site["shop.example.com"]
+}
+```
+
+```terminal
+{
+  "title": "moving modules into for_each",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform init",
+      "output": "Initializing the backend...\n\nInitializing modules...\n- site in modules/site\n"
+    },
+    {
+      "cmd": "terraform plan -no-color | grep -E '^  #|^Plan'",
+      "output": "  # module.blog.local_file.server has moved to module.site[\"blog.example.com\"].local_file.server\n  # module.blog.random_id.site has moved to module.site[\"blog.example.com\"].random_id.site\n  # module.site[\"docs.example.com\"].local_file.server will be created\n  # module.site[\"docs.example.com\"].random_id.site will be created\n  # module.shop.local_file.server has moved to module.site[\"shop.example.com\"].local_file.server\n  # module.shop.random_id.site has moved to module.site[\"shop.example.com\"].random_id.site\nPlan: 2 to add, 0 to change, 0 to destroy."
+    }
+  ]
+}
+```
+
+Both existing sites move without changes, and only `docs` is new. The same technique moves plain resources into a module when you extract one from a growing root module: `from = aws_instance.web`, `to = module.web.aws_instance.this`.
+
+## Module Sources
+
+The `source` argument says where the module code comes from. `terraform init` downloads remote modules into `.terraform/modules`.
+
+| Source                           | Example                                                       | Version pinning           |
+| -------------------------------- | ------------------------------------------------------------- | ------------------------- |
+| Local path                       | `./modules/site`                                              | Same commit as the caller |
+| Terraform Registry               | `terraform-aws-modules/vpc/aws`                               | `version = "~> 6.7"`      |
+| Private registry (HCP Terraform) | `app.terraform.io/acme/vpc/aws`                               | `version = "~> 2.1"`      |
+| Git over HTTPS or SSH            | `git::https://github.com/acme/tf-modules.git//vpc?ref=v2.1.0` | `?ref=` tag or commit     |
+| GitHub shorthand                 | `github.com/acme/tf-modules//vpc?ref=v2.1.0`                  | `?ref=`                   |
+| S3, GCS, HTTP archive            | `s3::https://s3.amazonaws.com/acme-modules/vpc.zip`           | Object name or version    |
+
+A double slash (`//vpc`) selects a subdirectory inside the repository or archive. Only registry sources accept the `version` argument; other sources pin with the reference in the URL. Pin to a tag at least, or to a full commit SHA if you want to be sure nobody can move the tag under you.
+
+Here are both remote kinds in practice: the registry module `hashicorp/dir/template`, which renders a directory of templates and needs no provider, and the same module straight from its Git repository:
+
+Both read a `static` directory with two files, the template `static/index.html.tmpl` and the plain file `static/robots.txt`. The module renders files whose names end in `.tmpl` as templates (and drops the suffix) and passes the others through unchanged:
+
+```html
+<h1>Welcome to ${site_name}</h1>
+```
+
+```text
+User-agent: *
+Allow: /
+```
+
+The module calls:
+
+```hcl
+module "static_files" {
+  source  = "hashicorp/dir/template"
+  version = "1.0.2"
+
+  base_dir      = "${path.root}/static"
+  template_vars = { site_name = "shop.example.com" }
+}
+
+module "static_files_git" {
+  source = "git::https://github.com/hashicorp/terraform-template-dir.git?ref=v1.0.2"
+
+  base_dir      = "${path.root}/static"
+  template_vars = { site_name = "blog.example.com" }
+}
+
+output "static_files" {
+  value = { for path, f in module.static_files.files : path => f.content_type }
+}
+```
+
+```terminal
+{
+  "title": "downloading modules",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform get",
+      "output": "Downloading registry.terraform.io/hashicorp/dir/template 1.0.2 for static_files...\n- static_files in .terraform/modules/static_files\nDownloading git::https://github.com/hashicorp/terraform-template-dir.git?ref=v1.0.2 for static_files_git...\n- static_files_git in .terraform/modules/static_files_git"
+    },
+    {
+      "cmd": "terraform apply -auto-approve",
+      "output": "  \"shop.example.com\" = \"./out/shop.example.com.conf\"\n}\nstatic_files = {\n  \"index.html\" = \"text/html; charset=utf-8\"\n  \"robots.txt\" = \"text/plain; charset=utf-8\"\n}"
+    }
+  ]
+}
+```
+
+`terraform get` downloads modules only; `terraform init` does that plus providers and the backend. To pick up newer versions that still match your constraints, run `terraform get -update` (modules only) or `terraform init -upgrade` (modules and providers).
+
+### Registry Modules
+
+The public registry has thousands of modules. The `terraform-aws-modules` collection is maintained by the community and widely used; its VPC module replaces a page of networking code:
+
+```hcl
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 6.7"
+
+  name = "webapp-dev"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["eu-west-1a", "eu-west-1b"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24"]
+
+  enable_nat_gateway = true
+  single_nat_gateway = true # one NAT gateway saves money outside production
+
+  tags = {
+    Environment = "dev"
+  }
+}
+
+output "private_subnet_ids" {
+  value = module.vpc.private_subnets
+}
+```
+
+Before you adopt a public module, check who maintains it, when it was last released, how many open issues it has, and read its code: you are running it with your cloud credentials. Each module's registry page lists its inputs, outputs and the provider versions it requires; version 6 of this one needs AWS provider 6.28 or later.
+
+## Providers and Modules
+
+A child module inherits the default provider configurations of its caller. When a module needs a different configuration, such as a second Region, pass it explicitly with `providers`:
+
+```hcl
+provider "aws" {
+  alias  = "dr"
+  region = "eu-central-1"
+}
+
+module "vpc_dr" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "~> 6.7"
+
+  providers = {
+    aws = aws.dr
+  }
+
+  name = "webapp-dr"
+  cidr = "10.1.0.0/16"
+  azs  = ["eu-central-1a", "eu-central-1b"]
+}
+```
+
+The key (`aws`) is the provider name inside the module, and the value is the configuration in the caller. A module that needs two configurations of the same provider declares them with `configuration_aliases` in its `required_providers` block. More examples are in [How to Share Providers and Variables Across Terraform Modules](/posts/terraform-provider-variable-sharing-modules).
+
+## Design Good Modules
+
+- **One purpose per module.** A network, a database, a service. A module called `everything` is a root module in disguise.
+- **No thin wrappers.** A module that wraps one resource and passes every argument through adds a layer without adding value. Write a module when it encodes a decision: secure defaults, naming, tagging, a group of resources that belong together.
+- **Small, typed interface.** Few required variables, sensible defaults, `validation` blocks, descriptions on everything. Output what callers need: IDs, ARNs, endpoints.
+- **No provider blocks, minimum provider versions.** As above.
+- **Document it.** A `README.md` with an example call. `terraform-docs` generates the inputs and outputs tables from your code.
+- **Test it.** An `examples/` directory with a working call, plus `terraform test` files ([Part 10](/guides/introduction-to-terraform/10-best-practices-and-production-patterns#h2-test-your-code)).
+- **Version it.** Tag releases with semantic versions (`v1.4.0`) and write down breaking changes. Renaming a variable or an output is a breaking change; adding an optional variable is not. Mark old variables `deprecated` for a release before you remove them ([Part 6](/guides/introduction-to-terraform/06-variables-and-outputs#h2-deprecate-variables-and-outputs)).
+- **Keep nesting shallow.** A module that calls modules that call modules is hard to debug. One or two levels is plenty.
+
+To publish on the public registry, the repository must be public on GitHub, named `terraform-<PROVIDER>-<NAME>` (for example `terraform-aws-webserver`), and have semantic version tags. HCP Terraform has a private registry with the same workflow.
+
+Since Terraform 1.15, `source` and `version` can use variables and locals, for example to point every module call at an internal mirror. Terraform evaluates them during `terraform init`, so a variable used there must be declared with `const = true`, and locals may only build on such variables and literals:
+
+```hcl
+variable "module_registry" {
+  type    = string
+  default = "app.terraform.io/acme"
+  const   = true # allowed in module source and version
+}
+
+module "vpc" {
+  source  = "${var.module_registry}/vpc/aws"
+  version = "~> 2.1"
+}
+```
+
+Without `const = true`, `init` stops with "Only literal values and const variables can be evaluated during init". A `const` variable cannot also be `sensitive` or `ephemeral`.
+
+## Common Mistakes
+
+- **Unpinned remote modules.** A Git source without `?ref=` or a registry module without `version` changes under you on the next `init -upgrade`.
+- **Refactoring into modules without `moved` blocks.** The plan destroys and recreates everything you moved.
+- **Provider blocks inside modules.** They block `for_each` on the module and make it impossible to delete the module cleanly.
+- **Too many variables.** If every argument of every resource is a variable, the module is not hiding anything. Decide the defaults.
+- **Hard-coded names inside modules.** A module that names its resources `web-sg` can only be called once per account. Build names from an input.
+
+## Summary
+
+- A module is a directory; the root module calls child modules with `module` blocks.
+- Inputs are variables, results are outputs, and nothing else crosses the boundary.
+- `for_each` and `count` work on modules; `moved` blocks keep refactors free of replacements.
+- Sources can be local, a registry, Git or object storage; pin every remote source.
+- Modules declare provider requirements but leave provider configuration to the caller.
+
+In [Part 8](/guides/introduction-to-terraform/08-working-with-multiple-environments) you use modules to run the same infrastructure in several environments.
+
+## Keep Learning
+
+- [Terraform Module Outputs, Inputs and Sources: How Modules Pass Data to Each Other](/posts/terraform-module-outputs-inputs-and-sources)
+- [How to Organize a Terraform Repository with Multiple Subfolders](/posts/organizing-terraform-repository-with-subfolders)
+- [Terraform Repository Structure Checklist](/checklists/terraform-repo-structure)
+- [Terraform vs Pulumi](/comparisons/terraform-vs-pulumi), if you would rather write modules in a general-purpose language

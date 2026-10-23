@@ -1,699 +1,541 @@
 ---
-title: Variables and Outputs in Terraform
-description: Learn how to parameterize configurations with input variables and expose information with outputs
+title: 'Terraform Variables and Outputs'
+description: 'Declare Terraform variables with types, defaults and validation, set them with tfvars files, -var or TF_VAR_ variables, and read outputs as text or JSON.'
 order: 6
 ---
 
-**TLDR**: Variables make configurations reusable - define them with type and default, set them via CLI, files, or environment variables. Outputs expose values after applying - like IP addresses or resource IDs. Use validation rules to catch errors early and sensitive flags to hide secrets.
+**TLDR**: Input variables (`variable` blocks) make a configuration reusable: you declare a type, an optional default and validation rules, and set values with `-var`, `-var-file`, `terraform.tfvars`, `*.auto.tfvars` or `TF_VAR_` environment variables. When several sources set the same variable, the command line wins, then `*.auto.tfvars`, then `terraform.tfvars`, then environment variables, then the default. Local values (`locals`) name expressions you use more than once. Outputs (`output` blocks) expose results to people, scripts and other modules; `terraform output -json` and `-raw` are made for scripts.
 
-Variables and outputs are how you make Terraform configurations flexible and informative. Variables let you customize behavior without changing code. Outputs extract information about created resources.
+Variables, locals and outputs are the interface of every Terraform configuration and every module. Getting them right is what makes code reusable across environments and safe to hand to other people. Every output below comes from real Terraform 1.17 runs.
 
-## Input Variables
+## Prerequisites
 
-Variables parameterize your configuration so you can use it in different scenarios without modification.
+- Terraform installed ([Part 2](/guides/introduction-to-terraform/02-installation-and-setup)) and the HCL types from [Part 3](/guides/introduction-to-terraform/03-configuration-language-basics#h2-types-and-values).
+- No cloud account for the examples; the AWS example at the end is optional.
 
-### Basic Variable Declaration
+## Declare Input Variables
 
-Declare variables with the `variable` block:
+A `variable` block declares an input. All of its arguments are optional, but a good variable has at least a description and a type. The examples in this part live in a new directory, `variables`, starting with this `variables.tf`:
 
 ```hcl
-variable "instance_type" {
-  description = "EC2 instance type"
+variable "environment" {
+  description = "Deployment environment: dev, staging or prod"
   type        = string
-  default     = "t3.micro"
+  default     = "dev"
 }
 
-variable "instance_count" {
-  description = "Number of instances to create"
+variable "replicas" {
+  description = "Number of application instances"
   type        = number
   default     = 1
 }
 
-variable "enable_monitoring" {
-  description = "Enable detailed monitoring"
-  type        = bool
-  default     = false
-}
-```
-
-Use variables in your configuration:
-
-```hcl
-resource "aws_instance" "web" {
-  count         = var.instance_count
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = var.instance_type
-  monitoring    = var.enable_monitoring
-
-  tags = {
-    Name = "web-${count.index}"
-  }
-}
-```
-
-### Variable Types
-
-Terraform supports several types:
-
-**Primitive types**:
-
-```hcl
-variable "string_example" {
-  type    = string
-  default = "hello"
-}
-
-variable "number_example" {
-  type    = number
-  default = 42
-}
-
-variable "bool_example" {
-  type    = bool
-  default = true
-}
-```
-
-**Collection types**:
-
-```hcl
-variable "availability_zones" {
-  type    = list(string)
-  default = ["us-east-1a", "us-east-1b", "us-east-1c"]
-}
-
-variable "instance_tags" {
-  type = map(string)
-  default = {
-    Environment = "development"
-    Project     = "web-app"
-  }
-}
-
-variable "allowed_ports" {
-  type    = set(number)
-  default = [80, 443, 8080]
-}
-```
-
-**Structural types**:
-
-```hcl
-variable "server_config" {
+variable "site" {
+  description = "The public site this environment serves"
   type = object({
-    instance_type = string
-    disk_size     = number
-    enable_backup = bool
+    domain    = string
+    port      = optional(number, 443)
+    redirects = optional(list(string), [])
   })
-
-  default = {
-    instance_type = "t3.micro"
-    disk_size     = 20
-    enable_backup = false
-  }
 }
 
-variable "subnet_configs" {
-  type = list(object({
-    cidr_block        = string
-    availability_zone = string
-    public            = bool
-  }))
+variable "db_password" {
+  description = "Database password, passed in from a secret store"
+  type        = string
+  sensitive   = true
+}
+```
 
-  default = [
+- **`type`** rejects wrong values early: `"three"` for a `number` fails before anything else runs. Without a type, any value is accepted, and errors show up later in confusing places.
+- **`default`** makes the variable optional. A variable without a default is **required**.
+- **`optional(type, default)`** inside an `object` type lets callers leave attributes out. Here `site` only needs a `domain`.
+- **`sensitive = true`** hides the value in plan and apply output. It does not encrypt it, and the value can still end up in the state.
+- **`nullable = false`** (not shown) rejects an explicit `null`, so the default is used instead.
+
+The configuration uses them through `var.<name>`:
+
+```hcl
+locals {
+  name_prefix = "shop-${var.environment}"
+  all_domains = concat([var.site.domain], var.site.redirects)
+}
+
+resource "local_file" "nginx" {
+  filename = "${path.module}/out/${local.name_prefix}.conf"
+  content  = <<-EOT
+    # ${local.name_prefix}: ${var.replicas} replica(s)
+    server {
+        listen ${var.site.port} ssl;
+        server_name ${join(" ", local.all_domains)};
+    }
+  EOT
+}
+
+resource "local_sensitive_file" "db" {
+  filename = "${path.module}/out/${local.name_prefix}-db.env"
+  content  = "DB_PASSWORD=${var.db_password}\n"
+}
+```
+
+**Locals** are named expressions inside one module. Use them for values you compute once and use in several places (a name prefix, a merged tag map), and keep variables for things the caller must be able to change. A local cannot be set from outside.
+
+## Set Variable Values
+
+Run `terraform init` in the directory first. Then try a plan: a required variable without a value stops the run. With `-input=false` (as in CI) Terraform fails immediately; in a terminal it asks you to type the value:
+
+```terminal
+{
+  "title": "a required variable without a value",
+  "prompt": "$",
+  "steps": [
     {
-      cidr_block        = "10.0.1.0/24"
-      availability_zone = "us-east-1a"
-      public            = true
-    },
-    {
-      cidr_block        = "10.0.2.0/24"
-      availability_zone = "us-east-1b"
-      public            = false
+      "cmd": "terraform plan -input=false",
+      "output": "╷\n│ Error: No value for required variable\n│\n│   on variables.tf line 13:\n│   13: variable \"site\" {\n│\n│ The root module input variable \"site\" is not set, and has no default value.\n│ Use a -var or -var-file command line argument to provide a value for this\n│ variable.\n╵\n╷\n│ Error: No value for required variable\n│\n│   on variables.tf line 22:\n│   22: variable \"db_password\" {\n│\n│ The root module input variable \"db_password\" is not set, and has no default\n│ value. Use a -var or -var-file command line argument to provide a value for\n│ this variable.\n╵"
     }
   ]
 }
 ```
 
-Using complex types:
+You can set values in five ways:
+
+```tabs
+{
+  "title": "Five ways to set a variable",
+  "tabs": [
+    {
+      "label": "-var",
+      "lang": "bash",
+      "code": "terraform apply -var 'replicas=3' -var 'site={ domain = \"shop.example.com\" }'"
+    },
+    {
+      "label": "-var-file",
+      "lang": "bash",
+      "code": "# Any file name; load it explicitly\nterraform apply -var-file=env/prod.tfvars"
+    },
+    {
+      "label": "terraform.tfvars",
+      "lang": "hcl",
+      "code": "# Loaded automatically from the working directory\nenvironment = \"staging\"\nreplicas    = 2\n\nsite = {\n  domain    = \"staging.shop.example.com\"\n  redirects = [\"www.staging.shop.example.com\"]\n}"
+    },
+    {
+      "label": "*.auto.tfvars",
+      "lang": "hcl",
+      "code": "# Every file named *.auto.tfvars (or *.auto.tfvars.json) is also loaded automatically\nreplicas = 2"
+    },
+    {
+      "label": "TF_VAR_ env",
+      "lang": "bash",
+      "code": "# TF_VAR_<variable name>; good for secrets in CI\nexport TF_VAR_db_password=\"$(vault kv get -field=password secret/shop/db)\"\nterraform apply"
+    }
+  ]
+}
+```
+
+`.tfvars` files use the same syntax as HCL arguments. Use `-var-file` with one file per environment (`env/dev.tfvars`, `env/prod.tfvars`), keep secrets out of them, and commit an `example.tfvars` that documents what is needed.
+
+### Which Value Wins
+
+When the same variable is set in several places, Terraform applies them in a fixed order, and **later sources override earlier ones**. This small project shows each step. It has one variable, `color`, with the default `"from-default"`:
+
+```terminal
+{
+  "title": "variable precedence, lowest to highest",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "echo 'var.color' | terraform console",
+      "output": "\"from-default\""
+    },
+    {
+      "cmd": "export TF_VAR_color=from-env\necho 'var.color' | terraform console",
+      "output": "\"from-env\""
+    },
+    {
+      "cmd": "echo 'color = \"from-terraform-tfvars\"' > terraform.tfvars\necho 'var.color' | terraform console",
+      "output": "\"from-terraform-tfvars\""
+    },
+    {
+      "cmd": "echo 'color = \"from-auto-tfvars\"' > colors.auto.tfvars\necho 'var.color' | terraform console",
+      "output": "\"from-auto-tfvars\""
+    },
+    {
+      "cmd": "echo 'color = \"from-var-file\"' > custom.tfvars\necho 'var.color' | terraform console -var-file=custom.tfvars",
+      "output": "\"from-var-file\""
+    },
+    {
+      "cmd": "echo 'var.color' | terraform console -var-file=custom.tfvars -var color=from-cli",
+      "output": "\"from-cli\""
+    },
+    {
+      "cmd": "echo 'var.color' | terraform console -var color=from-cli -var-file=custom.tfvars",
+      "output": "\"from-var-file\""
+    }
+  ]
+}
+```
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "default", "sub": "in the variable block", "tone": "slate" },
+    { "label": "TF_VAR_ env", "sub": "environment", "tone": "slate" },
+    { "label": "terraform.tfvars", "sub": "then .tfvars.json", "tone": "blue" },
+    { "label": "*.auto.tfvars", "sub": "alphabetical", "tone": "blue" },
+    { "label": "-var / -var-file", "sub": "in command-line order", "tone": "accent" }
+  ]
+}
+```
+
+The last two runs show the rule for the command line: `-var` and `-var-file` are processed in the order you type them, so the last one wins. Environment variables have the **lowest** priority of the explicit sources, which surprises people who expect an exported variable to override a file. If a `TF_VAR_` value seems to be ignored, look for a `.tfvars` file that sets the same variable.
+
+## Validate Input
+
+A `validation` block checks a value before Terraform plans anything. `condition` must be true; otherwise the run stops with your `error_message`. A variable can have several validation blocks, and since Terraform 1.9 a condition may refer to other variables:
 
 ```hcl
-resource "aws_instance" "web" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = var.server_config.instance_type
-
-  root_block_device {
-    volume_size = var.server_config.disk_size
-  }
-
-  tags = var.instance_tags
-}
-
-resource "aws_subnet" "subnets" {
-  for_each = { for idx, subnet in var.subnet_configs : idx => subnet }
-
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = each.value.cidr_block
-  availability_zone       = each.value.availability_zone
-  map_public_ip_on_launch = each.value.public
-}
-```
-
-### Setting Variable Values
-
-There are several ways to provide values:
-
-**Command line**:
-
-```bash
-terraform apply -var="instance_type=t3.large" -var="instance_count=3"
-```
-
-**Variable files**:
-
-Create `terraform.tfvars`:
-
-```hcl
-instance_type   = "t3.large"
-instance_count  = 3
-enable_monitoring = true
-
-instance_tags = {
-  Environment = "production"
-  Project     = "web-app"
-  Team        = "platform"
-}
-```
-
-Terraform automatically loads `terraform.tfvars` and `*.auto.tfvars` files.
-
-For environment-specific configs:
-
-```bash
-# dev.tfvars
-instance_type  = "t3.micro"
-instance_count = 1
-
-# prod.tfvars
-instance_type  = "t3.large"
-instance_count = 5
-```
-
-Apply with:
-
-```bash
-terraform apply -var-file="dev.tfvars"
-terraform apply -var-file="prod.tfvars"
-```
-
-**Environment variables**:
-
-```bash
-export TF_VAR_instance_type="t3.large"
-export TF_VAR_instance_count=3
-terraform apply
-```
-
-Terraform reads any environment variable starting with `TF_VAR_`.
-
-**Interactive input**:
-
-If a variable has no default and you don't provide a value, Terraform prompts:
-
-```bash
-$ terraform apply
-var.instance_type
-  EC2 instance type
-
-  Enter a value: t3.micro
-```
-
-### Variable Priority
-
-When multiple sources provide values, Terraform uses this precedence (highest to lowest):
-
-1. Command-line flags (`-var`)
-2. `*.auto.tfvars` files (alphabetical order)
-3. `terraform.tfvars` file
-4. Environment variables (`TF_VAR_*`)
-5. Default values in variable declarations
-
-### Variable Validation
-
-Add validation rules to catch errors before infrastructure changes:
-
-```hcl
-variable "instance_type" {
-  type        = string
-  description = "EC2 instance type"
-
-  validation {
-    condition     = can(regex("^t3\\.", var.instance_type))
-    error_message = "Instance type must be from the t3 family."
-  }
-}
-
-variable "environment" {
-  type        = string
-  description = "Environment name"
-
-  validation {
-    condition     = contains(["dev", "staging", "prod"], var.environment)
-    error_message = "Environment must be dev, staging, or prod."
-  }
-}
-
-variable "disk_size" {
+variable "max_replicas" {
+  description = "Upper limit for autoscaling"
   type        = number
-  description = "Root disk size in GB"
+  default     = 4
 
   validation {
-    condition     = var.disk_size >= 20 && var.disk_size <= 1000
-    error_message = "Disk size must be between 20 and 1000 GB."
+    condition     = var.max_replicas >= var.replicas
+    error_message = "max_replicas (${var.max_replicas}) must not be lower than replicas (${var.replicas})."
+  }
+}
+
+check "environment_name" {
+  assert {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Unexpected environment ${var.environment}."
   }
 }
 ```
 
-If validation fails, Terraform shows the error before making changes:
-
-```
-Error: Invalid value for variable
-
-  on variables.tf line 12:
-  12: variable "environment" {
-
-Environment must be dev, staging, or prod.
-```
-
-### Sensitive Variables
-
-Mark variables containing secrets:
+Add the same kind of rule to `environment` in `variables.tf`:
 
 ```hcl
-variable "database_password" {
-  type        = string
-  description = "Database admin password"
-  sensitive   = true
-}
-
-variable "api_key" {
-  type      = string
-  sensitive = true
-}
-```
-
-Terraform won't show these values in logs or output:
-
-```
-# aws_db_instance.main will be created
-+ resource "aws_db_instance" "main" {
-    + password = (sensitive value)
-    ...
-  }
-```
-
-Still never commit secrets to version control. Use environment variables or secret management systems.
-
-## Output Values
-
-Outputs expose information about your infrastructure after Terraform creates it.
-
-### Basic Outputs
-
-```hcl
-resource "aws_instance" "web" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t3.micro"
-}
-
-output "instance_id" {
-  description = "ID of the EC2 instance"
-  value       = aws_instance.web.id
-}
-
-output "instance_public_ip" {
-  description = "Public IP address"
-  value       = aws_instance.web.public_ip
-}
-
-output "instance_private_ip" {
-  description = "Private IP address"
-  value       = aws_instance.web.private_ip
-}
-```
-
-After `terraform apply`, outputs appear:
-
-```
-Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
-
-Outputs:
-
-instance_id = "i-0123456789abcdef"
-instance_private_ip = "10.0.1.25"
-instance_public_ip = "54.123.45.67"
-```
-
-View outputs anytime:
-
-```bash
-terraform output
-```
-
-Get a specific output:
-
-```bash
-terraform output instance_public_ip
-```
-
-Get JSON format:
-
-```bash
-terraform output -json
-```
-
-### Complex Outputs
-
-Output collections and structures:
-
-```hcl
-resource "aws_instance" "web" {
-  count         = 3
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t3.micro"
-}
-
-output "all_instance_ids" {
-  description = "IDs of all instances"
-  value       = aws_instance.web[*].id
-}
-
-output "all_instance_ips" {
-  description = "Public IPs of all instances"
-  value       = aws_instance.web[*].public_ip
-}
-
-output "instance_details" {
-  description = "Detailed information about instances"
-  value = {
-    ids         = aws_instance.web[*].id
-    public_ips  = aws_instance.web[*].public_ip
-    private_ips = aws_instance.web[*].private_ip
-  }
-}
-```
-
-Output:
-
-```
-Outputs:
-
-all_instance_ids = [
-  "i-0123456789abcdef",
-  "i-0123456789abcdeg",
-  "i-0123456789abcdeh",
-]
-
-instance_details = {
-  "ids" = [
-    "i-0123456789abcdef",
-    "i-0123456789abcdeg",
-    "i-0123456789abcdeh",
-  ]
-  "private_ips" = [
-    "10.0.1.25",
-    "10.0.1.26",
-    "10.0.1.27",
-  ]
-  "public_ips" = [
-    "54.123.45.67",
-    "54.123.45.68",
-    "54.123.45.69",
-  ]
-}
-```
-
-### Sensitive Outputs
-
-Hide sensitive information in output:
-
-```hcl
-resource "aws_db_instance" "main" {
-  identifier = "mydb"
-  engine     = "postgres"
-  password   = var.database_password
-  # ... other config ...
-}
-
-output "database_endpoint" {
-  description = "Database connection endpoint"
-  value       = aws_db_instance.main.endpoint
-}
-
-output "database_password" {
-  description = "Database password"
-  value       = aws_db_instance.main.password
-  sensitive   = true
-}
-```
-
-Sensitive outputs don't appear in normal output:
-
-```
-Outputs:
-
-database_endpoint = "mydb.abc123.us-east-1.rds.amazonaws.com:5432"
-database_password = <sensitive>
-```
-
-Retrieve the value explicitly:
-
-```bash
-terraform output database_password
-```
-
-Or with `-json` to parse it:
-
-```bash
-terraform output -json database_password | jq -r
-```
-
-### Outputs from Modules
-
-Outputs are how modules return values. If you use a VPC module:
-
-```hcl
-module "vpc" {
-  source = "./modules/vpc"
-
-  cidr_block = "10.0.0.0/16"
-  name       = "main-vpc"
-}
-
-# Use the module's outputs
-resource "aws_instance" "web" {
-  ami           = "ami-0c55b159cbfafe1f0"
-  instance_type = "t3.micro"
-  subnet_id     = module.vpc.public_subnet_id  # Output from module
-}
-
-# Re-export module outputs
-output "vpc_id" {
-  description = "ID of the VPC"
-  value       = module.vpc.vpc_id
-}
-```
-
-## Practical Example: Flexible Infrastructure
-
-Here's a complete example using variables and outputs:
-
-```hcl
-# variables.tf
 variable "environment" {
-  description = "Environment name"
+  description = "Deployment environment: dev, staging or prod"
+  type        = string
+  default     = "dev"
+
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "environment must be dev, staging or prod."
+  }
+}
+```
+
+Then try some bad values:
+
+```terminal
+{
+  "title": "validation errors",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "export TF_VAR_db_password=not-a-real-secret"
+    },
+    {
+      "cmd": "terraform plan -var 'site={ domain = \"shop.example.com\" }' -var environment=production",
+      "output": "Planning failed. Terraform encountered an error while generating this plan.\n\n╷\n│ Error: Invalid value for variable\n│\n│   on variables.tf line 1:\n│    1: variable \"environment\" {\n│     ├────────────────\n│     │ var.environment is \"production\"\n│\n│ environment must be dev, staging or prod.\n│\n│ This was checked by the validation rule at variables.tf:6,3-13.\n╵"
+    },
+    {
+      "cmd": "terraform plan -var 'site={ domain = \"shop.example.com\" }' -var replicas=6",
+      "output": "╷\n│ Error: Invalid value for variable\n│\n│   on validation.tf line 1:\n│    1: variable \"max_replicas\" {\n│     ├────────────────\n│     │ var.max_replicas is 4\n│     │ var.replicas is 6\n│\n│ max_replicas (4) must not be lower than replicas (6).\n│\n│ This was checked by the validation rule at validation.tf:6,3-13.\n╵"
+    }
+  ]
+}
+```
+
+The first rule fails before planning starts. The second one refers to another variable, so Terraform checks it while it plans; the plan is printed (cut here) and then the run fails with the same kind of error, so nothing can be applied.
+
+Useful conditions: `contains([...], var.x)` for allowed values, `can(regex("^[a-z0-9-]+$", var.name))` for formats, `can(cidrhost(var.cidr, 0))` for CIDR blocks, `length(var.list) > 0` for non-empty lists, and `alltrue([for p in var.ports : p > 0 && p < 65536])` for every element of a list.
+
+The `check` block in the same file is different: its assertion runs at the end of every plan and apply and only **warns**. Use checks for things you want to know about without blocking the run, such as a certificate that expires soon or an endpoint that does not answer ([Part 10](/guides/introduction-to-terraform/10-best-practices-and-production-patterns#h3-check-blocks)).
+
+## Sensitive Values
+
+Apply with valid values:
+
+```hcl
+environment = "staging"
+replicas    = 2
+
+site = {
+  domain    = "staging.shop.example.com"
+  redirects = ["www.staging.shop.example.com"]
+}
+```
+
+```terminal
+{
+  "title": "plan with a sensitive variable",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "terraform plan -no-color | sed -n '/local_sensitive_file.db will be created/,/^    }/p'",
+      "output": "  # local_sensitive_file.db will be created\n  + resource \"local_sensitive_file\" \"db\" {\n      + content              = (sensitive value)\n      + content_base64sha256 = (known after apply)\n      + content_base64sha512 = (known after apply)\n      + content_md5          = (known after apply)\n      + content_sha1         = (known after apply)\n      + content_sha256       = (known after apply)\n      + content_sha512       = (known after apply)\n      + directory_permission = \"0700\"\n      + file_permission      = \"0700\"\n      + filename             = \"./out/shop-staging-db.env\"\n      + id                   = (known after apply)\n    }"
+    },
+    {
+      "cmd": "terraform apply -auto-approve",
+      "output": "Apply complete! Resources: 2 added, 0 changed, 0 destroyed."
+    },
+    {
+      "cmd": "cat out/shop-staging.conf",
+      "output": "# shop-staging: 2 replica(s)\nserver {\n    listen 443 ssl;\n    server_name staging.shop.example.com www.staging.shop.example.com;\n}"
+    }
+  ]
+}
+```
+
+Terraform also **propagates** sensitivity: anything computed from a sensitive value is sensitive too. If you try to output it without saying so, the plan fails:
+
+```terminal
+{
+  "title": "an output that leaks a sensitive value",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform plan",
+      "output": "╷\n│ Error: Output refers to sensitive values\n│\n│   on outputs.tf line 1:\n│    1: output \"db_env\" {\n│\n│ To reduce the risk of accidentally exporting sensitive data that was\n│ intended to be only internal, Terraform requires that any root module\n│ output containing sensitive data be explicitly marked as sensitive, to\n│ confirm your intent.\n│\n│ If you do intend to export this data, annotate the output value as\n│ sensitive by adding the following argument:\n│     sensitive = true\n╵"
+    }
+  ]
+}
+```
+
+The fix is to mark the output `sensitive = true` as well, or, better, not to output secrets at all.
+
+## Outputs
+
+Replace `outputs.tf` with useful outputs:
+
+```hcl
+output "config_file" {
+  description = "Path of the generated Nginx configuration"
+  value       = local_file.nginx.filename
+}
+
+output "domains" {
+  description = "Every domain the site answers on"
+  value       = local.all_domains
+}
+
+output "site_port" {
+  description = "HTTPS port"
+  type        = number
+  value       = var.site.port
+}
+
+output "db_env_file" {
+  description = "Environment file with the database password"
+  value       = local_sensitive_file.db.filename
+}
+```
+
+```terminal
+{
+  "title": "reading outputs",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform apply -auto-approve",
+      "output": "Apply complete! Resources: 0 added, 0 changed, 0 destroyed.\n\nOutputs:\n\nconfig_file = \"./out/shop-staging.conf\"\ndb_env_file = \"./out/shop-staging-db.env\"\ndomains = [\n  \"staging.shop.example.com\",\n  \"www.staging.shop.example.com\",\n]\nsite_port = 443"
+    },
+    {
+      "cmd": "terraform output domains",
+      "output": "[\n  \"staging.shop.example.com\",\n  \"www.staging.shop.example.com\",\n]"
+    },
+    {
+      "cmd": "terraform output -raw config_file",
+      "output": "./out/shop-staging.conf"
+    },
+    {
+      "cmd": "terraform output -json | jq -c 'map_values(.value)'",
+      "output": "{\"config_file\":\"./out/shop-staging.conf\",\"db_env_file\":\"./out/shop-staging-db.env\",\"domains\":[\"staging.shop.example.com\",\"www.staging.shop.example.com\"],\"site_port\":443}"
+    }
+  ]
+}
+```
+
+- `terraform output` prints all outputs; `terraform output NAME` prints one in HCL syntax.
+- `-raw` prints a string without quotes, for shell scripts: `ssh ubuntu@$(terraform output -raw public_ip)`.
+- `-json` prints every output with its type and sensitivity. Sensitive outputs are shown in full in JSON, so be careful where you send it.
+- An output can have a `type` constraint since Terraform 1.15, as `site_port` does. Outputs can also have `precondition` blocks and `depends_on`.
+
+Outputs are also how a module returns values to its caller (`module.network.vpc_id`) and how one configuration reads another's results through the `terraform_remote_state` data source ([Part 8](/guides/introduction-to-terraform/08-working-with-multiple-environments#h2-share-data-between-configurations)).
+
+## Deprecate Variables and Outputs
+
+Renaming a variable breaks every caller. Since Terraform 1.15, you can keep the old variable for a while and mark it deprecated; callers who still set it get a warning:
+
+```hcl
+variable "domain" {
+  description = "Old name for site.domain"
+  type        = string
+  default     = null
+  deprecated  = "Set site.domain instead. This variable will be removed in version 3.0."
+}
+```
+
+```terminal
+{
+  "title": "a deprecated variable",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform plan -var domain=shop.example.com",
+      "output": "local_file.nginx: Refreshing state... [id=314518892b5546316bbec97947ae80716b691cc1]\nlocal_sensitive_file.db: Refreshing state... [id=f0a098591c595734fb14d6de19be649fd5da5d86]\n\nNo changes. Your infrastructure matches the configuration.\n\nTerraform has compared your real infrastructure against your configuration\nand found no differences, so no changes are needed.\n╷\n│ Warning: Deprecated variable got a value\n│\n│   on deprecated.tf line 5, in variable \"domain\":\n│    1: variable \"domain\" {\n│    2:   description = \"Old name for site.domain\"\n│    3:   type        = string\n│    4:   default     = null\n│    5:   deprecated  = \"Set site.domain instead. This variable will be removed in version 3.0.\"\n│\n│ Set site.domain instead. This variable will be removed in version 3.0.\n╵"
+    }
+  ]
+}
+```
+
+Outputs accept `deprecated` too, which warns modules that still refer to them.
+
+## Ephemeral Variables
+
+A variable with `ephemeral = true` (Terraform 1.10 and later) is never written to the plan file or the state. Terraform only lets you use it in places that are not stored either: provider configuration, other ephemeral values, and write-only arguments of resources. That makes it the right type for credentials a provider needs only while Terraform runs. [Part 10](/guides/introduction-to-terraform/10-best-practices-and-production-patterns#h2-keep-secrets-out-of-state) shows ephemeral values and write-only arguments together.
+
+## Example: One Configuration, Three Environments
+
+Here is the same pattern on AWS. A map holds the sizes per environment, a `validation` block guards the environment name, and the outputs give a person or a script what they need next:
+
+```hcl
+variable "environment" {
+  description = "dev, staging or prod"
   type        = string
 
   validation {
     condition     = contains(["dev", "staging", "prod"], var.environment)
-    error_message = "Must be dev, staging, or prod."
+    error_message = "environment must be dev, staging or prod."
   }
 }
 
-variable "project" {
-  description = "Project name"
-  type        = string
-  default     = "webapp"
-}
-
-variable "instance_configs" {
-  description = "Configuration for each instance type"
+variable "sizes" {
+  description = "Instance size and count per environment"
   type = map(object({
     instance_type = string
     count         = number
-    disk_size     = number
   }))
-
   default = {
-    dev = {
-      instance_type = "t3.micro"
-      count         = 1
-      disk_size     = 20
-    }
-    staging = {
-      instance_type = "t3.small"
-      count         = 2
-      disk_size     = 30
-    }
-    prod = {
-      instance_type = "t3.large"
-      count         = 5
-      disk_size     = 50
-    }
+    dev     = { instance_type = "t3.micro", count = 1 }
+    staging = { instance_type = "t3.small", count = 2 }
+    prod    = { instance_type = "m7i.large", count = 3 }
   }
 }
 
 variable "allowed_ssh_cidrs" {
-  description = "CIDR blocks allowed to SSH"
+  description = "CIDR blocks allowed to connect with SSH; empty means no SSH"
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = alltrue([for c in var.allowed_ssh_cidrs : can(cidrhost(c, 0))])
+    error_message = "Every entry must be a valid CIDR block, such as 203.0.113.0/24."
+  }
 }
 
-# main.tf
+variable "vpc_id" {
+  description = "VPC to deploy into"
+  type        = string
+}
+
+variable "subnet_id" {
+  description = "Subnet for the instances"
+  type        = string
+}
+
+variable "ami_id" {
+  description = "Machine image for the instances, from your image pipeline"
+  type        = string
+}
+```
+
+```hcl
 locals {
-  config = var.instance_configs[var.environment]
-  common_tags = {
-    Environment = var.environment
-    Project     = var.project
-    ManagedBy   = "terraform"
-  }
+  size = var.sizes[var.environment]
+  name = "webapp-${var.environment}"
 }
 
 resource "aws_security_group" "web" {
-  name        = "${var.project}-${var.environment}-sg"
-  description = "Security group for ${var.environment}"
-  vpc_id      = aws_vpc.main.id
+  name_prefix = "${local.name}-"
+  vpc_id      = var.vpc_id
+}
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+resource "aws_vpc_security_group_ingress_rule" "ssh" {
+  for_each = toset(var.allowed_ssh_cidrs)
 
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  dynamic "ingress" {
-    for_each = length(var.allowed_ssh_cidrs) > 0 ? [1] : []
-    content {
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_blocks = var.allowed_ssh_cidrs
-    }
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.environment}-sg"
-  })
+  security_group_id = aws_security_group.web.id
+  cidr_ipv4         = each.value
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
 }
 
 resource "aws_instance" "web" {
-  count         = local.config.count
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = local.config.instance_type
+  count = local.size.count
 
+  ami                    = var.ami_id
+  instance_type          = local.size.instance_type
+  subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.web.id]
-  subnet_id              = aws_subnet.public.id
 
-  root_block_device {
-    volume_size = local.config.disk_size
+  tags = {
+    Name = "${local.name}-${count.index + 1}"
   }
-
-  tags = merge(local.common_tags, {
-    Name = "${var.project}-${var.environment}-web-${count.index + 1}"
-  })
 }
+```
 
-# outputs.tf
-output "environment" {
-  description = "Deployment environment"
-  value       = var.environment
-}
-
-output "instance_count" {
-  description = "Number of instances created"
-  value       = local.config.count
-}
-
+```hcl
 output "instance_ids" {
-  description = "IDs of all web instances"
+  description = "IDs of the web instances"
   value       = aws_instance.web[*].id
 }
 
-output "instance_ips" {
-  description = "Public IP addresses"
-  value       = aws_instance.web[*].public_ip
-}
-
-output "ssh_commands" {
-  description = "SSH commands for each instance"
-  value = [
-    for idx, instance in aws_instance.web :
-    "ssh ubuntu@${instance.public_ip}  # ${var.project}-${var.environment}-web-${idx + 1}"
-  ]
-}
-
-output "load_balancer_endpoint" {
-  description = "Load balancer endpoint"
-  value       = aws_lb.web.dns_name
-  depends_on  = [aws_lb.web]
+output "private_ips" {
+  description = "Private IP address of each instance, by name"
+  value       = { for i in aws_instance.web : i.tags.Name => i.private_ip }
 }
 ```
 
-Use it for different environments:
-
-```bash
-# Development
-terraform apply -var="environment=dev"
-
-# Staging
-terraform apply -var="environment=staging" -var="allowed_ssh_cidrs=[\"203.0.113.0/24\"]"
-
-# Production
-terraform apply -var-file="prod.tfvars"
-```
-
-Where `prod.tfvars` contains:
+Each environment gets a variable file with its own values:
 
 ```hcl
+# env/prod.tfvars
 environment = "prod"
-project     = "webapp"
-
-allowed_ssh_cidrs = [
-  "203.0.113.0/24",  # Office network
-  "198.51.100.0/24"  # VPN network
-]
+vpc_id      = "vpc-0a1b2c3d4e5f60718"
+subnet_id   = "subnet-0f1e2d3c4b5a69788"
+ami_id      = "ami-0c1d2e3f4a5b6c7d8"
 ```
 
-This setup gives you:
+`terraform apply -var-file=env/prod.tfvars` creates three `m7i.large` instances, and the same code with `env/dev.tfvars` (with `environment = "dev"` and the dev network) creates one `t3.micro`. The IDs above are placeholders; use the IDs from your account, or the outputs of the network configuration. [Part 8](/guides/introduction-to-terraform/08-working-with-multiple-environments) shows how to keep the state of each environment separate.
 
-- Environment-specific instance counts and sizes
-- Validation preventing typos in environment names
-- Flexible SSH access control
-- Detailed outputs for connecting to resources
-- Reusable configuration across environments
+## Common Mistakes
 
-Understanding variables and outputs lets you build flexible, reusable Terraform configurations. Next, we'll explore modules - how to organize and share Terraform code across projects.
+- **Variables without types.** You lose early error messages and documentation. Always set `type`.
+- **Expecting `TF_VAR_` to override a tfvars file.** It does not; files and flags win.
+- **Secrets in `.tfvars` files in Git.** Pass them through `TF_VAR_` from a secret store or CI secrets, or read them with an ephemeral resource.
+- **Thinking `sensitive` means encrypted.** It only hides values in output; the state still has them.
+- **Outputs nobody uses.** Every output of a module is part of its interface. Export what callers need, not every attribute.
+- **Using variables where locals fit.** If nobody should change a value from outside, make it a local.
+
+## Summary
+
+- Declare every variable with a description and a type; use `optional()` for flexible objects and `validation` for rules.
+- Values come from defaults, `TF_VAR_`, `terraform.tfvars`, `*.auto.tfvars`, then `-var` and `-var-file` in order; the last one wins.
+- Locals name computed values; they cannot be set from outside.
+- Outputs expose results; `-raw` and `-json` are for scripts.
+- `sensitive` hides values, `ephemeral` keeps them out of state, `deprecated` helps you rename inputs safely.
+
+In [Part 7](/guides/introduction-to-terraform/07-modules) you package configurations into reusable modules.
+
+## Keep Learning
+
+- [Terraform Variables, Loops, and Outputs: The Complete Guide](/posts/terraform-variables-loops-and-outputs)
+- [How to Read Environment Variables From a .env File in Terraform](/posts/terraform-read-environment-variables-from-env-file)
+- [How to Fix Terraform "Variables Not Allowed" Error During Plan](/posts/terraform-variables-not-allowed-error-plan)
+- [How to Save Terraform Plan and Apply Output to a File](/posts/terraform-save-plan-apply-output-to-file)
