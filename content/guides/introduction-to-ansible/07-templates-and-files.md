@@ -1,600 +1,429 @@
 ---
-title: 'Templates and Files'
-description: 'Learn to manage configuration files and generate dynamic content using Ansible templates and file modules.'
+title: 'Ansible Templates and Files with Jinja2'
+description: 'Build config files with Jinja2 templates, manage files, links and permissions, edit lines safely, validate files before they go live and preview changes.'
 order: 7
 ---
 
-Managing configuration files is a core part of infrastructure automation. Ansible provides powerful tools for both static file deployment and dynamic configuration generation. You'll learn to use templates that adapt to different environments, manage file permissions and ownership, and organize configuration files for maintainability.
+So far `web.yml` writes files from inline strings. That works for one line, but real configuration files are long, and their content depends on the host. **Templates** are files with placeholders and logic, written in Jinja2, that Ansible renders separately for every host. In this part you move the page and the nginx site into templates, preview changes with `--diff`, and use the other file modules: directories, links, permissions, single lines, and validation before a file replaces the old one.
 
-## Understanding File Management in Ansible
+## Prerequisites
 
-Ansible offers several modules for file operations, each suited to different scenarios:
+- The `~/webfleet` project with `web.yml` and its handlers from [Part 6](/guides/introduction-to-ansible/06-handlers-and-notifications).
 
-- **copy**: Deploy static files unchanged
-- **template**: Generate files from Jinja2 templates with variable substitution
-- **file**: Manage file properties, directories, and links
-- **lineinfile**: Modify individual lines in existing files
-- **blockinfile**: Manage blocks of text in files
+## Which File Module?
 
-## Working with Static Files
+| Module                                                 | Use it to                                                             |
+| ------------------------------------------------------ | --------------------------------------------------------------------- |
+| `ansible.builtin.copy`                                 | Copy a file from the control node unchanged, or write a short string  |
+| `ansible.builtin.template`                             | Render a Jinja2 template from the control node                        |
+| `ansible.builtin.file`                                 | Create directories, links and empty files; set owner and mode; delete |
+| `ansible.builtin.lineinfile`                           | Make sure one line is (or is not) in a file you do not fully own      |
+| `ansible.builtin.blockinfile`                          | Manage a marked block of lines in such a file                         |
+| `ansible.builtin.replace`                              | Replace every match of a regular expression                           |
+| `ansible.builtin.get_url`, `ansible.builtin.unarchive` | Download a file; unpack an archive                                    |
+| `ansible.builtin.fetch`                                | Copy a file from the hosts to the control node                        |
+| `ansible.posix.synchronize`                            | Copy whole directory trees with `rsync`                               |
 
-### Basic File Deployment
+The rule of thumb: if Ansible owns the whole file, use `template` or `copy`. Use `lineinfile` and `blockinfile` only for files that something else owns too, such as a distribution's default configuration.
 
-The `copy` module handles straightforward file deployment:
+## Jinja2 in One Screen
 
-```yaml
----
-- name: Deploy static configuration files
-  hosts: webservers
-  become: yes
-
-  tasks:
-    - name: Copy SSL certificate
-      copy:
-        src: files/ssl/server.crt
-        dest: /etc/ssl/certs/server.crt
-        owner: root
-        group: root
-        mode: '0644'
-        backup: yes
-
-    - name: Copy SSL private key
-      copy:
-        src: files/ssl/server.key
-        dest: /etc/ssl/private/server.key
-        owner: root
-        group: ssl-cert
-        mode: '0640'
-        backup: yes
-      notify: restart nginx
-
-    - name: Deploy application scripts
-      copy:
-        src: files/scripts/
-        dest: /opt/myapp/scripts/
-        owner: myapp
-        group: myapp
-        mode: '0755'
-        directory_mode: '0755'
-```
-
-Key features of the copy module:
-
-- `backup: yes` creates a backup before overwriting
-- `directory_mode` sets permissions for directories when copying entire directories
-- The `src` path ending with `/` copies directory contents, not the directory itself
-
-### File Content Management
-
-Create files with specific content directly in your playbook:
-
-```yaml
-tasks:
-  - name: Create maintenance page
-    copy:
-      content: |
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Maintenance Mode</title>
-        </head>
-        <body>
-            <h1>Site Under Maintenance</h1>
-            <p>We'll be back shortly. Estimated downtime: {{ maintenance_duration | default('30 minutes') }}</p>
-        </body>
-        </html>
-      dest: /var/www/html/maintenance.html
-      owner: www-data
-      group: www-data
-      mode: '0644'
-```
-
-## Creating Dynamic Templates
-
-Templates use the Jinja2 templating engine to generate configuration files with variable substitution, conditionals, and loops.
-
-### Basic Template Structure
-
-Create a template file `templates/nginx.conf.j2`:
+Ansible looks for templates in a `templates/` directory next to the playbook (or inside a role). The syntax has three kinds of tags:
 
 ```jinja2
-# nginx configuration generated by Ansible
-# Last updated: {{ ansible_date_time.iso8601 }}
-
-user {{ nginx_user | default('www-data') }};
-worker_processes {{ nginx_worker_processes | default(ansible_processor_vcpus) }};
-pid /run/nginx.pid;
-
-events {
-    worker_connections {{ nginx_worker_connections | default(1024) }};
-    use epoll;
-    multi_accept on;
-}
-
-http {
-    include /etc/nginx/mime.types;
-    default_type application/octet-stream;
-
-    # Logging
-    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
-                    '$status $body_bytes_sent "$http_referer" '
-                    '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log {{ nginx_access_log | default('/var/log/nginx/access.log') }} main;
-    error_log {{ nginx_error_log | default('/var/log/nginx/error.log') }} warn;
-
-    # Performance settings
-    sendfile on;
-    tcp_nopush on;
-    tcp_nodelay on;
-    keepalive_timeout {{ nginx_keepalive_timeout | default(65) }};
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length {{ nginx_gzip_min_length | default(1024) }};
-    gzip_types
-        text/plain
-        text/css
-        text/xml
-        text/javascript
-        application/javascript
-        application/xml+rss
-        application/json;
-
-    include /etc/nginx/conf.d/*.conf;
-    include /etc/nginx/sites-enabled/*;
-}
+{{ site_owner }}                       {# print a value #}
+{{ site_owner | upper }}               {# with a filter #}
+{% if site_port != 80 %}...{% endif %} {# logic #}
+{% for host in groups['web'] %}...{% endfor %}
+{# a comment that is not rendered #}
 ```
 
-Deploy the template:
+Everything else is copied as it is. Ansible renders templates with `trim_blocks` on, so a line that holds only a `{% %}` tag leaves no empty line behind.
 
-```yaml
-tasks:
-  - name: Generate nginx main configuration
-    template:
-      src: nginx.conf.j2
-      dest: /etc/nginx/nginx.conf
-      owner: root
-      group: root
-      mode: '0644'
-      backup: yes
-    notify: restart nginx
-```
+## Template the Home Page
 
-### Templates with Conditionals
-
-Use Jinja2 conditionals to adapt configuration based on variables:
+Create `templates/index.html.j2`. It lists every web server and marks the one that rendered the page:
 
 ```jinja2
-# SSL configuration - templates/site.conf.j2
+{# Home page of each web server. Rendered by Ansible: do not edit on the server. #}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ inventory_hostname }} | webfleet</title>
+</head>
+<body>
+  <h1>Hello from {{ inventory_hostname }}</h1>
+  <p>Run by {{ site_owner }}. Managed by Ansible.</p>
+  <h2>Web servers</h2>
+  <ul>
+{% for host in groups['web'] %}
+    <li>{{ host }}{% if host == inventory_hostname %} (this one){% endif %}</li>
+{% endfor %}
+  </ul>
+</body>
+</html>
+```
+
+## Give the Site Its Own nginx Server Block
+
+Ubuntu's default site serves `/var/www/html`. A dedicated server block, with its own document root, is easier to reason about. Create `templates/webfleet.conf.j2`:
+
+```jinja2
+{{ ansible_managed | comment }}
 server {
-{% if ssl_enabled | default(false) %}
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
+    listen {{ site_port }} default_server;
+    listen [::]:{{ site_port }} default_server;
+    server_name {{ inventory_hostname }};
 
-    ssl_certificate {{ ssl_cert_path | default('/etc/ssl/certs/server.crt') }};
-    ssl_certificate_key {{ ssl_key_path | default('/etc/ssl/private/server.key') }};
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
-    ssl_prefer_server_ciphers off;
-{% else %}
-    listen 80;
-    listen [::]:80;
-{% endif %}
-
-    server_name {{ server_name | default(ansible_fqdn) }};
-    root {{ document_root | default('/var/www/html') }};
-    index index.html index.php;
-
-{% if environment == 'development' %}
-    # Development-specific settings
-    error_log /var/log/nginx/{{ server_name }}-error.log debug;
-    access_log /var/log/nginx/{{ server_name }}-access.log combined;
-{% else %}
-    # Production settings
-    error_log /var/log/nginx/{{ server_name }}-error.log warn;
-    access_log /var/log/nginx/{{ server_name }}-access.log main;
-{% endif %}
+    root /var/www/webfleet;
+    index index.html;
 
     location / {
         try_files $uri $uri/ =404;
     }
-
-{% if php_enabled | default(false) %}
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php{{ php_version | default('7.4') }}-fpm.sock;
-    }
-{% endif %}
-}
-
-{% if ssl_enabled | default(false) %}
-# HTTP to HTTPS redirect
-server {
-    listen 80;
-    listen [::]:80;
-    server_name {{ server_name | default(ansible_fqdn) }};
-    return 301 https://$server_name$request_uri;
-}
-{% endif %}
-```
-
-### Templates with Loops
-
-Generate repetitive configuration using loops:
-
-```jinja2
-# Load balancer configuration - templates/upstream.conf.j2
-{% for service in load_balanced_services %}
-upstream {{ service.name }}_backend {
-    least_conn;
-{% for server in service.servers %}
-    server {{ server.host }}:{{ server.port }} weight={{ server.weight | default(1) }}{% if server.backup | default(false) %} backup{% endif %};
-{% endfor %}
-
-    # Health check
-    keepalive {{ service.keepalive | default(32) }};
-}
-
-server {
-    listen {{ service.port | default(80) }};
-    server_name {{ service.domain }};
-
-    location / {
-        proxy_pass http://{{ service.name }}_backend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # Timeouts
-        proxy_connect_timeout {{ service.connect_timeout | default('5s') }};
-        proxy_send_timeout {{ service.send_timeout | default('60s') }};
-        proxy_read_timeout {{ service.read_timeout | default('60s') }};
-    }
-}
-
-{% endfor %}
-```
-
-Use it with corresponding variables:
-
-```yaml
-vars:
-  load_balanced_services:
-    - name: api
-      domain: api.example.com
-      port: 80
-      servers:
-        - host: 192.168.1.10
-          port: 8080
-          weight: 2
-        - host: 192.168.1.11
-          port: 8080
-          weight: 1
-        - host: 192.168.1.12
-          port: 8080
-          backup: true
-      keepalive: 64
-
-    - name: admin
-      domain: admin.example.com
-      port: 80
-      servers:
-        - host: 192.168.1.15
-          port: 9000
-```
-
-## Advanced Template Techniques
-
-### Using Filters in Templates
-
-Jinja2 filters transform data within templates:
-
-```jinja2
-# Database configuration - templates/database.conf.j2
-[database]
-host = {{ db_host | default('localhost') }}
-port = {{ db_port | default(5432) }}
-name = {{ db_name | upper }}
-user = {{ db_user | lower }}
-
-# Convert memory setting to MB
-shared_buffers = {{ (total_memory_mb * 0.25) | int }}MB
-effective_cache_size = {{ (total_memory_mb * 0.75) | int }}MB
-
-# Generate secure random password if not provided
-{% if db_password is not defined %}
-password = {{ ansible_date_time.epoch | hash('sha256') | truncate(16, true, '') }}
-{% else %}
-password = {{ db_password }}
-{% endif %}
-
-# Conditional features based on environment
-{% set features = environment_features | default([]) %}
-enable_logging = {{ 'logging' in features | lower }}
-enable_replication = {{ 'replication' in features | lower }}
-enable_ssl = {{ 'ssl' in features | lower }}
-
-# Generate comma-separated list of allowed hosts
-allowed_hosts = {{ allowed_host_list | join(', ') }}
-
-# Format timestamp
-last_updated = {{ ansible_date_time.iso8601 | strftime('%Y-%m-%d %H:%M:%S') }}
-```
-
-### Template Includes
-
-Break large templates into manageable pieces:
-
-```jinja2
-# Main template - templates/nginx-site.conf.j2
-server {
-{% include 'nginx/listen.j2' %}
-{% include 'nginx/server-name.j2' %}
-{% include 'nginx/ssl.j2' %}
-{% include 'nginx/locations.j2' %}
 }
 ```
 
-Create partial templates:
-
-```jinja2
-# templates/nginx/listen.j2
-{% if ssl_enabled %}
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-{% else %}
-    listen 80;
-    listen [::]:80;
-{% endif %}
-```
-
-```jinja2
-# templates/nginx/ssl.j2
-{% if ssl_enabled %}
-    ssl_certificate {{ ssl_certificate }};
-    ssl_certificate_key {{ ssl_certificate_key }};
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
-{% endif %}
-```
-
-### Template Debugging
-
-Add debugging information to templates during development:
-
-```jinja2
-{% if debug_mode | default(false) %}
-<!-- Debug Information -->
-<!-- Generated on: {{ ansible_date_time.iso8601 }} -->
-<!-- Target host: {{ inventory_hostname }} -->
-<!-- Environment: {{ environment | default('unknown') }} -->
-<!-- Variables:
-     - ssl_enabled: {{ ssl_enabled | default('not set') }}
-     - server_name: {{ server_name | default('not set') }}
-     - document_root: {{ document_root | default('not set') }}
--->
-{% endif %}
-```
-
-## File Modification Techniques
-
-### Line-by-Line Modifications
-
-Use `lineinfile` for precise configuration changes:
-
-```yaml
-tasks:
-  - name: Configure SSH settings
-    lineinfile:
-      path: /etc/ssh/sshd_config
-      regexp: '{{ item.regexp }}'
-      line: '{{ item.line }}'
-      backup: yes
-    loop:
-      - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
-      - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
-      - { regexp: '^#?Port', line: 'Port {{ ssh_port | default(22) }}' }
-    notify: restart sshd
-
-  - name: Add custom SSH configuration
-    lineinfile:
-      path: /etc/ssh/sshd_config
-      line: '{{ item }}'
-      insertafter: EOF
-    loop:
-      - '# Custom configuration'
-      - 'ClientAliveInterval 300'
-      - 'ClientAliveCountMax 2'
-    notify: restart sshd
-```
-
-### Block Modifications
-
-Use `blockinfile` to manage sections of configuration:
-
-```yaml
-tasks:
-  - name: Configure application settings block
-    blockinfile:
-      path: /etc/myapp/config.ini
-      block: |
-        # Application settings managed by Ansible
-        [performance]
-        max_workers = {{ max_workers | default(ansible_processor_vcpus) }}
-        memory_limit = {{ memory_limit | default('512M') }}
-        cache_enabled = {{ cache_enabled | default(true) | lower }}
-
-        [database]
-        host = {{ db_host }}
-        port = {{ db_port | default(5432) }}
-        pool_size = {{ db_pool_size | default(10) }}
-
-        [logging]
-        level = {{ log_level | default('INFO') }}
-        file = {{ log_file | default('/var/log/myapp/app.log') }}
-      marker: '# {mark} ANSIBLE MANAGED BLOCK - APPLICATION CONFIG'
-      backup: yes
-    notify: restart application
-```
-
-## Organizing Templates and Files
-
-### Directory Structure
-
-Organize your templates and files logically:
-
-```
-ansible-project/
-├── templates/
-│   ├── nginx/
-│   │   ├── nginx.conf.j2
-│   │   ├── site.conf.j2
-│   │   └── upstream.conf.j2
-│   ├── database/
-│   │   ├── postgresql.conf.j2
-│   │   └── pg_hba.conf.j2
-│   └── application/
-│       ├── app.conf.j2
-│       └── systemd.service.j2
-├── files/
-│   ├── ssl/
-│   │   ├── server.crt
-│   │   └── server.key
-│   ├── scripts/
-│   │   ├── backup.sh
-│   │   └── maintenance.sh
-│   └── static/
-│       └── maintenance.html
-```
-
-### Template Variables Organization
-
-Create variable files that correspond to your templates:
-
-```yaml
-# group_vars/webservers.yml
-nginx_config:
-  user: www-data
-  worker_processes: '{{ ansible_processor_vcpus }}'
-  worker_connections: 1024
-  keepalive_timeout: 65
-  gzip_enabled: true
-  ssl_enabled: true
-
-site_config:
-  server_name: www.example.com
-  document_root: /var/www/html
-  php_enabled: true
-  php_version: '8.1'
-```
-
-## Complete Example: Multi-Service Configuration
-
-Here's a comprehensive example that demonstrates templates, files, and handlers working together:
+`ansible_managed` renders a short note (by default `Ansible managed`), and the `comment` filter turns it into a comment block, so whoever opens the file on the server knows not to edit it by hand. Add the port to `inventory/group_vars/web.yml`:
 
 ```yaml
 ---
-- name: Configure web application stack
-  hosts: webservers
-  become: yes
-
-  vars:
-    app_name: ecommerce
-    app_version: '2.1.0'
-    ssl_enabled: true
-    php_enabled: true
-    cache_enabled: true
-
-  tasks:
-    - name: Create application directories
-      file:
-        path: '{{ item }}'
-        state: directory
-        owner: www-data
-        group: www-data
-        mode: '0755'
-      loop:
-        - /var/www/{{ app_name }}
-        - /var/www/{{ app_name }}/logs
-        - /var/www/{{ app_name }}/cache
-
-    - name: Deploy SSL certificates
-      copy:
-        src: 'files/ssl/{{ item }}'
-        dest: '/etc/ssl/{{ item }}'
-        owner: root
-        group: ssl-cert
-        mode: "{{ '0640' if 'key' in item else '0644' }}"
-      loop:
-        - certs/{{ app_name }}.crt
-        - private/{{ app_name }}.key
-      notify: restart nginx
-
-    - name: Generate nginx main configuration
-      template:
-        src: nginx/nginx.conf.j2
-        dest: /etc/nginx/nginx.conf
-        backup: yes
-      notify: restart nginx
-
-    - name: Generate site configuration
-      template:
-        src: nginx/site.conf.j2
-        dest: '/etc/nginx/sites-available/{{ app_name }}'
-        backup: yes
-      notify: restart nginx
-
-    - name: Enable site
-      file:
-        src: '/etc/nginx/sites-available/{{ app_name }}'
-        dest: '/etc/nginx/sites-enabled/{{ app_name }}'
-        state: link
-      notify: restart nginx
-
-    - name: Configure PHP-FPM pool
-      template:
-        src: php/pool.conf.j2
-        dest: '/etc/php/{{ php_version }}/fpm/pool.d/{{ app_name }}.conf'
-        backup: yes
-      notify: restart php-fpm
-      when: php_enabled
-
-    - name: Generate application configuration
-      template:
-        src: application/config.php.j2
-        dest: '/var/www/{{ app_name }}/config.php'
-        owner: www-data
-        group: www-data
-        mode: '0640'
-
-    - name: Deploy maintenance scripts
-      copy:
-        src: files/scripts/
-        dest: /opt/{{ app_name }}/scripts/
-        owner: root
-        group: root
-        mode: '0755'
-        directory_mode: '0755'
-
-  handlers:
-    - name: restart nginx
-      service:
-        name: nginx
-        state: restarted
-
-    - name: restart php-fpm
-      service:
-        name: 'php{{ php_version }}-fpm'
-        state: restarted
+site_owner: Platform team
+site_port: 80
 ```
 
-## Next Steps
+Now replace the page task in `web.yml` with these five tasks, which create the document root, render both templates, enable the new site and disable the default one:
 
-Templates and file management form the backbone of configuration automation. You've learned to generate dynamic configuration files, deploy static resources, and organize your automation for maintainability.
+```yaml
+- name: Create the site directory
+  ansible.builtin.file:
+    path: /var/www/webfleet
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
 
-In the next section, we'll explore roles - Ansible's way of organizing automation into reusable, shareable components that can be combined to create sophisticated infrastructure automation.
+- name: Publish the home page
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/webfleet/index.html
+    owner: root
+    group: root
+    mode: '0644'
+  tags: page
 
-The template and file management techniques you've learned here provide the foundation for creating flexible, environment-aware configuration management that scales with your infrastructure needs.
+- name: Configure the site
+  ansible.builtin.template:
+    src: webfleet.conf.j2
+    dest: /etc/nginx/sites-available/webfleet
+    owner: root
+    group: root
+    mode: '0644'
+  notify: nginx config changed
+
+- name: Enable the site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/webfleet
+    dest: /etc/nginx/sites-enabled/webfleet
+    state: link
+  notify: nginx config changed
+
+- name: Disable the default site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: nginx config changed
+```
+
+The check in `post_tasks` should follow the port too. Change its URL:
+
+```yaml
+- name: Fetch the home page from the control node
+  ansible.builtin.uri:
+    url: 'http://{{ ansible_host }}:{{ site_port }}/'
+```
+
+Run it with `--diff`, which shows every change to a file as a unified diff. Limit the run to the canary, `web2`, first:
+
+```bash
+ansible-playbook web.yml --diff --limit web2
+```
+
+```text
+TASK [Configure the site] ******************************************************
+--- before
++++ after: /home/dev/.ansible/tmp/ansible-local-2532xyplcy2/tmpjfc0ir9w/webfleet.conf.j2
+@@ -0,0 +1,15 @@
++#
++# Ansible managed
++#
++server {
++    listen 80 default_server;
++    listen [::]:80 default_server;
++    server_name web2;
++
++    root /var/www/webfleet;
++    index index.html;
++
++    location / {
++        try_files $uri $uri/ =404;
++    }
++}
+changed: [web2]
+TASK [Enable the site] *********************************************************
+RUNNING HANDLER [Check the nginx configuration] ********************************
+ok: [web2]
+RUNNING HANDLER [Reload nginx] *************************************************
+changed: [web2]
+TASK [Fetch the home page from the control node] *******************************
+ok: [web2 -> localhost]
+TASK [Check that the page names the host] **************************************
+ok: [web2] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+PLAY RECAP *********************************************************************
+web2                       : ok=15   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+`--diff` shows the rendered server block with the `Ansible managed` comment, and the handlers reload nginx once for all three changes. Check the page:
+
+```bash
+curl -s http://192.168.56.12/
+```
+
+```text
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>web2 | webfleet</title>
+</head>
+<body>
+  <h1>Hello from web2</h1>
+  <p>Run by Platform team (canary). Managed by Ansible.</p>
+  <h2>Web servers</h2>
+  <ul>
+    <li>web1</li>
+    <li>web2 (this one)</li>
+  </ul>
+</body>
+</html>
+```
+
+The `{% for %}` and `{% if %}` lines left no empty lines behind, because of `trim_blocks`. Now roll it out to `web1` too:
+
+```bash
+ansible-playbook web.yml
+```
+
+```text
+PLAY RECAP *********************************************************************
+web1                       : ok=15   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+web2                       : ok=13   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+## Preview Template Changes with --check --diff
+
+Together, `--check` and `--diff` show exactly what a template change would do on each host, without doing it. Change the heading of the list in `templates/index.html.j2` to `All web servers`, then:
+
+```bash
+ansible-playbook web.yml --check --diff --tags page
+```
+
+```text
+TASK [Publish the home page] ***************************************************
+--- before: /var/www/webfleet/index.html
++++ after: /home/dev/.ansible/tmp/ansible-local-677ex7ene48/tmp13jdc6me/index.html.j2
+@@ -7,7 +7,7 @@
+ <body>
+   <h1>Hello from web1</h1>
+   <p>Run by Platform team. Managed by Ansible.</p>
+-  <h2>Web servers</h2>
++  <h2>All web servers</h2>
+   <ul>
+     <li>web1 (this one)</li>
+     <li>web2</li>
+```
+
+Change the heading back afterward. Review this kind of output in pull requests for production changes: it is the closest Ansible gets to Terraform's `plan`.
+
+## Keep Templates Idempotent
+
+A template that renders differently on every run reports `changed` on every run, notifies its handlers every time, and hides real changes in noise. The usual cause is a timestamp:
+
+```yaml
+---
+- name: A template that never settles
+  hosts: web1
+  tasks:
+    - name: Write a file with a timestamp
+      ansible.builtin.copy:
+        content: "Generated at {{ ansible_facts['date_time']['iso8601'] }}\n"
+        dest: /tmp/stamp.txt
+        mode: '0644'
+```
+
+```terminal
+{
+  "title": "changed on every run",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ansible-playbook stamp.yml",
+      "output": "ok: [web1]\nchanged: [web1]\nweb1                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0"
+    },
+    {
+      "cmd": "ansible-playbook stamp.yml",
+      "output": "ok: [web1]\nchanged: [web1]\nweb1                       : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0"
+    }
+  ]
+}
+```
+
+Leave timestamps out of managed files. If you need to know when a file was last deployed, Ansible's output and your CI logs already tell you, and `ansible_managed` marks the file without changing on every run. Delete the demonstration: `rm stamp.yml` and `ansible web1 -m ansible.builtin.file -a "path=/tmp/stamp.txt state=absent"`.
+
+## Directories, Links and Permissions
+
+The `file` module sets the state of a path: `directory`, `link`, `touch`, `absent`, or `file` to change only its attributes. You saw `directory`, `link` and `absent` above. Its `owner`, `group` and `mode` options also exist on `copy` and `template`.
+
+Always quote modes. YAML reads `644` as the decimal number 644, which is not `rw-r--r--`:
+
+```yaml
+---
+- name: File modes
+  hosts: web1
+  gather_facts: false
+
+  tasks:
+    - name: Quoted mode, as intended
+      ansible.builtin.file:
+        path: /tmp/mode-demo-quoted
+        state: touch
+        mode: '0644'
+
+    - name: Unquoted mode without the leading zero
+      ansible.builtin.file:
+        path: /tmp/mode-demo-unquoted
+        state: touch
+        mode: 644
+```
+
+```terminal
+{
+  "title": "\"0644\" and 644 are different modes",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ansible-playbook modes.yml"
+    },
+    {
+      "cmd": "ansible web1 -a \"ls -l /tmp/mode-demo-quoted /tmp/mode-demo-unquoted\"",
+      "output": "web1 | CHANGED | rc=0 >>\n-rw-r--r-- 1 ubuntu ubuntu 0 Oct 24 03:45 /tmp/mode-demo-quoted\n--w----r-T 1 ubuntu ubuntu 0 Oct 24 03:46 /tmp/mode-demo-unquoted"
+    }
+  ]
+}
+```
+
+Decimal 644 is octal 1204: write permission for the owner only, read for others, and the sticky bit. `ansible-lint` reports unquoted modes with its `risky-octal` rule. You can also write modes symbolically: `mode: "u=rw,g=r,o=r"`. Delete `modes.yml` and the two test files (`ansible web1 -m ansible.builtin.shell -a "rm -f /tmp/mode-demo-*"`) before you continue.
+
+## Edit Lines in Files You Do Not Own
+
+`lineinfile` makes sure one line is present, and replaces the line that matches `regexp` if there is one. `blockinfile` does the same for a block of lines between two marker comments, so it can find and update its own block later:
+
+```yaml
+- name: Set the kernel's swappiness
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.d/99-webfleet.conf
+    regexp: '^vm\.swappiness'
+    line: vm.swappiness = 10
+    create: true
+    mode: '0644'
+
+- name: Add the lab hosts to /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: '# {mark} webfleet hosts (managed by Ansible)'
+    block: |
+      192.168.56.11 web1
+      192.168.56.12 web2
+```
+
+Prefer a whole file in a `.d` directory, when the software supports one (as `sysctl.d`, `sudoers.d`, `sshd_config.d` and nginx's `conf.d` do), over editing lines in the main file. A whole file is easier to read, to test and to remove.
+
+## Validate Files Before They Replace the Old Ones
+
+`template`, `copy`, `lineinfile` and `blockinfile` take a `validate` option: a command that checks the new file, with `%s` as its path, before Ansible moves it into place. If the check fails, the old file stays. This matters most for files that can lock you out, such as `sudoers`, where a syntax error disables `sudo` for everyone. Here is a sudoers rule that lets a deploy group reload nginx, with a deliberate typo (a missing `:` after `NOPASSWD`):
+
+```yaml
+---
+- name: Validate before replacing
+  hosts: web1
+  become: true
+
+  tasks:
+    - name: Let the deploy group reload nginx
+      ansible.builtin.copy:
+        content: "%webfleet-deploy ALL=(root) NOPASSWD /usr/bin/systemctl reload nginx\n"
+        dest: /etc/sudoers.d/webfleet
+        owner: root
+        group: root
+        mode: '0440'
+        validate: /usr/sbin/visudo -cf %s
+```
+
+```bash
+ansible-playbook sudoers.yml
+```
+
+The `fatal` line, cut after 400 characters:
+
+```text
+fatal: [web1]: FAILED! => {"changed": false, "checksum": "be3a7f2364719958191d83cd893d2ead6b183261", "exit_status": 1, "msg": "failed to validate", "stderr": "/home/ubuntu/.ansible/tmp/ansible-tmp-1792813575.2778404-879-81323113946663/.source:1:69: syntax error\n%webfleet-deploy ALL=(root) NOPASSWD /usr/bin/systemctl reload nginx\n
+```
+
+`visudo` rejected the file, so it never reached `/etc/sudoers.d/` and `sudo` keeps working. Add the missing `:` and the task passes:
+
+```bash
+ansible-playbook sudoers.yml
+```
+
+```text
+ok: [web1]
+changed: [web1]
+```
+
+The rule was only a demonstration. Remove it from `web1` and delete the playbook:
+
+```bash
+ansible web1 -b -m ansible.builtin.file -a "path=/etc/sudoers.d/webfleet state=absent"
+rm sudoers.yml
+```
+
+Other validators: `nginx -t -c %s` for a complete `nginx.conf`, `/usr/sbin/sshd -t -f %s` for `sshd_config`, `named-checkconf %s`, `python3 -m json.tool %s`. A validator has to accept the file on its own, so it does not work for fragments that only make sense inside another file; for those, test the whole configuration in a handler as in [Part 6](/guides/introduction-to-ansible/06-handlers-and-notifications#h2-test-the-configuration-before-reloading).
+
+## Common Mistakes
+
+- **Unquoted file modes.** Write `"0644"`.
+- **Timestamps and random values in templates.** They make every run report `changed`.
+- **Editing a file with many `lineinfile` tasks.** Template the whole file, or use a `.d` drop-in.
+- **No `validate` on critical files.** One typo in `sudoers` or `sshd_config` can lock you out.
+- **Logic-heavy templates.** Prepare data in variables or with filters, and keep templates close to the file they produce.
+
+## Summary
+
+- `template` renders Jinja2 per host; `copy` copies files unchanged; `file` manages directories, links, permissions and deletion.
+- Keep templates in `templates/`, mark generated files with `ansible_managed`, and keep them idempotent.
+- `--diff`, with or without `--check`, shows the exact change to each file on each host.
+- `lineinfile` and `blockinfile` are for files you share with others; prefer whole files in `.d` directories.
+- `validate` tests a new file before it replaces the old one.
+
+In [Part 8](/guides/introduction-to-ansible/08-roles-and-organization) you turn `web.yml` into a reusable role, add a baseline role that uses a community collection, and organize the project the way larger teams do.
+
+## Keep Learning
+
+- [How to change permissions for folders, subfolders and files in Linux](/posts/change-permissions-folder-subfolders-files-linux)
+- [Hash rings in nginx, HAProxy and Envoy](/posts/hash-ring-points-nginx-haproxy-envoy), for when the fleet grows behind a load balancer

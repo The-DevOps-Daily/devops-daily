@@ -1,540 +1,390 @@
 ---
-title: 'Handlers and Notifications'
-description: 'Learn to use Ansible handlers and notifications to trigger actions only when needed, creating efficient and reliable automation.'
+title: 'Ansible Handlers: Restart Services Only When Needed'
+description: 'Use handlers to reload nginx only when its configuration changes, test the config before a reload, and avoid the traps of failed runs and handler order.'
 order: 6
 ---
 
-Handlers are one of Ansible's most powerful features for building efficient automation. They let you trigger actions - like restarting services - only when configuration changes actually occur. This approach prevents unnecessary service restarts and creates more reliable automation that responds appropriately to changes.
+Some changes only take effect after a service reloads: nginx reads its configuration at start and on reload. You could reload nginx at the end of every run, but that touches every server even when nothing changed. **Handlers** solve this: a task that changes something **notifies** a handler, and the handler runs once, at the end, only if a notification arrived. In this part you add nginx configuration to `web.yml`, reload nginx with a handler, make the handler test the configuration first, and see the two situations in which handlers do not run when you expect them to.
 
-## Understanding Handlers
+## Prerequisites
 
-Handlers are special tasks that run only when "notified" by other tasks. Unlike regular tasks that run every time, handlers run once per playbook execution and only if triggered. This makes them perfect for actions that should happen after configuration changes.
+- The `~/webfleet` project with `web.yml` from [Part 3](/guides/introduction-to-ansible/03-writing-your-first-playbook) and the inventory from [Part 4](/guides/introduction-to-ansible/04-working-with-inventory).
 
-### Basic Handler Syntax
+## Add Configuration and a Handler
 
-Here's a simple example showing how handlers work:
+Right now nginx tells every client its exact version:
+
+```bash
+curl -sI http://192.168.56.11/ | grep -i '^server'
+```
+
+```text
+Server: nginx/1.24.0 (Ubuntu)
+```
+
+Add two configuration files to `web.yml`: one hides the version, one adds two security headers. Both notify the same handler topic, `nginx config changed`. Then add a `handlers` section with two handlers that listen to that topic. This is the whole playbook now:
 
 ```yaml
 ---
-- name: Configure web server
-  hosts: webservers
-  become: yes
+- name: Set up the web servers
+  hosts: web
+  become: true
+
+  pre_tasks:
+    - name: Stop on systems this playbook does not support
+      ansible.builtin.assert:
+        that: ansible_facts['os_family'] == "Debian"
+        fail_msg: This playbook supports Debian and Ubuntu only.
+      tags: always
 
   tasks:
     - name: Install nginx
-      apt:
+      ansible.builtin.apt:
         name: nginx
         state: present
+        update_cache: true
+        cache_valid_time: 3600
+      tags: packages
 
-    - name: Copy nginx configuration
-      copy:
-        src: nginx.conf
-        dest: /etc/nginx/nginx.conf
-        backup: yes
-      notify: restart nginx
+    - name: Hide the nginx version in responses
+      ansible.builtin.copy:
+        content: "server_tokens off;\n"
+        dest: /etc/nginx/conf.d/hardening.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: nginx config changed
 
-    - name: Copy site configuration
-      template:
-        src: site.conf.j2
-        dest: /etc/nginx/sites-available/default
-      notify: restart nginx
+    - name: Add security headers
+      ansible.builtin.copy:
+        content: |
+          add_header X-Content-Type-Options "nosniff" always;
+          add_header X-Frame-Options "DENY" always;
+        dest: /etc/nginx/conf.d/headers.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: nginx config changed
+
+    - name: Publish the home page
+      ansible.builtin.copy:
+        content: |
+          <h1>Hello from {{ inventory_hostname }}</h1>
+          <p>Run by {{ site_owner }}. Managed by Ansible.</p>
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+      tags: page
+
+    - name: Start nginx and enable it at boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
 
   handlers:
-    - name: restart nginx
-      service:
-        name: nginx
-        state: restarted
-```
-
-In this example:
-
-1. Two tasks can potentially trigger the handler using `notify`
-2. The handler runs only once, even if both tasks make changes
-3. The handler runs after all tasks complete
-4. If no tasks trigger notifications, the handler doesn't run
-
-### When Handlers Execute
-
-Handlers run at specific points during playbook execution:
-
-- **After all tasks in a play complete** (normal behavior)
-- **When explicitly flushed** using `meta: flush_handlers`
-- **At the end of each block** when using error handling blocks
-
-This timing ensures that configuration changes are complete before services restart.
-
-## Practical Handler Examples
-
-### Web Server Configuration
-
-Here's a realistic example managing nginx configuration with multiple potential triggers:
-
-```yaml
----
-- name: Configure nginx web server
-  hosts: webservers
-  become: yes
-
-  vars:
-    nginx_sites:
-      - name: api
-        port: 8080
-        backend: "{{ groups['api_servers'] }}"
-      - name: admin
-        port: 8081
-        backend: "{{ groups['admin_servers'] }}"
-
-  tasks:
-    - name: Install nginx
-      apt:
-        name: nginx
-        state: present
-
-    - name: Configure nginx main settings
-      template:
-        src: nginx.conf.j2
-        dest: /etc/nginx/nginx.conf
-        backup: yes
-      notify:
-        - validate nginx config
-        - restart nginx
-
-    - name: Configure nginx sites
-      template:
-        src: site.conf.j2
-        dest: '/etc/nginx/sites-available/{{ item.name }}'
-      loop: '{{ nginx_sites }}'
-      notify:
-        - validate nginx config
-        - restart nginx
-
-    - name: Enable nginx sites
-      file:
-        src: '/etc/nginx/sites-available/{{ item.name }}'
-        dest: '/etc/nginx/sites-enabled/{{ item.name }}'
-        state: link
-      loop: '{{ nginx_sites }}'
-      notify:
-        - validate nginx config
-        - restart nginx
-
-    - name: Remove default nginx site
-      file:
-        path: /etc/nginx/sites-enabled/default
-        state: absent
-      notify:
-        - validate nginx config
-        - restart nginx
-
-  handlers:
-    - name: validate nginx config
-      command: nginx -t
+    - name: Check the nginx configuration
+      ansible.builtin.command: nginx -t
       changed_when: false
+      listen: nginx config changed
 
-    - name: restart nginx
-      service:
+    - name: Reload nginx
+      ansible.builtin.service:
         name: nginx
-        state: restarted
-```
-
-Notice how multiple tasks can notify the same handlers. The handlers run in the order they're defined, so validation happens before restart.
-
-### Database Configuration
-
-Handlers work well for database configuration that requires service restarts:
-
-```yaml
----
-- name: Configure PostgreSQL
-  hosts: databases
-  become: yes
-  become_user: postgres
-
-  tasks:
-    - name: Configure PostgreSQL settings
-      lineinfile:
-        path: /etc/postgresql/13/main/postgresql.conf
-        regexp: '{{ item.regexp }}'
-        line: '{{ item.line }}'
-        backup: yes
-      loop:
-        - { regexp: '^#?shared_buffers', line: 'shared_buffers = {{ shared_buffers }}' }
-        - { regexp: '^#?max_connections', line: 'max_connections = {{ max_connections }}' }
-        - { regexp: '^#?listen_addresses', line: "listen_addresses = '{{ listen_addresses }}'" }
-      notify: restart postgresql
-
-    - name: Configure client authentication
-      template:
-        src: pg_hba.conf.j2
-        dest: /etc/postgresql/13/main/pg_hba.conf
-        backup: yes
-      notify:
-        - validate postgresql config
-        - reload postgresql
-
-    - name: Create application database
-      postgresql_db:
-        name: '{{ app_database }}'
-        state: present
-
-    - name: Create application user
-      postgresql_user:
-        name: '{{ app_user }}'
-        password: '{{ app_password }}'
-        db: '{{ app_database }}'
-        priv: ALL
-        state: present
-
-  handlers:
-    - name: validate postgresql config
-      command: /usr/lib/postgresql/13/bin/postgres --config-file=/etc/postgresql/13/main/postgresql.conf --check-config
-      become_user: postgres
-      changed_when: false
-
-    - name: restart postgresql
-      service:
-        name: postgresql
-        state: restarted
-
-    - name: reload postgresql
-      service:
-        name: postgresql
         state: reloaded
+      listen: nginx config changed
+
+  post_tasks:
+    - name: Fetch the home page from the control node
+      ansible.builtin.uri:
+        url: 'http://{{ ansible_host }}/'
+        return_content: true
+      register: home_page
+      delegate_to: localhost
+      become: false
+      check_mode: false # a GET changes nothing, so it also runs with --check
+
+    - name: Check that the page names the host
+      ansible.builtin.assert:
+        that: ('<h1>Hello from ' ~ inventory_hostname ~ '</h1>') in home_page.content
+        fail_msg: '{{ ansible_host }} did not serve its own page'
 ```
 
-This example shows different types of handlers: restart for major configuration changes, reload for authentication changes, and validation to ensure configuration is correct.
+Run it:
 
-## Advanced Handler Techniques
+```bash
+ansible-playbook web.yml
+```
 
-### Handler Dependencies
+```text
+TASK [Hide the nginx version in responses] *************************************
+changed: [web2]
+changed: [web1]
 
-Sometimes handlers must run in a specific order. Use `listen` to create handler groups:
+TASK [Add security headers] ****************************************************
+changed: [web2]
+changed: [web1]
+
+TASK [Publish the home page] ***************************************************
+ok: [web2]
+ok: [web1]
+
+TASK [Start nginx and enable it at boot] ***************************************
+ok: [web1]
+ok: [web2]
+
+RUNNING HANDLER [Check the nginx configuration] ********************************
+ok: [web2]
+ok: [web1]
+
+RUNNING HANDLER [Reload nginx] *************************************************
+changed: [web1]
+changed: [web2]
+
+TASK [Fetch the home page from the control node] *******************************
+ok: [web1 -> localhost]
+ok: [web2 -> localhost]
+
+TASK [Check that the page names the host] **************************************
+ok: [web1] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+ok: [web2] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+PLAY RECAP *********************************************************************
+web1                       : ok=11   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+web2                       : ok=11   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+Read the order of events:
+
+1. Both configuration tasks changed something on both hosts, so each sent the notification `nginx config changed` twice per host.
+2. The handlers did not run right away. They ran once per host, after all tasks of the `tasks` section, and before `post_tasks`, so the test at the end saw the reloaded nginx.
+3. They ran in the order they are written in the `handlers` section, not in the order of the notifications: first `nginx -t`, then the reload.
+
+The result:
+
+```bash
+curl -sI http://192.168.56.11/ | grep -i -E '^(server|x-)'
+```
+
+```text
+Server: nginx
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+```
+
+Run the playbook again and nothing is notified, so no handler runs:
+
+```bash
+ansible-playbook web.yml
+```
+
+```text
+PLAY RECAP *********************************************************************
+web1                       : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+web2                       : ok=9    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+## How Notifications Work
+
+- `notify` takes a handler's `name` or a `listen` topic, or a list of them. A topic lets several handlers react to one event, and lets tasks notify "what happened" (`nginx config changed`) instead of "what to do".
+- A handler runs only if the notifying task reported `changed`. `ok` and `skipped` do not notify.
+- A handler runs at most once per host per flush, however many tasks notified it.
+- Handlers are flushed at the end of each section of a play (`pre_tasks`, then `roles` and `tasks`, then `post_tasks`), and when a task calls `ansible.builtin.meta: flush_handlers`.
+- Handler names must be unique in a play. If two roles both define `Reload nginx`, only the last one loaded can run. Give handlers in roles names that include the role, or notify a `listen` topic.
+
+When a later task needs the new configuration, flush the handlers before it instead of waiting for the end of the section:
 
 ```yaml
-tasks:
-  - name: Update SSL certificate
-    copy:
-      src: '{{ item }}'
-      dest: '/etc/ssl/certs/'
-    loop:
-      - server.crt
-      - server.key
-    notify: ssl certificate updated
+- name: Switch nginx to the new upstream
+  ansible.builtin.copy:
+    src: upstream.conf
+    dest: /etc/nginx/conf.d/upstream.conf
+    mode: '0644'
+  notify: nginx config changed
 
-handlers:
-  - name: validate ssl certificate
-    command: openssl x509 -in /etc/ssl/certs/server.crt -text -noout
-    listen: ssl certificate updated
-    changed_when: false
+- name: Run the pending handlers now
+  ansible.builtin.meta: flush_handlers
 
-  - name: restart nginx
-    service:
-      name: nginx
-      state: restarted
-    listen: ssl certificate updated
-
-  - name: restart apache
-    service:
-      name: apache2
-      state: restarted
-    listen: ssl certificate updated
+- name: Warm the cache through the new upstream
+  ansible.builtin.uri:
+    url: http://localhost/warmup
 ```
 
-When a task notifies "ssl certificate updated", all handlers listening for that notification run in order.
+## Test the Configuration Before Reloading
 
-### Conditional Handlers
+The `Check the nginx configuration` handler runs `nginx -t` before the reload. When the check fails, the reload never happens and nginx keeps serving with the configuration it already has. Try it: break the first file with a typo, `server_tokens of;`.
 
-Handlers can include conditionals, making them run only under specific circumstances:
-
-```yaml
-handlers:
-  - name: restart application
-    service:
-      name: '{{ app_name }}'
-      state: restarted
-    when: not maintenance_mode | default(false)
-
-  - name: reload configuration
-    command: '{{ app_command }} reload'
-    when:
-      - app_running is defined
-      - app_running.rc == 0
+```bash
+ansible-playbook web.yml --limit web1
 ```
 
-### Forcing Handler Execution
-
-Use `meta: flush_handlers` to run handlers immediately instead of waiting for the end of the play:
-
-```yaml
-tasks:
-  - name: Update database configuration
-    template:
-      src: postgresql.conf.j2
-      dest: /etc/postgresql/13/main/postgresql.conf
-    notify: restart postgresql
-
-  - name: Flush handlers to restart database now
-    meta: flush_handlers
-
-  - name: Run database migrations (requires running database)
-    command: 'python manage.py migrate'
-    become_user: '{{ app_user }}'
+```text
+RUNNING HANDLER [Check the nginx configuration] ********************************
+fatal: [web1]: FAILED! => {"changed": false, "changed_when_result": false, "cmd": ["nginx", "-t"], "delta": "0:00:00.024931", "end": "2026-10-24 03:41:29.547712", "msg": "The command exited with a non-zero return code.", "rc": 1, "start": "2026-10-24 03:41:29.522781", "stderr": "2026/10/24 03:41:29 [emerg] 83095#83095: invalid value \"of\" in /etc/nginx/conf.d/hardening.conf:1\nnginx: configuration file /etc/nginx/nginx.conf test failed", "stderr_lines": ["2026/10/24 03:41:29 [emerg] 83095#83095: invalid value \"of\" in /etc/nginx/conf.d/hardening.conf:1", "nginx: configuration file /etc/nginx/nginx.conf test failed"], "stdout": "", "stdout_lines": []}
+PLAY RECAP *********************************************************************
+web1                       : ok=7    changed=1    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
 ```
 
-This pattern is useful when later tasks depend on services being restarted.
+The handler failed, so the reload did not run, `web1` stopped, and the site is still up with the old configuration:
 
-### Error Handling in Handlers
-
-Handlers can fail, potentially leaving systems in inconsistent states. Handle this with proper error checking:
-
-```yaml
-handlers:
-  - name: restart nginx with validation
-    block:
-      - name: validate nginx configuration
-        command: nginx -t
-        changed_when: false
-
-      - name: restart nginx service
-        service:
-          name: nginx
-          state: restarted
-
-    rescue:
-      - name: restore nginx configuration backup
-        command: cp /etc/nginx/nginx.conf.ansible-backup /etc/nginx/nginx.conf
-        ignore_errors: yes
-
-      - name: ensure nginx is running with old config
-        service:
-          name: nginx
-          state: started
-
-      - name: report configuration failure
-        fail:
-          msg: 'nginx configuration update failed, reverted to backup'
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.56.11/
 ```
 
-## Real-World Handler Patterns
+```text
+200
+```
 
-### Multi-Service Coordination
+The broken file is still on disk, though. If nginx restarted now, for example after a reboot, it would not start. Fix the typo and run again: the file changes back, the handlers are notified, and this time they pass.
 
-When changes affect multiple services, coordinate their restarts properly:
+```bash
+ansible-playbook web.yml --limit web1
+```
+
+```text
+RUNNING HANDLER [Check the nginx configuration] ********************************
+ok: [web1]
+RUNNING HANDLER [Reload nginx] *************************************************
+changed: [web1]
+PLAY RECAP *********************************************************************
+web1                       : ok=11   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+When a module writes the complete configuration file, its `validate` option is stronger: it tests the new file before it replaces the old one, so a broken file never reaches its place. [Part 7](/guides/introduction-to-ansible/07-templates-and-files#h2-validate-files-before-they-replace-the-old-ones) uses it for a `sudoers` file. For files that nginx includes, like these, the handler check is the practical option.
+
+## When Handlers Do Not Run
+
+The classic trap: a task changes a configuration file and notifies a handler, then a later task fails. By default, a host that fails runs no handlers, so the reload never happens. On the next run the configuration task reports `ok`, because the file is already right, so nothing notifies the handler again. The new configuration sits on disk, unused, until something else restarts the service.
 
 ```yaml
 ---
-- name: Update application stack
-  hosts: app_servers
-  become: yes
+- name: A failure after a notification
+  hosts: web1
+  become: true
 
   tasks:
-    - name: Update application code
-      git:
-        repo: '{{ app_repository }}'
-        dest: '{{ app_directory }}'
-        version: '{{ app_version }}'
-      notify:
-        - restart application
-        - restart workers
+    - name: Change the configuration
+      ansible.builtin.copy:
+        content: "gzip_comp_level 5;\n"
+        dest: /etc/nginx/conf.d/gzip.conf
+        mode: '0644'
+      notify: Reload nginx
 
-    - name: Update nginx proxy configuration
-      template:
-        src: proxy.conf.j2
-        dest: /etc/nginx/conf.d/app.conf
-      notify: reload nginx
-
-    - name: Update application configuration
-      template:
-        src: app.conf.j2
-        dest: '{{ app_directory }}/config.ini'
-      notify:
-        - restart application
-        - restart workers
+    - name: A later task fails
+      ansible.builtin.command: /bin/false
+      changed_when: false
 
   handlers:
-    - name: restart application
-      service:
-        name: '{{ app_name }}'
-        state: restarted
-
-    - name: restart workers
-      service:
-        name: '{{ app_name }}-workers'
-        state: restarted
-
-    - name: reload nginx
-      service:
+    - name: Reload nginx
+      ansible.builtin.service:
         name: nginx
         state: reloaded
 ```
 
-### Rolling Restarts
-
-For applications that need graceful restarts, implement rolling restart patterns:
-
-```yaml
----
-- name: Rolling restart of web servers
-  hosts: webservers
-  serial: 1 # Process one host at a time
-  become: yes
-
-  tasks:
-    - name: Remove server from load balancer
-      uri:
-        url: 'http://{{ load_balancer_host }}/api/servers/{{ inventory_hostname }}/disable'
-        method: POST
-      delegate_to: localhost
-
-    - name: Wait for existing connections to drain
-      wait_for:
-        timeout: 30
-
-    - name: Update application configuration
-      template:
-        src: app.conf.j2
-        dest: /etc/myapp/app.conf
-      notify: restart application
-
-    - name: Flush handlers to restart application
-      meta: flush_handlers
-
-    - name: Wait for application to be ready
-      wait_for:
-        port: '{{ app_port }}'
-        host: '{{ inventory_hostname }}'
-        delay: 5
-        timeout: 60
-
-    - name: Add server back to load balancer
-      uri:
-        url: 'http://{{ load_balancer_host }}/api/servers/{{ inventory_hostname }}/enable'
-        method: POST
-      delegate_to: localhost
-
-  handlers:
-    - name: restart application
-      service:
-        name: myapp
-        state: restarted
+```bash
+ansible-playbook gotcha.yml
 ```
 
-### Configuration Validation Chain
+The output, with the long `fatal` line cut after 72 characters:
 
-Create handler chains that validate configuration before applying changes:
+```text
+TASK [Gathering Facts] *********************************************************
+ok: [web1]
+TASK [Change the configuration] ************************************************
+changed: [web1]
+TASK [A later task fails] ******************************************************
+fatal: [web1]: FAILED! => {"changed": false, "changed_when_result": fals
+PLAY RECAP *********************************************************************
+web1                       : ok=2    changed=1    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+```
+
+No `RUNNING HANDLER` line: the reload was lost, and running the playbook again does not bring it back, because the file is already in place. Reload nginx by hand to apply it (`ansible web1 -b -a "systemctl reload nginx"`). To avoid the problem, run with `--force-handlers`, or set `force_handlers: true` on the play, and notified handlers run even on a host where a task failed. To see it, delete the file so that the task changes it again, then run with the option:
+
+```bash
+ansible web1 -b -m ansible.builtin.file -a "path=/etc/nginx/conf.d/gzip.conf state=absent"
+```
+
+```text
+web1 | CHANGED => {
+    "changed": true,
+    "path": "/etc/nginx/conf.d/gzip.conf",
+    "state": "absent"
+}
+```
+
+```bash
+ansible-playbook gotcha.yml --force-handlers
+```
+
+The output, with the long `fatal` line cut after 72 characters:
+
+```text
+TASK [Gathering Facts] *********************************************************
+ok: [web1]
+TASK [Change the configuration] ************************************************
+changed: [web1]
+TASK [A later task fails] ******************************************************
+fatal: [web1]: FAILED! => {"changed": false, "changed_when_result": fals
+RUNNING HANDLER [Reload nginx] *************************************************
+changed: [web1]
+PLAY RECAP *********************************************************************
+web1                       : ok=3    changed=2    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0
+```
+
+This time the handler ran although a task failed. `gotcha.yml` was only a demonstration; delete it, and remove its file from `web1`:
+
+```bash
+ansible web1 -b -m ansible.builtin.file -a "path=/etc/nginx/conf.d/gzip.conf state=absent"
+ansible web1 -b -a "systemctl reload nginx"
+rm gotcha.yml
+```
+
+The second case is check mode: with `--check`, a task that would change reports `changed`, and its handlers are shown as if they ran, but nothing is reloaded.
+
+## Reload or Restart?
+
+Prefer a reload when the service supports one. nginx reloads its configuration without dropping open connections; a restart stops the process and briefly refuses new ones. Some changes need a restart anyway, such as a new nginx module or, for many databases, a memory setting. Give each its own handler and notify the one that fits:
 
 ```yaml
 handlers:
-  - name: validate and restart services
-    block:
-      - name: validate nginx configuration
-        command: nginx -t
-        changed_when: false
-
-      - name: validate ssl certificates
-        command: openssl x509 -in {{ item }} -text -noout
-        loop:
-          - /etc/ssl/certs/server.crt
-        changed_when: false
-
-      - name: restart nginx
-        service:
-          name: nginx
-          state: restarted
-
-      - name: verify nginx is responding
-        uri:
-          url: 'http://{{ ansible_default_ipv4.address }}'
-          status_code: 200
-        retries: 3
-        delay: 5
-
-    rescue:
-      - name: restore configuration backups
-        command: '{{ item }}'
-        loop:
-          - cp /etc/nginx/nginx.conf.backup /etc/nginx/nginx.conf
-          - cp /etc/ssl/certs/server.crt.backup /etc/ssl/certs/server.crt
-        ignore_errors: yes
-
-      - name: restart nginx with old configuration
-        service:
-          name: nginx
-          state: restarted
-
-      - name: fail with detailed message
-        fail:
-          msg: 'Configuration update failed and was rolled back'
-```
-
-## Best Practices for Handlers
-
-### Naming and Organization
-
-Use descriptive names and organize handlers logically:
-
-```yaml
-handlers:
-  # Service management
-  - name: restart web server
-    service:
-      name: nginx
-      state: restarted
-
-  - name: reload web server
-    service:
+  - name: Reload nginx
+    ansible.builtin.service:
       name: nginx
       state: reloaded
 
-  # Configuration validation
-  - name: validate web server config
-    command: nginx -t
-    changed_when: false
-
-  # Application specific
-  - name: restart application server
-    service:
-      name: '{{ app_name }}'
+  - name: Restart nginx
+    ansible.builtin.service:
+      name: nginx
       state: restarted
 ```
 
-### Handler Efficiency
+For a fleet behind a load balancer, combine handlers with `serial`, which runs the whole play on a few hosts at a time, so that only part of the fleet reloads at once. [Part 9](/guides/introduction-to-ansible/09-best-practices-and-production-patterns#h2-rolling-updates) shows it.
 
-Prefer reloads over restarts when possible:
+## Common Mistakes
 
-```yaml
-# Better - faster, doesn't interrupt existing connections
-- name: reload nginx configuration
-  service:
-    name: nginx
-    state: reloaded
+- **Restarting in a regular task.** A task with `state: restarted` restarts every time. Use a handler.
+- **Notifying a name that does not exist.** The playbook fails with `The requested handler 'Reload nginix' was not found`. Topics with `listen` make typos less likely, because one name covers several handlers.
+- **Expecting notification order to matter.** Handlers run in the order of the `handlers` section.
+- **A failed run that leaves changed files behind.** Use `--force-handlers`, or check the service after a failed run.
+- **A command in a handler without `changed_when`.** `nginx -t` changes nothing; say so.
 
-# Use only when reload isn't sufficient
-- name: restart nginx service
-  service:
-    name: nginx
-    state: restarted
-```
+## Summary
 
-### Testing Handler Behavior
+- Tasks notify handlers by name or by `listen` topic; a handler runs once per host, at the end of the section, and only if a notifying task changed something.
+- Handlers run in the order they are defined; `meta: flush_handlers` runs them early.
+- Test the configuration in a handler before the reload, so a broken file never reaches the running service.
+- A failed task cancels pending handlers on that host; `--force-handlers` changes that.
 
-Test that handlers work correctly by making intentional changes:
+In [Part 7](/guides/introduction-to-ansible/07-templates-and-files) you replace the inline file contents with Jinja2 templates, give the site its own nginx server block, and use the other file modules.
 
-```bash
-# Make a change that should trigger handlers
-ansible-playbook site.yml --check --diff
+## Keep Learning
 
-# Run the playbook and verify handlers execute
-ansible-playbook site.yml -v
-
-# Verify services are running correctly
-ansible webservers -m service -a "name=nginx state=started"
-```
-
-## Next Steps
-
-Handlers provide the foundation for creating automation that responds intelligently to changes. You've learned to trigger actions conditionally, coordinate multiple services, and implement error handling for critical operations.
-
-In the next section, we'll explore templates and files - how to generate dynamic configuration files and manage file deployments across your infrastructure.
-
-The handler patterns you've learned here ensure your automation is both efficient and reliable, avoiding unnecessary service disruptions while maintaining system consistency.
+- [Production Deployment Checklist](/checklists/production-deployment)
+- [Zero-downtime deployments: strategies compared](/posts/deployment-strategies-guide)

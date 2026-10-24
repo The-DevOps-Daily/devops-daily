@@ -1,430 +1,527 @@
 ---
-title: 'Writing Your First Playbook'
-description: 'Build a complete, production-ready playbook with error handling, conditionals, and proper structure.'
+title: 'Write Your First Ansible Playbook'
+description: 'Build a playbook that installs nginx on two servers, publishes a page and tests it, then add conditions, loops, tags and error handling. Real output.'
 order: 3
 ---
 
-Now that you understand Ansible's basic concepts, let's build a complete playbook that demonstrates real-world patterns. You'll create a playbook that sets up a web server with proper error handling, security configurations, and flexibility to work across different environments.
+Time to automate something real. In this part you write `web.yml`, a playbook that turns `web1` and `web2` into nginx web servers that each serve their own page, and that tests the result from the control node. You build it in three steps and run it after each one, so you see what every addition does. Then you add the tools you need in every playbook: conditions, loops, tags and error handling.
 
-## Planning Your Playbook
+## Prerequisites
 
-Before writing any code, think about what you want to accomplish. Our example playbook will:
+- The `~/webfleet` project from [Part 1](/guides/introduction-to-ansible/01-installing-and-setting-up), with `web1` and `web2` reachable.
+- The basics from [Part 2](/guides/introduction-to-ansible/02-fundamentals): modules, tasks, plays, and how to read `ansible-playbook` output.
 
-- Install and configure nginx
-- Set up a firewall with appropriate rules
-- Create a custom index page
-- Handle different operating systems
-- Include proper error checking
-- Be flexible enough for different environments
+## Step 1: Install nginx
 
-This approach - planning before coding - prevents playbooks from becoming disorganized collections of tasks.
-
-## Building the Basic Structure
-
-Create a new file called `web-setup.yml`:
+Start with two tasks: install the package, and make sure the service runs now and after a reboot. Save this as `web.yml` in `~/webfleet`:
 
 ```yaml
 ---
-- name: Set up web server with security configurations
-  hosts: webservers
-  become: yes
-  gather_facts: yes
-
-  vars:
-    web_user: www-data
-    web_port: 80
-    allowed_ports:
-      - 22
-      - 80
-      - 443
+- name: Set up the web servers
+  hosts: web
+  become: true # every task in this play runs with sudo
 
   tasks:
-    - name: Update package cache (Debian/Ubuntu)
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-      when: ansible_os_family == "Debian"
-
-    - name: Install nginx web server
-      package:
+    - name: Install nginx
+      ansible.builtin.apt:
         name: nginx
         state: present
-```
+        update_cache: true # run apt update first...
+        cache_valid_time: 3600 # ...unless it ran in the last hour
 
-Notice several improvements over basic examples:
-
-- `gather_facts: yes` explicitly enables fact collection
-- The `package` module works across different Linux distributions
-- `when` conditions make tasks conditional
-- `cache_valid_time` prevents unnecessary cache updates
-
-## Adding Conditional Logic
-
-Different Linux distributions require different approaches. Let's handle multiple operating systems:
-
-```yaml
-- name: Install firewall (Ubuntu/Debian)
-  apt:
-    name: ufw
-    state: present
-  when: ansible_os_family == "Debian"
-
-- name: Install firewall (CentOS/RHEL)
-  yum:
-    name: firewalld
-    state: present
-  when: ansible_os_family == "RedHat"
-
-- name: Configure ufw firewall rules (Ubuntu/Debian)
-  ufw:
-    rule: allow
-    port: '{{ item }}'
-    proto: tcp
-  loop: '{{ allowed_ports }}'
-  when: ansible_os_family == "Debian"
-
-- name: Enable ufw firewall (Ubuntu/Debian)
-  ufw:
-    state: enabled
-  when: ansible_os_family == "Debian"
-```
-
-The `when` clause uses Ansible facts to determine the operating system family. This makes your playbook work across different Linux distributions without modification.
-
-## Implementing Error Handling
-
-Real-world automation needs robust error handling. Let's add checks to ensure our configuration is successful:
-
-```yaml
-- name: Start nginx service
-  service:
-    name: nginx
-    state: started
-    enabled: yes
-  register: nginx_service_result
-
-- name: Verify nginx is responding
-  uri:
-    url: 'http://{{ ansible_default_ipv4.address }}:{{ web_port }}'
-    method: GET
-    status_code: 200
-  register: nginx_response
-  retries: 3
-  delay: 5
-  until: nginx_response.status == 200
-
-- name: Display service status
-  debug:
-    msg: 'Nginx is running and responding on port {{ web_port }}'
-  when: nginx_response.status == 200
-```
-
-This sequence:
-
-1. Starts nginx and registers the result
-2. Tests that nginx responds to HTTP requests
-3. Retries the test up to 3 times with 5-second delays
-4. Displays success only when verification passes
-
-The `register` keyword captures task output for use in later tasks. The `until` clause repeats the task until the condition is met.
-
-## Creating Dynamic Content
-
-Instead of static files, let's generate content based on system information:
-
-```yaml
-- name: Create custom index page
-  copy:
-    content: |
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <title>{{ inventory_hostname }} - Web Server</title>
-          <style>
-              body { font-family: Arial, sans-serif; margin: 40px; }
-              .info { background-color: #f0f0f0; padding: 20px; border-radius: 5px; }
-          </style>
-      </head>
-      <body>
-          <h1>Web Server Information</h1>
-          <div class="info">
-              <p><strong>Hostname:</strong> {{ inventory_hostname }}</p>
-              <p><strong>IP Address:</strong> {{ ansible_default_ipv4.address }}</p>
-              <p><strong>Operating System:</strong> {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
-              <p><strong>Total Memory:</strong> {{ ansible_memory_mb.real.total }}MB</p>
-              <p><strong>Processor Count:</strong> {{ ansible_processor_vcpus }}</p>
-              <p><strong>Server Status:</strong> Online and Running</p>
-          </div>
-          <p><em>Last updated: {{ ansible_date_time.iso8601 }}</em></p>
-      </body>
-      </html>
-    dest: /var/www/html/index.html
-    owner: '{{ web_user }}'
-    group: '{{ web_user }}'
-    mode: '0644'
-  notify: reload nginx
-```
-
-This task creates a dynamic HTML page using Ansible facts. The `notify` directive triggers a handler when the file changes.
-
-## Adding Handlers
-
-Handlers run only when notified by other tasks and only run once, even if notified multiple times. They're perfect for restarting services after configuration changes:
-
-```yaml
-handlers:
-  - name: reload nginx
-    service:
-      name: nginx
-      state: reloaded
-
-  - name: restart nginx
-    service:
-      name: nginx
-      state: restarted
-```
-
-Place handlers at the same indentation level as `tasks`. They run after all tasks complete, ensuring services restart only once even if multiple configuration files change.
-
-## Adding Pre-task Validation
-
-Before making changes, validate that the system meets requirements:
-
-```yaml
-pre_tasks:
-  - name: Check if system has sufficient memory
-    fail:
-      msg: 'System requires at least 1GB RAM, but only has {{ ansible_memory_mb.real.total }}MB'
-    when: ansible_memory_mb.real.total < 1024
-
-  - name: Verify SSH connectivity
-    ping:
-
-  - name: Check disk space
-    shell: df / | tail -1 | awk '{print $5}' | sed 's/%//'
-    register: disk_usage
-    changed_when: false
-
-  - name: Fail if disk usage is too high
-    fail:
-      msg: 'Root filesystem is {{ disk_usage.stdout }}% full. Need at least 20% free space.'
-    when: disk_usage.stdout|int > 80
-```
-
-Pre-tasks run before regular tasks and can prevent playbook execution if conditions aren't met. The `changed_when: false` directive prevents the shell command from being marked as a change.
-
-## The Complete Playbook
-
-Here's the full playbook with all components:
-
-```yaml
----
-- name: Set up web server with security configurations
-  hosts: webservers
-  become: yes
-  gather_facts: yes
-
-  vars:
-    web_user: www-data
-    web_port: 80
-    allowed_ports:
-      - 22
-      - 80
-      - 443
-
-  pre_tasks:
-    - name: Check system requirements
-      fail:
-        msg: 'System requires at least 1GB RAM'
-      when: ansible_memory_mb.real.total < 1024
-
-    - name: Verify connectivity
-      ping:
-
-  tasks:
-    - name: Update package cache (Debian/Ubuntu)
-      apt:
-        update_cache: yes
-        cache_valid_time: 3600
-      when: ansible_os_family == "Debian"
-
-    - name: Install required packages
-      package:
-        name: '{{ item }}'
-        state: present
-      loop:
-        - nginx
-        - ufw
-      when: ansible_os_family == "Debian"
-
-    - name: Configure firewall rules
-      ufw:
-        rule: allow
-        port: '{{ item }}'
-        proto: tcp
-      loop: '{{ allowed_ports }}'
-      when: ansible_os_family == "Debian"
-
-    - name: Enable firewall
-      ufw:
-        state: enabled
-      when: ansible_os_family == "Debian"
-
-    - name: Start and enable nginx
-      service:
+    - name: Start nginx and enable it at boot
+      ansible.builtin.service:
         name: nginx
         state: started
-        enabled: yes
-      register: nginx_start
+        enabled: true
+```
 
-    - name: Create custom index page
-      copy:
-        content: |
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>{{ inventory_hostname }} - Web Server</title>
-              <style>
-                  body { font-family: Arial, sans-serif; margin: 40px; }
-                  .info { background-color: #f0f0f0; padding: 20px; border-radius: 5px; }
-              </style>
-          </head>
-          <body>
-              <h1>{{ inventory_hostname }} Web Server</h1>
-              <div class="info">
-                  <p><strong>IP:</strong> {{ ansible_default_ipv4.address }}</p>
-                  <p><strong>OS:</strong> {{ ansible_distribution }} {{ ansible_distribution_version }}</p>
-                  <p><strong>Memory:</strong> {{ ansible_memory_mb.real.total }}MB</p>
-                  <p><strong>Status:</strong> Online</p>
-              </div>
-              <p><em>Configured by Ansible on {{ ansible_date_time.iso8601 }}</em></p>
-          </body>
-          </html>
-        dest: /var/www/html/index.html
-        owner: '{{ web_user }}'
-        group: '{{ web_user }}'
-        mode: '0644'
-      notify: reload nginx
+Check the syntax, then run it:
 
-    - name: Verify web server is responding
-      uri:
-        url: 'http://{{ ansible_default_ipv4.address }}:{{ web_port }}'
-        method: GET
-        status_code: 200
-      register: web_check
-      retries: 3
-      delay: 5
-      until: web_check.status == 200
+```terminal
+{
+  "title": "check the syntax, then run",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ansible-playbook web.yml --syntax-check",
+      "output": "playbook: web.yml"
+    },
+    {
+      "cmd": "ansible-playbook web.yml",
+      "output": "PLAY [Set up the web servers] **************************************************\n\nTASK [Gathering Facts] *********************************************************\nok: [web1]\nok: [web2]\n\nTASK [Install nginx] ***********************************************************\nchanged: [web1]\nchanged: [web2]\n\nTASK [Start nginx and enable it at boot] ***************************************\nok: [web2]\nok: [web1]\n\nPLAY RECAP *********************************************************************\nweb1                       : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb2                       : ok=3    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0"
+    }
+  ]
+}
+```
 
-    - name: Display success message
-      debug:
-        msg: 'Web server successfully configured at http://{{ ansible_default_ipv4.address }}'
+Both hosts report `changed` for the install. The service task is `ok`, because on Debian and Ubuntu the nginx package starts and enables the service itself, so it was already in the wanted state when the task checked. On another distribution the same task would start it. That is the point of declaring state: the task is correct either way.
 
-  handlers:
-    - name: reload nginx
-      service:
+## Step 2: Publish a Page
+
+A web server should serve something. Add a variable and a task that writes the home page. The `copy` module with `content` writes a file from a string, and the `{{ }}` expressions are filled in per host:
+
+```yaml
+---
+- name: Set up the web servers
+  hosts: web
+  become: true
+
+  vars:
+    site_owner: Platform team
+
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
         name: nginx
-        state: reloaded
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Publish the home page
+      ansible.builtin.copy:
+        content: |
+          <h1>Hello from {{ inventory_hostname }}</h1>
+          <p>Run by {{ site_owner }}. Managed by Ansible.</p>
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Start nginx and enable it at boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+```
+
+```terminal
+{
+  "title": "run it, then ask both servers for the page",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ansible-playbook web.yml",
+      "output": "PLAY RECAP *********************************************************************\nweb1                       : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb2                       : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0"
+    },
+    {
+      "cmd": "curl -s http://192.168.56.11/",
+      "output": "<h1>Hello from web1</h1>\n<p>Run by Platform team. Managed by Ansible.</p>"
+    },
+    {
+      "cmd": "curl -s http://192.168.56.12/",
+      "output": "<h1>Hello from web2</h1>\n<p>Run by Platform team. Managed by Ansible.</p>"
+    }
+  ]
+}
+```
+
+Only the new task changed something; nginx was already installed, so that task reported `ok` without running `apt` again. Ubuntu's default nginx site serves `/var/www/html` and looks for `index.html` before its own welcome page, so the new file is what you see.
+
+Always quote file modes as strings (`"0644"`). An unquoted `0644` is read by YAML as an octal number and happens to work, but `644` without the zero is the decimal number 644, which gives the file permissions you did not want. [Part 7](/guides/introduction-to-ansible/07-templates-and-files) shows the result.
+
+## Step 3: Test the Result
+
+A playbook that finishes without errors has not proved that the site works. Add checks that run from the control node, the way a user reaches the site. `post_tasks` run after the main tasks:
+
+```yaml
+---
+- name: Set up the web servers
+  hosts: web
+  become: true
+
+  vars:
+    site_owner: Platform team
+
+  pre_tasks:
+    - name: Stop on systems this playbook does not support
+      ansible.builtin.assert:
+        that: ansible_facts['os_family'] == "Debian"
+        fail_msg: This playbook supports Debian and Ubuntu only.
+      tags: always
+
+  tasks:
+    - name: Install nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+      tags: packages
+
+    - name: Publish the home page
+      ansible.builtin.copy:
+        content: |
+          <h1>Hello from {{ inventory_hostname }}</h1>
+          <p>Run by {{ site_owner }}. Managed by Ansible.</p>
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+      tags: page
+
+    - name: Start nginx and enable it at boot
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
 
   post_tasks:
-    - name: Run final verification
-      uri:
-        url: 'http://{{ ansible_default_ipv4.address }}'
-        return_content: yes
-      register: final_check
+    - name: Fetch the home page from the control node
+      ansible.builtin.uri:
+        url: 'http://{{ ansible_host }}/'
+        return_content: true
+      register: home_page
+      delegate_to: localhost
+      become: false
+      check_mode: false # a GET changes nothing, so it also runs with --check
 
-    - name: Confirm deployment
-      debug:
-        msg: 'Deployment complete. Server is responding correctly.'
-      when: final_check.status == 200
+    - name: Check that the page names the host
+      ansible.builtin.assert:
+        that: ('<h1>Hello from ' ~ inventory_hostname ~ '</h1>') in home_page.content
+        fail_msg: '{{ ansible_host }} did not serve its own page'
 ```
 
-## Running and Testing Your Playbook
+What is new:
 
-Execute your playbook with additional options for better output:
+- **`pre_tasks`** run before `tasks`. The `assert` stops the play early on a system the playbook was not written for, instead of failing halfway through with a confusing `apt` error.
+- **`delegate_to: localhost`** runs the `uri` task on the control node, but with the variables of the current host, so `{{ ansible_host }}` is `192.168.56.11` for `web1` and `192.168.56.12` for `web2`. `become: false` is needed because the play sets `become: true`, and the control node has no reason to use `sudo`.
+- **`register`** stores a task's result in a variable (`home_page`), and the next task checks that its `content` has this host's heading.
+- **`check_mode: false`** lets the `uri` task run even during a `--check` run. Ansible cannot know whether `uri` would change something, so it skips the module in check mode, and the `assert` would then have no page to check. A `GET` request changes nothing, so it is safe to run.
+- **`tags`** label tasks so you can run a subset later.
 
 ```bash
-# Run with verbose output to see detailed information
-ansible-playbook web-setup.yml -v
-
-# Run in check mode to see what would change
-ansible-playbook web-setup.yml --check
-
-# Run and limit to specific hosts
-ansible-playbook web-setup.yml --limit web1
-
-# Run with step-by-step confirmation
-ansible-playbook web-setup.yml --step
+ansible-playbook web.yml
 ```
 
-The `--step` option asks for confirmation before each task, useful for testing or when you want to carefully control execution.
+```text
+PLAY [Set up the web servers] **************************************************
 
-## Troubleshooting Common Issues
+TASK [Gathering Facts] *********************************************************
+ok: [web1]
+ok: [web2]
 
-When playbooks don't work as expected, use these debugging techniques:
+TASK [Stop on systems this playbook does not support] **************************
+ok: [web1] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+ok: [web2] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
 
-### Adding Debug Output
+TASK [Install nginx] ***********************************************************
+ok: [web1]
+ok: [web2]
 
-Insert debug tasks to inspect variables:
+TASK [Publish the home page] ***************************************************
+ok: [web1]
+ok: [web2]
+
+TASK [Start nginx and enable it at boot] ***************************************
+ok: [web1]
+ok: [web2]
+
+TASK [Fetch the home page from the control node] *******************************
+ok: [web2 -> localhost]
+ok: [web1 -> localhost]
+
+TASK [Check that the page names the host] **************************************
+ok: [web1] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+ok: [web2] => {
+    "changed": false,
+    "msg": "All assertions passed"
+}
+
+PLAY RECAP *********************************************************************
+web1                       : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+web2                       : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+```
+
+`changed=0` on both hosts: the servers were already right, and the new checks passed. This is the full playbook for now. In later parts it gets a template, handlers and a role, but the structure stays the same.
+
+## Run Part of a Playbook
+
+As a playbook grows, you often want to run only some of it.
+
+```terminal
+{
+  "title": "limit, tags and task lists",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "only on web2",
+      "cmd": "ansible-playbook web.yml --limit web2 | tail -n 3",
+      "output": "PLAY RECAP *********************************************************************\nweb2                       : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0"
+    },
+    {
+      "comment": "which tags exist",
+      "cmd": "ansible-playbook web.yml --list-tags",
+      "output": "playbook: web.yml\n\n  play #1 (web): Set up the web servers\tTAGS: []\n      TASK TAGS: [always, packages, page]"
+    },
+    {
+      "comment": "only tasks tagged page (plus the ones tagged always)",
+      "cmd": "ansible-playbook web.yml --tags page",
+      "output": "PLAY [Set up the web servers] **************************************************\n\nTASK [Gathering Facts] *********************************************************\nok: [web2]\nok: [web1]\n\nTASK [Stop on systems this playbook does not support] **************************\nok: [web1] => {\n    \"changed\": false,\n    \"msg\": \"All assertions passed\"\n}\nok: [web2] => {\n    \"changed\": false,\n    \"msg\": \"All assertions passed\"\n}\n\nTASK [Publish the home page] ***************************************************\nok: [web2]\nok: [web1]\n\nPLAY RECAP *********************************************************************\nweb1                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\nweb2                       : ok=3    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0"
+    }
+  ]
+}
+```
+
+`--tags page` ran the page task and the `assert`, which is tagged `always`; untagged tasks were left out. The opposite is `--skip-tags`. Two more options help while you develop a playbook: `--start-at-task "Publish the home page"` starts at a named task, and `--step` asks before each task whether to run it.
+
+## Conditions with when
+
+A task with `when` runs only on hosts where the expression is true. The expression is plain Jinja2, without `{{ }}`. Facts make common conditions short. Save this as `conditions.yml`:
 
 ```yaml
-- name: Debug system information
-  debug:
-    var: ansible_facts
-  when: debug_mode is defined
+---
+- name: Conditions and loops
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install htop on Debian and Ubuntu
+      ansible.builtin.apt:
+        name: htop
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Install htop on Fedora, RHEL and similar
+      ansible.builtin.dnf:
+        name: htop
+        state: present
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Warn about small servers
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} has only {{ ansible_facts['memtotal_mb'] }} MB of memory"
+      when: ansible_facts['memtotal_mb'] < 1024
+
+    - name: Show a few facts
+      ansible.builtin.debug:
+        msg: '{{ item }} = {{ ansible_facts[item] }}'
+      loop:
+        - distribution_release
+        - processor_vcpus
+        - kernel
+      when: inventory_hostname == "web1"
 ```
 
-Run with: `ansible-playbook web-setup.yml -e debug_mode=true`
+```bash
+ansible-playbook conditions.yml
+```
 
-### Using Tags for Selective Execution
+```text
+PLAY [Conditions and loops] ****************************************************
 
-Add tags to run only specific parts of your playbook:
+TASK [Gathering Facts] *********************************************************
+ok: [web2]
+ok: [web1]
+
+TASK [Install htop on Debian and Ubuntu] ***************************************
+changed: [web1]
+changed: [web2]
+
+TASK [Install htop on Fedora, RHEL and similar] ********************************
+skipping: [web1]
+skipping: [web2]
+
+TASK [Warn about small servers] ************************************************
+ok: [web1] => {
+    "msg": "web1 has only 445 MB of memory"
+}
+ok: [web2] => {
+    "msg": "web2 has only 445 MB of memory"
+}
+
+TASK [Show a few facts] ********************************************************
+skipping: [web2] => (item=distribution_release)
+ok: [web1] => (item=distribution_release) => {
+    "msg": "distribution_release = noble"
+}
+skipping: [web2] => (item=processor_vcpus)
+skipping: [web2] => (item=kernel)
+skipping: [web2]
+ok: [web1] => (item=processor_vcpus) => {
+    "msg": "processor_vcpus = 1"
+}
+ok: [web1] => (item=kernel) => {
+    "msg": "kernel = 6.8.0-147-generic"
+}
+
+PLAY RECAP *********************************************************************
+web1                       : ok=4    changed=1    unreachable=0    failed=0    skipped=1    rescued=0    ignored=0
+web2                       : ok=3    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0
+```
+
+The `dnf` task shows `skipping` on both Ubuntu hosts. The last task shows how `loop` and `when` combine: the condition is checked for every item, which is why `web2` skips each item separately.
+
+### Conditions must be booleans
+
+Since ansible-core 2.19, a condition must produce `true` or `false`. Older versions accepted any "truthy" value, which hid real bugs: the string `"false"` is truthy, so this task ran even though the variable says not to.
 
 ```yaml
-- name: Install packages
-  package:
-    name: nginx
-    state: present
-  tags:
-    - packages
-    - install
+---
+- name: A broken condition
+  hosts: web1
+  gather_facts: false
+  vars:
+    install_extras: 'false' # a string, for example from -e install_extras=false
 
-- name: Configure firewall
-  ufw:
-    rule: allow
-    port: 80
-  tags:
-    - security
-    - firewall
+  tasks:
+    - name: Install extra tools
+      ansible.builtin.debug:
+        msg: Installing extras
+      when: install_extras
 ```
 
-Run only firewall tasks: `ansible-playbook web-setup.yml --tags firewall`
+```bash
+ansible-playbook broken.yml
+```
 
-### Handling Task Failures
+```text
+11         msg: Installing extras
+12       when: install_extras
+               ^ column 13
+<<< caused by >>>
+Conditional result (True) was derived from value of type 'str' at '/home/dev/webfleet/broken.yml:6:21'. Conditionals must have a boolean result.
+Origin: /home/dev/webfleet/broken.yml:12:13
+10       ansible.builtin.debug:
+11         msg: Installing extras
+12       when: install_extras
+               ^ column 13
+Broken conditionals can be temporarily allowed with the `ALLOW_BROKEN_CONDITIONALS` configuration option.
+fatal: [web1]: FAILED! => {"msg": "Task failed: A 'when' expression failed: Conditional result (True) was derived from value of type 'str' at '/home/dev/webfleet/broken.yml:6:21'. Conditionals must have a boolean result."}
+```
 
-Some tasks might fail in ways you can recover from:
+The error names the file, line and column where the string came from. Convert the value explicitly with the `bool` filter, which understands `"false"`, `"no"`, `"0"` and their opposites:
 
 ```yaml
-- name: Attempt to install optional package
-  package:
-    name: htop
-    state: present
-  ignore_errors: yes
-  register: htop_install
-
-- name: Report optional package status
-  debug:
-    msg: "htop installation: {{ 'successful' if htop_install.failed == false else 'failed (not critical)' }}"
+when: install_extras | bool
 ```
 
-The `ignore_errors: yes` directive continues playbook execution even if the task fails.
+Other conditions that 2.19 and later reject: a template inside `when` (`when: "{{ x }} == 1"`; write `when: x == 1`), and a bare list or string (`when: my_list`; write `when: my_list | length > 0`). If an older project fails after an upgrade, the `ALLOW_BROKEN_CONDITIONALS` setting turns these errors into warnings while you fix them, but treat it as temporary.
 
-## Next Steps
+## Loops
 
-You've built a comprehensive playbook that demonstrates many of Ansible's powerful features. This playbook includes validation, error handling, cross-platform support, and verification - patterns you'll use in production automation.
+`loop` repeats a task for each item of a list, and `{{ item }}` holds the current one. A list of dictionaries lets each item carry several values:
 
-In the next section, we'll explore how to organize multiple servers using inventory files, groups, and variables. You'll learn to manage different environments and scale your automation across larger infrastructures.
+```yaml
+- name: Create the site directories
+  ansible.builtin.file:
+    path: '{{ item.path }}'
+    state: directory
+    mode: '{{ item.mode }}'
+  loop:
+    - { path: /srv/webfleet, mode: '0755' }
+    - { path: /srv/webfleet/uploads, mode: '0750' }
+```
 
-The structured approach you've learned here - planning, implementing with error handling, and thorough testing - will serve you well as we tackle more complex scenarios.
+Before you loop, check whether the module takes a list itself. `ansible.builtin.apt` does, and `name: [nginx, htop, tree]` installs all three in one `apt` transaction, which is much faster than three tasks. Older playbooks use `with_items` and other `with_*` keywords; they still work, but `loop` is the current form.
 
-Happy configuring!
+## Handle Errors
+
+By default, a failed task stops that host for the rest of the play, while the other hosts continue. You have four tools to change that.
+
+**`changed_when` and `failed_when`** set the result yourself, which `command` and `shell` tasks need:
+
+```yaml
+- name: Read the nginx version
+  ansible.builtin.command: nginx -v
+  register: nginx_version
+  changed_when: false # reading something never changes the host
+```
+
+**`creates` and `removes`** make a command idempotent by checking a file first: `ansible.builtin.command: tar xf app.tar.gz` with `creates: /opt/app/bin/app` runs only while that file is missing.
+
+**`ignore_errors: true`** lets the play continue after a failure. It hides problems, so use it only for tasks that are really optional, and prefer `failed_when` with a precise condition.
+
+**`block`, `rescue` and `always`** work like try, catch and finally. Save this as `errors.yml`:
+
+```yaml
+---
+- name: Error handling
+  hosts: web1
+  gather_facts: false
+
+  tasks:
+    - name: Fetch a page, recover if it fails
+      block:
+        - name: Fetch a page that does not exist
+          ansible.builtin.uri:
+            url: 'http://{{ ansible_host }}/missing'
+          delegate_to: localhost
+      rescue:
+        - name: Report what failed
+          ansible.builtin.debug:
+            msg: '{{ ansible_failed_task.name }} failed with HTTP {{ ansible_failed_result.status }}'
+      always:
+        - name: Runs whether the block failed or not
+          ansible.builtin.debug:
+            msg: Done
+```
+
+```bash
+ansible-playbook errors.yml
+```
+
+```text
+PLAY [Error handling] **********************************************************
+TASK [Fetch a page that does not exist] ****************************************
+[ERROR]: Task failed: Module failed: Status code was 404 and not [200]: HTTP Error 404: Not Found
+Origin: /home/dev/webfleet/errors.yml:9:11
+7     - name: Fetch a page, recover if it fails
+8       block:
+9         - name: Fetch a page that does not exist
+            ^ column 11
+fatal: [web1 -> localhost]: FAILED! => {"changed": false, "connection": "close", "content_length": "162", "content_type": "text/html", "date": "Sat, 24 Oct 2026 03:35:46 GMT", "elapsed": 0, "msg": "Status code was 404 and not [200]: HTTP Error 404: Not Found", "redirected": false, "server": "nginx/1.24.0 (Ubuntu)", "status": 404, "url": "http://192.168.56.11/missing"}
+TASK [Report what failed] ******************************************************
+ok: [web1] => {
+    "msg": "Fetch a page that does not exist failed with HTTP 404"
+}
+TASK [Runs whether the block failed or not] ************************************
+ok: [web1] => {
+    "msg": "Done"
+}
+PLAY RECAP *********************************************************************
+web1                       : ok=2    changed=0    unreachable=0    failed=0    skipped=0    rescued=1    ignored=0
+```
+
+The failed task still prints its error, but `rescue` handled it, so the recap shows `failed=0` and `rescued=1`. Inside `rescue`, `ansible_failed_task` and `ansible_failed_result` describe what went wrong.
+
+The three playbooks in this section were demonstrations, not part of the project. Delete them:
+
+```bash
+rm conditions.yml broken.yml errors.yml
+```
+
+## Common Mistakes
+
+- **Testing only that the playbook finished.** Check the result, as the `uri` and `assert` tasks do here.
+- **Using `{{ }}` in `when`, or non-boolean conditions.** Both are errors since ansible-core 2.19.
+- **`become: true` on a task delegated to `localhost`.** It tries `sudo` on your control node; set `become: false` there.
+- **Unquoted file modes.** Write `mode: "0644"`.
+- **`ignore_errors` everywhere.** A playbook that cannot fail cannot tell you that something is broken.
+
+## Summary
+
+- Build playbooks in small steps and run them after each step: `changed` should appear once and then turn into `ok`.
+- `pre_tasks` and `post_tasks` are the places for checks before and tests after the real work.
+- `delegate_to: localhost` runs a task on the control node with the current host's variables.
+- `when` takes a plain expression that must be a boolean; `loop` repeats a task over a list.
+- `--limit`, `--tags`, `--start-at-task` and `--step` run part of a playbook; `block`/`rescue`/`always` handle failures.
+
+In [Part 4](/guides/introduction-to-ansible/04-working-with-inventory) you move the inventory to YAML, add groups for environments, and give each group and host its own variables.
+
+## Keep Learning
+
+- [Complete Web Server Automation with Ansible](/exercises/ansible-web-server-automation), a hands-on exercise
+- [Ansible Configuration Management Quiz](/quizzes/ansible-quiz)

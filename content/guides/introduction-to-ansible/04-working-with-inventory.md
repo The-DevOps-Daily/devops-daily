@@ -1,460 +1,314 @@
 ---
-title: 'Working with Inventory'
-description: 'Learn to organize and manage multiple servers using Ansible inventory files, groups, and host-specific configurations.'
+title: 'Ansible Inventory: Hosts, Groups, Variables and Patterns'
+description: 'Write Ansible inventories in INI and YAML, group hosts by role and environment, set group_vars and host_vars, and target hosts with patterns.'
 order: 4
 ---
 
-As your infrastructure grows, manually listing servers in ad-hoc commands becomes impractical. Ansible's inventory system provides a structured way to organize hosts, define groups, and manage different environments. You'll learn to create flexible inventory configurations that scale from a few servers to hundreds.
+The inventory tells Ansible which machines exist, how to reach them, how they are grouped, and which variables belong to each. A good inventory makes playbooks simple: the playbook says "configure the web servers", and the inventory decides which servers those are in staging and in production. In this part you move the project's inventory to YAML in its own directory, add group and host variables, and learn the host patterns that pick the machines a command runs on.
 
-## Understanding Inventory Structure
+## Prerequisites
 
-Inventory files define which servers Ansible manages and how to connect to them. You can organize hosts into logical groups, set connection parameters, and define variables that apply to specific hosts or groups.
+- The `~/webfleet` project with `web.yml` from [Part 3](/guides/introduction-to-ansible/03-writing-your-first-playbook).
 
-### Basic Inventory Formats
+## INI and YAML Inventories
 
-Ansible supports both INI and YAML inventory formats. Let's start with INI format since it's more commonly used:
-
-```ini
-# Basic inventory.ini
-[webservers]
-web1.example.com
-web2.example.com
-web3.example.com
-
-[databases]
-db1.example.com
-db2.example.com
-
-[monitoring]
-monitor.example.com
-```
-
-This creates three groups: `webservers`, `databases`, and `monitoring`. Each group contains one or more hosts.
-
-### Adding Connection Details
-
-Real servers need connection information. Add these details to your inventory:
+Ansible reads several inventory formats through **inventory plugins**. The two you write by hand are INI and YAML. This is the INI file from Part 1:
 
 ```ini
-[webservers]
-web1 ansible_host=192.168.1.10 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/web_key
-web2 ansible_host=192.168.1.11 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/web_key
-web3 ansible_host=192.168.1.12 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/web_key
+[web]
+web1 ansible_host=192.168.56.11
+web2 ansible_host=192.168.56.12
 
-[databases]
-db-primary ansible_host=192.168.1.20 ansible_user=postgres ansible_port=2222
-db-replica ansible_host=192.168.1.21 ansible_user=postgres ansible_port=2222
-
-[loadbalancers]
-lb1 ansible_host=10.0.1.5 ansible_user=admin
+[web:vars]
+ansible_user=ubuntu
+ansible_python_interpreter=/usr/bin/python3
 ```
 
-Here's what these parameters do:
-
-- `ansible_host`: The actual IP address or hostname to connect to
-- `ansible_user`: SSH username for connections
-- `ansible_ssh_private_key_file`: Path to SSH private key
-- `ansible_port`: SSH port (default is 22)
-
-Using aliases (like `web1`, `db-primary`) makes your playbooks more readable than using IP addresses directly.
-
-## Group Variables and Host Variables
-
-Rather than repeating connection details, use variables to set common parameters for groups or individual hosts.
-
-### Group Variables
-
-Create a `group_vars` directory and add YAML files named after your groups:
+`ansible-inventory` prints any inventory in another format, which is a quick way to convert one:
 
 ```bash
-mkdir -p group_vars
+ansible-inventory -i inventory.ini --list --yaml
 ```
 
-Create `group_vars/webservers.yml`:
+```text
+all:
+  children:
+    web:
+      hosts:
+        web1:
+          ansible_host: 192.168.56.11
+          ansible_python_interpreter: /usr/bin/python3
+          ansible_user: ubuntu
+        web2:
+          ansible_host: 192.168.56.12
+          ansible_python_interpreter: /usr/bin/python3
+          ansible_user: ubuntu
+```
+
+The output puts the variables on each host, because that is how Ansible sees them after merging. When you write the file yourself, keep shared values on the group. Prefer YAML for anything beyond a few hosts: it has real data types and nests cleanly. In INI, values in a `[group:vars]` section are always strings, so `debug=false` there is the string `"false"`, which is exactly the kind of value that breaks a condition ([Part 3](/guides/introduction-to-ansible/03-writing-your-first-playbook#h3-conditions-must-be-booleans)).
+
+## Move the Inventory into Its Own Directory
+
+Variables do not belong in the host list. Ansible loads them automatically from two directories next to the inventory file:
+
+- `group_vars/<group>.yml` (or a directory `group_vars/<group>/` with several files) for every host in that group;
+- `host_vars/<host>.yml` for one host.
+
+Create this layout:
+
+```text
+webfleet/
+├── ansible.cfg
+├── inventory/
+│   ├── hosts.yml
+│   ├── group_vars/
+│   │   ├── all.yml
+│   │   └── web.yml
+│   └── host_vars/
+│       └── web2.yml
+└── web.yml
+```
+
+The host list, `inventory/hosts.yml`:
+
+```yaml
+---
+all:
+  children:
+    web:
+      hosts:
+        web1:
+          ansible_host: 192.168.56.11
+        web2:
+          ansible_host: 192.168.56.12
+    production:
+      children:
+        web:
+```
+
+`web` groups the hosts by what they do; `production` groups them by environment and contains the whole `web` group as a **child group**. Later you can add a `db` group under `production` without touching `web`.
+
+Connection settings for every host go to `inventory/group_vars/all.yml`:
 
 ```yaml
 ---
 ansible_user: ubuntu
-ansible_ssh_private_key_file: ~/.ssh/web_servers_key
-web_port: 80
-nginx_worker_processes: 2
-ssl_enabled: false
+ansible_python_interpreter: /usr/bin/python3
 ```
 
-Create `group_vars/databases.yml`:
+The site owner moves from the play into `inventory/group_vars/web.yml`, because it describes the web servers, not the playbook:
 
 ```yaml
 ---
-ansible_user: postgres
-ansible_port: 2222
-db_port: 5432
-max_connections: 100
-shared_buffers: 256MB
+site_owner: Platform team
 ```
 
-Now your inventory becomes much cleaner:
-
-```ini
-[webservers]
-web1 ansible_host=192.168.1.10
-web2 ansible_host=192.168.1.11
-web3 ansible_host=192.168.1.12
-
-[databases]
-db-primary ansible_host=192.168.1.20
-db-replica ansible_host=192.168.1.21
-```
-
-### Host Variables
-
-For host-specific settings, create a `host_vars` directory:
-
-```bash
-mkdir -p host_vars
-```
-
-Create `host_vars/db-primary.yml`:
+And `web2` gets its own value in `inventory/host_vars/web2.yml`, because it is the canary that receives changes first:
 
 ```yaml
 ---
-db_role: primary
-backup_enabled: true
-replication_user: replicator
+site_owner: Platform team (canary)
 ```
 
-Create `host_vars/db-replica.yml`:
-
-```yaml
----
-db_role: replica
-backup_enabled: false
-primary_host: db-primary
-```
-
-These variables are automatically available in playbooks when targeting the specific hosts.
-
-## Creating Group Hierarchies
-
-Groups can contain other groups, creating hierarchies that make management easier.
-
-### Parent and Child Groups
+Point `ansible.cfg` at the new file, and delete `inventory.ini`:
 
 ```ini
-[webservers]
-web1 ansible_host=192.168.1.10
-web2 ansible_host=192.168.1.11
-
-[api_servers]
-api1 ansible_host=192.168.1.15
-api2 ansible_host=192.168.1.16
-
-[databases]
-db1 ansible_host=192.168.1.20
-db2 ansible_host=192.168.1.21
-
-# Create parent groups
-[frontend:children]
-webservers
-
-[backend:children]
-api_servers
-databases
-
-[production:children]
-frontend
-backend
+[defaults]
+inventory = inventory/hosts.yml
 ```
 
-Now you can target different levels:
+Finally, remove the `vars:` block with `site_owner` from `web.yml`. A variable set in the play would win over the inventory, as [Part 5](/guides/introduction-to-ansible/05-variables-and-facts) explains.
 
-- `ansible all -m ping`: All hosts
-- `ansible frontend -m shell -a "uptime"`: Just web servers
-- `ansible backend -m shell -a "df -h"`: API servers and databases
-- `ansible production -m setup`: Everything in production
+## Check What Ansible Sees
 
-### Environment Separation
+Before you run anything against a changed inventory, look at it:
 
-Organize different environments using group hierarchies:
-
-```ini
-[web-prod]
-web-prod-1 ansible_host=10.0.1.10
-web-prod-2 ansible_host=10.0.1.11
-
-[web-staging]
-web-staging-1 ansible_host=10.0.2.10
-
-[web-dev]
-web-dev-1 ansible_host=192.168.1.10
-
-[db-prod]
-db-prod-primary ansible_host=10.0.1.20
-db-prod-replica ansible_host=10.0.1.21
-
-[db-staging]
-db-staging-1 ansible_host=10.0.2.20
-
-# Environment groupings
-[production:children]
-web-prod
-db-prod
-
-[staging:children]
-web-staging
-db-staging
-
-[development:children]
-web-dev
+```terminal
+{
+  "title": "inspect the inventory",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ansible-inventory --graph",
+      "output": "@all:\n  |--@ungrouped:\n  |--@web:\n  |  |--web1\n  |  |--web2\n  |--@production:\n  |  |--@web:\n  |  |  |--web1\n  |  |  |--web2"
+    },
+    {
+      "comment": "all variables of one host, after merging group and host variables",
+      "cmd": "ansible-inventory --host web2",
+      "output": "{\n    \"ansible_host\": \"192.168.56.12\",\n    \"ansible_python_interpreter\": \"/usr/bin/python3\",\n    \"ansible_user\": \"ubuntu\",\n    \"site_owner\": \"Platform team (canary)\"\n}"
+    },
+    {
+      "comment": "the same graph with each host's variables",
+      "cmd": "ansible-inventory --graph --vars web",
+      "output": "@web:\n  |--web1\n  |  |--{ansible_host = 192.168.56.11}\n  |  |--{ansible_python_interpreter = /usr/bin/python3}\n  |  |--{ansible_user = ubuntu}\n  |  |--{site_owner = Platform team}\n  |--web2\n  |  |--{ansible_host = 192.168.56.12}\n  |  |--{ansible_python_interpreter = /usr/bin/python3}\n  |  |--{ansible_user = ubuntu}\n  |  |--{site_owner = Platform team (canary)}\n  |--{site_owner = Platform team}"
+    }
+  ]
+}
 ```
 
-Create corresponding variable files for each environment in `group_vars/`:
+Every inventory has two implicit groups: `all`, which contains every host, and `ungrouped`, for hosts that are in no other group. `--host` shows that `web2` got its `site_owner` from `host_vars`, which wins over the group value.
 
-`group_vars/production.yml`:
-
-```yaml
----
-environment: production
-log_level: warn
-debug_mode: false
-ssl_required: true
-backup_retention_days: 30
-```
-
-`group_vars/staging.yml`:
-
-```yaml
----
-environment: staging
-log_level: info
-debug_mode: true
-ssl_required: false
-backup_retention_days: 7
-```
-
-## Dynamic Ranges and Patterns
-
-For large numbers of similar hosts, use patterns to avoid repetitive definitions:
-
-```ini
-[webservers]
-web[01:05].prod.example.com
-
-[databases]
-db[a:c].prod.example.com ansible_user=postgres
-
-[workers]
-worker-[001:100].example.com
-```
-
-This creates:
-
-- `web01.prod.example.com` through `web05.prod.example.com`
-- `dba.prod.example.com`, `dbb.prod.example.com`, `dbc.prod.example.com`
-- `worker-001.example.com` through `worker-100.example.com`
-
-## Advanced Inventory Techniques
-
-### Multiple Inventory Files
-
-Split large inventories across multiple files for better organization:
+Now run the playbook. Only `web2` changes, because only its variable is new:
 
 ```bash
-inventories/
-├── production/
-│   ├── hosts.ini
-│   └── group_vars/
-│       ├── webservers.yml
-│       └── databases.yml
-└── staging/
-    ├── hosts.ini
-    └── group_vars/
-        ├── webservers.yml
-        └── databases.yml
+ansible-playbook web.yml
 ```
 
-Specify the inventory directory when running playbooks:
+```text
+TASK [Publish the home page] ***************************************************
+ok: [web1]
+changed: [web2]
 
-```bash
-ansible-playbook -i inventories/production/ web-setup.yml
-ansible-playbook -i inventories/staging/ web-setup.yml
+PLAY RECAP *********************************************************************
+web1                       : ok=7    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+web2                       : ok=7    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
-### Using YAML Inventory Format
+## Host Patterns
 
-For complex inventories, YAML format offers more flexibility:
+The first argument of `ansible`, and the `hosts:` line of a play, is a **pattern**. `--list-hosts` shows what a pattern matches without connecting to anything:
 
-```yaml
-# inventory.yml
-all:
-  children:
-    webservers:
-      hosts:
-        web1:
-          ansible_host: 192.168.1.10
-          nginx_worker_processes: 4
-        web2:
-          ansible_host: 192.168.1.11
-          nginx_worker_processes: 2
-      vars:
-        ansible_user: ubuntu
-        web_port: 80
-
-    databases:
-      hosts:
-        db-primary:
-          ansible_host: 192.168.1.20
-          db_role: primary
-        db-replica:
-          ansible_host: 192.168.1.21
-          db_role: replica
-      vars:
-        ansible_user: postgres
-        db_port: 5432
-
-    production:
-      children:
-        webservers:
-        databases:
-      vars:
-        environment: prod
-        ssl_enabled: true
+```terminal
+{
+  "title": "host patterns",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "a group",
+      "cmd": "ansible web --list-hosts",
+      "output": "  hosts (2):\n    web1\n    web2"
+    },
+    {
+      "comment": "a group minus a host",
+      "cmd": "ansible 'web:!web2' --list-hosts",
+      "output": "  hosts (1):\n    web1"
+    },
+    {
+      "comment": "hosts in both groups",
+      "cmd": "ansible 'web:&production' --list-hosts",
+      "output": "  hosts (2):\n    web1\n    web2"
+    },
+    {
+      "comment": "the first host of a group",
+      "cmd": "ansible 'web[0]' --list-hosts",
+      "output": "  hosts (1):\n    web1"
+    },
+    {
+      "comment": "a regular expression starts with ~",
+      "cmd": "ansible '~web[12]' --list-hosts",
+      "output": "  hosts (2):\n    web1\n    web2"
+    }
+  ]
+}
 ```
 
-### Local Connections
+The patterns combine: `web:db` (union), `web:&production` (intersection) and `web:!web2` (exclusion). Quote them in the shell, because `!` and `&` mean something to it. `ansible-playbook --limit` takes the same patterns, and the playbook's `hosts:` line and `--limit` are intersected, so `--limit web2` can only ever narrow a run.
 
-For tasks that run on your control machine, add it to inventory:
+## Ranges and Larger Inventories
+
+For many similar hosts, use ranges. This file is an example only; the hosts do not exist, which `ansible-inventory` does not need:
 
 ```ini
-[control]
-localhost ansible_connection=local
-
-[webservers]
-web1 ansible_host=192.168.1.10
-web2 ansible_host=192.168.1.11
-```
-
-This lets you run tasks locally (like generating configuration files) as part of your playbooks:
-
-```yaml
-- name: Generate deployment report
-  hosts: control
-  tasks:
-    - name: Create deployment summary
-      copy:
-        content: |
-          Deployment completed at {{ ansible_date_time.iso8601 }}
-          Hosts updated: {{ groups['webservers'] | length }}
-        dest: ./deployment-report.txt
-```
-
-## Testing Your Inventory
-
-Before running playbooks, verify your inventory configuration:
-
-```bash
-# List all hosts
-ansible-inventory --list
-
-# List hosts in specific group
-ansible-inventory --list --limit webservers
-
-# Show host variables
-ansible-inventory --host web1
-
-# Graph group relationships
-ansible-inventory --graph
-```
-
-Test connectivity to different groups:
-
-```bash
-# Test all hosts
-ansible all -m ping
-
-# Test specific environment
-ansible production -m ping
-
-# Test specific group
-ansible webservers -m ping
-```
-
-## Practical Example: Multi-Environment Setup
-
-Here's a complete example showing how to structure inventory for multiple environments:
-
-```ini
-# inventories/production/hosts.ini
-[web-servers]
-web-prod-1 ansible_host=10.0.1.10
-web-prod-2 ansible_host=10.0.1.11
-web-prod-3 ansible_host=10.0.1.12
-
-[api-servers]
-api-prod-1 ansible_host=10.0.1.15
-api-prod-2 ansible_host=10.0.1.16
+[web]
+web[01:03].example.com
 
 [db-servers]
-db-prod-primary ansible_host=10.0.1.20
-db-prod-replica1 ansible_host=10.0.1.21
-db-prod-replica2 ansible_host=10.0.1.22
-
-[load-balancers]
-lb-prod-1 ansible_host=10.0.1.5
-lb-prod-2 ansible_host=10.0.1.6
-
-[frontend:children]
-web-servers
-load-balancers
-
-[backend:children]
-api-servers
-db-servers
+db-[a:b].example.com
 
 [production:children]
-frontend
-backend
+web
+db-servers
 ```
 
-Corresponding playbook that uses this structure:
-
-```yaml
----
-- name: Deploy frontend components
-  hosts: frontend
-  become: yes
-  tasks:
-    - name: Update frontend applications
-      git:
-        repo: '{{ app_repository }}'
-        dest: '{{ app_directory }}'
-        version: '{{ app_version }}'
-      when: inventory_hostname in groups['web-servers']
-
-- name: Configure load balancers
-  hosts: load-balancers
-  become: yes
-  tasks:
-    - name: Update upstream servers
-      template:
-        src: upstream.conf.j2
-        dest: /etc/nginx/conf.d/upstream.conf
-      notify: reload nginx
-
-- name: Database maintenance
-  hosts: db-servers
-  become: yes
-  tasks:
-    - name: Run database backups
-      shell: pg_dump {{ database_name }} | gzip > /backups/{{ inventory_hostname }}-{{ ansible_date_time.date }}.sql.gz
-      when: backup_enabled | default(false)
+```bash
+ansible-inventory -i examples/ranges.ini --graph
 ```
 
-## Next Steps
+```text
+[WARNING]: Invalid characters were found in group names but not replaced, use -vvvv to see details
+@all:
+  |--@ungrouped:
+  |--@production:
+  |  |--@web:
+  |  |  |--web01.example.com
+  |  |  |--web02.example.com
+  |  |  |--web03.example.com
+  |  |--@db-servers:
+  |  |  |--db-a.example.com
+  |  |  |--db-b.example.com
+```
 
-You now understand how to organize hosts using Ansible inventory files, create group hierarchies, and manage variables across different environments. This foundation lets you scale your automation from single servers to complex multi-environment infrastructures.
+`[01:03]` keeps the leading zero, and `[a:b]` works with letters. Note the warning: a group name with a dash is accepted, but it cannot be used as a variable name in templates (`groups.db-servers` is a subtraction to Jinja2). Use underscores in group names: `db_servers`. The file was only an example; delete it with `rm -r examples`.
 
-In the next section, we'll dive deeper into variables and facts - how to make your playbooks flexible and responsive to different system configurations and environments.
+## Separate Environments
 
-The inventory patterns you've learned here will support increasingly sophisticated automation as your infrastructure grows and your playbooks become more complex.
+Keep each environment in its own inventory, so that a run against staging cannot touch production by accident:
 
-Happy organizing!
+```text
+inventories/
+├── staging/
+│   ├── hosts.yml
+│   └── group_vars/
+│       └── web.yml
+└── production/
+    ├── hosts.yml
+    └── group_vars/
+        └── web.yml
+```
+
+Both inventories use the same group names (`web`, `db`), so the same playbook runs against either, and the environment is chosen on the command line:
+
+```bash
+ansible-playbook -i inventories/staging web.yml
+ansible-playbook -i inventories/production web.yml
+```
+
+Do not set a default inventory in `ansible.cfg` when production is one of the choices; make every run name its target. This guide keeps one inventory because the lab has one environment.
+
+## Connection Variables
+
+These variables control how Ansible reaches a host. Set them on a host, or on a group to apply them to many:
+
+| Variable                                | Meaning                               | Example                                             |
+| --------------------------------------- | ------------------------------------- | --------------------------------------------------- |
+| `ansible_host`                          | Address to connect to                 | `192.168.56.11`                                     |
+| `ansible_port`                          | SSH port                              | `2222`                                              |
+| `ansible_user`                          | Login user                            | `ubuntu`                                            |
+| `ansible_ssh_private_key_file`          | Key for this host                     | `~/.ssh/web_ed25519`                                |
+| `ansible_python_interpreter`            | Python on the host                    | `/usr/bin/python3`                                  |
+| `ansible_become`, `ansible_become_user` | Use privilege escalation, and as whom | `true`, `postgres`                                  |
+| `ansible_connection`                    | Connection plugin                     | `ssh` (default), `local`, `community.docker.docker` |
+| `ansible_ssh_common_args`               | Extra SSH options                     | `-o ProxyJump=ubuntu@bastion.example.com`           |
+
+For servers behind a bastion host, set `ansible_ssh_common_args` with `ProxyJump` on their group, or put a `Host` block with `ProxyJump` in `~/.ssh/config`. Ansible uses your SSH configuration, so both work.
+
+Ansible also has an implicit `localhost` for the control node, which runs tasks without SSH. If you list `localhost` in the inventory yourself, set `ansible_connection: local` on it, or Ansible tries to SSH to your own machine.
+
+## Dynamic Inventories
+
+When hosts come and go, a static file goes stale. **Inventory plugins** build the inventory at run time from a cloud API, a CMDB or Terraform state: `amazon.aws.aws_ec2`, `azure.azcollection.azure_rm`, `google.cloud.gcp_compute` and many more. You configure one with a small YAML file instead of a host list. [Part 10](/guides/introduction-to-ansible/10-advanced-features-and-next-steps#h2-dynamic-inventories) shows how they work.
+
+## Common Mistakes
+
+- **Values in INI `[group:vars]` are strings.** Use YAML group variables for numbers and booleans.
+- **A host in two environments.** If `web1` is in both `staging` and `production`, variables from both apply and the result depends on precedence rules. Keep environments in separate inventories.
+- **`-u` loses against the inventory.** `ansible_user` in the inventory wins over `-u` on the command line; use `-e ansible_user=...` to override it for one run.
+- **Dashes in group names.** Use underscores.
+- **Variables in the wrong place.** Values that describe hosts belong in `group_vars` and `host_vars`; values that describe what a playbook does belong in the playbook or a role.
+
+## Summary
+
+- Write inventories in YAML; group hosts by role (`web`) and by environment (`production`) with child groups.
+- Put variables in `group_vars/` and `host_vars/` next to the inventory; host variables win over group variables.
+- `ansible-inventory --graph`, `--host` and `--list` show what Ansible will use before you run anything.
+- Patterns such as `web:!web2` and `web:&production`, with `--limit`, choose which hosts a run touches.
+- Keep one inventory per environment and name it on every run.
+
+In [Part 5](/guides/introduction-to-ansible/05-variables-and-facts) you look at all the places variables come from, the order in which they win, and the facts Ansible collects about each host.
+
+## Keep Learning
+
+- [Configuration Management Basics](/interview-questions/junior/configuration-management-basics), interview questions
+- [Can Terraform Provision On-Premises Servers?](/posts/terraform-on-premises-servers), which pairs Terraform with Ansible

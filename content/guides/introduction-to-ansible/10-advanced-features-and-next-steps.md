@@ -1,759 +1,547 @@
 ---
-title: 'Advanced Features and Next Steps'
-description: 'Explore advanced Ansible capabilities and discover how to continue your automation journey with dynamic inventories, custom modules, and integrations.'
+title: 'Advanced Ansible: Dynamic Inventory, Plugins and Next Steps'
+description: 'Build dynamic inventories, write a custom module and filter plugin, change the output format, build execution environments, and see where AAP and AWX fit.'
 order: 10
 ---
 
-You now have a solid foundation in Ansible automation. This final section explores advanced features that unlock Ansible's full potential and provides guidance for continuing your automation journey. You'll learn about dynamic inventories, custom modules, integration patterns, and how to become part of the broader automation community.
+You can now build and run a real Ansible project. This last part covers the features you reach for when the basics are not enough: inventories that come from an API instead of a file, your own modules and filters, other output formats, and execution environments that package Ansible with its dependencies. It ends with the tools around Ansible, such as Ansible Automation Platform, AWX and Terraform, and with what to learn next.
+
+## Prerequisites
+
+- The `~/webfleet` project from [Part 9](/guides/introduction-to-ansible/09-best-practices-and-production-patterns), with the roles, the vault file and `ANSIBLE_VAULT_PASSWORD_FILE` set.
 
 ## Dynamic Inventories
 
-Static inventory files work well for smaller, stable infrastructures, but cloud environments with frequently changing resources need dynamic approaches.
+A static `hosts.yml` is fine while servers are long-lived. When autoscaling groups, Terraform runs or a CMDB create and remove servers, the inventory has to come from the source of truth at run time. Ansible does that with **inventory plugins**: you write a small YAML file that names the plugin and its options, and pass that file wherever you would pass an inventory.
 
-### Cloud Provider Integration
+### Build groups from variables: constructed
 
-Ansible includes inventory plugins for major cloud providers. Configure AWS dynamic inventory:
+The built-in `ansible.builtin.constructed` plugin adds groups and variables on top of another inventory, using expressions. Save this as `inventory/groups.constructed.yml`:
 
 ```yaml
-# inventories/aws.yml
 ---
-plugin: amazon.aws.aws_ec2
-regions:
-  - us-east-1
-  - us-west-2
+plugin: ansible.builtin.constructed
+strict: true
+use_vars_plugins: true # also see group_vars and host_vars
+groups:
+  canary: "'canary' in webserver_owner"
 keyed_groups:
-  # Group by instance type
-  - key: instance_type
-    prefix: type
-  # Group by environment tag
-  - key: tags.Environment
-    prefix: env
-  # Group by application tag
-  - key: tags.Application
-    prefix: app
-compose:
-  # Create ansible_host from public IP
-  ansible_host: public_ip_address | default(private_ip_address)
-  # Set connection user based on AMI
-  ansible_user: ubuntu if image.name.startswith('ubuntu') else ec2-user
-filters:
-  # Only include running instances
-  - instance-state-name: running
-  # Only include instances with specific tags
-  - tag:Managed: ansible
+  - key: webserver_port | string # group names are built from strings
+    prefix: port
 ```
 
-Use the dynamic inventory:
+Pass both sources; Ansible reads them in order, so the constructed file sees the hosts from `hosts.yml`:
 
 ```bash
-# List discovered hosts
-ansible-inventory -i inventories/aws.yml --list
-
-# Run playbooks against dynamic groups
-ansible-playbook -i inventories/aws.yml site.yml --limit env_production
+ansible-inventory -i inventory/hosts.yml -i inventory/groups.constructed.yml --graph
 ```
 
-### Custom Dynamic Inventories
+```text
+@all:
+  |--@ungrouped:
+  |--@web:
+  |  |--web1
+  |  |--web2
+  |--@production:
+  |  |--@web:
+  |  |  |--web1
+  |  |  |--web2
+  |--@port_80:
+  |  |--web1
+  |  |--web2
+  |--@canary:
+  |  |--web2
+```
 
-Create custom inventory scripts for specialized environments:
+The new `canary` group follows the data: give another host an owner with "canary" in it, and it joins the group without anyone editing a group list. The `| string` matters: since ansible-core 2.19, values keep their types, and a `keyed_groups` key that is a number stops the plugin with `Invalid group name format`. Cloud inventory plugins have the same `groups`, `keyed_groups` and `compose` options.
+
+### From a cloud API
+
+Every major cloud has an inventory plugin in its collection: `amazon.aws.aws_ec2`, `azure.azcollection.azure_rm`, `google.cloud.gcp_compute`, `digitalocean.cloud.droplets` and more. This file, for example `inventory/do.droplets.yml`, lists every Droplet in a DigitalOcean account, uses the public IPv4 address to connect, and groups the Droplets by region and image:
+
+```yaml
+---
+plugin: digitalocean.cloud.droplets
+# the API token comes from the DIGITALOCEAN_TOKEN environment variable
+attributes:
+  - networks
+  - region
+  - image
+compose:
+  ansible_host: networks.v4 | selectattr("type", "eq", "public") | map(attribute="ip_address") | first
+keyed_groups:
+  - key: region.slug
+    prefix: region
+  - key: image.slug | default("custom", true)
+    prefix: image
+```
+
+Install the collection and the `pydo` library it uses first (`ansible-galaxy collection install digitalocean.cloud`, and with a pipx install, `pipx inject ansible-core pydo`), then use the file like any inventory: `ansible-inventory -i inventory/do.droplets.yml --graph`. Most cloud plugins also support `cache: true`, so that repeated runs do not call the API every time.
+
+### Your own source: an inventory script
+
+When no plugin exists for your source, the simplest option is an executable that prints JSON. Ansible runs it with `--list` and expects groups, hosts and a `_meta.hostvars` section. This script reads a file exported from a CMDB. Save the export as `examples/cmdb.json`:
+
+```json
+[
+  { "name": "app1", "ip": "10.0.1.21", "role": "app", "env": "staging" },
+  { "name": "app2", "ip": "10.0.1.22", "role": "app", "env": "production" },
+  { "name": "db1", "ip": "10.0.2.31", "role": "db", "env": "production" }
+]
+```
+
+and the script next to it as `examples/cmdb_inventory.py`:
 
 ```python
 #!/usr/bin/env python3
-# inventories/custom_inventory.py
-
+"""Ansible inventory from a CMDB export: groups by role and by environment."""
 import json
-import requests
+import pathlib
 import sys
 
-def get_inventory():
-    """Fetch inventory from custom API"""
-    try:
-        # Replace with your actual API endpoint
-        response = requests.get('https://api.company.com/infrastructure')
-        data = response.json()
+SOURCE = pathlib.Path(__file__).with_name("cmdb.json")
 
-        inventory = {
-            '_meta': {
-                'hostvars': {}
-            }
-        }
+def build():
+    inventory = {"_meta": {"hostvars": {}}}
+    for server in json.loads(SOURCE.read_text()):
+        for group in (server["role"], server["env"]):
+            inventory.setdefault(group, {"hosts": []})["hosts"].append(server["name"])
+        inventory["_meta"]["hostvars"][server["name"]] = {"ansible_host": server["ip"]}
+    return inventory
 
-        for server in data['servers']:
-            # Create groups based on server attributes
-            role_group = f"role_{server['role']}"
-            env_group = f"env_{server['environment']}"
-
-            # Initialize groups if they don't exist
-            for group in [role_group, env_group]:
-                if group not in inventory:
-                    inventory[group] = {'hosts': []}
-
-            # Add host to appropriate groups
-            hostname = server['hostname']
-            inventory[role_group]['hosts'].append(hostname)
-            inventory[env_group]['hosts'].append(hostname)
-
-            # Set host variables
-            inventory['_meta']['hostvars'][hostname] = {
-                'ansible_host': server['ip_address'],
-                'ansible_user': server.get('ssh_user', 'ubuntu'),
-                'server_id': server['id'],
-                'environment': server['environment'],
-                'role': server['role'],
-                'datacenter': server['datacenter']
-            }
-
-        return inventory
-
-    except Exception as e:
-        print(f"Error fetching inventory: {e}", file=sys.stderr)
-        return {}
-
-if __name__ == '__main__':
-    if len(sys.argv) == 2 and sys.argv[1] == '--list':
-        print(json.dumps(get_inventory(), indent=2))
-    elif len(sys.argv) == 3 and sys.argv[1] == '--host':
-        # Ansible requires this for compatibility
-        print(json.dumps({}))
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--list"]:
+        print(json.dumps(build()))
+    elif sys.argv[1:2] == ["--host"]:
+        print(json.dumps({}))  # all host variables are in _meta already
     else:
-        print("Usage: %s --list or %s --host <hostname>" % (sys.argv[0], sys.argv[0]))
+        sys.exit("usage: cmdb_inventory.py --list | --host <name>")
 ```
 
-Make the script executable and test it:
+Ansible runs a script only if it is executable:
 
-```bash
-chmod +x inventories/custom_inventory.py
-ansible-inventory -i inventories/custom_inventory.py --list
-```
-
-## Advanced Playbook Patterns
-
-### Strategy Plugins
-
-Control how Ansible executes tasks across hosts:
-
-```yaml
-# Free strategy: Don't wait for all hosts to complete each task
-- name: Fast parallel execution
-  hosts: webservers
-  strategy: free
-  gather_facts: no
-
-  tasks:
-    - name: Quick service restart
-      service:
-        name: nginx
-        state: restarted
-
-# Debug strategy: Interactive debugging
-- name: Debug problematic deployment
-  hosts: problem_servers
-  strategy: debug
-
-  tasks:
-    - name: Complex task that might fail
-      complex_module:
-        param: value
-```
-
-### Delegation and Local Actions
-
-Execute tasks on different hosts or locally:
-
-```yaml
-tasks:
-  # Run on Ansible control machine
-  - name: Generate configuration locally
-    template:
-      src: config.j2
-      dest: '/tmp/config-{{ inventory_hostname }}.conf'
-    delegate_to: localhost
-    become: no
-
-  # Copy generated config to target host
-  - name: Deploy generated configuration
-    copy:
-      src: '/tmp/config-{{ inventory_hostname }}.conf'
-      dest: /etc/myapp/config.conf
-
-  # Update load balancer from specific host
-  - name: Update load balancer configuration
-    uri:
-      url: '{{ loadbalancer_api }}/servers'
-      method: POST
-      body_format: json
-      body:
-        server: '{{ inventory_hostname }}'
-        status: active
-    delegate_to: "{{ groups['loadbalancers'][0] }}"
-    run_once: true
-
-  # Run command on database server from web server
-  - name: Trigger database backup
-    command: /opt/backup/run-backup.sh
-    delegate_to: "{{ groups['databases'][0] }}"
-    when: inventory_hostname == groups['webservers'][0]
-```
-
-### Advanced Loops and Conditions
-
-Use complex iteration patterns:
-
-```yaml
-tasks:
-  # Nested loops
-  - name: Configure firewall rules for each service
-    ufw:
-      rule: allow
-      port: '{{ item.1 }}'
-      from_ip: '{{ item.0.ip }}'
-      comment: '{{ item.0.name }} access to port {{ item.1 }}'
-    loop: "{{ allowed_sources | subelements('ports') }}"
-    vars:
-      allowed_sources:
-        - name: office
-          ip: 203.0.113.0/24
-          ports: [80, 443, 22]
-        - name: monitoring
-          ip: 198.51.100.5
-          ports: [9100, 9200]
-
-  # Conditional loops with complex logic
-  - name: Install packages by OS family
-    package:
-      name: '{{ item }}'
-      state: present
-    loop: '{{ packages[ansible_os_family] | default([]) }}'
-    when:
-      - packages is defined
-      - ansible_os_family in packages
-    vars:
-      packages:
-        Debian: ['nginx', 'python3-pip', 'htop']
-        RedHat: ['nginx', 'python3-pip', 'htop']
-        Alpine: ['nginx', 'py3-pip', 'htop']
-
-  # Dictionary iteration with complex conditions
-  - name: Configure services based on host role
-    service:
-      name: '{{ item.key }}'
-      state: '{{ item.value.state }}'
-      enabled: '{{ item.value.enabled }}'
-    loop: '{{ services | dict2items }}'
-    when:
-      - item.value.roles is undefined or
-        (inventory_hostname in groups[item.value.roles] if item.value.roles is string else
-        group_names | intersect(item.value.roles) | length > 0)
-    vars:
-      services:
-        nginx:
-          state: started
-          enabled: yes
-          roles: webservers
-        postgresql:
-          state: started
-          enabled: yes
-          roles: databases
-        redis:
-          state: started
-          enabled: yes
-          roles: [webservers, databases]
-```
-
-## Custom Modules and Plugins
-
-### Writing Custom Modules
-
-Create custom modules for specialized tasks:
-
-```python
-#!/usr/bin/python3
-# library/company_api.py
-
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.urls import fetch_url
-import json
-
-def main():
-    module_args = dict(
-        api_endpoint=dict(type='str', required=True),
-        api_key=dict(type='str', required=True, no_log=True),
-        action=dict(type='str', required=True, choices=['deploy', 'rollback', 'status']),
-        service_name=dict(type='str', required=True),
-        version=dict(type='str', required=False),
-        timeout=dict(type='int', default=300)
-    )
-
-    module = AnsibleModule(
-        argument_spec=module_args,
-        supports_check_mode=True
-    )
-
-    # Extract parameters
-    api_endpoint = module.params['api_endpoint']
-    api_key = module.params['api_key']
-    action = module.params['action']
-    service_name = module.params['service_name']
-    version = module.params['version']
-    timeout = module.params['timeout']
-
-    # Prepare API request
-    headers = {
-        'Authorization': f'Bearer {api_key}',
-        'Content-Type': 'application/json'
+```terminal
+{
+  "title": "an inventory script",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "chmod +x examples/cmdb_inventory.py"
+    },
+    {
+      "cmd": "ansible-inventory -i examples/cmdb_inventory.py --graph",
+      "output": "@all:\n  |--@ungrouped:\n  |--@app:\n  |  |--app1\n  |  |--app2\n  |--@staging:\n  |  |--app1\n  |--@production:\n  |  |--app2\n  |  |--db1\n  |--@db:\n  |  |--db1"
     }
-
-    url = f"{api_endpoint}/services/{service_name}/{action}"
-
-    if action == 'deploy' and not version:
-        module.fail_json(msg="version parameter required for deploy action")
-
-    body = {}
-    if action == 'deploy':
-        body['version'] = version
-
-    # Check mode - don't make actual changes
-    if module.check_mode:
-        module.exit_json(changed=True, msg=f"Would {action} {service_name}")
-
-    # Make API call
-    response, info = fetch_url(
-        module,
-        url,
-        method='POST',
-        headers=headers,
-        data=json.dumps(body) if body else None,
-        timeout=timeout
-    )
-
-    if info['status'] == 200:
-        result = json.loads(response.read())
-        module.exit_json(
-            changed=True,
-            msg=f"Successfully executed {action} for {service_name}",
-            result=result
-        )
-    else:
-        module.fail_json(
-            msg=f"API call failed with status {info['status']}",
-            details=info
-        )
-
-if __name__ == '__main__':
-    main()
-```
-
-Use your custom module:
-
-```yaml
-tasks:
-  - name: Deploy application via company API
-    company_api:
-      api_endpoint: '{{ company_api_url }}'
-      api_key: '{{ company_api_key }}'
-      action: deploy
-      service_name: customer-portal
-      version: '{{ app_version }}'
-    register: deployment_result
-
-  - name: Display deployment result
-    debug:
-      var: deployment_result
-```
-
-### Custom Filter Plugins
-
-Create custom filters for data transformation:
-
-```python
-# filter_plugins/custom_filters.py
-
-class FilterModule(object):
-    def filters(self):
-        return {
-            'to_env_vars': self.to_env_vars,
-            'merge_configs': self.merge_configs,
-            'safe_filename': self.safe_filename
-        }
-
-    def to_env_vars(self, data, prefix=''):
-        """Convert dictionary to environment variable format"""
-        env_vars = []
-        for key, value in data.items():
-            env_key = f"{prefix}{key}".upper() if prefix else key.upper()
-            if isinstance(value, dict):
-                env_vars.extend(self.to_env_vars(value, f"{env_key}_"))
-            else:
-                env_vars.append(f"{env_key}={value}")
-        return env_vars
-
-    def merge_configs(self, base_config, override_config):
-        """Deep merge configuration dictionaries"""
-        import copy
-        result = copy.deepcopy(base_config)
-
-        def deep_merge(base, override):
-            for key, value in override.items():
-                if key in base and isinstance(base[key], dict) and isinstance(value, dict):
-                    deep_merge(base[key], value)
-                else:
-                    base[key] = value
-
-        deep_merge(result, override_config)
-        return result
-
-    def safe_filename(self, filename):
-        """Convert string to safe filename"""
-        import re
-        safe = re.sub(r'[^\w\-_.]', '_', filename)
-        return safe.strip('_.')
-```
-
-Use custom filters in templates and tasks:
-
-```yaml
-tasks:
-  - name: Generate environment file
-    copy:
-      content: |
-        {% for env_var in app_config | to_env_vars('APP_') %}
-        {{ env_var }}
-        {% endfor %}
-      dest: '/etc/{{ app_name }}/environment'
-
-  - name: Merge configurations
-    set_fact:
-      final_config: '{{ base_config | merge_configs(environment_overrides) }}'
-
-  - name: Create safe backup filename
-    set_fact:
-      backup_file: "/backups/{{ (app_name + '_' + ansible_date_time.iso8601) | safe_filename }}.tar.gz"
-```
-
-## Integration Patterns
-
-### Ansible Tower/AWX Integration
-
-Use Ansible Tower for enterprise automation management:
-
-```yaml
-# Job template configuration for Tower/AWX
----
-name: 'Deploy Web Application'
-description: 'Deploy web application to specified environment'
-job_type: 'run'
-inventory: 'Dynamic AWS Inventory'
-project: 'Infrastructure Automation'
-playbook: 'deploy-webapp.yml'
-credential: 'AWS SSH Key'
-verbosity: 1
-extra_vars:
-  environment: "{{ tower_environment | default('staging') }}"
-  app_version: '{{ tower_app_version }}'
-  notification_email: '{{ tower_notification_email }}'
-ask_variables_on_launch: true
-concurrent_jobs_enabled: false
-```
-
-### CI/CD Pipeline Integration
-
-Integrate Ansible with Jenkins:
-
-```groovy
-// Jenkinsfile
-pipeline {
-    agent any
-
-    parameters {
-        choice(
-            name: 'ENVIRONMENT',
-            choices: ['staging', 'production'],
-            description: 'Target environment'
-        )
-        string(
-            name: 'APP_VERSION',
-            defaultValue: 'latest',
-            description: 'Application version to deploy'
-        )
-    }
-
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Lint and Test') {
-            parallel {
-                stage('Ansible Lint') {
-                    steps {
-                        sh 'ansible-lint site.yml'
-                    }
-                }
-                stage('YAML Lint') {
-                    steps {
-                        sh 'yamllint .'
-                    }
-                }
-                stage('Syntax Check') {
-                    steps {
-                        sh 'ansible-playbook --syntax-check site.yml'
-                    }
-                }
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                withCredentials([
-                    file(credentialsId: 'ansible-vault-password', variable: 'VAULT_PASSWORD_FILE'),
-                    sshUserPrivateKey(credentialsId: 'deployment-key', keyFileVariable: 'SSH_KEY')
-                ]) {
-                    sh """
-                        ansible-playbook site.yml \
-                            -i inventories/${params.ENVIRONMENT}/ \
-                            --private-key ${SSH_KEY} \
-                            --vault-password-file ${VAULT_PASSWORD_FILE} \
-                            -e app_version=${params.APP_VERSION} \
-                            -e notification_email=${env.CHANGE_AUTHOR_EMAIL}
-                    """
-                }
-            }
-        }
-
-        stage('Verify Deployment') {
-            steps {
-                sh """
-                    ansible-playbook verify-deployment.yml \
-                        -i inventories/${params.ENVIRONMENT}/ \
-                        --private-key ${SSH_KEY}
-                """
-            }
-        }
-    }
-
-    post {
-        success {
-            slackSend(
-                color: 'good',
-                message: "✅ Deployment successful: ${params.APP_VERSION} to ${params.ENVIRONMENT}"
-            )
-        }
-        failure {
-            slackSend(
-                color: 'danger',
-                message: "❌ Deployment failed: ${params.APP_VERSION} to ${params.ENVIRONMENT}"
-            )
-        }
-    }
+  ]
 }
 ```
 
-### Terraform Integration
+For anything larger, write an inventory plugin in Python instead, which gets caching, `constructed`-style options and a YAML configuration file for free. The `examples/` directory was only a demonstration; delete it with `rm -r examples`.
 
-Combine Terraform for infrastructure provisioning with Ansible for configuration:
+## Write a Custom Module
+
+When no module does what you need and `command` would not be idempotent, write a module. A module is a Python script that reads its options, does its job, and prints JSON. Put it in a `library/` directory next to your playbook (or in a role's `library/`), and Ansible finds it. This one records the deployed release in a JSON file on each server, and reports a change only when the release differs:
+
+```python
+#!/usr/bin/python
+"""Ansible module: record the deployed release in a JSON file."""
+
+DOCUMENTATION = r"""
+module: release_marker
+short_description: Record the deployed release in a JSON file
+description:
+  - Writes the release version and channel to a JSON file, and reports a change only when they differ.
+options:
+  version:
+    description: Release version.
+    type: str
+    required: true
+  channel:
+    description: Release channel.
+    type: str
+    default: stable
+    choices: [stable, canary]
+  path:
+    description: File to write.
+    type: path
+    default: /etc/webfleet/release.json
+author: webfleet team
+"""
+
+EXAMPLES = r"""
+- name: Record the release
+  release_marker:
+    version: 1.4.2
+"""
+
+RETURN = r"""
+release:
+  description: The release that is now recorded.
+  returned: always
+  type: dict
+"""
+
+import json
+import os
+import tempfile
+
+from ansible.module_utils.basic import AnsibleModule
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            version=dict(type="str", required=True),
+            channel=dict(type="str", default="stable", choices=["stable", "canary"]),
+            path=dict(type="path", default="/etc/webfleet/release.json"),
+        ),
+        supports_check_mode=True,
+    )
+    path = os.path.abspath(module.params["path"])
+    wanted = {"version": module.params["version"], "channel": module.params["channel"]}
+
+    current = None
+    if os.path.exists(path):
+        with open(path) as f:
+            try:
+                current = json.load(f)
+            except ValueError:
+                current = None
+
+    result = {"changed": current != wanted, "path": path, "release": wanted}
+    if module._diff:
+        result["diff"] = {
+            "before": json.dumps(current, indent=2, sort_keys=True) + "\n" if current else "",
+            "after": json.dumps(wanted, indent=2, sort_keys=True) + "\n",
+        }
+
+    if result["changed"] and not module.check_mode:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        # a new, unique temporary file in the same directory, then an atomic rename
+        fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path), prefix=".release_marker.")
+        with os.fdopen(fd, "w") as f:
+            json.dump(wanted, f, indent=2, sort_keys=True)
+            f.write("\n")
+        module.atomic_move(tmp, path)
+
+    module.exit_json(**result)
+
+if __name__ == "__main__":
+    main()
+```
+
+The parts every module has:
+
+- `DOCUMENTATION`, `EXAMPLES` and `RETURN` in YAML, which `ansible-doc` reads.
+- `AnsibleModule` with an `argument_spec`, which checks types, defaults and choices before your code runs.
+- `supports_check_mode=True`, honored by computing `changed` first and skipping the write in check mode.
+- `module.exit_json()` on success or `module.fail_json(msg=...)` on failure. Since ansible-core 2.19, an unexpected Python exception also comes back as a normal failed result with the traceback, so you do not need a `try`/`except` around everything.
+
+`ansible-doc` shows the documentation of the local module:
+
+```bash
+ansible-doc -M library release_marker
+```
+
+```text
+> MODULE release_marker (/home/dev/webfleet/library/release_marker.py)
+
+  Writes the release version and channel to a JSON file, and reports a
+  change only when they differ.
+
+OPTIONS (red indicates it is required):
+
+   channel  Release channel.
+        choices: [stable, canary]
+        default: stable
+        type: str
+
+   path    File to write.
+        default: /etc/webfleet/release.json
+        type: path
+
+   version  Release version.
+        type: str
+
+AUTHOR: webfleet team
+
+EXAMPLES:
+```
+
+Use it in a playbook, `release.yml`:
 
 ```yaml
-# terraform-then-ansible.yml
 ---
-- name: Provision and configure infrastructure
-  hosts: localhost
-  gather_facts: no
+- name: Record the release on the web servers
+  hosts: web
+  become: true
+  gather_facts: false
 
   tasks:
-    - name: Run Terraform to provision infrastructure
-      terraform:
-        project_path: './terraform'
-        state: present
-        variables:
-          environment: '{{ target_environment }}'
-          instance_count: '{{ server_count }}'
-      register: terraform_output
-
-    - name: Add provisioned servers to inventory
-      add_host:
-        name: '{{ item.value.public_ip }}'
-        groups: webservers
-        ansible_host: '{{ item.value.public_ip }}'
-        ansible_user: ubuntu
-        private_ip: '{{ item.value.private_ip }}'
-      loop: '{{ terraform_output.outputs.web_servers.value | dict2items }}'
-
-    - name: Wait for SSH to be available
-      wait_for:
-        host: '{{ item.value.public_ip }}'
-        port: 22
-        timeout: 300
-      loop: '{{ terraform_output.outputs.web_servers.value | dict2items }}'
-
-- name: Configure provisioned servers
-  hosts: webservers
-  become: yes
-  gather_facts: yes
-
-  roles:
-    - common
-    - webserver
-    - monitoring
+    - name: Record the release
+      release_marker:
+        version: '{{ release_version }}'
+        channel: "{{ 'canary' if 'canary' in webserver_owner else 'stable' }}"
 ```
 
-## Monitoring and Observability
+```terminal
+{
+  "title": "a custom module: changed, ok, and a preview",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ansible-playbook release.yml -e release_version=1.4.2",
+      "output": "changed: [web1]\nchanged: [web2]"
+    },
+    {
+      "comment": "the same release again: nothing to do",
+      "cmd": "ansible-playbook release.yml -e release_version=1.4.2",
+      "output": "ok: [web1]\nok: [web2]"
+    },
+    {
+      "comment": "what a new release would change on web1",
+      "cmd": "ansible-playbook release.yml -e release_version=1.5.0 --check --diff --limit web1",
+      "output": "--- before\n+++ after\n@@ -1,4 +1,4 @@\n {\n   \"channel\": \"stable\",\n-  \"version\": \"1.4.2\"\n+  \"version\": \"1.5.0\"\n }\n\nchanged: [web1]"
+    }
+  ]
+}
+```
 
-### Ansible Metrics Collection
+When a module grows, or you want to share it, move it into a collection and test it with `ansible-test`, the test runner that ships with ansible-core.
 
-Monitor your Ansible automation:
+## Write a Filter Plugin
+
+A **filter plugin** adds Jinja2 filters, for data shaping that would make a template hard to read. Put a Python file with a `FilterModule` class in `filter_plugins/`:
+
+```python
+"""Jinja2 filters for the webfleet project."""
+
+def nginx_upstream(addresses, port=80):
+    """Turn a list of addresses into the server lines of an nginx upstream block."""
+    return "\n".join(f"server {address}:{port};" for address in addresses)
+
+class FilterModule:
+    def filters(self):
+        return {"nginx_upstream": nginx_upstream}
+```
+
+Use it like any built-in filter. Ansible loads `filter_plugins/` (and `library/`) next to the playbook it runs; ad-hoc commands do not, unless you set `library` and `filter_plugins` in `ansible.cfg`. This playbook, `upstream.yml`, renders the upstream lines for the web servers:
 
 ```yaml
-# Enable callback plugins for metrics
-# ansible.cfg
+---
+- name: Use the custom filter
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Show the upstream servers for the web group
+      ansible.builtin.debug:
+        msg: "{{ groups['web'] | map('extract', hostvars, 'ansible_host') | nginx_upstream(80) }}"
+```
+
+```bash
+ansible-playbook upstream.yml
+```
+
+```text
+TASK [Show the upstream servers for the web group] *****************************
+ok: [localhost] => {
+    "msg": "server 192.168.56.11:80;\nserver 192.168.56.12:80;"
+}
+```
+
+`upstream.yml` was only a demonstration; delete it (`rm upstream.yml`).
+
+Filters run on the control node, during templating. Lookup plugins (`lookup('...')`) read data from outside, such as files, environment variables or secret managers, and test plugins add `is ...` tests. All of them live in directories next to the playbook while you develop them, and in a collection when you share them.
+
+## Change the Output: Callback Plugins
+
+**Callback plugins** react to events during a run: they print the output, time tasks, or send results somewhere. The default output callback can print task results as YAML instead of JSON, which is easier to read for multi-line values:
+
+```bash
+ANSIBLE_CALLBACK_RESULT_FORMAT=yaml ansible-playbook release.yml -e release_version=1.4.2 --limit web1 -v
+```
+
+```text
+TASK [Record the release] ******************************************************
+ok: [web1] =>
+    changed: false
+    gid: 0
+    group: root
+    mode: '0644'
+    owner: root
+    path: /etc/webfleet/release.json
+    release:
+        channel: stable
+        version: 1.4.2
+    size: 48
+    state: file
+    uid: 0
+```
+
+Set it permanently with `callback_result_format = yaml` under `[defaults]` in `ansible.cfg`. Older guides use `stdout_callback = community.general.yaml` for this; that plugin was removed in `community.general` 12.0.0. To enable extra callbacks, such as `ansible.posix.profile_tasks` from [Part 9](/guides/introduction-to-ansible/09-best-practices-and-production-patterns#h2-make-runs-faster), list them in `callbacks_enabled`, which replaced the old `callback_whitelist`:
+
+```ini
 [defaults]
-callback_whitelist = profile_tasks, timer, json
-
-# Custom callback plugin for metrics
-# callback_plugins/metrics.py
-import json
-import time
-from ansible.plugins.callback import CallbackBase
-
-class CallbackModule(CallbackBase):
-    def __init__(self):
-        super(CallbackModule, self).__init__()
-        self.start_time = time.time()
-        self.task_start_time = {}
-
-    def v2_playbook_on_task_start(self, task, is_conditional):
-        self.task_start_time[task._uuid] = time.time()
-
-    def v2_runner_on_ok(self, result):
-        duration = time.time() - self.task_start_time.get(result._task._uuid, time.time())
-        # Send metrics to your monitoring system
-        self.send_metric('ansible.task.duration', duration, {
-            'task': result._task.name,
-            'host': result._host.name,
-            'status': 'ok'
-        })
-
-    def send_metric(self, metric_name, value, tags):
-        # Implementation depends on your monitoring system
-        # Examples: StatsD, Prometheus, CloudWatch, etc.
-        pass
+callback_result_format = yaml
+callbacks_enabled = ansible.posix.profile_tasks, ansible.posix.timer
 ```
 
-### Integration with Monitoring Systems
+`ansible.builtin.junit` writes JUnit XML that CI systems can display as test results, and `ansible.posix.json` prints the whole run as one JSON document for other tools.
 
-Send deployment events to monitoring systems:
+## Execution Environments
+
+Your project depends on a Python version, ansible-core, collections, and Python libraries on the control node. On a laptop that drifts; on ten laptops and a CI runner it drifts ten different ways. An **execution environment** (EE) is a container image that holds all of it, so every run uses the same versions. Ansible Automation Platform runs every job in one, and the command line tools work with them too:
+
+- **ansible-builder** builds an EE image from a definition file.
+- **ansible-navigator** runs playbooks inside an EE, with Podman or Docker.
+
+The definition for this project, `execution-environment.yml`:
 
 ```yaml
-tasks:
-  - name: Send deployment start event
-    uri:
-      url: '{{ monitoring_webhook }}'
-      method: POST
-      body_format: json
-      body:
-        event_type: deployment_start
-        service: '{{ app_name }}'
-        version: '{{ app_version }}'
-        environment: '{{ environment }}'
-        timestamp: '{{ ansible_date_time.iso8601 }}'
-    delegate_to: localhost
-
-  - name: Deploy application
-    include_role:
-      name: app_deployment
-
-  - name: Send deployment success event
-    uri:
-      url: '{{ monitoring_webhook }}'
-      method: POST
-      body_format: json
-      body:
-        event_type: deployment_success
-        service: '{{ app_name }}'
-        version: '{{ app_version }}'
-        environment: '{{ environment }}'
-        timestamp: '{{ ansible_date_time.iso8601 }}'
-        duration: '{{ ansible_play_batch | length * 60 }}' # Rough estimate
-    delegate_to: localhost
+---
+version: 3
+images:
+  base_image:
+    name: quay.io/fedora/fedora:44 # ansible-builder needs an RPM-based image
+dependencies:
+  python_interpreter: # the Fedora image has no Python; install it with dnf
+    package_system: python3
+    python_path: /usr/bin/python3
+  ansible_core:
+    package_pip: ansible-core==2.21.5
+  ansible_runner:
+    package_pip: ansible-runner
+  galaxy: requirements.yml
+  system:
+    - openssh-clients # Ansible connects with the ssh command
 ```
 
-## Community and Learning Resources
+`ansible-builder create` writes the build context: the image definition and the files it copies in. That step needs no container engine, so you can review exactly what will be built. The definition is a `Containerfile` when Podman is installed and a `Dockerfile` otherwise, as on this control node:
 
-### Contributing to Ansible
+```terminal
+{
+  "title": "generate the build context",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "pipx install ansible-builder==3.2.0",
+      "output": "  installed package ansible-builder 3.2.0, installed using Python 3.12.3\n  These apps are now globally available\n    - ansible-builder"
+    },
+    {
+      "cmd": "ansible-builder create",
+      "output": "Complete! The build context can be found at: /home/dev/webfleet/context"
+    },
+    {
+      "cmd": "find context -type f | sort",
+      "output": "context/Dockerfile\ncontext/_build/bindep.txt\ncontext/_build/requirements.yml\ncontext/_build/scripts/assemble\ncontext/_build/scripts/check_ansible\ncontext/_build/scripts/check_galaxy\ncontext/_build/scripts/entrypoint\ncontext/_build/scripts/install-from-bindep\ncontext/_build/scripts/introspect.py\ncontext/_build/scripts/pip_install"
+    },
+    {
+      "cmd": "grep -E '^(ARG|FROM)' context/Dockerfile | head -n 9",
+      "output": "ARG EE_BASE_IMAGE=\"quay.io/fedora/fedora:44\"\nARG PYCMD=\"/usr/bin/python3\"\nARG PYPKG=\"python3\"\nARG PKGMGR_PRESERVE_CACHE=\"\"\nARG ANSIBLE_GALAXY_CLI_COLLECTION_OPTS=\"\"\nARG ANSIBLE_GALAXY_CLI_ROLE_OPTS=\"\"\nARG ANSIBLE_INSTALL_REFS=\"ansible-core==2.21.5 ansible-runner\"\nARG PKGMGR=\"/usr/bin/dnf\"\nFROM $EE_BASE_IMAGE AS base"
+    }
+  ]
+}
+```
 
-Contribute to the Ansible ecosystem:
+`ansible-builder build --tag webfleet-ee:1.0` then builds the image with Podman or Docker, and you push it to a registry like any other image. To run the project in it, tell ansible-navigator which image to use and give the container what lives outside the project: the vault password file, and a collection path that includes the collections built into the image, because `ansible.cfg` points `collections_path` at the project's own `collections/` directory:
 
-1. **Report Issues**: Use GitHub issues for bugs and feature requests
-2. **Submit Pull Requests**: Fix bugs or add features to collections
-3. **Create Collections**: Package and share your modules and roles
-4. **Documentation**: Improve documentation and examples
+```bash
+ansible-builder build --tag webfleet-ee:1.0
+ansible-navigator run site.yml --mode stdout \
+  --execution-environment-image webfleet-ee:1.0 --pull-policy never \
+  --execution-environment-volume-mounts "$HOME/.webfleet-vault-pass:/tmp/vault-pass:ro" \
+  --set-environment-variable ANSIBLE_VAULT_PASSWORD_FILE=/tmp/vault-pass \
+  --set-environment-variable ANSIBLE_COLLECTIONS_PATH=/usr/share/ansible/collections
+```
 
-### Building Your Skills
+ansible-navigator mounts your `~/.ssh` directory and your `ssh-agent` socket into the container by itself, so the SSH key and `known_hosts` work as before. The lab has no container engine, so this command is shown without output. The `ansible-dev-tools` Python package installs ansible-builder, ansible-navigator, ansible-lint, Molecule and `ansible-creator` (which scaffolds new collections and playbook projects) in one go, and is also published as a container image.
 
-Continue your automation journey:
+## Automation Platforms: AAP and AWX
 
-1. **Advanced Topics**:
+Running playbooks from CI works well for one team. Organizations with many teams usually want a web interface, role-based access to credentials, schedules, an API, and a central log of every run. That is what an automation platform adds on top of ansible-core:
 
-   - Network automation with Ansible
-   - Windows automation
-   - Container orchestration
-   - Security automation (Ansible Security Automation Platform)
+- **Red Hat Ansible Automation Platform (AAP)** is the commercial product. Releases 2.5 and 2.6 are current in October 2026, and Red Hat lists 2.7 as the next one. Its parts are **automation controller** (formerly Ansible Tower) for jobs, inventories, credentials and schedules; **Event-Driven Ansible**, which starts automation from events such as monitoring alerts; **automation hub** for certified and private collections and EEs; and the **platform gateway**, the single web interface and API in front of them since 2.5.
+- **AWX** is the open-source upstream of automation controller. Its last release was 24.6.1 in July 2024, and releases are paused while the project is refactored into a new architecture, so check its status before you build on it.
+- The rest of the ecosystem includes Semaphore UI, an open-source web interface for Ansible, and general CI systems such as GitHub Actions, GitLab CI or Jenkins, running `ansible-playbook` as in [Part 9](/guides/introduction-to-ansible/09-best-practices-and-production-patterns#h2-run-every-change-through-ci).
 
-2. **Certification**:
+Whatever you choose, the platform holds the keys to every server it manages. Patch it quickly and limit who can log in; [this CVE in Event-Driven Ansible](/posts/ansible-automation-platform-credential-leak-cve-2026-11807) shows why.
 
-   - Red Hat Certified Specialist in Ansible Automation
-   - Advanced certifications in automation platforms
+## Ansible and Terraform
 
-3. **Community Engagement**:
-   - Join Ansible meetups and conferences
-   - Participate in forums and discussion groups
-   - Contribute to open source projects
+Terraform and Ansible overlap less than it seems. Terraform is best at creating infrastructure and tracking it in state: networks, servers, DNS records, managed databases. Ansible is best at what happens inside the servers: packages, files, users, services and ordered rollouts. Many teams use both, with Terraform first:
 
-### Recommended Next Steps
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "terraform apply", "sub": "creates servers", "icon": "cloud", "tone": "violet" },
+    { "label": "state", "sub": "addresses, tags", "icon": "database", "tone": "slate" },
+    { "label": "inventory plugin", "sub": "reads the state", "icon": "gear", "tone": "blue" },
+    { "label": "ansible-playbook", "sub": "configures them", "icon": "server", "tone": "green" }
+  ]
+}
+```
 
-Based on your infrastructure needs:
+The glue is the inventory. Either use the cloud's inventory plugin with the tags Terraform sets, or declare Ansible hosts in Terraform with the `ansible/ansible` provider and read them with the `cloud.terraform.terraform_provider` inventory plugin:
 
-**For Cloud-Native Environments**:
+```hcl
+terraform {
+  required_providers {
+    ansible = {
+      source  = "ansible/ansible"
+      version = "~> 1.5"
+    }
+  }
+}
 
-- Explore Kubernetes automation with Ansible
-- Learn about GitOps patterns
-- Study service mesh automation
+resource "ansible_host" "web" {
+  count  = 2
+  name   = "web${count.index + 1}"
+  groups = ["web"]
+  variables = {
+    ansible_host = digitalocean_droplet.web[count.index].ipv4_address
+  }
+}
+```
 
-**For Large Scale Infrastructure**:
+```yaml
+# inventory/terraform.yml
+---
+plugin: cloud.terraform.terraform_provider
+project_path: ../terraform
+```
 
-- Implement Ansible Tower/AWX
-- Learn about infrastructure testing strategies
-- Study compliance automation (DISA STIG, CIS benchmarks)
+The plugin runs `terraform show` on the state, so the `terraform` binary must be installed on the control node.
 
-**For Security Focus**:
+Avoid running Ansible from inside Terraform with `local-exec` provisioners: a failed playbook then fails the `terraform apply`, and Terraform cannot track what Ansible changed. The [Introduction to Terraform](/guides/introduction-to-terraform) guide covers the Terraform side.
 
-- Explore Ansible Security Automation Platform
-- Learn about vulnerability management automation
-- Study compliance as code patterns
+## What to Learn Next
 
-**For Development Teams**:
+You have the core of Ansible. Where to go from here depends on what you automate:
 
-- Learn about application deployment patterns
-- Study blue/green and canary deployment strategies
-- Explore infrastructure testing in CI/CD pipelines
+- **More of the language**: `async` and `poll` for long tasks, `delegate_to` and `run_once` for orchestration, the `assemble` and `slurp` modules, and lookup plugins.
+- **Collections of your own**: package roles, modules and plugins with `ansible-galaxy collection init` or `ansible-creator`, test them with `ansible-test`, and publish them to Galaxy or a private automation hub.
+- **Windows**: the `ansible.windows` and `community.windows` collections, over WinRM or SSH.
+- **Network devices**: `ansible.netcommon` and the vendor collections (`cisco.ios`, `arista.eos`, `junipernetworks.junos`) use network connection plugins instead of Python on the device.
+- **Kubernetes and containers**: `kubernetes.core` and `community.docker`.
+- **Events**: `ansible-rulebook`, the open-source engine behind Event-Driven Ansible.
+- **Certification**: Red Hat's EX294 exam (Red Hat Certified Advanced System Administrator in Ansible) tests playbooks, roles, Vault and system administration with Ansible, and is part of the path to Red Hat Certified Engineer (RHCE).
 
-## Final Thoughts
+## Summary
 
-You've completed a comprehensive journey through Ansible automation, from basic concepts to advanced production patterns. The skills you've developed provide a solid foundation for managing infrastructure at any scale.
+- Inventory plugins build the inventory at run time; `constructed` adds groups from expressions, cloud plugins read the provider's API, and a script that prints JSON covers everything else.
+- A module is a Python script with an `argument_spec`, check mode support and a JSON result; put it in `library/`.
+- Filter, lookup and callback plugins extend templating and output; the default callback prints YAML with `callback_result_format = yaml`.
+- Execution environments package Ansible and its dependencies in a container image; `ansible-builder` builds them and `ansible-navigator` runs them.
+- AAP (and AWX upstream) adds a web interface, credentials, schedules and audit logs; Terraform creates the servers that Ansible then configures.
 
-Remember these key principles as you continue:
+That is the end of the guide. Go back to [the overview](/guides/introduction-to-ansible) for the full list of parts, or start automating your own servers with the `webfleet` project as a template.
 
-1. **Start Simple**: Begin with basic automation and add complexity gradually
-2. **Test Everything**: Always test your automation in non-production environments
-3. **Document Relentlessly**: Good documentation makes automation maintainable
-4. **Security First**: Never compromise on security for convenience
-5. **Iterate and Improve**: Continuously refine your automation based on experience
+## Keep Learning
 
-Ansible automation is both an art and a science. The technical skills you've learned are just the beginning - the real expertise comes from understanding how to apply these tools to solve real business problems while maintaining reliability, security, and maintainability.
-
-The automation community is welcoming and helpful. Don't hesitate to ask questions, share your experiences, and contribute back to the tools and practices that help everyone succeed.
-
-Your automation journey is just beginning. Use what you've learned to make infrastructure management more reliable, predictable, and enjoyable for yourself and your teams.
-
-Happy automating, and welcome to the community!
+- [Introduction to Terraform](/guides/introduction-to-terraform)
+- [Ansible vs Chef](/comparisons/ansible-vs-chef)
+- [Ansible Configuration Management Quiz](/quizzes/ansible-quiz)
+- [GitOps Implementation Checklist](/checklists/gitops-implementation)
