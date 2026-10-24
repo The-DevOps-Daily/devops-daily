@@ -10,7 +10,7 @@
   "minutes": 30,
   "tags": ["docker", "containers", "dockerfile", "python", "security"],
   "situation": [
-    "The slug service is tiny: one Flask file (app.py) and three dependencies. It turns any text into a URL-friendly slug, so GET /slugify?text=Hello World answers {\"slug\": \"hello-world\"}.",
+    "The slug service is tiny: one Flask file (app.py) and three dependencies. It turns any text into a URL-friendly slug, so GET /slugify?text=Hello%20World answers {\"slug\": \"hello-world\"}.",
     "Its container image is over 1 GB. Every deploy pulls it again, the registry bill keeps growing, and the security scanner lists hundreds of packages the app never uses. It also runs as root. Nobody has touched the Dockerfile since the first prototype."
   ],
   "task": [
@@ -34,7 +34,7 @@
     {
       "id": "non-root",
       "name": "Runs as a non-root user",
-      "description": "The image sets a USER that is not root, and no process in the running container has UID 0."
+      "description": "The image's USER resolves to a UID other than 0 (a name is looked up in the image's /etc/passwd), and no process in the running container has UID 0."
     },
     {
       "id": "starts",
@@ -44,7 +44,7 @@
     {
       "id": "works",
       "name": "The app still works",
-      "description": "GET /slugify returns the same slug as python-slugify for five random texts in Latin, Greek and Cyrillic letters, Flask's error answers are unchanged, and gunicorn serves the app."
+      "description": "The real app answers: GET /slugify returns the same answer as app.py for five random texts in Latin, Greek and Cyrillic letters, the error answers are Flask's, and gunicorn serves it, with no network access beyond the grader."
     }
   ],
   "solutionFiles": [
@@ -67,7 +67,7 @@
   ],
   "localTest": {
     "intro": "From the challenge folder, with Docker installed:",
-    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\ncurl -i localhost:8000/health\ncurl 'localhost:8000/slugify?text=Shrink This Image'\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
+    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\ncurl -i localhost:8000/health\ncurl --get --data-urlencode 'text=Shrink This Image' localhost:8000/slugify\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
   },
   "related": {
     "exercises": ["docker-multi-stage-build", "docker-server-deployment"],

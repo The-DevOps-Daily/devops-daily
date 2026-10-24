@@ -5,8 +5,12 @@ import { Users } from 'lucide-react';
 import { CHALLENGE_STATS_URL, type ChallengeStats } from '@/lib/challenge-types';
 import { cn } from '@/lib/utils';
 
-// One request per page view, shared by every card on the page.
+// One request shared by every card on the page. A result is reused for five
+// minutes (the file's own cache time); a failed request is not kept, so the
+// next page can try again.
+const STATS_MAX_AGE_MS = 5 * 60 * 1000;
 let statsRequest: Promise<ChallengeStats | null> | null = null;
+let statsRequestedAt = 0;
 
 function isStats(value: unknown): value is ChallengeStats {
   if (!value || typeof value !== 'object') return false;
@@ -15,14 +19,21 @@ function isStats(value: unknown): value is ChallengeStats {
 }
 
 function loadStats(): Promise<ChallengeStats | null> {
-  if (!statsRequest) {
+  if (!statsRequest || Date.now() - statsRequestedAt > STATS_MAX_AGE_MS) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
-    statsRequest = fetch(CHALLENGE_STATS_URL, { signal: controller.signal })
+    statsRequestedAt = Date.now();
+    const request: Promise<ChallengeStats | null> = fetch(CHALLENGE_STATS_URL, {
+      signal: controller.signal,
+    })
       .then((response) => (response.ok ? response.json() : null))
       .then((json: unknown) => (isStats(json) ? json : null))
       .catch(() => null)
       .finally(() => clearTimeout(timer));
+    statsRequest = request;
+    request.then((stats) => {
+      if (stats === null && statsRequest === request) statsRequest = null;
+    });
   }
   return statsRequest;
 }

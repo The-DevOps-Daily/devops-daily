@@ -106,7 +106,8 @@ export default async function ChallengesPage() {
               The tests and the grader always come from the repository&apos;s main branch, never
               from your pull request. Only the challenge&apos;s solution files are copied out of
               your PR, your code runs in a container or a throwaway kind cluster, and some inputs
-              are random at grading time, so an answer cannot be hardcoded.
+              are random at grading time, so the checks do not compare against fixed answers you
+              could copy.
             </p>
           </div>
           <div className="rounded-lg border border-dashed border-border p-6">

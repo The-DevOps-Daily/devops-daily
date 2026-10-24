@@ -141,7 +141,12 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
 
         <section className="mb-10">
           <SectionHeading id="checks">What the grader checks</SectionHeading>
-          <div className="overflow-x-auto rounded-lg border border-border">
+          <div
+            className="overflow-x-auto rounded-lg border border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            tabIndex={0}
+            role="region"
+            aria-labelledby="checks"
+          >
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/50">
                 <tr>
@@ -203,7 +208,11 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
         <section className="mb-10">
           <SectionHeading id="local">Test it locally</SectionHeading>
           <p className="mb-3 text-foreground/90">{challenge.localTest.intro}</p>
-          <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-sm">
+          <pre
+            className="overflow-x-auto rounded-lg bg-muted p-4 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            tabIndex={0}
+            aria-labelledby="local"
+          >
             <code>{challenge.localTest.commands}</code>
           </pre>
         </section>
@@ -229,7 +238,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
             </li>
             <li>
               When every check passes, the PR gets the passed label and is closed. It is never
-              merged, and your pass counts here within the hour.
+              merged, and your pass is usually counted on this page within a few minutes.
             </li>
           </ol>
         </section>

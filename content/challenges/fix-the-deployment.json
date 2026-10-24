@@ -24,7 +24,7 @@
     {
       "id": "manifests",
       "name": "The manifests apply",
-      "description": "The files in k8s/ parse and apply, and only define the inventory-api Deployment and Service plus ConfigMaps. The image, the 2 replicas and both HTTP probes stay in place, STORE_NAME comes from a ConfigMap, and the pods meet Pod Security restricted. Nothing is applied until these checks pass."
+      "description": "The files in k8s/ parse and apply, and only define the inventory-api Deployment and Service plus ConfigMaps. The image, the 2 replicas and both HTTP probes stay in place, STORE_NAME comes from a ConfigMap, and the pods meet Pod Security restricted (no root, no privileged mode, no host namespaces or host paths). Nothing is applied until these checks pass."
     },
     {
       "id": "rollout",
@@ -44,7 +44,7 @@
     {
       "id": "stable",
       "name": "The pods stay up",
-      "description": "30 seconds after the other checks: the URLs both probes call answer, 2 of 2 replicas are still ready, and no container restarted."
+      "description": "30 seconds after the other checks: the URLs both probes call answer 2xx without a redirect, 2 of 2 replicas are still ready, and no container restarted."
     }
   ],
   "solutionFiles": [
