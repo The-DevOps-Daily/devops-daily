@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { GitPullRequest, ShieldCheck, Swords } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
+import { InlineSponsors } from '@/components/inline-sponsors';
 import { ChallengeCard } from '@/components/challenges/challenge-card';
 import { getAllChallenges } from '@/lib/challenges';
 import { CHALLENGES_REPO_URL } from '@/lib/challenge-types';
@@ -93,6 +94,10 @@ export default async function ChallengesPage() {
             <ChallengeCard key={challenge.id} challenge={challenge} />
           ))}
         </div>
+      </section>
+
+      <section className="container mx-auto max-w-6xl px-4">
+        <InlineSponsors variant="banner" className="mt-0" />
       </section>
 
       <section className="container mx-auto max-w-6xl px-4 pb-16">
