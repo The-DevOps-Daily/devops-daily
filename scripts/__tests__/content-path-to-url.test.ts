@@ -37,6 +37,7 @@ describe('contentPathToUrl', () => {
     expect(contentPathToUrl('content/quizzes/a-quiz.json')).toBe('/quizzes/a-quiz');
     expect(contentPathToUrl('content/flashcards/terraform-basics.json')).toBe('/flashcards/terraform-basics');
     expect(contentPathToUrl('content/checklists/kubernetes-security.json')).toBe('/checklists/kubernetes-security');
+    expect(contentPathToUrl('content/challenges/fix-the-deployment.json')).toBe('/challenges/fix-the-deployment');
   });
 
   it('reads the tier of an interview question from the file', () => {

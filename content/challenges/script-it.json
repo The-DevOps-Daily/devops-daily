@@ -1,0 +1,93 @@
+{
+  "id": "script-it",
+  "slug": "script-it",
+  "title": "Script It: Summarize an Access Log",
+  "description": "Finish a half-written Bash script that turns an nginx access log into a report. ShellCheck clean, edge cases covered, fast on big logs. CI grades it.",
+  "summary": "Finish a half-written Bash script that turns an nginx access log into a short report: requests, status classes, top clients and top paths. ShellCheck has to be clean and the edge cases right.",
+  "topic": "Bash",
+  "category": "Linux",
+  "difficulty": "starter",
+  "minutes": 45,
+  "tags": ["bash", "shell", "awk", "shellcheck", "linux", "logs"],
+  "situation": [
+    "When the site is slow, the first question on the incident call is always the same: who is hitting us, which pages, and how many errors?",
+    "Someone started summarize.sh to answer it from an nginx access log, then got pulled onto something else. Right now it counts lines and not much more, and ShellCheck is not happy with it."
+  ],
+  "task": [
+    "Print the report described in the challenge README for a log in the combined format: requests, unique IPs, counts per status class, skipped lines, and the top IPs and paths.",
+    "Read the log from a file, or from stdin when no file is given or the file is -.",
+    "Support -n N for the length of the top lists, and exit 2 on usage errors and 1 on unreadable files, with messages on stderr.",
+    "Keep ShellCheck clean, without disable comments.",
+    "Summarize 100,000 lines in under 10 seconds."
+  ],
+  "checks": [
+    {
+      "id": "shellcheck",
+      "name": "ShellCheck is clean",
+      "description": "ShellCheck 0.11 reports no issues at any severity, and the script does not switch checks off with disable directives."
+    },
+    {
+      "id": "report",
+      "name": "Report for a known log",
+      "description": "Prints the exact report for a small log with a known answer."
+    },
+    {
+      "id": "edge-cases",
+      "name": "Edge cases",
+      "description": "Skips malformed lines, ignores empty lines, strips query strings, breaks ties in byte order, counts a last line with no newline and handles an empty log."
+    },
+    {
+      "id": "input",
+      "name": "File or stdin",
+      "description": "Reads the log from a file, from stdin when no file is given or the file is -, and from a file name with a space in it."
+    },
+    {
+      "id": "arguments",
+      "name": "Options and usage errors",
+      "description": "Supports -n N for the length of the top lists, and exits 2 with a message on stderr for a bad -n value, an unknown option or more than one file."
+    },
+    {
+      "id": "errors",
+      "name": "Unreadable input",
+      "description": "Exits 1 with a message on stderr, and prints nothing on stdout, when the log file is missing, unreadable or a directory."
+    },
+    {
+      "id": "random",
+      "name": "Random logs",
+      "description": "Gives the right report for three logs generated at random during grading. Their names and answers are not visible to the script."
+    },
+    {
+      "id": "speed",
+      "name": "Speed",
+      "description": "Summarizes a random 100,000-line log correctly in under 10 seconds, including about a second to start the container."
+    }
+  ],
+  "solutionFiles": ["challenges/script-it/summarize.sh"],
+  "hints": [
+    {
+      "title": "Getting the edge cases right",
+      "body": "Read each line with one regular expression match instead of cutting fields by position. The user agent contains spaces, so field numbers after the request are not stable."
+    },
+    {
+      "title": "Speed",
+      "body": "A while read loop in bash over 100,000 lines takes far longer than 10 seconds, and starting cut or grep once per line is slower still. Let one awk program do the reading and counting, and sort do the ranking."
+    },
+    {
+      "title": "The ShellCheck warnings in the starter",
+      "body": "Look up each code on the ShellCheck wiki. The fix is in the code, not in a disable comment."
+    },
+    {
+      "title": "set -o pipefail and head",
+      "body": "sort | head -n 5 can kill sort with SIGPIPE when there is a lot of output. With pipefail and set -e that ends the script early. Test with a big log."
+    }
+  ],
+  "localTest": {
+    "intro": "From the challenge folder, with bash, Python 3, ShellCheck and bats-core 1.5 or later:",
+    "commands": "./summarize.sh sample/access.log\nshellcheck summarize.sh\nSANDBOX=none SOLUTION_DIR=\"$PWD\" bats grade/summarize.bats"
+  },
+  "related": {
+    "exercises": ["server-monitoring-maintenance", "linux-performance-troubleshooting"],
+    "guides": ["introduction-to-bash", "introduction-to-linux"]
+  },
+  "publishedAt": "2026-10-24"
+}

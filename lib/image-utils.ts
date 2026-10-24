@@ -88,6 +88,7 @@ export function getSocialImagePath(
     | 'quizzes'
     | 'flashcards'
     | 'checklists'
+    | 'challenges'
     | 'tools'
 ): string {
   return getExistingImagePath(type, slug, SOCIAL_IMAGE_EXTENSIONS, true) || '/og-image.jpg';

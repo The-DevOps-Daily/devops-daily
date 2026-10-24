@@ -13,6 +13,8 @@ import { pickRelatedItems } from '@/lib/related-content';
 import { RelatedContent } from '@/components/related-content';
 import { RelatedAcrossTypes } from '@/components/related-across-types';
 import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
+import { getChallengesForExercise } from '@/lib/challenges';
+import { ChallengeCallout } from '@/components/challenges/challenge-callout';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -90,6 +92,8 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
     { currentSlug: exercise.id, limit: 3 },
   );
 
+  const challenges = await getChallengesForExercise(exercise.id);
+
   const crossTypeRelated = await getRelatedAcrossTypes({
     current: {
       type: 'exercise',
@@ -114,6 +118,11 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         url={`/exercises/${exercise.id}`}
       />
       <ExerciseDetailClient exercise={exercise} />
+      {challenges.length > 0 && (
+        <div className="max-w-4xl mx-auto px-4 pb-8">
+          <ChallengeCallout challenges={challenges} />
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4 pb-12">
         <ExerciseSeriesNav
           currentExercise={exercise}

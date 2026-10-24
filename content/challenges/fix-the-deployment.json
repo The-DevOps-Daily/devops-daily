@@ -1,0 +1,77 @@
+{
+  "id": "fix-the-deployment",
+  "slug": "fix-the-deployment",
+  "title": "Fix the Deployment",
+  "description": "An inventory API never comes up on Kubernetes. Find and fix the bugs in its Deployment, Service and ConfigMap. CI grades your PR on a kind cluster.",
+  "summary": "An inventory API never comes up on Kubernetes. Find and fix the bugs in its Deployment, Service and ConfigMap until the rollout finishes and the Service answers.",
+  "topic": "Kubernetes",
+  "category": "Kubernetes",
+  "difficulty": "intermediate",
+  "minutes": 45,
+  "tags": ["kubernetes", "kubectl", "debugging", "deployments", "services", "probes"],
+  "situation": [
+    "The inventory API was moved to Kubernetes on Friday. On Monday it is still not serving: the rollout never finishes, and the few times a pod looked healthy, nothing answered behind the Service. The person who wrote the manifests is on holiday.",
+    "The app itself is fine. It reads the store name from STORE_NAME and refuses to start without it, listens on port 8080, answers ok on GET /healthz and JSON with the store's stock on GET /. The manifests in k8s/ are where the bugs are, and there is more than one."
+  ],
+  "task": [
+    "The inventory-api Deployment rolls out with 2 of 2 replicas ready.",
+    "The inventory-api Service routes to the pods.",
+    "GET / on port 80 of the Service answers HTTP 200 for the store named in the ConfigMap.",
+    "The pods stay up without restarts.",
+    "Keep the image and its entrypoint, the 2 replicas, both HTTP probes, STORE_NAME from a ConfigMap, and the security settings: the namespace enforces Pod Security restricted."
+  ],
+  "checks": [
+    {
+      "id": "manifests",
+      "name": "The manifests apply",
+      "description": "The files in k8s/ parse and apply, and only define the inventory-api Deployment and Service plus ConfigMaps. The image, the 2 replicas and both HTTP probes stay in place, STORE_NAME comes from a ConfigMap, and the pods meet Pod Security restricted. Nothing is applied until these checks pass."
+    },
+    {
+      "id": "rollout",
+      "name": "The rollout finishes",
+      "description": "kubectl rollout status for deployment/inventory-api succeeds within 120 seconds, with 2 of 2 replicas ready."
+    },
+    {
+      "id": "endpoints",
+      "name": "The Service has endpoints",
+      "description": "The inventory-api Service routes to at least one ready pod."
+    },
+    {
+      "id": "answers",
+      "name": "The Service answers",
+      "description": "GET / on port 80 of the Service's cluster IP answers HTTP 200 with the store name from the ConfigMap."
+    },
+    {
+      "id": "stable",
+      "name": "The pods stay up",
+      "description": "30 seconds after the other checks: the URLs both probes call answer, 2 of 2 replicas are still ready, and no container restarted."
+    }
+  ],
+  "solutionFiles": [
+    "challenges/fix-the-deployment/k8s/*.yaml",
+    "challenges/fix-the-deployment/k8s/*.yml"
+  ],
+  "hints": [
+    {
+      "title": "Start where Kubernetes tells you",
+      "body": "kubectl get pods, then kubectl describe pod and read the Events at the bottom. kubectl logs shows what the app printed before it stopped."
+    },
+    {
+      "title": "A pod that runs but is never ready",
+      "body": "Something decides when a pod is ready. Ask the app what it actually serves: port-forward to the Deployment and curl the paths the probes use."
+    },
+    {
+      "title": "Ready pods, but the Service does not answer",
+      "body": "kubectl get endpointslices -l kubernetes.io/service-name=inventory-api shows which pods the Service sends traffic to, and on which port. Compare the Service with the pods it should select."
+    }
+  ],
+  "localTest": {
+    "intro": "From the challenge folder, with Docker, kind and kubectl:",
+    "commands": "kind create cluster --name inventory\ndocker build -t devops-daily/inventory-api:1.0 app/\nkind load docker-image devops-daily/inventory-api:1.0 --name inventory\nkubectl create namespace challenge\nkubectl label namespace challenge pod-security.kubernetes.io/enforce=restricted\nkubectl apply -n challenge -f k8s/\nkubectl -n challenge rollout status deployment/inventory-api --timeout=120s\nkind delete cluster --name inventory"
+  },
+  "related": {
+    "exercises": ["helm-kubernetes-packaging", "kubernetes-hpa-lab"],
+    "guides": ["introduction-to-kubernetes"]
+  },
+  "publishedAt": "2026-10-24"
+}

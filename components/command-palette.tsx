@@ -28,6 +28,7 @@ import {
   Scale,
   Layers,
   Wrench,
+  Swords,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { TYPE_COLORS, TYPE_LABELS, type SearchItem } from '@/lib/search-types';
@@ -45,6 +46,7 @@ const TYPE_ICONS = {
   comparison: Scale,
   flashcard: Layers,
   tool: Wrench,
+  challenge: Swords,
 };
 
 export function CommandPalette() {

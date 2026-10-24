@@ -10,7 +10,8 @@ export type SearchItemType =
   | 'interview-question'
   | 'comparison'
   | 'flashcard'
-  | 'tool';
+  | 'tool'
+  | 'challenge';
 
 export interface SearchItem {
   id: string;
@@ -37,6 +38,7 @@ export const TYPE_LABELS: Record<SearchItemType, string> = {
   comparison: 'Comparisons',
   flashcard: 'Flashcards',
   tool: 'Tools',
+  challenge: 'Challenges',
 };
 
 export const TYPE_COLORS: Record<SearchItemType, string> = {
@@ -53,4 +55,5 @@ export const TYPE_COLORS: Record<SearchItemType, string> = {
   comparison: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
   flashcard: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20',
   tool: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  challenge: 'bg-lime-500/10 text-lime-700 dark:text-lime-400 border-lime-500/20',
 };

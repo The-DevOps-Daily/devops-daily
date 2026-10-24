@@ -229,6 +229,18 @@ async function collectItems(): Promise<CoverItem[]> {
       ogSuffix: true,
     });
   }
+  for (const challenge of await readJsonDirectory('content/challenges')) {
+    items.push({
+      type: 'challenge',
+      slug: required(challenge.slug || challenge.id, 'challenge slug'),
+      title: required(challenge.title, 'challenge title'),
+      category: challenge.category || 'DevOps',
+      topicCategory: challenge.category,
+      tags: challenge.tags,
+      directory: 'challenges',
+      ogSuffix: true,
+    });
+  }
   for (const flashcard of await readJsonDirectory('content/flashcards')) {
     items.push({
       type: 'flashcard',

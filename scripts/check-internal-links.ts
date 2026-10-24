@@ -54,6 +54,7 @@ const LINK_TARGETS: Record<string, { dir: string; ext: string; isDir?: boolean }
   '/quizzes/': { dir: 'quizzes', ext: '.json' },
   '/categories/': { dir: 'categories', ext: '.md' },
   '/checklists/': { dir: 'checklists', ext: '.json' },
+  '/challenges/': { dir: 'challenges', ext: '.json' },
   '/flashcards/': { dir: 'flashcards', ext: '.json' },
   '/interview-questions/': { dir: 'interview-questions', ext: '.json' },
 };
@@ -64,7 +65,7 @@ function extractInternalLinks(content: string): InternalLink[] {
 
   for (let i = 0; i < lines.length; i++) {
     // Match markdown links like [text](/posts/slug) or [text](/guides/slug/part)
-    const regex = /\]\((\/(?:posts|guides|exercises|quizzes|categories|checklists|flashcards|interview-questions)\/[^\s)#]+)/g;
+    const regex = /\]\((\/(?:posts|guides|exercises|quizzes|categories|checklists|challenges|flashcards|interview-questions)\/[^\s)#]+)/g;
     let match;
     while ((match = regex.exec(lines[i])) !== null) {
       links.push({ path: match[1], line: i + 1 });
