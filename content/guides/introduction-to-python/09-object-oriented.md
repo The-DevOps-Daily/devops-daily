@@ -1,830 +1,504 @@
 ---
-title: 'Object-Oriented Programming'
-description: 'Learn the principles of object-oriented programming in Python'
+title: 'Python Classes and Dataclasses: Object-Oriented Code for Ops Tools'
+description: 'Python classes for real tools: dataclasses, enums, properties, special methods, Protocols vs inheritance, and an API client class, with real runs and mypy.'
 order: 9
 ---
 
-Object-Oriented Programming (OOP) is a programming paradigm that organizes code around objects, which are instances of classes. Python is a multi-paradigm language that supports OOP and offers a flexible implementation of OOP principles. In this section, you'll learn how to create and use classes and objects in Python.
+By now you have functions that check things, dictionaries that describe services and results, and an HTTP client with settings. As a tool grows, those pieces want to travel together: a check needs its settings _and_ the code that runs it, a result needs a fixed set of fields that every part of the program agrees on, and an API client needs its base URL, token and connection pool in one place. **Classes** bundle data with the functions that work on it.
 
-## Classes and Objects
+This part covers classes and instances, the dataclass shortcut you will use most, enums for fixed sets of values, properties, special methods, and the choice between inheritance and Protocols. It ends with the check classes that [Part 10](/guides/introduction-to-python/10-building-a-python-project) packages into a command-line tool.
 
-A class is a blueprint for creating objects. An object is an instance of a class, a concrete entity based on the class definition.
+## Prerequisites
 
-### Defining a Class
+- The `~/pyops` project with httpx installed, and the test API `fakeapi.py` from [Part 8](/guides/introduction-to-python/08-error-handling) running in a second terminal: `python fakeapi.py 8080`.
+- Functions, type hints and decorators from [Part 4](/guides/introduction-to-python/04-functions).
 
-Here's a simple class definition:
+## Classes and Instances
 
-```python
-class Dog:
-    """A simple class representing a dog."""
+A **class** describes a kind of object; an **instance** is one object of that kind. `__init__` runs when you create an instance and sets its **attributes**; methods are functions defined in the class, and they receive the instance as their first parameter, called `self` by convention:
 
-    # Class attribute (shared by all instances)
-    species = "Canis familiaris"
-
-    # Initializer / Constructor
-    def __init__(self, name, age):
-        """Initialize a new Dog object."""
-        self.name = name  # Instance attribute
-        self.age = age    # Instance attribute
-
-    # Instance method
-    def bark(self):
-        """Let the dog bark."""
-        return f"{self.name} says Woof!"
-
-    # Instance method
-    def description(self):
-        """Return a description of the dog."""
-        return f"{self.name} is {self.age} years old"
+```terminal
+{
+  "title": "a first class",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> class Server:\n...     def __init__(self, name, cpus, memory_gib):\n...         self.name = name\n...         self.cpus = cpus\n...         self.memory_gib = memory_gib\n...     def fits(self, cpus, memory_gib):\n...         return cpus <= self.cpus and memory_gib <= self.memory_gib\n...     def __repr__(self):\n...         return f\"Server({self.name!r}, cpus={self.cpus}, memory_gib={self.memory_gib})\"\n...\n>>> web = Server(\"web-01\", 4, 8)\n>>> web\nServer('web-01', cpus=4, memory_gib=8)\n>>> web.fits(2, 4), web.fits(8, 4)\n(True, False)\n>>> web.cpus = 8\n>>> web.fits(8, 4)\nTrue\n>>> exit()"
+    }
+  ]
+}
 ```
 
-Key components of this class definition:
+`__repr__` is a **special method** (a "dunder" method, for the double underscores): Python calls it when it needs to show the object, in the REPL, in logs and in tracebacks. Without it you get `<__main__.Server object at 0x7f...>`, which tells you nothing.
 
-- The `class` keyword followed by the class name (usually in CamelCase)
-- A docstring that describes the class
-- Class attributes that are shared by all instances
-- The `__init__` method (constructor) that initializes new instances
-- Instance attributes that are unique to each instance
-- Instance methods that define the behavior of objects
+### Class attributes are shared
 
-### Creating Objects (Instances)
+A variable assigned in the class body, outside any method, belongs to the _class_ and is shared by every instance. That is fine for constants, and a classic bug for anything mutable:
 
-Once you've defined a class, you can create instances (objects) of that class:
-
-```python
-# Create two dog instances
-buddy = Dog("Buddy", 9)
-miles = Dog("Miles", 4)
-
-# Access instance attributes
-print(buddy.name)  # "Buddy"
-print(miles.age)   # 4
-
-# Access class attributes
-print(buddy.species)  # "Canis familiaris"
-print(miles.species)  # "Canis familiaris"
-
-# Call instance methods
-print(buddy.bark())        # "Buddy says Woof!"
-print(miles.description())  # "Miles is 4 years old"
+```terminal
+{
+  "title": "a shared class attribute",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> class Host:\n...     tags = []\n...     def __init__(self, name):\n...         self.name = name\n...\n>>> web, db = Host(\"web-01\"), Host(\"db-01\")\n>>> web.tags.append(\"frontend\")\n>>> db.tags\n['frontend']\n>>> exit()"
+    }
+  ]
+}
 ```
 
-### Methods with Parameters
+Create per-instance values in `__init__` (`self.tags = []`), or use a dataclass with a default factory, which the next section shows.
 
-Methods can take parameters just like regular functions:
+## Dataclasses
 
-```python
-class Dog:
-    # Previous code...
-
-    def eat(self, food):
-        """Feed the dog."""
-        return f"{self.name} is eating {food}"
-
-# Create a dog instance
-buddy = Dog("Buddy", 9)
-
-# Call a method with a parameter
-print(buddy.eat("dog food"))  # "Buddy is eating dog food"
-```
-
-## Inheritance
-
-Inheritance allows you to create a new class that inherits attributes and methods from an existing class.
-
-### Creating a Subclass
+Most classes in operations code are mainly data: an endpoint, a check, a result, a deployment. Writing `__init__`, `__repr__` and `__eq__` for each one is boilerplate. The `@dataclass` decorator generates them from annotated fields:
 
 ```python
-class Dog:
-    # Previous Dog class code...
+from dataclasses import asdict, dataclass, field, replace
 
-class Bulldog(Dog):
-    """A Bulldog, a specific breed of dog."""
 
-    # Override the species class attribute
-    species = "Canis familiaris bulldogus"
+@dataclass(frozen=True, slots=True, order=True)
+class Endpoint:
+    host: str
+    port: int = 443
+    tags: tuple[str, ...] = ()
 
-    def __init__(self, name, age, weight):
-        # Call the parent class's __init__ method
-        super().__init__(name, age)
-        self.weight = weight  # Add a new instance attribute
-
-    # Override the bark method
-    def bark(self):
-        """Bulldogs have a different bark."""
-        return f"{self.name} says Grrrr!"
-
-    # Add a new method
-    def snore(self):
-        """Bulldogs snore loudly."""
-        return f"{self.name} is snoring... ZZZ"
-```
-
-### Using the Subclass
-
-```python
-# Create a Bulldog instance
-rocky = Bulldog("Rocky", 3, 65)
-
-# Access inherited attributes and methods
-print(rocky.name)           # "Rocky"
-print(rocky.description())  # "Rocky is 3 years old"
-
-# Access overridden attributes and methods
-print(rocky.species)  # "Canis familiaris bulldogus"
-print(rocky.bark())   # "Rocky says Grrrr!"
-
-# Access new attributes and methods
-print(rocky.weight)   # 65
-print(rocky.snore())  # "Rocky is snoring... ZZZ"
-```
-
-### Multiple Inheritance
-
-Python supports multiple inheritance, where a class can inherit from multiple parent classes:
-
-```python
-class Animal:
-    def eat(self):
-        return "Eating..."
-
-class CanSwim:
-    def swim(self):
-        return "Swimming..."
-
-class CanFly:
-    def fly(self):
-        return "Flying..."
-
-# Inherits from both Animal and CanSwim
-class Duck(Animal, CanSwim, CanFly):
-    def quack(self):
-        return "Quack!"
-
-# Create a Duck instance
-donald = Duck()
-
-# Access methods from all parent classes
-print(donald.eat())   # "Eating..."
-print(donald.swim())  # "Swimming..."
-print(donald.fly())   # "Flying..."
-print(donald.quack()) # "Quack!"
-```
-
-When a class inherits from multiple parents, Python uses the Method Resolution Order (MRO) to determine which method to call when the same method name is used in multiple parent classes.
-
-## Encapsulation
-
-Encapsulation is the bundling of data and methods that operate on that data within a single unit (the class). It also involves restricting access to certain components to prevent unintended modifications.
-
-### Private Attributes and Methods
-
-Python doesn't have true private attributes or methods, but it uses a convention: names prefixed with a single underscore are considered "protected" (not meant to be accessed directly), and names prefixed with double underscores are name-mangled to make them harder to access accidentally:
-
-```python
-class BankAccount:
-    def __init__(self, owner, balance=0):
-        self.owner = owner            # Public attribute
-        self._balance = balance       # Protected attribute
-        self.__account_number = "12345"  # Private attribute (name-mangled)
-
-    def deposit(self, amount):
-        """Deposit money into the account."""
-        if amount > 0:
-            self._balance += amount
-            return f"Deposited ${amount}. New balance: ${self._balance}"
-        return "Invalid deposit amount"
-
-    def withdraw(self, amount):
-        """Withdraw money from the account."""
-        if 0 < amount <= self._balance:
-            self._balance -= amount
-            return f"Withdrew ${amount}. New balance: ${self._balance}"
-        return "Invalid withdrawal amount"
-
-    def get_balance(self):
-        """Get the current balance."""
-        return self._balance
-
-    def _service_charge(self):
-        """Apply a service charge (protected method)."""
-        self._balance -= 5
-
-    def __generate_statement(self):
-        """Generate an account statement (private method)."""
-        return f"Statement for account {self.__account_number}"
-```
-
-### Accessing Attributes
-
-```python
-# Create a bank account
-account = BankAccount("Alice", 1000)
-
-# Access public attributes and methods
-print(account.owner)           # "Alice"
-print(account.deposit(500))    # "Deposited $500. New balance: $1500"
-print(account.get_balance())   # 1500
-
-# Access protected attributes and methods
-# This works, but it's discouraged by convention
-print(account._balance)        # 1500
-account._service_charge()
-print(account.get_balance())   # 1495
-
-# Try to access private attributes and methods
-# This will raise an AttributeError
-# print(account.__account_number)
-# account.__generate_statement()
-
-# But you can still access them using name mangling
-print(account._BankAccount__account_number)  # "12345"
-print(account._BankAccount__generate_statement())  # "Statement for account 12345"
-```
-
-## Property Decorators
-
-Python provides property decorators for controlled access to attributes. This allows you to define methods that behave like attributes:
-
-```python
-class Temperature:
-    def __init__(self, celsius=0):
-        self._celsius = celsius
+    def __post_init__(self) -> None:
+        if not 1 <= self.port <= 65535:
+            raise ValueError(f"port out of range: {self.port}")
 
     @property
-    def celsius(self):
-        """Get the temperature in Celsius."""
-        return self._celsius
+    def url(self) -> str:
+        return f"https://{self.host}:{self.port}/"
 
-    @celsius.setter
-    def celsius(self, value):
-        """Set the temperature in Celsius."""
-        if value < -273.15:
-            raise ValueError("Temperature below absolute zero is not possible")
-        self._celsius = value
 
-    @property
-    def fahrenheit(self):
-        """Get the temperature in Fahrenheit."""
-        return (self._celsius * 9/5) + 32
-
-    @fahrenheit.setter
-    def fahrenheit(self, value):
-        """Set the temperature in Fahrenheit."""
-        celsius = (value - 32) * 5/9
-        if celsius < -273.15:
-            raise ValueError("Temperature below absolute zero is not possible")
-        self._celsius = celsius
+@dataclass(slots=True)
+class Service:
+    name: str
+    endpoints: list[Endpoint] = field(default_factory=list)
+    replicas: int = 1
 ```
 
-Using properties:
-
-```python
-# Create a Temperature instance
-temp = Temperature(25)
-
-# Access properties like attributes
-print(temp.celsius)     # 25
-print(temp.fahrenheit)  # 77.0
-
-# Set properties
-temp.celsius = 30
-print(temp.celsius)     # 30
-print(temp.fahrenheit)  # 86.0
-
-temp.fahrenheit = 68
-print(temp.celsius)     # 20.0
-print(temp.fahrenheit)  # 68.0
-
-# This will raise a ValueError
-# temp.celsius = -300
+```terminal
+{
+  "title": "dataclasses at work",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> from dataclasses import asdict, replace\n>>> from endpoints import Endpoint, Service\n>>> api = Endpoint(\"api.internal\", tags=(\"public\",))\n>>> api\nEndpoint(host='api.internal', port=443, tags=('public',))\n>>> api == Endpoint(\"api.internal\", 443, (\"public\",))\nTrue\n>>> api.url\n'https://api.internal:443/'\n>>> sorted([Endpoint(\"db\", 5432), Endpoint(\"api\"), Endpoint(\"api\", 8443)])\n[Endpoint(host='api', port=443, tags=()), Endpoint(host='api', port=8443, tags=()), Endpoint(host='db', port=5432, tags=())]\n>>> replace(api, port=8443)\nEndpoint(host='api.internal', port=8443, tags=('public',))\n>>> svc = Service(\"checkout\", [api])\n>>> asdict(svc)\n{'name': 'checkout', 'endpoints': [{'host': 'api.internal', 'port': 443, 'tags': ('public',)}], 'replicas': 1}\n>>> api.port = 80\nTraceback (most recent call last):\n  File \"<stdin>\", line 1, in <module>\n    api.port = 80\n    ^^^^^^^^\n  File \"<string>\", line 34, in __setattr__\ndataclasses.FrozenInstanceError: cannot assign to field 'port'\n>>> Endpoint(\"db\", 70000)\nTraceback (most recent call last):\n  File \"<stdin>\", line 1, in <module>\n    Endpoint(\"db\", 70000)\n    ~~~~~~~~^^^^^^^^^^^^^\n  File \"<string>\", line 6, in __init__\n  File \"/home/dev/pyops/endpoints.py\", line 12, in __post_init__\n    raise ValueError(f\"port out of range: {self.port}\")\nValueError: port out of range: 70000\n>>> exit()"
+    }
+  ]
+}
 ```
 
-## Polymorphism
+What each option does:
 
-Polymorphism allows different classes to be treated as instances of the same class through inheritance and method overriding, or by implementing the same methods in unrelated classes.
+- **Generated methods**: `__init__` takes the fields in order with their defaults, `__repr__` shows them, and `__eq__` compares them, so two endpoints with the same values are equal.
+- **`frozen=True`** makes instances read-only: assigning to a field raises `FrozenInstanceError`. Frozen instances are also hashable, so they can go in sets and be dictionary keys, as long as every field is hashable. Freezing stops reassignment, not changes _inside_ a mutable field such as a list, which is why `Endpoint` keeps its tags in a tuple. Use it for values that should not change after creation, such as results and configuration.
+- **`order=True`** adds `<`, `>` and friends, comparing fields in order, so `sorted()` works.
+- **`slots=True`** (Python 3.10 and later) stores attributes in fixed slots instead of a dictionary: less memory, and a typo such as `api.prot = 80` raises an error instead of quietly creating a new attribute.
+- **`__post_init__`** runs after the generated `__init__`; it is the place for validation.
+- **`field(default_factory=list)`** gives each instance its own new list. A plain `= []` default is refused outright, because it would be shared (the trap from Part 4):
 
-### Method Overriding
-
-We've already seen method overriding in the Bulldog example, where the `bark` method was overridden.
-
-### Duck Typing
-
-Python also supports "duck typing," where the type or class of an object is less important than the methods it defines. "If it walks like a duck and quacks like a duck, then it's a duck."
-
-```python
-class Duck:
-    def quack(self):
-        return "Quack!"
-
-    def fly(self):
-        return "Flapping wings"
-
-class Person:
-    def quack(self):
-        return "I'm quacking like a duck!"
-
-    def fly(self):
-        return "I'm flapping my arms!"
-
-def make_it_quack_and_fly(thing):
-    """Make the thing quack and fly regardless of its type."""
-    print(thing.quack())
-    print(thing.fly())
-
-# Create instances
-duck = Duck()
-person = Person()
-
-# Both can quack and fly
-make_it_quack_and_fly(duck)    # "Quack!" and "Flapping wings"
-make_it_quack_and_fly(person)  # "I'm quacking like a duck!" and "I'm flapping my arms!"
+```terminal
+{
+  "title": "no mutable defaults",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> from dataclasses import dataclass\n>>> try:\n...     @dataclass\n...     class Bad:\n...         tags: list[str] = []\n... except ValueError as err:\n...     print(err)\n...\nmutable default <class 'list'> for field tags is not allowed: use default_factory\n>>> exit()"
+    }
+  ]
+}
 ```
 
-## Special Methods (Magic Methods)
+`asdict()` converts a dataclass (recursively) into dictionaries and lists, ready for `json.dumps()`, and `replace()` returns a copy with some fields changed, which is how you "modify" a frozen instance.
 
-Python classes can define special methods, also known as "magic methods" or "dunder methods" (double underscore methods), to customize the behavior of objects.
+## Enums for Fixed Sets of Values
 
-### Common Special Methods
+When a value can only be one of a few things (a check status, an environment, a log level), an **enum** turns typos into errors and gives you one place that lists the options. `StrEnum` (Python 3.11 and later) members are also real strings, so they compare with strings and serialize to JSON as is:
 
-```python
-class Vector:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        """Return a string representation of the vector."""
-        return f"Vector({self.x}, {self.y})"
-
-    def __repr__(self):
-        """Return a string representation for developers."""
-        return f"Vector({self.x}, {self.y})"
-
-    def __add__(self, other):
-        """Add two vectors."""
-        return Vector(self.x + other.x, self.y + other.y)
-
-    def __sub__(self, other):
-        """Subtract one vector from another."""
-        return Vector(self.x - other.x, self.y - other.y)
-
-    def __eq__(self, other):
-        """Check if two vectors are equal."""
-        return self.x == other.x and self.y == other.y
-
-    def __abs__(self):
-        """Return the magnitude of the vector."""
-        return (self.x ** 2 + self.y ** 2) ** 0.5
-
-    def __bool__(self):
-        """Return True if the vector's magnitude is non-zero."""
-        return abs(self) != 0
-
-    def __len__(self):
-        """Return the dimension of the vector."""
-        return 2
+```terminal
+{
+  "title": "StrEnum",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> import json\n>>> from enum import StrEnum\n>>> class Status(StrEnum):\n...     OK = \"ok\"\n...     WARN = \"warn\"\n...     FAIL = \"fail\"\n...\n>>> Status.FAIL, Status.FAIL == \"fail\"\n(<Status.FAIL: 'fail'>, True)\n>>> Status(\"warn\")\n<Status.WARN: 'warn'>\n>>> [s.value for s in Status]\n['ok', 'warn', 'fail']\n>>> json.dumps({\"api\": Status.OK})\n'{\"api\": \"ok\"}'\n>>> try:\n...     Status(\"broken\")\n... except ValueError as err:\n...     print(err)\n...\n'broken' is not a valid Status\n>>> exit()"
+    }
+  ]
+}
 ```
 
-Using special methods:
+## Properties
 
-```python
-# Create vectors
-v1 = Vector(3, 4)
-v2 = Vector(1, 2)
+A **property** is a method that you read like an attribute. Use it for values computed from other fields, so they can never be out of date. `Endpoint.url` above is one; here is another:
 
-# __str__ is called by print()
-print(v1)  # "Vector(3, 4)"
-
-# __repr__ is called in interactive mode or by repr()
-repr(v2)  # "Vector(1, 2)"
-
-# __add__ is called by +
-v3 = v1 + v2
-print(v3)  # "Vector(4, 6)"
-
-# __sub__ is called by -
-v4 = v1 - v2
-print(v4)  # "Vector(2, 2)"
-
-# __eq__ is called by ==
-print(v1 == v2)  # False
-print(v3 == Vector(4, 6))  # True
-
-# __abs__ is called by abs()
-print(abs(v1))  # 5.0
-
-# __bool__ is called by bool() or in conditionals
-if v1:
-    print("v1 is non-zero")  # This will be printed
-
-# __len__ is called by len()
-print(len(v1))  # 2
+```terminal
+{
+  "title": "a computed property",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> import shutil\n>>> from dataclasses import dataclass\n>>> @dataclass(frozen=True)\n... class DiskUsage:\n...     total: int\n...     used: int\n...     @property\n...     def used_percent(self):\n...         return round(self.used / self.total * 100, 1)\n...\n>>> usage = DiskUsage(*shutil.disk_usage(\"/tmp\")[:2])\n>>> usage.used_percent\n0.0\n>>> DiskUsage(total=100, used=91).used_percent\n91.0\n>>> exit()"
+    }
+  ]
+}
 ```
 
-## Static Methods and Class Methods
+Do not write Java-style `get_x()` and `set_x()` methods. Start with a plain attribute; if you later need logic, turn it into a property and no caller has to change.
 
-### Static Methods
+## Special Methods: Make Objects Behave Like Built-ins
 
-Static methods don't operate on instances and don't require the `self` parameter:
+Special methods let your objects work with Python's syntax and built-in functions: `len()` calls `__len__`, `in` calls `__contains__`, a `for` loop calls `__iter__`, and `with` calls `__enter__` and `__exit__`. An inventory class that supports all of them reads naturally:
 
 ```python
-class MathUtils:
-    @staticmethod
-    def add(a, b):
-        return a + b
+from collections.abc import Iterator
 
-    @staticmethod
-    def multiply(a, b):
-        return a * b
 
-# Use static methods without creating an instance
-print(MathUtils.add(5, 3))       # 8
-print(MathUtils.multiply(5, 3))  # 15
+class Inventory:
+    """Hosts and the roles they have."""
 
-# You can also use them from an instance
-math = MathUtils()
-print(math.add(5, 3))       # 8
+    def __init__(self) -> None:
+        self._roles: dict[str, set[str]] = {}
+
+    def add(self, host: str, *roles: str) -> None:
+        self._roles.setdefault(host, set()).update(roles)
+
+    def with_role(self, role: str) -> list[str]:
+        return sorted(host for host, roles in self._roles.items() if role in roles)
+
+    def __len__(self) -> int:
+        return len(self._roles)
+
+    def __contains__(self, host: object) -> bool:
+        return host in self._roles
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(sorted(self._roles))
+
+    def __repr__(self) -> str:
+        return f"Inventory({len(self)} hosts)"
 ```
 
-### Class Methods
-
-Class methods operate on the class itself and take a `cls` parameter:
-
-```python
-class Person:
-    count = 0  # Class attribute to track the number of people
-
-    def __init__(self, name, age):
-        self.name = name
-        self.age = age
-        Person.count += 1
-
-    @classmethod
-    def create_adult(cls, name):
-        """Create a new person who is an adult (age 18)."""
-        return cls(name, 18)
-
-    @classmethod
-    def create_child(cls, name):
-        """Create a new person who is a child (age 5)."""
-        return cls(name, 5)
-
-    @classmethod
-    def get_count(cls):
-        """Get the number of Person instances created."""
-        return cls.count
-
-# Create instances using class methods
-adult = Person.create_adult("Alice")
-child = Person.create_child("Bob")
-
-print(adult.name, adult.age)  # "Alice 18"
-print(child.name, child.age)  # "Bob 5"
-print(Person.get_count())     # 2
+```terminal
+{
+  "title": "an inventory that acts like a collection",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> from inventory import Inventory\n>>> inv = Inventory()\n>>> inv.add(\"web-01\", \"web\", \"prod\")\n>>> inv.add(\"web-02\", \"web\", \"prod\")\n>>> inv.add(\"db-01\", \"db\", \"prod\")\n>>> inv.add(\"web-01\", \"canary\")\n>>> inv, len(inv), \"db-01\" in inv, \"db-02\" in inv\n(Inventory(3 hosts), 3, True, False)\n>>> list(inv)\n['db-01', 'web-01', 'web-02']\n>>> inv.with_role(\"web\"), inv.with_role(\"canary\")\n(['web-01', 'web-02'], ['web-01'])\n>>> exit()"
+    }
+  ]
+}
 ```
 
-## Abstract Base Classes
+The leading underscore in `self._roles` marks the attribute as internal: Python does not enforce it, but it tells other code not to touch it, so the class can change how it stores hosts later.
 
-Abstract Base Classes (ABCs) define a common interface for their subclasses but can't be instantiated themselves. Python's `abc` module provides tools for creating ABCs:
+## Inheritance, ABCs and Protocols
 
-```python
-from abc import ABC, abstractmethod
+**Inheritance** lets a class reuse and extend another: `class TcpCheck(Check)` gets every method of `Check` and can override some. An **abstract base class** (from the `abc` module) declares methods that every subclass must implement, and Python refuses to create an instance of a subclass that forgot one.
 
-class Shape(ABC):
-    @abstractmethod
-    def area(self):
-        """Calculate the area of the shape."""
-        pass
-
-    @abstractmethod
-    def perimeter(self):
-        """Calculate the perimeter of the shape."""
-        pass
-
-    def describe(self):
-        """Describe the shape."""
-        return f"This shape has an area of {self.area()} square units and a perimeter of {self.perimeter()} units."
-
-class Rectangle(Shape):
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-
-    def area(self):
-        return self.width * self.height
-
-    def perimeter(self):
-        return 2 * (self.width + self.height)
-
-class Circle(Shape):
-    def __init__(self, radius):
-        self.radius = radius
-
-    def area(self):
-        import math
-        return math.pi * self.radius ** 2
-
-    def perimeter(self):
-        import math
-        return 2 * math.pi * self.radius
-```
-
-Using abstract base classes:
+For tools like this one there is usually a better fit: a **Protocol** (from `typing`). A Protocol describes what an object must _have_, and any class with those attributes and methods qualifies, without inheriting from anything. That is Python's duck typing ("if it has a `run()` method, it is a check"), made checkable by mypy. Here are the checks from the earlier parts as classes that all satisfy one Protocol:
 
 ```python
-# This would raise TypeError because Shape is abstract
-# shape = Shape()
-
-# Create concrete instances
-rect = Rectangle(10, 5)
-circle = Circle(7)
-
-print(rect.area())       # 50
-print(rect.perimeter())  # 30
-print(rect.describe())   # "This shape has an area of 50 square units and a perimeter of 30 units."
+"""Health checks as small classes: python checks.py"""
 
-print(circle.area())       # 153.93804002589985
-print(circle.perimeter())  # 43.982297150257104
-print(circle.describe())   # "This shape has an area of 153.93804002589985 square units and a perimeter of 43.982297150257104 units."
-```
+import shutil
+import socket
+import time
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Protocol
 
-## Practical Example: Library Management System
-
-Let's build a practical example of a Library Management System that demonstrates OOP principles:
+import httpx
 
-```python
-from datetime import datetime, timedelta
-from abc import ABC, abstractmethod
 
-class LibraryItem(ABC):
-    """Base class for all library items."""
+class Status(StrEnum):
+    OK = "ok"
+    WARN = "warn"
+    FAIL = "fail"
 
-    def __init__(self, title, item_id):
-        self.title = title
-        self.item_id = item_id
-        self.checked_out = False
-        self.due_date = None
 
-    @abstractmethod
-    def get_type(self):
-        """Return the type of the item."""
-        pass
-
-    @abstractmethod
-    def get_loan_period(self):
-        """Return the loan period in days."""
-        pass
+@dataclass(frozen=True, slots=True)
+class Result:
+    name: str
+    status: Status
+    detail: str
+    duration_ms: float = 0.0
 
-    def check_out(self):
-        """Check out the item."""
-        if self.checked_out:
-            return f"{self.title} is already checked out."
 
-        self.checked_out = True
-        self.due_date = datetime.now() + timedelta(days=self.get_loan_period())
-        return f"{self.title} checked out successfully. Due on {self.due_date.strftime('%Y-%m-%d')}."
+class Check(Protocol):
+    """Anything with a name and a run() method that returns a Result."""
 
-    def check_in(self):
-        """Check in the item."""
-        if not self.checked_out:
-            return f"{self.title} is not checked out."
+    name: str
 
-        self.checked_out = False
-        self.due_date = None
-        return f"{self.title} checked in successfully."
+    def run(self) -> Result: ...
 
-    def is_overdue(self):
-        """Check if the item is overdue."""
-        if not self.checked_out:
-            return False
-        return datetime.now() > self.due_date
-
-    def __str__(self):
-        status = "Checked out" if self.checked_out else "Available"
-        return f"{self.get_type()}: {self.title} ({self.item_id}) - {status}"
-
-class Book(LibraryItem):
-    """A book in the library."""
-
-    def __init__(self, title, item_id, author, pages):
-        super().__init__(title, item_id)
-        self.author = author
-        self.pages = pages
-
-    def get_type(self):
-        return "Book"
-
-    def get_loan_period(self):
-        return 21  # 3 weeks
 
-    def __str__(self):
-        base_str = super().__str__()
-        return f"{base_str}, Author: {self.author}, Pages: {self.pages}"
+def elapsed_ms(start: float) -> float:
+    return round((time.perf_counter() - start) * 1000, 1)
 
-class DVD(LibraryItem):
-    """A DVD in the library."""
 
-    def __init__(self, title, item_id, director, runtime):
-        super().__init__(title, item_id)
-        self.director = director
-        self.runtime = runtime  # in minutes
+@dataclass(slots=True)
+class HttpCheck:
+    name: str
+    url: str
+    timeout: float = 2.0
+    expect_status: int = 200
 
-    def get_type(self):
-        return "DVD"
+    def run(self) -> Result:
+        start = time.perf_counter()
+        try:
+            response = httpx.get(self.url, timeout=self.timeout)
+        except httpx.HTTPError as err:
+            return Result(self.name, Status.FAIL, f"{type(err).__name__}: {err}", elapsed_ms(start))
+        ok = response.status_code == self.expect_status
+        return Result(self.name, Status.OK if ok else Status.FAIL, f"HTTP {response.status_code}", elapsed_ms(start))
 
-    def get_loan_period(self):
-        return 7  # 1 week
 
-    def __str__(self):
-        base_str = super().__str__()
-        return f"{base_str}, Director: {self.director}, Runtime: {self.runtime} mins"
+@dataclass(slots=True)
+class TcpCheck:
+    name: str
+    host: str
+    port: int
+    timeout: float = 2.0
 
-class Magazine(LibraryItem):
-    """A magazine in the library."""
+    def run(self) -> Result:
+        start = time.perf_counter()
+        try:
+            with socket.create_connection((self.host, self.port), timeout=self.timeout):
+                pass
+        except OSError as err:
+            return Result(self.name, Status.FAIL, str(err), elapsed_ms(start))
+        return Result(self.name, Status.OK, f"{self.host}:{self.port} accepts connections", elapsed_ms(start))
 
-    def __init__(self, title, item_id, issue, publisher):
-        super().__init__(title, item_id)
-        self.issue = issue
-        self.publisher = publisher
 
-    def get_type(self):
-        return "Magazine"
+@dataclass(slots=True)
+class DiskCheck:
+    name: str
+    path: str = "/"
+    warn_percent: float = 80.0
+    max_used_percent: float = 90.0
 
-    def get_loan_period(self):
-        return 7  # 1 week
+    def run(self) -> Result:
+        usage = shutil.disk_usage(self.path)
+        if usage.total <= 0:  # /proc and other virtual file systems report no size
+            return Result(self.name, Status.FAIL, "no measurable capacity")
+        used = usage.used / usage.total * 100
+        if used >= self.max_used_percent:
+            status = Status.FAIL
+        elif used >= self.warn_percent:
+            status = Status.WARN
+        else:
+            status = Status.OK
+        return Result(self.name, status, f"{used:.1f}% used")
 
-    def __str__(self):
-        base_str = super().__str__()
-        return f"{base_str}, Issue: {self.issue}, Publisher: {self.publisher}"
 
-class Patron:
-    """A library patron (user)."""
+def run_all(checks: list[Check]) -> list[Result]:
+    return [check.run() for check in checks]
 
-    def __init__(self, name, patron_id):
-        self.name = name
-        self.patron_id = patron_id
-        self.checked_out_items = []
-
-    def check_out_item(self, item):
-        """Check out an item from the library."""
-        if item.checked_out:
-            return f"Cannot check out {item.title} because it is already checked out."
-
-        item.check_out()
-        self.checked_out_items.append(item)
-        return f"{self.name} checked out {item.title}."
-
-    def return_item(self, item):
-        """Return an item to the library."""
-        if item not in self.checked_out_items:
-            return f"{self.name} does not have {item.title} checked out."
-
-        item.check_in()
-        self.checked_out_items.remove(item)
-        return f"{self.name} returned {item.title}."
-
-    def get_checked_out_items(self):
-        """Get a list of all checked out items."""
-        return self.checked_out_items
-
-    def __str__(self):
-        num_items = len(self.checked_out_items)
-        return f"Patron: {self.name} ({self.patron_id}), Items Checked Out: {num_items}"
-
-class Library:
-    """A library that manages items and patrons."""
-
-    def __init__(self, name):
-        self.name = name
-        self.items = {}  # Dictionary of item_id -> item
-        self.patrons = {}  # Dictionary of patron_id -> patron
-
-    def add_item(self, item):
-        """Add an item to the library collection."""
-        if item.item_id in self.items:
-            return f"Item with ID {item.item_id} already exists."
-
-        self.items[item.item_id] = item
-        return f"{item.title} added to the library."
-
-    def add_patron(self, patron):
-        """Register a new patron with the library."""
-        if patron.patron_id in self.patrons:
-            return f"Patron with ID {patron.patron_id} already exists."
-
-        self.patrons[patron.patron_id] = patron
-        return f"{patron.name} registered with the library."
-
-    def check_out_item(self, patron_id, item_id):
-        """Check out an item to a patron."""
-        if patron_id not in self.patrons:
-            return f"Patron with ID {patron_id} does not exist."
-
-        if item_id not in self.items:
-            return f"Item with ID {item_id} does not exist."
-
-        patron = self.patrons[patron_id]
-        item = self.items[item_id]
-
-        return patron.check_out_item(item)
-
-    def return_item(self, patron_id, item_id):
-        """Return an item from a patron."""
-        if patron_id not in self.patrons:
-            return f"Patron with ID {patron_id} does not exist."
-
-        if item_id not in self.items:
-            return f"Item with ID {item_id} does not exist."
-
-        patron = self.patrons[patron_id]
-        item = self.items[item_id]
-
-        return patron.return_item(item)
-
-    def list_overdue_items(self):
-        """List all overdue items."""
-        overdue_items = [item for item in self.items.values() if item.is_overdue()]
-        return overdue_items
-
-    def __str__(self):
-        return f"{self.name} Library - {len(self.items)} items, {len(self.patrons)} patrons"
-
-# Example usage
-def main():
-    # Create a library
-    library = Library("Community")
-
-    # Add some items to the library
-    book1 = Book("The Hobbit", "B001", "J.R.R. Tolkien", 295)
-    book2 = Book("1984", "B002", "George Orwell", 328)
-    dvd1 = DVD("The Matrix", "D001", "The Wachowskis", 136)
-    magazine1 = Magazine("National Geographic", "M001", "January 2023", "National Geographic Society")
-
-    print(library.add_item(book1))
-    print(library.add_item(book2))
-    print(library.add_item(dvd1))
-    print(library.add_item(magazine1))
-
-    # Register some patrons
-    patron1 = Patron("Alice Smith", "P001")
-    patron2 = Patron("Bob Johnson", "P002")
-
-    print(library.add_patron(patron1))
-    print(library.add_patron(patron2))
-
-    # Check out and return items
-    print(library.check_out_item("P001", "B001"))  # Alice checks out The Hobbit
-    print(library.check_out_item("P002", "D001"))  # Bob checks out The Matrix
-    print(library.check_out_item("P001", "M001"))  # Alice checks out National Geographic
-
-    print("\nLibrary Items Status:")
-    for item in library.items.values():
-        print(f"- {item}")
-
-    print("\nPatron Status:")
-    for patron in library.patrons.values():
-        print(f"- {patron}")
-        for item in patron.get_checked_out_items():
-            print(f"  * {item.title}")
-
-    print("\nReturning items:")
-    print(library.return_item("P001", "B001"))  # Alice returns The Hobbit
-
-    print("\nUpdated Library Items Status:")
-    for item in library.items.values():
-        print(f"- {item}")
 
 if __name__ == "__main__":
-    main()
+    checks: list[Check] = [
+        HttpCheck("api", "http://127.0.0.1:8080/health"),
+        HttpCheck("deploys", "http://127.0.0.1:8080/deploys"),
+        TcpCheck("postgres", "127.0.0.1", 5432, timeout=1.0),
+        DiskCheck("tmp-disk", path="/tmp"),
+    ]
+    for result in sorted(run_all(checks), key=lambda r: r.status != Status.FAIL):
+        print(f"{result.status.upper():<4}  {result.name:<9} {result.detail} ({result.duration_ms} ms)")
 ```
 
-This example demonstrates:
+```terminal
+{
+  "title": "checks as classes",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python checks.py",
+      "output": "FAIL  deploys   HTTP 401 (28.0 ms)\nFAIL  postgres  [Errno 111] Connection refused (1.1 ms)\nOK    api       HTTP 200 (587.2 ms)\nOK    tmp-disk  0.0% used (0.0 ms)"
+    }
+  ]
+}
+```
 
-1. Abstract base classes with `LibraryItem` as the parent class for different types of items
-2. Inheritance with `Book`, `DVD`, and `Magazine` inheriting from `LibraryItem`
-3. Encapsulation with attributes and methods organized within classes
-4. Polymorphism with different implementations of `get_type` and `get_loan_period`
-5. Composition with `Library` managing collections of items and patrons
-6. Method overriding with `__str__` methods customized for each class
-7. Property validation with check-out and check-in logic
+Every check is a small dataclass with its settings as fields and one `run()` method that returns a `Result`. `run_all()` does not know or care which classes it gets: anything with a `name` and a `run()` that returns a `Result` works, including test doubles and checks you add later. The `deploys` check failed because it sends no token, and `postgres` because nothing listens on port 5432 here.
 
-## OOP Design Principles
+The Protocol is not just documentation. If someone writes a check with the wrong method name, mypy catches it before it runs:
 
-As you become more comfortable with OOP, consider these design principles:
+```python
+from dataclasses import dataclass
 
-1. **Single Responsibility Principle**: A class should have only one reason to change.
-2. **Open/Closed Principle**: Classes should be open for extension but closed for modification.
-3. **Liskov Substitution Principle**: Objects of a superclass should be replaceable with objects of a subclass without affecting the program's correctness.
-4. **Interface Segregation**: Many specific interfaces are better than one general-purpose interface.
-5. **Dependency Inversion**: Depend on abstractions, not on concrete implementations.
+from checks import Result, Status, run_all
 
-These principles, often referred to as SOLID, help create more maintainable, flexible, and robust code.
 
-## Next Steps
+@dataclass
+class PingCheck:
+    name: str
+    host: str
 
-Object-oriented programming is a powerful paradigm that can help you organize and structure your code. By creating classes and objects, you can model real-world entities and their relationships, making your code more intuitive and maintainable.
+    def check(self) -> Result:  # should be run()
+        return Result(self.name, Status.OK, "pong")
 
-In the next section, we'll put everything you've learned together to build a complete Python project from start to finish.
 
-Happy coding!
+run_all([PingCheck("gateway", "10.0.0.1")])
+```
+
+```terminal
+{
+  "title": "mypy enforces the Protocol",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uvx --with httpx mypy ping.py",
+      "output": "Installed 12 packages in 79ms\nping.py:15: error: List item 0 has incompatible type \"PingCheck\"; expected \"Check\"  [list-item]\nping.py:15: note: \"PingCheck\" is missing following \"Check\" protocol member:\nping.py:15: note:     run\nFound 1 error in 1 file (checked 1 source file)"
+    }
+  ]
+}
+```
+
+(`--with httpx` installs httpx next to mypy, so mypy can see its type information when it follows the import of `checks.py`.)
+
+When should you inherit instead? When subclasses really share _code_, not just a shape: for example, a base class whose `run()` handles timing and error wrapping and calls an abstract `_probe()` that each subclass implements. Keep hierarchies shallow, one or two levels; deep inheritance trees are hard to follow and harder to change. For most tools, small dataclasses plus a Protocol, combined by **composition** (objects holding other objects, like `Service` holding `Endpoint`s), are enough.
+
+## Class Methods and Static Methods
+
+A `@classmethod` receives the class instead of an instance, which makes it the standard way to write **alternative constructors**: build an object from a dictionary, a file or an environment. A `@staticmethod` is a plain function that lives in the class's namespace; a module-level function is usually just as good.
+
+```terminal
+{
+  "title": "an alternative constructor",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> from dataclasses import dataclass\n>>> @dataclass(frozen=True)\n... class TcpTarget:\n...     host: str\n...     port: int\n...     @classmethod\n...     def parse(cls, text):\n...         host, _, port = text.rpartition(\":\")\n...         return cls(host.strip(\"[]\"), int(port))\n...\n>>> TcpTarget.parse(\"db-01.internal:5432\")\nTcpTarget(host='db-01.internal', port=5432)\n>>> TcpTarget.parse(\"[2001:db8::10]:443\")\nTcpTarget(host='2001:db8::10', port=443)\n>>> exit()"
+    }
+  ]
+}
+```
+
+## A Client Class for an API
+
+The HTTP client from Part 8 becomes a class: the constructor takes the settings, methods hide the URLs and turn JSON into dataclasses, and `__enter__`/`__exit__` close the connection pool, so `with` works. Note the `__repr__`: it shows the URL but never the token, so the object is safe to log:
+
+```python
+import os
+from dataclasses import dataclass
+from types import TracebackType
+from typing import Self
+
+import httpx
+
+
+@dataclass(frozen=True, slots=True)
+class Deploy:
+    id: int
+    version: str
+
+
+class DeployAPI:
+    """A client for the deployment API of the test server."""
+
+    def __init__(self, base_url: str, token: str | None = None, timeout: float = 2.0) -> None:
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        self._client = httpx.Client(base_url=base_url, headers=headers, timeout=timeout)
+
+    @classmethod
+    def from_env(cls) -> Self:
+        return cls(os.environ.get("API_URL", "http://127.0.0.1:8080"), os.environ.get("API_TOKEN"))
+
+    def deploys(self) -> list[Deploy]:
+        response = self._client.get("/deploys")
+        response.raise_for_status()
+        return [Deploy(**item) for item in response.json()]
+
+    def latest(self) -> Deploy:
+        return max(self.deploys(), key=lambda d: d.id)
+
+    def close(self) -> None:
+        self._client.close()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
+        self.close()
+
+    def __repr__(self) -> str:
+        return f"DeployAPI({str(self._client.base_url)!r})"
+
+
+if __name__ == "__main__":
+    with DeployAPI.from_env() as api:
+        print(api)
+        print(api.latest())
+```
+
+```terminal
+{
+  "title": "the API client class",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "API_TOKEN=test-token python deploy_api.py",
+      "output": "DeployAPI('http://127.0.0.1:8080')\nDeploy(id=42, version='1.4.2')"
+    },
+    {
+      "cmd": "python deploy_api.py 2>&1 | tail -n 2",
+      "output": "httpx.HTTPStatusError: Client error '401 Unauthorized' for url 'http://127.0.0.1:8080/deploys'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401"
+    }
+  ]
+}
+```
+
+`Self` (from `typing`, Python 3.11 and later) is the type hint for "an instance of this class", which keeps `from_env()` and `__enter__` correct in subclasses too. `Deploy(**item)` builds a dataclass from a dictionary whose keys match the fields; if the API adds a field, it raises a `TypeError`, which you may prefer to ignoring unknown data silently, or not (then pick the fields you need explicitly). For large API schemas, a validation library such as Pydantic builds typed objects from JSON with clear error messages.
+
+## Common Mistakes
+
+- **Mutable class attributes** used as per-instance state. Set them in `__init__` or use `field(default_factory=...)`.
+- **Classes for everything.** A module with functions is often enough; add a class when data and behaviour belong together or you need several instances with different settings.
+- **Getters and setters.** Use attributes, and properties when you need logic.
+- **Deep inheritance** to share a few lines of code. Prefer composition and Protocols.
+- **No `__repr__`**, or a `__repr__` that prints secrets.
+- **Forgetting `self`** as the first parameter of a method, or calling a method on the class instead of an instance.
+- **Mutable dataclasses for results and configuration.** Freeze them, so nothing changes them by accident after validation.
+
+## Summary
+
+- A class bundles data (attributes) with behaviour (methods); `__init__` sets up an instance and `self` is the instance.
+- `@dataclass` generates `__init__`, `__repr__` and `__eq__`; use `frozen=True` for values, `slots=True` to catch typos, `field(default_factory=...)` for mutable defaults and `__post_init__` for validation.
+- `StrEnum` gives you named, typo-proof constants that are still strings.
+- Properties compute values on access; special methods make objects work with `len`, `in`, `for` and `with`.
+- Protocols describe what an object must have, mypy checks them, and they keep tools open to new implementations without inheritance.
+
+Next: [Building a Python Project](/guides/introduction-to-python/10-building-a-python-project), where the checks become `svcheck`, a packaged command-line tool with a TOML config, tests, linting, type checking and CI.
+
+## Keep Learning
+
+- The [dataclasses documentation](https://docs.python.org/3/library/dataclasses.html) and the [typing guide to Protocols](https://typing.python.org/en/latest/spec/protocol.html).
+- [The Python Fundamentals Quiz](/quizzes/python-quiz) has questions on classes and dunder methods.

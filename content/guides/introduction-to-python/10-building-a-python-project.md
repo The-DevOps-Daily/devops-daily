@@ -1,1047 +1,1384 @@
 ---
-title: 'Building a Practical Project'
-description: "Apply everything you've learned by building a complete Python application"
+title: 'Build a Python CLI Tool: uv, argparse, pytest, Ruff, mypy and CI'
+description: 'Package a Python CLI with uv: src layout, pyproject.toml, argparse, threads, pytest, Ruff, mypy --strict, tests on 3.12 to 3.15, boto3 and CI.'
 order: 10
 ---
 
-Congratulations on making it to the final section of this Python guide! In this section, we'll apply everything you've learned by building a complete Python application: a Task Management System. This project will incorporate all the major concepts we've covered, from basic syntax to object-oriented programming.
+The earlier parts built the pieces: settings from the environment, retry loops, data structures, files and TOML, exceptions, logging, `subprocess`, HTTP clients and check classes. This part puts them together into **svcheck**, a small command-line tool that runs HTTP, TCP, disk and command checks from a TOML file, in parallel, and exits with a code that cron, systemd or a CI job can act on.
 
-## Project Overview: Task Management System
+More important than the tool is the project around it, because that is what makes Python code maintainable in a team: a standard `pyproject.toml`, a `src` layout, a lock file, an installable command, tests with pytest, linting and formatting with Ruff, type checking with mypy, tests on every supported Python version, and a CI workflow that runs all of it.
 
-Our Task Management System will allow users to:
+## Prerequisites
 
-- Create, view, update, and delete tasks
-- Organize tasks into projects
-- Set priorities and due dates for tasks
-- Mark tasks as complete
-- Save and load tasks from a file
-- Generate reports on task status
+- uv and Python 3.14 from [Part 1](/guides/introduction-to-python/01-getting-started). Start in a new terminal (or run `deactivate`), because this project gets its own environment instead of the `~/pyops` one.
+- The check classes from [Part 9](/guides/introduction-to-python/09-object-oriented) and the test API `fakeapi.py` from [Part 8](/guides/introduction-to-python/08-error-handling), running on port 8080 in a second terminal.
+- Git, for the CI part, and optionally [actionlint](https://github.com/rhysd/actionlint) (`brew install actionlint`, or a binary from its releases page) to check the workflow file.
 
-Let's break down the implementation into steps:
+## What You Are Building
 
-## Step 1: Planning the Project Structure
-
-Before we start coding, let's plan our project structure:
-
-```
-task_manager/
-│
-├── task_manager.py      # Main script to run the application
-├── models.py            # Classes for Task, Project, etc.
-├── storage.py           # Functions for saving/loading data
-├── reports.py           # Functions for generating reports
-├── utils.py             # Utility functions
-└── data/                # Directory for saved data
-    └── tasks.json       # JSON file to store tasks
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "services.toml", "sub": "which checks to run", "icon": "box", "tone": "slate" },
+    { "label": "config.py", "sub": "load and validate", "icon": "gear", "tone": "blue" },
+    { "label": "runner.py", "sub": "threads and retries", "icon": "cpu", "tone": "violet" },
+    { "label": "checks.py", "sub": "HTTP, TCP, disk, command, S3", "icon": "activity", "tone": "green" },
+    { "label": "report.py", "sub": "table or JSON, exit code", "icon": "check", "tone": "amber" }
+  ]
+}
 ```
 
-## Step 2: Implementing the Models
+```text
+svcheck/
+├── pyproject.toml          project metadata, dependencies, tool settings
+├── uv.lock                 exact versions of every dependency
+├── .python-version         the Python version uv uses for development
+├── src/svcheck/
+│   ├── __init__.py         the version number
+│   ├── __main__.py         python -m svcheck
+│   ├── cli.py              argparse, logging, exit codes
+│   ├── config.py           TOML to check objects, with clear errors
+│   ├── checks.py           Status, Result, the Check protocol and the checks
+│   ├── runner.py           parallel runs and retries
+│   ├── report.py           table, JSON, exit code
+│   └── aws.py              an optional S3 check that needs boto3
+├── tests/                  pytest tests
+└── .github/workflows/ci.yml
+```
 
-Let's start by defining our data models in `models.py`:
+The **src layout** (code under `src/svcheck/` rather than `svcheck/` at the top) means tests and scripts can only import the package after it is installed, so they test what users will actually get, not whatever happens to be in the current directory.
+
+## Create the Project
+
+`uv init --package` creates a project that is built as an installable package, with a `src` layout and a command-line entry point:
+
+```terminal
+{
+  "title": "uv init --package",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "cd ~ && uv init --package svcheck --python 3.14",
+      "output": "Initialized project `svcheck` at `/home/dev/svcheck`"
+    },
+    {
+      "cmd": "cd svcheck && find . -path ./.git -prune -o -type f -print | sort",
+      "output": "./.gitignore\n./.python-version\n./README.md\n./pyproject.toml\n./src/svcheck/__init__.py"
+    }
+  ]
+}
+```
+
+Now replace `pyproject.toml` with the full project definition:
+
+```toml
+[project]
+name = "svcheck"
+version = "0.1.0"
+description = "Run HTTP, TCP, disk and command checks from a TOML file"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["httpx>=0.28.1"]
+
+[project.optional-dependencies]
+aws = ["boto3>=1.43"]
+
+[project.scripts]
+svcheck = "svcheck.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["mypy>=2.4", "pytest>=9.1", "ruff>=0.17"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["boto3", "botocore.*"]
+ignore_missing_imports = true
+
+[tool.pytest]
+addopts = ["-ra"]
+testpaths = ["tests"]
+```
+
+Section by section:
+
+- **`[project]`** is the standard metadata ([PEP 621](https://peps.python.org/pep-0621/)) that every tool reads. `requires-python = ">=3.12"` promises support for 3.12 and newer, and the tests below hold the code to that. `dependencies` lists what the tool needs at runtime, with minimum versions; the exact versions go into `uv.lock`.
+- **`[project.optional-dependencies]`** defines an **extra**: `svcheck[aws]` also installs boto3, for users who want the S3 check. Everyone else does not pay for it.
+- **`[project.scripts]`** creates the `svcheck` command, which calls `main()` in `svcheck/cli.py` and exits with its return value.
+- **`[build-system]`** says how to build the package. `uv_build` is uv's own backend; `hatchling` and `setuptools` are common alternatives, and any standard frontend (`pip`, `uv`, `build`) can use whichever you choose.
+- **`[dependency-groups]`** ([PEP 735](https://peps.python.org/pep-0735/)) holds development tools. They are installed by `uv sync` but are not part of the published package.
+- **`[tool.*]`** tables configure Ruff, mypy and pytest, so every developer and CI run uses the same settings. pytest 9 reads its own `[tool.pytest]` table.
+
+## The Code
+
+`checks.py` is the Part 9 module with three additions: every `Result` says whether the failure is `retryable` (a timeout, a refused connection or a 503 may go away; a 404 will not), `DiskCheck` turns a bad path into a failed result instead of an exception, and `CommandCheck` runs a command with `subprocess` (Part 8), with a timeout and no shell:
 
 ```python
-"""
-Models for the Task Management System.
+"""The checks svcheck can run, and the Result each one returns."""
 
-This module defines the classes for Task, Project, and other data structures.
-"""
+import shutil
+import socket
+import subprocess
+import time
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Protocol
 
-from datetime import datetime, timedelta
-from enum import Enum
-import uuid
+import httpx
 
-class Priority(Enum):
-    """Priority levels for tasks."""
-    LOW = 1
-    MEDIUM = 2
-    HIGH = 3
-    URGENT = 4
 
-    def __str__(self):
-        return self.name
+class Status(StrEnum):
+    OK = "ok"
+    WARN = "warn"
+    FAIL = "fail"
 
-class Status(Enum):
-    """Status options for tasks."""
-    NOT_STARTED = 1
-    IN_PROGRESS = 2
-    COMPLETED = 3
 
-    def __str__(self):
-        return self.name.replace('_', ' ').title()
+@dataclass(frozen=True, slots=True)
+class Result:
+    name: str
+    status: Status
+    detail: str
+    duration_ms: float = 0.0
+    retryable: bool = False  # True when trying again later may give a different answer
 
-class Task:
-    """Represents a task in the system."""
 
-    def __init__(self, title, description="", priority=Priority.MEDIUM,
-                 due_date=None, project=None):
-        """Initialize a new Task."""
-        self.id = str(uuid.uuid4())[:8]  # Generate a unique ID
-        self.title = title
-        self.description = description
-        self.priority = priority
-        self.status = Status.NOT_STARTED
-        self.created_at = datetime.now()
-        self.completed_at = None
-        self.due_date = due_date
-        self.project = project
+class Check(Protocol):
+    """Anything with a name and a run() method that returns a Result."""
 
-    def mark_complete(self):
-        """Mark the task as complete."""
-        self.status = Status.COMPLETED
-        self.completed_at = datetime.now()
+    name: str
 
-    def mark_in_progress(self):
-        """Mark the task as in progress."""
-        self.status = Status.IN_PROGRESS
+    def run(self) -> Result: ...
 
-    def update(self, title=None, description=None, priority=None, due_date=None, project=None):
-        """Update task details."""
-        if title is not None:
-            self.title = title
-        if description is not None:
-            self.description = description
-        if priority is not None:
-            self.priority = priority
-        if due_date is not None:
-            self.due_date = due_date
-        if project is not None:
-            self.project = project
 
-    def is_overdue(self):
-        """Check if the task is overdue."""
-        if self.due_date and self.status != Status.COMPLETED:
-            return datetime.now() > self.due_date
-        return False
+RETRY_STATUSES = {429, 500, 502, 503, 504}
 
-    def days_left(self):
-        """Calculate days left until the due date."""
-        if not self.due_date:
-            return None
-        if self.status == Status.COMPLETED:
-            return 0
 
-        time_left = self.due_date - datetime.now()
-        return max(0, time_left.days)
+def elapsed_ms(start: float) -> float:
+    return round((time.perf_counter() - start) * 1000, 1)
 
-    def to_dict(self):
-        """Convert the task to a dictionary for storage."""
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'priority': self.priority.name,
-            'status': self.status.name,
-            'created_at': self.created_at.isoformat(),
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'due_date': self.due_date.isoformat() if self.due_date else None,
-            'project': self.project
-        }
 
-    @classmethod
-    def from_dict(cls, data):
-        """Create a Task instance from a dictionary."""
-        task = cls(
-            title=data['title'],
-            description=data.get('description', ''),
-            priority=Priority[data['priority']],
-            due_date=datetime.fromisoformat(data['due_date']) if data.get('due_date') else None,
-            project=data.get('project')
-        )
-        task.id = data['id']
-        task.status = Status[data['status']]
-        task.created_at = datetime.fromisoformat(data['created_at'])
-        if data.get('completed_at'):
-            task.completed_at = datetime.fromisoformat(data['completed_at'])
-        return task
+@dataclass(slots=True)
+class HttpCheck:
+    name: str
+    url: str
+    timeout: float = 2.0
+    expect_status: int = 200
 
-    def __str__(self):
-        """Return a string representation of the task."""
-        status_str = f"[{self.status}]"
-        priority_str = f"({self.priority})"
+    def run(self) -> Result:
+        start = time.perf_counter()
+        try:
+            response = httpx.get(self.url, timeout=self.timeout)
+        except httpx.InvalidURL as err:
+            return Result(self.name, Status.FAIL, f"invalid URL: {err}", elapsed_ms(start))
+        except httpx.HTTPError as err:
+            detail = f"{type(err).__name__}: {err}"
+            return Result(self.name, Status.FAIL, detail, elapsed_ms(start), retryable=True)
+        detail = f"HTTP {response.status_code}"
+        if response.status_code == self.expect_status:
+            return Result(self.name, Status.OK, detail, elapsed_ms(start))
+        retryable = response.status_code in RETRY_STATUSES
+        return Result(self.name, Status.FAIL, detail, elapsed_ms(start), retryable=retryable)
 
-        if self.is_overdue():
-            due_str = "OVERDUE"
-        elif self.due_date:
-            days = self.days_left()
-            due_str = f"{days} day{'s' if days != 1 else ''} left"
+
+@dataclass(slots=True)
+class TcpCheck:
+    name: str
+    host: str
+    port: int
+    timeout: float = 2.0
+
+    def run(self) -> Result:
+        start = time.perf_counter()
+        try:
+            with socket.create_connection((self.host, self.port), timeout=self.timeout):
+                pass
+        except OSError as err:
+            return Result(self.name, Status.FAIL, str(err), elapsed_ms(start), retryable=True)
+        detail = f"{self.host}:{self.port} accepts connections"
+        return Result(self.name, Status.OK, detail, elapsed_ms(start))
+
+
+@dataclass(slots=True)
+class DiskCheck:
+    name: str
+    path: str = "/"
+    warn_percent: float = 80.0
+    max_used_percent: float = 90.0
+
+    def run(self) -> Result:
+        start = time.perf_counter()
+        try:
+            usage = shutil.disk_usage(self.path)
+        except OSError as err:
+            return Result(self.name, Status.FAIL, str(err), elapsed_ms(start))
+        if usage.total <= 0:  # /proc and other virtual file systems report no size
+            return Result(self.name, Status.FAIL, "no measurable capacity", elapsed_ms(start))
+        used = usage.used / usage.total * 100
+        if used >= self.max_used_percent:
+            status = Status.FAIL
+        elif used >= self.warn_percent:
+            status = Status.WARN
         else:
-            due_str = "No due date"
+            status = Status.OK
+        return Result(self.name, status, f"{used:.1f}% used", elapsed_ms(start))
 
-        project_str = f"Project: {self.project}" if self.project else "No project"
 
-        return f"{self.title} {status_str} {priority_str} - {due_str} - {project_str}"
+@dataclass(slots=True)
+class CommandCheck:
+    name: str
+    command: list[str]
+    timeout: float = 10.0
 
-class TaskManager:
-    """Manages a collection of tasks."""
-
-    def __init__(self):
-        """Initialize a new TaskManager."""
-        self.tasks = {}  # Dictionary of task_id -> task
-        self.projects = set()  # Set of project names
-
-    def add_task(self, task):
-        """Add a task to the manager."""
-        self.tasks[task.id] = task
-        if task.project:
-            self.projects.add(task.project)
-
-    def get_task(self, task_id):
-        """Get a task by ID."""
-        return self.tasks.get(task_id)
-
-    def delete_task(self, task_id):
-        """Delete a task by ID."""
-        if task_id in self.tasks:
-            task = self.tasks[task_id]
-            del self.tasks[task_id]
-
-            # Update projects set if necessary
-            if task.project and all(t.project != task.project for t in self.tasks.values()):
-                self.projects.remove(task.project)
-
-            return True
-        return False
-
-    def get_all_tasks(self):
-        """Get all tasks."""
-        return list(self.tasks.values())
-
-    def get_tasks_by_status(self, status):
-        """Get tasks by status."""
-        return [task for task in self.tasks.values() if task.status == status]
-
-    def get_tasks_by_priority(self, priority):
-        """Get tasks by priority."""
-        return [task for task in self.tasks.values() if task.priority == priority]
-
-    def get_tasks_by_project(self, project):
-        """Get tasks by project."""
-        return [task for task in self.tasks.values() if task.project == project]
-
-    def get_overdue_tasks(self):
-        """Get all overdue tasks."""
-        return [task for task in self.tasks.values() if task.is_overdue()]
-
-    def get_due_soon_tasks(self, days=3):
-        """Get tasks due within the specified number of days."""
-        result = []
-        for task in self.tasks.values():
-            if task.status != Status.COMPLETED and task.due_date:
-                days_left = task.days_left()
-                if days_left is not None and days_left <= days:
-                    result.append(task)
-        return result
-
-    def to_dict(self):
-        """Convert all tasks to a dictionary for storage."""
-        return {
-            'tasks': [task.to_dict() for task in self.tasks.values()]
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        """Create a TaskManager instance from a dictionary."""
-        manager = cls()
-        for task_data in data.get('tasks', []):
-            task = Task.from_dict(task_data)
-            manager.add_task(task)
-        return manager
+    def run(self) -> Result:
+        start = time.perf_counter()
+        try:
+            proc = subprocess.run(
+                self.command,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=self.timeout,
+            )
+        except (OSError, subprocess.TimeoutExpired) as err:
+            return Result(self.name, Status.FAIL, str(err), elapsed_ms(start))
+        output = (proc.stdout or proc.stderr).strip().splitlines()
+        first_line = output[0] if output else ""
+        if proc.returncode != 0:
+            detail = f"exit {proc.returncode}: {first_line}"
+            return Result(self.name, Status.FAIL, detail, elapsed_ms(start))
+        return Result(self.name, Status.OK, first_line, elapsed_ms(start))
 ```
 
-## Step 3: Implementing Storage Functions
-
-Now, let's create functions to save and load our data in `storage.py`:
+`config.py` turns the TOML file into check objects. TOML gives you types, but not the _right_ types: `port = "ssh"` or `command = "true"` is valid TOML. So every value goes through a small validation function (numbers must also be finite, because TOML has `nan` and `inf`; percentages stop at 100; URLs need `http` or `https` and a numeric port), and every way a config can be wrong, including a file that is not UTF-8, becomes a `ConfigError` with the file name and the check number, so the user sees one clear line instead of a traceback. `raise ... from None` drops the original exception from the traceback here on purpose, because the message already says everything:
 
 ```python
-"""
-Storage functions for the Task Management System.
+"""Load checks from a TOML file, with a clear error for every mistake."""
 
-This module provides functions to save and load task data.
-"""
+import math
+import tomllib
+from pathlib import Path
+from typing import Any
+from urllib.parse import urlsplit
 
+from svcheck.checks import Check, CommandCheck, DiskCheck, HttpCheck, TcpCheck
+
+
+class ConfigError(Exception):
+    """The configuration file is missing or invalid."""
+
+
+def load_config(path: Path) -> tuple[list[Check], int]:
+    """Return the checks defined in path, and how often to retry a failed check."""
+    try:
+        with path.open("rb") as f:
+            data = tomllib.load(f)
+    except FileNotFoundError:
+        raise ConfigError(f"{path}: no such file") from None
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as err:
+        raise ConfigError(f"{path}: {err}") from None
+
+    defaults = data.get("defaults", {})
+    entries = data.get("check", [])
+    if not isinstance(defaults, dict):
+        raise ConfigError(f"{path}: defaults must be a [defaults] table")
+    if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+        raise ConfigError(f"{path}: checks must be [[check]] tables")
+    if not entries:
+        raise ConfigError(f"{path}: no [[check]] tables")
+    try:
+        timeout = positive_number(defaults.get("timeout", 2.0), "timeout")
+        retries = whole_number(defaults.get("retries", 0), "retries")
+    except ValueError as err:
+        raise ConfigError(f"{path}: [defaults]: {err}") from None
+
+    checks = []
+    for number, entry in enumerate(entries, start=1):
+        try:
+            checks.append(build_check(entry, timeout))
+        except KeyError as err:
+            raise ConfigError(f"{path}: check {number}: missing key {err}") from None
+        except ValueError as err:
+            raise ConfigError(f"{path}: check {number}: {err}") from None
+    names = [check.name for check in checks]
+    duplicates = sorted({name for name in names if names.count(name) > 1})
+    if duplicates:
+        raise ConfigError(f"{path}: duplicate check names: {', '.join(duplicates)}")
+    return checks, retries
+
+
+def build_check(entry: dict[str, Any], default_timeout: float) -> Check:
+    name = string(entry["name"], "name")
+    timeout = positive_number(entry.get("timeout", default_timeout), "timeout")
+    match entry["type"]:
+        case "http":
+            expect = whole_number(entry.get("expect_status", 200), "expect_status")
+            return HttpCheck(name, http_url(entry["url"]), timeout, expect)
+        case "tcp":
+            return TcpCheck(name, string(entry["host"], "host"), port(entry["port"]), timeout)
+        case "disk":
+            warn = percent(entry.get("warn_percent", 80), "warn_percent")
+            limit = percent(entry.get("max_used_percent", 90), "max_used_percent")
+            if warn > limit:
+                raise ValueError("warn_percent must not be above max_used_percent")
+            return DiskCheck(name, string(entry.get("path", "/"), "path"), warn, limit)
+        case "command":
+            return CommandCheck(name, command(entry["command"]), timeout)
+        case "s3":
+            from svcheck.aws import S3BucketCheck  # needs the "aws" extra at run time
+
+            return S3BucketCheck(name, string(entry["bucket"], "bucket"), timeout)
+        case other:
+            raise ValueError(f"unknown type {other!r}")
+
+
+def string(value: object, key: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{key} must be a non-empty string, not {value!r}")
+    return value
+
+
+def positive_number(value: object, key: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ValueError(f"{key} must be a positive number, not {value!r}")
+    if not math.isfinite(value) or value <= 0:  # TOML also has nan and inf
+        raise ValueError(f"{key} must be a positive number, not {value!r}")
+    return float(value)
+
+
+def percent(value: object, key: str) -> float:
+    number = positive_number(value, key)
+    if number > 100:
+        raise ValueError(f"{key} must be at most 100, not {value!r}")
+    return number
+
+
+def http_url(value: object) -> str:
+    url = string(value, "url")
+    parts = urlsplit(url)
+    try:
+        _ = parts.port  # raises ValueError when the port is not a number
+    except ValueError:
+        raise ValueError(f"url has an invalid port: {url!r}") from None
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        raise ValueError(f"url must be an http:// or https:// URL, not {url!r}")
+    return url
+
+
+def whole_number(value: object, key: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise ValueError(f"{key} must be a whole number of 0 or more, not {value!r}")
+    return value
+
+
+def port(value: object) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 65535:
+        raise ValueError(f"port must be a whole number from 1 to 65535, not {value!r}")
+    return value
+
+
+def command(value: object) -> list[str]:
+    if not isinstance(value, list) or not value or not all(isinstance(a, str) for a in value):
+        raise ValueError(f"command must be a non-empty list of strings, not {value!r}")
+    return value
+```
+
+`runner.py` runs the checks in parallel and retries the failures that may go away, with exponential backoff and jitter (Part 3). It waits between retries with `stop.wait()` instead of `time.sleep()`, so a stop request ends the wait at once, and on the way out it cancels the checks that have not started yet. It never retries a permanent failure, and it never retries a command check, because running a command twice is not always safe. Checks spend their time waiting for the network, a disk or another process, and Python releases the global interpreter lock (GIL) while a thread waits, so a thread pool runs many checks at once even on a regular build of Python. `pool.map()` returns results in the order of the input, so the report always lists checks in config order. The parameter is a `Sequence[Check]` rather than a `list[Check]`, so callers can pass a list of any class that matches the Protocol (mypy treats `list` as invariant):
+
+```python
+"""Run checks in parallel threads, retrying failures that may go away."""
+
+import logging
+import random
+import threading
+from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
+
+from svcheck.checks import Check, Result, Status
+
+log = logging.getLogger(__name__)
+
+
+def run_one(check: Check, retries: int, delay: float, stop: threading.Event) -> Result:
+    result = check.run()
+    for attempt in range(1, retries + 1):
+        if result.status is not Status.FAIL or not result.retryable:
+            break
+        wait = random.uniform(0, delay * 2**attempt)  # exponential backoff, full jitter
+        log.info("%s: %s, retry %d/%d in %.1fs", check.name, result.detail, attempt, retries, wait)
+        if stop.wait(wait):  # returns True at once when svcheck is told to stop
+            break
+        result = check.run()
+    return result
+
+
+def run_checks(
+    checks: Sequence[Check],
+    retries: int = 0,
+    delay: float = 0.5,
+    workers: int = 8,
+    stop: threading.Event | None = None,
+) -> list[Result]:
+    """Run every check, at most `workers` at a time; results keep the config order."""
+    if stop is None:
+        stop = threading.Event()
+    pool = ThreadPoolExecutor(max_workers=workers)
+    try:
+        return list(pool.map(lambda check: run_one(check, retries, delay, stop), checks))
+    finally:
+        # after SIGTERM: drop the checks that have not started, wait for the running ones
+        pool.shutdown(wait=True, cancel_futures=True)
+```
+
+`report.py` formats the results and decides the exit code: warnings do not fail the run, failures do:
+
+```python
+"""Turn results into a table, JSON and an exit code."""
+
+import contextlib
 import json
 import os
-from models import Task, TaskManager
+import stat
+import tempfile
+from dataclasses import asdict
+from pathlib import Path
 
-# Default data directory and file
-DATA_DIR = "data"
-DATA_FILE = os.path.join(DATA_DIR, "tasks.json")
+from svcheck.checks import Result, Status
 
-def ensure_data_dir():
-    """Ensure the data directory exists."""
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR)
 
-def save_tasks(task_manager, file_path=DATA_FILE):
+def as_table(results: list[Result]) -> str:
+    width = max(len(result.name) for result in results)
+    lines = [f"{'STATUS':<6}  {'CHECK':<{width}}  {'TIME':>7}  DETAIL"]
+    for r in results:
+        lines.append(
+            f"{r.status.upper():<6}  {r.name:<{width}}  {r.duration_ms:>5.0f}ms  {r.detail}"
+        )
+    counts = {status: sum(r.status is status for r in results) for status in Status}
+    lines.append(", ".join(f"{count} {status}" for status, count in counts.items()))
+    return "\n".join(lines)
+
+
+def as_json(results: list[Result]) -> str:
+    return json.dumps([asdict(result) for result in results], indent=2)
+
+
+def exit_code(results: list[Result]) -> int:
+    """0 when nothing failed (warnings are fine), 1 when any check failed."""
+    return 1 if any(result.status is Status.FAIL for result in results) else 0
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """Replace path with text so readers never see a partial file (Part 7).
+
+    A new report is readable only by its owner (mkstemp's 0600), because it can contain
+    command output; an existing report keeps the mode someone gave it.
     """
-    Save tasks to a JSON file.
-
-    Args:
-        task_manager (TaskManager): The task manager to save.
-        file_path (str): Path to the file where tasks will be saved.
-
-    Returns:
-        bool: True if successful, False otherwise.
-    """
-    ensure_data_dir()
-
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
     try:
-        with open(file_path, 'w') as f:
-            json.dump(task_manager.to_dict(), f, indent=2)
-        return True
-    except Exception as e:
-        print(f"Error saving tasks: {e}")
-        return False
-
-def load_tasks(file_path=DATA_FILE):
-    """
-    Load tasks from a JSON file.
-
-    Args:
-        file_path (str): Path to the file to load tasks from.
-
-    Returns:
-        TaskManager: A task manager with loaded tasks, or a new one if loading fails.
-    """
-    if not os.path.exists(file_path):
-        return TaskManager()
-
-    try:
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        return TaskManager.from_dict(data)
-    except Exception as e:
-        print(f"Error loading tasks: {e}")
-        return TaskManager()
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        if path.exists():
+            os.chmod(tmp, stat.S_IMODE(path.stat().st_mode))
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(tmp)
+        raise
 ```
 
-## Step 4: Implementing Report Generation
-
-Let's create functions to generate reports in `reports.py`:
+`cli.py` is the only module that knows about command-line arguments, logging setup, signals and exit codes. Everything else is plain functions and classes that tests can call directly. Two details come from earlier parts: `--output` writes the report with the atomic write from Part 7 (now in `report.py`), so a monitoring system never reads half a file, and `SIGTERM` becomes a normal exit, as in Part 8. The handler also sets a `threading.Event` that tells the runner to start no new attempts:
 
 ```python
-"""
-Reports for the Task Management System.
+"""The svcheck command: svcheck CONFIG [--json] [--workers N] [-v]"""
 
-This module provides functions to generate reports from task data.
-"""
+import argparse
+import logging
+import signal
+import threading
+from pathlib import Path
 
-from datetime import datetime
-from models import Status, Priority
+from svcheck import __version__
+from svcheck.config import ConfigError, load_config
+from svcheck.report import as_json, as_table, exit_code, write_atomic
+from svcheck.runner import run_checks
 
-def generate_status_report(task_manager):
-    """
-    Generate a report on task status.
+log = logging.getLogger("svcheck")
 
-    Args:
-        task_manager (TaskManager): The task manager to generate the report from.
 
-    Returns:
-        str: A formatted report.
-    """
-    not_started = task_manager.get_tasks_by_status(Status.NOT_STARTED)
-    in_progress = task_manager.get_tasks_by_status(Status.IN_PROGRESS)
-    completed = task_manager.get_tasks_by_status(Status.COMPLETED)
+def parse_args(argv: list[str] | None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog="svcheck",
+        description="Run HTTP, TCP, disk and command checks from a TOML file.",
+        epilog="Exit codes: 0 nothing failed, 1 a check failed, 2 usage or config error.",
+    )
+    parser.add_argument("config", type=Path, help="TOML file with [[check]] tables")
+    parser.add_argument("--json", action="store_true", help="print the results as JSON")
+    parser.add_argument(
+        "--workers", type=int, default=8, metavar="N", help="checks to run at once (default: 8)"
+    )
+    parser.add_argument(
+        "--output", type=Path, metavar="FILE", help="also write the report to FILE, atomically"
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="log retries")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    args = parser.parse_args(argv)
+    if args.workers < 1:
+        parser.error("--workers must be at least 1")
+    return args
 
-    total = len(task_manager.get_all_tasks())
-    if total == 0:
-        return "No tasks to report on."
 
-    not_started_percent = len(not_started) / total * 100 if total > 0 else 0
-    in_progress_percent = len(in_progress) / total * 100 if total > 0 else 0
-    completed_percent = len(completed) / total * 100 if total > 0 else 0
+def main(argv: list[str] | None = None) -> int:
+    stop = threading.Event()
 
-    report = "Task Status Report\n"
-    report += "=================\n\n"
-    report += f"Total Tasks: {total}\n\n"
-    report += f"Not Started: {len(not_started)} ({not_started_percent:.1f}%)\n"
-    report += f"In Progress: {len(in_progress)} ({in_progress_percent:.1f}%)\n"
-    report += f"Completed: {len(completed)} ({completed_percent:.1f}%)\n"
+    def on_sigterm(signum: int, frame: object) -> None:
+        stop.set()  # no new attempts or retries
+        raise SystemExit(128 + signum)  # then exit like Ctrl+C would (Part 8)
 
-    return report
-
-def generate_priority_report(task_manager):
-    """
-    Generate a report on task priorities.
-
-    Args:
-        task_manager (TaskManager): The task manager to generate the report from.
-
-    Returns:
-        str: A formatted report.
-    """
-    low = task_manager.get_tasks_by_priority(Priority.LOW)
-    medium = task_manager.get_tasks_by_priority(Priority.MEDIUM)
-    high = task_manager.get_tasks_by_priority(Priority.HIGH)
-    urgent = task_manager.get_tasks_by_priority(Priority.URGENT)
-
-    total = len(task_manager.get_all_tasks())
-    if total == 0:
-        return "No tasks to report on."
-
-    report = "Task Priority Report\n"
-    report += "===================\n\n"
-    report += f"Total Tasks: {total}\n\n"
-    report += f"Low Priority: {len(low)} ({len(low) / total * 100:.1f}%)\n"
-    report += f"Medium Priority: {len(medium)} ({len(medium) / total * 100:.1f}%)\n"
-    report += f"High Priority: {len(high)} ({len(high) / total * 100:.1f}%)\n"
-    report += f"Urgent Priority: {len(urgent)} ({len(urgent) / total * 100:.1f}%)\n"
-
-    return report
-
-def generate_overdue_report(task_manager):
-    """
-    Generate a report on overdue tasks.
-
-    Args:
-        task_manager (TaskManager): The task manager to generate the report from.
-
-    Returns:
-        str: A formatted report.
-    """
-    overdue_tasks = task_manager.get_overdue_tasks()
-
-    if not overdue_tasks:
-        return "No overdue tasks. Good job!"
-
-    report = "Overdue Tasks Report\n"
-    report += "===================\n\n"
-    report += f"Number of Overdue Tasks: {len(overdue_tasks)}\n\n"
-    report += "Overdue Tasks:\n"
-
-    for task in sorted(overdue_tasks, key=lambda t: t.due_date):
-        days_overdue = (datetime.now() - task.due_date).days
-        report += f"- {task.title} (Due: {task.due_date.strftime('%Y-%m-%d')}, {days_overdue} days overdue)\n"
-
-    return report
-
-def generate_project_report(task_manager):
-    """
-    Generate a report on tasks by project.
-
-    Args:
-        task_manager (TaskManager): The task manager to generate the report from.
-
-    Returns:
-        str: A formatted report.
-    """
-    all_tasks = task_manager.get_all_tasks()
-
-    if not all_tasks:
-        return "No tasks to report on."
-
-    # Count tasks by project
-    projects = {}
-    for task in all_tasks:
-        project = task.project or "No Project"
-        if project not in projects:
-            projects[project] = {
-                'total': 0,
-                'not_started': 0,
-                'in_progress': 0,
-                'completed': 0
-            }
-
-        projects[project]['total'] += 1
-
-        if task.status == Status.NOT_STARTED:
-            projects[project]['not_started'] += 1
-        elif task.status == Status.IN_PROGRESS:
-            projects[project]['in_progress'] += 1
-        elif task.status == Status.COMPLETED:
-            projects[project]['completed'] += 1
-
-    report = "Project Report\n"
-    report += "=============\n\n"
-    report += f"Number of Projects: {len(projects)}\n\n"
-
-    for project, counts in sorted(projects.items()):
-        completed_percent = counts['completed'] / counts['total'] * 100 if counts['total'] > 0 else 0
-        report += f"Project: {project}\n"
-        report += f"  Total Tasks: {counts['total']}\n"
-        report += f"  Not Started: {counts['not_started']}\n"
-        report += f"  In Progress: {counts['in_progress']}\n"
-        report += f"  Completed: {counts['completed']} ({completed_percent:.1f}%)\n\n"
-
-    return report
+    signal.signal(signal.SIGTERM, on_sigterm)
+    args = parse_args(argv)
+    logging.basicConfig(
+        level=logging.INFO if args.verbose else logging.WARNING,
+        format="%(levelname)s %(name)s: %(message)s",
+    )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    try:
+        checks, retries = load_config(args.config)
+    except ConfigError as err:
+        log.error("%s", err)
+        return 2
+    results = run_checks(checks, retries=retries, workers=args.workers, stop=stop)
+    report = as_json(results) if args.json else as_table(results)
+    print(report)
+    if args.output:
+        write_atomic(args.output, report + "\n")
+    return exit_code(results)
 ```
 
-## Step 5: Implementing Utility Functions
+`argparse` generates `--help`, rejects unknown options and converts types (`type=Path`, `type=int`); `parser.error()` prints a usage message and exits with 2. `main()` takes an optional argument list, so tests can call `main(["services.toml", "--json"])` without touching `sys.argv`.
 
-Let's create some utility functions in `utils.py`:
+The package's `__init__.py` reads the version from the installed package metadata, so `pyproject.toml` stays the only place it is written, and `__main__.py` makes `python -m svcheck` work:
 
 ```python
-"""
-Utility functions for the Task Management System.
+"""Run HTTP, TCP, disk and command checks from a TOML file."""
 
-This module provides helper functions for the application.
-"""
+from importlib.metadata import version
 
-from datetime import datetime, timedelta
-from models import Priority, Status
+__version__ = version("svcheck")
+```
 
-def parse_date(date_str):
-    """
-    Parse a date string into a datetime object.
+```python
+from svcheck.cli import main
 
-    Accepted formats:
-    - YYYY-MM-DD
-    - DD/MM/YYYY
-    - today
-    - tomorrow
-    - next week
+raise SystemExit(main())
+```
 
-    Args:
-        date_str (str): The date string to parse.
+`aws.py` holds the optional S3 check, explained in [Talking to AWS with boto3](#h2-talking-to-aws-with-boto3) below. It imports boto3 only when it runs, so svcheck works without the `aws` extra, and it passes the check's timeout to botocore, whose own defaults are a 60-second timeout and several retries:
 
-    Returns:
-        datetime or None: The parsed date, or None if parsing failed.
-    """
-    if not date_str:
-        return None
+```python
+"""An optional check that needs boto3: install svcheck with the "aws" extra."""
 
-    date_str = date_str.strip().lower()
+import time
+from dataclasses import dataclass
+from typing import Any
 
-    # Handle relative dates
-    if date_str == 'today':
-        return datetime.now().replace(hour=23, minute=59, second=59)
+from svcheck.checks import Result, Status, elapsed_ms
 
-    if date_str == 'tomorrow':
-        return (datetime.now() + timedelta(days=1)).replace(hour=23, minute=59, second=59)
 
-    if date_str == 'next week':
-        return (datetime.now() + timedelta(days=7)).replace(hour=23, minute=59, second=59)
+@dataclass(slots=True)
+class S3BucketCheck:
+    name: str
+    bucket: str
+    timeout: float = 5.0
+    client: Any = None  # a boto3 S3 client; None means "build one from the environment"
 
-    # Try parsing formats
-    formats = ['%Y-%m-%d', '%d/%m/%Y']
-
-    for fmt in formats:
+    def run(self) -> Result:
+        start = time.perf_counter()
         try:
-            date = datetime.strptime(date_str, fmt)
-            return date.replace(hour=23, minute=59, second=59)
-        except ValueError:
-            continue
-
-    return None
-
-def parse_priority(priority_str):
-    """
-    Parse a priority string into a Priority enum.
-
-    Args:
-        priority_str (str): The priority string to parse.
-
-    Returns:
-        Priority: The parsed priority, or Priority.MEDIUM if parsing failed.
-    """
-    if not priority_str:
-        return Priority.MEDIUM
-
-    priority_str = priority_str.strip().upper()
-
-    try:
-        return Priority[priority_str]
-    except KeyError:
-        # Try to parse by numeric value
-        priority_map = {
-            '1': Priority.LOW,
-            '2': Priority.MEDIUM,
-            '3': Priority.HIGH,
-            '4': Priority.URGENT
-        }
-
-        if priority_str in priority_map:
-            return priority_map[priority_str]
-
-        # Try to match by name
-        for priority in Priority:
-            if priority.name.startswith(priority_str):
-                return priority
-
-        return Priority.MEDIUM
-
-def format_task_list(tasks):
-    """
-    Format a list of tasks for display.
-
-    Args:
-        tasks (list): A list of Task objects.
-
-    Returns:
-        str: A formatted string representation of the tasks.
-    """
-    if not tasks:
-        return "No tasks found."
-
-    result = "\n"
-    for i, task in enumerate(tasks, 1):
-        result += f"{i}. {task}\n"
-
-    return result
+            import boto3  # imported here, so svcheck works without boto3 installed
+            from botocore.config import Config
+            from botocore.exceptions import BotoCoreError, ClientError
+        except ImportError:
+            detail = "needs boto3: install svcheck with the aws extra"
+            return Result(self.name, Status.FAIL, detail, elapsed_ms(start))
+        try:
+            # botocore waits 60 s and retries on its own by default: keep both bounded
+            config = Config(
+                connect_timeout=self.timeout,
+                read_timeout=self.timeout,
+                retries={"mode": "standard", "max_attempts": 2},
+            )
+            client = self.client or boto3.client("s3", config=config)
+            client.head_bucket(Bucket=self.bucket)
+        except ClientError as err:
+            code = err.response.get("Error", {}).get("Code", "unknown")
+            return Result(self.name, Status.FAIL, f"{self.bucket}: {code}", elapsed_ms(start))
+        except BotoCoreError as err:  # no or partial credentials, unknown profile, network
+            return Result(self.name, Status.FAIL, str(err), elapsed_ms(start))
+        return Result(self.name, Status.OK, f"{self.bucket} is reachable", elapsed_ms(start))
 ```
 
-## Step 6: Implementing the Main Application
+Install everything, including the `aws` extra and the development tools. `uv sync` creates `.venv`, writes `uv.lock` and installs svcheck itself in **editable** mode, so changes to the source take effect without reinstalling:
 
-Finally, let's create the main application script in `task_manager.py`:
+```terminal
+{
+  "title": "uv sync",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv sync --all-extras 2>&1 | tail -n 4",
+      "output": " + six==1.17.0\n + svcheck==0.1.0 (from file:///home/dev/svcheck)\n + typing-extensions==4.16.0\n + urllib3==2.8.0"
+    },
+    {
+      "cmd": "uv run svcheck --version",
+      "output": "svcheck 0.1.0"
+    }
+  ]
+}
+```
+
+## Run It
+
+A config for this machine, using the test API on port 8080 for the HTTP checks:
+
+```toml
+# Checks for this host: svcheck services.toml
+[defaults]
+timeout = 2.0
+retries = 2
+
+[[check]]
+name = "api"
+type = "http"
+url = "http://127.0.0.1:8080/health"
+
+[[check]]
+name = "api-warmup"
+type = "http"
+url = "http://127.0.0.1:8080/flaky?client=svcheck"
+
+[[check]]
+name = "postgres"
+type = "tcp"
+host = "127.0.0.1"
+port = 5432
+timeout = 1.0
+
+[[check]]
+name = "tmp-disk"
+type = "disk"
+path = "/tmp"
+
+[[check]]
+name = "git"
+type = "command"
+command = ["git", "--version"]
+```
+
+```terminal
+{
+  "title": "svcheck in action",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv run svcheck services.toml -v; echo \"exit code $?\"",
+      "output": "INFO svcheck.runner: postgres: [Errno 111] Connection refused, retry 1/2 in 0.5s\nINFO svcheck.runner: api-warmup: HTTP 503, retry 1/2 in 0.8s\nINFO svcheck.runner: postgres: [Errno 111] Connection refused, retry 2/2 in 1.6s\nINFO svcheck.runner: api-warmup: HTTP 503, retry 2/2 in 0.8s\nSTATUS  CHECK          TIME  DETAIL\nOK      api           479ms  HTTP 200\nOK      api-warmup     44ms  HTTP 200\nFAIL    postgres        0ms  [Errno 111] Connection refused\nOK      tmp-disk        4ms  0.0% used\nOK      git            10ms  git version 2.39.5\n4 ok, 0 warn, 1 fail\nexit code 1"
+    },
+    {
+      "comment": "the warm-up endpoint is healthy by now; JSON for other tools",
+      "cmd": "uv run svcheck services.toml --json | head -n 8",
+      "output": "[\n  {\n    \"name\": \"api\",\n    \"status\": \"ok\",\n    \"detail\": \"HTTP 200\",\n    \"duration_ms\": 127.5,\n    \"retryable\": false\n  },"
+    },
+    {
+      "cmd": "printf '[[check]]\\nname = \"db\"\\ntype = \"tcp\"\\nhost = \"db-01\"\\n' > broken.toml && uv run svcheck broken.toml; echo \"exit code $?\"",
+      "output": "ERROR svcheck: broken.toml: check 1: missing key 'port'\nexit code 2"
+    },
+    {
+      "cmd": "uv run svcheck --help",
+      "output": "usage: svcheck [-h] [--json] [--workers N] [--output FILE] [-v] [--version]\n               config\n\nRun HTTP, TCP, disk and command checks from a TOML file.\n\npositional arguments:\n  config         TOML file with [[check]] tables\n\noptions:\n  -h, --help     show this help message and exit\n  --json         print the results as JSON\n  --workers N    checks to run at once (default: 8)\n  --output FILE  also write the report to FILE, atomically\n  -v, --verbose  log retries\n  --version      show program's version number and exit\n\nExit codes: 0 nothing failed, 1 a check failed, 2 usage or config error."
+    }
+  ]
+}
+```
+
+The first run shows the whole design at work. With `-v`, the log lines (on standard error) show `api-warmup` failing twice and passing on its second retry, while `postgres` failed all three attempts because nothing listens on port 5432 here. The table lists the last attempt of each check, and the exit code is 1 because a check failed. A broken config exits with 2 and one line that names the file, the check and the problem.
+
+### Threads in action
+
+Five checks against an endpoint that takes a second to answer show what the thread pool buys you. The `time` numbers come from a small ARM board, and include just under a second for `uv run` and Python to start:
+
+```toml
+[[check]]
+name = "slow-1"
+type = "http"
+url = "http://127.0.0.1:8080/slow?seconds=1&n=1"
+
+[[check]]
+name = "slow-2"
+type = "http"
+url = "http://127.0.0.1:8080/slow?seconds=1&n=2"
+
+[[check]]
+name = "slow-3"
+type = "http"
+url = "http://127.0.0.1:8080/slow?seconds=1&n=3"
+
+[[check]]
+name = "slow-4"
+type = "http"
+url = "http://127.0.0.1:8080/slow?seconds=1&n=4"
+
+[[check]]
+name = "slow-5"
+type = "http"
+url = "http://127.0.0.1:8080/slow?seconds=1&n=5"
+```
+
+```terminal
+{
+  "title": "one worker versus five",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "time uv run svcheck slow.toml --workers 1 > /dev/null",
+      "output": "real\t0m5.855s\nuser\t0m0.768s\nsys\t0m0.086s"
+    },
+    {
+      "cmd": "time uv run svcheck slow.toml --workers 5 > /dev/null",
+      "output": "real\t0m1.728s\nuser\t0m0.706s\nsys\t0m0.116s"
+    }
+  ]
+}
+```
+
+Stopping a run is quick too. With one worker, a `SIGTERM` after 1.5 seconds lets the check in progress finish, drops the queued checks and exits with 143. The running check is not interrupted, and httpx's timeouts limit each wait for the server, not the whole request, so a server that keeps sending a little data now and then can hold that last check open for longer. The command calls `.venv/bin/svcheck` directly, so the signal goes straight to svcheck rather than to `uv run`:
+
+```terminal
+{
+  "title": "a clean stop on SIGTERM",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "start=$SECONDS; .venv/bin/svcheck slow.toml --workers 1 & pid=$!; sleep 1.5; kill -TERM \"$pid\"; wait \"$pid\"; echo \"exit code $?, stopped after $((SECONDS - start))s\"",
+      "output": "exit code 143, stopped after 1s"
+    }
+  ]
+}
+```
+
+For checks like these, threads are the simplest choice. The alternatives, for when you need them:
+
+- **asyncio** with `httpx.AsyncClient` and `asyncio.TaskGroup` (Python 3.11 and later) handles thousands of concurrent connections in one thread. Start it with `asyncio.run(main())`: since Python 3.14, `asyncio.get_event_loop()` raises a `RuntimeError` when there is no current event loop instead of creating one, which breaks some older code. Python 3.14 can also show what a running asyncio program is waiting on with `python -m asyncio ps PID`.
+- **Processes** (`concurrent.futures.ProcessPoolExecutor`) for CPU-heavy work such as parsing huge files, because the GIL lets only one thread run Python code at a time. On Linux, Python 3.14 changed the default way of starting worker processes from `fork` to `forkserver`, which can break code that relied on `fork` copying the parent's state.
+- **The free-threaded build** (`uv python install 3.14t`) runs Python threads truly in parallel. Since 3.14 it is officially supported but optional, single-threaded code is about 5 to 10% slower on it, and every compiled library you use must support it.
+
+## Test with pytest
+
+pytest finds files named `test_*.py`, runs every function named `test_*` and reports each `assert` that fails with the values involved. **Fixtures** provide what tests need: pytest's built-in `tmp_path` (a fresh directory), `monkeypatch` (temporarily replace a function or environment variable), `capsys` and `caplog` (captured output and logs), and your own fixtures in `conftest.py`. This one starts a real HTTP server on a free port, so the HTTP check is tested over a real connection without mocking anything:
 
 ```python
-"""
-Task Management System
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-A command-line application for managing tasks and projects.
-"""
+import pytest
 
-import os
-import sys
-from datetime import datetime, timedelta
 
-from models import Task, TaskManager, Priority, Status
-from storage import save_tasks, load_tasks
-from reports import (
-    generate_status_report, generate_priority_report,
-    generate_overdue_report, generate_project_report
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        status = {"/health": 200, "/missing": 404}.get(self.path, 503)
+        self.send_response(status)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def log_message(self, format: str, *args: object) -> None:
+        pass
+
+
+@pytest.fixture
+def http_server() -> Iterator[str]:
+    """A real HTTP server on a free port: /health 200, /missing 404, anything else 503."""
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield f"http://127.0.0.1:{server.server_address[1]}"
+    server.shutdown()
+    server.server_close()
+```
+
+```python
+import socket
+from types import SimpleNamespace
+
+import pytest
+
+from svcheck.checks import CommandCheck, DiskCheck, HttpCheck, Status, TcpCheck
+
+
+def test_http_ok(http_server: str) -> None:
+    assert HttpCheck("api", f"{http_server}/health").run().status is Status.OK
+
+
+def test_http_permanent_failure(http_server: str) -> None:
+    result = HttpCheck("api", f"{http_server}/missing").run()
+    assert (result.status, result.detail, result.retryable) == (Status.FAIL, "HTTP 404", False)
+
+
+def test_http_temporary_failure(http_server: str) -> None:
+    result = HttpCheck("api", f"{http_server}/busy").run()
+    assert (result.status, result.detail, result.retryable) == (Status.FAIL, "HTTP 503", True)
+
+
+def test_tcp_open_then_closed() -> None:
+    with socket.create_server(("127.0.0.1", 0)) as listener:
+        port = listener.getsockname()[1]
+        assert TcpCheck("db", "127.0.0.1", port).run().status is Status.OK
+    assert TcpCheck("db", "127.0.0.1", port, timeout=0.5).run().status is Status.FAIL
+
+
+@pytest.mark.parametrize(
+    ("used", "expected"),
+    [(50, Status.OK), (85, Status.WARN), (95, Status.FAIL)],
 )
-from utils import parse_date, parse_priority, format_task_list
+def test_disk_thresholds(monkeypatch: pytest.MonkeyPatch, used: int, expected: Status) -> None:
+    fake = SimpleNamespace(total=100, used=used, free=100 - used)
+    monkeypatch.setattr("svcheck.checks.shutil.disk_usage", lambda path: fake)
+    assert DiskCheck("root").run().status is expected
 
-def clear_screen():
-    """Clear the terminal screen."""
-    os.system('cls' if os.name == 'nt' else 'clear')
 
-def print_header():
-    """Print the application header."""
-    clear_screen()
-    print("=" * 50)
-    print("            TASK MANAGEMENT SYSTEM             ")
-    print("=" * 50)
-    print()
+def test_disk_without_capacity(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = SimpleNamespace(total=0, used=0, free=0)  # what /proc reports on Linux
+    monkeypatch.setattr("svcheck.checks.shutil.disk_usage", lambda path: fake)
+    result = DiskCheck("proc", path="/proc").run()
+    assert (result.status, result.detail) == (Status.FAIL, "no measurable capacity")
 
-def print_menu():
-    """Print the main menu."""
-    print("\nMain Menu:")
-    print("1. Add Task")
-    print("2. View Tasks")
-    print("3. Update Task")
-    print("4. Delete Task")
-    print("5. Mark Task as Complete")
-    print("6. Mark Task as In Progress")
-    print("7. View Reports")
-    print("8. Save and Exit")
-    print()
 
-def add_task(task_manager):
-    """Add a new task to the task manager."""
-    print_header()
-    print("Add a New Task")
-    print("--------------")
+def test_command_results() -> None:
+    assert CommandCheck("ok", ["true"]).run().status is Status.OK
+    failed = CommandCheck("fails", ["false"]).run()
+    assert (failed.status, failed.detail) == (Status.FAIL, "exit 1: ")
+    slow = CommandCheck("slow", ["sleep", "5"], timeout=0.2).run()
+    assert slow.status is Status.FAIL
+    assert "timed out" in slow.detail
+    assert CommandCheck("missing", ["no-such-command"]).run().status is Status.FAIL
+```
 
-    title = input("Title: ").strip()
-    if not title:
-        print("Task must have a title. Returning to main menu.")
-        return
+`@pytest.mark.parametrize` runs one test function with several inputs, and each case is reported separately. The disk test uses `monkeypatch` to replace `shutil.disk_usage` with a function that returns fixed numbers, because the real disk's usage is not under the test's control.
 
-    description = input("Description (optional): ").strip()
+The config tests write small TOML files into `tmp_path` and check that every kind of mistake gives the right message:
 
-    priority_str = input("Priority (LOW, MEDIUM, HIGH, URGENT) [MEDIUM]: ").strip()
-    priority = parse_priority(priority_str)
+```python
+from pathlib import Path
 
-    due_date_str = input("Due Date (YYYY-MM-DD, DD/MM/YYYY, today, tomorrow, next week) [none]: ").strip()
-    due_date = parse_date(due_date_str)
+import pytest
 
-    project = input("Project (optional): ").strip()
+from svcheck.checks import HttpCheck, TcpCheck
+from svcheck.config import ConfigError, load_config
 
-    task = Task(title, description, priority, due_date, project)
-    task_manager.add_task(task)
+VALID = """
+[defaults]
+timeout = 3.0
+retries = 1
 
-    print(f"\nTask '{title}' added successfully.")
-    input("Press Enter to continue...")
+[[check]]
+name = "api"
+type = "http"
+url = "http://127.0.0.1:8080/health"
 
-def view_tasks(task_manager):
-    """View tasks with filtering options."""
-    while True:
-        print_header()
-        print("View Tasks")
-        print("----------")
-        print("1. View All Tasks")
-        print("2. View Tasks by Status")
-        print("3. View Tasks by Priority")
-        print("4. View Tasks by Project")
-        print("5. View Overdue Tasks")
-        print("6. View Tasks Due Soon")
-        print("7. Return to Main Menu")
-        print()
+[[check]]
+name = "db"
+type = "tcp"
+host = "127.0.0.1"
+port = 5432
+timeout = 1.0
+"""
 
-        choice = input("Enter your choice (1-7): ").strip()
 
-        if choice == '1':
-            tasks = task_manager.get_all_tasks()
-            print(format_task_list(tasks))
+def write(tmp_path: Path, text: str) -> Path:
+    path = tmp_path / "services.toml"
+    path.write_text(text, encoding="utf-8")
+    return path
 
-        elif choice == '2':
-            print("\nTask Status Options:")
-            for i, status in enumerate(Status, 1):
-                print(f"{i}. {status}")
 
-            status_choice = input("\nSelect status (1-3): ").strip()
-            try:
-                status_index = int(status_choice) - 1
-                if 0 <= status_index < len(Status):
-                    status = list(Status)[status_index]
-                    tasks = task_manager.get_tasks_by_status(status)
-                    print(format_task_list(tasks))
-                else:
-                    print("Invalid status option.")
-            except ValueError:
-                print("Please enter a number.")
+def test_valid_config(tmp_path: Path) -> None:
+    checks, retries = load_config(write(tmp_path, VALID))
+    assert retries == 1
+    assert checks == [
+        HttpCheck("api", "http://127.0.0.1:8080/health", 3.0),
+        TcpCheck("db", "127.0.0.1", 5432, 1.0),
+    ]
 
-        elif choice == '3':
-            print("\nTask Priority Options:")
-            for i, priority in enumerate(Priority, 1):
-                print(f"{i}. {priority}")
 
-            priority_choice = input("\nSelect priority (1-4): ").strip()
-            try:
-                priority_index = int(priority_choice) - 1
-                if 0 <= priority_index < len(Priority):
-                    priority = list(Priority)[priority_index]
-                    tasks = task_manager.get_tasks_by_priority(priority)
-                    print(format_task_list(tasks))
-                else:
-                    print("Invalid priority option.")
-            except ValueError:
-                print("Please enter a number.")
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("", "no [[check]] tables"),
+        ('[[check]]\nname = "x"\ntype = "ftp"\n', "unknown type 'ftp'"),
+        ('[[check]]\nname = "x"\ntype = "tcp"\nhost = "h"\n', "missing key 'port'"),
+        ('[[check]]\nname = "x"\ntype = "tcp"\nhost = "h"\nport = "ssh"\n', "port must be"),
+        ('[[check]]\nname = "x"\ntype = "command"\ncommand = "true"\n', "non-empty list"),
+        ('defaults = 1\n[[check]]\nname = "x"\ntype = "disk"\n', "[defaults] table"),
+        ('[defaults]\ntimeout = "oops"\n[[check]]\nname = "x"\ntype = "disk"\n', "positive number"),
+        ('[[check]]\nname = "x"\ntype = "disk"\nmax_used_percent = nan\n', "positive number"),
+        ('[[check]]\nname = "x"\ntype = "http"\nurl = "http://localhost:abc/"\n', "invalid port"),
+        ('[[check]]\nname = "x"\ntype = "http"\nurl = "ftp://files/"\n', "http:// or https://"),
+        ('[[check]]\nname = "x"\ntype = "disk"\n' * 2, "duplicate check names: x"),
+        ("[[check]\n", "at line 1"),
+    ],
+)
+def test_invalid_config(tmp_path: Path, text: str, message: str) -> None:
+    with pytest.raises(ConfigError) as info:
+        load_config(write(tmp_path, text))
+    assert message in str(info.value)
 
-        elif choice == '4':
-            if not task_manager.projects:
-                print("No projects found.")
-            else:
-                print("\nProjects:")
-                for i, project in enumerate(sorted(task_manager.projects), 1):
-                    print(f"{i}. {project}")
 
-                project_choice = input("\nSelect project number or enter project name: ").strip()
+def test_not_utf8(tmp_path: Path) -> None:
+    path = tmp_path / "services.toml"
+    path.write_bytes(b'[[check]]\nname = "caf\xe9"\n')
+    with pytest.raises(ConfigError, match="can't decode"):
+        load_config(path)
 
-                try:
-                    project_index = int(project_choice) - 1
-                    if 0 <= project_index < len(task_manager.projects):
-                        project = sorted(task_manager.projects)[project_index]
-                        tasks = task_manager.get_tasks_by_project(project)
-                        print(format_task_list(tasks))
-                    else:
-                        print("Invalid project option.")
-                except ValueError:
-                    # User entered a project name
-                    tasks = task_manager.get_tasks_by_project(project_choice)
-                    print(format_task_list(tasks))
 
-        elif choice == '5':
-            tasks = task_manager.get_overdue_tasks()
-            print(format_task_list(tasks))
+def test_missing_file(tmp_path: Path) -> None:
+    with pytest.raises(ConfigError, match="no such file"):
+        load_config(tmp_path / "missing.toml")
+```
 
-        elif choice == '6':
-            days_str = input("Enter number of days (default: 3): ").strip()
-            try:
-                days = int(days_str) if days_str else 3
-                tasks = task_manager.get_due_soon_tasks(days)
-                print(format_task_list(tasks))
-            except ValueError:
-                print("Please enter a valid number.")
+And the CLI tests check the contract that scripts depend on, the output format and the exit codes:
 
-        elif choice == '7':
-            return
+```python
+import json
+from pathlib import Path
 
-        else:
-            print("Invalid choice. Please try again.")
+import pytest
 
-        input("Press Enter to continue...")
+from svcheck.cli import main
 
-def select_task(task_manager, prompt="Select a task: "):
-    """Helper function to select a task."""
-    tasks = task_manager.get_all_tasks()
 
-    if not tasks:
-        print("No tasks available.")
-        return None
+def test_json_output_and_exit_code(
+    tmp_path: Path, http_server: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config = tmp_path / "services.toml"
+    config.write_text(
+        f'[[check]]\nname = "api"\ntype = "http"\nurl = "{http_server}/health"\n\n'
+        f'[[check]]\nname = "broken"\ntype = "http"\nurl = "{http_server}/broken"\n',
+        encoding="utf-8",
+    )
+    report = tmp_path / "last.json"
+    assert main([str(config), "--json", "--output", str(report)]) == 1
+    results = json.loads(capsys.readouterr().out)
+    assert [(r["name"], r["status"]) for r in results] == [("api", "ok"), ("broken", "fail")]
+    assert json.loads(report.read_text(encoding="utf-8")) == results
+    assert report.stat().st_mode & 0o777 == 0o600
 
-    print("\nAvailable Tasks:")
-    for i, task in enumerate(tasks, 1):
-        print(f"{i}. {task.title}")
 
-    task_choice = input(f"\n{prompt}").strip()
+def test_config_error_exits_2(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    assert main([str(tmp_path / "missing.toml")]) == 2
+    assert "no such file" in caplog.text
 
-    try:
-        task_index = int(task_choice) - 1
-        if 0 <= task_index < len(tasks):
-            return tasks[task_index]
-        else:
-            print("Invalid task number.")
-            return None
-    except ValueError:
-        # Try to find by ID or title
-        for task in tasks:
-            if task_choice == task.id or task_choice.lower() == task.title.lower():
-                return task
 
-        print("Task not found.")
-        return None
+def test_bad_option_exits_2() -> None:
+    with pytest.raises(SystemExit) as info:
+        main(["services.toml", "--workers", "0"])
+    assert info.value.code == 2
+```
 
-def update_task(task_manager):
-    """Update an existing task."""
-    print_header()
-    print("Update Task")
-    print("-----------")
+The runner test needs no network at all. A small fake class that matches the `Check` Protocol fails a set number of times, which pins down exactly when the runner retries:
 
-    task = select_task(task_manager)
-    if not task:
-        input("Press Enter to continue...")
-        return
+```python
+import threading
+from dataclasses import dataclass
 
-    print(f"\nUpdating Task: {task.title}")
-    print("Leave fields blank to keep current values.")
+from svcheck.checks import Result, Status
+from svcheck.runner import run_checks
 
-    title = input(f"Title [{task.title}]: ").strip()
-    description = input(f"Description [{task.description}]: ").strip()
 
-    priority_str = input(f"Priority ({task.priority}) [LOW, MEDIUM, HIGH, URGENT]: ").strip()
-    priority = parse_priority(priority_str) if priority_str else None
+@dataclass
+class FlakyCheck:
+    """A fake check that fails a given number of times, then passes."""
 
-    due_date_display = task.due_date.strftime("%Y-%m-%d") if task.due_date else "none"
-    due_date_str = input(f"Due Date [{due_date_display}] (YYYY-MM-DD, today, tomorrow, next week): ").strip()
-    due_date = parse_date(due_date_str) if due_date_str else None
+    name: str
+    failures: int
+    retryable: bool = True
+    calls: int = 0
 
-    project_display = task.project if task.project else "none"
-    project = input(f"Project [{project_display}]: ").strip()
+    def run(self) -> Result:
+        self.calls += 1
+        if self.calls <= self.failures:
+            return Result(self.name, Status.FAIL, "down", retryable=self.retryable)
+        return Result(self.name, Status.OK, "up")
 
-    # Update task with new values
-    task.update(
-        title=title if title else None,
-        description=description if description else None,
-        priority=priority,
-        due_date=due_date,
-        project=project if project else None
+
+def test_retries_until_success() -> None:
+    check = FlakyCheck("api", failures=2)
+    [result] = run_checks([check], retries=2, delay=0)
+    assert (result.status, check.calls) == (Status.OK, 3)
+
+
+def test_gives_up_after_the_last_retry() -> None:
+    check = FlakyCheck("api", failures=5)
+    [result] = run_checks([check], retries=2, delay=0)
+    assert (result.status, check.calls) == (Status.FAIL, 3)
+
+
+def test_never_retries_a_permanent_failure() -> None:
+    check = FlakyCheck("api", failures=5, retryable=False)
+    [result] = run_checks([check], retries=2, delay=0)
+    assert (result.status, check.calls) == (Status.FAIL, 1)
+
+
+def test_stop_ends_retries_at_once() -> None:
+    stop = threading.Event()
+    stop.set()
+    check = FlakyCheck("api", failures=5)
+    [result] = run_checks([check], retries=2, delay=10, stop=stop)
+    assert (result.status, check.calls) == (Status.FAIL, 1)
+```
+
+And the AWS tests use botocore's `Stubber`, explained in the AWS section below:
+
+```python
+import pytest
+
+boto3 = pytest.importorskip("boto3")
+from botocore.stub import Stubber  # noqa: E402
+
+from svcheck.aws import S3BucketCheck  # noqa: E402
+from svcheck.checks import Status  # noqa: E402
+
+
+def make_client() -> object:
+    # Fake credentials and a fixed region: the Stubber answers, nothing reaches AWS.
+    return boto3.client(
+        "s3",
+        region_name="eu-west-1",
+        aws_access_key_id="testing",
+        aws_secret_access_key="testing",
     )
 
-    print(f"\nTask '{task.title}' updated successfully.")
-    input("Press Enter to continue...")
 
-def delete_task(task_manager):
-    """Delete a task."""
-    print_header()
-    print("Delete Task")
-    print("-----------")
+def test_bucket_reachable() -> None:
+    client = make_client()
+    with Stubber(client) as stub:
+        stub.add_response("head_bucket", {}, {"Bucket": "backups"})
+        result = S3BucketCheck("backups", "backups", client=client).run()
+    assert result.status is Status.OK
 
-    task = select_task(task_manager)
-    if not task:
-        input("Press Enter to continue...")
-        return
 
-    confirm = input(f"Are you sure you want to delete '{task.title}'? (y/n): ").strip().lower()
-
-    if confirm == 'y':
-        task_manager.delete_task(task.id)
-        print(f"\nTask '{task.title}' deleted successfully.")
-    else:
-        print("\nDeletion cancelled.")
-
-    input("Press Enter to continue...")
-
-def mark_task_complete(task_manager):
-    """Mark a task as complete."""
-    print_header()
-    print("Mark Task as Complete")
-    print("--------------------")
-
-    task = select_task(task_manager)
-    if not task:
-        input("Press Enter to continue...")
-        return
-
-    task.mark_complete()
-    print(f"\nTask '{task.title}' marked as complete.")
-    input("Press Enter to continue...")
-
-def mark_task_in_progress(task_manager):
-    """Mark a task as in progress."""
-    print_header()
-    print("Mark Task as In Progress")
-    print("-----------------------")
-
-    task = select_task(task_manager)
-    if not task:
-        input("Press Enter to continue...")
-        return
-
-    task.mark_in_progress()
-    print(f"\nTask '{task.title}' marked as in progress.")
-    input("Press Enter to continue...")
-
-def view_reports(task_manager):
-    """View various reports about tasks."""
-    while True:
-        print_header()
-        print("View Reports")
-        print("-----------")
-        print("1. Status Report")
-        print("2. Priority Report")
-        print("3. Overdue Tasks Report")
-        print("4. Project Report")
-        print("5. Return to Main Menu")
-        print()
-
-        choice = input("Enter your choice (1-5): ").strip()
-
-        if choice == '1':
-            report = generate_status_report(task_manager)
-            print("\n" + report)
-
-        elif choice == '2':
-            report = generate_priority_report(task_manager)
-            print("\n" + report)
-
-        elif choice == '3':
-            report = generate_overdue_report(task_manager)
-            print("\n" + report)
-
-        elif choice == '4':
-            report = generate_project_report(task_manager)
-            print("\n" + report)
-
-        elif choice == '5':
-            return
-
-        else:
-            print("Invalid choice. Please try again.")
-
-        input("Press Enter to continue...")
-
-def main():
-    """Main function to run the Task Management System."""
-    # Load tasks from file
-    task_manager = load_tasks()
-
-    while True:
-        print_header()
-        print_menu()
-
-        choice = input("Enter your choice (1-8): ").strip()
-
-        if choice == '1':
-            add_task(task_manager)
-        elif choice == '2':
-            view_tasks(task_manager)
-        elif choice == '3':
-            update_task(task_manager)
-        elif choice == '4':
-            delete_task(task_manager)
-        elif choice == '5':
-            mark_task_complete(task_manager)
-        elif choice == '6':
-            mark_task_in_progress(task_manager)
-        elif choice == '7':
-            view_reports(task_manager)
-        elif choice == '8':
-            # Save tasks before exiting
-            if save_tasks(task_manager):
-                print("Tasks saved successfully.")
-            else:
-                print("Error saving tasks.")
-
-            print("Thank you for using the Task Management System. Goodbye!")
-            break
-        else:
-            print("Invalid choice. Please try again.")
-            input("Press Enter to continue...")
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\nProgram terminated by user.")
-        sys.exit(0)
+def test_bucket_missing() -> None:
+    client = make_client()
+    with Stubber(client) as stub:
+        stub.add_client_error(
+            "head_bucket",
+            service_error_code="404",
+            http_status_code=404,
+            expected_params={"Bucket": "backups"},
+        )
+        result = S3BucketCheck("backups", "backups", client=client).run()
+    assert (result.status, result.detail) == (Status.FAIL, "backups: 404")
 ```
 
-## Step 7: Running the Application
-
-To run the application, navigate to the `task_manager` directory and execute:
-
-```bash
-python task_manager.py
+```terminal
+{
+  "title": "run the tests",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv run pytest",
+      "output": "============================= test session starts ==============================\nplatform linux -- Python 3.14.9, pytest-9.1.1, pluggy-1.7.0\nrootdir: /home/dev/svcheck\nconfigfile: pyproject.toml\ntestpaths: tests\nplugins: anyio-4.15.1\ncollected 33 items\n\ntests/test_aws.py ..                                                     [  6%]\ntests/test_checks.py .........                                           [ 33%]\ntests/test_cli.py ...                                                    [ 42%]\ntests/test_config.py ...............                                     [ 87%]\ntests/test_runner.py ....                                                [100%]\n\n============================== 33 passed in 6.12s =============================="
+    }
+  ]
+}
 ```
 
-This will start the Task Management System in your terminal.
+## Lint, Format and Type Check
 
-## Project Summary
+**Ruff** is a linter and formatter in one fast binary: `ruff check` finds bugs and bad patterns (the rules selected in `pyproject.toml` include pyflakes, bugbear, import sorting and pyupgrade), and `ruff format` formats code in a style compatible with Black. **mypy** with `strict = true` checks every function's types, including the tests:
 
-Let's review what we've built and the Python concepts we've applied:
+```terminal
+{
+  "title": "ruff and mypy",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv run ruff check",
+      "output": "All checks passed!"
+    },
+    {
+      "cmd": "uv run ruff format --check",
+      "output": "15 files already formatted"
+    },
+    {
+      "cmd": "uv run mypy",
+      "output": "Success: no issues found in 14 source files"
+    }
+  ]
+}
+```
 
-### Data Models (`models.py`)
+To see them earn their keep, make two typical mistakes. Add an import nobody uses to the top of `src/svcheck/report.py`, after `import os`:
 
-- **Classes and Objects**: We defined classes for `Task` and `TaskManager`
-- **Enums**: We used the `Enum` class for `Priority` and `Status`
-- **Special Methods**: We implemented `__str__` for custom string representation
-- **Type Conversion**: We created methods to convert between objects and dictionaries
+```python
+import os
+import shutil
+import stat
+```
 
-### Storage (`storage.py`)
+and save a small script, `src/svcheck/scratch.py`, that mixes up a number and a string:
 
-- **File Operations**: We used file I/O to save and load data
-- **JSON Serialization**: We converted Python objects to/from JSON
-- **Error Handling**: We used try-except blocks to handle potential errors
-- **Path Handling**: We used the `os` module to work with file paths
+```python
+from svcheck.checks import DiskCheck
 
-### Reporting (`reports.py`)
+result = DiskCheck("root").run()
+print("took " + result.duration_ms + " ms")
+```
 
-- **Function Definitions**: We created functions for different report types
-- **String Formatting**: We formatted reports for readable output
-- **Date Manipulation**: We worked with datetime objects for date calculations
-- **List Comprehensions**: We filtered and processed lists of tasks
+```terminal
+{
+  "title": "both tools catch a mistake",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv run ruff check",
+      "output": "F401 [*] `shutil` imported but unused\n --> src/svcheck/report.py:6:8\n  |\n4 | import json\n5 | import os\n6 | import shutil\n  |        ^^^^^^\n7 | import stat\n8 | import tempfile\n  |\nhelp: Remove unused import: `shutil`\n  |\n5 | import os\n  - import shutil\n6 | import stat\n  |\n\nFound 1 error.\n[*] 1 fixable with `--fix`."
+    },
+    {
+      "cmd": "uv run mypy",
+      "output": "src/svcheck/scratch.py:4: error: Unsupported operand types for + (\"str\" and \"float\")  [operator]\nFound 1 error in 1 file (checked 15 source files)"
+    },
+    {
+      "comment": "let Ruff fix the import, delete the scratch file, check again",
+      "cmd": "uv run ruff check --fix",
+      "output": "Found 1 error (1 fixed, 0 remaining)."
+    },
+    {
+      "cmd": "rm src/svcheck/scratch.py && uv run mypy",
+      "output": "Success: no issues found in 14 source files"
+    }
+  ]
+}
+```
 
-### Utilities (`utils.py`)
+The string mistake would otherwise only show up when that line runs, as a `TypeError`; mypy finds it without running anything. Run these tools in your editor as you type, in a pre-commit hook, and in CI.
 
-- **Date Parsing**: We converted string inputs to datetime objects
-- **Enum Parsing**: We converted string inputs to enum values
-- **Flexible Input Handling**: We accommodated different input formats
+## Test on Every Supported Python
 
-### Main Application (`task_manager.py`)
+`requires-python = ">=3.12"` is a promise. `uv run --isolated --python X` runs the tests in a temporary environment with another Python version, downloading it if needed, and leaves the project's `.venv` on 3.14:
 
-- **Command-Line Interface**: We built a text-based user interface
-- **Menu System**: We implemented a menu-driven application flow
-- **User Input Validation**: We validated and processed user inputs
-- **Application Logic**: We connected all components together
+```terminal
+{
+  "title": "3.12 and 3.15",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv run --isolated --all-extras --python 3.12 pytest -q 2>&1 | tail -n 2",
+      "output": ".................................                                        [100%]\n33 passed in 11.28s"
+    },
+    {
+      "cmd": "uv run --isolated --all-extras --python 3.15 pytest -q 2>&1 | tail -n 2",
+      "output": ".................................                                        [100%]\n33 passed in 13.89s"
+    }
+  ]
+}
+```
 
-### Python Concepts Applied
+The same code passes on Python 3.12 and on 3.15.1. Nothing in svcheck depends on a 3.13 or 3.14 feature; if it did (for example `except A, B:` without parentheses or a t-string, which need 3.14), the 3.12 run would fail here, long before a user hit it.
 
-- **Variables and Data Types**: Strings, integers, lists, dictionaries
-- **Control Flow**: If statements, loops, conditional expressions
-- **Functions**: Definition, parameters, return values
-- **Data Structures**: Lists, dictionaries, sets
-- **Modules and Packages**: Organizing code in separate files
-- **File Operations**: Reading from and writing to files
-- **Error Handling**: Using try-except blocks
-- **Object-Oriented Programming**: Classes, inheritance, encapsulation
-- **Date and Time Handling**: Using the datetime module
-- **JSON Serialization**: Converting between Python objects and JSON
-- **Command-Line Interface**: Building a text-based user interface
+## Build and Install the Tool
 
-## Extending the Project
+`uv build` produces the two standard distribution files: a **source distribution** (`.tar.gz`) and a **wheel** (`.whl`), the ready-to-install package. Because svcheck is pure Python, one wheel (`py3-none-any`) works on every platform:
 
-This Task Management System can be extended in many ways:
+```terminal
+{
+  "title": "build and install",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uv build",
+      "output": "Building source distribution...\nBuilding wheel from source distribution...\nSuccessfully built dist/svcheck-0.1.0.tar.gz\nSuccessfully built dist/svcheck-0.1.0-py3-none-any.whl"
+    },
+    {
+      "cmd": "uv tool install dist/svcheck-0.1.0-py3-none-any.whl",
+      "output": "Resolved 7 packages in 199ms\nPrepared 1 package in 9ms\nInstalled 7 packages in 10ms\n + anyio==4.15.1\n + certifi==2026.10.23\n + h11==0.16.0\n + httpcore==1.0.9\n + httpx==0.28.1\n + idna==3.20\n + svcheck==0.1.0 (from file:///home/dev/svcheck/dist/svcheck-0.1.0-py3-none-any.whl)\nInstalled 1 executable: svcheck"
+    },
+    {
+      "cmd": "cd /tmp && which svcheck && svcheck ~/svcheck/services.toml | tail -n 1",
+      "output": "/home/dev/.local/bin/svcheck\n4 ok, 0 warn, 1 fail"
+    },
+    {
+      "cmd": "cd ~/svcheck"
+    }
+  ]
+}
+```
 
-1. **Add a GUI**: Create a graphical user interface using Tkinter or PyQt
-2. **Add a Database**: Replace the JSON storage with SQLite or another database
-3. **Add Reminders**: Implement a notification system for upcoming due dates
-4. **Add User Authentication**: Support multiple users with login functionality
-5. **Add Task Dependencies**: Allow tasks to depend on other tasks
-6. **Add Tags**: Implement a tagging system for better organization
-7. **Add Search**: Implement a search function to find tasks by keywords
-8. **Add Collaboration**: Allow sharing tasks between users
-9. **Add Sync**: Synchronize tasks with online services
-10. **Add Statistics**: Generate more detailed reports and visualizations
+`uv tool install` gave svcheck its own environment and put the command in `~/.local/bin`, so it runs from any directory with no virtual environment active, exactly as it would on a server. To share it, publish the wheel to PyPI or a private index (`uv publish`; on GitHub, use trusted publishing so no long-lived token is stored), or install straight from Git: `uv tool install git+https://github.com/<you>/svcheck`.
 
-## Conclusion
+## Talking to AWS with boto3
 
-Congratulations! You've built a complete Python application that demonstrates all the concepts we've covered in this guide. The Task Management System is a practical example of how Python can be used to create useful software.
+Cloud providers ship Python SDKs, and in AWS's case the SDK is **boto3**. svcheck's optional `S3BucketCheck` (`src/svcheck/aws.py`, shown above) checks that a bucket exists and is reachable with the current credentials. It follows the usual boto3 pattern: create a **client** for the service, call an API operation (`head_bucket`), and handle two kinds of errors. `ClientError` means AWS answered with an error code (`403`, `404`, `NoSuchBucket`, ...), and `BotoCoreError` means the request never got an answer (no credentials, a network problem, a bad configuration). This guide uses no AWS account, so it does not show a successful call; the runs below test the code without one.
 
-Remember, the best way to improve your Python skills is to continue building projects. Take what you've learned here and apply it to your own ideas. Experiment with new libraries, tackle different problems, and seek feedback from others.
+Never put access keys in code or in the config file. boto3 finds credentials itself and uses the first source that has them: environment variables (`AWS_ACCESS_KEY_ID` and friends), a web identity token (EKS IRSA), the shared files `~/.aws/credentials` and `~/.aws/config` (including SSO profiles selected with `AWS_PROFILE`), and finally the role of the container or machine it runs on (an ECS task role, EKS Pod Identity or an EC2 instance profile). The boto3 documentation lists the exact order. In production, use a role; on a laptop, use SSO.
 
-The Python journey doesn't end here, it's just beginning. Keep learning, keep coding, and keep having fun!
+Without any credentials, the check fails cleanly instead of crashing. `AWS_EC2_METADATA_DISABLED=true` stops boto3 from first trying the EC2 metadata endpoint, which only exists on EC2 and otherwise costs a few seconds of timeouts:
 
-Happy coding!
+```terminal
+{
+  "title": "no credentials",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "AWS_EC2_METADATA_DISABLED=true uv run python -c 'from svcheck.aws import S3BucketCheck; print(S3BucketCheck(\"backups\", \"acme-backups\").run())'",
+      "output": "Result(name='backups', status=<Status.FAIL: 'fail'>, detail='Unable to locate credentials', duration_ms=832.5, retryable=False)"
+    }
+  ]
+}
+```
+
+To test code that calls AWS without an account, botocore's `Stubber` replaces the HTTP layer of a client with canned responses and checks the parameters you send. That is what `tests/test_aws.py` above does, with fake credentials and a fixed region so nothing ever reaches AWS; both of its tests were part of the run above. For larger AWS test suites, the `moto` library emulates whole services in memory. Two more boto3 habits: use **paginators** (`client.get_paginator("list_objects_v2")`) for any list call, because AWS list APIs return results in pages (S3's `list_objects_v2` returns at most 1,000 keys per call), and prefer **clients** to the older `resource` interface, which the boto3 team no longer adds features to.
+
+## Continuous Integration
+
+A workflow that runs the same commands on every push and pull request, on every supported Python version. The actions are pinned to full commit SHAs (with the version in a comment), so a moved tag cannot change what runs, and `uv sync --locked` fails if `uv.lock` is out of date with `pyproject.toml`:
+
+```yaml
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.13', '3.14', '3.15']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: '0.13.5'
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - run: uv sync --locked --all-extras
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy
+      - run: uv run pytest
+```
+
+```terminal
+{
+  "title": "lint the workflow",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "actionlint && echo \"workflow ok\"",
+      "output": "workflow ok"
+    }
+  ]
+}
+```
+
+[actionlint](https://github.com/rhysd/actionlint) checks the workflow's syntax, expressions and action inputs (see the prerequisites for installing it). The workflow itself was not run on GitHub for this guide. The [CI/CD guide](/guides/introduction-to-cicd) covers workflows, caching and hardening in depth.
+
+## Run It on a Schedule
+
+On a single server, cron or a systemd timer runs the checks and alerting picks up the exit code or the JSON. These are examples to adapt, not runs from this guide:
+
+```tabs
+{
+  "title": "Schedule svcheck",
+  "tabs": [
+    {
+      "label": "systemd timer",
+      "lang": "ini",
+      "code": "# /etc/systemd/system/svcheck.service\n[Unit]\nDescription=Run service checks\n\n[Service]\nType=oneshot\nUser=svcheck\nExecStart=/home/svcheck/.local/bin/svcheck /etc/svcheck/services.toml --json\n\n# /etc/systemd/system/svcheck.timer\n[Unit]\nDescription=Run service checks every 5 minutes\n\n[Timer]\nOnBootSec=2min\nOnUnitActiveSec=5min\n\n[Install]\nWantedBy=timers.target"
+    },
+    {
+      "label": "cron",
+      "lang": "bash",
+      "code": "# crontab -e for a dedicated user; cron uses /bin/sh and a minimal PATH,\n# so give the full path to the installed command. --output replaces\n# last.json atomically after the checks; a config error leaves the old one.\n*/5 * * * * /home/svcheck/.local/bin/svcheck /etc/svcheck/services.toml --json --output /var/log/svcheck/last.json > /dev/null 2>> /var/log/svcheck/errors.log"
+    },
+    {
+      "label": "container",
+      "lang": "dockerfile",
+      "code": "FROM python:3.14-slim\nCOPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /bin/uv\nWORKDIR /app\nCOPY pyproject.toml uv.lock README.md ./\nCOPY src ./src\nRUN uv sync --locked --no-dev --no-editable\nUSER nobody\nENTRYPOINT [\"/app/.venv/bin/svcheck\"]\nCMD [\"/etc/svcheck/services.toml\", \"--json\"]"
+    }
+  ]
+}
+```
+
+In the container, the `ENTRYPOINT` in exec form makes svcheck PID 1, so it receives `SIGTERM` directly. That only helps because `cli.py` handles the signal: Linux does not apply the default "terminate" action to PID 1, so a PID 1 without a handler ignores `SIGTERM` until Docker kills it after its grace period.
+
+## Where to Go Next
+
+You now have the skills and the project structure for real operations tooling. Directions worth exploring from here:
+
+- **Typer or Click** instead of `argparse` for larger command-line tools with many subcommands. Typer builds the interface from type hints.
+- **Pydantic** for validating complex configuration and API payloads into typed objects.
+- **asyncio** for tools that talk to hundreds of endpoints at once.
+- **Ansible modules and plugins**, which are Python, for automation that should live in your playbooks; see the [Ansible guide](/guides/introduction-to-ansible).
+- **Python 3.15** features once your dependencies support it: explicit lazy imports (`lazy import json`) for faster start-up of command-line tools, the `frozendict` built-in, and Tachyon, a sampling profiler in the new `profiling.sampling` module that attaches to a running process.
+
+## Common Mistakes
+
+- **Code next to `pyproject.toml` instead of in `src/`.** Tests then pass against the working directory and fail against the installed package.
+- **No lock file in Git**, or CI that updates it silently. Commit `uv.lock` and use `uv sync --locked`.
+- **Logic in the CLI layer.** Keep `cli.py` thin, so tests can call plain functions.
+- **Tests that need the network, a real cloud account or a particular disk.** Use local servers, `tmp_path`, `monkeypatch` and stubbers.
+- **Testing only on your own Python version** when `requires-python` promises more.
+- **Unpinned CI actions and tools**, and secrets in the workflow file.
+- **`pip install` of tools into a project environment.** Use dependency groups for project tools and `uv tool install` for standalone commands.
+
+## Summary
+
+- `uv init --package` creates a `src` layout project; `pyproject.toml` holds metadata, dependencies, extras, dependency groups, the command entry point and tool settings; `uv.lock` pins everything.
+- Split a tool into small modules: configuration, checks, running, reporting, and a thin CLI with `argparse` and clear exit codes.
+- A thread pool runs I/O-bound checks in parallel; asyncio, processes and the free-threaded build are there when you need more.
+- pytest with fixtures, `parametrize`, `tmp_path` and `monkeypatch` tests real behaviour; Ruff and mypy `--strict` catch mistakes before tests run; `uv run --isolated --python X` tests other versions.
+- `uv build` makes a wheel, `uv tool install` installs it as a command, and a pinned CI workflow runs every check on every change.
+- boto3 takes credentials from the environment or a role; `Stubber` and moto test AWS code without an account.
+
+This is the end of the guide. Go back to the [guide overview](/guides/introduction-to-python) for the full list of parts, or test what you learned with the [Python Fundamentals Quiz](/quizzes/python-quiz).
+
+## Keep Learning
+
+- [Introduction to CI/CD with GitHub Actions](/guides/introduction-to-cicd), to run svcheck's checks in a full pipeline.
+- [Shai-Hulud reaches PyPI](/posts/shai-hulud-hades-pypi-wave-june-2026): why pinned actions, locked dependencies and a release cooldown matter.
+- [Why your Docker container exits immediately](/posts/why-docker-container-exits-immediately), for the PID 1 and signal behaviour of the container example.
+- The [pytest documentation](https://docs.pytest.org/), the [Ruff rules](https://docs.astral.sh/ruff/rules/) and the [mypy cheat sheet](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html).
