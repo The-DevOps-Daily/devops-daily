@@ -1,517 +1,382 @@
 ---
-title: Setting Up a Kubernetes Cluster
-description: Learn different ways to create and configure a Kubernetes cluster for development and production
+title: 'Set Up a Kubernetes Cluster with kind, minikube or a Cloud Service'
+description: 'Install kubectl, kind and Helm, create a three-node Kubernetes 1.37 cluster locally, use contexts and namespaces, or create a DOKS, EKS or kubeadm cluster.'
 order: 2
 ---
 
-With a solid understanding of Kubernetes architecture, you're ready to set up a cluster. This section covers various options for creating a Kubernetes cluster, from local development environments to production-ready setups.
+**TLDR**: Install `kubectl`, `kind` and `helm`, then run `kind create cluster --config kind-config.yaml` to get a three-node Kubernetes 1.37 cluster inside Docker in about a minute. `kubectl` talks to it through a context in `~/.kube/config`. For production, use a managed service such as DigitalOcean Kubernetes, EKS, GKE or AKS, or build your own with kubeadm.
 
-## Kubernetes Cluster Options
+In this part you install the tools, create the cluster that the rest of the guide uses, learn how kubeconfig contexts and namespaces work, and see the other ways to run Kubernetes, from minikube to kubeadm on your own servers.
 
-There are several ways to run Kubernetes, depending on your needs:
+## Prerequisites
 
-1. **Local development clusters**: Lightweight options for your machine
-2. **Self-managed clusters**: Full control over your infrastructure
-3. **Managed Kubernetes services**: Cloud provider-managed control plane
-4. **Kubernetes distributions**: Vendor-supported packages with additional features
-
-Let's explore each option, starting with the simplest.
-
-## Local Development Clusters
-
-For learning and development, you can run Kubernetes on your local machine.
-
-### Minikube
-
-Minikube is a lightweight Kubernetes implementation that creates a VM on your local machine and deploys a simple cluster with a single node.
-
-#### Prerequisites
-
-- 2 CPUs or more
-- 2GB of free memory
-- 20GB of free disk space
-- Container or virtual machine manager (Docker, Hyperkit, VirtualBox, etc.)
-
-#### Installation
-
-For macOS with Homebrew:
+- Docker Desktop (macOS, Windows) or Docker Engine (Linux), running. On Windows, use WSL 2 with Docker Desktop's WSL integration, and run every command of this guide in the WSL terminal; the commands are written for Bash. kind starts each Kubernetes node as a container. Podman also works with kind, but kind's support for it is experimental.
+- Give Docker at least 4 CPUs and 6 GB of memory if you use Docker Desktop (Settings, Resources).
+- The [companion repository](https://github.com/The-DevOps-Daily/guide-kubernetes-demo-2026-10-24), cloned. Every command in this guide runs from its root directory:
 
 ```bash
-brew install minikube
+git clone https://github.com/The-DevOps-Daily/guide-kubernetes-demo-2026-10-24.git
+cd guide-kubernetes-demo-2026-10-24
 ```
 
-For Windows with Chocolatey:
+## Ways to Run Kubernetes
 
-```bash
-choco install minikube
+| Option                               | What it is                                                         | Good for                                      |
+| ------------------------------------ | ------------------------------------------------------------------ | --------------------------------------------- |
+| **kind**                             | Kubernetes nodes as Docker containers; the project's own test tool | Learning, CI, multi-node tests on a laptop    |
+| **minikube**                         | A single- or multi-node cluster in a VM or container               | Learning, with built-in add-ons               |
+| **k3d** / **k3s**                    | k3s, a small Kubernetes distribution, in Docker or on a server     | Laptops, edge devices, small servers          |
+| **Docker Desktop / Rancher Desktop** | A cluster you switch on in the app's settings                      | A quick start if you already use the app      |
+| **Managed (DOKS, EKS, GKE, AKS)**    | The provider runs the control plane; you pay for worker nodes      | Production for most teams                     |
+| **kubeadm** (or Kubespray, Talos)    | You install and run every component on your own machines           | Full control, on-premises, learning internals |
+
+This guide uses kind because it gives you real multi-node behavior (scheduling across nodes, draining a node, node-local storage) on one computer, and because the same commands run in CI. Everything you learn applies to the other options.
+
+## Install kubectl, kind and Helm
+
+**kubectl** is the command-line client for the Kubernetes API. **kind** creates the local cluster. **Helm** installs packaged applications (charts); you use it in [Part 9](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes).
+
+```tabs
+{
+  "title": "Install the tools",
+  "tabs": [
+    {
+      "label": "macOS",
+      "lang": "bash",
+      "code": "# Homebrew installs the current releases\nbrew install kubectl kind helm"
+    },
+    {
+      "label": "Linux",
+      "lang": "bash",
+      "code": "# kubectl v1.37.1 (use arm64 instead of amd64 on ARM machines)\ncurl -LO https://dl.k8s.io/release/v1.37.1/bin/linux/amd64/kubectl\ncurl -LO https://dl.k8s.io/release/v1.37.1/bin/linux/amd64/kubectl.sha256\necho \"$(cat kubectl.sha256)  kubectl\" | sha256sum --check\nsudo install -m 0755 kubectl /usr/local/bin/kubectl\n\n# kind v0.33.0\ncurl -Lo kind https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64\ncurl -Lo kind.sha256sum https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64.sha256sum\necho \"$(cut -d' ' -f1 kind.sha256sum)  kind\" | sha256sum --check\nsudo install -m 0755 kind /usr/local/bin/kind\n\n# Helm v4.3.1\ncurl -LO https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz\ncurl -LO https://get.helm.sh/helm-v4.3.1-linux-amd64.tar.gz.sha256sum\nsha256sum --check helm-v4.3.1-linux-amd64.tar.gz.sha256sum\ntar -xzf helm-v4.3.1-linux-amd64.tar.gz\nsudo install -m 0755 linux-amd64/helm /usr/local/bin/helm"
+    },
+    {
+      "label": "Windows",
+      "lang": "powershell",
+      "code": "# The commands in this guide are Bash. On Windows, run them in WSL 2:\nwsl --install -d Ubuntu\n# Then turn on Docker Desktop's WSL integration (Settings, Resources, WSL integration),\n# open the Ubuntu terminal, and follow the Linux tab there."
+    }
+  ]
+}
 ```
 
-For Linux:
+Check the versions:
 
-```bash
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```terminal
+{
+  "title": "versions",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kind version",
+      "output": "kind v0.33.0 go1.26.7 linux/amd64"
+    },
+    {
+      "cmd": "kubectl version --client",
+      "output": "Client Version: v1.37.1\nKustomize Version: v5.8.1"
+    },
+    {
+      "cmd": "helm version",
+      "output": "version.BuildInfo{Version:\"v4.3.1\", GitCommit:\"c0d08d0d6d9424d4a14febb5e8a3e51b0dd00dff\", GitTreeState:\"clean\", GoVersion:\"go1.27.2\", KubeClientVersion:\"v1.37\"}"
+    }
+  ]
+}
 ```
 
-#### Starting a Cluster
+`kubectl` supports API servers one minor version older or newer than itself, so kubectl 1.37 works with clusters from 1.36 to 1.38. If you manage clusters on several versions, keep a kubectl that is no more than one minor version away from each.
 
-Start a basic Minikube cluster:
+## Create the Cluster
 
-```bash
-minikube start
-```
-
-Or customize with more resources:
-
-```bash
-minikube start --cpus 4 --memory 8192 --disk-size 50g
-```
-
-Minikube provides a dashboard for visualization:
-
-```bash
-minikube dashboard
-```
-
-### Kind (Kubernetes IN Docker)
-
-Kind runs Kubernetes clusters inside Docker containers, making it quick and easy to set up test clusters.
-
-#### Installation
-
-For macOS with Homebrew:
-
-```bash
-brew install kind
-```
-
-For Windows with Chocolatey:
-
-```bash
-choco install kind
-```
-
-For Linux:
-
-```bash
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
-chmod +x ./kind
-sudo mv ./kind /usr/local/bin/kind
-```
-
-#### Creating a Cluster
-
-Create a basic Kind cluster:
-
-```bash
-kind create cluster --name my-cluster
-```
-
-For multi-node clusters, create a configuration file `kind-config.yaml`:
+The cluster for this guide has one control plane node and two worker nodes. The file also maps port 30080 of the control plane container to port 30080 on `127.0.0.1`, which [Part 5](/guides/introduction-to-kubernetes/05-services-and-networking) uses for a NodePort Service. Binding to `127.0.0.1` keeps other machines on your network from reaching it:
 
 ```yaml
+# A local cluster with one control plane node and two worker nodes.
+# kind v0.33.0 runs Kubernetes v1.37.0 on these nodes by default.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
+name: k8s-guide
 nodes:
   - role: control-plane
+    extraPortMappings:
+      # Makes NodePort 30080 reachable as localhost:30080 (Part 5), and only from this computer
+      - containerPort: 30080
+        hostPort: 30080
+        listenAddress: '127.0.0.1'
   - role: worker
   - role: worker
 ```
 
-Then create the cluster with:
+Create the cluster. kind pulls the node image the first time, so this takes a minute or two:
 
 ```bash
 kind create cluster --config kind-config.yaml
 ```
 
-### Docker Desktop
+```text
+Creating cluster "k8s-guide" ...
+ • Ensuring node image (kindest/node:v1.37.0) 🖼️  ...
+ ✓ Ensuring node image (kindest/node:v1.37.0) 🖼️
+ • Preparing nodes 📦 📦 📦   ...
+ ✓ Preparing nodes 📦 📦 📦
+ • Writing configuration 📜  ...
+ ✓ Writing configuration 📜
+ • Starting control-plane 🕹️  ...
+ ✓ Starting control-plane 🕹️
+ • Installing CNI 🔌  ...
+ ✓ Installing CNI 🔌
+ • Installing StorageClass 💾  ...
+ ✓ Installing StorageClass 💾
+ • Joining worker nodes 🚜  ...
+ ✓ Joining worker nodes 🚜
+Set kubectl context to "kind-k8s-guide"
+You can now use your cluster with:
 
-Docker Desktop for Mac and Windows includes a Kubernetes option that's easily enabled from the settings.
+kubectl cluster-info --context kind-k8s-guide
 
-1. Open Docker Desktop preferences
-2. Go to the Kubernetes tab
-3. Check "Enable Kubernetes"
-4. Click "Apply & Restart"
-
-This is one of the simplest ways to start if you already use Docker Desktop.
-
-## Self-Managed Production Clusters
-
-For production workloads, you can set up and manage your own Kubernetes clusters.
-
-### kubeadm
-
-kubeadm is the official Kubernetes cluster bootstrapping tool. It handles the setup of the control plane and worker nodes.
-
-#### Prerequisites
-
-- Multiple Linux machines (virtual or physical)
-- 2 GB or more of RAM per machine
-- 2 CPUs or more per machine
-- Full network connectivity between all machines in the cluster
-- sudo privileges on all machines
-- Container runtime installed (Docker, containerd, CRI-O)
-
-#### Installation Steps
-
-1. First, install kubeadm on all nodes:
-
-```bash
-# Update package list
-sudo apt-get update
-
-# Install prerequisites
-sudo apt-get install -y apt-transport-https ca-certificates curl
-
-# Add Kubernetes repository key
-curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
-
-# Add Kubernetes repository
-echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
-
-# Update package list again
-sudo apt-get update
-
-# Install kubelet, kubeadm, and kubectl
-sudo apt-get install -y kubelet kubeadm kubectl
-
-# Pin their version to prevent auto-updates
-sudo apt-mark hold kubelet kubeadm kubectl
+Have a nice day! 👋
 ```
 
-2. On the control plane node, initialize the cluster:
+kind also wrote a context called `kind-k8s-guide` into `~/.kube/config` and made it the current one, so `kubectl` now talks to the new cluster:
 
-```bash
-sudo kubeadm init --pod-network-cidr=192.168.0.0/16
+```terminal
+{
+  "title": "is it up?",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl cluster-info --context kind-k8s-guide",
+      "output": "Kubernetes control plane is running at https://127.0.0.1:37953\nCoreDNS is running at https://127.0.0.1:37953/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy\n\nTo further debug and diagnose cluster problems, use 'kubectl cluster-info dump'."
+    },
+    {
+      "cmd": "kubectl get nodes",
+      "output": "NAME                      STATUS     ROLES           AGE   VERSION\nk8s-guide-control-plane   NotReady   control-plane   15s   v1.37.0\nk8s-guide-worker          NotReady   <none>          0s    v1.37.0\nk8s-guide-worker2         NotReady   <none>          0s    v1.37.0"
+    }
+  ]
+}
 ```
 
-3. Set up kubectl access:
+The nodes report `NotReady` for the first few seconds, until the network plugin runs on each of them. Wait for them instead of guessing:
 
-```bash
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```terminal
+{
+  "title": "wait for the nodes",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl wait --for=condition=Ready nodes --all --timeout=120s",
+      "output": "node/k8s-guide-control-plane condition met\nnode/k8s-guide-worker condition met\nnode/k8s-guide-worker2 condition met"
+    },
+    {
+      "cmd": "kubectl get nodes -o wide",
+      "output": "NAME                      STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE                       KERNEL-VERSION              CONTAINER-RUNTIME\nk8s-guide-control-plane   Ready    control-plane   28s   v1.37.0   172.18.0.4    <none>        Debian GNU/Linux 13 (trixie)   6.17.0-1022-azure (amd64)   containerd://2.3.4\nk8s-guide-worker          Ready    <none>          13s   v1.37.0   172.18.0.2    <none>        Debian GNU/Linux 13 (trixie)   6.17.0-1022-azure (amd64)   containerd://2.3.4\nk8s-guide-worker2         Ready    <none>          13s   v1.37.0   172.18.0.3    <none>        Debian GNU/Linux 13 (trixie)   6.17.0-1022-azure (amd64)   containerd://2.3.4"
+    },
+    {
+      "cmd": "kubectl version",
+      "output": "Client Version: v1.37.1\nKustomize Version: v5.8.1\nServer Version: v1.37.0"
+    }
+  ]
+}
 ```
 
-4. Install a pod network add-on (example with Calico):
+Each node is a Debian 13 container that runs containerd and the kubelet. You can see them with Docker; the API server is published on a random port on `127.0.0.1`:
 
-```bash
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+```terminal
+{
+  "title": "the nodes are containers",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Ports}}'",
+      "output": "NAMES                     IMAGE                  PORTS\nk8s-guide-worker          kindest/node:v1.37.0\nk8s-guide-worker2         kindest/node:v1.37.0\nk8s-guide-control-plane   kindest/node:v1.37.0   127.0.0.1:30080->30080/tcp, 127.0.0.1:37953->6443/tcp"
+    },
+    {
+      "cmd": "kind get clusters",
+      "output": "k8s-guide"
+    }
+  ]
+}
 ```
 
-5. Join worker nodes to the cluster using the token from the kubeadm init output:
+kind also installed a default StorageClass that creates volumes in a directory on the node ([Part 7](/guides/introduction-to-kubernetes/07-persistent-storage-in-kubernetes)):
 
 ```bash
-sudo kubeadm join <control-plane-IP>:6443 --token <token> --discovery-token-ca-cert-hash <hash>
+kubectl get storageclass
 ```
 
-### kubespray
-
-Kubespray uses Ansible to automate Kubernetes cluster deployment and configuration in a more sophisticated manner than kubeadm.
-
-```bash
-# Clone the Kubespray repository
-git clone https://github.com/kubernetes-sigs/kubespray.git
-cd kubespray
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy the sample inventory and customize it
-cp -rfp inventory/sample inventory/mycluster
-
-# Update the inventory file with your servers
-vi inventory/mycluster/inventory.ini
-
-# Deploy Kubernetes with Ansible
-ansible-playbook -i inventory/mycluster/inventory.ini cluster.yml -b
+```text
+NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  24s
 ```
 
-## Managed Kubernetes Services
+## Contexts and kubeconfig
 
-Managed services offload the control plane management to cloud providers, allowing you to focus on your applications.
-
-### DigitalOcean Kubernetes (DOKS)
-
-DigitalOcean offers a managed Kubernetes service that simplifies setup and maintenance. [Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) (referral link) to try DOKS.
-
-You can create a cluster through the web UI or using their CLI tool, doctl:
+`kubectl` reads its configuration from `~/.kube/config` (or the files listed in the `KUBECONFIG` variable). The file has three lists: **clusters** (API server addresses and CA certificates), **users** (credentials) and **contexts**, which pair a cluster with a user and a default namespace. The **current context** decides where every `kubectl` command goes.
 
 ```bash
-# Install doctl
-brew install doctl  # For macOS
+kubectl config get-contexts
+```
 
-# Authenticate with DigitalOcean
+```text
+CURRENT   NAME             CLUSTER          AUTHINFO         NAMESPACE
+*         kind-k8s-guide   kind-k8s-guide   kind-k8s-guide
+```
+
+When you have several clusters, switch with `kubectl config use-context <name>`, or run a single command elsewhere with `--context <name>`. Before any command that changes something, check where you are with `kubectl config current-context`; running a delete against the wrong cluster is one of the most common and expensive Kubernetes mistakes.
+
+:::tip
+Your own preferences, such as aliases and default flags, belong in `~/.kube/kuberc` (beta and on by default since Kubernetes 1.34), not in the kubeconfig file. That keeps them out of the credentials you share with tools and CI.
+:::
+
+## Namespaces
+
+Every namespaced command runs in the current context's namespace, which is `default` until you change it. Create a namespace for the guide's app and make it the default for this context, so you do not have to type `-n demo` every time:
+
+```terminal
+{
+  "title": "a namespace for the guide",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl create namespace demo",
+      "output": "namespace/demo created"
+    },
+    {
+      "cmd": "kubectl config set-context --current --namespace=demo",
+      "output": "Context \"kind-k8s-guide\" modified."
+    },
+    {
+      "cmd": "kubectl config view --minify -o jsonpath='{..namespace}'",
+      "output": "demo"
+    },
+    {
+      "cmd": "kubectl get pods",
+      "output": "No resources found in demo namespace."
+    },
+    {
+      "cmd": "kubectl get namespaces",
+      "output": "NAME                 STATUS   AGE\ndefault              Active   28s\ndemo                 Active   0s\nkube-node-lease      Active   28s\nkube-public          Active   28s\nkube-system          Active   28s\nlocal-path-storage   Active   24s"
+    }
+  ]
+}
+```
+
+For a single command, `-n <namespace>` overrides the default and `-A` (`--all-namespaces`) lists objects in every namespace. More on this in [how to switch namespaces in Kubernetes](/posts/switch-namespace-in-kubernetes).
+
+## Stopping and Deleting the Cluster
+
+The cluster keeps running until you delete it, and it starts again after a reboot if Docker does. Delete it when you are done with the guide:
+
+```bash
+kind delete cluster --name k8s-guide
+```
+
+```text
+Deleting cluster "k8s-guide" ...
+Deleted nodes: ["k8s-guide-worker" "k8s-guide-worker2" "k8s-guide-control-plane"]
+```
+
+To start a later part on a fresh cluster, create it again and recreate the namespace; each part lists the manifests from earlier parts that it needs.
+
+## Other Local Options
+
+The same app runs on these, with small differences you will notice in Parts 5 and 7 (how LoadBalancer Services get an address, and which StorageClass is the default):
+
+```bash
+# minikube v1.39 (Kubernetes 1.37 by default)
+minikube start --nodes 3 --cpus 2 --memory 4g
+minikube tunnel # in a second terminal: gives LoadBalancer Services an address
+
+# k3d v5.9 (k3s in Docker, with Traefik and a LoadBalancer implementation built in)
+k3d cluster create k8s-guide --agents 2
+```
+
+These are examples; the outputs in this guide come from kind.
+
+## Managed Kubernetes
+
+With a managed service, the provider runs and upgrades the control plane, backs up etcd and connects the cluster to its load balancers and disks. You manage worker nodes (or not even those, with GKE Autopilot or EKS Auto Mode) and pay for them by the hour.
+
+**DigitalOcean Kubernetes (DOKS)** is one of the simplest to start with. Install [`doctl`](https://docs.digitalocean.com/reference/doctl/how-to/install/), create an API token in the control panel, and create a cluster with two worker nodes:
+
+```bash
 doctl auth init
-
-# Create a Kubernetes cluster
-doctl kubernetes cluster create my-cluster \
-  --region nyc1 \
-  --size s-2vcpu-4gb \
-  --count 3
+doctl kubernetes cluster create k8s-guide \
+  --region fra1 \
+  --node-pool "name=workers;size=s-2vcpu-4gb;count=2"
+kubectl get nodes # doctl adds the context and switches to it
 ```
 
-### Amazon EKS (Elastic Kubernetes Service)
+If you do not have a DigitalOcean account yet, you can sign up through our [referral link](https://m.do.co/c/2a9bba940f39). A new account gets DigitalOcean's standard [signup credit](https://docs.digitalocean.com/platform/billing/signup-credit/) ($5 that expires 90 days after sign-up), and you must add a payment method before you can create resources. If you later spend $25 on DigitalOcean, this site gets $25 of credit ([referral program](https://docs.digitalocean.com/platform/teams/refer-others/)). The worker nodes are billed while they exist; delete the cluster and the load balancers and volumes it created with `doctl kubernetes cluster delete k8s-guide --dangerous`.
 
-Amazon EKS is AWS's managed Kubernetes service. You can create clusters through the AWS Management Console, AWS CLI, or eksctl:
+The other large providers, each with its own CLI (examples, not run for this guide):
 
 ```bash
-eksctl create cluster \
-  --name my-cluster \
-  --region us-west-2 \
-  --nodegroup-name standard-workers \
-  --node-type t3.medium \
-  --nodes 3 \
-  --nodes-min 1 \
-  --nodes-max 4
+# Amazon EKS with eksctl; Auto Mode also manages the nodes for you
+eksctl create cluster --name k8s-guide --region eu-central-1 --enable-auto-mode
+
+# Google GKE Autopilot: no nodes to manage
+gcloud container clusters create-auto k8s-guide --region europe-west1
+gcloud container clusters get-credentials k8s-guide --region europe-west1
+
+# Azure AKS
+az group create --name k8s-guide --location westeurope
+az aks create --resource-group k8s-guide --name k8s-guide --node-count 2 --generate-ssh-keys
+az aks get-credentials --resource-group k8s-guide --name k8s-guide
 ```
 
-### Google Kubernetes Engine (GKE)
+Managed services usually offer a new Kubernetes minor version a few weeks or months after the upstream release, and each has its own support window. Check which versions your provider offers before you plan an upgrade.
 
-GKE is Google Cloud's managed Kubernetes service, often considered one of the most mature offerings:
+## Self-Managed Clusters with kubeadm
+
+**kubeadm** is the official tool for building a cluster on machines you control. Each machine needs a supported Linux with cgroup v2, swap turned off (or configured for Kubernetes), and containerd 2.x configured with the systemd cgroup driver. Install the Kubernetes packages from `pkgs.k8s.io`, which has one repository per minor version; the old `apt.kubernetes.io` and `packages.cloud.google.com` repositories that older guides use stopped working on 4 March 2024.
+
+These commands are an example for Ubuntu and Debian, not run for this guide:
 
 ```bash
-gcloud container clusters create my-cluster \
-  --zone us-central1-a \
-  --num-nodes 3 \
-  --machine-type e2-standard-2
-```
-
-### Azure Kubernetes Service (AKS)
-
-Microsoft's managed Kubernetes offering:
-
-```bash
-az aks create \
-  --resource-group myResourceGroup \
-  --name myAKSCluster \
-  --node-count 3 \
-  --enable-addons monitoring \
-  --generate-ssh-keys
-```
-
-## Kubernetes Distributions
-
-Several vendors package Kubernetes with additional tools and support:
-
-- **Red Hat OpenShift**: Enterprise Kubernetes platform with developer and operations-focused tools
-- **Rancher**: Complete container management platform
-- **VMware Tanzu Kubernetes Grid**: Enterprise-ready Kubernetes runtime
-- **k3s**: Lightweight Kubernetes distribution for edge and IoT
-
-## Accessing Your Cluster
-
-No matter which option you choose, you'll interact with your cluster using kubectl, the Kubernetes command-line tool.
-
-### Installing kubectl
-
-For macOS:
-
-```bash
-brew install kubectl
-```
-
-For Windows with Chocolatey:
-
-```bash
-choco install kubernetes-cli
-```
-
-For Linux:
-
-```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
-```
-
-### Configuring kubectl
-
-kubectl uses a configuration file (kubeconfig) located at `~/.kube/config` by default.
-
-For local clusters, the setup command usually configures kubectl automatically. For remote clusters, you'll need to download the kubeconfig:
-
-```bash
-# Example with DigitalOcean
-doctl kubernetes cluster kubeconfig save my-cluster
-
-# Example with AWS EKS
-aws eks update-kubeconfig --name my-cluster --region us-west-2
-
-# Example with GKE
-gcloud container clusters get-credentials my-cluster --zone us-central1-a
-```
-
-### Verifying Cluster Access
-
-Ensure kubectl can communicate with your cluster:
-
-```bash
-kubectl cluster-info
-```
-
-You should see the Kubernetes control plane address and CoreDNS information.
-
-Check the nodes in your cluster:
-
-```bash
-kubectl get nodes
-```
-
-This should show all the nodes in your cluster with their status, roles, and versions.
-
-## Cluster Configuration
-
-### Setting Up a High-Availability Cluster
-
-For production, a high-availability setup is crucial. This typically involves:
-
-- Multiple control plane nodes
-- Multiple worker nodes
-- External etcd cluster
-- Load balancer for the API server
-
-If you're using kubeadm, initialize with:
-
-```bash
-kubeadm init --control-plane-endpoint "LOAD_BALANCER_DNS:LOAD_BALANCER_PORT" \
-    --upload-certs \
-    --pod-network-cidr=192.168.0.0/16
-```
-
-Then join additional control plane nodes with:
-
-```bash
-kubeadm join LOAD_BALANCER_DNS:LOAD_BALANCER_PORT \
-    --token <token> \
-    --discovery-token-ca-cert-hash <hash> \
-    --control-plane \
-    --certificate-key <certificate-key>
-```
-
-### Node Labels and Taints
-
-Customize how pods are scheduled to nodes with labels and taints.
-
-Add a label to a node:
-
-```bash
-kubectl label nodes worker-1 disktype=ssd
-```
-
-Add a taint to keep certain workloads away:
-
-```bash
-kubectl taint nodes worker-2 dedicated=gpu:NoSchedule
-```
-
-### Role-Based Access Control (RBAC)
-
-Configure RBAC to control access to your cluster resources:
-
-Create a role:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  namespace: default
-  name: pod-reader
-rules:
-  - apiGroups: ['']
-    resources: ['pods']
-    verbs: ['get', 'watch', 'list']
-```
-
-Create a role binding:
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: read-pods
-  namespace: default
-subjects:
-  - kind: User
-    name: jane
-    apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: Role
-  name: pod-reader
-  apiGroup: rbac.authorization.k8s.io
-```
-
-### Networking Add-ons
-
-Kubernetes needs a Container Network Interface (CNI) plugin to handle pod networking:
-
-- **Calico**: Provides networking and network policy
-- **Flannel**: Simple overlay network
-- **Cilium**: Advanced networking with eBPF
-- **Weave Net**: Multi-host Docker networking
-
-Install Calico with:
-
-```bash
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-```
-
-## Upgrading Clusters
-
-Kubernetes releases new versions regularly. Upgrading involves these steps:
-
-1. Upgrade the control plane
-2. Upgrade worker nodes
-3. Upgrade cluster add-ons
-
-For kubeadm clusters:
-
-```bash
-# Control plane
+# On every node: the Kubernetes 1.37 package repository
 sudo apt-get update
-sudo apt-get install -y kubeadm=1.24.0-00
-sudo kubeadm upgrade plan
-sudo kubeadm upgrade apply v1.24.0
-
-# Worker nodes
-kubectl drain worker-1 --ignore-daemonsets
+sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.37/deb/Release.key |
+  sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.37/deb/ /' |
+  sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update
-sudo apt-get install -y kubelet=1.24.0-00 kubectl=1.24.0-00
-sudo systemctl restart kubelet
-kubectl uncordon worker-1
+sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-mark hold kubelet kubeadm kubectl # upgrade them on purpose, never by accident
+sudo systemctl enable --now kubelet
+
+# On the first control plane node
+sudo kubeadm init --pod-network-cidr=10.244.0.0/16
+mkdir -p "$HOME/.kube"
+sudo cp /etc/kubernetes/admin.conf "$HOME/.kube/config"
+sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
+
+# Install a network plugin (CNI), for example Cilium or Calico, with its own instructions,
+# then join each worker with the command that kubeadm init printed:
+sudo kubeadm join CONTROL_PLANE_IP:6443 --token TOKEN --discovery-token-ca-cert-hash sha256:HASH
 ```
 
-For managed services, upgrades are often just a few clicks in the UI or a simple CLI command.
+For production, run three control plane nodes behind a load balancer (`kubeadm init --control-plane-endpoint`), back up etcd with `etcdctl snapshot save`, and plan for upgrades: Kubernetes supports each minor version for about 14 months, and you upgrade one minor version at a time, control plane first, then the nodes. Kubespray automates kubeadm with Ansible, and Talos Linux and k3s are lighter alternatives.
 
-## Backup and Disaster Recovery
+## Common Mistakes
 
-Regularly back up your cluster's critical components:
+- **Running commands against the wrong cluster.** Check `kubectl config current-context` before changes, and use a different color or prompt for production contexts.
+- **Too little memory for Docker Desktop.** Pods stay `Pending` or nodes go `NotReady` when the VM runs out of memory. Give it at least 6 GB for this guide.
+- **Copying old install steps.** `apt-key`, `apt.kubernetes.io`, Docker as the runtime and `kubernetes-xenial` lines are from before 2024 and no longer work.
+- **A kubectl far from the cluster version.** Stay within one minor version of the API server.
+- **Forgetting cloud clusters.** Managed nodes, load balancers and volumes cost money until you delete them.
 
-- etcd data
-- Persistent volumes
-- Configuration
+## Summary
 
-Back up etcd:
+- `kind create cluster --config kind-config.yaml` gives you a three-node Kubernetes 1.37 cluster in Docker.
+- `kubectl` uses contexts from `~/.kube/config`; each context names a cluster, a user and a default namespace.
+- This guide's app lives in the `demo` namespace, set as the default for the `kind-k8s-guide` context.
+- Managed services run the control plane for you; kubeadm builds a cluster on your own machines from `pkgs.k8s.io` packages.
 
-```bash
-ETCDCTL_API=3 etcdctl \
-  --endpoints=https://127.0.0.1:2379 \
-  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
-  --cert=/etc/kubernetes/pki/etcd/server.crt \
-  --key=/etc/kubernetes/pki/etcd/server.key \
-  snapshot save snapshot.db
-```
+## Keep Learning
 
-## Choosing the Right Option
+- [How to switch kubectl between clusters](/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube)
+- [List all pods and nodes in a cluster](/posts/kubernetes-list-all-pods-and-nodes)
+- [A 5-minute Kubernetes cluster health check](/posts/5-minute-kubernetes-cluster-health-check)
 
-When selecting a Kubernetes solution, consider these factors:
-
-- **Expertise required**: Managed services require less Kubernetes expertise
-- **Cost**: Self-managed can be cheaper but requires more operational effort
-- **Control**: Self-managed provides more control over configuration
-- **Scalability**: All solutions can scale, but with different levels of effort
-- **Integration**: Consider how well it integrates with your existing tools
-
-For many teams, starting with a managed service like DigitalOcean Kubernetes ([referral link](https://m.do.co/c/2a9bba940f39)) provides a good balance of simplicity and capability while learning.
-
-In the next section, we'll explore how to work with pods and containers, the fundamental units of deployment in Kubernetes.
+Next, in [Part 3](/guides/introduction-to-kubernetes/03-pods-and-containers-in-kubernetes), you run your first pod on this cluster.

@@ -1,702 +1,565 @@
 ---
-title: Persistent Storage in Kubernetes
-description: Learn how to manage persistent data for stateful applications using Kubernetes storage options
+title: 'Kubernetes Persistent Volumes, PVCs and StatefulSets'
+description: 'Keep data when pods restart: PersistentVolumeClaims, StorageClasses, access modes, StatefulSets with volumeClaimTemplates, volume expansion and backups.'
 order: 7
 ---
 
-Containers are ephemeral by design, when a pod is deleted or rescheduled, its internal data is lost. However, most applications need to persist data beyond the container lifecycle. Kubernetes provides several abstractions to manage persistent storage for your applications. In this section, we'll explore how to use volumes, persistent volumes, and storage classes to manage stateful data.
+**TLDR**: Files written inside a container disappear with the pod. To keep data, a pod mounts a **PersistentVolumeClaim** (PVC), a request for storage of a certain size and access mode. A **StorageClass** creates a matching **PersistentVolume** (PV) for it on demand, usually through a CSI driver. A **StatefulSet** gives each of its pods a stable name and its own PVC, which is what databases and caches need.
 
-## Understanding Kubernetes Storage Architecture
+In this part you watch the cache lose its data when its pod restarts, create a PVC and see when and where its volume appears, move the cache to a StatefulSet that keeps its data, and learn the limits of node-local storage that will matter again in Part 8.
 
-Kubernetes has a layered storage architecture with several key components:
+## Prerequisites
 
-1. **Volumes**: The most basic storage abstraction, tied to the pod lifecycle
-2. **Persistent Volumes (PV)**: Cluster-wide storage resources that exist independently of pods
-3. **Persistent Volume Claims (PVC)**: Requests for storage by users that are bound to Persistent Volumes
-4. **Storage Classes**: Define types of storage with different characteristics
+- The cache and the configured podinfo from [Part 6](/guides/introduction-to-kubernetes/06-configmaps-and-secrets). On a new cluster, apply `04-deployments/deployment.yaml` and `05-networking/service.yaml`, create the `podinfo-tls` Secret as Part 6 shows, then apply the files in `06-config/` (`cache.yaml`, `configmap.yaml`, `deployment.yaml`).
 
-Let's explore each of these components in detail.
+## Data Without a Volume Is Lost
 
-## Basic Volume Types
+The cache from Part 6 is a Deployment without a volume, so Valkey keeps its data in the container's own filesystem. Write a key through podinfo, then replace the cache pod:
 
-Kubernetes supports many volume types that mount directly into pods. Here are some commonly used types:
-
-### emptyDir
-
-An `emptyDir` volume is created when a pod is assigned to a node and exists as long as the pod runs on that node. When the pod is removed, the data in the `emptyDir` is deleted.
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: test-pd
-spec:
-  containers:
-    - name: test-container
-      image: nginx
-      volumeMounts:
-        - mountPath: /cache
-          name: cache-volume
-  volumes:
-    - name: cache-volume
-      emptyDir: {}
+```terminal
+{
+  "title": "lose the data",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl port-forward service/podinfo 8080:80 > /dev/null 2>&1 & PF=$!"
+    },
+    {
+      "cmd": "curl -s --retry 5 --retry-connrefused --retry-delay 1 -X POST -d \"hello from the cache\" localhost:8080/cache/greeting"
+    },
+    {
+      "cmd": "curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/greeting",
+      "output": "hello from the cache [200]"
+    },
+    {
+      "cmd": "kubectl delete pod -l app=cache",
+      "output": "pod \"cache-7b64d7978-td6fb\" deleted from demo namespace"
+    },
+    {
+      "cmd": "kubectl rollout status deployment/cache",
+      "output": "Waiting for deployment \"cache\" rollout to finish: 0 of 1 updated replicas are available...\ndeployment \"cache\" successfully rolled out"
+    },
+    {
+      "cmd": "curl -s -X POST -d ok localhost:8080/cache/check"
+    },
+    {
+      "cmd": "curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/check",
+      "output": "ok [200]"
+    },
+    {
+      "cmd": "curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/greeting",
+      "output": " [404]"
+    }
+  ]
+}
 ```
 
-Use cases for `emptyDir`:
+podinfo answers `404` for a key that does not exist, and also when it cannot reach the cache at all. The round trip with the `check` key proves that podinfo is connected to the new cache pod, so the `404` for `greeting` means the data is gone: the new pod started empty. If you get a `404` for `check` too, podinfo has not reconnected yet; wait a few seconds and try again. That is fine for a cache you can refill, and a disaster for a database.
 
-- Scratch space for temporary files
-- Checkpoint storage for long computations
-- Shared storage for containers in the same pod
+## Volumes, PersistentVolumes and Claims
 
-### hostPath
+Kubernetes separates what a pod needs from how storage is provided:
 
-A `hostPath` volume mounts a file or directory from the host node's filesystem into your pod.
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: test-hostpath
-spec:
-  containers:
-    - name: test-container
-      image: nginx
-      volumeMounts:
-        - mountPath: /test-data
-          name: test-volume
-  volumes:
-    - name: test-volume
-      hostPath:
-        path: /data
-        type: Directory
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Pod", "sub": "mounts a claim", "icon": "pod", "tone": "blue" },
+    { "label": "PersistentVolumeClaim", "sub": "1Gi, ReadWriteOnce", "icon": "box", "tone": "accent" },
+    { "label": "StorageClass", "sub": "how to create it", "icon": "gear", "tone": "slate" },
+    { "label": "Provisioner", "sub": "a CSI driver or local-path", "icon": "cpu", "tone": "violet" },
+    { "label": "PersistentVolume", "sub": "the actual disk", "icon": "database", "tone": "green" }
+  ]
+}
 ```
 
-The `type` field can be:
+- A **volume** in a pod spec is anything mounted into containers. Some live as long as the pod (`emptyDir`, `configMap`, `secret`, `projected`), others point at storage that outlives it (`persistentVolumeClaim`).
+- A **PersistentVolumeClaim** is a namespaced request: "1 GiB that one node can mount read-write". Apps ask for storage with claims and do not need to know the storage system.
+- A **PersistentVolume** is the cluster-wide object for a real piece of storage: a cloud disk, an NFS export, a directory on a node.
+- A **StorageClass** tells Kubernetes how to create PVs on demand (**dynamic provisioning**) through a **provisioner**. On cloud clusters that is a **CSI driver**, the plugin that talks to the storage system; kind uses a simpler provisioner. Most clusters have a default StorageClass, used by claims that name none.
 
-- `DirectoryOrCreate`: Creates the directory if it doesn't exist
-- `Directory`: Directory must exist
-- `FileOrCreate`: Creates an empty file if it doesn't exist
-- `File`: File must exist
-- `Socket`: UNIX socket must exist
-- `CharDevice`: Character device must exist
-- `BlockDevice`: Block device must exist
+`hostPath` volumes, which mount a directory of the node directly, appear in many old examples. Avoid them in apps: a pod can read or overwrite node files through them, the data stays on one node, and the restricted Pod Security level forbids them ([Part 10](/guides/introduction-to-kubernetes/10-best-practices-in-kubernetes)).
 
-> ⚠️ **Warning**: `hostPath` volumes pose security risks because they allow pods to access the host filesystem. Use with caution in production environments.
+## Dynamic Provisioning on kind
 
-### configMap and secret
+kind ships Rancher's local-path provisioner (not a CSI driver) as its default StorageClass. It creates each volume as a `hostPath` directory on the node where the pod runs:
 
-As we covered in the previous section, ConfigMaps and Secrets can be mounted as volumes to provide configuration data and sensitive information to pods.
-
-### Other Basic Volume Types
-
-Kubernetes supports many other volume types for various use cases:
-
-- `downwardAPI`: Exposes pod and container data to applications
-- `projected`: Maps several volume sources into the same directory
-- `csi`: Container Storage Interface for third-party storage plugins
-- Cloud provider-specific volumes: `awsElasticBlockStore`, `azureDisk`, `gcePersistentDisk`
-
-## Persistent Volumes and Claims
-
-For data that needs to survive pod restarts and reschedules, Kubernetes provides Persistent Volumes (PVs) and Persistent Volume Claims (PVCs).
-
-### Persistent Volumes (PV)
-
-A PersistentVolume is a piece of storage provisioned by an administrator or dynamically provisioned using Storage Classes. It exists independently of any pod.
-
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv-example
-spec:
-  capacity:
-    storage: 10Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Retain
-  storageClassName: standard
-  hostPath:
-    path: /data/pv-example
+```bash
+kubectl get storageclass
 ```
 
-Key fields in a PersistentVolume:
+```text
+NAME                 PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+standard (default)   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  77s
+```
 
-- **capacity**: How much storage is available
-- **volumeMode**: Filesystem (default) or Block
-- **accessModes**: How the volume can be mounted
-  - `ReadWriteOnce` (RWO): Volume can be mounted as read-write by a single node
-  - `ReadOnlyMany` (ROX): Volume can be mounted read-only by many nodes
-  - `ReadWriteMany` (RWX): Volume can be mounted as read-write by many nodes
-- **persistentVolumeReclaimPolicy**: What happens when a claim is released
-  - `Retain`: Manual reclamation (default)
-  - `Delete`: Automatically delete PV and storage
-  - `Recycle`: Basic scrub (deprecated)
-- **storageClassName**: Name of StorageClass for dynamic provisioning
-- Volume-specific parameters (e.g., `hostPath`, `nfs`, etc.)
+`WaitForFirstConsumer` means the volume is created only when a pod that uses the claim is scheduled, on that pod's node. `Immediate` would create it right away, possibly in a zone or on a node where the pod cannot run. `ALLOWVOLUMEEXPANSION false` comes back below.
 
-### Persistent Volume Claims (PVC)
-
-A PersistentVolumeClaim is a request for storage by a user. It's similar to a pod in that pods consume node resources and PVCs consume PV resources.
+Create a claim:
 
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pvc-example
+  name: scratch
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce # one node can mount it read-write
   resources:
     requests:
-      storage: 5Gi
-  storageClassName: standard
+      storage: 1Gi
+  # no storageClassName: the cluster's default StorageClass is used
 ```
 
-When you create a PVC, Kubernetes finds a matching PV based on:
+```terminal
+{
+  "title": "a claim waits for its first pod",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl apply -f 07-storage/pvc.yaml",
+      "output": "persistentvolumeclaim/scratch created"
+    },
+    {
+      "cmd": "kubectl get pvc scratch",
+      "output": "NAME      STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE\nscratch   Pending                                      standard       <unset>                 0s"
+    },
+    {
+      "cmd": "kubectl events --for pvc/scratch",
+      "output": "LAST SEEN   TYPE     REASON                 OBJECT                          MESSAGE\n0s          Normal   WaitForFirstConsumer   PersistentVolumeClaim/scratch   waiting for first consumer to be created before binding"
+    }
+  ]
+}
+```
 
-- Access modes
-- Size
-- Storage class
-- Volume mode
-- Selector
-
-### Using PVCs in Pods
-
-Once you have a PVC, you can use it in a pod:
+`Pending` is expected here. Now start a pod that mounts the claim and writes a file:
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pvc-pod-example
+  name: writer
 spec:
   containers:
-    - name: app
-      image: nginx
+    - name: writer
+      image: busybox:1.38.0
+      command: ['sh', '-c', 'date -u > /data/created-at.txt && sleep 3600']
       volumeMounts:
-        - mountPath: '/usr/share/nginx/html'
-          name: mypd
+        - name: scratch
+          mountPath: /data
   volumes:
-    - name: mypd
+    - name: scratch
       persistentVolumeClaim:
-        claimName: pvc-example
+        claimName: scratch
 ```
 
-## Storage Classes
-
-StorageClasses enable dynamic provisioning of Persistent Volumes. Instead of pre-provisioning PVs, administrators can define storage classes and let Kubernetes create PVs on demand.
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: fast
-provisioner: kubernetes.io/aws-ebs
-parameters:
-  type: gp2
-  fsType: ext4
-reclaimPolicy: Delete
-allowVolumeExpansion: true
-volumeBindingMode: Immediate
+```terminal
+{
+  "title": "the first consumer binds it",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl apply -f 07-storage/pvc-pod.yaml",
+      "output": "pod/writer created"
+    },
+    {
+      "cmd": "kubectl wait --for=condition=Ready pod/writer --timeout=120s",
+      "output": "pod/writer condition met"
+    },
+    {
+      "cmd": "kubectl get pvc scratch",
+      "output": "NAME      STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE\nscratch   Bound    pvc-5af14182-989e-4a62-9f01-fb69f7c7c20f   1Gi        RWO            standard       <unset>                 7s"
+    },
+    {
+      "cmd": "kubectl get pv",
+      "output": "NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM          STORAGECLASS   VOLUMEATTRIBUTESCLASS   REASON   AGE\npvc-5af14182-989e-4a62-9f01-fb69f7c7c20f   1Gi        RWO            Delete           Bound    demo/scratch   standard       <unset>                          4s"
+    },
+    {
+      "cmd": "kubectl describe pv $(kubectl get pvc scratch -o jsonpath={.spec.volumeName})",
+      "output": "Name:              pvc-5af14182-989e-4a62-9f01-fb69f7c7c20f\nLabels:            <none>\nAnnotations:       local.path.provisioner/selected-node: k8s-guide-worker\n                   pv.kubernetes.io/provisioned-by: rancher.io/local-path\nFinalizers:        [kubernetes.io/pv-protection]\nStorageClass:      standard\nStatus:            Bound\nClaim:             demo/scratch\nReclaim Policy:    Delete\nAccess Modes:      RWO\nVolumeMode:        Filesystem\nCapacity:          1Gi\nNode Affinity:\n  Required Terms:\n    Term 0:        kubernetes.io/hostname in [k8s-guide-worker]\nMessage:\nSource:\n    Type:          HostPath (bare host directory volume)\n    Path:          /var/local-path-provisioner/pvc-5af14182-989e-4a62-9f01-fb69f7c7c20f_demo_scratch\n    HostPathType:  DirectoryOrCreate\nEvents:            <none>"
+    },
+    {
+      "cmd": "kubectl exec writer -- cat /data/created-at.txt",
+      "output": "Sat Oct 24 10:16:37 UTC 2026"
+    }
+  ]
+}
 ```
 
-Key fields in a StorageClass:
+The provisioner created a PV, named after the claim's UID, and bound the two. `Node Affinity` pins this PV to the node the pod landed on: a local volume exists on one node only, so any pod that uses it must run there. Cloud disks are pinned the same way to a zone.
 
-- **provisioner**: The volume plugin to use
-- **parameters**: Specific to the provisioner
-- **reclaimPolicy**: What happens to PVs when PVCs are deleted
-- **allowVolumeExpansion**: Whether PVCs can be expanded
-- **volumeBindingMode**:
-  - `Immediate`: Binding occurs immediately (default)
-  - `WaitForFirstConsumer`: Binding delayed until pod using PVC is created
+When you delete the claim, the **reclaim policy** decides what happens to the volume. `Delete`, the default for dynamically provisioned volumes, deletes the PV and the data:
 
-### Using Storage Classes
+```terminal
+{
+  "title": "reclaim policy Delete",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl delete -f 07-storage/pvc-pod.yaml -f 07-storage/pvc.yaml",
+      "output": "pod \"writer\" deleted from demo namespace\npersistentvolumeclaim \"scratch\" deleted from demo namespace"
+    },
+    {
+      "cmd": "kubectl get pv",
+      "output": "No resources found"
+    }
+  ]
+}
+```
 
-To use a StorageClass, reference it in your PVC:
+For data you care about, use a StorageClass with `reclaimPolicy: Retain`. The PV then stays after the claim is deleted, and an administrator decides whether to reuse or delete it.
+
+### Access Modes
+
+| Mode               | Short | Meaning                                                                   |
+| ------------------ | ----- | ------------------------------------------------------------------------- |
+| `ReadWriteOnce`    | RWO   | Mounted read-write by pods on one node at a time                          |
+| `ReadWriteOncePod` | RWOP  | Mounted read-write by exactly one pod (stable since 1.29)                 |
+| `ReadOnlyMany`     | ROX   | Mounted read-only on many nodes                                           |
+| `ReadWriteMany`    | RWX   | Mounted read-write on many nodes, for example NFS or a cloud file service |
+
+Block storage such as cloud disks supports RWO and RWOP; RWX needs a file system that many nodes can share, such as NFS, CephFS, Amazon EFS, Azure Files or Google Filestore. Use RWOP for databases, so that a second pod can never mount the same disk by mistake.
+
+## A StatefulSet for the Cache
+
+A Deployment's pods are interchangeable, and they would all share one claim. A **StatefulSet** gives each pod:
+
+- a stable name, `cache-0`, `cache-1` and so on, kept when the pod is replaced;
+- a stable DNS name through a headless Service, `cache-0.cache-headless.demo.svc.cluster.local`;
+- its own PVC from `volumeClaimTemplates`, `data-cache-0` for `cache-0`, which the replacement pod mounts again;
+- ordered startup, scaling and updates, one pod at a time.
 
 ```yaml
+# A headless Service gives each StatefulSet pod a stable DNS name: cache-0.cache-headless
 apiVersion: v1
-kind: PersistentVolumeClaim
+kind: Service
 metadata:
-  name: fast-pvc
+  name: cache-headless
+  labels:
+    app: cache
 spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: fast
-```
-
-If you don't specify a StorageClass, the default StorageClass is used (if available).
-
-## Dynamic Provisioning
-
-With StorageClasses, you can dynamically provision Persistent Volumes. This means:
-
-1. You create a StorageClass defining the type of storage
-2. A user creates a PVC requesting storage from that class
-3. Kubernetes automatically provisions a matching PV
-
-This workflow is much more convenient than manually creating PVs, especially in cloud environments.
-
-## Common Storage Solutions
-
-Let's explore some common storage solutions used with Kubernetes:
-
-### Local Storage
-
-Local storage refers to disks or directories mounted on specific nodes. While this provides high performance, it lacks portability because pods can only run on nodes with the attached storage.
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: local-storage
-provisioner: kubernetes.io/no-provisioner
-volumeBindingMode: WaitForFirstConsumer
+  clusterIP: None
+  selector:
+    app: cache
+  ports:
+    - name: valkey
+      port: 6379
+      targetPort: valkey
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: local-pv
-spec:
-  capacity:
-    storage: 100Gi
-  accessModes:
-    - ReadWriteOnce
-  persistentVolumeReclaimPolicy: Delete
-  storageClassName: local-storage
-  local:
-    path: /mnt/disks/ssd1
-  nodeAffinity:
-    required:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/hostname
-              operator: In
-              values:
-                - worker-node-1
-```
-
-### NFS Storage
-
-Network File System (NFS) provides shared storage that can be mounted by multiple nodes.
-
-```yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: nfs-pv
-spec:
-  capacity:
-    storage: 10Gi
-  accessModes:
-    - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  nfs:
-    server: nfs-server.example.com
-    path: '/exports'
-```
-
-### Cloud Providers
-
-Each cloud provider offers native storage options:
-
-#### AWS EBS
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: ebs-sc
-provisioner: kubernetes.io/aws-ebs
-parameters:
-  type: gp3
-  fsType: ext4
-  encrypted: 'true'
-```
-
-#### Azure Disk
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: azure-disk
-provisioner: kubernetes.io/azure-disk
-parameters:
-  storageaccounttype: Premium_LRS
-  kind: Managed
-```
-
-#### Google Persistent Disk
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: gce-pd
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-standard
-  fstype: ext4
-```
-
-#### DigitalOcean Block Storage
-
-DigitalOcean Kubernetes includes a StorageClass that automatically provisions DigitalOcean Block Storage volumes:
-
-```yaml
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  name: do-block-storage
-  annotations:
-    storageclass.kubernetes.io/is-default-class: 'true'
-provisioner: dobs.csi.digitalocean.com
-parameters:
-  fstype: ext4
-```
-
-To use this StorageClass, simply create a PVC without specifying a StorageClass name:
-
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: do-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
-```
-
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) (referral link) and try this Block Storage integration with Kubernetes.
-
-## StatefulSets with Persistent Storage
-
-StatefulSets are ideal for applications that require stable, unique network identifiers, stable persistent storage, and ordered deployment and scaling. When used with PVCs, they provide a complete solution for stateful applications.
-
-```yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgres
+  name: cache
+  labels:
+    app: cache
 spec:
-  serviceName: 'postgres'
-  replicas: 3
+  serviceName: cache-headless
+  replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: cache
+  # Keep the volumes when the StatefulSet is deleted or scaled down (the default)
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
   template:
     metadata:
       labels:
-        app: postgres
+        app: cache
     spec:
       containers:
-        - name: postgres
-          image: postgres:13
+        - name: valkey
+          image: valkey/valkey:9.1.2-alpine
+          # --appendonly yes writes every change to a log file in /data
+          args: ['/etc/valkey/valkey.conf', '--appendonly', 'yes']
           ports:
-            - containerPort: 5432
-              name: postgres
+            - name: valkey
+              containerPort: 6379
           volumeMounts:
-            - name: pgdata
-              mountPath: /var/lib/postgresql/data
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /etc/valkey
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: cache-config
+  # One PersistentVolumeClaim per pod: data-cache-0, data-cache-1, ...
   volumeClaimTemplates:
     - metadata:
-        name: pgdata
+        name: data
       spec:
         accessModes: ['ReadWriteOnce']
-        storageClassName: 'standard'
         resources:
           requests:
-            storage: 10Gi
+            storage: 1Gi
 ```
 
-The `volumeClaimTemplates` field automatically creates a PVC for each pod in the StatefulSet. When pods are rescheduled, they reattach to the same PVC and thus the same data.
+`--appendonly yes` makes Valkey log every write to a file under `/data`, which is now the volume. The existing `cache` Service from Part 6 selects `app: cache`, so podinfo reaches the StatefulSet's pod without any change. Replace the Deployment:
 
-## Volume Snapshots
-
-Kubernetes allows you to create snapshots of volumes for backup or migration purposes.
-
-```yaml
-apiVersion: snapshot.storage.k8s.io/v1
-kind: VolumeSnapshot
-metadata:
-  name: data-snapshot
-spec:
-  volumeSnapshotClassName: csi-hostpath-snapclass
-  source:
-    persistentVolumeClaimName: pvc-example
+```terminal
+{
+  "title": "move the cache to a StatefulSet",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl delete deployment cache",
+      "output": "deployment.apps \"cache\" deleted from demo namespace"
+    },
+    {
+      "cmd": "kubectl apply -f 07-storage/statefulset.yaml",
+      "output": "service/cache-headless created\nstatefulset.apps/cache created"
+    },
+    {
+      "cmd": "kubectl rollout status statefulset/cache",
+      "output": "Waiting for 1 pods to be ready...\npartitioned roll out complete: 1 new pods have been updated..."
+    },
+    {
+      "cmd": "kubectl get statefulset,pods,pvc -l app=cache",
+      "output": "NAME                     READY   AGE\nstatefulset.apps/cache   1/1     3s\n\nNAME          READY   STATUS    RESTARTS   AGE\npod/cache-0   1/1     Running   0          3s\n\nNAME                                 STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE\npersistentvolumeclaim/data-cache-0   Bound    pvc-a3e0ac33-4d3d-4119-be4e-e5718580b9db   1Gi        RWO            standard       <unset>                 3s"
+    }
+  ]
+}
 ```
 
-To restore from a snapshot:
+Check that podinfo reaches the new cache pod, write a key and read it back, delete the pod, and read the key again:
 
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: pvc-from-snapshot
-spec:
-  dataSource:
-    name: data-snapshot
-    kind: VolumeSnapshot
-    apiGroup: snapshot.storage.k8s.io
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
+```terminal
+{
+  "title": "the data survives the pod",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "curl -s -X POST -d ok localhost:8080/cache/check && curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/check",
+      "output": "ok [200]"
+    },
+    {
+      "cmd": "curl -s -X POST -d \"survives restarts\" localhost:8080/cache/greeting"
+    },
+    {
+      "cmd": "curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/greeting",
+      "output": "survives restarts [200]"
+    },
+    {
+      "cmd": "kubectl delete pod cache-0",
+      "output": "pod \"cache-0\" deleted from demo namespace"
+    },
+    {
+      "cmd": "kubectl rollout status statefulset/cache",
+      "output": "Waiting for 1 pods to be ready...\npartitioned roll out complete: 1 new pods have been updated..."
+    },
+    {
+      "cmd": "curl -s -X POST -d ok localhost:8080/cache/check && curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/check",
+      "output": "ok [200]"
+    },
+    {
+      "cmd": "curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/greeting",
+      "output": "survives restarts [200]"
+    },
+    {
+      "cmd": "kubectl exec cache-0 -- ls -l /data/appendonlydir",
+      "output": "total 12\n-rw-------    1 valkey   valkey          89 Oct 24 10:17 appendonly.aof.1.base.rdb\n-rw-------    1 valkey   valkey         225 Oct 24 10:17 appendonly.aof.1.incr.aof\n-rw-------    1 valkey   valkey          88 Oct 24 10:17 appendonly.aof.manifest"
+    },
+    {
+      "cmd": "kubectl exec cache-0 -- valkey-cli GET greeting",
+      "output": "survives restarts"
+    }
+  ]
+}
 ```
 
-## Expanding Persistent Volumes
+The StatefulSet recreated `cache-0` with the same name, it mounted `data-cache-0` again, and Valkey replayed its append-only file. Each pod also has a DNS name of its own, which clustered databases use to find each other:
 
-Some storage providers allow you to expand PVCs without interrupting applications:
-
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: expandable-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi # Initial size
-  storageClassName: expandable-storage
+```bash
+kubectl exec deploy/podinfo -- nslookup cache-0.cache-headless.demo.svc.cluster.local
 ```
 
-To expand it:
+```text
+Server:		10.96.0.10
+Address:	10.96.0.10:53
 
-```yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: expandable-pvc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi # Increased size
-  storageClassName: expandable-storage
+Name:	cache-0.cache-headless.demo.svc.cluster.local
+Address: 10.244.2.13
 ```
 
-The StorageClass must have `allowVolumeExpansion: true` for this to work.
+Scaling a StatefulSet down does not delete its claims (`persistentVolumeClaimRetentionPolicy` controls that, and `Retain` is the default), so scaling back up brings the data back:
 
-## Volume Topology
+```terminal
+{
+  "title": "scale to zero and back",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl scale statefulset cache --replicas=0",
+      "output": "statefulset.apps/cache scaled"
+    },
+    {
+      "cmd": "kubectl wait --for=delete pod/cache-0 --timeout=120s",
+      "output": "pod/cache-0 condition met"
+    },
+    {
+      "cmd": "kubectl get pvc",
+      "output": "NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE\ndata-cache-0   Bound    pvc-a3e0ac33-4d3d-4119-be4e-e5718580b9db   1Gi        RWO            standard       <unset>                 9s"
+    },
+    {
+      "cmd": "kubectl scale statefulset cache --replicas=1",
+      "output": "statefulset.apps/cache scaled"
+    },
+    {
+      "cmd": "kubectl rollout status statefulset/cache",
+      "output": "Waiting for 1 pods to be ready...\npartitioned roll out complete: 1 new pods have been updated..."
+    },
+    {
+      "cmd": "curl -s -X POST -d ok localhost:8080/cache/check && curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/check",
+      "output": "ok [200]"
+    },
+    {
+      "cmd": "curl -s -w ' [%{http_code}]\\n' localhost:8080/cache/greeting",
+      "output": "survives restarts [200]"
+    }
+  ]
+}
+```
 
-In multi-zone clusters, you may want to constrain volumes to specific zones. Volume Topology enables this:
+Note where `cache-0` runs. Its volume is a directory on that node, so `cache-0` can only ever run there; Part 8 drains that node and shows what happens:
+
+```terminal
+{
+  "title": "the node the volume lives on",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl get pod cache-0 -o jsonpath='{.spec.nodeName}{\"\\n\"}'",
+      "output": "k8s-guide-worker"
+    },
+    {
+      "cmd": "kill $PF"
+    }
+  ]
+}
+```
+
+## Expanding a Volume
+
+To grow a claim, raise `resources.requests.storage`. That only works when the StorageClass has `allowVolumeExpansion: true` and its CSI driver supports resizing. kind's local-path class does not:
+
+```bash
+kubectl patch pvc data-cache-0 -p '{"spec":{"resources":{"requests":{"storage":"2Gi"}}}}'
+```
+
+```text
+Error from server (Forbidden): persistentvolumeclaims "data-cache-0" is forbidden: only dynamically provisioned pvc can be resized and the storageclass that provisions the pvc must support resize
+```
+
+Cloud StorageClasses usually allow it, and the disk grows while the pod runs. Claims can only grow, never shrink. In a StatefulSet, `volumeClaimTemplates` cannot be changed in place, so you resize each existing PVC yourself and update the template for future pods by recreating the StatefulSet with `kubectl delete statefulset cache --cascade=orphan`, which keeps the pods and claims. To change a volume's performance, such as IOPS, without a new disk, use a **VolumeAttributesClass** (stable since 1.34) if your CSI driver supports it.
+
+## Storage on Managed Clusters
+
+Managed services install their CSI driver, or offer it as an add-on (the EBS CSI driver on EKS clusters without Auto Mode), and usually a default StorageClass. On DigitalOcean Kubernetes, the default `do-block-storage` class creates a DigitalOcean Volume for each claim, billed while it exists. Here are StorageClasses for the other big providers (examples; each needs that provider's cluster):
 
 ```yaml
+# StorageClasses for managed clusters. Each needs that provider's CSI driver,
+# which the managed service installs or offers as an add-on.
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: topology-aware-storage
-provisioner: kubernetes.io/gce-pd
+  name: ebs-gp3 # Amazon EKS Auto Mode, as created in Part 2
+provisioner: ebs.csi.eks.amazonaws.com # with the EBS CSI driver add-on instead: ebs.csi.aws.com
 parameters:
-  type: pd-standard
+  type: gp3
+  encrypted: 'true'
+reclaimPolicy: Delete
+allowVolumeExpansion: true
 volumeBindingMode: WaitForFirstConsumer
 allowedTopologies:
   - matchLabelExpressions:
-      - key: failure-domain.beta.kubernetes.io/zone
-        values:
-          - us-central1-a
-          - us-central1-b
+      - key: eks.amazonaws.com/compute-type
+        values: ['auto']
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: pd-balanced # Google Kubernetes Engine
+provisioner: pd.csi.storage.gke.io
+parameters:
+  type: pd-balanced
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azure-premium # Azure Kubernetes Service
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: WaitForFirstConsumer
 ```
 
-## Advanced Storage Patterns
+Old tutorials use in-tree provisioners such as `kubernetes.io/aws-ebs` or `kubernetes.io/gce-pd`. Kubernetes migrated them to CSI drivers and has removed the in-tree plugins for the major clouds, so use the CSI provisioner names above.
 
-### ReadWriteMany (RWX) Volumes
+## Snapshots and Backups
 
-For applications that need shared access to the same volume from multiple pods, use storage solutions that support ReadWriteMany access mode:
-
-- **NFS**: Network File System
-- **CephFS**: Distributed filesystem by Ceph
-- **GlusterFS**: Scalable network filesystem
-- **Azure File**: SMB file shares
-- **AWS EFS**: Elastic File System
+A **VolumeSnapshot** asks the CSI driver for a point-in-time copy of a claim, and a new claim can start from it. It needs the snapshot CRDs, the snapshot controller and a CSI driver that supports snapshots, which most managed services provide (kind's local-path driver does not):
 
 ```yaml
+# Needs the snapshot CRDs and controller, and a CSI driver with snapshot support
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: cache-data-snapshot
+spec:
+  volumeSnapshotClassName: csi-snapclass # provided by your CSI driver
+  source:
+    persistentVolumeClaimName: data-cache-0
+---
+# A new claim that starts with the snapshot's data
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: shared-pvc
+  name: data-cache-restore
 spec:
-  accessModes:
-    - ReadWriteMany
+  dataSource:
+    name: cache-data-snapshot
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  accessModes: ['ReadWriteOnce']
   resources:
     requests:
-      storage: 10Gi
-  storageClassName: nfs-storage
+      storage: 1Gi
 ```
 
-### Ephemeral Volumes
+Snapshots are not a full backup plan. For databases, also take application-level backups (`pg_dump`, Valkey's RDB files) and store them outside the cluster. [Velero](https://velero.io/) backs up Kubernetes objects and volumes together and restores them into another cluster. For a production database on Kubernetes, use an operator such as CloudNativePG, which handles replicas, failover and backups, or a managed database outside the cluster.
 
-For storage that's tied to a pod's lifecycle but more flexible than `emptyDir`, use ephemeral volumes:
+## Common Mistakes
 
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: test-ephemeral
-spec:
-  containers:
-    - name: test-container
-      image: nginx
-      volumeMounts:
-        - mountPath: /test
-          name: ephemeral-volume
-  volumes:
-    - name: ephemeral-volume
-      ephemeral:
-        volumeClaimTemplate:
-          metadata:
-            labels:
-              type: ephemeral
-          spec:
-            accessModes: ['ReadWriteOnce']
-            storageClassName: 'fast-storage'
-            resources:
-              requests:
-                storage: 1Gi
-```
+- **No volume for data you need.** Anything written to the container's filesystem or an `emptyDir` is gone when the pod is replaced.
+- **`Immediate` binding in multi-zone clusters.** The disk can end up in a zone where the pod cannot run. Use `WaitForFirstConsumer`.
+- **`reclaimPolicy: Delete` for important data.** Deleting the claim deletes the disk. Use `Retain`, snapshots and backups.
+- **Sharing one RWO claim between replicas.** A Deployment with several replicas and one RWO claim only works while all pods land on one node. Use a StatefulSet with one claim per pod.
+- **Forgetting that local volumes pin pods to nodes.** A pod with a node-local volume cannot move when its node is drained or dies.
 
-### Data Migration
+## Summary
 
-To migrate data between clusters or storage classes:
+- Pods ask for storage with PersistentVolumeClaims; StorageClasses and their provisioners (usually CSI drivers) create PersistentVolumes on demand.
+- `WaitForFirstConsumer` creates the volume where the pod runs; the reclaim policy decides what happens when the claim goes.
+- A StatefulSet gives each pod a stable name, DNS name and its own claim, so its data survives restarts and rescheduling.
+- Expansion, snapshots and performance changes depend on the CSI driver; backups belong outside the cluster.
 
-1. Create a VolumeSnapshot of the original PVC
-2. Create a new PVC in the target environment, referencing the snapshot
-3. Create a migration pod that copies data
+## Keep Learning
 
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: data-migration
-spec:
-  containers:
-    - name: migrator
-      image: alpine
-      command: ['sh', '-c', 'cp -rv /source/* /destination/']
-      volumeMounts:
-        - name: source-volume
-          mountPath: /source
-        - name: destination-volume
-          mountPath: /destination
-  volumes:
-    - name: source-volume
-      persistentVolumeClaim:
-        claimName: source-pvc
-    - name: destination-volume
-      persistentVolumeClaim:
-        claimName: destination-pvc
-  restartPolicy: Never
-```
+- [The anatomy of Kubernetes persistent storage](/posts/anatomy-of-kubernetes-persistent-storage)
+- [Running Postgres on Kubernetes](/posts/postgres-k8s)
+- [Kubernetes 1.37: finding unused PVCs](/posts/kubernetes-1-37-unused-pvc-condition)
 
-## Backup and Restore Strategies
-
-Kubernetes doesn't provide built-in backup solutions, but you can implement several approaches:
-
-### 1. Volume Snapshots
-
-As covered earlier, use the Volume Snapshot API to create point-in-time snapshots of volumes.
-
-### 2. Application-Level Backups
-
-For databases and other stateful applications, use application-specific backup tools:
-
-```yaml
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: postgres-backup
-spec:
-  schedule: '0 1 * * *' # Daily at 1:00 AM
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-            - name: backup
-              image: postgres:13
-              command:
-                - /bin/sh
-                - -c
-                - pg_dump -h postgres -U postgres -d mydb | gzip > /backup/mydb-$(date +%Y%m%d).sql.gz
-              env:
-                - name: PGPASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: postgres-credentials
-                      key: password
-              volumeMounts:
-                - name: backup-volume
-                  mountPath: /backup
-          volumes:
-            - name: backup-volume
-              persistentVolumeClaim:
-                claimName: backup-pvc
-          restartPolicy: OnFailure
-```
-
-### 3. External Backup Solutions
-
-Several tools specifically designed for Kubernetes backup:
-
-- **Velero**: Backup and migrate Kubernetes resources and volumes
-- **Kasten K10**: Purpose-built for Kubernetes backup and disaster recovery
-- **Trilios**: Data protection for Kubernetes applications
-
-## Performance Considerations
-
-When designing for storage performance in Kubernetes:
-
-1. **Choose the right storage type**: SSD for high IOPS, HDD for high throughput
-2. **Consider local storage** for latency-sensitive applications
-3. **Use volume caching** for frequently accessed data
-4. **Set appropriate resource requests and limits** for storage-related pods
-5. **Use appropriate QoS** for storage traffic
-6. **Monitor storage metrics** to identify bottlenecks
-
-## Best Practices for Kubernetes Storage
-
-1. **Plan for data persistence**: Decide which data needs to survive pod restarts
-
-2. **Use the right storage for the job**: Match storage characteristics to application requirements
-
-3. **Define resource requests accurately**: Request what you need to avoid overprovisioning
-
-4. **Implement proactive monitoring**: Watch for storage capacity and performance issues
-
-5. **Plan for backup and recovery**: Implement and test backup procedures
-
-6. **Consider a multi-zone approach**: Distribute storage across availability zones
-
-7. **Use labels and annotations**: Organize and describe your storage resources
-
-8. **Test failure scenarios**: Verify that your applications can recover from storage failures
-
-9. **Document storage architecture**: Maintain clear documentation of your storage setup
-
-10. **Implement proper security**: Use encryption for sensitive data
-
-## DigitalOcean Volumes for Kubernetes
-
-DigitalOcean makes it easy to provision and manage persistent storage for your Kubernetes clusters. DigitalOcean Volumes provide:
-
-- SSD-based block storage
-- Automatic encryption at rest
-- Automated volume snapshots
-- Seamless Kubernetes integration through CSI driver
-
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) (referral link) and try their storage solutions with your Kubernetes applications.
-
-In the next section, we'll explore Kubernetes resource management, covering how to optimize your cluster's compute resources and implement effective scaling strategies.
+Next, in [Part 8](/guides/introduction-to-kubernetes/08-resource-management-and-scaling), you give the pods CPU and memory budgets, scale them with load and drain a node, including the one this volume lives on.
