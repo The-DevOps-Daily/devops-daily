@@ -121,7 +121,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'Git Branching Strategies',
         description: 'Learn GitFlow, trunk-based development, and when to use each',
-        link: '/guides/git-branching-strategies',
+        link: '/guides/introduction-to-git/04-branching',
         icon: GitBranch,
         priority: 'essential',
         estimatedHours: 8,
@@ -129,7 +129,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'Pull Requests & Code Review',
         description: 'Create PRs, review code, and collaborate effectively',
-        link: '/guides/code-review-best-practices',
+        link: '/guides/introduction-to-git/07-collaboration',
         icon: FileText,
         priority: 'essential',
         estimatedHours: 6,
@@ -137,7 +137,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'GitHub Actions Basics',
         description: 'Automate simple workflows like linting and testing',
-        link: '/guides/introduction-to-github-actions',
+        link: '/guides/introduction-to-cicd',
         icon: Workflow,
         priority: 'important',
         estimatedHours: 10,
@@ -181,7 +181,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'Dockerfile Best Practices',
         description: 'Write efficient, secure, and maintainable Dockerfiles',
-        link: '/guides/dockerfile-best-practices',
+        link: '/guides/introduction-to-docker/05-building-custom-docker-images',
         icon: FileText,
         priority: 'essential',
         estimatedHours: 8,
@@ -189,7 +189,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'Docker Compose',
         description: 'Define and run multi-container applications',
-        link: '/guides/docker-compose-guide',
+        link: '/guides/introduction-to-docker/08-docker-compose',
         icon: Server,
         priority: 'important',
         estimatedHours: 10,
@@ -224,7 +224,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'CI/CD Concepts',
         description: 'Understand continuous integration and delivery principles',
-        link: '/guides/ci-cd-fundamentals',
+        link: '/guides/introduction-to-cicd/01-understanding-cicd-and-first-workflow',
         icon: Workflow,
         priority: 'essential',
         estimatedHours: 6,
@@ -232,7 +232,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'GitHub Actions Advanced',
         description: 'Build complete CI/CD pipelines with GitHub Actions',
-        link: '/guides/github-actions-advanced',
+        link: '/guides/introduction-to-cicd/07-advanced-workflows-and-automation',
         icon: Workflow,
         priority: 'essential',
         estimatedHours: 15,
@@ -240,7 +240,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'Testing in Pipelines',
         description: 'Integrate unit tests, linting, and security scans',
-        link: '/guides/testing-in-ci-cd',
+        link: '/guides/introduction-to-cicd/03-building-and-testing-applications',
         icon: CheckCircle2,
         priority: 'important',
         estimatedHours: 10,
@@ -275,7 +275,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'Cloud Fundamentals',
         description: 'Understand cloud computing concepts, pricing, and service models',
-        link: '/guides/cloud-computing-fundamentals',
+        link: '/guides/introduction-to-aws',
         icon: Cloud,
         priority: 'essential',
         estimatedHours: 10,
@@ -283,7 +283,7 @@ export const milestones: JuniorMilestone[] = [
       {
         name: 'AWS/Azure/GCP Core Services',
         description: 'Learn compute, storage, and networking basics on your chosen platform',
-        link: '/guides/aws-for-beginners',
+        link: '/guides/introduction-to-aws/03-ec2-servers',
         simulators: [{ name: 'AWS VPC', link: '/games/aws-vpc-simulator' }],
         icon: Server,
         priority: 'essential',
