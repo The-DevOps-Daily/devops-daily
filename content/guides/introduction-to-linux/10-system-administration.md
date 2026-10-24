@@ -620,6 +620,8 @@ On a server, run `sudo lsof +L1`, then restart the service that holds the file (
 
 ## A Checklist for a New Server
 
+Run through this list on every fresh server, whether it is a VM at home or a cloud server (for example a DigitalOcean Droplet created through [this referral link](https://m.do.co/c/2a9bba940f39)).
+
 1. Update everything: `sudo apt update && sudo apt full-upgrade` (or `sudo dnf upgrade`), then reboot if asked.
 2. Create your own user with `sudo` and an SSH key; test it in a second session ([Part 6](/guides/introduction-to-linux/06-user-management)).
 3. Harden SSH with a drop-in file and check it with `sshd -t` and `sshd -T`.

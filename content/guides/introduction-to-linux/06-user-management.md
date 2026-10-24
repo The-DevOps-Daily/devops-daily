@@ -447,6 +447,8 @@ Password policies come from **PAM**, the Pluggable Authentication Modules config
 
 Many cloud images let you log in as `root` (DigitalOcean) or as a default user such as `ubuntu`, `admin` or `ec2-user` (AWS). On a fresh server, create your own admin account and check that it works before you turn off root logins:
 
+No server yet? Any cloud provider works. For DigitalOcean, you can create a Droplet through [this referral link](https://m.do.co/c/2a9bba940f39); new accounts get DigitalOcean's standard [sign-up credit](https://docs.digitalocean.com/platform/billing/signup-credit/).
+
 ```bash
 # as root on the new server
 adduser alice                          # Fedora/RHEL: useradd -m alice && passwd alice
