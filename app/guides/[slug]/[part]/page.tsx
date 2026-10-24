@@ -9,6 +9,7 @@ import { tagToSlug } from '@/lib/tag-utils';
 import { getLinkableTagSlugs } from '@/lib/tags';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { GuidePartNavigation } from '@/components/guide-part-navigation';
+import { GuideMobileNav } from '@/components/guide-mobile-nav';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
@@ -149,8 +150,15 @@ export default async function GuidePartPage({
         keywords={guide.tags}
       />
       <ReadingProgressBar />
+      <GuideMobileNav
+        guide={toGuideNav(guide)}
+        activePart={partSlug}
+        previousPart={previousPart && { title: previousPart.title, slug: previousPart.slug }}
+        nextPart={nextPart && { title: nextPart.title, slug: nextPart.slug }}
+      />
 
-      <div className="container px-4 py-8 mx-auto">
+      {/* Room for the fixed bottom bar on small screens */}
+      <div className="container px-4 pt-8 pb-24 mx-auto lg:pb-8">
         <Breadcrumb items={breadcrumbItems} />
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
@@ -158,7 +166,7 @@ export default async function GuidePartPage({
           <div className="xl:col-span-9">
             <div className="flex flex-col gap-8 lg:flex-row">
               {/* Guide Navigation Sidebar */}
-              <aside className="shrink-0 lg:w-80">
+              <aside className="hidden shrink-0 lg:block lg:w-80">
                 <GuideSidebar guide={toGuideNav(guide)} activePart={partSlug} />
               </aside>
 
