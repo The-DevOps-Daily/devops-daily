@@ -1,929 +1,564 @@
 ---
-title: Monitoring and Logging in Kubernetes
-description: Implement comprehensive observability with effective monitoring, logging, and troubleshooting strategies
+title: 'Kubernetes Monitoring, Logging and Troubleshooting'
+description: 'Debug Kubernetes with logs, events and kubectl debug, fix ImagePullBackOff, CrashLoopBackOff and Pending pods, and add Prometheus alerts with Helm 4.'
 order: 9
 ---
 
-Maintaining visibility into your Kubernetes cluster and applications is essential for ensuring reliability, performance, and security. In this section, we'll explore how to implement effective monitoring and logging solutions, as well as strategies for troubleshooting issues in your Kubernetes environment.
+**TLDR**: When a pod misbehaves, run `kubectl get pods`, then `kubectl describe pod` (its events), then `kubectl logs` (add `--previous` after a crash). The pod's status tells you which of a handful of problems you have: `ImagePullBackOff`, `CrashLoopBackOff`, `Pending`, or `Running` but not ready. `kubectl debug` adds a temporary container with tools to a running pod. For history and alerts, install Prometheus with the kube-prometheus-stack Helm chart and describe what to scrape with a ServiceMonitor.
 
-## Understanding Observability in Kubernetes
+In this part you crash podinfo on purpose and read the logs of the dead container, diagnose three broken Deployments, take a pod out of rotation through its readiness probe, debug a pod and a node with `kubectl debug`, then install Prometheus with Helm 4, scrape podinfo, and watch an alert fire.
 
-Observability encompasses three main pillars:
+## Prerequisites
 
-1. **Monitoring**: Collecting and analyzing metrics about the performance and health of your systems
-2. **Logging**: Capturing and storing event logs from your applications and infrastructure
-3. **Tracing**: Following requests as they flow through your distributed system
+- The app after [Part 8](/guides/introduction-to-kubernetes/08-resource-management-and-scaling), with metrics-server installed.
+- Helm 4 (installed in [Part 2](/guides/introduction-to-kubernetes/02-setting-up-a-kubernetes-cluster)) and `jq`.
 
-Together, these provide a comprehensive view of your cluster's state and behavior.
+## Four Kinds of Signals
 
-## Kubernetes Monitoring Architecture
+| Signal      | Answers                                   | Where it comes from                                         |
+| ----------- | ----------------------------------------- | ----------------------------------------------------------- |
+| **Events**  | What did Kubernetes do, and what failed?  | Controllers, the scheduler and kubelets; kept about an hour |
+| **Logs**    | What did the app say?                     | Each container's standard output and error                  |
+| **Metrics** | How much, how fast, how often, over time? | metrics-server for now, Prometheus for history              |
+| **Traces**  | Where did one request spend its time?     | The app, instrumented with OpenTelemetry                    |
 
-Kubernetes exposes metrics through several components:
+Events and logs are enough to fix most problems in front of you. Metrics and alerts tell you about the problems you are not looking at yet.
 
-### Metrics Server
+## Logs
 
-Metrics Server is a cluster-wide aggregator of resource usage data that collects CPU and memory metrics from kubelet. It's a lightweight, short-term, in-memory metrics solution.
+The kubelet captures what each container writes to standard output and standard error and stores it on the node. `kubectl logs` reads it through the API server:
 
-```bash
-# Install Metrics Server
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
-# Verify installation
-kubectl get deployment metrics-server -n kube-system
-
-# Use Metrics Server
-kubectl top nodes
-kubectl top pods --all-namespaces
+```terminal
+{
+  "title": "read logs",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl logs deployment/podinfo --tail=3",
+      "output": "Found 3 pods, using pod/podinfo-75bb4bb8cc-cjtwp\n{\"level\":\"info\",\"ts\":\"2026-10-24T10:16:56.022Z\",\"caller\":\"fscache/fscache.go:38\",\"msg\":\"fscache start watcher for /podinfo/config\"}\n{\"level\":\"info\",\"ts\":\"2026-10-24T10:16:56.022Z\",\"caller\":\"http/server.go:273\",\"msg\":\"Starting HTTP Server.\",\"addr\":\":9898\"}\n{\"level\":\"info\",\"ts\":\"2026-10-24T10:16:56.022Z\",\"caller\":\"http/server.go:305\",\"msg\":\"Starting HTTPS Server.\",\"addr\":\":8443\"}"
+    },
+    {
+      "cmd": "kubectl logs -l app=podinfo --prefix --tail=1",
+      "output": "[pod/podinfo-75bb4bb8cc-zjlzn/podinfo] {\"level\":\"info\",\"ts\":\"2026-10-24T10:17:06.531Z\",\"caller\":\"http/server.go:305\",\"msg\":\"Starting HTTPS Server.\",\"addr\":\":8443\"}\n[pod/podinfo-75bb4bb8cc-6h7vc/podinfo] {\"level\":\"info\",\"ts\":\"2026-10-24T10:17:01.473Z\",\"caller\":\"http/server.go:305\",\"msg\":\"Starting HTTPS Server.\",\"addr\":\":8443\"}\n[pod/podinfo-75bb4bb8cc-cjtwp/podinfo] {\"level\":\"info\",\"ts\":\"2026-10-24T10:16:56.022Z\",\"caller\":\"http/server.go:305\",\"msg\":\"Starting HTTPS Server.\",\"addr\":\":8443\"}"
+    }
+  ]
+}
 ```
 
-Metrics Server powers features like:
+`kubectl logs deployment/podinfo` picks one pod of the Deployment. To read all of them, select by label and add `--prefix` to see which line came from which pod. Other useful flags: `-f` to follow, `--since=10m`, `--timestamps`, `-c <container>` for multi-container pods, and `--all-containers`.
 
-- Horizontal Pod Autoscaler (HPA)
-- Vertical Pod Autoscaler (VPA)
-- kubectl top command
+### Logs of a Crashed Container
 
-### kube-state-metrics
+podinfo's `/panic` endpoint makes the process exit with code 255. Call it inside one pod, and the container dies, taking the `curl` that called it along:
 
-kube-state-metrics listens to the Kubernetes API server and generates metrics about the state of Kubernetes objects.
-
-```bash
-# Install kube-state-metrics
-kubectl apply -f https://github.com/kubernetes/kube-state-metrics/tree/main/examples/standard
-
-# Example metrics
-# - kube_pod_status_phase
-# - kube_deployment_status_replicas
-# - kube_node_status_condition
+```terminal
+{
+  "title": "crash a container",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "POD=$(kubectl get pods -l app=podinfo -o jsonpath='{.items[0].metadata.name}')"
+    },
+    {
+      "cmd": "kubectl exec $POD -- curl -s localhost:9898/panic",
+      "output": "command terminated with exit code 52"
+    },
+    {
+      "cmd": "kubectl get pod $POD",
+      "output": "NAME                       READY   STATUS    RESTARTS      AGE\npodinfo-75bb4bb8cc-6h7vc   1/1     Running   1 (15s ago)   30s"
+    },
+    {
+      "cmd": "kubectl logs $POD --previous --tail=2",
+      "output": "{\"level\":\"info\",\"ts\":\"2026-10-24T10:17:01.473Z\",\"caller\":\"http/server.go:305\",\"msg\":\"Starting HTTPS Server.\",\"addr\":\":8443\"}\n{\"level\":\"info\",\"ts\":\"2026-10-24T10:17:16.360Z\",\"caller\":\"http/panic.go:14\",\"msg\":\"Panic command received\"}"
+    },
+    {
+      "cmd": "kubectl get pod $POD -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}{\"\\n\"}'",
+      "output": "255"
+    }
+  ]
+}
 ```
 
-### cAdvisor
+The kubelet restarted the container, so plain `kubectl logs` shows the new one. `--previous` shows the logs of the container that died, and its last line says why. The kubelet keeps only the current and the previous container's logs, and only while the pod exists.
 
-Container Advisor (cAdvisor) is built into kubelet and provides resource usage and performance metrics about running containers.
+### Where Logs Live, and Shipping Them
 
-### Prometheus Operator and Kubernetes Monitoring Stack
+On the node, container logs are files under `/var/log/pods/<namespace>_<pod>_<uid>/`. The kubelet rotates them (10 MiB and 5 files per container by default), and they disappear with the pod. For history and search across pods, run a log agent as a DaemonSet that reads those files and ships them to a store:
 
-For comprehensive monitoring, many organizations use the Prometheus Operator and related components, often as part of the Kubernetes Monitoring Stack (formerly known as Prometheus Operator or kube-prometheus):
+- Agents: **Fluent Bit**, the **OpenTelemetry Collector**, Grafana **Alloy** or Vector. Promtail, which many Loki tutorials still use, reached its end of life on 2 March 2026; Grafana replaced it with Alloy.
+- Stores: **Grafana Loki**, **Elasticsearch** or **OpenSearch**, or your cloud provider's logging service.
+
+Log in JSON, as podinfo does, so the agent can parse fields such as level and request ID without regular expressions.
+
+## Events
+
+Events are the cluster's own log. They expire after about an hour, so look at them while the problem is fresh:
 
 ```bash
-# Clone the repository
-git clone https://github.com/prometheus-operator/kube-prometheus.git
-cd kube-prometheus
-
-# Create the namespace and CRDs
-kubectl create -f manifests/setup
-
-# Wait for the CRDs to be created
-until kubectl get servicemonitors --all-namespaces ; do sleep 1; done
-
-# Create the monitoring stack components
-kubectl create -f manifests/
+kubectl events --for pod/POD_NAME  # one object, oldest first
+kubectl events --types=Warning    # only problems, in the current namespace
+kubectl events -A --watch         # everything, as it happens
 ```
 
-This installs:
+## A Troubleshooting Playbook
 
-- Prometheus Operator
-- Prometheus instances
-- Alertmanager
-- Grafana
-- Node Exporter
-- kube-state-metrics
-- Pre-configured dashboards and alerts
+Most pod problems fall into one of four shapes. The `STATUS` column of `kubectl get pods` tells you which:
 
-## Setting Up Prometheus and Grafana
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [{ "id": "get", "label": "kubectl get pods", "sub": "read STATUS", "icon": "cpu", "tone": "slate" }],
+    [
+      { "id": "pull", "label": "ImagePullBackOff", "sub": "ErrImagePull", "icon": "box", "tone": "red", "detail": "The node cannot pull the image: wrong name or tag, private registry without imagePullSecrets, or rate limits. Check describe events." },
+      { "id": "crash", "label": "CrashLoopBackOff", "sub": "Error, OOMKilled", "icon": "activity", "tone": "red", "detail": "The container starts and exits. Check logs --previous and the last state: reason OOMKilled points at memory (the limit or the node); exit codes 1 or 2 usually come from the app." },
+      { "id": "pending", "label": "Pending", "sub": "no node", "icon": "server", "tone": "amber", "detail": "The scheduler found no node: not enough requested CPU or memory, a selector or affinity no node matches, a taint, or an unbound volume." },
+      { "id": "notready", "label": "Running, 0/1", "sub": "not ready", "icon": "net", "tone": "amber", "detail": "The readiness probe fails, so the pod gets no traffic. Check the probe in describe and the app's health endpoint." }
+    ],
+    [
+      { "id": "f1", "label": "describe: events", "sub": "the pull error", "icon": "check", "tone": "green" },
+      { "id": "f2", "label": "logs --previous", "sub": "the crash", "icon": "check", "tone": "green" },
+      { "id": "f3", "label": "describe: events", "sub": "the scheduler's reason", "icon": "check", "tone": "green" },
+      { "id": "f4", "label": "describe: probe", "sub": "and EndpointSlices", "icon": "check", "tone": "green" }
+    ]
+  ],
+  "edges": [["get", "pull"], ["get", "crash"], ["get", "pending"], ["get", "notready"], ["pull", "f1"], ["crash", "f2"], ["pending", "f3"], ["notready", "f4"]]
+}
+```
 
-Let's explore a more detailed setup of Prometheus and Grafana for monitoring:
-
-### Basic Prometheus Setup
+These three Deployments are each broken in one of the first three ways:
 
 ```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: Prometheus
+# Three Deployments that fail in three common ways
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: prometheus
-  namespace: monitoring
+  name: bad-image
+  labels:
+    lab: broken
 spec:
-  serviceAccountName: prometheus
-  serviceMonitorSelector:
+  replicas: 1
+  selector:
     matchLabels:
-      team: frontend
-  resources:
-    requests:
-      memory: 400Mi
-  enableAdminAPI: false
+      app: bad-image
+  template:
+    metadata:
+      labels:
+        app: bad-image
+        lab: broken
+    spec:
+      containers:
+        - name: podinfo
+          image: ghcr.io/stefanprodan/podinfo:6.150.0 # a typo in the tag
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bad-config
+  labels:
+    lab: broken
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bad-config
+  template:
+    metadata:
+      labels:
+        app: bad-config
+        lab: broken
+    spec:
+      containers:
+        - name: podinfo
+          image: ghcr.io/stefanprodan/podinfo:6.15.0
+          command: ['./podinfo']
+          args: ['--random-delay-min=5', '--random-delay-max=1'] # an invalid combination
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-node
+  labels:
+    lab: broken
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: no-node
+  template:
+    metadata:
+      labels:
+        app: no-node
+        lab: broken
+    spec:
+      nodeSelector:
+        disktype: ssd # no node has this label
+      containers:
+        - name: podinfo
+          image: ghcr.io/stefanprodan/podinfo:6.15.0
 ```
 
-### Creating ServiceMonitors
+```terminal
+{
+  "title": "three broken Deployments",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl apply -f 09-observability/broken.yaml",
+      "output": "deployment.apps/bad-image created\ndeployment.apps/bad-config created\ndeployment.apps/no-node created"
+    },
+    {
+      "cmd": "kubectl get pods -l lab=broken",
+      "output": "NAME                          READY   STATUS         RESTARTS      AGE\nbad-config-74b5489975-dlkjw   0/1     Error          3 (45s ago)   60s\nbad-image-76c5699b4d-vvz77    0/1     ErrImagePull   0             60s\nno-node-f744f9db9-rwxcn       0/1     Pending        0             60s"
+    }
+  ]
+}
+```
 
-ServiceMonitors define how Prometheus should discover and scrape services:
+**ImagePullBackOff.** The events of the pod name the image and the registry's answer, `not found`:
+
+```bash
+kubectl describe pod -l app=bad-image | sed -n '/^Events:/,$p'
+```
+
+```text
+Events:
+  Type     Reason     Age                From               Message
+  ----     ------     ----               ----               -------
+  Normal   Scheduled  60s                default-scheduler  Successfully assigned demo/bad-image-76c5699b4d-vvz77 to k8s-guide-worker
+  Normal   Pulling    22s (x3 over 60s)  kubelet            spec.containers{podinfo}: Pulling image "ghcr.io/stefanprodan/podinfo:6.150.0"
+  Warning  Failed     22s (x3 over 59s)  kubelet            spec.containers{podinfo}: Failed to pull image "ghcr.io/stefanprodan/podinfo:6.150.0": rpc error: code = NotFound desc = failed to pull and unpack image "ghcr.io/stefanprodan/podinfo:6.150.0": failed to resolve reference "ghcr.io/stefanprodan/podinfo:6.150.0": ghcr.io/stefanprodan/podinfo:6.150.0: not found
+  Warning  Failed     22s (x3 over 59s)  kubelet            spec.containers{podinfo}: Error: ErrImagePull
+  Normal   BackOff    8s (x3 over 59s)   kubelet            spec.containers{podinfo}: Back-off pulling image "ghcr.io/stefanprodan/podinfo:6.150.0"
+  Warning  Failed     8s (x3 over 59s)   kubelet            spec.containers{podinfo}: Error: ImagePullBackOff
+```
+
+Check the tag for typos, check that the registry is reachable from the nodes, and for private registries add `imagePullSecrets` to the pod or its ServiceAccount. Kubernetes retries with growing delays, which is the "back-off".
+
+**CrashLoopBackOff.** The container starts and exits; here `STATUS` shows `Error` between restarts. The logs say why, and the exit code (2 for a Go panic) says how:
+
+```terminal
+{
+  "title": "a crash loop",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl logs deployment/bad-config",
+      "output": "{\"level\":\"panic\",\"ts\":\"2026-10-24T10:18:08.414Z\",\"caller\":\"podinfo/main.go:136\",\"msg\":\"`--random-delay-max` should be greater than `--random-delay-min`\",\"stacktrace\":\"main.main\\n\\t/podinfo/cmd/podinfo/main.go:136\\nruntime.main\\n\\t/usr/local/go/src/runtime/proc.go:302\"}\npanic: `--random-delay-max` should be greater than `--random-delay-min`"
+    },
+    {
+      "cmd": "kubectl describe pod -l app=bad-config | grep -A 5 'Last State'",
+      "output": "    Last State:     Terminated\n      Reason:       Error\n      Exit Code:    2\n      Started:      Sat, 24 Oct 2026 10:17:46 +0000\n      Finished:     Sat, 24 Oct 2026 10:17:46 +0000\n    Ready:          False"
+    }
+  ]
+}
+```
+
+The first two lines of the log are enough: two options contradict each other. If a crashing container prints nothing at all, check its last state: `Reason: OOMKilled` means the kernel's out-of-memory killer ended it, usually at its memory limit, sometimes because the node ran out ([Part 8](/guides/introduction-to-kubernetes/08-resource-management-and-scaling)); exit code 137 without that reason means something else sent SIGKILL. Exit codes 127 and 126 mean the command in the pod spec does not exist or is not executable. [CrashLoopBackOff with no logs](/posts/kubernetes-pods-crashloopbackoff-no-logs) covers more cases.
+
+**Pending.** No node fits. The scheduler's event lists, per node, why not:
+
+```bash
+kubectl describe pod -l app=no-node | sed -n '/^Events:/,$p'
+```
+
+```text
+Events:
+  Type     Reason            Age   From               Message
+  ----     ------            ----  ----               -------
+  Warning  FailedScheduling  60s   default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 node(s) didn't match Pod's node affinity/selector. preemption: 0/3 nodes are available: 3 Preemption is not helpful for scheduling.
+```
+
+One node is the tainted control plane, and the two workers lack the `disktype=ssd` label. Other common reasons are `Insufficient cpu` or `Insufficient memory` (requests larger than any node's free capacity), a PVC that cannot bind, and a quota (in which case the pod is never created, and the event is on the ReplicaSet). Clean up:
+
+```bash
+kubectl delete -f 09-observability/broken.yaml
+```
+
+```text
+deployment.apps "bad-image" deleted from demo namespace
+deployment.apps "bad-config" deleted from demo namespace
+deployment.apps "no-node" deleted from demo namespace
+```
+
+**Running but not ready.** podinfo can switch its own readiness off. Do that in one pod and watch it leave the Service:
+
+```terminal
+{
+  "title": "a pod out of rotation",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl exec $POD -- curl -s -X POST localhost:9898/readyz/disable"
+    },
+    {
+      "cmd": "kubectl get pods -l app=podinfo",
+      "output": "NAME                       READY   STATUS    RESTARTS      AGE\npodinfo-75bb4bb8cc-6h7vc   0/1     Running   1 (90s ago)   105s\npodinfo-75bb4bb8cc-cjtwp   1/1     Running   0             111s\npodinfo-75bb4bb8cc-zjlzn   1/1     Running   0             100s"
+    },
+    {
+      "cmd": "kubectl get endpointslices -l kubernetes.io/service-name=podinfo -o jsonpath='{range .items[*].endpoints[*]}{.targetRef.name}{\"\\t\"}ready={.conditions.ready}{\"\\n\"}{end}'",
+      "output": "podinfo-75bb4bb8cc-cjtwp\tready=true\npodinfo-75bb4bb8cc-6h7vc\tready=false\npodinfo-75bb4bb8cc-zjlzn\tready=true"
+    },
+    {
+      "cmd": "kubectl exec $POD -- curl -s -X POST localhost:9898/readyz/enable"
+    }
+  ]
+}
+```
+
+The pod keeps running (readiness failures never restart a container; liveness failures do), but its endpoint is marked `ready=false`, so the Service sends it no new connections. That is how a pod that is overloaded or warming up steps aside without being killed.
+
+## kubectl debug
+
+Many production images contain only the app: no shell, no `ps`, no network tools. `kubectl debug` adds an **ephemeral container** with an image of your choice to a running pod. With `--target`, it shares the process namespace of the app's container, so you can see its processes:
+
+```terminal
+{
+  "title": "an ephemeral debug container",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl debug $POD --image=busybox:1.38.0 --target=podinfo --container=debugger -- sh -c \"ps; netstat -tln\"",
+      "output": "Targeting container \"podinfo\". If you don't see processes from this container it may be because the container runtime doesn't support this feature."
+    },
+    {
+      "cmd": "kubectl logs $POD -c debugger",
+      "output": "PID   USER     TIME  COMMAND\n    1 100       0:00 ./podinfo --config-path=/podinfo/config --secure-port=8443 --cert-path=/podinfo/tls --cache-server=tcp://cache:6379\n   34 root      0:00 sh -c ps; netstat -tln\n   47 root      0:00 ps\nActive Internet connections (only servers)\nProto Recv-Q Send-Q Local Address           Foreign Address         State\ntcp        0      0 :::9898                 :::*                    LISTEN\ntcp        0      0 :::8443                 :::*                    LISTEN"
+    }
+  ]
+}
+```
+
+The debug container sees podinfo as process 1, running as user 100 (busybox has no name for that ID), listening on ports 9898 and 8443. Add `-it` instead of a command to get an interactive shell. Ephemeral containers cannot be removed; they stay in the pod's spec until the pod is replaced. Two other modes are useful: `kubectl debug $POD -it --copy-to=debug-copy --container=podinfo -- sh` starts a copy of the pod with a different command, and `kubectl debug node/<name>` starts a pod on a node with the node's filesystem mounted at `/host`:
+
+```terminal
+{
+  "title": "debug a node",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl debug node/k8s-guide-worker --image=busybox:1.38.0 --profile=general -- ls /host/var/log/pods",
+      "output": "Creating debugging pod node-debugger-k8s-guide-worker-d6ffl with container debugger on node k8s-guide-worker."
+    },
+    {
+      "cmd": "kubectl logs $(kubectl get pods -o name | grep node-debugger)",
+      "output": "demo_bad-config-74b5489975-dlkjw_97409a9f-6a9d-49e4-a5c3-d0f3430be3c2\ndemo_bad-image-76c5699b4d-vvz77_39f812e5-618d-42e5-ac7c-1541b5a4cf02\ndemo_node-debugger-k8s-guide-worker-d6ffl_8b756d65-1743-4484-b692-1f028bae2f29\ndemo_podinfo-75bb4bb8cc-zjlzn_c6de5c55-a930-427d-835d-cca4e034ad0f\nkube-system_kindnet-sn2zm_09465231-6d19-4924-9d29-abb727c39e6f\nkube-system_kube-proxy-c52d7_2db178ce-f53c-4f6a-a31d-73d700b96608\nkube-system_metrics-server-84c99cb944-s62vc_ba69e415-3ad5-4e15-9c95-096a0f4a71b7"
+    },
+    {
+      "cmd": "kubectl delete $(kubectl get pods -o name | grep node-debugger)",
+      "output": "pod \"node-debugger-k8s-guide-worker-d6ffl\" deleted from demo namespace"
+    }
+  ]
+}
+```
+
+There are the log directories from above, one per pod on that node. `--profile` sets the debug container's privileges: `general` for most work, `netadmin` for network tools, `sysadmin` for full access.
+
+## Metrics with metrics-server
+
+metrics-server keeps only the latest values, which is enough for `kubectl top` and the HPA:
+
+```bash
+kubectl top pods --containers
+```
+
+```text
+POD                        NAME      CPU(cores)   MEMORY(bytes)
+cache-0                    valkey    1m           8Mi
+podinfo-75bb4bb8cc-6h7vc   podinfo   1m           18Mi
+podinfo-75bb4bb8cc-cjtwp   podinfo   1m           16Mi
+podinfo-75bb4bb8cc-zjlzn   podinfo   1m           18Mi
+```
+
+For history, rates, percentiles and alerts, you need Prometheus.
+
+## Prometheus with the kube-prometheus-stack Chart
+
+The [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) Helm chart installs the Prometheus Operator, Prometheus, Alertmanager, Grafana, kube-state-metrics (metrics about Kubernetes objects) and node-exporter (metrics about nodes), with dashboards and alert rules for the cluster. Helm installs charts straight from OCI registries such as GitHub's. On kind, a few control plane components only listen on `127.0.0.1`, so this values file turns off scraping them:
+
+```yaml
+# Values for the kube-prometheus-stack chart on a kind cluster.
+# kind binds these control plane components to 127.0.0.1, so Prometheus cannot scrape them.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+```
+
+```terminal
+{
+  "title": "install the monitoring stack",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "helm install monitoring oci://ghcr.io/prometheus-community/charts/kube-prometheus-stack --version 92.11.0 --namespace monitoring --create-namespace --values 09-observability/monitoring-values.yaml --wait --timeout 10m",
+      "output": "Pulled: ghcr.io/prometheus-community/charts/kube-prometheus-stack:92.11.0\nDigest: sha256:5b9b0215085f00f61c0fb2aa01ec402609d91c0a6a91bc84ca85cce2ed69e635\nNAME: monitoring\nLAST DEPLOYED: Sat Oct 24 10:19:09 2026\nNAMESPACE: monitoring\nSTATUS: deployed\nREVISION: 1\nDESCRIPTION: Install complete\nNOTES:\nkube-prometheus-stack has been installed. Check its status by running:\n  kubectl --namespace monitoring get pods -l \"release=monitoring\""
+    },
+    {
+      "cmd": "kubectl get pods -n monitoring",
+      "output": "NAME                                                     READY   STATUS    RESTARTS   AGE\nalertmanager-monitoring-kube-prometheus-alertmanager-0   2/2     Running   0          36s\nmonitoring-grafana-5f9554bfb8-k7hzv                      3/3     Running   0          39s\nmonitoring-kube-prometheus-operator-74b7478f6d-f2k2h     1/1     Running   0          39s\nmonitoring-kube-state-metrics-78fd56fc4b-2d5fn           1/1     Running   0          39s\nmonitoring-prometheus-node-exporter-bwvhb                1/1     Running   0          39s\nmonitoring-prometheus-node-exporter-kwhfh                1/1     Running   0          39s\nmonitoring-prometheus-node-exporter-tv4rq                1/1     Running   0          39s\nprometheus-monitoring-kube-prometheus-prometheus-0       2/2     Running   0          35s"
+    }
+  ]
+}
+```
+
+(The chart's notes go on with Grafana instructions, cut here.) Pin the chart version, as here, so an upgrade is a decision rather than an accident.
+
+### Scrape podinfo with a ServiceMonitor
+
+The Prometheus Operator adds CRDs: a **ServiceMonitor** tells Prometheus to scrape the endpoints of matching Services, and a **PrometheusRule** holds alert and recording rules. This chart's Prometheus picks up objects labeled `release: monitoring`:
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: example-app
-  namespace: monitoring
+  name: podinfo
   labels:
-    team: frontend
+    release: monitoring # the chart's Prometheus selects ServiceMonitors with this label
 spec:
   selector:
     matchLabels:
-      app: example-app
+      app: podinfo # scrape the endpoints of Services with this label
   endpoints:
-    - port: web
-      interval: 30s
+    - port: http # the named Service port
       path: /metrics
+      interval: 15s
 ```
 
-### Setting Up Grafana
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: grafana
-  namespace: monitoring
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: grafana
-  template:
-    metadata:
-      labels:
-        app: grafana
-    spec:
-      containers:
-        - name: grafana
-          image: grafana/grafana:9.3.6
-          ports:
-            - containerPort: 3000
-              name: http
-          volumeMounts:
-            - mountPath: /var/lib/grafana
-              name: grafana-storage
-            - mountPath: /etc/grafana/provisioning/datasources
-              name: grafana-datasources
-              readOnly: true
-      volumes:
-        - name: grafana-storage
-          persistentVolumeClaim:
-            claimName: grafana-pvc
-        - name: grafana-datasources
-          configMap:
-            name: grafana-datasources
-```
-
-Create a ConfigMap for Grafana datasources:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-datasources
-  namespace: monitoring
-data:
-  prometheus.yaml: |-
-    apiVersion: 1
-    datasources:
-    - name: Prometheus
-      type: prometheus
-      url: http://prometheus-operated:9090
-      access: proxy
-      isDefault: true
-```
-
-## Essential Prometheus Metrics
-
-When monitoring Kubernetes, focus on these key metrics:
-
-### Node Metrics
-
-- `node_cpu_seconds_total`: CPU usage
-- `node_memory_MemAvailable_bytes`: Available memory
-- `node_filesystem_avail_bytes`: Available disk space
-- `node_network_transmit_bytes_total` and `node_network_receive_bytes_total`: Network I/O
-
-### Kubernetes Resource Metrics
-
-- `kube_pod_container_resource_requests` and `kube_pod_container_resource_limits`: Resource allocation
-- `kube_pod_container_status_restarts_total`: Container restarts
-- `kube_pod_container_status_waiting_reason`: Pods in waiting state
-- `kube_deployment_spec_replicas` and `kube_deployment_status_replicas_available`: Deployment status
-
-### Application Metrics
-
-- `http_requests_total`: Total HTTP requests (with labels for status code, method, etc.)
-- `http_request_duration_seconds`: Request latency
-- `application_memory_usage_bytes`: Application memory usage
-- `application_database_connections`: Database connection count
-
-## Creating Effective Dashboards
-
-Designing useful Grafana dashboards involves:
-
-1. **Hierarchical Organization**:
-
-   - Cluster overview
-   - Namespace/application views
-   - Pod/container details
-
-2. **Key Dashboard Components**:
-
-   - Resource utilization (CPU, memory, disk, network)
-   - Application metrics (requests, latency, error rates)
-   - Kubernetes state (pods running, deployment status)
-   - Alerts and incidents
-
-3. **Effective Visualization**:
-   - Use appropriate graph types
-   - Add thresholds and reference lines
-   - Include legends and documentation
-   - Create template variables for filtering
-
-Example dashboard JSON snippet:
-
-```json
-{
-  "panels": [
-    {
-      "title": "CPU Usage",
-      "type": "graph",
-      "datasource": "Prometheus",
-      "targets": [
-        {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$namespace\",pod=~\"$pod\"}[5m])) by (pod)",
-          "legendFormat": "{{pod}}",
-          "refId": "A"
-        }
-      ],
-      "yaxes": [
-        {
-          "format": "percentunit",
-          "label": "CPU Usage"
-        }
-      ],
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 0
-      }
-    }
-  ],
-  "templating": {
-    "list": [
-      {
-        "name": "namespace",
-        "type": "query",
-        "datasource": "Prometheus",
-        "query": "label_values(kube_namespace_labels, namespace)"
-      },
-      {
-        "name": "pod",
-        "type": "query",
-        "datasource": "Prometheus",
-        "query": "label_values(kube_pod_info{namespace=\"$namespace\"}, pod)"
-      }
-    ]
-  }
-}
-```
-
-## Setting Up Alerts
-
-Configure alerts to notify you of potential issues:
-
-### Prometheus AlertManager Rules
+The alert fires when more than 5 percent of podinfo's requests fail for a minute. podinfo counts its requests in `http_requests_total` with a `status` label:
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: kubernetes-apps
-  namespace: monitoring
+  name: podinfo
   labels:
-    prometheus: k8s
-    role: alert-rules
+    release: monitoring
 spec:
   groups:
-    - name: kubernetes-apps
+    - name: podinfo
       rules:
-        - alert: KubePodCrashLooping
-          expr: rate(kube_pod_container_status_restarts_total{job="kube-state-metrics"}[15m]) * 60 * 5 > 0
-          for: 15m
+        - alert: PodinfoHighErrorRate
+          expr: |
+            sum(rate(http_requests_total{job="podinfo", status=~"5.."}[2m]))
+              / sum(rate(http_requests_total{job="podinfo"}[2m])) > 0.05
+          for: 1m
           labels:
-            severity: critical
+            severity: warning
           annotations:
-            summary: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} is crash looping'
-            description: 'Pod {{ $labels.namespace }}/{{ $labels.pod }} is restarting {{ printf "%.2f" $value }} times every 5 minutes.'
+            summary: More than 5 percent of podinfo requests fail
+            description: '{{ $value | humanizePercentage }} of podinfo requests returned a 5xx status over the last 2 minutes.'
 ```
 
-### AlertManager Configuration
-
-```yaml
-apiVersion: monitoring.coreos.com/v1
-kind: Alertmanager
-metadata:
-  name: main
-  namespace: monitoring
-spec:
-  replicas: 3
-  configSecret: alertmanager-config
-```
-
-Configure AlertManager with a ConfigMap:
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: alertmanager-config
-  namespace: monitoring
-stringData:
-  alertmanager.yaml: |-
-    global:
-      resolve_timeout: 5m
-      slack_api_url: 'http[s]://hooks[.]slack[.]com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX'
-
-    route:
-      group_by: ['namespace', 'alertname']
-      group_wait: 30s
-      group_interval: 5m
-      repeat_interval: 12h
-      receiver: 'slack-notifications'
-      routes:
-      - match:
-          severity: critical
-        receiver: 'slack-critical'
-
-    receivers:
-    - name: 'slack-notifications'
-      slack_configs:
-      - channel: '#alerts'
-        title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
-        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
-
-    - name: 'slack-critical'
-      slack_configs:
-      - channel: '#critical-alerts'
-        title: '[CRITICAL] {{ .CommonLabels.alertname }}'
-        text: "{{ range .Alerts }}{{ .Annotations.description }}\n{{ end }}"
-```
-
-## Logging in Kubernetes
-
-Kubernetes doesn't provide a built-in cluster-wide logging solution. Instead, there are several common patterns:
-
-### Node-level Logging
-
-The simplest approach where applications write logs to stdout/stderr, which are captured by the container runtime:
-
-```bash
-# View logs for a pod
-kubectl logs nginx-pod
-
-# View logs for a specific container in a pod
-kubectl logs nginx-pod -c nginx
-
-# Follow logs (stream in real-time)
-kubectl logs -f nginx-pod
-
-# Show logs from the previous container instance
-kubectl logs nginx-pod --previous
-```
-
-### Logging with a DaemonSet
-
-Deploy a logging agent on each node to collect and forward logs:
-
-```yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: fluentd
-  namespace: logging
-spec:
-  selector:
-    matchLabels:
-      app: fluentd
-  template:
-    metadata:
-      labels:
-        app: fluentd
-    spec:
-      tolerations:
-        - key: node-role.kubernetes.io/master
-          effect: NoSchedule
-      containers:
-        - name: fluentd
-          image: fluent/fluentd:v1.14-1
-          volumeMounts:
-            - name: varlog
-              mountPath: /var/log
-            - name: varlibdockercontainers
-              mountPath: /var/lib/docker/containers
-              readOnly: true
-            - name: config
-              mountPath: /fluentd/etc
-      volumes:
-        - name: varlog
-          hostPath:
-            path: /var/log
-        - name: varlibdockercontainers
-          hostPath:
-            path: /var/lib/docker/containers
-        - name: config
-          configMap:
-            name: fluentd-config
-```
-
-### EFK/ELK Stack
-
-A popular logging stack consists of:
-
-- **Elasticsearch**: For storing and searching logs
-- **Fluentd/Logstash**: For collecting and processing logs
-- **Kibana**: For visualizing and analyzing logs
-
-```yaml
-# Elasticsearch StatefulSet (simplified)
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: elasticsearch
-  namespace: logging
-spec:
-  serviceName: elasticsearch
-  replicas: 3
-  selector:
-    matchLabels:
-      app: elasticsearch
-  template:
-    metadata:
-      labels:
-        app: elasticsearch
-    spec:
-      containers:
-        - name: elasticsearch
-          image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
-          env:
-            - name: discovery.type
-              value: single-node
-          ports:
-            - containerPort: 9200
-              name: rest
-            - containerPort: 9300
-              name: inter-node
-          volumeMounts:
-            - name: data
-              mountPath: /usr/share/elasticsearch/data
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: ['ReadWriteOnce']
-        resources:
-          requests:
-            storage: 20Gi
-```
-
-### Loki
-
-Grafana Loki is a lightweight alternative to Elasticsearch, designed specifically for logs:
-
-```yaml
-# Loki configuration (simplified)
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: loki
-  namespace: logging
-spec:
-  serviceName: loki
-  replicas: 1
-  selector:
-    matchLabels:
-      app: loki
-  template:
-    metadata:
-      labels:
-        app: loki
-    spec:
-      containers:
-        - name: loki
-          image: grafana/loki:2.7.0
-          ports:
-            - containerPort: 3100
-              name: http
-          volumeMounts:
-            - name: config
-              mountPath: /etc/loki
-            - name: data
-              mountPath: /data
-      volumes:
-        - name: config
-          configMap:
-            name: loki-config
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes: ['ReadWriteOnce']
-        resources:
-          requests:
-            storage: 10Gi
-```
-
-## Structured Logging
-
-Implement structured logging in your applications for better searchability:
-
-### JSON Logging Example
-
-```python
-# Python example with json logging
-import logging
-import json
-import datetime
-
-class JSONFormatter(logging.Formatter):
-    def format(self, record):
-        log_record = {
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-            "level": record.levelname,
-            "message": record.getMessage(),
-            "logger": record.name,
-            "path": record.pathname,
-            "function": record.funcName,
-            "line": record.lineno
-        }
-
-        if hasattr(record, 'request_id'):
-            log_record["request_id"] = record.request_id
-
-        if record.exc_info:
-            log_record["exception"] = self.formatException(record.exc_info)
-
-        return json.dumps(log_record)
-
-# Set up the logger
-logger = logging.getLogger("my-app")
-handler = logging.StreamHandler()
-handler.setFormatter(JSONFormatter())
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
-
-# Usage
-logger.info("Processing order", extra={"request_id": "abc-123"})
-```
-
-Output:
-
-```json
+```terminal
 {
-  "timestamp": "2023-05-17T12:34:56.789012",
-  "level": "INFO",
-  "message": "Processing order",
-  "logger": "my-app",
-  "path": "/app/main.py",
-  "function": "process_order",
-  "line": 42,
-  "request_id": "abc-123"
+  "title": "scrape podinfo",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl apply -f 09-observability/servicemonitor.yaml -f 09-observability/prometheusrule.yaml",
+      "output": "servicemonitor.monitoring.coreos.com/podinfo created\nprometheusrule.monitoring.coreos.com/podinfo created"
+    },
+    {
+      "cmd": "kubectl port-forward -n monitoring service/monitoring-kube-prometheus-prometheus 9090:9090 > /dev/null 2>&1 & PF=$!"
+    },
+    {
+      "cmd": "curl -s localhost:9090/api/v1/query --data-urlencode 'query=up{job=\"podinfo\"}' | jq -r '.data.result[] | \"\\(.metric.pod) up=\\(.value[1])\"'",
+      "output": "podinfo-75bb4bb8cc-6h7vc up=1\npodinfo-75bb4bb8cc-cjtwp up=1\npodinfo-75bb4bb8cc-zjlzn up=1"
+    }
+  ]
 }
 ```
 
-## Distributed Tracing
+Prometheus needs a minute or so to discover the new targets. Then all three pods are scraped (`up=1`). You can also open `http://localhost:9090` in a browser and use the Prometheus UI.
 
-For complex microservice architectures, distributed tracing helps you understand request flows:
+### Make an Alert Fire
 
-### Jaeger Setup
-
-```yaml
-# Jaeger all-in-one deployment (for development)
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: jaeger
-  namespace: tracing
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: jaeger
-  template:
-    metadata:
-      labels:
-        app: jaeger
-    spec:
-      containers:
-        - name: jaeger
-          image: jaegertracing/all-in-one:1.35
-          ports:
-            - containerPort: 6831
-              name: jaeger-thrift
-            - containerPort: 16686
-              name: web
-```
-
-### Application Instrumentation
-
-Use OpenTelemetry to instrument your applications:
-
-```javascript
-// Node.js example with OpenTelemetry
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { JaegerExporter } = require('@opentelemetry/exporter-jaeger');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
-const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-
-// Configure the tracer
-const provider = new NodeTracerProvider();
-
-const exporter = new JaegerExporter({
-  serviceName: 'my-service',
-  endpoint: 'http://jaeger-collector:14268/api/traces',
-});
-
-provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
-provider.register();
-
-// Register auto-instrumentations
-registerInstrumentations({
-  instrumentations: [new HttpInstrumentation(), new ExpressInstrumentation()],
-});
-
-// Your application code follows
-const express = require('express');
-const app = express();
-
-app.get('/api/orders', (req, res) => {
-  // This request is automatically traced
-  res.json({ orders: [] });
-});
-
-app.listen(3000);
-```
-
-## Metrics, Logging, and Tracing Integration
-
-For comprehensive observability, integrate all three pillars:
-
-1. **Correlation IDs**: Include request IDs in logs, metrics, and traces
-2. **Service Mesh**: Use Istio or Linkerd for built-in observability
-3. **Dashboards**: Create unified dashboards that link metrics to logs and traces
-
-Example correlation in a Node.js application:
-
-```javascript
-app.use((req, res, next) => {
-  // Generate or extract request ID
-  const requestId = req.headers['x-request-id'] || uuid.v4();
-  req.requestId = requestId;
-
-  // Add to response headers
-  res.setHeader('x-request-id', requestId);
-
-  // Set up correlation for logging
-  req.log = logger.child({ requestId });
-
-  // Add to tracing span
-  const span = tracer.getCurrentSpan();
-  if (span) {
-    span.setAttribute('request_id', requestId);
-  }
-
-  next();
-});
-```
-
-## Troubleshooting Kubernetes Issues
-
-### Common Troubleshooting Tools
+podinfo's `/status/500` endpoint answers with a 500 error. A small pod sends one failing and one good request every half second:
 
 ```bash
-# Check pod status
-kubectl get pods
-
-# Describe pod for events and details
-kubectl describe pod <pod-name>
-
-# Check pod logs
-kubectl logs <pod-name>
-
-# Check node status
-kubectl describe node <node-name>
-
-# Check resource usage
-kubectl top pods
-kubectl top nodes
-
-# Execute commands in containers
-kubectl exec -it <pod-name> -- /bin/sh
-
-# View network policies
-kubectl get networkpolicies
+kubectl run errors --image=curlimages/curl:8.23.0 --restart=Never -- sh -c 'for i in $(seq 1 400); do curl -s -o /dev/null http://podinfo/status/500; curl -s -o /dev/null http://podinfo/; sleep 0.5; done'
 ```
 
-### Troubleshooting Pod Issues
-
-For pods stuck in Pending state:
-
-1. Check for insufficient resources:
-   ```bash
-   kubectl describe pod <pod-name> | grep -A 10 Events
-   ```
-2. Verify PVC binding (if using volumes):
-   ```bash
-   kubectl get pvc
-   ```
-3. Check for node selectors or taints:
-   ```bash
-   kubectl get pod <pod-name> -o yaml | grep -A 10 nodeSelector
-   ```
-
-For CrashLoopBackOff:
-
-1. Check container logs:
-   ```bash
-   kubectl logs <pod-name>
-   ```
-2. Check for resource limits being exceeded:
-   ```bash
-   kubectl describe pod <pod-name> | grep -A 3 Limits
-   ```
-3. Check liveness probes:
-   ```bash
-   kubectl get pod <pod-name> -o yaml | grep -A 10 livenessProbe
-   ```
-
-### Using Debug Containers
-
-In Kubernetes 1.18+, you can attach debug containers to running pods:
-
-```bash
-kubectl debug -it <pod-name> --image=busybox --target=<container-name>
+```text
+pod/errors created
 ```
 
-### Creating Debug Pods
+A few minutes later, the request rate by status and the alert:
 
-Create temporary pods for debugging:
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: debug-pod
-spec:
-  containers:
-    - name: debug
-      image: nicolaka/netshoot
-      command:
-        - sleep
-        - '3600'
-  restartPolicy: Never
+```terminal
+{
+  "title": "PromQL and alerts",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "curl -s localhost:9090/api/v1/query --data-urlencode 'query=sum by (status) (rate(http_requests_total{job=\"podinfo\"}[2m]))' | jq -r '.data.result[] | \"\\(.metric.status) \\(.value[1])\"'",
+      "output": "200 3.0095238095238095\n202 0\n503 0\n500 1.952380952380952"
+    },
+    {
+      "cmd": "curl -s localhost:9090/api/v1/alerts | jq -r '.data.alerts[] | select(.labels.alertname==\"PodinfoHighErrorRate\") | \"\\(.state) \\(.annotations.description)\"'",
+      "output": "firing 39.66% of podinfo requests returned a 5xx status over the last 2 minutes."
+    }
+  ]
+}
 ```
 
-### Network Debugging
+About two requests per second fail and three succeed. The 3 per second of status 200 include the kubelets' liveness and readiness probes, which call podinfo too; the 503 and 202 series are left over from the readiness switch earlier. The alert moved from `pending` to `firing` after its `for: 1m`, and Prometheus sent it to Alertmanager, which routes alerts to Slack, email, PagerDuty and others once you configure a receiver. Clean up the error generator and the port-forward:
 
-For network issues:
-
-```bash
-# Check services
-kubectl get services
-
-# Check endpoints
-kubectl get endpoints <service-name>
-
-# Test DNS resolution
-kubectl run -it --rm debug --image=busybox -- nslookup kubernetes.default
-
-# Test connectivity
-kubectl run -it --rm debug --image=nicolaka/netshoot -- curl -v <service-name>
-
-# Check network policies
-kubectl get networkpolicies
+```terminal
+{
+  "title": "clean up",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl delete pod errors",
+      "output": "pod \"errors\" deleted from demo namespace"
+    },
+    {
+      "cmd": "kill $PF"
+    }
+  ]
+}
 ```
 
-## Cluster-Level Monitoring
+### What to Watch
 
-Beyond application monitoring, implement cluster-level monitoring:
+- **For each app**, the RED signals: request **r**ate, **e**rrors and **d**uration (latency percentiles from a histogram such as podinfo's `http_request_duration_seconds`).
+- **From kube-state-metrics**: `kube_pod_container_status_restarts_total` (crash loops), `kube_deployment_status_replicas_available` against the desired count, and pods stuck in `Pending`.
+- **From the nodes**: CPU, memory, disk space and the kubelet's pressure conditions.
+- **For the cluster**: API server latency and errors, etcd health (on self-managed clusters), and certificate expiry.
 
-### Control Plane Monitoring
+Grafana comes with the chart and has dashboards for most of these. Its admin password is in the `monitoring-grafana` Secret; port-forward `service/monitoring-grafana` to port 3000 to open it. Alert on symptoms users feel (errors, latency, availability), not on every high CPU reading.
 
-Monitor control plane components:
+## Traces with OpenTelemetry
 
-- kube-apiserver
-- etcd
-- kube-scheduler
-- kube-controller-manager
+Metrics tell you that requests are slow; a trace tells you where one request spent its time across services. Instrument apps with the OpenTelemetry SDK for their language and send traces with the OTLP protocol to an OpenTelemetry Collector, which forwards them to Jaeger, Grafana Tempo or a commercial backend. podinfo has OpenTelemetry built in: setting the `PODINFO_OTEL_SERVICE_NAME` and the standard `OTEL_EXPORTER_OTLP_ENDPOINT` environment variables turns it on. The Collector can also receive logs and metrics, so many teams run one Collector DaemonSet for all three signals.
 
-Key metrics:
+## Common Mistakes
 
-- API server request latency
-- etcd leader changes
-- Scheduler pending pods
-- Controller manager queue length
+- **Reading only `kubectl logs` after a crash.** You see the new container. Use `--previous`.
+- **Not looking at events.** Image pulls, scheduling, probes and quotas all report there, not in the app's logs.
+- **Logs only on the nodes.** They vanish with the pod and rotate quickly; ship them somewhere.
+- **No resource requests, then wondering why the HPA or the dashboards show nothing useful.** Percentages are relative to requests.
+- **Alerting on causes instead of symptoms.** Page on errors and latency users see; keep CPU and memory alerts for tickets.
+- **Unpinned charts.** `helm install` without `--version` installs whatever is newest today.
 
-### Resource Capacity Planning
+## Summary
 
-Monitor trends to plan for future capacity:
+- `get`, `describe` and `logs --previous` find most problems; the pod's status names the kind of problem.
+- `kubectl debug` adds a tool container to a running pod or a node without changing the image.
+- Logs belong in a central store, shipped by a DaemonSet agent such as Fluent Bit, the OpenTelemetry Collector or Alloy.
+- kube-prometheus-stack gives you Prometheus, Alertmanager and Grafana; ServiceMonitors and PrometheusRules are how apps plug in.
 
-- Node CPU/memory utilization trends
-- Storage utilization growth
-- Network bandwidth utilization
-- Resource request vs. actual usage
+## Keep Learning
 
-### Audit Logging
+- [How to follow logs continuously](/posts/kubectl-logs-continuously)
+- [Fix pods stuck in Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
+- [Prometheus and Grafana monitoring exercise](/exercises/prometheus-grafana-monitoring)
+- [Prometheus vs Datadog](/comparisons/prometheus-vs-datadog) and the [monitoring and observability quiz](/quizzes/monitoring-observability-quiz)
 
-Enable Kubernetes audit logging for security monitoring:
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: kube-apiserver
-spec:
-  containers:
-    - name: kube-apiserver
-      command:
-        - kube-apiserver
-        - --audit-log-path=/var/log/audit.log
-        - --audit-log-maxage=30
-        - --audit-log-maxbackup=10
-        - --audit-policy-file=/etc/kubernetes/audit-policy.yaml
-      volumeMounts:
-        - mountPath: /etc/kubernetes/audit-policy.yaml
-          name: audit
-          readOnly: true
-        - mountPath: /var/log/audit.log
-          name: audit-log
-          readOnly: false
-  volumes:
-    - name: audit
-      hostPath:
-        path: /etc/kubernetes/audit-policy.yaml
-        type: File
-    - name: audit-log
-      hostPath:
-        path: /var/log/audit.log
-        type: FileOrCreate
-```
-
-With an audit policy file:
-
-```yaml
-apiVersion: audit.k8s.io/v1
-kind: Policy
-rules:
-  - level: Metadata
-    resources:
-      - group: ''
-        resources: ['pods', 'services']
-  - level: RequestResponse
-    resources:
-      - group: ''
-        resources: ['secrets', 'configmaps']
-```
-
-## Cost Monitoring
-
-Monitor your Kubernetes costs with tools like:
-
-- Kubecost
-- CloudHealth
-- Prometheus + custom dashboards
-
-Key metrics to track:
-
-- Per-namespace cost allocation
-- Idle resources
-- Resource efficiency (requests vs. usage)
-- Persistent volume costs
-
-## Using DigitalOcean for Kubernetes Monitoring
-
-DigitalOcean Kubernetes makes monitoring easy with:
-
-- Built-in metrics server
-- Native integration with common monitoring tools
-- Managed Prometheus and Grafana offered as add-ons
-- Simple log aggregation with existing tools
-
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) (referral link) and implement effective monitoring for your Kubernetes applications.
-
-## Best Practices for Kubernetes Monitoring and Logging
-
-1. **Start with the essentials**: Focus on key metrics and logs first
-2. **Use labels consistently**: Proper labeling makes filtering and alerting effective
-3. **Implement both white-box and black-box monitoring**: Monitor from both inside and outside
-4. **Create meaningful alerts**: Focus on actionable, high-signal alerts
-5. **Retain logs appropriately**: Balance storage costs with compliance needs
-6. **Use structured logging**: Makes logs more searchable and analyzable
-7. **Implement rate limiting for logs**: Prevent log flooding
-8. **Configure proper log rotation**: Manage disk space on nodes
-9. **Document your monitoring strategy**: Ensure team members understand the setup
-10. **Regularly review and refine**: Monitoring needs evolve with your application
-
-In the next section, we'll explore Kubernetes security best practices to ensure your clusters and workloads remain protected against threats.
+Next, in [Part 10](/guides/introduction-to-kubernetes/10-best-practices-in-kubernetes), you lock the app and the cluster down.
