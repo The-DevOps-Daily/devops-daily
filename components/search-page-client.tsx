@@ -27,6 +27,7 @@ import {
   Scale,
   Layers,
   Wrench,
+  Swords,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -76,6 +77,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   comparison: Scale,
   flashcard: Layers,
   tool: Wrench,
+  challenge: Swords,
 };
 
 export function SearchPageClient() {

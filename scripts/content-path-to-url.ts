@@ -51,6 +51,7 @@ export function contentPathToUrl(filePath: string, options: MapOptions = {}): st
   if ((m = p.match(/^content\/quizzes\/([^/]+)\.json$/))) return `/quizzes/${m[1]}`;
   if ((m = p.match(/^content\/flashcards\/([^/]+)\.json$/))) return `/flashcards/${m[1]}`;
   if ((m = p.match(/^content\/checklists\/([^/]+)\.json$/))) return `/checklists/${m[1]}`;
+  if ((m = p.match(/^content\/challenges\/([^/]+)\.json$/))) return `/challenges/${m[1]}`;
 
   // Interview questions render at /interview-questions/<tier>/<slug>; the
   // tier is only known from the file body.

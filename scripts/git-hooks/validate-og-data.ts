@@ -60,6 +60,14 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     descriptionFields: ['description'],
     slugField: 'slug',
   },
+  challenges: {
+    dir: 'content/challenges',
+    imagesDir: 'challenges',
+    extension: '.json',
+    requiredFields: ['title', 'description'],
+    descriptionFields: ['description'],
+    slugField: 'slug',
+  },
   'interview-questions': {
     dir: 'content/interview-questions',
     imagesDir: 'interview-questions',

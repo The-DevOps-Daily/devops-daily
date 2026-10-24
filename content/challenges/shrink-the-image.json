@@ -1,0 +1,77 @@
+{
+  "id": "shrink-the-image",
+  "slug": "shrink-the-image",
+  "title": "Shrink the Image",
+  "description": "A Flask app ships in a 1 GB+ image that runs as root. Rewrite the Dockerfile to get it under 200 MB, non-root and working. CI grades your PR.",
+  "summary": "A tiny Flask app ships in a container image of more than 1 GB that runs as root. Rewrite the Dockerfile so the image is under 200 MB, runs as a normal user and still works.",
+  "topic": "Docker",
+  "category": "Containers",
+  "difficulty": "starter",
+  "minutes": 30,
+  "tags": ["docker", "containers", "dockerfile", "python", "security"],
+  "situation": [
+    "The slug service is tiny: one Flask file (app.py) and three dependencies. It turns any text into a URL-friendly slug, so GET /slugify?text=Hello%20World answers {\"slug\": \"hello-world\"}.",
+    "Its container image is over 1 GB. Every deploy pulls it again, the registry bill keeps growing, and the security scanner lists hundreds of packages the app never uses. It also runs as root. Nobody has touched the Dockerfile since the first prototype."
+  ],
+  "task": [
+    "The image builds.",
+    "The image is at most 200 MB.",
+    "The container runs as a user that is not root.",
+    "It starts and answers GET /health on port 8000 within 20 seconds.",
+    "It still runs the real app with gunicorn. Leave app.py and the requirements files as they are."
+  ],
+  "checks": [
+    {
+      "id": "build",
+      "name": "The image builds",
+      "description": "docker build finishes within 10 minutes on a GitHub-hosted ubuntu-24.04 runner, with Docker's official Dockerfile frontend, pinned by the grader (no # syntax= line)."
+    },
+    {
+      "id": "size",
+      "name": "Under 200 MB",
+      "description": "The image is at most 200 MB (200,000,000 bytes), as docker image inspect reports it. python:3.13-slim with the app's dependencies is about 125 MB; the full python:3.13 base alone is over 1 GB."
+    },
+    {
+      "id": "non-root",
+      "name": "Runs as a non-root user",
+      "description": "Docker starts the image as a UID other than 0 (the grader checks with its own static id binary, so a name that maps to UID 0 does not count), and no process in the running container has UID 0."
+    },
+    {
+      "id": "starts",
+      "name": "Starts and answers /health",
+      "description": "The container, started with no extra arguments, answers GET /health on port 8000 with HTTP 200 within 20 seconds."
+    },
+    {
+      "id": "works",
+      "name": "The app still works",
+      "description": "The real app answers: GET /slugify returns the same answer as app.py for five random texts in Latin, Greek and Cyrillic letters, the error answers are Flask's, and gunicorn serves it, with no network access beyond the grader."
+    }
+  ],
+  "solutionFiles": [
+    "challenges/shrink-the-image/Dockerfile",
+    "challenges/shrink-the-image/.dockerignore"
+  ],
+  "hints": [
+    {
+      "title": "Where do the gigabytes come from?",
+      "body": "Run docker history on the current image. Compare the size of the first layers with the layers your own instructions add."
+    },
+    {
+      "title": "What does the app need at run time?",
+      "body": "Python and the packages in requirements.txt. Not a compiler, git, vim, the dev requirements, the tests or pip's download cache."
+    },
+    {
+      "title": "Who runs the process?",
+      "body": "A container runs as root unless the image says otherwise. Create a user in the image and switch to it with USER before CMD."
+    }
+  ],
+  "localTest": {
+    "intro": "From the challenge folder, with Docker installed:",
+    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\nfor i in $(seq 20); do curl -fs localhost:8000/health && break; sleep 1; done\ncurl -i localhost:8000/health\ncurl --get --data-urlencode 'text=Shrink This Image' localhost:8000/slugify\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
+  },
+  "related": {
+    "exercises": ["docker-multi-stage-build", "docker-server-deployment"],
+    "guides": ["introduction-to-docker"]
+  },
+  "publishedAt": "2026-10-24"
+}

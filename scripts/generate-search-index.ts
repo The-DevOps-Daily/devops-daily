@@ -7,6 +7,7 @@ import { getAllExercises } from '../lib/exercises.js';
 import { getAllNews } from '../lib/news.js';
 import { getActiveGames } from '../lib/games.js';
 import { getAllChecklists } from '../lib/checklists.js';
+import { getAllChallenges } from '../lib/challenges.js';
 import { getAllComparisons } from '../lib/comparisons.js';
 import { getAllFlashCardSets } from '../lib/flashcard-loader.js';
 import { getAllQuizzes } from '../lib/quiz-loader.js';
@@ -119,6 +120,14 @@ const PAGES: SearchItem[] = [
     description: 'Interactive DevOps and security checklists',
     url: '/checklists',
     icon: '✅',
+  },
+  {
+    id: 'page-challenges',
+    type: 'page',
+    title: 'Challenges',
+    description: 'Hands-on DevOps challenges graded by CI on your pull request',
+    url: '/challenges',
+    icon: '🏁',
   },
   {
     id: 'page-comparisons',
@@ -297,6 +306,21 @@ async function generateSearchIndex() {
   } catch (error) {
     console.log('  ⚠️ Could not load news items');
   }
+
+  // Add challenges
+  console.log('Adding challenges...');
+  const challenges = await getAllChallenges();
+  const challengeItems: SearchItem[] = challenges.map((challenge) => ({
+    id: `challenge-${challenge.slug}`,
+    type: 'challenge',
+    title: challenge.title,
+    description: challenge.summary,
+    url: `/challenges/${challenge.slug}`,
+    category: challenge.category,
+    tags: challenge.tags,
+  }));
+  searchIndex.push(...challengeItems);
+  console.log(`  ✓ Added ${challengeItems.length} challenges`);
 
   // Add checklists
   console.log('Adding checklists...');

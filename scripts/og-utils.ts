@@ -33,6 +33,7 @@ export const CONTENT_COVER_TYPES = [
   'comparison',
   'flashcard',
   'tool',
+  'challenge',
 ] as const;
 
 export type ContentCoverType = (typeof CONTENT_COVER_TYPES)[number];
@@ -202,6 +203,7 @@ const COVER_TYPE_LABELS: Record<ContentCoverType, string | null> = {
   comparison: 'Comparison',
   flashcard: 'Flashcards',
   tool: 'Tool',
+  challenge: 'Challenge',
 };
 
 export interface ContentCoverOptions {

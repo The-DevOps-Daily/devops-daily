@@ -8,6 +8,7 @@ import { getAllNews } from '@/lib/news';
 import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
+import { getAllChallenges } from '@/lib/challenges';
 import { interviewQuestions, getAllTopics } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
 import { getPostgresAdventDays } from '@/lib/advent-postgres';
@@ -53,6 +54,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     checklists,
     hacktoberfestDays,
     postgresAdventDays,
+    challenges,
   ] = await Promise.all([
     getAllPosts(),
     getAllCategories(),
@@ -68,6 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getAllChecklists(),
     getAllHacktoberfestDays(),
     getPostgresAdventDays(),
+    getAllChallenges(),
   ]);
 
   const latestPostDate = posts[0] ? postLastModified(posts[0]) : undefined;
@@ -208,6 +211,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Challenge routes
+  const challengeRoutes = challenges.map((challenge) => ({
+    url: `${baseUrl}/challenges/${challenge.slug}`,
+    ...withLastModified(challenge.updatedAt || challenge.publishedAt),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
   // Interview question routes
   const interviewRoutes = interviewQuestions.map((q) => ({
     url: `${baseUrl}/interview-questions/${q.tier}/${q.slug}`,
@@ -287,6 +298,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/books/devops-survival-guide',
     '/flashcards',
     '/checklists',
+    '/challenges',
     '/interview-questions',
     '/advent-of-devops',
     '/advent-of-postgres',
@@ -333,6 +345,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...gameRoutes,
     ...flashcardRoutes,
     ...checklistRoutes,
+    ...challengeRoutes,
     ...interviewRoutes,
     ...interviewTopicRoutes,
     ...adventRoutes,

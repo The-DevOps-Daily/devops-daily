@@ -23,6 +23,7 @@ import {
   GitPullRequest,
   Shirt,
   Database,
+  Swords,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -163,6 +164,13 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/exercises',
           description: 'Hands-on DevOps exercises',
           icon: Target,
+        },
+        {
+          label: 'Challenges',
+          href: '/challenges',
+          description: 'Fix a real thing, open a PR, get graded',
+          icon: Swords,
+          badge: 'New',
         },
         {
           label: 'DevOps Roadmap',

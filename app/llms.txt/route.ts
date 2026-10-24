@@ -10,13 +10,14 @@ import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
 import { getAllComparisons } from '@/lib/comparisons';
+import { getAllChallenges } from '@/lib/challenges';
 
 export const dynamic = 'force-static';
 
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
-  const [posts, categories, guides, exercises, quizzes, adventDays, news, games, flashcards, checklists] =
+  const [posts, categories, guides, exercises, quizzes, adventDays, news, games, flashcards, checklists, challenges] =
     await Promise.all([
       getAllPosts(),
       getAllCategories(),
@@ -28,6 +29,7 @@ export async function GET() {
       getActiveGames(),
       getAllFlashCardSets(),
       getAllChecklists(),
+      getAllChallenges(),
     ]);
 
   const md = `# DevOps Daily
@@ -48,6 +50,7 @@ export async function GET() {
 - [Quizzes](${baseUrl}/quizzes): Test your DevOps knowledge with interactive quizzes
 - [Flashcards](${baseUrl}/flashcards): Review key concepts with spaced-repetition flashcards
 - [Checklists](${baseUrl}/checklists): Actionable security and best-practice checklists
+- [Challenges](${baseUrl}/challenges): Hands-on tasks graded by CI on your pull request
 - [Interview Questions](${baseUrl}/interview-questions): DevOps interview prep for junior to senior
 - [News](${baseUrl}/news): Weekly curated DevOps news digests
 - [Games](${baseUrl}/games): ${games.length}+ interactive DevOps simulators and learning tools
@@ -85,6 +88,10 @@ ${flashcards.map((f) => `- [${f.title}](${baseUrl}/flashcards/${f.id}): ${f.desc
 ## Checklists
 
 ${checklists.map((c) => `- [${c.title}](${baseUrl}/checklists/${c.slug}): ${c.description || ''}`).join('\n')}
+
+## Challenges
+
+${challenges.map((c) => `- [${c.title}](${baseUrl}/challenges/${c.slug}): ${c.description} (${c.difficulty}, about ${c.minutes} minutes)`).join('\n')}
 
 ## Interview Questions
 
