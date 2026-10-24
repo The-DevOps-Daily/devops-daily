@@ -16,6 +16,12 @@
   "updatedDate": "2026-04-07T10:00:00Z",
   "estimatedReadTime": "14 min read",
   "introduction": "CI/CD is the backbone of modern software delivery, and two platforms handle the bulk of pipeline workloads in 2026: GitLab CI and GitHub Actions. Both are tightly coupled to their respective source code platforms, which means choosing one is often tied to where your code lives. But the tools are different enough in philosophy, configuration, and capability that the decision deserves a close look.\n\nGitLab CI has been part of GitLab since 2012, making it one of the earliest integrated CI/CD systems built directly into a source control platform. It uses a single .gitlab-ci.yml file at the root of your repository and follows a pipeline model with stages, jobs, and directed acyclic graph (DAG) execution. GitLab positions itself as a complete DevSecOps platform, so CI/CD is just one layer in a stack that includes container registries, security scanning, package management, and deployment environments - all under one roof.\n\nGitHub Actions launched in 2019 and took a different approach: a marketplace-driven, event-based workflow system. Instead of a monolithic pipeline definition, you define workflows triggered by GitHub events (push, pull request, issue creation, schedule, etc.) using YAML files in .github/workflows/. The real power comes from the Actions marketplace, where thousands of community-maintained and first-party actions handle everything from building Docker images to deploying to Kubernetes.\n\nThe key philosophical difference is integration depth versus ecosystem breadth. GitLab CI gives you a single platform where CI/CD, security scanning, artifact management, and deployment tracking all share the same data model. GitHub Actions gives you a flexible automation engine backed by a massive ecosystem of reusable actions and tight integration with the world's largest developer community.\n\nThis comparison walks through 12 feature dimensions, real-world use cases, and a decision framework to help you pick the platform that fits your team's workflow and constraints.",
+  "relatedLinks": [
+    {
+      "href": "/guides/introduction-to-cicd",
+      "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    }
+  ],
   "toolA": {
     "name": "GitLab CI",
     "icon": "GitBranch",

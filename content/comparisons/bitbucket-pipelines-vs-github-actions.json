@@ -17,6 +17,12 @@
   "updatedDate": "2026-04-15T10:00:00Z",
   "estimatedReadTime": "13 min read",
   "introduction": "Bitbucket Pipelines and GitHub Actions are the built-in CI/CD solutions for their respective Git platforms. Both use YAML configuration files, both run builds in containers or virtual machines, and both handle the standard build-test-deploy workflow. But the similarities end at the surface level. Under the hood, these tools differ significantly in their approach to pipeline design, ecosystem size, pricing structure, and advanced capabilities.\n\nGitHub Actions launched in 2019 and grew fast. The marketplace now has over 20,000 community-contributed actions covering everything from deploying to AWS to posting Slack notifications to generating changelogs. Actions supports Linux, macOS, and Windows runners out of the box, offers self-hosted runners for custom environments, and allows reusable workflows that can be shared across repositories. The workflow YAML syntax is event-driven - you define triggers (push, pull request, schedule, workflow dispatch) and jobs run in response.\n\nBitbucket Pipelines takes a simpler approach. Every step runs in a Docker container, which makes builds reproducible and environment management straightforward. The YAML syntax is more linear - you define a pipeline with sequential steps rather than a graph of jobs. Pipes are Bitbucket's equivalent of Actions marketplace items: pre-built integration steps for common tasks like deploying to AWS, running SonarQube scans, or sending notifications. The Pipes catalog is smaller (a few hundred vs. 20,000+) but covers the most common use cases.\n\nPricing is where teams often make their final decision. GitHub Actions gives 2,000 free minutes per month for private repositories on the Free plan, with additional minutes at $0.008/minute for Linux runners. Bitbucket's free tier includes only 50 build minutes - barely enough for a hobby project. Bitbucket Standard ($3/user/month) bumps that to 2,500 minutes and Premium ($6/user/month) to 3,500 minutes. Both platforms charge more for macOS and Windows runners.\n\nThis comparison goes deep on 10 specific areas where Pipelines and Actions differ. If you are choosing between Bitbucket and GitHub primarily for CI/CD capabilities, this is the comparison that matters.",
+  "relatedLinks": [
+    {
+      "href": "/guides/introduction-to-cicd",
+      "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    }
+  ],
   "toolA": {
     "name": "Bitbucket Pipelines",
     "icon": "GitBranch",

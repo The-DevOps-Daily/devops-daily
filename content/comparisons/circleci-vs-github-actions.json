@@ -16,6 +16,12 @@
   "updatedDate": "2026-05-19T10:00:00Z",
   "estimatedReadTime": "13 min read",
   "introduction": "CircleCI and GitHub Actions are two of the most popular CI/CD platforms in 2026, and they compete directly for the same audience: teams that want fast, reliable build pipelines without managing Jenkins or similar self-hosted systems. The interesting twist is that CircleCI integrates with GitHub repositories, so you are not choosing between source control platforms here - you are choosing between a dedicated CI/CD product and a CI/CD system bundled into your source control platform.\n\nCircleCI has been around since 2011 and has spent over a decade focused exclusively on CI/CD. That focus shows in features like Docker layer caching, resource classes for fine-grained compute control, dynamic configuration with setup workflows, and the orb ecosystem for reusable pipeline components. CircleCI treats build performance as a core product differentiator, offering features like test splitting, parallelism, and insights dashboards that help teams optimize pipeline speed.\n\nGitHub Actions arrived in 2019 and grew rapidly by being free for public repositories and deeply integrated with the GitHub platform. Its event-driven workflow model goes beyond traditional CI/CD - you can trigger workflows on issues, pull requests, releases, schedules, or custom webhook events. The Actions marketplace is massive, with thousands of community-maintained actions covering everything from code linting to cloud deployments.\n\nThe fundamental trade-off is specialization versus integration. CircleCI is a purpose-built CI/CD tool with deeper pipeline optimization features. GitHub Actions is a general-purpose automation platform that happens to be great at CI/CD and benefits from zero-friction setup if your code is already on GitHub. For teams that run thousands of builds per day and care about shaving minutes off every pipeline, CircleCI's performance tooling matters. For teams that want simple setup and tight integration with their existing GitHub workflow, Actions is hard to argue against.\n\nThis comparison examines 11 key dimensions, walks through practical use cases, and provides a decision matrix to help you choose based on your team's actual needs rather than marketing claims.",
+  "relatedLinks": [
+    {
+      "href": "/guides/introduction-to-cicd",
+      "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    }
+  ],
   "toolA": {
     "name": "CircleCI",
     "icon": "Circle",

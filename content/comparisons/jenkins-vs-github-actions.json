@@ -9,6 +9,12 @@
   "updatedDate": "2026-04-01T10:00:00Z",
   "estimatedReadTime": "13 min read",
   "introduction": "CI/CD is the backbone of modern software delivery, and the choice of CI/CD platform affects every team that ships code. Jenkins and GitHub Actions represent two fundamentally different approaches to the same problem: Jenkins is a self-hosted, infinitely extensible automation server that has been the industry standard since 2011, while GitHub Actions is a cloud-native, tightly integrated CI/CD service that launched in 2019 and has rapidly become the default for GitHub-hosted projects.\n\nJenkins 2.x, powered by its pipeline-as-code model (Jenkinsfile) and a plugin ecosystem of 1,800+ plugins, can automate virtually anything. It runs on your own infrastructure, giving you full control over compute resources, network access, and security boundaries. This flexibility comes at a cost: Jenkins requires dedicated maintenance, plugin compatibility management, and infrastructure scaling that someone on your team has to own.\n\nGitHub Actions takes the opposite approach. Workflows are defined in YAML files inside your repository, runners are managed by GitHub (or self-hosted if you need them), and the integration with GitHub's pull request, issue, and release workflows is seamless. The GitHub Marketplace offers 20,000+ community actions, and the free tier provides 2,000 minutes per month for public repositories and a generous allocation for private ones.\n\nThe CI/CD landscape in 2026 also includes GitLab CI, CircleCI, Buildkite, Dagger, and others. But Jenkins and GitHub Actions remain the two most widely adopted options, especially when you account for the massive installed base of Jenkins in enterprises and the rapid adoption of GitHub Actions by teams already on GitHub.\n\nThis comparison is aimed at engineering teams making a practical decision. We cover 12 feature dimensions, walk through specific scenarios where one tool clearly beats the other, and provide a decision matrix you can use in your next architecture review. We deliberately avoid marketing language and focus on the trade-offs you will actually encounter in production.",
+  "relatedLinks": [
+    {
+      "href": "/guides/introduction-to-cicd",
+      "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    }
+  ],
   "toolA": {
     "name": "Jenkins",
     "icon": "Server",
