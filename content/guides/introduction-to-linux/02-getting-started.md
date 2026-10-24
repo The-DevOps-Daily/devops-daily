@@ -109,7 +109,7 @@ Things to know about WSL:
 
 A small cloud VM costs a few dollars a month, often less while you have trial credits, and behaves exactly like the servers you will manage at work. Every provider follows the same steps:
 
-1. Create an account. New DigitalOcean accounts that sign up through [this referral link](https://m.do.co/c/2a9bba940f39) and add a payment method get a $200 credit valid for 60 days. AWS, Google Cloud, Azure, Hetzner and others have their own free tiers or credits.
+1. Create an account. For DigitalOcean, you can use [this DigitalOcean referral link](https://m.do.co/c/2a9bba940f39): new accounts that sign up through it get DigitalOcean's standard [sign-up credit](https://docs.digitalocean.com/platform/billing/signup-credit/) (the page lists the current amount), and you add a payment method before you create a Droplet. AWS, Google Cloud, Azure, Hetzner and others have their own free tiers or credits.
 2. Create a server (DigitalOcean calls it a **Droplet**, AWS an **EC2 instance**) with **Ubuntu 24.04 LTS** and the smallest size.
 3. Pick a region close to you.
 4. Add your **SSH public key** instead of a password. If you do not have one yet, run `ssh-keygen -t ed25519` on your computer and paste the contents of `~/.ssh/id_ed25519.pub` ([Part 6](/guides/introduction-to-linux/06-user-management) explains keys).
