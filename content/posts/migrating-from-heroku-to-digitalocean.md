@@ -342,7 +342,7 @@ doctl compute droplet create coolify-server \\
 # - NYC3 or any region
 ```
 
-[Sign up for DigitalOcean](https://m.do.co/c/2a9bba940f39) and receive $200 in credits to test Coolify risk-free.
+[Sign up for DigitalOcean](https://m.do.co/c/2a9bba940f39) (referral link) to test Coolify.
 
 **Installing Coolify**
 
@@ -1407,4 +1407,4 @@ The migration itself takes 3-4 weeks with minimal downtime when done incremental
 - Team has zero DevOps experience and no time to learn
 - You're pre-product-market-fit and optimizing for speed over cost
 
-**Get started**: [Sign up for DigitalOcean](https://m.do.co/c/2a9bba940f39) and receive $200 in credits to test your migration risk-free.
+**Get started**: [Sign up for DigitalOcean](https://m.do.co/c/2a9bba940f39) (referral link) to test your migration.

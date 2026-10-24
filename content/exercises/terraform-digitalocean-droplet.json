@@ -48,7 +48,7 @@
       ],
       "hints": [
         "Keep your API token secure - never commit it to version control",
-        "Free trial DigitalOcean accounts get $200 credit for 60 days",
+        "New DigitalOcean accounts get a sign-up credit (see DigitalOcean's docs for the current amount)",
         "Use 'echo $DIGITALOCEAN_TOKEN' to verify the variable is set (Linux/Mac)"
       ]
     },

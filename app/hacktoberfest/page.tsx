@@ -700,7 +700,7 @@ export default function HacktoberfestPage() {
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              Get $200 free credit on DigitalOcean
+              Sign up for DigitalOcean (referral link)
             </a>{' '}
             to spin up a droplet.
           </p>

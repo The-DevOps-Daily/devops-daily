@@ -218,7 +218,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                     className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 text-sm rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                   >
                     <Cloud className="w-3.5 h-3.5" />
-                    Need a server? Get $200 free credits on DigitalOcean
+                    Need a server? Try DigitalOcean (referral link)
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
@@ -306,7 +306,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                           {exercise.sponsorCta.text}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Get $200 in free credits to get started.
+                          New accounts get a sign-up credit (referral link).
                         </p>
                       </div>
                       <a

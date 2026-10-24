@@ -98,7 +98,7 @@ function SqlTerminalEducational() {
           >
             run managed PostgreSQL on DigitalOcean
           </a>{' '}
-          (new accounts get $200 in credits). Load a table or two, then re-run the lessons here against
+          (referral link; new accounts get a sign-up credit). Load a table or two, then re-run the lessons here against
           your own data.
         </p>
       </div>

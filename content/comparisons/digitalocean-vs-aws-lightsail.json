@@ -256,7 +256,7 @@
     },
     {
       "question": "Does DigitalOcean have an equivalent to the AWS Free Tier?",
-      "answer": "DigitalOcean offers a $200 credit for 60 days for new accounts, which is effectively their free trial. AWS Lightsail offers the first three months free on select plans. Neither gives you a permanent free tier, but the trial credits let you test both platforms thoroughly before committing."
+      "answer": "DigitalOcean gives new accounts a small sign-up credit (check DigitalOcean's docs for the current amount). AWS Lightsail offers the first three months free on select plans. Neither gives you a permanent free tier, but the trial credits let you test both platforms thoroughly before committing."
     },
     {
       "question": "Can I use Terraform or Pulumi with both platforms?",

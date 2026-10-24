@@ -36,7 +36,7 @@ Coolify is an open-source, self-hosted platform-as-a-service that gives you the 
 
 ## Prerequisites
 
-- A [DigitalOcean account](https://m.do.co/c/2a9bba940f39) (use this link for $200 free credit)
+- A [DigitalOcean account](https://m.do.co/c/2a9bba940f39) (referral link)
 - A domain name pointed to your server
 - Basic familiarity with SSH and the command line
 - A GitHub account with repositories you want to deploy

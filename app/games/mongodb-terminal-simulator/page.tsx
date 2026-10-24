@@ -93,7 +93,7 @@ function MongodbEducational() {
           >
             DigitalOcean
           </a>{' '}
-          (new accounts get $200 in credits), then paste the same commands into <code>mongosh</code> to
+          (referral link; new accounts get a sign-up credit), then paste the same commands into <code>mongosh</code> to
           run them for real.
         </p>
       </div>

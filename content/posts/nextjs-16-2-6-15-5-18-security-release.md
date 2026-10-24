@@ -217,7 +217,7 @@ If you self-host Next.js (or you're about to), here is what to verify alongside 
 
 Self-hosting Next.js is a real choice in 2026. You get to control the perimeter, you avoid platform lock-in, and you can size compute to your actual traffic instead of paying for cold-start headroom you do not use.
 
-[DigitalOcean App Platform](https://m.do.co/c/2a9bba940f39) is a solid landing spot if you want a managed runtime that still behaves like a server you understand. Native Next.js support, git-push deployments, predictable pricing, and you keep control over the network surface that the SSRF and DoS advisories above care about. New accounts get $200 in credits, which is enough to run a small production app for a few months while you validate the move.
+[DigitalOcean App Platform](https://m.do.co/c/2a9bba940f39) is a solid landing spot if you want a managed runtime that still behaves like a server you understand. Native Next.js support, git-push deployments, predictable pricing, and you keep control over the network surface that the SSRF and DoS advisories above care about. New accounts get a small sign-up credit (referral link), enough to try the platform while you validate the move.
 
 [Sign up for DigitalOcean](https://m.do.co/c/2a9bba940f39) if you want to test it out, or pair the App Platform with a small Droplet for the bits of your stack that need a real VM.
 
@@ -233,4 +233,4 @@ If you operate Next.js anywhere reachable from the internet, this one is not opt
 - [Next.js 15.5.18 release notes](https://github.com/vercel/next.js/releases/tag/v15.5.18)
 - [Next.js security advisories](https://github.com/vercel/next.js/security/advisories)
 - [Vercel announcement (X)](https://x.com/nextjs/status/2052489312944759202)
-- [DigitalOcean App Platform ($200 credit)](https://m.do.co/c/2a9bba940f39)
+- [DigitalOcean App Platform](https://m.do.co/c/2a9bba940f39) (referral link)

@@ -97,7 +97,7 @@ function PostgresTerminalEducational() {
           >
             run managed PostgreSQL on DigitalOcean
           </a>{' '}
-          (new accounts get $200 in credits). Load a table, run EXPLAIN before and after CREATE INDEX,
+          (referral link; new accounts get a sign-up credit). Load a table, run EXPLAIN before and after CREATE INDEX,
           and compare the plans against what you saw here.
         </p>
       </div>
