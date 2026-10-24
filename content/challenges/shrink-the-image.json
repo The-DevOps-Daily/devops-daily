@@ -67,7 +67,7 @@
   ],
   "localTest": {
     "intro": "From the challenge folder, with Docker installed:",
-    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\nsleep 3\ncurl -i localhost:8000/health\ncurl --get --data-urlencode 'text=Shrink This Image' localhost:8000/slugify\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
+    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\nfor i in $(seq 20); do curl -fs localhost:8000/health && break; sleep 1; done\ncurl -i localhost:8000/health\ncurl --get --data-urlencode 'text=Shrink This Image' localhost:8000/slugify\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
   },
   "related": {
     "exercises": ["docker-multi-stage-build", "docker-server-deployment"],
