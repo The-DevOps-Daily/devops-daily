@@ -1,377 +1,489 @@
 ---
-title: 'Functions'
-description: 'Create reusable blocks of code to make your programs more organized and modular'
+title: 'Python Functions: Arguments, Type Hints, Generators and Decorators'
+description: 'Write Python functions for ops scripts: keyword-only arguments, type hints checked by mypy, the mutable default trap, generators and a retry decorator.'
 order: 4
 ---
 
-Functions are blocks of reusable code designed to perform a specific task. They help you organize your code, make it more reusable, and break complex problems into smaller, manageable parts.
+The scripts in Part 3 work, but each one is a single block of code. As soon as you want the same check in two places, or a test for one piece, you need **functions**: named, reusable blocks that take inputs and return a result. Functions are also where Python's type hints pay off, because a checker can verify every call against the definition.
 
-## Defining and Calling Functions
+This part covers defining and calling functions, the kinds of parameters, return values, type hints and a real run of the mypy type checker, scope, functions as values, generators for batching work, recursion over nested configuration, and decorators, ending with a retry decorator you will reuse later in the guide.
 
-Here's how to define a simple function in Python:
+## Prerequisites
+
+- The `~/pyops` project from [Part 1](/guides/introduction-to-python/01-getting-started), with its virtual environment active.
+- Loops and `match` from [Part 3](/guides/introduction-to-python/03-control-flow).
+
+## Define and Call a Function
+
+`def` names a function and lists its **parameters**. The indented body runs each time you call the function, and `return` sends a value back to the caller. A string right after the `def` line is the **docstring**: it documents the function, and tools and `help()` show it.
 
 ```python
-# Define a function
-def greet():
-    print("Hello, world!")
+"""Parse durations such as 90s, 15m, 2h and 1d."""
 
-# Call the function
-greet()  # Output: Hello, world!
+UNITS = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+
+
+def parse_duration(text: str) -> int:
+    """Return the number of seconds in a duration such as '15m' or '2h'."""
+    number, unit = text[:-1], text[-1:]
+    if unit not in UNITS or not number.isdigit():
+        raise ValueError(f"bad duration {text!r}, use a number and one of s, m, h, d")
+    return int(number) * UNITS[unit]
+
+
+def format_duration(seconds: int) -> str:
+    """Return a short human form: 5400 -> '1h30m'."""
+    hours, rest = divmod(seconds, 3600)
+    minutes, secs = divmod(rest, 60)
+    text = ""
+    if hours:
+        text += f"{hours}h"
+    if minutes:
+        text += f"{minutes}m"
+    if secs or not text:
+        text += f"{secs}s"
+    return text
+
+
+if __name__ == "__main__":
+    for value in ["90s", "15m", "2h", "1d"]:
+        seconds = parse_duration(value)
+        print(f"{value:>4} = {seconds:>6} s = {format_duration(seconds)}")
+    print(parse_duration("1w"))
 ```
 
-This function doesn't take any parameters or return any values. Let's look at more complex examples.
+```terminal
+{
+  "title": "call the functions",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python durations.py",
+      "output": " 90s =     90 s = 1m30s\n 15m =    900 s = 15m\n  2h =   7200 s = 2h\n  1d =  86400 s = 24h\nTraceback (most recent call last):\n  File \"/home/dev/pyops/durations.py\", line 32, in <module>\n    print(parse_duration(\"1w\"))\n          ~~~~~~~~~~~~~~^^^^^^\n  File \"/home/dev/pyops/durations.py\", line 10, in parse_duration\n    raise ValueError(f\"bad duration {text!r}, use a number and one of s, m, h, d\")\nValueError: bad duration '1w', use a number and one of s, m, h, d"
+    }
+  ]
+}
+```
+
+`raise ValueError(...)` stops the function and reports the problem to the caller, who can handle it (Part 8 shows how). That is better than returning a special value such as `-1`, which a caller can forget to check. `divmod(a, b)` returns the quotient and the remainder at once, and the `if __name__ == "__main__":` block runs only when you run the file directly, not when another file imports it ([Part 6](/guides/introduction-to-python/06-modules-and-packages) explains why that matters).
+
+A function without a `return` (or with a bare `return`) returns `None`. Forgetting the `return` is a common bug, and the result is a confusing error somewhere else:
+
+```terminal
+{
+  "title": "a missing return",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> def disk_free_percent(free, total):\n...     percent = free / total * 100\n...\n>>> result = disk_free_percent(20, 80)\n>>> print(result)\nNone\n>>> result > 10\nTraceback (most recent call last):\n  File \"<stdin>\", line 1, in <module>\n    result > 10\nTypeError: '>' not supported between instances of 'NoneType' and 'int'\n>>> exit()"
+    }
+  ]
+}
+```
 
 ## Parameters and Arguments
 
-Parameters are variables listed in the function definition. Arguments are the values you pass to the function when calling it.
+When you call a function you can pass arguments by position or by name. A parameter with a **default value** is optional. Parameters after a bare `*` are **keyword-only**: callers must name them, which keeps calls readable when a function has several options of the same type:
 
 ```python
-# Function with parameters
-def greet_person(name):
-    print(f"Hello, {name}!")
+"""Build an ssh command line as a list of arguments."""
 
-# Call the function with an argument
-greet_person("Alice")  # Output: Hello, Alice!
-greet_person("Bob")    # Output: Hello, Bob!
+
+def ssh_command(
+    host: str,
+    command: str,
+    *,
+    user: str = "deploy",
+    port: int = 22,
+    connect_timeout: int = 10,
+) -> list[str]:
+    """Return the argument list for running command on host over SSH."""
+    return [
+        "ssh",
+        "-p", str(port),
+        "-o", f"ConnectTimeout={connect_timeout}",
+        "-o", "BatchMode=yes",
+        f"{user}@{host}",
+        command,
+    ]
+
+
+print(ssh_command("web-01", "uptime"))
+print(ssh_command("web-02", "df -h /", user="admin", port=2222))
+options = {"user": "ops", "connect_timeout": 3}
+print(ssh_command("db-01", "systemctl is-active postgresql", **options))
+print(ssh_command("web-01", "uptime", "admin"))
 ```
 
-Functions can have multiple parameters:
-
-```python
-def describe_pet(animal_type, pet_name):
-    print(f"I have a {animal_type} named {pet_name}.")
-
-describe_pet("dog", "Rex")  # Output: I have a dog named Rex.
-describe_pet("cat", "Whiskers")  # Output: I have a cat named Whiskers.
+```terminal
+{
+  "title": "positional, keyword and keyword-only",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python sshcmd.py",
+      "output": "['ssh', '-p', '22', '-o', 'ConnectTimeout=10', '-o', 'BatchMode=yes', 'deploy@web-01', 'uptime']\n['ssh', '-p', '2222', '-o', 'ConnectTimeout=10', '-o', 'BatchMode=yes', 'admin@web-02', 'df -h /']\n['ssh', '-p', '22', '-o', 'ConnectTimeout=3', '-o', 'BatchMode=yes', 'ops@db-01', 'systemctl is-active postgresql']\nTraceback (most recent call last):\n  File \"/home/dev/pyops/sshcmd.py\", line 27, in <module>\n    print(ssh_command(\"web-01\", \"uptime\", \"admin\"))\n          ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: ssh_command() takes 2 positional arguments but 3 were given"
+    }
+  ]
+}
 ```
 
-### Default Parameter Values
+The last call fails on purpose: `"admin"` cannot be passed by position, so nobody can mix up the user and, say, the port. `**options` unpacks a dictionary into keyword arguments, and `*items` unpacks a list into positional ones. Returning the command as a **list** rather than one string is deliberate; Part 8 passes such lists to `subprocess.run` without a shell, which avoids quoting bugs and injection on your machine. It does not protect the remote side: `ssh` joins its command arguments into one string that the remote user's shell interprets, so `command` must come from you, or every untrusted part of it must be quoted with `shlex.quote()`.
 
-You can specify default values for parameters, which are used when arguments aren't provided:
+Functions can also accept any number of arguments. `*args` collects extra positional arguments into a tuple and `**kwargs` collects extra keyword arguments into a dictionary. A small structured logger shows both:
 
-```python
-def greet_person(name, greeting="Hello"):
-    print(f"{greeting}, {name}!")
-
-greet_person("Alice")  # Output: Hello, Alice!
-greet_person("Bob", "Hi")  # Output: Hi, Bob!
+```terminal
+{
+  "title": "*args and **kwargs",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> def log(event, *tags, **fields):\n...     pairs = \" \".join(f\"{key}={value}\" for key, value in fields.items())\n...     print(f\"event={event} tags={','.join(tags) or '-'} {pairs}\")\n...\n>>> log(\"deploy.start\", \"prod\", \"web\", version=\"1.4.2\", replicas=3)\nevent=deploy.start tags=prod,web version=1.4.2 replicas=3\n>>> log(\"deploy.done\", duration_s=41.7)\nevent=deploy.done tags=- duration_s=41.7\n>>> exit()"
+    }
+  ]
+}
 ```
 
-### Keyword Arguments
+## Return Several Values
 
-You can use parameter names when calling functions to make your code more readable and to specify arguments in any order:
+`return a, b` returns a tuple, and the caller unpacks it:
 
-```python
-def describe_pet(animal_type, pet_name):
-    print(f"I have a {animal_type} named {pet_name}.")
-
-# Using keyword arguments
-describe_pet(animal_type="hamster", pet_name="Harry")
-describe_pet(pet_name="Harry", animal_type="hamster")  # Same result, different order
+```terminal
+{
+  "title": "return a tuple",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> def split_image(image):\n...     name, _, tag = image.rpartition(\":\")\n...     if not name or \"/\" in tag:\n...         return image, \"latest\"\n...     return name, tag\n...\n>>> split_image(\"ghcr.io/acme/api:1.4.2\")\n('ghcr.io/acme/api', '1.4.2')\n>>> split_image(\"nginx\")\n('nginx', 'latest')\n>>> repo, tag = split_image(\"localhost:5000/tools\")\n>>> repo, tag\n('localhost:5000/tools', 'latest')\n>>> exit()"
+    }
+  ]
+}
 ```
 
-## Return Values
+The last example shows why the function checks for `/` in the tag: in `localhost:5000/tools`, the colon belongs to the registry's port, not to a tag.
 
-Functions can return values using the `return` statement:
+## Type Hints and mypy
+
+The hints in `parse_duration(text: str) -> int` say that the function takes a string and returns an integer. Python does not check them at runtime, but a type checker reads them and checks every call before the code runs. The most common hints are:
+
+| Hint                 | Meaning                                    |
+| -------------------- | ------------------------------------------ |
+| `int`, `str`, `bool` | That type                                  |
+| `list[str]`          | A list of strings                          |
+| `dict[str, int]`     | A dictionary from strings to integers      |
+| `tuple[str, int]`    | A pair: a string, then an integer          |
+| `str \| None`        | A string or `None` (Python 3.10 and later) |
+| `-> None`            | The function returns nothing               |
+
+Here is a script with two bugs that Python only finds when the bad line runs, if ever:
 
 ```python
-def add_numbers(a, b):
-    return a + b
+from durations import parse_duration
 
-sum_result = add_numbers(5, 3)
-print(sum_result)  # Output: 8
+
+def find_port(services: dict[str, int], name: str) -> int | None:
+    """Return the port of a service, or None if it is unknown."""
+    return services.get(name)
+
+
+ports = {"api": 8080, "metrics": 9090}
+timeout = parse_duration(90)
+port = find_port(ports, "api")
+print(f"api on {port + 1}")
 ```
 
-A function can return multiple values as a tuple:
+[mypy](https://mypy-lang.org/) is the reference type checker. `uvx` (part of uv) runs a tool in a temporary environment without installing it into your project:
 
-```python
-def get_dimensions():
-    return 1920, 1080
-
-width, height = get_dimensions()
-print(f"Width: {width}, Height: {height}")  # Output: Width: 1920, Height: 1080
+```terminal
+{
+  "title": "mypy finds the bugs",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "uvx mypy typed.py",
+      "output": "Installed 6 packages in 75ms\ntyped.py:10: error: Argument 1 to \"parse_duration\" has incompatible type \"int\"; expected \"str\"  [arg-type]\ntyped.py:12: error: Unsupported operand types for + (\"None\" and \"int\")  [operator]\ntyped.py:12: note: Left operand is of type \"int | None\"\nFound 2 errors in 1 file (checked 1 source file)"
+    }
+  ]
+}
 ```
 
-If a function doesn't explicitly return a value, it implicitly returns `None`:
+The first error is a wrong argument type. The second is subtler: `find_port` can return `None`, and `None + 1` would crash. The fix is to handle that case (`if port is None: ...`), after which mypy knows `port` is an `int`. You will run mypy on the whole project in [Part 10](/guides/introduction-to-python/10-building-a-python-project). Other checkers that read the same hints are Pyright (used by VS Code's Pylance) and Astral's newer `ty`, which is still in beta.
 
-```python
-def no_return():
-    print("This function doesn't return anything.")
+## The Mutable Default Argument Trap
 
-result = no_return()
-print(result)  # Output: None
+Default values are created **once**, when Python runs the `def` line, not on every call. With an immutable default (a number, a string, `None`) that never matters. With a list or dictionary it does, because every call shares the same object:
+
+```terminal
+{
+  "title": "a shared default list",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> def add_tag(tag, tags=[]):\n...     tags.append(tag)\n...     return tags\n...\n>>> add_tag(\"web\")\n['web']\n>>> add_tag(\"db\")\n['web', 'db']\n>>> def add_tag(tag, tags=None):\n...     if tags is None:\n...         tags = []\n...     tags.append(tag)\n...     return tags\n...\n>>> add_tag(\"web\")\n['web']\n>>> add_tag(\"db\")\n['db']\n>>> exit()"
+    }
+  ]
+}
 ```
 
-## Variable Scope
+Use `None` as the default and create the list inside the function. Linters such as Ruff flag the mistake (rule `B006`).
 
-Variables defined inside a function have a local scope, which means they're only accessible within that function:
+## Scope: Where Names Live
 
-```python
-def my_function():
-    local_var = "I'm local"
-    print(local_var)  # This works
+Names assigned inside a function are **local**: they exist only during the call and do not affect names outside. A function can read names from the module around it, but assigning to one creates a new local name instead, unless you declare it `global`. Avoid `global` in real code; pass values in and return results, which also makes the function testable.
 
-my_function()
-# print(local_var)  # This would cause an error because local_var is not defined outside the function
+```terminal
+{
+  "title": "local and global names",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> environment = \"staging\"\n>>> def describe():\n...     return f\"deploying to {environment}\"\n...\n>>> describe()\n'deploying to staging'\n>>> def switch():\n...     environment = \"prod\"\n...     return environment\n...\n>>> switch(), environment\n('prod', 'staging')\n>>> exit()"
+    }
+  ]
+}
 ```
 
-Variables defined outside any function have a global scope:
+A function defined inside another function can read the outer function's variables, even after the outer function has returned. Such a function is a **closure**, and it is how decorators (below) keep their settings. Use `nonlocal` when the inner function must also assign to the outer variable.
 
-```python
-global_var = "I'm global"
+## Functions Are Values
 
-def my_function():
-    print(global_var)  # You can access global variables inside functions
+A function is an object like any other: you can store it in a variable, put it in a list or pass it to another function. Many built-ins take a function as the `key` that decides how to compare items. A **lambda** is a short, unnamed function written in one expression:
 
-my_function()  # Output: I'm global
+```terminal
+{
+  "title": "functions as arguments",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> disks = [(\"web-01\", 91.5), (\"db-01\", 62.0), (\"web-02\", 97.2)]\n>>> sorted(disks, key=lambda disk: disk[1], reverse=True)\n[('web-02', 97.2), ('web-01', 91.5), ('db-01', 62.0)]\n>>> max(disks, key=lambda disk: disk[1])\n('web-02', 97.2)\n>>> def is_critical(disk):\n...     return disk[1] >= 95\n...\n>>> list(filter(is_critical, disks))\n[('web-02', 97.2)]\n>>> exit()"
+    }
+  ]
+}
 ```
 
-If you want to modify a global variable inside a function, you need to use the `global` keyword:
+Note `key=is_critical` versus `key=is_critical()`: you pass the function itself, and the other function calls it.
+
+## Generators: Produce Values One at a Time
+
+A function that uses `yield` instead of `return` is a **generator**. Calling it returns an iterator that runs the body only as far as the next `yield` each time a loop asks for a value. That makes generators ideal for splitting work into batches and for reading large files, because nothing is computed (or loaded into memory) before it is needed.
+
+Here the batched rollout from Part 3 becomes three small functions. `batches()` yields one batch at a time, and `rollout()` returns as soon as a host fails, which replaces the flag and the double `break`:
 
 ```python
-counter = 0
+"""Restart hosts in batches and stop at the first failed health check."""
 
-def increment_counter():
-    global counter  # Tell Python we want to use the global counter
-    counter += 1
-    print(f"Counter: {counter}")
+from collections.abc import Callable, Iterator
 
-increment_counter()  # Output: Counter: 1
-increment_counter()  # Output: Counter: 2
-```
 
-## Docstrings
+def batches(items: list[str], size: int) -> Iterator[list[str]]:
+    """Yield consecutive slices of items, each at most size long."""
+    if size < 1:  # range() rejects 0, and a negative size would silently yield no batches
+        raise ValueError(f"batch size must be at least 1, got {size}")
+    for start in range(0, len(items), size):
+        yield items[start : start + size]
 
-Docstrings (documentation strings) explain what a function does. They help other developers (and future you) understand your code:
 
-```python
-def calculate_area(length, width):
-    """
-    Calculate the area of a rectangle.
+def rollout(hosts: list[str], size: int, restart: Callable[[str], bool]) -> str | None:
+    """Restart every host; return the first host that fails, or None."""
+    for number, batch in enumerate(batches(hosts, size), start=1):
+        print(f"batch {number}: {', '.join(batch)}")
+        for host in batch:
+            if not restart(host):
+                return host
+            print(f"  {host}: healthy")
+    return None
 
-    Args:
-        length (float): The length of the rectangle.
-        width (float): The width of the rectangle.
 
-    Returns:
-        float: The area of the rectangle.
-    """
-    return length * width
+def fake_restart(host: str) -> bool:
+    return host != "web-03"
 
-# You can access the docstring
-print(calculate_area.__doc__)
-```
 
-## \*args and \*\*kwargs
-
-Python allows you to define functions that can accept a variable number of arguments:
-
-### \*args (Positional Arguments)
-
-```python
-def sum_all(*args):
-    """Sum all the numbers passed to the function."""
-    total = 0
-    for num in args:
-        total += num
-    return total
-
-print(sum_all(1, 2, 3))  # Output: 6
-print(sum_all(1, 2, 3, 4, 5))  # Output: 15
-```
-
-### \*\*kwargs (Keyword Arguments)
-
-```python
-def print_info(**kwargs):
-    """Print information about a person."""
-    for key, value in kwargs.items():
-        print(f"{key}: {value}")
-
-print_info(name="Alice", age=30, city="New York")
-# Output:
-# name: Alice
-# age: 30
-# city: New York
-```
-
-## Lambda Functions
-
-Lambda functions are small, anonymous functions defined with the `lambda` keyword:
-
-```python
-# Regular function
-def add(a, b):
-    return a + b
-
-# Equivalent lambda function
-add_lambda = lambda a, b: a + b
-
-print(add(5, 3))       # Output: 8
-print(add_lambda(5, 3))  # Output: 8
-```
-
-Lambda functions are often used with functions like `map()`, `filter()`, and `sorted()`:
-
-```python
-# Using lambda with map
-numbers = [1, 2, 3, 4, 5]
-squared = list(map(lambda x: x**2, numbers))
-print(squared)  # Output: [1, 4, 9, 16, 25]
-
-# Using lambda with filter
-even_numbers = list(filter(lambda x: x % 2 == 0, numbers))
-print(even_numbers)  # Output: [2, 4]
-
-# Using lambda with sorted
-people = [
-    {"name": "Alice", "age": 30},
-    {"name": "Bob", "age": 25},
-    {"name": "Charlie", "age": 35}
-]
-sorted_people = sorted(people, key=lambda person: person["age"])
-print(sorted_people)
-# Output: [{'name': 'Bob', 'age': 25}, {'name': 'Alice', 'age': 30}, {'name': 'Charlie', 'age': 35}]
-```
-
-## Recursion
-
-A function can call itself, which is known as recursion. This is useful for solving problems that can be broken down into smaller, similar subproblems:
-
-```python
-def factorial(n):
-    """Calculate the factorial of a number using recursion."""
-    # Base case
-    if n == 0 or n == 1:
-        return 1
-    # Recursive case
-    else:
-        return n * factorial(n - 1)
-
-print(factorial(5))  # Output: 120 (5 * 4 * 3 * 2 * 1)
-```
-
-Be careful with recursion, as it can lead to a stack overflow if the recursion depth is too high. Python limits recursion depth to prevent this.
-
-## Practical Example: A Temperature Converter
-
-Let's build a practical temperature converter using functions:
-
-```python
-def celsius_to_fahrenheit(celsius):
-    """
-    Convert Celsius to Fahrenheit.
-
-    Args:
-        celsius (float): Temperature in Celsius.
-
-    Returns:
-        float: Temperature in Fahrenheit.
-    """
-    return (celsius * 9/5) + 32
-
-def fahrenheit_to_celsius(fahrenheit):
-    """
-    Convert Fahrenheit to Celsius.
-
-    Args:
-        fahrenheit (float): Temperature in Fahrenheit.
-
-    Returns:
-        float: Temperature in Celsius.
-    """
-    return (fahrenheit - 32) * 5/9
-
-def kelvin_to_celsius(kelvin):
-    """
-    Convert Kelvin to Celsius.
-
-    Args:
-        kelvin (float): Temperature in Kelvin.
-
-    Returns:
-        float: Temperature in Celsius.
-    """
-    return kelvin - 273.15
-
-def celsius_to_kelvin(celsius):
-    """
-    Convert Celsius to Kelvin.
-
-    Args:
-        celsius (float): Temperature in Celsius.
-
-    Returns:
-        float: Temperature in Kelvin.
-    """
-    return celsius + 273.15
-
-def convert_temperature(value, from_unit, to_unit):
-    """
-    Convert a temperature from one unit to another.
-
-    Args:
-        value (float): The temperature value to convert.
-        from_unit (str): The unit to convert from ('C', 'F', or 'K').
-        to_unit (str): The unit to convert to ('C', 'F', or 'K').
-
-    Returns:
-        float: The converted temperature.
-    """
-    # First convert to Celsius as an intermediate step
-    if from_unit == 'C':
-        celsius = value
-    elif from_unit == 'F':
-        celsius = fahrenheit_to_celsius(value)
-    elif from_unit == 'K':
-        celsius = kelvin_to_celsius(value)
-    else:
-        raise ValueError("From unit must be 'C', 'F', or 'K'")
-
-    # Then convert from Celsius to the target unit
-    if to_unit == 'C':
-        return celsius
-    elif to_unit == 'F':
-        return celsius_to_fahrenheit(celsius)
-    elif to_unit == 'K':
-        return celsius_to_kelvin(celsius)
-    else:
-        raise ValueError("To unit must be 'C', 'F', or 'K'")
-
-# Main program
-def main():
-    print("Temperature Converter")
-    print("---------------------")
-    print("Units: 'C' for Celsius, 'F' for Fahrenheit, 'K' for Kelvin")
-
-    try:
-        value = float(input("Enter the temperature value: "))
-        from_unit = input("Enter the unit to convert from (C/F/K): ").upper()
-        to_unit = input("Enter the unit to convert to (C/F/K): ").upper()
-
-        result = convert_temperature(value, from_unit, to_unit)
-        print(f"{value} {from_unit} = {result:.2f} {to_unit}")
-
-    except ValueError as e:
-        print(f"Error: {e}")
-
-# Only run the main function if this file is run directly (not imported)
 if __name__ == "__main__":
-    main()
+    hosts = ["web-01", "web-02", "web-03", "web-04", "web-05"]
+    failed = rollout(hosts, 2, fake_restart)
+    print(f"rollout stopped at {failed}" if failed else "rollout complete")
+    print(list(batches(hosts, 3)))
 ```
 
-Save this as `temperature_converter.py` and run it. This example demonstrates several key concepts:
+```terminal
+{
+  "title": "the rollout as functions",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python rollout.py",
+      "output": "batch 1: web-01, web-02\n  web-01: healthy\n  web-02: healthy\nbatch 2: web-03, web-04\nrollout stopped at web-03\n[['web-01', 'web-02', 'web-03'], ['web-04', 'web-05']]"
+    }
+  ]
+}
+```
 
-1. Function definitions with parameters and return values
-2. Docstrings
-3. Function composition (functions calling other functions)
-4. Error handling with exceptions
-5. The `if __name__ == "__main__"` pattern (more on this in the modules section)
+`Callable[[str], bool]` is the type hint for "a function that takes a string and returns a bool". Because `rollout()` receives the restart function as an argument, a test can pass a fake one, as this script does, and the real script can pass one that calls SSH or an API.
 
-## Next Steps
+## Recursion: Walk Nested Configuration
 
-Functions are a fundamental building block in Python programming. By learning functions, you've taken a significant step toward writing more organized, reusable, and maintainable code.
+A **recursive** function calls itself on a smaller piece of the problem. Nested configuration, such as a Helm values file or a JSON document, is the classic case. This function flattens it into dotted keys and then into environment variable names:
 
-In the next section, we'll explore Python's data structures, including lists, tuples, dictionaries, and sets, which will allow you to work with collections of data more effectively.
+```python
+"""Flatten nested settings into dotted keys and environment variable names."""
 
-Happy coding!
+
+def flatten(config: dict[str, object], prefix: str = "") -> dict[str, object]:
+    flat: dict[str, object] = {}
+    for key, value in config.items():
+        name = f"{prefix}{key}"
+        if isinstance(value, dict):
+            flat.update(flatten(value, f"{name}."))
+        else:
+            flat[name] = value
+    return flat
+
+
+settings = {
+    "app": {"name": "checkout", "port": 8080},
+    "db": {"host": "db-01", "pool": {"min": 2, "max": 10}},
+    "debug": False,
+}
+for key, value in flatten(settings).items():
+    env_name = key.upper().replace(".", "_")
+    print(f"{key:<12} {env_name:<12} {value}")
+```
+
+```terminal
+{
+  "title": "recursive flatten",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python flatten.py",
+      "output": "app.name     APP_NAME     checkout\napp.port     APP_PORT     8080\ndb.host      DB_HOST      db-01\ndb.pool.min  DB_POOL_MIN  2\ndb.pool.max  DB_POOL_MAX  10\ndebug        DEBUG        False"
+    }
+  ]
+}
+```
+
+Each call handles one level and hands nested dictionaries to a new call with a longer prefix. Python limits recursion depth (1,000 calls by default), which is plenty for configuration but not for walking a huge structure; use a loop with your own stack for that.
+
+## Decorators: Wrap a Function
+
+A **decorator** is a function that takes a function and returns a new one that adds behaviour around it: timing, logging, caching, retries. Writing `@retry(...)` above a `def` is shorthand for `fetch = retry(...)(fetch)`.
+
+Here is a retry decorator with exponential backoff, the loop from Part 3 made reusable. It retries only the exception types you list, and it re-raises the last error when it runs out of attempts:
+
+```python
+"""A retry decorator with exponential backoff."""
+
+import functools
+import time
+from collections.abc import Callable
+
+
+def retry[**P, R](
+    attempts: int = 3,
+    delay: float = 0.5,
+    exceptions: tuple[type[Exception], ...] = (OSError,),
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
+    """Retry the decorated function when it raises one of the given exceptions."""
+
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            for attempt in range(1, attempts):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as err:
+                    wait = delay * 2 ** (attempt - 1)
+                    print(f"{func.__name__}: {err} (attempt {attempt}/{attempts}), retrying in {wait:.1f}s")
+                    time.sleep(wait)
+            return func(*args, **kwargs)  # the last attempt: errors reach the caller
+
+        return wrapper
+
+    return decorator
+
+
+calls = 0
+
+
+@retry(attempts=4, delay=0.2, exceptions=(ConnectionError,))
+def fetch_status(service: str) -> str:
+    """Pretend to call an API that fails twice before it answers."""
+    global calls
+    calls += 1
+    if calls < 3:
+        raise ConnectionError(f"{service} refused the connection")
+    return f"{service}: ok after {calls} calls"
+
+
+if __name__ == "__main__":
+    print(fetch_status("payments"))
+    print(fetch_status.__name__, "-", fetch_status.__doc__)
+```
+
+```terminal
+{
+  "title": "a retry decorator",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python retrying.py",
+      "output": "fetch_status: payments refused the connection (attempt 1/4), retrying in 0.2s\nfetch_status: payments refused the connection (attempt 2/4), retrying in 0.4s\npayments: ok after 3 calls\nfetch_status - Pretend to call an API that fails twice before it answers."
+    }
+  ]
+}
+```
+
+How it fits together:
+
+- `retry(attempts=4, ...)` runs first and returns `decorator`, a closure that remembers the settings.
+- `decorator(fetch_status)` returns `wrapper`, which replaces the original function.
+- `functools.wraps` copies the name, docstring and other metadata onto `wrapper`, so `fetch_status.__name__`, `help()` and anything that prints the function's name still show `fetch_status`.
+- `def retry[**P, R](...)` declares type parameters (Python 3.12 syntax): `P` stands for the wrapped function's parameters and `R` for its return type, so a type checker knows that the decorated function still takes a `str` and returns a `str`.
+
+The `global calls` counter is only there to fake a flaky service; [Part 8](/guides/introduction-to-python/08-error-handling) uses the same decorator idea on real HTTP requests against a test server. For production code, the [tenacity](https://pypi.org/project/tenacity/) library offers the same thing with more options (jitter, stop after a total time, retry on results).
+
+The standard library has a few decorators you will use as is: `@functools.cache` remembers results of a function for each set of arguments (good for expensive, pure lookups), `@property` and `@dataclass` appear in [Part 9](/guides/introduction-to-python/09-object-oriented), and `@contextlib.contextmanager` in Part 8.
+
+## Common Mistakes
+
+- **Forgetting `return`.** The function returns `None`, and the error shows up somewhere else.
+- **A list or dictionary as a default value.** Use `None` and create it inside.
+- **Passing `func()` where a function is expected** (`key=len()` instead of `key=len`).
+- **Returning special values for errors** (`-1`, `""`, `False`). Raise an exception instead.
+- **Many positional parameters of the same type.** Make the options keyword-only with `*`, or group them in a dataclass (Part 9).
+- **Changing global variables from functions.** Pass values in and return results.
+- **A decorator without `functools.wraps`.** Every decorated function then reports its name as `wrapper` and loses its docstring.
+
+## Summary
+
+- `def` defines a function; `return` sends back a value, and a function without one returns `None`.
+- Parameters can be positional, keyword, defaulted, keyword-only (after `*`), or collected with `*args` and `**kwargs`.
+- Type hints document intent; mypy checks them before the code runs, and `uvx mypy` runs it without installing anything.
+- Defaults are created once: never use a mutable default.
+- Generators (`yield`) produce values lazily; they are the natural way to batch work and read big inputs.
+- Decorators wrap functions; a retry decorator with backoff is one you will reuse.
+
+Next: [Data Structures](/guides/introduction-to-python/05-data-structures), where you work with lists, dictionaries and sets of hosts and find drift between what should run and what does.
+
+## Keep Learning
+
+- [What is the quickest way to HTTP GET in Python?](/posts/what-is-the-quickest-way-to-http-get-in-python), a preview of the HTTP clients in Part 8.
+- The [mypy documentation](https://mypy.readthedocs.io/) and its cheat sheet of type hints.
