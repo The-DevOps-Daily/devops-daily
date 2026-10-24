@@ -14,6 +14,7 @@ import { difficultyLabel, CHALLENGES_REPO_URL } from '@/lib/challenge-types';
 import { detailPageMetadata } from '@/lib/metadata-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export const dynamicParams = false;
 
@@ -260,6 +261,8 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
         {relatedLinks.length > 0 && (
           <RelatedContent title="Learn the basics first" items={relatedLinks} className="mb-10" />
         )}
+
+        <InlineSponsors variant="banner" />
         {others.length > 0 && (
           <RelatedContent
             title="More challenges"
