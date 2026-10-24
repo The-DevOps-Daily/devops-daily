@@ -1,381 +1,245 @@
 ---
-title: 'Environment Variables and Secrets Management'
-description: 'Learn to manage configuration and sensitive data securely in GitHub Actions workflows using environment variables, secrets, and best practices.'
+title: 'Environment Variables, Secrets and OIDC'
+description: 'Keep configuration in GitHub Actions variables and credentials in secrets, see how masking works, and replace long-lived cloud keys with OIDC tokens.'
 order: 5
 ---
 
-Every developer has accidentally committed an API key or database password to version control at some point. It's one of those mistakes that makes your stomach drop when you realize what happened - especially if it's a production database password or an AWS key with billing access. The panic of trying to figure out who might have seen it, rotating credentials, and hoping no damage was done is something you never want to experience again.
+A workflow needs two kinds of settings that do not belong in its YAML: configuration that differs between repositories or environments, such as a site title or an API URL, and credentials, such as an API token. GitHub Actions keeps the first in **variables** and the second in **secrets**. For cloud providers there is a better option than storing any credential at all: **OIDC** lets a job prove who it is and get short-lived cloud credentials for that one job.
 
-GitHub Actions workflows need access to sensitive information like deployment credentials, API keys, and database passwords, but they also need to keep this information secure. Understanding how to handle configuration and secrets properly protects your applications, infrastructure, and users while maintaining the flexibility to deploy across different environments.
+In this part you set a variable and a secret with the GitHub CLI, see how GitHub masks secrets in logs, use the variable in the build, and look inside a real OIDC token.
 
-## The Configuration Security Spectrum
+## Prerequisites
 
-Not all configuration is equally sensitive, and understanding these differences helps you choose the right storage mechanism. Public configuration like Node.js versions, build flags, or documentation URLs can be stored as plain environment variables. Semi-private configuration like internal API endpoints or database names might reveal architectural details but won't cause security breaches. Truly sensitive information like passwords, API keys, and certificates must be stored as encrypted secrets.
+- The repository from [Part 4](/guides/introduction-to-cicd/04-working-with-artifacts-and-dependencies).
+- Admin access to it, to change its settings.
 
-GitHub Actions provides different mechanisms for each level of sensitivity. Environment variables handle public and semi-private configuration that you don't mind appearing in logs. GitHub Secrets encrypt sensitive information and mask it in logs, preventing accidental exposure.
+## Where Settings Live
 
-The key principle is that secrets should never appear in your workflow files, even if your repository is private. Workflow files are often shared, copied to other repositories, or included in documentation, creating opportunities for accidental exposure.
+| Kind                    | Where you set it                        | In the workflow                                        | Good for                                    |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------ | ------------------------------------------- |
+| `env:` in the YAML      | The workflow file                       | `$NAME` or `${{ env.NAME }}`                           | Values that are the same everywhere         |
+| Configuration variables | Repository, environment or organization | `${{ vars.NAME }}`                                     | Non-secret settings: titles, URLs, regions  |
+| Secrets                 | Repository, environment or organization | `${{ secrets.NAME }}`                                  | Tokens, passwords, keys (up to 48 KB each)  |
+| `GITHUB_TOKEN`          | Created automatically for every job     | `${{ secrets.GITHUB_TOKEN }}` or `${{ github.token }}` | Calls to the GitHub API for this repository |
+| OIDC token              | Requested by the job                    | The cloud provider's login action                      | Short-lived cloud credentials               |
 
-## Using Environment Variables Effectively
+`env:` can be set for the whole workflow, a job or a step; the narrowest one wins. A step can also set variables for the steps after it by appending `NAME=value` lines to the file in `$GITHUB_ENV`, and add directories to the `PATH` through `$GITHUB_PATH`.
 
-Environment variables in GitHub Actions work at multiple levels - workflow, job, and step - with step-level variables taking precedence over job-level, which take precedence over workflow-level. Understanding this hierarchy helps you organize configuration logically.
+Values set at more than one level follow the same idea: an environment's variable or secret overrides the repository's, which overrides the organization's.
 
-Here's a practical example of environment variable management:
+## Set a Variable and a Secret
+
+The build script reads the page title from `SITE_TITLE`. Store it as a repository variable, and create a secret for the demonstration. Piping the value in keeps it out of your shell history:
+
+```terminal
+{
+  "title": "variables and secrets",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh variable set SITE_TITLE --body \"DevOps Command Cheatsheet\"",
+      "output": "✓ Created variable SITE_TITLE for The-DevOps-Daily/guide-cicd-demo-2026-10-24"
+    },
+    {
+      "comment": "a random 32-character value; in real life, the token you were given",
+      "cmd": "openssl rand -hex 16 | gh secret set DEMO_API_TOKEN",
+      "output": "✓ Set Actions secret DEMO_API_TOKEN for The-DevOps-Daily/guide-cicd-demo-2026-10-24"
+    },
+    {
+      "comment": "secrets can be listed but never read back",
+      "cmd": "gh variable list; gh secret list",
+      "output": "NAME        VALUE                      UPDATED\nSITE_TITLE  DevOps Command Cheatsheet  less than a minute ago\nNAME            UPDATED\nDEMO_API_TOKEN  less than a minute ago"
+    }
+  ]
+}
+```
+
+The same settings are in **Settings > Secrets and variables > Actions**. GitHub encrypts secrets before storing them, and nobody can read a secret back, not even an admin; you can only replace it.
+
+## Use Them in a Workflow
+
+This manual workflow uses both, and tries to print the secret:
 
 ```yaml
-name: Multi-Environment Deployment
-
-# Workflow-level variables available to all jobs
-env:
-  NODE_VERSION: '18'
-  BUILD_ENVIRONMENT: 'development'
+name: Config and secrets
 
 on:
-  push:
-    branches: [main, develop]
   workflow_dispatch:
-    inputs:
-      target_environment:
-        description: 'Environment to deploy to'
-        required: true
-        default: 'staging'
-        type: choice
-        options: [staging, production]
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  show-config:
     runs-on: ubuntu-latest
-
-    # Job-level variables can override workflow-level ones
+    timeout-minutes: 5
     env:
-      BUILD_ENVIRONMENT: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
-      API_BASE_URL: ${{ github.ref == 'refs/heads/main' && 'https://api.example.com' || 'https://api.staging.example.com' }}
-
+      SITE_TITLE: ${{ vars.SITE_TITLE }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Show build configuration
-        run: |
-          echo "Node Version: $NODE_VERSION"
-          echo "Build Environment: $BUILD_ENVIRONMENT"
-          echo "API Base URL: $API_BASE_URL"
-          echo "Git Branch: ${{ github.ref_name }}"
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Step-level variables have highest precedence
-      - name: Build application
+      - name: Use a variable and a secret
         env:
-          NODE_ENV: production
-          BUILD_ID: ${{ github.run_number }}
-          COMMIT_SHA: ${{ github.sha }}
+          API_TOKEN: ${{ secrets.DEMO_API_TOKEN }}
         run: |
-          echo "Building with environment: $NODE_ENV"
-          echo "Build ID: $BUILD_ID"
-          echo "Commit: $COMMIT_SHA"
-
-          # Create build-time configuration
-          cat > src/config.js << EOF
-          export const config = {
-            environment: '$BUILD_ENVIRONMENT',
-            apiBaseUrl: '$API_BASE_URL',
-            buildId: '$BUILD_ID',
-            commitSha: '$COMMIT_SHA'
-          };
-          EOF
-
-          npm run build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ env.BUILD_ENVIRONMENT }}
-          path: dist/
-```
-
-This example shows how environment variables can be computed dynamically based on branch names, user inputs, and other context information. The configuration becomes part of the built application, enabling environment-specific behavior without hardcoding values.
-
-## Secrets Management Done Right
-
-GitHub Secrets provide encrypted storage for sensitive information. Secrets are encrypted at rest and only decrypted when accessed by authorized workflows. They're automatically masked in logs, so even if you accidentally try to print them, they appear as `***` instead of the actual values.
-
-Here's how to use secrets properly in a deployment workflow:
-
-```yaml
-name: Secure Deployment
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    environment: production # Use environment protection
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: production-build
-          path: dist/
-
-      - name: Deploy to AWS
-        env:
-          # Access secrets through the secrets context
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # Combine secrets with public configuration
-          AWS_REGION: us-east-1
-          S3_BUCKET: my-app-production
-        run: |
-          echo "Deploying to AWS S3..."
-          echo "Region: $AWS_REGION"
-          echo "Bucket: $S3_BUCKET"
-
-          # Configure AWS CLI with credentials
-          aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-          aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-          aws configure set region "$AWS_REGION"
-
-          # Sync files to S3
-          aws s3 sync dist/ s3://$S3_BUCKET/ --delete
-
-          # Invalidate CloudFront cache
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
-
-      - name: Update database
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: |
-          echo "Running database migrations..."
-          # Use the database connection securely
-          # Never echo the DATABASE_URL directly
-          echo "Database connection configured"
-
-          # Run migrations (example)
-          # npx prisma migrate deploy
-
-      - name: Send deployment notification
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          curl -X POST "$SLACK_WEBHOOK_URL" \
-            -H 'Content-type: application/json' \
-            --data "{\"text\":\"✅ Production deployment completed for commit ${{ github.sha }}\"}"
-```
-
-Notice how secrets are accessed through `${{ secrets.SECRET_NAME }}` and combined with public configuration. The workflow never echoes secret values directly, and all sensitive operations are contained within the steps that need them.
-
-## Environment Protection and Approval Gates
-
-GitHub Environments provide an additional layer of security for sensitive deployments. You can configure environments to require manual approval, restrict deployment to specific branches, or add time delays before deployments proceed.
-
-```yaml
-# This job uses environment protection
-deploy-production:
-  runs-on: ubuntu-latest
-  environment:
-    name: production
-    url: https://myapp.com
-
-  steps:
-    - name: Deploy to production
-      run: echo "Deploying to production..."
-```
-
-To set up environment protection:
-
-1. Go to your repository's Settings → Environments
-2. Create a "production" environment
-3. Add required reviewers who must approve deployments
-4. Restrict deployments to specific branches (like `main`)
-5. Add secrets that are only available to this environment
-
-This ensures that production deployments can't happen accidentally and provides an audit trail of who approved what deployments.
-
-## Dynamic Configuration Based on Context
-
-Sometimes you need to compute configuration values based on workflow context, Git information, or external conditions. Here's how to create dynamic configuration:
-
-```yaml
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Determine deployment configuration
-        run: |
-          # Set environment based on branch
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            echo "DEPLOY_ENV=production" >> $GITHUB_ENV
-            echo "API_URL=https://api.example.com" >> $GITHUB_ENV
-            echo "DEBUG_MODE=false" >> $GITHUB_ENV
-          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
-            echo "DEPLOY_ENV=staging" >> $GITHUB_ENV
-            echo "API_URL=https://api.staging.example.com" >> $GITHUB_ENV
-            echo "DEBUG_MODE=true" >> $GITHUB_ENV
-          else
-            echo "DEPLOY_ENV=review" >> $GITHUB_ENV
-            echo "API_URL=https://api.review.example.com" >> $GITHUB_ENV
-            echo "DEBUG_MODE=true" >> $GITHUB_ENV
+          if [ -z "$API_TOKEN" ]; then
+            echo "::error::The DEMO_API_TOKEN secret is not set"
+            exit 1
           fi
+          echo "Site title: $SITE_TITLE"
+          echo "Token length: ${#API_TOKEN}"
+          echo "Printing the token anyway: $API_TOKEN"
 
-          # Create unique deployment identifier
-          echo "DEPLOY_ID=${{ github.run_number }}-$(date +%s)" >> $GITHUB_ENV
-
-          # Set feature flags based on environment
-          if [ "$DEPLOY_ENV" = "production" ]; then
-            echo "FEATURE_NEW_UI=true" >> $GITHUB_ENV
-            echo "FEATURE_BETA_API=false" >> $GITHUB_ENV
-          else
-            echo "FEATURE_NEW_UI=true" >> $GITHUB_ENV
-            echo "FEATURE_BETA_API=true" >> $GITHUB_ENV
-          fi
-
-      - name: Show computed configuration
+      - name: Mask a value you create
         run: |
-          echo "Deploy Environment: $DEPLOY_ENV"
-          echo "API URL: $API_URL"
-          echo "Debug Mode: $DEBUG_MODE"
-          echo "Deploy ID: $DEPLOY_ID"
-          echo "Feature Flags: NEW_UI=$FEATURE_NEW_UI, BETA_API=$FEATURE_BETA_API"
+          session_id="session-$RANDOM$RANDOM"
+          echo "::add-mask::$session_id"
+          echo "Session: $session_id"
 
-      - name: Deploy with computed configuration
+  oidc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - name: Request an OIDC token and show its claims
         run: |
-          # Use the dynamically computed values
-          echo "Deploying to $DEPLOY_ENV environment..."
-          # Your deployment commands would use these environment variables
+          token=$(curl -sSf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
+          echo "::add-mask::$token"
+          jq -R 'split(".")[1] | gsub("-";"+") | gsub("_";"/") | @base64d | fromjson
+            | {iss, aud, sub, repository, ref, event_name, runner_environment}' <<< "$token"
 ```
 
-The `GITHUB_ENV` file allows you to create environment variables during workflow execution that subsequent steps can use. This enables complex configuration logic while keeping the values available throughout the workflow.
+Run it with `gh workflow run config.yml`. The first job's output:
 
-## Validating Configuration
+```terminal
+{
+  "title": "masking",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view 40064104730 --log | grep -E 'Z (Site title|Token length|Printing the token anyway|Session):' | cut -f3-",
+      "output": "2026-10-24T04:53:19.5063920Z Site title: DevOps Command Cheatsheet\n2026-10-24T04:53:19.5064811Z Token length: 32\n2026-10-24T04:53:19.5065611Z Printing the token anyway: ***\n2026-10-24T04:53:19.5413358Z Session: ***"
+    }
+  ]
+}
+```
 
-Configuration errors are a common source of deployment failures. Add validation steps to catch problems early:
+GitHub replaced the secret with `***` everywhere in the log, including the `env:` listing at the start of the step. The value created in the step was masked too, because the step registered it with `::add-mask::` before printing it. A secret that is missing is an empty string, not an error, which is why the step checks for it first.
+
+Masking has limits. It replaces the exact string, so a value you transform (base64-encode, reverse, cut in half) is printed in clear. GitHub cannot mask what it does not know is secret, such as a token you read from a file, unless you add a mask. And masking only covers logs and job summaries: a secret written to an artifact or a cache is stored as it is.
+
+Now use the variable for real. In the `build` job of `ci.yml`, pass it to the build step:
 
 ```yaml
-- name: Validate required configuration
-  run: |
-    # Check required environment variables
-    REQUIRED_VARS="NODE_VERSION API_URL DEPLOY_ENV"
-    MISSING_VARS=""
-
-    for var in $REQUIRED_VARS; do
-      if [ -z "${!var}" ]; then
-        echo "❌ Missing required variable: $var"
-        MISSING_VARS="$MISSING_VARS $var"
-      else
-        echo "✅ $var is configured"
-      fi
-    done
-
-    if [ -n "$MISSING_VARS" ]; then
-      echo "Missing required variables:$MISSING_VARS"
-      exit 1
-    fi
-
-    # Validate configuration values
-    if [[ ! "$API_URL" =~ ^https:// ]]; then
-      echo "❌ API_URL must start with https://"
-      exit 1
-    fi
-
-    if [[ ! "$DEPLOY_ENV" =~ ^(production|staging|development)$ ]]; then
-      echo "❌ DEPLOY_ENV must be production, staging, or development"
-      exit 1
-    fi
-
-    echo "✅ All configuration validation passed"
+- run: npm run build
+  env:
+    SITE_TITLE: ${{ vars.SITE_TITLE }}
 ```
 
-## Security Best Practices
+If the variable does not exist, `vars.SITE_TITLE` is empty and the build falls back to its default title.
 
-Here are essential practices for keeping your secrets secure:
+## Who Gets the Secrets
 
-**Never Log Secrets**:
+- **Pull requests from forks** get no secrets (except `GITHUB_TOKEN`, which is read-only). Otherwise anyone could open a pull request that prints them. Plan for it: steps that need a secret should be skipped or use test values in fork pull requests.
+- **Dependabot pull requests** get Dependabot secrets, a separate list under the same settings page, not your Actions secrets.
+- **Environment secrets** are released only to jobs that run in that environment, and only after its protection rules pass, such as an approval. Part 6 uses this for deployments.
+- **Organization secrets** can be limited to selected repositories.
 
-```yaml
-# Bad - never do this
-- name: Debug deployment
-  run: echo "Database password is ${{ secrets.DB_PASSWORD }}"
+Prefer the automatic `GITHUB_TOKEN` over a personal access token. It expires when the job ends, it can only access this repository, and the `permissions:` block limits it further. Part 9 covers it.
 
-# Good - secrets are automatically masked but don't risk it
-- name: Debug deployment
-  run: echo "Database connection configured: ✅"
+## OIDC Instead of Cloud Keys
+
+The classic way to deploy to a cloud is to create an access key, store it as a secret and hope it never leaks. It lives until someone rotates it, and anyone who gets it can use it from anywhere.
+
+With **OpenID Connect (OIDC)**, the job asks GitHub for a signed token that says which repository, branch, workflow and environment it is running for. The cloud provider checks the signature and the claims against a trust policy you created once, and returns credentials that expire after about an hour. No long-lived key exists.
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Job", "sub": "id-token: write", "icon": "server", "tone": "blue" },
+    { "label": "GitHub OIDC", "sub": "signed JWT", "icon": "shield", "tone": "violet" },
+    { "label": "Cloud STS", "sub": "checks sub and aud", "icon": "cloud", "tone": "amber" },
+    { "label": "Credentials", "sub": "expire in 1 hour", "icon": "lock", "tone": "green" }
+  ]
+}
 ```
 
-**Use Environment-Specific Secrets**:
+The `oidc` job above requests a token with `permissions: id-token: write` and prints a few of its claims. It masks the token itself and never prints it:
 
-```yaml
-# Instead of one DATABASE_URL secret, use environment-specific ones
-DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
-# Or
-DATABASE_URL: ${{ secrets[format('DATABASE_URL_{0}', env.DEPLOY_ENV)] }}
+```terminal
+{
+  "title": "OIDC claims",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120783604663 --log | grep 'show its claims' | cut -f3- | tail -n 9",
+      "output": "2026-10-24T04:53:22.0360194Z {\n2026-10-24T04:53:22.0361039Z   \"iss\": \"https://token.actions.githubusercontent.com\",\n2026-10-24T04:53:22.0362172Z   \"aud\": \"sts.amazonaws.com\",\n2026-10-24T04:53:22.0363353Z   \"sub\": \"repo:The-DevOps-Daily@212527617/guide-cicd-demo-2026-10-24@1431822257:ref:refs/heads/main\",\n2026-10-24T04:53:22.0364981Z   \"repository\": \"The-DevOps-Daily/guide-cicd-demo-2026-10-24\",\n2026-10-24T04:53:22.0365971Z   \"ref\": \"refs/heads/main\",\n2026-10-24T04:53:22.0366451Z   \"event_name\": \"workflow_dispatch\",\n2026-10-24T04:53:22.0366968Z   \"runner_environment\": \"github-hosted\"\n2026-10-24T04:53:22.0367451Z }"
+    }
+  ]
+}
 ```
 
-**Rotate Secrets Regularly**:
+The **`sub`** (subject) claim is what trust policies match on. Notice its format: `repo:The-DevOps-Daily@212527617/guide-cicd-demo-2026-10-24@1431822257:ref:refs/heads/main`. Since [15 July 2026](https://github.blog/changelog/2026-04-23-immutable-subject-claims-for-github-actions-oidc-tokens/), repositories created or renamed after that date get the owner and repository IDs after an `@`. The IDs never change, so if someone later creates an organization or repository with the same name, their tokens do not match your trust policy. Older repositories keep `repo:owner/name:...` unless you opt in. When a job uses an environment, the subject ends in `:environment:<name>` instead of the ref, which lets you limit cloud access to jobs that passed that environment's approval.
 
-```yaml
-# Add secret rotation reminders
-- name: Check secret age
-  run: |
-    echo "⚠️ Remember to rotate secrets regularly"
-    echo "Last deployment: $(date)"
-    echo "Consider rotating AWS keys, database passwords, and API tokens"
+The login actions of the big clouds do the token exchange for you. These steps were checked with actionlint, not run against a cloud account; the role, identity and project names are placeholders:
+
+```tabs
+{
+  "title": "OIDC login per cloud",
+  "tabs": [
+    {
+      "label": "AWS",
+      "lang": "yaml",
+      "code": "name: Deploy to AWS\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n  id-token: write\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: aws-actions/configure-aws-credentials@v6\n        with:\n          role-to-assume: arn:aws:iam::123456789012:role/cheatsheet-deploy\n          aws-region: eu-west-1\n      - run: aws sts get-caller-identity"
+    },
+    {
+      "label": "Azure",
+      "lang": "yaml",
+      "code": "name: Deploy to Azure\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n  id-token: write\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: azure/login@v3\n        with:\n          client-id: ${{ vars.AZURE_CLIENT_ID }}\n          tenant-id: ${{ vars.AZURE_TENANT_ID }}\n          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}\n      - run: az account show --query name --output tsv"
+    },
+    {
+      "label": "Google Cloud",
+      "lang": "yaml",
+      "code": "name: Deploy to Google Cloud\n\non:\n  push:\n    branches: [main]\n\npermissions:\n  contents: read\n  id-token: write\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - uses: google-github-actions/auth@v3\n        with:\n          workload_identity_provider: projects/123456789/locations/global/workloadIdentityPools/github/providers/cheatsheet\n          service_account: deployer@my-project.iam.gserviceaccount.com\n      - uses: google-github-actions/setup-gcloud@v3\n      - run: gcloud auth list"
+    }
+  ]
+}
 ```
 
-**Limit Secret Scope**:
-Use GitHub Environments to restrict which workflows can access which secrets. Production secrets should only be available to production deployment workflows.
+The IDs in the Azure example are not secret, so they are variables. On the cloud side, you trust the issuer `https://token.actions.githubusercontent.com` once, then allow a role (AWS), a federated credential (Azure) or a workload identity pool provider (Google Cloud) to be used by tokens with a specific `sub` and `aud`. For AWS, the condition of the role's trust policy for jobs in the `production` environment of the companion repository would be:
 
-## Troubleshooting Configuration Issues
-
-When configuration doesn't work as expected, here's how to diagnose problems:
-
-```yaml
-- name: Debug configuration (safe values only)
-  run: |
-    echo "=== Environment Variables ==="
-    env | grep -E '^(NODE_|API_|DEPLOY_|GITHUB_)' | sort
-
-    echo "=== GitHub Context ==="
-    echo "Repository: ${{ github.repository }}"
-    echo "Branch: ${{ github.ref_name }}"
-    echo "Event: ${{ github.event_name }}"
-    echo "Actor: ${{ github.actor }}"
-
-    echo "=== Computed Values ==="
-    echo "Build Environment: $BUILD_ENVIRONMENT"
-    echo "Deploy Environment: $DEPLOY_ENV"
-
-    # Check file system for configuration files
-    echo "=== Configuration Files ==="
-    if [ -f "src/config.js" ]; then
-      echo "Config file exists:"
-      cat src/config.js
-    else
-      echo "No config file found"
-    fi
+```json
+{
+  "StringEquals": {
+    "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+    "token.actions.githubusercontent.com:sub": "repo:The-DevOps-Daily@212527617/guide-cicd-demo-2026-10-24@1431822257:environment:production"
+  }
+}
 ```
 
-**Common Issues and Solutions**:
+Match the full subject. A wildcard such as `repo:my-org/*` lets every repository in the organization, and every branch and pull request in it, assume the role.
 
-- **Variable not set**: Check the scope (workflow/job/step level) and spelling
-- **Secret access denied**: Verify the secret exists and the workflow has permission to access it
-- **Environment-specific config not working**: Check branch names and conditions in your logic
-- **Masked values in logs**: This is normal for secrets - they're working correctly
+## Common Mistakes
 
-Understanding configuration and secrets management is crucial for building secure, flexible workflows that work across different environments. In the next section, we'll explore deployment strategies and environment management, showing how to safely deliver your applications using the configuration techniques you've learned.
+- **Secrets in the workflow file.** Anything in the repository is visible to everyone with read access, and stays in the Git history after you delete it. If it happens, rotate the secret.
+- **Printing transformed secrets.** Masking only catches the exact value.
+- **Secrets in artifacts or caches.** Masking does not apply there.
+- **One set of credentials for every environment.** Use environment secrets, so a staging job cannot read production credentials.
+- **Long-lived cloud keys.** Use OIDC wherever the provider supports it, and match the full `sub` claim.
+- **Expecting secrets in fork pull requests.** They are empty there by design.
+
+## Summary
+
+- `env:` holds fixed values, configuration variables (`vars`) hold settings, secrets (`secrets`) hold credentials.
+- GitHub masks known secret values in logs and job summaries; register other sensitive values with `::add-mask::`, and keep secrets out of artifacts and caches.
+- Fork pull requests get no secrets; environment secrets are released only after the environment's rules pass.
+- OIDC replaces stored cloud keys with credentials that expire after about an hour; new repositories have an immutable `sub` claim with IDs.
+
+In [Part 6](/guides/introduction-to-cicd/06-deployment-strategies-and-environments) you deploy the site to GitHub Pages through a protected environment that needs an approval.
+
+## Keep Learning
+
+- [Secrets Management Guide: Vault, AWS Secrets Manager, and Azure Key Vault](/posts/secrets-management-guide)
+- [You Cannot Rotate a Secret You Cannot Find](/posts/you-cannot-rotate-a-secret-you-cannot-find)
+- [Secrets Management Best Practices with HashiCorp Vault](/posts/hashicorp-vault-secrets-management-best-practices)

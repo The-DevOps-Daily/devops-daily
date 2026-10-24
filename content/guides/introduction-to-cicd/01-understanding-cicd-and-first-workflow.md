@@ -1,147 +1,221 @@
 ---
-title: 'Understanding CI/CD and Your First Workflow'
-description: 'Learn the fundamentals of CI/CD and create your first GitHub Actions workflow to automate basic development tasks.'
+title: 'What Is CI/CD? Your First GitHub Actions Workflow'
+description: 'What continuous integration, delivery and deployment mean, how GitHub Actions runs a workflow, and how to push your first workflow and read its logs.'
 order: 1
 ---
 
-Every developer has experienced the frustration of broken deployments, forgotten test runs, or code that works locally but fails in production. These problems stem from relying on human memory and manual processes for critical development tasks. When you're juggling multiple features, fighting deadlines, and context-switching between projects, it's easy to skip steps or make mistakes.
+Software breaks in boring ways. Someone forgets to run the tests before a merge, two changes that each work alone break when they meet, or a release depends on the one person who remembers the manual steps. **CI/CD** replaces those memories with automation that runs on every change.
 
-Continuous Integration and Continuous Deployment (CI/CD) solve these problems by automating the repetitive, error-prone tasks that bridge the gap between writing code and delivering value to users. Instead of hoping you remember to run tests, check code quality, and deploy correctly, automated systems handle these tasks consistently every time.
+In this part you learn what continuous integration, continuous delivery and continuous deployment mean, how GitHub Actions turns an event such as a push into a run on a fresh runner, and you push your first workflow and read its logs.
 
-## The Real Problems CI/CD Solves
+## Prerequisites
 
-Imagine working on a team where developers disappear into feature branches for weeks, then try to merge everything at once. The integration becomes a nightmare of conflicts, broken tests, and finger-pointing about whose changes broke what. Even when integration succeeds, deployment requires someone to remember dozens of manual steps, often performed under pressure with no room for mistakes.
+- A GitHub account and a new repository with only a README in it. This guide calls it `cheatsheet`; the companion repository is `The-DevOps-Daily/guide-cicd-demo-2026-10-24`.
+- Git and the [GitHub CLI](https://cli.github.com/) on your computer, logged in with `gh auth login`.
 
-This traditional approach creates bottlenecks where integration and deployment become expensive, risky events that everyone dreads. Teams spend more time fighting their development process than building features. Quality suffers because testing happens too late, and deployments are rare enough that each one feels like rolling dice.
+## CI, Continuous Delivery and Continuous Deployment
 
-CI/CD flips this model by making integration and deployment frequent, automated, and low-risk. When integration happens multiple times per day, conflicts are smaller and easier to resolve. When deployment is automated and well-tested, it becomes a non-event rather than a crisis.
+**Continuous integration (CI)** means that everyone merges small changes into the main branch often, at least daily, and that an automated build and test run checks every change before and after it is merged. Problems show up while the change is small and fresh in your mind, not weeks later in a big merge.
 
-## How Continuous Integration Actually Works
+**Continuous delivery** adds the release side: every change that passes CI produces something you can deploy, and the deployment itself is a script. A person still decides when to release, often with one click or an approval.
 
-Continuous Integration means developers merge their changes into the main codebase frequently - typically multiple times per day rather than once per week or month. Each merge triggers automated builds and tests that verify the changes work correctly and don't break existing functionality.
+**Continuous deployment** removes that last manual decision: every change that passes the pipeline goes to production automatically. The safety comes from the tests, small changes and fast rollback, not from a person watching.
 
-Here's how the traditional development flow compares to CI:
+| Practice               | What is automated                      | Who decides to release |
+| ---------------------- | -------------------------------------- | ---------------------- |
+| Continuous integration | Build and tests on every change        | Nobody releases yet    |
+| Continuous delivery    | Build, tests and the deployment script | A person approves      |
+| Continuous deployment  | Everything, up to production           | The pipeline           |
 
+This guide builds continuous delivery: every change on `main` is deployed automatically, but only after a person approves the deployment (Part 6). Removing the approval later turns it into continuous deployment.
+
+## How GitHub Actions Works
+
+GitHub Actions has five building blocks:
+
+- An **event** is something that happens in or to the repository: a push, a pull request, a schedule, a click on "Run workflow".
+- A **workflow** is a YAML file in `.github/workflows/`. Its `on:` key lists the events that start it.
+- A workflow has one or more **jobs**. Each job runs on its own **runner**. A GitHub-hosted runner is a fresh machine that GitHub creates for that job and deletes afterwards: a virtual machine, or a container for the small `ubuntu-slim` runner. Self-hosted runners are machines you manage yourself. Jobs run in parallel unless one `needs` another.
+- A job is a list of **steps** that run in order on the same runner. A step either runs shell commands (`run:`) or uses an **action** (`uses:`), a reusable piece of automation such as `actions/checkout`, which downloads your code.
+- Each execution of a workflow is a **run**, with logs for every step.
+
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "event", "label": "push to main", "sub": "event", "icon": "branch", "tone": "slate", "detail": "GitHub sends the event to every workflow whose on: key matches it." }
+    ],
+    [
+      { "id": "wf", "label": "hello.yml", "sub": "workflow", "icon": "gear", "tone": "blue", "detail": "A YAML file in .github/workflows/. One run starts for each matching event." }
+    ],
+    [
+      { "id": "job", "label": "say-hello", "sub": "job on ubuntu-latest", "icon": "server", "tone": "violet", "detail": "ubuntu-latest is a GitHub-hosted virtual machine, created for this job and deleted when it ends." }
+    ],
+    [
+      { "id": "s1", "label": "checkout", "sub": "uses: an action", "icon": "box", "tone": "green" },
+      { "id": "s2", "label": "echo", "sub": "run: a command", "icon": "cpu", "tone": "green" }
+    ]
+  ],
+  "edges": [["event", "wf", "triggers"], ["wf", "job", "starts"], ["job", "s1"], ["job", "s2"]]
+}
 ```
-Traditional Development (Weekly Merges):
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│ Developer A │    │ Developer B │    │ Developer C │
-│ works for   │    │ works for   │    │ works for   │
-│ 1 week      │    │ 1 week      │    │ 1 week      │
-└─────────────┘    └─────────────┘    └─────────────┘
-       │                   │                   │
-       └───────────────────┼───────────────────┘
-                           │
-                    ┌─────────────┐
-                    │ Integration │
-                    │ NIGHTMARE   │  ← Conflicts, broken tests, blame game
-                    └─────────────┘
 
-Continuous Integration (Daily Merges):
-┌───┐ ┌───┐ ┌───┐    ┌───┐ ┌───┐ ┌───┐    ┌───┐ ┌───┐ ┌───┐
-│ A │ │ B │ │ C │    │ A │ │ B │ │ C │    │ A │ │ B │ │ C │
-└─┬─┘ └─┬─┘ └─┬─┘    └─┬─┘ └─┬─┘ └─┬─┘    └─┬─┘ └─┬─┘ └─┬─┘
-  │     │     │        │     │     │        │     │     │
-  └─────┼─────┘        └─────┼─────┘        └─────┼─────┘
-        │                    │                    │
-   ┌─────────┐          ┌─────────┐          ┌─────────┐
-   │Auto Test│          │Auto Test│          │Auto Test│  ← Small, easy fixes
-   │& Build  │          │& Build  │          │& Build  │
-   └─────────┘          └─────────┘          └─────────┘
-     Day 1                Day 2                Day 3
-```
+## Write the First Workflow
 
-The magic happens because integration problems grow exponentially with time. If two developers work separately for a day, merging their changes is relatively straightforward. If they work separately for two weeks, integration becomes much more complex and time-consuming. CI keeps this integration debt low by addressing conflicts when they're fresh and manageable.
-
-Your automated CI system becomes a safety net that catches problems before they impact other team members. It provides rapid feedback about code quality and helps maintain high standards without slowing down development velocity.
-
-## Continuous Deployment in Practice
-
-Continuous Deployment takes CI further by automatically releasing code that passes all quality checks. This doesn't mean every code change immediately goes to users - it means your code is always in a deployable state, and you can choose when to release features.
-
-Many teams practice Continuous Delivery instead, which maintains the same automated deployment capabilities but requires manual approval for production releases. The key is having reliable, automated deployment processes that remove human error and make releases predictable.
-
-## Creating Your First GitHub Actions Workflow
-
-Let's build a simple workflow that demonstrates the core concepts without overwhelming complexity. GitHub Actions workflows are YAML files stored in your repository's `.github/workflows` directory. When GitHub detects these files, it automatically runs them based on the triggers you specify.
-
-Create `.github/workflows/hello-world.yml` in your repository:
+Clone your new repository and create the file `.github/workflows/hello.yml`. GitHub only looks for workflows in that directory, and the file name is up to you.
 
 ```yaml
-name: Hello World Workflow
+name: Hello
 
-# When should this workflow run?
-# These triggers respond to common development events
 on:
   push:
-  pull_request:
+  workflow_dispatch:
 
-# What work should be done?
-# Jobs run independently on separate virtual machines
+permissions:
+  contents: read
+
 jobs:
   say-hello:
-    # Use Ubuntu Linux for consistency and tool availability
     runs-on: ubuntu-latest
-
-    # Steps execute sequentially within each job
     steps:
-      # Download your repository's code into the virtual machine
-      - name: Get the code
-        uses: actions/checkout@v4
+      - name: Check out the repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      # Run commands just like you would locally
       - name: Say hello
-        run: echo "Hello, GitHub Actions!"
+        run: echo "Hello from GitHub Actions"
 
-      # Access information about this workflow run
-      - name: Show context information
+      - name: Show where this job runs
         run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Triggered by: ${{ github.event_name }}"
-          echo "User: ${{ github.actor }}"
+          echo "Event:  $GITHUB_EVENT_NAME"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Commit: $GITHUB_SHA"
+          echo "Runner: $RUNNER_OS $RUNNER_ARCH, $ImageOS $ImageVersion"
+          ls -A
 ```
 
-This workflow introduces the essential building blocks. The `name` gives your workflow a descriptive title that appears in GitHub's interface. The `on` section defines triggers - events that cause GitHub to execute your workflow.
+Line by line:
 
-The `jobs` section contains the actual work. Each job runs on its own virtual machine, which means jobs can run in parallel by default. The `runs-on` field specifies the operating system - Ubuntu provides a Linux environment with common development tools pre-installed.
+- `name` is what the Actions tab shows.
+- `on` lists the triggers: every `push` to any branch, and `workflow_dispatch`, which adds a "Run workflow" button (Part 2 adds inputs to it).
+- `permissions` sets what the automatic `GITHUB_TOKEN` of this run may do. `contents: read` lets it read the code and nothing else. Set it in every workflow; [Part 9](/guides/introduction-to-cicd/09-security-best-practices-and-production-patterns) explains why.
+- `jobs` holds one job, `say-hello`. `runs-on: ubuntu-latest` asks for a GitHub-hosted Linux runner.
+- The first step uses the `actions/checkout` action at major version 7. The runner starts empty, and this step clones your repository into it. `persist-credentials: false` stops it from leaving the token configured for later `git` commands, which this job does not need.
+- The other two steps run shell commands. On Linux runners, `run:` uses Bash. GitHub sets environment variables such as `GITHUB_SHA` and `RUNNER_OS` in every job, and the runner image sets `ImageOS` and `ImageVersion`.
 
-Within each job, `steps` define what happens sequentially. You can use pre-built actions (like `actions/checkout`) or run shell commands directly. The checkout action is essential because it downloads your repository's files into the otherwise empty virtual machine.
+:::note
+This guide references actions by major version tag, such as `actions/checkout@v7`, to keep the examples short. A tag can be moved to different code, so production workflows should pin each action to a full commit SHA. [Part 9](/guides/introduction-to-cicd/09-security-best-practices-and-production-patterns) shows how, and the companion repository is pinned that way.
+:::
 
-## Understanding GitHub's Context System
+## Push It and Watch the Run
 
-The workflow above demonstrates accessing GitHub's context information using expressions like `${{ github.repository }}`. This context system provides extensive information about the workflow execution, including repository details, triggering events, and environment information.
+Commit the file and push it. The push is the event that starts the workflow.
 
-Context expressions make workflows intelligent by adapting behavior based on conditions. You might run different steps for pull requests versus pushes, or change behavior based on which branch triggered the workflow. This flexibility enables sophisticated automation that responds appropriately to different situations.
+```bash
+git add .github/workflows/hello.yml
+git commit -m "Add a first workflow"
+git push
+```
 
-The double curly brace syntax `${{ }}` tells GitHub to evaluate the expression and substitute the result. This works throughout workflow files, allowing dynamic configuration that changes based on runtime conditions.
+Open the **Actions** tab of the repository to watch the run, or use the GitHub CLI from inside your clone:
 
-## Running Your First Workflow
+```terminal
+{
+  "title": "the first run",
+  "prompt": "$",
+  "steps": [
+    {
+      "comment": "list the recent runs of all workflows",
+      "cmd": "gh run list",
+      "output": "STATUS  TITLE                 WORKFLOW  BRANCH  EVENT  ID           ELAPSED  AGE\n✓       Add a first workflow  Hello     main    push   40063694804  8s       less than a minute ago"
+    },
+    {
+      "comment": "show one run: its jobs, their times and any annotations",
+      "cmd": "gh run view 40063694804",
+      "output": "✓ main Hello · 40063694804\nTriggered via push less than a minute ago\n\nJOBS\n✓ say-hello in 5s (ID 120782375744)\n\nANNOTATIONS\n- \"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"\nsay-hello: .github#1\n\n\nFor more information about the job, try: gh run view --job=120782375744\nView this run on GitHub: https://github.com/The-DevOps-Daily/guide-cicd-demo-2026-10-24/actions/runs/40063694804"
+    }
+  ]
+}
+```
 
-Commit and push the workflow file to your repository. GitHub automatically detects the new workflow and begins monitoring for trigger events. Since you configured the workflow to run on pushes, GitHub will execute it immediately when you push the commit.
+`gh run view` without an ID asks you to pick a run, and `gh run watch` follows a run until it finishes.
 
-Navigate to your repository's "Actions" tab to watch the workflow execute. GitHub provides detailed logs showing each job and step, including output from commands you run. You can expand individual steps to see exactly what happened and troubleshoot any issues.
+The run has one annotation, a notice from GitHub: the `ubuntu-latest` label is moving from Ubuntu 24.04 to Ubuntu 26.04. GitHub [announced it on 17 September 2026](https://github.blog/changelog/2026-09-17-ubuntu-26-generally-available-and-latest-migration/), and the move rolls out gradually between 19 October and 19 November 2026, so for a few weeks a job can land on either image. This run still got Ubuntu 24.04. If a tool your build needs changed between the two releases, test with `runs-on: ubuntu-26.04` first, or pin `runs-on: ubuntu-24.04` until you are ready.
 
-This visibility is crucial for understanding and debugging workflows. When problems occur, these logs tell you exactly where things went wrong. When everything works correctly, the logs confirm that each step completed as expected.
+## Read the Logs
 
-## The Execution Environment
+The log of every step is kept with the run (for 90 days by default). `gh run view --log` prints it with the job name, step name and a timestamp on every line. Here are the last lines of the step that printed the environment, with `cut` dropping the job and step columns:
 
-Each workflow job starts with a fresh virtual machine running a clean operating system installation. This isolation ensures reproducible builds and prevents workflows from interfering with each other. However, it means each job knows nothing about your code or dependencies unless you explicitly provide them.
+```terminal
+{
+  "title": "step output",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120782375744 --log | grep 'Show where this job runs' | cut -f3- | tail -n 7",
+      "output": "2026-10-24T04:47:00.8552682Z Event:  push\n2026-10-24T04:47:00.8553580Z Branch: main\n2026-10-24T04:47:00.8554362Z Commit: dca60e9a75bb6a2dd7f14f6ac13771a7f94b48b7\n2026-10-24T04:47:00.8555116Z Runner: Linux X64, ubuntu24 20261012.334.1\n2026-10-24T04:47:00.8563485Z .git\n2026-10-24T04:47:00.8564145Z .github\n2026-10-24T04:47:00.8564664Z README.md"
+    }
+  ]
+}
+```
 
-The `actions/checkout` action solves the most basic need by downloading your repository's code. Without this step, your workflow would run in an empty environment with no access to your project files. This explicit step might seem redundant, but it provides control over which version of your code gets used and how it's configured.
+The workspace contains only what `actions/checkout` downloaded: `.git`, `.github` and the README. Nothing from earlier runs or other jobs is there.
 
-GitHub provides substantial computing resources for workflow execution. Public repositories get unlimited minutes, while private repositories have monthly quotas based on your GitHub plan. The virtual machines are powerful enough for most development tasks, including building applications, running tests, and deploying to cloud services.
+The "Set up job" step at the top of every log tells you what the job ran on. This part of it names the runner version, the image and the token permissions:
 
-## What You've Accomplished
+```terminal
+{
+  "title": "set up job",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120782375744 --log | grep 'Set up job' | cut -f3- | sed -n '1p;16,27p'",
+      "output": "2026-10-24T04:46:59.5293799Z Current runner version: '2.338.0'\n2026-10-24T04:46:59.5331209Z ##[group]Runner Image\n2026-10-24T04:46:59.5331805Z Image: ubuntu-24.04\n2026-10-24T04:46:59.5332327Z Version: 20261012.334.1\n2026-10-24T04:46:59.5333376Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md\n2026-10-24T04:46:59.5335067Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334\n2026-10-24T04:46:59.5336010Z ##[endgroup]\n2026-10-24T04:46:59.5337160Z ##[group]GITHUB_TOKEN Permissions\n2026-10-24T04:46:59.5339707Z Contents: read\n2026-10-24T04:46:59.5340596Z Metadata: read\n2026-10-24T04:46:59.5341230Z ##[endgroup]\n2026-10-24T04:46:59.5343321Z Secret source: Actions\n2026-10-24T04:46:59.5344274Z Cache mode: write"
+    }
+  ]
+}
+```
 
-You've created a working GitHub Actions workflow and understand the fundamental concepts of triggers, jobs, and steps. This foundation supports everything else you'll build with CI/CD automation.
+The image link leads to the full list of preinstalled software for that image version: Node.js, Python, Java, Go, Docker, the cloud CLIs and many more. The token permissions match the `permissions:` block of the workflow.
 
-The simple workflow you created might not seem impressive, but it demonstrates the core pattern that powers sophisticated automation: responding to development events with automated tasks. Whether you're running tests, building applications, or deploying to production, you'll use the same basic structure of triggers, jobs, and steps.
+## The Runner
 
-## Common Workflow Patterns
+On GitHub-hosted runners, every job starts on a clean machine (a virtual machine, or a container for `ubuntu-slim`), and the machine is deleted when the job ends. That makes runs repeatable, but it also means a job knows nothing about earlier jobs: anything you want to keep, such as dependencies or the built app, has to be cached or uploaded (Part 4).
 
-Most workflows follow recognizable patterns based on their purpose. A testing workflow typically checks out code, sets up the runtime environment, installs dependencies, and runs tests. A deployment workflow might download build artifacts, configure target environments, and deploy applications.
+GitHub-hosted runners for public repositories have 4 vCPUs on Linux and Windows. These are the labels you will use in this guide (October 2026):
 
-Understanding these patterns helps you design workflows that other developers will recognize and maintain. You're not just writing automation scripts - you're creating infrastructure that supports your team's development process using established conventions.
+| Label              | Machine                                          |
+| ------------------ | ------------------------------------------------ |
+| `ubuntu-latest`    | Ubuntu 24.04, moving to 26.04, x64               |
+| `ubuntu-24.04-arm` | Ubuntu 24.04 on arm64                            |
+| `windows-latest`   | Windows Server 2025, x64                         |
+| `macos-latest`     | macOS 26 on Apple silicon (arm64)                |
+| `ubuntu-slim`      | 1 vCPU container for small jobs, 15-minute limit |
 
-In the next section, we'll explore these building blocks in more detail, including advanced trigger configurations, job dependencies, and the marketplace of pre-built actions. You'll learn to create more sophisticated workflows that handle real development scenarios.
+In public repositories, these standard runners are free. In private repositories, they use the minutes included in your plan, then cost per minute; the [overview](/guides/introduction-to-cicd#h2-what-it-costs) lists the prices.
+
+## Common Mistakes
+
+- **The file is in the wrong place.** Workflows must be in `.github/workflows/` at the root of the repository, with a `.yml` or `.yaml` extension. Anywhere else, GitHub ignores them silently.
+- **Tabs in YAML.** YAML indentation must be spaces. Part 2 shows how to check a workflow before you push it.
+- **Forgetting the checkout.** Without `actions/checkout`, the runner has none of your files.
+- **Expecting state to survive.** Files, installed packages and environment variables are gone when the job ends.
+- **Leaving out `permissions`.** Without it, the token gets the repository's default permissions, which can include write access.
+
+## Summary
+
+- Continuous integration builds and tests every change; continuous delivery makes every passing change deployable by script; continuous deployment releases it automatically.
+- An event starts a workflow, the workflow runs jobs on fresh runners, and each job runs its steps in order.
+- `gh run list`, `gh run view` and `gh run view --log` show runs, jobs and logs from the terminal.
+- `ubuntu-latest` is moving to Ubuntu 26.04 between 19 October and 19 November 2026.
+
+In [Part 2](/guides/introduction-to-cicd/02-workflow-anatomy-and-core-concepts) you extend this workflow with filters, manual inputs, a second job and a job output.
+
+## Keep Learning
+
+- [CI/CD Fundamentals Quiz](/quizzes/cicd-fundamentals-quiz)
+- [CI/CD Concepts flashcards](/flashcards/cicd-concepts)
+- [Interview question: CI/CD pipeline stages](/interview-questions/junior/cicd-pipeline-stages)
+- [Jenkins vs GitHub Actions](/comparisons/jenkins-vs-github-actions)

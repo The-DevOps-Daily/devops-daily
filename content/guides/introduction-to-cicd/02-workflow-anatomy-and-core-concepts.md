@@ -1,263 +1,253 @@
 ---
-title: 'Workflow Anatomy and Core Concepts'
-description: 'Deep dive into GitHub Actions workflow structure, triggers, jobs, and the action marketplace to build robust automation.'
+title: 'Workflow Syntax: Triggers, Jobs, Steps and Expressions'
+description: 'How a GitHub Actions workflow file works: triggers and filters, manual inputs, jobs and needs, job outputs, contexts, expressions and if conditions.'
 order: 2
 ---
 
-Understanding how GitHub Actions workflows fit together is like learning the grammar of automation. Once you grasp how workflows, jobs, steps, and actions work together, you can express complex automation ideas clearly and build systems that other developers can easily understand and maintain.
+Part 1's workflow ran one job on every push. Real workflows decide when to run, take inputs, split work into jobs that depend on each other and pass values between them. This part covers the syntax for all of that by extending `hello.yml` into two jobs that share a message, and shows how to check a workflow for mistakes before you push it.
 
-The key insight is that GitHub Actions mirrors how you naturally think about development tasks. You have high-level goals (like "deploy the application"), which break down into logical phases (like "build", "test", "deploy"), which further break down into specific actions (like "install dependencies", "run tests", "upload files"). This hierarchy makes workflows intuitive once you understand the structure.
+## Prerequisites
 
-## How Workflows Are Actually Structured
+- The repository from [Part 1](/guides/introduction-to-cicd/01-understanding-cicd-and-first-workflow) with `.github/workflows/hello.yml`.
+- Optional: [actionlint](https://github.com/rhysd/actionlint) to check workflows locally. With [shellcheck](https://www.shellcheck.net/) installed, it also checks the scripts in `run:` steps.
 
-Every GitHub Actions workflow follows a predictable hierarchy that reflects real development processes. At the top, you have a workflow that responds to specific events. Within that workflow, you define jobs that represent major phases of work. Each job contains steps that perform individual tasks.
+## The New hello.yml
 
-Here's the hierarchy structure:
-
-```
-Workflow: "Build and Deploy Application"
-├── Triggers: [push, pull_request, schedule]
-├── Environment Variables: NODE_VERSION=18
-│
-├── Job: "quality-check" (runs-on: ubuntu-latest)
-│   ├── Step: "Checkout code"
-│   ├── Step: "Setup Node.js"
-│   ├── Step: "Install dependencies"
-│   ├── Step: "Run tests"
-│   └── Step: "Run linting"
-│
-├── Job: "build" (needs: quality-check)
-│   ├── Step: "Checkout code"
-│   ├── Step: "Setup Node.js"
-│   ├── Step: "Install dependencies"
-│   ├── Step: "Build application"
-│   └── Step: "Upload artifacts"
-│
-└── Job: "deploy" (needs: build)
-    ├── Step: "Download artifacts"
-    ├── Step: "Deploy to staging"
-    └── Step: "Run smoke tests"
-```
-
-And here's how jobs can run in parallel or sequence:
-
-```
-Parallel Execution (default):
-┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-│    Job A    │  │    Job B    │  │    Job C    │
-│   (tests)   │  │   (lint)    │  │   (build)   │
-└─────────────┘  └─────────────┘  └─────────────┘
-      │                │                │
-      └────────────────┼────────────────┘
-                       │
-              ┌─────────────┐
-              │   Finish    │
-              │  Together   │
-              └─────────────┘
-
-Sequential Execution (with needs):
-┌─────────────┐
-│    Job A    │
-│   (tests)   │
-└─────────────┘
-      │
-      ▼
-┌─────────────┐
-│    Job B    │
-│   (build)   │  ← waits for Job A
-└─────────────┘
-      │
-      ▼
-┌─────────────┐
-│    Job C    │
-│  (deploy)   │  ← waits for Job B
-└─────────────┘
-```
-
-Let's examine a workflow that demonstrates these concepts in action:
+Replace the workflow with this version:
 
 ```yaml
-name: Build and Deploy Application
+name: Hello
 
-# Control exactly when this workflow runs
-# Precision here prevents wasted resources and noise
 on:
   push:
-    # Only run for important branches
-    branches: [main, develop]
-    # Ignore documentation changes that don't affect the build
+    branches: [main]
     paths-ignore:
       - '**.md'
-      - 'docs/**'
-
-  pull_request:
-    branches: [main]
-    # Only run when code actually changes
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'package-lock.json'
-
-  # Allow manual execution with parameters
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Where to deploy'
-        required: true
-        default: 'staging'
-        type: choice
-        options: [staging, production]
+      name:
+        description: Who to greet
+        type: string
+        default: world
+      shout:
+        description: Print the greeting in capitals
+        type: boolean
+        default: false
 
-# Configuration that applies to all jobs
+permissions:
+  contents: read
+
 env:
-  NODE_VERSION: '18'
+  GREETING: Hello
 
 jobs:
-  # First job: validate code quality
-  quality-check:
+  greet:
     runs-on: ubuntu-latest
-
-    # This job creates outputs that other jobs can use
+    timeout-minutes: 5
     outputs:
-      tests-passed: ${{ steps.test.outputs.passed }}
-
+      message: ${{ steps.compose.outputs.message }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check code style
-        run: npm run lint
-
-      - name: Run tests
-        id: test
+      - name: Compose the message
+        id: compose
+        env:
+          NAME: ${{ inputs.name || 'world' }}
+          SHOUT: ${{ inputs.shout }}
         run: |
-          npm test
-          echo "passed=true" >> $GITHUB_OUTPUT
+          message="$GREETING, $NAME!"
+          if [ "$SHOUT" = "true" ]; then
+            message="${message^^}"
+          fi
+          echo "message=$message" >> "$GITHUB_OUTPUT"
 
-  # Second job: build the application
-  # This only runs if quality checks pass
-  build:
+  report:
+    needs: greet
     runs-on: ubuntu-latest
-    needs: quality-check
-    # Skip build if it's just a documentation change
-    if: needs.quality-check.outputs.tests-passed == 'true'
-
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - name: Print the message
+        env:
+          MESSAGE: ${{ needs.greet.outputs.message }}
+        run: echo "$MESSAGE"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build application
-        run: npm run build
-
-      # Save the build output for other jobs
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: application-build
-          path: dist/
-
-  # Third job: deploy if everything worked
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [quality-check, build]
-    # Only deploy from main branch or manual triggers
-    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: application-build
-          path: dist/
-
-      - name: Deploy to environment
-        run: |
-          echo "Deploying to ${{ github.event.inputs.environment || 'staging' }}"
-          # Your deployment commands would go here
+      - name: Runs only when started by hand
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "Started from the Actions tab or with gh workflow run"
 ```
 
-This example shows how jobs depend on each other using the `needs` keyword, creating a pipeline where later stages only run if earlier stages succeed. The `if` conditions demonstrate how to make jobs conditional based on context like branch names or previous job results.
+The two jobs and the value that flows between them:
 
-## Workflow Triggers
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "push or dispatch", "sub": "with inputs", "icon": "branch", "tone": "slate" },
+    { "label": "greet", "sub": "writes $GITHUB_OUTPUT", "icon": "gear", "tone": "blue" },
+    { "label": "outputs.message", "sub": "a string", "icon": "box", "tone": "violet" },
+    { "label": "report", "sub": "needs: greet", "icon": "check", "tone": "green" }
+  ]
+}
+```
 
-Workflow triggers determine when GitHub executes your automation. Understanding triggers helps you build efficient workflows that run when needed without wasting resources or creating noise.
+## Triggers
 
-Push triggers form the backbone of continuous integration, running whenever someone pushes commits to specified branches. However, you can fine-tune them to avoid unnecessary runs. The `paths` filter ensures workflows only run when relevant files change, while `branches` restricts execution to important branches.
+The `on:` key decides when the workflow runs. This version narrows the `push` trigger with two filters: `branches: [main]` ignores pushes to other branches, and `paths-ignore` skips pushes that change only Markdown files. `paths` does the opposite and runs only when matching files change. Both filters also work on `pull_request`.
 
-Pull request triggers enable code review workflows that run when developers propose changes. These workflows often focus on testing and validation rather than deployment, helping maintain code quality before changes reach main branches.
+These are the triggers you will use most:
 
-The `workflow_dispatch` trigger enables manual workflow execution through GitHub's interface. This proves invaluable for deployment workflows or maintenance tasks that need human approval. The inputs system lets you collect parameters from users, making manual workflows flexible and reusable.
+| Trigger               | Runs when                                                   | Used in this guide              |
+| --------------------- | ----------------------------------------------------------- | ------------------------------- |
+| `push`                | Commits are pushed to a branch or a tag is pushed           | Parts 1, 2 and 6                |
+| `pull_request`        | A pull request is opened, updated or reopened               | Part 3                          |
+| `workflow_dispatch`   | Someone clicks "Run workflow" or runs `gh workflow run`     | Parts 2 and 5                   |
+| `schedule`            | A cron schedule matches (UTC unless you set `timezone`)     | Not used; see the note below    |
+| `workflow_call`       | Another workflow calls this one as a reusable workflow      | Part 7                          |
+| `merge_group`         | A pull request enters a merge queue                         | Part 7                          |
+| `pull_request_target` | Like `pull_request`, but with the base repository's secrets | Part 9 explains why to avoid it |
 
-Schedule triggers use cron syntax for time-based execution, enabling practices like nightly builds that test against fresh dependencies or generate regular reports. These workflows help catch environmental issues that don't appear during normal development.
+`workflow_dispatch` takes up to 25 inputs (the limit was 10 until [December 2025](https://github.blog/changelog/2025-12-04-actions-workflow-dispatch-workflows-now-support-25-inputs/)) of type `string`, `boolean`, `choice`, `number` or `environment`. The "Run workflow" button only appears once the workflow file is on the default branch.
 
-## Job Dependencies and Parallel Execution
+A `schedule` runs on the default branch, at most every 5 minutes, and is often delayed a few minutes at busy times such as the top of the hour. Since March 2026 you can add a `timezone`, for example `timezone: 'Europe/Berlin'` next to `cron: '30 5 * * 1-5'`. In a public repository, GitHub disables scheduled workflows after 60 days without any repository activity.
 
-By default, all jobs in a workflow run in parallel, maximizing efficiency by using multiple virtual machines simultaneously. This works well when jobs are independent, but real workflows often need sequential execution where later jobs depend on earlier ones completing successfully.
+## Jobs, Needs and Outputs
 
-The `needs` keyword creates explicit dependencies between jobs. When you specify `needs: quality-check`, that job waits for the quality-check job to complete before starting. If the dependency fails, the dependent job is skipped unless you override this behavior with conditional expressions.
+Jobs run in parallel by default. `needs: greet` makes `report` wait for `greet`, and skips `report` if `greet` fails. `timeout-minutes` stops a job that hangs; the default is 360 minutes (6 hours), or less where the runner has a lower limit, such as 15 minutes on `ubuntu-slim`.
 
-Job dependencies also enable data flow through outputs. Jobs can create outputs using the `GITHUB_OUTPUT` file, and other jobs can access these values using expressions like `needs.quality-check.outputs.tests-passed`. This creates communication channels that let jobs share information and make decisions based on earlier results.
+A job can pass strings to later jobs in three steps:
 
-Consider the efficiency implications of your job structure. Running tests and builds in parallel saves time, but you might want to avoid expensive deployment jobs if tests fail. The key is balancing speed with resource efficiency.
+1. A step with an `id` (`compose`) writes `name=value` lines to the file in `$GITHUB_OUTPUT`.
+2. The job maps that step output to a job output: `message: ${{ steps.compose.outputs.message }}`.
+3. A job that `needs` it reads `${{ needs.greet.outputs.message }}`.
 
-## The Action Marketplace Ecosystem
+Job outputs are always strings. For structured data, write JSON and read it with `fromJSON()`. For files, use artifacts (Part 4).
 
-GitHub Actions gains much of its power from the marketplace - a collection of pre-built automation components that handle common tasks. Instead of writing shell scripts for every operation, you can use tested, maintained actions that provide consistent interfaces and handle edge cases.
+## Contexts and Expressions
 
-The most essential action is `actions/checkout`, which downloads your repository code into the workflow's virtual machine. Without this action, workflows run in empty environments with no access to your project files. The action handles authentication, git configuration, and various checkout scenarios automatically.
+Anything inside `${{ }}` is an **expression** that GitHub evaluates before the step runs. Expressions read **contexts**: `github` (the event, ref, SHA, repository), `env`, `vars` and `secrets` (Part 5), `inputs`, `needs`, `steps`, `matrix` (Part 3), `runner` and `job`. Operators such as `==`, `&&`, `||` and `!` and functions such as `contains()`, `startsWith()`, `format()`, `toJSON()`, `fromJSON()` and `hashFiles()` work inside them. Since January 2026 there is also `case()`, which returns the value of the first true condition:
 
-Language-specific setup actions like `actions/setup-node`, `actions/setup-python`, or `actions/setup-java` install runtime environments and configure toolchains. These actions provide consistent environments across different operating systems and handle details like package manager caching.
+```yaml
+env:
+  TARGET: ${{ case(github.ref == 'refs/heads/main', 'production', 'development') }}
+```
 
-When choosing actions from the marketplace, prioritize those maintained by GitHub or well-known organizations. Check the action's documentation, usage statistics, and update frequency. Popular actions with active maintenance are generally safer choices than obscure or abandoned ones.
+`${{ inputs.name || 'world' }}` uses `||` to fall back to `world` on a push, where there are no inputs.
 
-## Action Versioning for Stability
+Notice that the workflow never writes `${{ inputs.name }}` directly into the shell script. It passes the value through `env:` and the script uses `$NAME`. GitHub pastes expressions into the script text before Bash runs it, so a value such as `"; rm -rf ~; echo "` would become code. Through an environment variable it stays data. [Part 9](/guides/introduction-to-cicd/09-security-best-practices-and-production-patterns) covers this **script injection** problem.
 
-Always specify action versions explicitly rather than using default branches. Version tags like `@v4` ensure your workflows remain stable even if action maintainers introduce breaking changes. Major version tags typically receive bug fixes while avoiding breaking changes.
+## Conditions
 
-For security-sensitive workflows, consider pinning actions to specific commit hashes rather than version tags. This prevents supply chain attacks where malicious code could be introduced through action updates, though it requires more maintenance to receive security fixes.
+`if:` decides whether a job or step runs. It is an expression, so `${{ }}` is optional there. The last step of `report` runs only for manual runs.
 
-Understanding action versioning helps you balance stability with receiving updates. Most teams use major version tags for the convenience of automatic bug fixes while avoiding the maintenance overhead of commit pinning.
+By default, a step runs only if all earlier steps succeeded. Status functions change that:
 
-## Environment Variables and Context
+| Condition             | The step runs when                                                    |
+| --------------------- | --------------------------------------------------------------------- |
+| `success()` (default) | Every earlier step succeeded                                          |
+| `failure()`           | An earlier step failed                                                |
+| `always()`            | Always, even when the run is canceled                                 |
+| `!cancelled()`        | Always, unless the run is canceled; usually what you want for reports |
 
-GitHub provides extensive context information through built-in environment variables and expressions. This context helps workflows make intelligent decisions and provide useful information in logs and notifications.
+`continue-on-error: true` on a step lets the job go on after that step fails, and the job still counts as successful. Use it rarely: it hides failures.
 
-Context includes details about the repository, the triggering event, the user who initiated it, and the current execution environment. You can use this information to customize workflow behavior, such as enabling debug mode for pull requests or selecting deployment targets based on branch names.
+## Run It by Hand
 
-Environment variables work at multiple scopes within workflows. Workflow-level variables are available to all jobs, job-level variables are available to all steps in that job, and step-level variables are available only to that specific step. This scoping helps organize configuration and prevents variable conflicts.
+Push the new file, then start a manual run with both inputs:
 
-## Error Handling and Workflow Control
+```terminal
+{
+  "title": "workflow_dispatch",
+  "prompt": "$",
+  "steps": [
+    {
+      "comment": "start the workflow with inputs; the command prints the new run",
+      "cmd": "gh workflow run hello.yml -f name=\"GitHub Actions\" -f shout=true",
+      "output": "https://github.com/The-DevOps-Daily/guide-cicd-demo-2026-10-24/actions/runs/40063790832"
+    },
+    {
+      "cmd": "gh run list --workflow hello.yml",
+      "output": "STATUS  TITLE                   WORKFLOW  BRANCH  EVENT              ID           ELAPSED  AGE\n✓       Hello                   Hello     main    workflow_dispatch  40063790832  12s      less than a minu...\n✓       Pass a message betw...  Hello     main    push               40063759857  13s      less than a minu...\n✓       Add a first workflow    Hello     main    push               40063694804  8s       about 1 minute ago"
+    },
+    {
+      "comment": "the report job printed the message it got from greet",
+      "cmd": "gh run view --job 120782683217 --log | grep 'Print the message' | cut -f3- | tail -n 1",
+      "output": "2026-10-24T04:48:36.3242222Z HELLO, GITHUB ACTIONS!"
+    }
+  ]
+}
+```
 
-Understanding how GitHub Actions handles errors is crucial for building reliable workflows. By default, if any step in a job fails, the entire job stops and is marked as failed. This fail-fast behavior prevents workflows from continuing with invalid state.
+The `greet` job composed the message from the inputs, and `report` printed it. On the push run, the last step was skipped because the event was `push`. `gh run view --job` shows skipped steps with a dash:
 
-The `continue-on-error` keyword at the step level allows workflows to continue even if that step fails. This is useful for steps like uploading test results that shouldn't stop the workflow if they encounter problems. However, use this carefully to avoid masking important failures.
+```terminal
+{
+  "title": "a skipped step",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120782594172",
+      "output": "✓ main Hello · 40063759857\nTriggered via push about 1 minute ago\n\n✓ report in 2s (ID 120782594172)\n  ✓ Set up job\n  ✓ Print the message\n  - Runs only when started by hand\n  ✓ Complete job\n\nANNOTATIONS\n- \"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\"\nreport: .github#1\n\n\nTo see the full job log, try: gh run view --log --job=120782594172\nView this run on GitHub: https://github.com/The-DevOps-Daily/guide-cicd-demo-2026-10-24/actions/runs/40063759857"
+    }
+  ]
+}
+```
 
-Job-level conditions using `if` statements let you control when jobs run based on the success or failure of previous jobs. This enables patterns like running cleanup jobs even when builds fail or sending different notifications based on workflow outcomes.
+## Check a Workflow Before You Push
 
-## Building Intuitive Workflows
+A typo in a workflow often shows up only when the run fails, or worse, when a condition silently never matches. **actionlint** checks workflow files locally: YAML structure, expressions, job dependencies, input names, and with shellcheck, the scripts in `run:`. Here it is on a copy of `hello.yml` with three typical mistakes: `needs: gret`, `inputs.nmae` and an unquoted `$MESSAGE`:
 
-As you work with GitHub Actions, you'll develop mental models for common patterns. A typical CI workflow follows the pattern of checkout, setup environment, install dependencies, run tests, and build artifacts. Deployment workflows often follow download artifacts, deploy to environment, and verify deployment patterns.
+```terminal
+{
+  "title": "actionlint",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "actionlint -version",
+      "output": "1.7.12\ninstalled by downloading from release page\nbuilt with go1.26.1 compiler for linux/arm64"
+    },
+    {
+      "cmd": "actionlint",
+      "output": ".github/workflows/hello.yml:23:21: property \"nmae\" is not defined in object type {name: string} [expression]\n   |\n23 |           NAME: ${{ inputs.nmae }}\n   |                     ^~~~~~~~~~~\n.github/workflows/hello.yml:26:3: job \"report\" needs job \"gret\" which does not exist in this workflow [job-needs]\n   |\n26 |   report:\n   |   ^~~~~~~\n.github/workflows/hello.yml:32:24: property \"greet\" is not defined in object type {} [expression]\n   |\n32 |           MESSAGE: ${{ needs.greet.outputs.message }}\n   |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~\n.github/workflows/hello.yml:33:9: shellcheck reported issue in this script: SC2086:info:1:6: Double quote to prevent globbing and word splitting [shellcheck]\n   |\n33 |         run: echo $MESSAGE\n   |         ^~~~"
+    }
+  ]
+}
+```
 
-These patterns exist because they reflect natural software development processes. Understanding and following established patterns makes your workflows easier for other developers to understand and maintain. You're not just writing automation - you're encoding your team's development practices in a maintainable way.
+actionlint found all three, plus a follow-up error: `needs.greet` is not available because `report` does not need `greet`. On the real `hello.yml` it prints nothing and exits with status 0:
 
-The hierarchical structure of workflows, jobs, and steps aligns with how you naturally break down complex tasks. This alignment between the tool's structure and human thinking makes GitHub Actions intuitive once you grasp the core concepts.
+```terminal
+{
+  "title": "a clean workflow",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "actionlint && echo \"no problems found\"",
+      "output": "no problems found"
+    }
+  ]
+}
+```
 
-In the next section, we'll apply these concepts to build and test real applications, focusing on practical workflows that handle dependencies, caching, and build optimization for different programming languages and frameworks.
+Run actionlint in your editor or as a pre-commit hook. Part 9 adds **zizmor**, which looks for security problems that actionlint does not.
+
+## Common Mistakes
+
+- **Writing `${{ }}` into `run:` scripts.** It works until a value contains a quote. Pass values through `env:`.
+- **Comparing booleans as booleans everywhere.** Inputs of type `boolean` are real booleans in `inputs`, but in environment variables and job outputs everything is a string: compare with `"true"`.
+- **A job output that is always empty.** The step needs an `id`, and the job needs an `outputs:` entry that points to it.
+- **Expecting `workflow_dispatch` on a branch.** The button and `gh workflow run` need the workflow file on the default branch.
+- **Overlapping triggers.** `on: [push, pull_request]` without filters runs twice for every push to a pull request branch.
+
+## Summary
+
+- `on:` with `branches`, `paths` and `paths-ignore` filters decides when a workflow runs; `workflow_dispatch` adds manual runs with up to 25 inputs.
+- Jobs run in parallel unless they `need` each other; job outputs pass strings between jobs.
+- Expressions read contexts such as `github`, `inputs` and `needs`; pass them to scripts through `env:`.
+- `if:` with `success()`, `failure()`, `always()` and `!cancelled()` controls what runs after a failure.
+- actionlint catches typos and script bugs before you push.
+
+In [Part 3](/guides/introduction-to-cicd/03-building-and-testing-applications) you add the example app and a CI workflow that lints, tests and builds it on every pull request.
+
+## Keep Learning
+
+- [YAML Parsing Simulator](/games/yaml-parsing-simulator) and [Cron Expression Simulator](/games/cron-expression-simulator)
+- [GitHub Actions Workflows Quiz](/quizzes/github-actions-quiz)
+- [CI/CD Pipelines Quiz](/quizzes/cicd-pipelines-quiz)

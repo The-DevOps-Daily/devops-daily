@@ -1,849 +1,377 @@
 ---
-title: 'Real-World Examples and Next Steps'
-description: 'Explore complete CI/CD implementations for different project types and learn how to continue your automation journey.'
+title: 'A Complete Pipeline and Next Steps'
+description: 'The finished GitHub Actions pipeline for the example app, how a change moves through it, release and infrastructure patterns, and what to learn next.'
 order: 10
 ---
 
-You've learned the individual pieces of GitHub Actions, but seeing how they fit together in real projects makes the difference between understanding concepts and being able to implement them effectively. Real-world CI/CD isn't just about running tests and deployments - it's about creating systems that handle the messy complexities of actual software development.
+Over nine parts, a one-job "hello" workflow grew into a pipeline that tests every pull request on ten runner configurations, merges through a queue, deploys the exact build that passed after an approval, and checks the live site. This part puts the finished pipeline in one place, follows one change through it, and shows how the same structure extends to releases, containers and infrastructure.
 
-Different types of projects need different automation approaches. A React frontend has different requirements than a Python API, a mobile app, or a multi-service microservices architecture. Understanding these patterns helps you adapt the concepts you've learned to your specific situation.
+## Prerequisites
 
-Here's how different project types typically structure their CI/CD pipelines:
+- The previous parts, or the [companion repository](https://github.com/The-DevOps-Daily/guide-cicd-demo-2026-10-24), which has every file shown here.
 
-```
-Single Application (React/Node.js):
-┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Repository                        │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ Push to main/develop → Trigger Workflow             │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-        ┌─────────────────────────────────────────┐
-        │            Parallel Quality             │
-        │              ┌─────────────┐            │
-        │              │    Lint     │            │
-        │              └─────────────┘            │
-        │              ┌─────────────┐            │
-        │              │    Test     │            │
-        │              └─────────────┘            │
-        │              ┌─────────────┐            │
-        │              │ Type Check  │            │
-        │              └─────────────┘            │
-        └─────────────────────────────────────────┘
-                               │
-                               ▼
-                    ┌─────────────────┐
-                    │      Build      │
-                    │   Application   │
-                    └─────────────────┘
-                               │
-                               ▼
-    ┌──────────────────────────────────────────────────────────┐
-    │                    Deploy Pipeline                       │
-    │                                                          │
-    │  Dev Environment ──▶ Staging Environment ──▶ Production  │
-    │  (auto on develop)   (auto on main)        (manual gate) │
-    └──────────────────────────────────────────────────────────┘
+## The Repository
 
-Microservices/Monorepo:
-┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Repository                        │
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │ services/api/  services/web/  services/mobile/      │    │
-│  │ packages/shared/                                    │    │
-│  └─────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                               │
-                               ▼
-                    ┌─────────────────┐
-                    │ Detect Changes  │
-                    │ (path filtering)│
-                    └─────────────────┘
-                               │
-        ┌──────────────────────┼──────────────────────┐
-        │                      │                      │
-        ▼                      ▼                      ▼
-┌─────────────┐        ┌─────────────┐        ┌─────────────┐
-│ API Service │        │ Web Service │        │Mobile App   │
-│             │        │             │        │             │
-│ ┌─────────┐ │        │ ┌─────────┐ │        │ ┌─────────┐ │
-│ │ Test    │ │        │ │ Test    │ │        │ │ Test    │ │
-│ │ Build   │ │        │ │ Build   │ │        │ │ Build   │ │
-│ │ Deploy  │ │        │ │ Deploy  │ │        │ │ Deploy  │ │
-│ └─────────┘ │        │ └─────────┘ │        │ └─────────┘ │
-└─────────────┘        └─────────────┘        └─────────────┘
-        │                      │                      │
-        └──────────────────────┼──────────────────────┘
-                               │
-                               ▼
-                    ┌─────────────────┐
-                    │ Integration     │
-                    │ Tests (E2E)     │
-                    └─────────────────┘
+```terminal
+{
+  "title": "the files",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "git ls-files | sort",
+      "output": ".github/actions/setup-app/action.yml\n.github/workflows/ci.yml\n.github/workflows/config.yml\n.github/workflows/deploy.yml\n.github/workflows/hello.yml\n.gitignore\nREADME.md\neslint.config.js\npackage-lock.json\npackage.json\nscripts/build.js\nsrc/commands.json\nsrc/render.js\ntest/render.test.js"
+    }
+  ]
+}
 ```
 
-## Complete React Application Pipeline
+| File                                   | Role                                                                                                                      |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/ci.yml`             | Lint, tests on ten runner configurations, build, `all-checks`; for pull requests, the merge queue and the deploy workflow |
+| `.github/workflows/deploy.yml`         | On every push to `main`: CI, package, deploy to Pages after approval, smoke test                                          |
+| `.github/actions/setup-app/action.yml` | Node.js, the npm cache and `npm ci`, in one step                                                                          |
+| `.github/workflows/config.yml`         | Manual demonstration of variables, secrets and OIDC (Part 5)                                                              |
+| `.github/workflows/hello.yml`          | The first workflow from Parts 1 and 2                                                                                     |
 
-Let's examine a full-featured React application with modern tooling, multiple environments, and production-ready practices:
+## How a Change Moves Through the Pipeline
+
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "pr", "label": "Pull request", "sub": "pull_request", "icon": "branch", "tone": "slate", "detail": "ci.yml runs lint, the test matrix, build and all-checks. Superseded runs are canceled." }
+    ],
+    [
+      { "id": "queue", "label": "Merge queue", "sub": "merge_group", "icon": "queue", "tone": "blue", "detail": "CI runs again on the latest main plus the queued pull requests. all-checks is the required check." }
+    ],
+    [
+      { "id": "main", "label": "main", "sub": "push", "icon": "check", "tone": "violet", "detail": "The merge starts deploy.yml, which calls ci.yml with workflow_call, so main gets the same checks." }
+    ],
+    [
+      { "id": "package", "label": "package", "sub": "github-pages artifact", "icon": "box", "tone": "violet", "detail": "The site that CI built, packaged once and kept for 14 days, so a deploy job can be re-run as a rollback." }
+    ],
+    [
+      { "id": "deploy", "label": "deploy", "sub": "approval required", "icon": "shield", "tone": "amber", "detail": "The github-pages environment waits for a reviewer. Only this job has pages: write and id-token: write." }
+    ],
+    [
+      { "id": "smoke", "label": "smoke-test", "sub": "live version.json", "icon": "activity", "tone": "green", "detail": "Fails the run unless the live site serves the commit that was just deployed." }
+    ]
+  ],
+  "edges": [["pr", "queue", "merge"], ["queue", "main", "merged"], ["main", "package", "CI passed"], ["package", "deploy"], ["deploy", "smoke"]]
+}
+```
+
+1. You push a branch and open a pull request. `ci.yml` runs for the `pull_request` event: lint, ten test jobs, the build, and `all-checks`. A new push to the branch cancels the run for the old commit.
+2. When the checks pass, `gh pr merge` or the **Merge when ready** button puts the pull request into the merge queue. CI runs again, on the latest `main` plus your change. If `all-checks` passes, GitHub merges.
+3. The merge pushes to `main`, which starts `deploy.yml`. It calls `ci.yml` as a reusable workflow, so `main` is checked by exactly the same jobs.
+4. `package` turns the site artifact into a Pages artifact. `deploy` waits for a reviewer, then publishes it.
+5. `smoke-test` fetches `version.json` from the live site and fails unless it shows the new commit.
+6. If something is wrong, re-run an older run's `deploy` job to roll back, then fix forward with a new pull request.
+
+## The Final Workflows
+
+Every action is pinned to a commit SHA (Part 9). `ci.yml`:
 
 ```yaml
-name: React Application CI/CD
+name: CI
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
-    branches: [main, develop]
+  merge_group:
+  workflow_call:
 
-env:
-  NODE_VERSION: '18'
-  CACHE_VERSION: 'v1'
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # Quality checks run in parallel for fast feedback
-  quality-checks:
+  lint:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          persist-credentials: false
+      - uses: ./.github/actions/setup-app
+      - run: npm run lint
 
-      - name: Install dependencies
-        run: npm ci
-
-      # Run multiple quality checks in parallel using step-level parallelism
-      - name: Lint code
-        run: npm run lint
-
-      - name: Check TypeScript types
-        run: npm run type-check
-
-      - name: Check code formatting
-        run: npm run format:check
-
-      - name: Run unit tests
-        run: npm test -- --coverage --watchAll=false
-        env:
-          CI: true
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-
-  # Build application for different environments
-  build:
-    runs-on: ubuntu-latest
-    needs: quality-checks
-
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
-        environment: [development, staging, production]
-
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24, 26]
+        include:
+          - os: ubuntu-24.04-arm
+            node: 24
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build for ${{ matrix.environment }}
-        run: npm run build
-        env:
-          NODE_ENV: production
-          REACT_APP_ENV: ${{ matrix.environment }}
-          REACT_APP_API_URL: ${{ matrix.environment == 'production' && 'https://api.myapp.com' || matrix.environment == 'staging' && 'https://api.staging.myapp.com' || 'https://api.dev.myapp.com' }}
-          REACT_APP_SENTRY_DSN: ${{ secrets[format('SENTRY_DSN_{0}', matrix.environment)] }}
-          GENERATE_SOURCEMAP: ${{ matrix.environment != 'production' }}
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+          persist-credentials: false
+      - uses: ./.github/actions/setup-app
         with:
-          name: build-${{ matrix.environment }}
-          path: build/
-          retention-days: ${{ matrix.environment == 'production' && 30 || 7 }}
-
-  # End-to-end tests using Playwright
-  e2e-tests:
-    runs-on: ubuntu-latest
-    needs: [quality-checks, build]
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+          node-version: ${{ matrix.node }}
+      - name: Run the tests and write a JUnit report
+        run: >-
+          npm test --
+          --test-reporter=spec --test-reporter-destination=stdout
+          --test-reporter=junit --test-reporter-destination=test-results.xml
+      - name: Upload the test report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download development build
-        uses: actions/download-artifact@v4
-        with:
-          name: build-development
-          path: build/
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-
-      - name: Start application server
-        run: |
-          npm install -g serve
-          serve -s build -l 3000 &
-          # Wait for server to start
-          sleep 5
-
-      - name: Run E2E tests
-        run: npx playwright test
-        env:
-          PLAYWRIGHT_BASE_URL: http://localhost:3000
-
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: playwright-report/
+          name: test-results-${{ matrix.os }}-node-${{ matrix.node }}
+          path: test-results.xml
           retention-days: 7
 
-  # Deploy to different environments based on branch
-  deploy-development:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/develop'
-    environment: development
-
-    steps:
-      - name: Download development build
-        uses: actions/download-artifact@v4
-        with:
-          name: build-development
-          path: build/
-
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v2
-        with:
-          publish-dir: './build'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Deploy from GitHub Actions'
-          enable-pull-request-comment: false
-          enable-commit-comment: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_DEV }}
-
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [build, e2e-tests]
-    if: github.ref == 'refs/heads/main'
-    environment: staging
-
-    steps:
-      - name: Download staging build
-        uses: actions/download-artifact@v4
-        with:
-          name: build-staging
-          path: build/
-
-      - name: Deploy to staging
-        run: |
-          # Deploy to S3 and invalidate CloudFront
-          aws s3 sync build/ s3://${{ secrets.S3_BUCKET_STAGING }}/ --delete
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_STAGING }} --paths "/*"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-
-      - name: Run smoke tests on staging
-        run: |
-          # Wait for deployment to propagate
-          sleep 30
-
-          # Basic smoke tests
-          curl --fail https://staging.myapp.com/
-          curl --fail https://staging.myapp.com/health
-
-  deploy-production:
-    runs-on: ubuntu-latest
-    needs: [build, deploy-staging]
-    if: github.ref == 'refs/heads/main'
-    environment: production
-
-    steps:
-      - name: Download production build
-        uses: actions/download-artifact@v4
-        with:
-          name: build-production
-          path: build/
-
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production..."
-          aws s3 sync build/ s3://${{ secrets.S3_BUCKET_PRODUCTION }}/ --delete
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_PRODUCTION }} --paths "/*"
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
-
-      - name: Run production smoke tests
-        run: |
-          sleep 30
-          curl --fail https://myapp.com/
-          curl --fail https://myapp.com/health
-
-      - name: Send deployment notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          text: 'Production deployment completed!'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        if: always()
-```
-
-This example demonstrates a complete React application pipeline with quality checks, multi-environment builds, end-to-end testing, and progressive deployment through development, staging, and production environments.
-
-## Node.js API with Database Pipeline
-
-Here's a complete pipeline for a Node.js API that includes database migrations and integration testing:
-
-```yaml
-name: Node.js API CI/CD
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-services:
-  postgres:
-    image: postgres:16
-    env:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: testdb
-    options: >-
-      --health-cmd pg_isready
-      --health-interval 10s
-      --health-timeout 5s
-      --health-retries 5
-    ports:
-      - 5432:5432
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run database migrations
-        run: npm run migrate
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-
-      - name: Run unit tests
-        run: npm test
-        env:
-          NODE_ENV: test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-
-      - name: Run integration tests
-        run: npm run test:integration
-        env:
-          NODE_ENV: test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-
   build:
+    needs: [lint, test]
     runs-on: ubuntu-latest
-    needs: test
-
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+          persist-credentials: false
+      - uses: ./.github/actions/setup-app
+      - run: npm run build
+        env:
+          SITE_TITLE: ${{ vars.SITE_TITLE }}
+      - name: Write a job summary
+        run: |
+          {
+            echo "### Site build"
+            echo ""
+            echo "| File | Bytes |"
+            echo "| --- | ---: |"
+            for f in dist/*; do
+              echo "| \`${f#dist/}\` | $(wc -c < "$f") |"
+            done
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Upload the site
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          name: site
+          path: dist/
+          retention-days: 14
+          if-no-files-found: error
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    environment: production
-
+  # One stable check name for branch rulesets, whatever the matrix contains
+  all-checks:
+    if: ${{ always() }}
+    needs: [lint, test, build]
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
     steps:
-      - name: Deploy to production
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.PRODUCTION_HOST }}
-          username: ${{ secrets.PRODUCTION_USER }}
-          key: ${{ secrets.PRODUCTION_SSH_KEY }}
-          script: |
-            # Pull latest image
-            docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
-
-            # Run database migrations
-            docker run --rm \
-              --network app-network \
-              -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-              ghcr.io/${{ github.repository }}:${{ github.sha }} \
-              npm run migrate
-
-            # Update running container
-            docker stop api-production || true
-            docker rm api-production || true
-
-            docker run -d \
-              --name api-production \
-              --network app-network \
-              -p 3000:3000 \
-              -e NODE_ENV=production \
-              -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              --restart unless-stopped \
-              ghcr.io/${{ github.repository }}:${{ github.sha }}
-
-            # Wait for health check
-            sleep 10
-            curl --fail http://localhost:3000/health || exit 1
+      - name: Fail if a needed job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
+      - run: echo "All CI jobs passed"
 ```
 
-## Monorepo with Multiple Services
-
-For complex projects with multiple services, you need more sophisticated workflow coordination:
+`deploy.yml`:
 
 ```yaml
-name: Monorepo CI/CD
+name: Deploy
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer run waits instead of cancelling a deployment
+concurrency:
+  group: pages-production
+  cancel-in-progress: false
 
 jobs:
-  # Detect which services changed
-  detect-changes:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # Package once, so re-running the deploy job (a rollback) reuses this artifact
+  package:
+    needs: ci
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download the site built by CI
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: site
+          path: site
+      - name: Package the site for GitHub Pages
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site/
+          retention-days: 14
+
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     outputs:
-      api-changed: ${{ steps.changes.outputs.api }}
-      web-changed: ${{ steps.changes.outputs.web }}
-      mobile-changed: ${{ steps.changes.outputs.mobile }}
-      shared-changed: ${{ steps.changes.outputs.shared }}
-
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            api:
-              - 'services/api/**'
-              - 'packages/shared/**'
-            web:
-              - 'services/web/**'
-              - 'packages/shared/**'
-            mobile:
-              - 'services/mobile/**'
-              - 'packages/shared/**'
-            shared:
-              - 'packages/shared/**'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
 
-  # Test shared packages first since other services depend on them
-  test-shared:
+  smoke-test:
+    needs: deploy
     runs-on: ubuntu-latest
-    needs: detect-changes
-    if: needs.detect-changes.outputs.shared-changed == 'true'
-
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test --workspace=packages/shared
-
-  # Test and build API service
-  test-api:
-    runs-on: ubuntu-latest
-    needs: [detect-changes, test-shared]
-    if: always() && needs.detect-changes.outputs.api-changed == 'true' && (needs.test-shared.result == 'success' || needs.test-shared.result == 'skipped')
-
-    services:
-      postgres:
-        image: postgres:16
+      - name: Check that the new version is live
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test --workspace=services/api
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
-
-  # Test web service
-  test-web:
-    runs-on: ubuntu-latest
-    needs: [detect-changes, test-shared]
-    if: always() && needs.detect-changes.outputs.web-changed == 'true' && (needs.test-shared.result == 'success' || needs.test-shared.result == 'skipped')
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test --workspace=services/web
-      - run: npm run build --workspace=services/web
-
-  # Deploy services that changed and passed tests
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [detect-changes, test-api, test-web]
-    if: always() && github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy API service
-        if: needs.detect-changes.outputs.api-changed == 'true' && needs.test-api.result == 'success'
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
         run: |
-          echo "Deploying API service..."
-          # API deployment commands
-
-      - name: Deploy Web service
-        if: needs.detect-changes.outputs.web-changed == 'true' && needs.test-web.result == 'success'
-        run: |
-          echo "Deploying Web service..."
-          # Web deployment commands
+          for attempt in 1 2 3 4 5 6; do
+            live=$(curl -sSf "${PAGE_URL}version.json?run=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$attempt" | jq -r .commit) || live=""
+            echo "Attempt $attempt: live commit ${live:-none}, expected $GITHUB_SHA"
+            if [ "$live" = "$GITHUB_SHA" ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::The site does not serve commit $GITHUB_SHA"
+          exit 1
 ```
 
-## Mobile App CI/CD with App Store Deployment
-
-Mobile applications have unique requirements for building, signing, and distributing apps:
+And the composite action, `.github/actions/setup-app/action.yml`:
 
 ```yaml
-name: React Native Mobile App
+name: Set up the app
+description: Install Node.js with the npm cache, then install the dependencies with npm ci
+
+inputs:
+  node-version:
+    description: The Node.js version to install
+    default: '24'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+    - name: Install the dependencies
+      run: npm ci
+      shell: bash
+```
+
+The last runs in the companion repository. The newest Deploy run is the smoke test fix; the 33-second and 46-second Deploy runs show the duration of their latest attempt, the re-run deploy jobs from the rollback in Part 6:
+
+```terminal
+{
+  "title": "the run history",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run list --limit 8",
+      "output": "STATUS  TITLE                              WORKFLOW  BRANCH  EVENT  ID           ELAPSED  AGE\n✓       Make every smoke test request ...  Deploy    main    push   40069252836  1m36s    about 1 minute ago\n✓       Make every smoke test request ...  Hello     main    push   40069252797  12s      about 1 minute ago\n✓       Describe the repository and it...  Deploy    main    push   40066550852  1m44s    about 43 minutes ago\n✓       Pin every action to a full com...  Deploy    main    push   40066422313  1m25s    about 44 minutes ago\n✓       Pin every action to a full com...  Hello     main    push   40066422254  14s      about 44 minutes ago\n✓       Add kubectl logs to the cheats...  Deploy    main    push   40066117968  33s      about 46 minutes ago\n✓       Add kubectl logs to the cheats...  Hello     main    push   40066117936  13s      about 49 minutes ago\n✓       Package the Pages artifact onc...  Deploy    main    push   40065982801  46s      about 47 minutes ago"
+    }
+  ]
+}
+```
+
+## Releases From Tags
+
+A deployment on every merge suits a website. A library or a CLI tool is released when you decide, usually by pushing a version tag. This workflow (checked with actionlint, not run in the companion repository) reuses CI, then attaches the built site to a GitHub release:
+
+```yaml
+name: Release
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+    tags: ['v*']
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/download-artifact@v8
         with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
-        run: npm test
-
-      - name: Run linting
-        run: npm run lint
-
-  build-android:
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '11'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Android app
-        run: |
-          cd android
-          ./gradlew assembleRelease
+          name: site
+          path: site
+      - name: Create the release
         env:
-          MYAPP_UPLOAD_STORE_FILE: ${{ secrets.ANDROID_KEYSTORE_FILE }}
-          MYAPP_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          MYAPP_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
-          MYAPP_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: android/app/build/outputs/apk/release/
-
-  build-ios:
-    runs-on: macos-latest
-    needs: test
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install iOS dependencies
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
         run: |
-          cd ios
-          pod install
-
-      - name: Build iOS app
-        run: |
-          cd ios
-          xcodebuild -workspace MyApp.xcworkspace \
-            -scheme MyApp \
-            -configuration Release \
-            -destination generic/platform=iOS \
-            -archivePath MyApp.xcarchive \
-            archive
-
-      - name: Export IPA
-        run: |
-          cd ios
-          xcodebuild -exportArchive \
-            -archivePath MyApp.xcarchive \
-            -exportOptionsPlist ExportOptions.plist \
-            -exportPath build
-
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-ipa
-          path: ios/build/*.ipa
+          (cd site && zip -r "../cheatsheet-$TAG.zip" .)
+          gh release create "$TAG" "cheatsheet-$TAG.zip" --repo "$GITHUB_REPOSITORY" --generate-notes --verify-tag
 ```
 
-## Expanding Your CI/CD Knowledge
+`git tag v1.1.0 && git push origin v1.1.0` starts it. Only the `release` job can write to the repository, and only after CI passed. For packages on npm or PyPI, use **trusted publishing**, which works with OIDC like the cloud logins in Part 5, instead of storing a registry token.
 
-Now that you understand the fundamentals and have seen real-world examples, here are areas to explore next:
+## Containers, Infrastructure and Kubernetes
 
-### Infrastructure as Code Integration
+The structure stays the same for other targets: CI builds and tests one artifact, a protected job deploys exactly that artifact, and a check confirms the result. Only the artifact and the deploy step change:
 
-Combine GitHub Actions with infrastructure management tools:
+- **Container images.** Build once, push to a registry such as GHCR, and deploy by digest, not by tag. The [Docker guide's delivery pipeline](/guides/introduction-to-docker/10-docker-in-production#h2-the-delivery-pipeline) builds a multi-platform image, signs it and deploys it with Compose.
+- **Infrastructure with Terraform or OpenTofu.** Run `plan` on pull requests and post it for review, then `apply` the reviewed plan on `main` through a protected environment, with OIDC to the cloud. The [Terraform guide's team workflow](/guides/introduction-to-terraform/09-remote-backends-and-collaboration#h2-team-workflow-plan-in-pull-requests-apply-after-review) has the complete workflow.
+- **Kubernetes.** Either the pipeline runs `kubectl set image` and `kubectl rollout status` (Part 6), or, with **GitOps**, it only commits the new image digest to a configuration repository and Argo CD or Flux applies it from inside the cluster. GitOps keeps cluster credentials out of CI. See [GitOps: Deploy Docker Containers with GitHub Actions and ArgoCD](/posts/gitops-deploy-docker-containers-github-actions-argocd).
+- **Security gates.** Policy checks, vulnerability scans and signed provenance fit between build and deploy. The [Security Gates guide](/guides/security-gates) adds them to a pipeline like this one.
 
-```yaml
-name: Infrastructure and Application Deployment
+## Other CI Systems
 
-jobs:
-  provision-infrastructure:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+The concepts carry over: GitLab CI has stages, jobs, `rules`, environments with approvals and a merge train; Jenkins has pipelines in a `Jenkinsfile`, agents and credentials; CircleCI and Bitbucket Pipelines have their own YAML with the same ideas. The comparisons help if you are choosing one or moving between them:
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
+- [Jenkins vs GitHub Actions](/comparisons/jenkins-vs-github-actions)
+- [GitLab CI vs GitHub Actions](/comparisons/gitlab-ci-vs-github-actions)
+- [CircleCI vs GitHub Actions](/comparisons/circleci-vs-github-actions)
+- [Bitbucket Pipelines vs GitHub Actions](/comparisons/bitbucket-pipelines-vs-github-actions)
 
-      - name: Terraform Init
-        run: terraform init
+## What to Learn Next
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
+1. **Containers.** The [Introduction to Docker](/guides/introduction-to-docker) guide, then [Kubernetes](/guides/introduction-to-kubernetes).
+2. **Infrastructure as code.** [Terraform](/guides/introduction-to-terraform) for cloud resources, [Ansible](/guides/introduction-to-ansible) for servers.
+3. **Pipeline security.** [Security Gates](/guides/security-gates) and [SAST tools](/guides/sast-tools).
+4. **Practice.** The [Complete CI/CD Pipeline with GitHub Actions](/exercises/ci-cd-github-actions) exercise, then build a pipeline for a project of your own and remove one manual step from your release process each week.
 
-      - name: Terraform Apply
-        run: terraform apply tfplan
+## Common Mistakes When You Scale This Up
 
-      - name: Output infrastructure details
-        run: terraform output -json > infrastructure.json
+- **Copying workflows between repositories.** Put shared pipelines in a reusable workflow in one repository and call it, pinned to a SHA, from the others.
+- **Deploying something CI did not test.** Promote the artifact or image digest that CI built; never rebuild for production.
+- **Manual steps that nobody wrote down.** If a release still needs a person to run a command, put the command in a workflow with an environment approval instead.
+- **Pipelines nobody owns.** Workflows are code; give `.github/` a code owner and review changes to it like any other code.
 
-      - name: Upload infrastructure details
-        uses: actions/upload-artifact@v4
-        with:
-          name: infrastructure-config
-          path: infrastructure.json
+## Summary
 
-  deploy-application:
-    needs: provision-infrastructure
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download infrastructure config
-        uses: actions/download-artifact@v4
-        with:
-          name: infrastructure-config
+- The finished pipeline: CI as a reusable workflow for pull requests, the merge queue and `main`; a deploy workflow that packages once, deploys after approval and smoke tests the live site.
+- Tags start releases; trusted publishing and OIDC replace stored registry and cloud tokens.
+- Containers, Terraform and Kubernetes fit the same shape: build one artifact, deploy exactly that artifact through a protected job, verify the result.
 
-      - name: Deploy to provisioned infrastructure
-        run: |
-          # Use infrastructure.json to get deployment targets
-          # Deploy application using the provisioned resources
-```
+Go back to the [overview](/guides/introduction-to-cicd) for the list of what changed in GitHub Actions in 2025 and 2026, or start the [Docker guide](/guides/introduction-to-docker) next.
 
-### Advanced Testing Strategies
+## Keep Learning
 
-Implement sophisticated testing approaches:
-
-- **Contract Testing**: Ensure API compatibility between services
-- **Performance Testing**: Automated load testing in CI/CD
-- **Security Testing**: SAST, DAST, and dependency scanning
-- **Accessibility Testing**: Automated a11y testing for web applications
-
-### Monitoring and Observability Integration
-
-Connect your CI/CD pipeline to monitoring systems:
-
-```yaml
-- name: Create deployment marker
-  run: |
-    curl -X POST "https://api.datadog.com/api/v1/events" \
-      -H "DD-API-KEY: ${{ secrets.DATADOG_API_KEY }}" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "title": "Deployment",
-        "text": "Deployed version ${{ github.sha }} to production",
-        "tags": ["deployment", "production", "github-actions"]
-      }'
-```
-
-### GitOps and Deployment Automation
-
-Explore GitOps patterns where infrastructure and deployment configurations are managed through Git:
-
-- **ArgoCD**: Kubernetes-native GitOps
-- **Flux**: CNCF GitOps toolkit
-- **GitHub Environments**: Advanced deployment protection and tracking
-
-### Enterprise Patterns
-
-For larger organizations, consider:
-
-- **Self-hosted Runners**: Custom runner infrastructure for sensitive workloads
-- **Organizational Policies**: Standardize workflows across repositories
-- **Cost Management**: Monitor and optimize CI/CD resource usage
-- **Compliance Integration**: SOC2, ISO27001, and other compliance frameworks
-
-## Common Pitfalls and How to Avoid Them
-
-As you build more complex CI/CD systems, watch out for these common issues:
-
-### Over-Engineering Early
-
-Start simple and add complexity gradually. A basic workflow that works is better than a complex workflow that's unreliable.
-
-### Ignoring Security from the Start
-
-Security should be built in from the beginning, not added later. Review the security practices from the previous section regularly.
-
-### Poor Secret Management
-
-Never hardcode secrets, even in private repositories. Use GitHub Secrets appropriately and rotate them regularly.
-
-### Flaky Tests
-
-Unreliable tests are worse than no tests. Invest time in making tests deterministic and fixing intermittent failures.
-
-### Slow Feedback Loops
-
-Optimize for fast feedback. Developers should know within minutes if their changes break something.
-
-### Lack of Monitoring
-
-Monitor your CI/CD system itself. Track build times, failure rates, and resource usage to identify improvement opportunities.
-
-## Building a Learning Plan
-
-To continue improving your CI/CD skills:
-
-1. **Practice with Personal Projects**: Apply these concepts to your own projects, even simple ones
-2. **Read Industry Content**: Follow DevOps blogs, conference talks, and case studies
-3. **Experiment with Tools**: Try different CI/CD platforms and tools to understand their strengths
-4. **Join Communities**: Participate in DevOps and GitHub Actions communities
-5. **Contribute to Open Source**: Many open source projects have sophisticated CI/CD that you can learn from
-
-## The Journey Continues
-
-CI/CD is not a destination but a journey of continuous improvement. The fundamentals you've learned here - automation, testing, security, monitoring - apply regardless of which specific tools you use. Technology changes, but the principles of reliable software delivery remain constant.
-
-Start with simple automation and gradually add sophistication as your needs grow and your confidence increases. Focus on solving real problems rather than implementing complex solutions for their own sake. Most importantly, remember that CI/CD exists to help teams deliver better software faster - keep that goal in mind as you design and improve your automation.
-
-The investment you make in learning CI/CD pays dividends throughout your career. These skills are valuable across industries, technologies, and team sizes. Whether you're working on a solo project or managing deployment pipelines for a large organization, understanding how to automate software delivery effectively makes you a more valuable developer and team member.
-
-Keep experimenting, keep learning, and keep improving your automation. The journey from manual deployments to sophisticated CI/CD systems is rewarding, and the skills you develop will serve you well throughout your career in software development.
+- [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup) and [Production Deployment Checklist](/checklists/production-deployment)
+- [Interview question: CI/CD pipeline design](/interview-questions/mid/cicd-pipeline-design)
+- [CI/CD Stack Generator](/games/cicd-stack-generator)
+- [GitHub Actions Workflows Quiz](/quizzes/github-actions-quiz)

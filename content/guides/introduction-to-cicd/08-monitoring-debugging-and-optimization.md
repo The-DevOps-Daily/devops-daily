@@ -1,785 +1,286 @@
 ---
-title: 'Monitoring, Debugging, and Optimization'
-description: 'Learn to troubleshoot failing workflows, optimize CI/CD performance, and maintain reliable automation systems.'
+title: 'Debugging and Speeding Up Workflows'
+description: 'Find out why a GitHub Actions run failed with gh run view, annotations and debug logs, write job summaries, and make runs faster and cheaper.'
 order: 8
 ---
 
-Nothing is more frustrating than a workflow that worked perfectly yesterday but mysteriously fails today, especially when you're trying to fix a critical bug or deploy an urgent feature. Cryptic error messages, builds that hang forever, and intermittent failures that only happen in CI make debugging workflows feel like solving puzzles with missing pieces.
+Sooner or later a run fails and the reason is not obvious, or the pipeline that took two minutes now takes twenty. This part walks through a real failure in the companion repository, from the red check on the pull request to the line that caused it, then shows the tools for harder cases: debug logging, annotations and job summaries. The second half is about making runs faster and cheaper.
 
-The difference between a maintainable CI/CD system and a constant headache is having good observability, debugging strategies, and optimization practices. When you understand how to diagnose problems quickly and keep your workflows running efficiently, you spend less time fighting your automation and more time building features.
+## Prerequisites
 
-## Building Observability into Workflows
+- The repository from [Part 7](/guides/introduction-to-cicd/07-advanced-workflows-and-automation), with CI running on pull requests.
 
-The first step to debugging problems is having enough information to understand what's happening. Workflows that fail silently or provide vague error messages are impossible to fix efficiently.
+## A Pull Request That Fails
 
-Here's the debugging information flow you need:
+The change adds the number of commands to the footer of the page. It has two problems that are easy to miss in a review: a variable that is never used, and a test that still expects the old footer.
 
-```
-Workflow Execution with Observability:
-
-┌─────────────────────────────────────────────────────┐
-│                  Workflow Start                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ Environment Logging                         │    │
-│  │ - OS, Architecture, Node version            │    │
-│  │ - Git branch, commit, repository            │    │
-│  │ - Environment variables                     │    │
-│  │ - System resources (memory, disk)           │    │
-│  └─────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌────────────────────────────────────────────────────┐
-│                   Job Execution                    │
-│                                                    │
-│  Step 1: Setup ──┐                                 │
-│                  │ ✅ Success                      │
-│                  └─▶ Log: "Node.js 18 installed"   │
-│                                                    │
-│  Step 2: Install ──┐                               │
-│                    │ ❌ Failure                    │
-│                    └─▶ Logs: "npm ERR! 404..."     │
-│                       ├─▶ Debug Info:              │
-│                       │   • Network connectivity   │
-│                       │   • npm cache status       │
-│                       │   • package.json validity  │
-│                       └─▶ Error Context:           │
-│                           • Exit code: 1           │
-│                           • Failed command         │
-│                           • Suggested fixes        │
-└────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────┐
-│                Artifact Collection                  │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ Always Collected (even on failure):         │    │
-│  │ - Test results and coverage reports         │    │
-│  │ - Build logs and error outputs              │    │
-│  │ - System information and diagnostics        │    │
-│  │ - Performance metrics and timing data       │    │
-│  └─────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────┘
-                           │
-                           ▼
-┌─────────────────────────────────────────────────────┐
-│              Notification & Reporting               │
-│                                                     │
-│  Success Path:           Failure Path:              │
-│  ┌─────────────┐        ┌─────────────────────────┐ │
-│  │ ✅ Slack    │        │ ❌ Detailed Slack Alert  │ │
-│  │ "Deployed!" │        │ • What failed           │ │
-│  └─────────────┘        │ • Error message         │ │
-│                         │ • Link to logs          │ │
-│                         │ • Suggested actions     │ │
-│                         └─────────────────────────┘ │
-└─────────────────────────────────────────────────────┘
+```bash
+git show dc22f5a --format= -- src/render.js
 ```
 
-Here's how to build observability into your workflows:
+```diff
+diff --git a/src/render.js b/src/render.js
+index 9fa02cf..c5acb0d 100644
+--- a/src/render.js
++++ b/src/render.js
+@@ -35,6 +35,8 @@ ${list.map((c) => `<dt><code>${escapeHtml(c.cmd)}</code></dt><dd>${escapeHtml(c.
+     )
+     .join('\n');
+
++  const count = commands.length;
++
+   return `<!doctype html>
+ <html lang="en">
+ <head>
+@@ -45,7 +47,7 @@ ${list.map((c) => `<dt><code>${escapeHtml(c.cmd)}</code></dt><dd>${escapeHtml(c.
+ <body>
+ <h1>${escapeHtml(title)}</h1>
+ ${sections}
+-<footer>Version ${escapeHtml(version)}, commit ${escapeHtml(commit.slice(0, 7))}</footer>
++<footer>${commands.length} commands, version ${escapeHtml(version)}, commit ${escapeHtml(commit.slice(0, 7))}</footer>
+ </body>
+ </html>
+ `;
+```
+
+Opening the pull request ran CI, and the checks show the damage:
+
+```terminal
+{
+  "title": "the checks",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh pr checks 2",
+      "output": "Some checks were not successful\n0 cancelled, 12 failing, 0 successful, 1 skipped, and 0 pending checks\n\n   NAME                                        DESCRIPTION  ELAPSED  URL\nX  CI/all-checks (pull_request)                             2s       https://github.com/The-DevOps-Daily/gu...\nX  CI/lint (pull_request)                                   9s       https://github.com/The-DevOps-Daily/gu...\nX  CI/test (macos-latest, 22) (pull_request)                12s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (macos-latest, 24) (pull_request)                12s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (macos-latest, 26) (pull_request)                15s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (ubuntu-24.04-arm, 24) (pull_re...               13s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (ubuntu-latest, 22) (pull_request)               10s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (ubuntu-latest, 24) (pull_request)               12s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (ubuntu-latest, 26) (pull_request)               11s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (windows-latest, 22) (pull_requ...               20s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (windows-latest, 24) (pull_requ...               32s      https://github.com/The-DevOps-Daily/gu...\nX  CI/test (windows-latest, 26) (pull_requ...               34s      https://github.com/The-DevOps-Daily/gu...\n-  CI/build (pull_request)                                           https://github.com/The-DevOps-Daily/gu..."
+    }
+  ]
+}
+```
+
+Twelve checks failed, and `build` was skipped. Start with the annotations: they are the short version of every error, and they appear on the pull request's **Files changed** tab next to the line:
+
+```terminal
+{
+  "title": "annotations",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view 40065283263 --attempt 1 | grep -A 1 'never used'",
+      "output": "X 'count' is assigned a value but never used\nlint: src/render.js#38"
+    }
+  ]
+}
+```
+
+That annotation comes from ESLint's output. `actions/setup-node` registers **problem matchers**, regular expressions that turn compiler and linter output into annotations with a file and line. The failed step's log has the full message:
+
+```terminal
+{
+  "title": "failed steps",
+  "prompt": "$",
+  "steps": [
+    {
+      "comment": "the lint job",
+      "cmd": "gh run view 40065283263 --attempt 1 --log-failed | grep '^lint' | cut -f3- | grep -E 'render.js|error  |problem'",
+      "output": "2026-10-24T05:11:39.6713053Z /home/runner/work/guide-cicd-demo-2026-10-24/guide-cicd-demo-2026-10-24/src/render.js\n2026-10-24T05:11:39.6734433Z ##[error]  38:9  error  'count' is assigned a value but never used  no-unused-vars\n2026-10-24T05:11:39.6740531Z ✖ 1 problem (1 error, 0 warnings)"
+    },
+    {
+      "comment": "one of the test jobs",
+      "cmd": "gh run view 40065283263 --attempt 1 --log-failed | grep '^test (ubuntu-latest, 24)' | cut -f3- | grep -E '✖|AssertionError'",
+      "output": "2026-10-24T05:11:42.2467538Z ✖ renderPage shows the title, version and short commit (1.20432ms)\n2026-10-24T05:11:42.2605232Z ✖ failing tests:\n2026-10-24T05:11:42.2606988Z ✖ renderPage shows the title, version and short commit (1.20432ms)\n2026-10-24T05:11:42.2608494Z   AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Version 1\\.0\\.0, commit 0123456/. Input:"
+    }
+  ]
+}
+```
+
+`--log-failed` prints only the steps that failed, which is usually all you need. `--attempt 1` picks the first attempt of the run; without it, `gh` shows the latest attempt.
+
+And the required check did its job. `all-checks` failed instead of being skipped, so the ruleset from Part 7 blocks the merge:
+
+```terminal
+{
+  "title": "the required check",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view 40065283263 --attempt 1 | grep -E -A 4 '^X all-checks'",
+      "output": "X all-checks in 2s (ID 120787239448)\n  ✓ Set up job\n  X Fail if a needed job failed or was cancelled\n  - Run echo \"All CI jobs passed\"\n  ✓ Complete job"
+    },
+    {
+      "cmd": "gh run view 40065283263 --attempt 1 | grep '^- build'",
+      "output": "- build (ID 120787240928)"
+    }
+  ]
+}
+```
+
+## Debug Logging
+
+When the normal log is not enough, for example when a condition skips a step and you do not see why, re-run with **debug logging**. The runner then prints how it evaluated every expression and condition:
+
+```terminal
+{
+  "title": "re-run with debug logs",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run rerun 40065283263 --failed --debug",
+      "output": "✓ Requested rerun (failed jobs) of run 40065283263 with debug logging enabled"
+    },
+    {
+      "comment": "why the report was uploaded although the tests failed",
+      "cmd": "gh run view 40065283263 --attempt 2 --log | grep '^test (ubuntu-latest, 24)' | cut -f3- | grep -A 6 \"condition for step: 'Upload the test report'\"",
+      "output": "2026-10-24T05:13:02.3483808Z ##[debug]Evaluating condition for step: 'Upload the test report'\n2026-10-24T05:13:02.3487620Z ##[debug]Evaluating: !cancelled()\n2026-10-24T05:13:02.3488106Z ##[debug]Evaluating Not:\n2026-10-24T05:13:02.3489362Z ##[debug]..Evaluating cancelled:\n2026-10-24T05:13:02.3490903Z ##[debug]..=> false\n2026-10-24T05:13:02.3491256Z ##[debug]=> true\n2026-10-24T05:13:02.3492504Z ##[debug]Expanded: !false"
+    }
+  ]
+}
+```
+
+The debug log of that one job has 477 `##[debug]` lines, so search it rather than read it. To turn debug logging on for every run instead of one re-run, create a repository variable (or secret) `ACTIONS_STEP_DEBUG` with the value `true`. `ACTIONS_RUNNER_DEBUG=true` adds the runner's own diagnostic logs. Turn both off again when you are done; debug logs are long, and in a public repository everyone can read them.
+
+`--failed` re-runs only the failed jobs and the jobs that depend on them. A run can be re-run for up to 30 days and at most 50 times.
+
+## Annotations and Log Groups You Write Yourself
+
+Any step can create annotations and structure its log by printing **workflow commands**:
+
+```bash
+echo "::error file=src/render.js,line=38::The footer is missing the version"
+echo "::warning file=src/commands.json::The topic 'gh' has more than 10 commands"
+echo "::notice::Built 13 commands"
+
+echo "::group::Installed packages"
+npm ls --depth=0
+echo "::endgroup::"
+```
+
+`::error` and `::warning` show up in the run summary and, with `file` and `line`, on the pull request diff. `::group::` folds a part of the log. An `::error` line does not fail the step by itself; exit with a non-zero status for that.
+
+## Job Summaries
+
+Every step can append Markdown to the file in `$GITHUB_STEP_SUMMARY`, and GitHub shows it on the run's summary page. The build job in `ci.yml` now writes a table of the built files (and `tee` also prints it to the log):
 
 ```yaml
-name: Observable Workflow
-
-on:
-  push:
-    branches: [main]
-
-env:
-  # Enable detailed logging for debugging
-  ACTIONS_STEP_DEBUG: ${{ vars.ENABLE_DEBUG_LOGGING || 'false' }}
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # Log environment information for debugging
-      - name: Environment information
-        run: |
-          echo "=== Environment Information ==="
-          echo "Runner OS: ${{ runner.os }}"
-          echo "Runner Architecture: ${{ runner.arch }}"
-          echo "GitHub Event: ${{ github.event_name }}"
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
-          echo "Repository: ${{ github.repository }}"
-          echo "Workflow: ${{ github.workflow }}"
-          echo "Job: ${{ github.job }}"
-          echo "Run ID: ${{ github.run_id }}"
-          echo "Run Number: ${{ github.run_number }}"
-
-          echo "=== System Information ==="
-          uname -a
-          df -h
-          free -h
-
-          echo "=== Environment Variables ==="
-          env | grep -E '^(GITHUB_|RUNNER_|NODE_|NPM_)' | sort
-
-      - name: Setup Node.js with detailed logging
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      # Validate environment before proceeding
-      - name: Validate environment
-        run: |
-          echo "=== Validation Checks ==="
-
-          # Check Node.js installation
-          echo "Node.js version: $(node --version)"
-          echo "NPM version: $(npm --version)"
-
-          # Check if package.json exists
-          if [ ! -f "package.json" ]; then
-            echo "❌ package.json not found"
-            exit 1
-          else
-            echo "✅ package.json found"
-          fi
-
-          # Check if lockfile exists
-          if [ ! -f "package-lock.json" ]; then
-            echo "⚠️ package-lock.json not found, this might cause dependency issues"
-          else
-            echo "✅ package-lock.json found"
-          fi
-
-      # Install dependencies with detailed output
-      - name: Install dependencies
-        run: |
-          echo "=== Installing Dependencies ==="
-
-          # Show what we're about to install
-          echo "Dependencies to install:"
-          npm list --depth=0 --json 2>/dev/null || echo "No existing dependencies"
-
-          # Install with detailed logging
-          npm ci --verbose
-
-          # Verify installation
-          echo "Installed dependencies:"
-          npm list --depth=0
-
-      # Run tests with comprehensive error reporting
-      - name: Run tests
-        id: tests
-        run: |
-          echo "=== Running Tests ==="
-
-          # Run tests with detailed output
-          if npm test -- --verbose --reporters=default,jest-junit; then
-            echo "✅ All tests passed"
-            echo "test-status=passed" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Tests failed"
-            echo "test-status=failed" >> $GITHUB_OUTPUT
-            
-            # Capture additional debugging information
-            echo "=== Test Failure Debug Info ==="
-            echo "Exit code: $?"
-            
-            # Show recent logs if they exist
-            if [ -d "coverage" ]; then
-              echo "Coverage files:"
-              ls -la coverage/
-            fi
-            
-            exit 1
-          fi
-        env:
-          JEST_JUNIT_OUTPUT_DIR: ./test-results
-          JEST_JUNIT_OUTPUT_NAME: junit.xml
-
-      # Always upload test results, even on failure
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-${{ github.run_id }}
-          path: |
-            test-results/
-            coverage/
-          retention-days: 7
-
-      # Build with error handling
-      - name: Build application
-        run: |
-          echo "=== Building Application ==="
-
-          # Check available disk space before building
-          echo "Available disk space:"
-          df -h
-
-          # Run build with error handling
-          if npm run build; then
-            echo "✅ Build successful"
-            
-            # Show build output information
-            if [ -d "dist" ]; then
-              echo "Build output:"
-              ls -la dist/
-              echo "Total build size: $(du -sh dist/ | cut -f1)"
-            fi
-          else
-            echo "❌ Build failed"
-            
-            # Capture build failure information
-            echo "=== Build Failure Debug Info ==="
-            echo "Exit code: $?"
-            echo "Available memory: $(free -h)"
-            echo "Available disk space: $(df -h)"
-            
-            # Check for common build issues
-            if [ ! -d "node_modules" ]; then
-              echo "⚠️ node_modules directory missing"
-            fi
-            
-            exit 1
-          fi
-
-      # Generate workflow summary
-      - name: Generate workflow summary
-        if: always()
-        run: |
-          echo "## Workflow Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tests**: ${{ steps.tests.outputs.test-status }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Duration**: $(date -d @$(($(date +%s) - ${{ github.event.head_commit.timestamp && github.event.head_commit.timestamp || github.event.created_at }})) -u +%H:%M:%S)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: [${{ github.sha }}](${{ github.event.head_commit.url }})" >> $GITHUB_STEP_SUMMARY
-
-          if [ "${{ job.status }}" != "success" ]; then
-            echo "## Debugging Information" >> $GITHUB_STEP_SUMMARY
-            echo "Check the workflow logs for detailed error information." >> $GITHUB_STEP_SUMMARY
-            echo "Artifacts with test results and logs are available for download." >> $GITHUB_STEP_SUMMARY
-          fi
-```
-
-This workflow provides extensive logging and debugging information, making it much easier to diagnose problems when they occur.
-
-## Debugging Common Workflow Failures
-
-Different types of failures require different debugging approaches. Here are the most common problems and how to solve them:
-
-### Dependency Installation Failures
-
-```yaml
-- name: Debug dependency issues
-  if: failure()
+- name: Write a job summary
   run: |
-    echo "=== Dependency Debug Information ==="
-
-    # Check npm cache
-    echo "NPM cache info:"
-    npm cache verify
-
-    # Check for permission issues
-    echo "NPM configuration:"
-    npm config list
-
-    # Check network connectivity
-    echo "Network connectivity test:"
-    curl -I https://registry.npmjs.org/ || echo "NPM registry unreachable"
-
-    # Check package.json validity
-    echo "Package.json validation:"
-    node -e "console.log('package.json is valid JSON')" < package.json || echo "Invalid package.json"
-
-    # Check for conflicting global packages
-    echo "Global packages:"
-    npm list -g --depth=0
-
-    # Clear cache and retry
-    echo "Clearing NPM cache..."
-    npm cache clean --force
+    {
+      echo "### Site build"
+      echo ""
+      echo "| File | Bytes |"
+      echo "| --- | ---: |"
+      for f in dist/*; do
+        echo "| \`${f#dist/}\` | $(wc -c < "$f") |"
+      done
+    } | tee -a "$GITHUB_STEP_SUMMARY"
 ```
 
-### Build Failures
-
-```yaml
-- name: Debug build failures
-  if: failure()
-  run: |
-    echo "=== Build Debug Information ==="
-
-    # Check build configuration
-    echo "Build scripts in package.json:"
-    cat package.json | jq '.scripts'
-
-    # Check for missing environment variables
-    echo "Required environment variables:"
-    echo "NODE_ENV: ${NODE_ENV:-'not set'}"
-    echo "CI: ${CI:-'not set'}"
-
-    # Check memory usage
-    echo "Memory usage:"
-    free -h
-
-    # Check for large files that might cause issues
-    echo "Large files in project:"
-    find . -type f -size +10M -not -path './node_modules/*' | head -10
-
-    # Try building with more memory
-    echo "Attempting build with increased memory:"
-    NODE_OPTIONS="--max_old_space_size=4096" npm run build || echo "Build still failed with more memory"
+```terminal
+{
+  "title": "the summary in the log",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120788135809 --log | grep 'Write a job summary' | cut -f3- | tail -n 6",
+      "output": "2026-10-24T05:16:53.2059540Z ### Site build\n2026-10-24T05:16:53.2059856Z\n2026-10-24T05:16:53.2060032Z | File | Bytes |\n2026-10-24T05:16:53.2060304Z | --- | ---: |\n2026-10-24T05:16:53.2071343Z | `index.html` | 1647 |\n2026-10-24T05:16:53.2087546Z | `version.json` | 81 |"
+    }
+  ]
+}
 ```
 
-### Test Failures
+Use summaries for what a reviewer wants at a glance: test counts, coverage, bundle sizes, the URL of a preview deployment. Each step can write up to 1 MiB. Like logs, summaries mask known secret values; anything else you write stays there until you delete the run.
 
-```yaml
-- name: Debug test failures
-  if: failure()
-  run: |
-    echo "=== Test Debug Information ==="
+## Fix It, and Let Concurrency Cancel the Old Run
 
-    # Run tests with maximum verbosity
-    echo "Running tests with debug output:"
-    npm test -- --verbose --no-coverage --detectOpenHandles --forceExit || true
+The fix removes the unused variable and updates the test. It was pushed in two commits, 15 seconds apart. Because `ci.yml` has `cancel-in-progress: true` for pull requests, the second push canceled the run of the first:
 
-    # Check for test environment issues
-    echo "Test environment:"
-    echo "NODE_ENV: ${NODE_ENV:-'not set'}"
-    echo "CI: ${CI:-'not set'}"
-
-    # Check for port conflicts
-    echo "Checking for port usage:"
-    netstat -tulpn 2>/dev/null | grep :300 || echo "No processes on port 3000"
-
-    # Check test configuration
-    if [ -f "jest.config.js" ]; then
-      echo "Jest configuration:"
-      cat jest.config.js
-    fi
+```terminal
+{
+  "title": "superseded runs",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run list --branch footer-count",
+      "output": "STATUS  TITLE                     WORKFLOW  BRANCH        EVENT         ID           ELAPSED  AGE\n✓       Show the number of co...  CI        footer-count  pull_request  40065537928  1m38s    about 1 minut...\nX       Show the number of co...  CI        footer-count  pull_request  40065517393  42s      about 2 minut...\nX       Show the number of co...  CI        footer-count  pull_request  40065283263  54s      about 4 minut..."
+    },
+    {
+      "cmd": "gh run view 40065517393 | grep -m 1 -A 1 Canceling",
+      "output": "X Canceling since a higher priority waiting request for ci-CI-refs/pull/2/merge exists\ntest (windows-latest, 26): .github#1"
+    }
+  ]
+}
 ```
 
-## Performance Optimization Strategies
+The list shows the canceled run with an `X` like a failure; `gh run view` or the annotation tells you it was canceled. With green checks, `gh pr merge 2` sent the pull request through the merge queue, and the deploy workflow published the new footer.
 
-Slow workflows frustrate developers and waste CI resources. Here's how to optimize workflow performance:
+## gh Tips for Runs
 
-### Dependency Caching Optimization
+- `gh run watch <id> --exit-status` follows a run and exits non-zero if it fails, handy after a push.
+- `gh run list --status failure --limit 10` lists recent failures; `--workflow`, `--branch` and `--event` narrow it down.
+- `gh run view <id> --log-failed` is the fastest way to the error; `--job <id>` and `--attempt <n>` pick one job or attempt.
+- `gh run download <id>` fetches the artifacts, such as the JUnit reports from Part 4.
+- For jobs from a reusable workflow, `gh run view --log` cannot name the steps and prints `UNKNOWN STEP` in the step column, so filter those logs by the job column or by text:
 
-```yaml
-name: Optimized Workflow
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # Multi-layer caching strategy
-      - name: Cache node modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.npm
-            node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # Cache build outputs
-      - name: Cache build output
-        uses: actions/cache@v3
-        with:
-          path: |
-            .next/cache
-            dist/
-          key: ${{ runner.os }}-build-${{ hashFiles('src/**/*', 'package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-build-
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          # Built-in cache for additional speed
-          cache: 'npm'
-
-      # Only install if cache miss
-      - name: Install dependencies
-        run: |
-          if [ ! -d "node_modules" ]; then
-            echo "Cache miss, installing dependencies..."
-            npm ci
-          else
-            echo "Using cached dependencies"
-            # Verify cache integrity
-            npm list > /dev/null || {
-              echo "Cache corrupted, reinstalling..."
-              rm -rf node_modules
-              npm ci
-            }
-          fi
+```terminal
+{
+  "title": "logs of a called workflow's job",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120786814554 --log | cut -f2 | sort | uniq -c",
+      "output": "    265 UNKNOWN STEP"
+    }
+  ]
+}
 ```
 
-### Parallel Job Execution
+## Make Runs Faster and Cheaper
 
-```yaml
-name: Parallel Optimized Workflow
+Most slow pipelines have the same few causes. In order of how much they usually save:
 
-on:
-  push:
-    branches: [main]
+1. **Do not run what is not needed.** Cancel superseded runs with `concurrency` (above), skip workflows with `paths` filters when only documentation changed, and run expensive suites, such as end-to-end tests, only on the merge queue or on `main`.
+2. **Cache downloads.** The setup actions' built-in caches cover most package managers; `actions/cache` the rest (Part 4).
+3. **Run in parallel.** Split independent work into jobs, shard long test suites over a matrix (`--shard=1/4` in many test runners), and use parallel steps for small independent commands (Part 7).
+4. **Pick the right runner.** In Part 7, the same job took 30 seconds on Windows and 10 to 11 seconds on Linux and macOS. Run the full matrix where it matters and Linux elsewhere. For tiny jobs such as `all-checks`, the companion repository uses `ubuntu-slim`, a 1 vCPU runner that is a container rather than a VM, with a 15-minute job limit ([generally available since January 2026](https://github.blog/changelog/2026-01-22-1-vcpu-linux-runner-now-generally-available-in-github-actions/)):
 
-jobs:
-  # Run these jobs in parallel to save time
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run lint
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm test
-
-  type-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run type-check
-
-  # Only build if all checks pass
-  build:
-    needs: [lint, test, type-check]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
+```terminal
+{
+  "title": "ubuntu-slim",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "gh run view --job 120788176847 --log | grep 'Set up job' | cut -f3- | grep -A 4 'VM Image'",
+      "output": "2026-10-24T05:17:00.3161637Z ##[group]VM Image\n2026-10-24T05:17:00.3163048Z - OS: Linux (x64)\n2026-10-24T05:17:00.3163733Z - Source: Docker\n2026-10-24T05:17:00.3164287Z - Name: ubuntu:24.04\n2026-10-24T05:17:00.3164902Z - Version: 20261021.31.1"
+    }
+  ]
+}
 ```
 
-### Selective Workflow Execution
+5. **Set `timeout-minutes` on every job.** The default is 360 minutes (6 hours), lower only where the runner has its own limit, such as 15 minutes on `ubuntu-slim`. In a private repository, one hung job can cost 360 billed minutes.
+6. **Fetch less.** `actions/checkout` fetches one commit by default (`fetch-depth: 1`); only ask for `fetch-depth: 0` when a tool needs the history.
+7. **Look for slow steps.** The step timings in the run page, or `gh api repos/{owner}/{repo}/actions/jobs/<id> --jq '.steps[]'`, show where the time goes. In Part 7, they showed that Windows spent its extra time in checkout and `npm ci`, not in the tests.
 
-```yaml
-name: Smart Execution Workflow
+When the hosted runners are not enough, larger runners (more cores, GPUs, static IP addresses) are billed even in public repositories, and self-hosted runners run on your own machines. Self-hosted runners must stay up to date: since 29 September 2026, runners older than v2.329.0 cannot register, and runners below a newer minimum version stop getting jobs.
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+## Common Mistakes
 
-jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      src-changed: ${{ steps.filter.outputs.src }}
-      docs-changed: ${{ steps.filter.outputs.docs }}
-      config-changed: ${{ steps.filter.outputs.config }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
-        id: filter
-        with:
-          filters: |
-            src:
-              - 'src/**'
-              - 'package*.json'
-            docs:
-              - 'docs/**'
-              - '*.md'
-            config:
-              - '.github/**'
-              - 'config/**'
+- **Reading the whole log.** Start with the annotations and `--log-failed`.
+- **Debug logging left on.** It slows reading and exposes more detail than you need, in public repositories to everyone.
+- **`continue-on-error` to get a run green.** It hides the failure; fix it or make the step conditional.
+- **No `timeout-minutes`.** One stuck job can cost up to 6 hours of runner time.
+- **Optimizing before measuring.** Check the step timings first; in the companion repository, the tests were the fastest part of every job.
 
-  test:
-    needs: changes
-    if: needs.changes.outputs.src-changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run tests
-        run: echo "Running tests because src changed"
+## Summary
 
-  docs:
-    needs: changes
-    if: needs.changes.outputs.docs-changed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build docs
-        run: echo "Building docs because docs changed"
-```
+- Annotations, `gh run view --log-failed` and the job summary lead you to most failures quickly.
+- `gh run rerun --failed --debug` shows how every condition was evaluated; `ACTIONS_STEP_DEBUG` turns debug logs on for all runs.
+- Workflow commands (`::error`, `::warning`, `::group::`) and `$GITHUB_STEP_SUMMARY` make your own steps easier to read.
+- Speed comes from skipping unneeded work, caching, parallel jobs and steps, the right runner, and timeouts.
 
-## Workflow Monitoring and Alerting
+In [Part 9](/guides/introduction-to-cicd/09-security-best-practices-and-production-patterns) you secure the pipeline: token permissions, untrusted input, unsafe triggers, and actions pinned to commit SHAs.
 
-Production CI/CD systems need monitoring to catch issues before they impact developer productivity:
+## Keep Learning
 
-```yaml
-name: Monitored Production Workflow
-
-on:
-  push:
-    branches: [main]
-  schedule:
-    # Run health check daily at 9 AM UTC
-    - cron: '0 9 * * *'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # Track workflow execution time
-      - name: Record start time
-        run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
-
-      - name: Deploy application
-        run: |
-          echo "Deploying application..."
-          # Your deployment steps here
-          sleep 30  # Simulate deployment time
-
-      # Calculate and report execution time
-      - name: Report execution metrics
-        if: always()
-        run: |
-          END_TIME=$(date +%s)
-          DURATION=$((END_TIME - START_TIME))
-
-          echo "Workflow execution time: ${DURATION} seconds"
-
-          # Send metrics to monitoring system
-          curl -X POST "${{ secrets.METRICS_ENDPOINT }}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"workflow\": \"${{ github.workflow }}\",
-              \"job\": \"${{ github.job }}\",
-              \"duration\": $DURATION,
-              \"status\": \"${{ job.status }}\",
-              \"repository\": \"${{ github.repository }}\",
-              \"branch\": \"${{ github.ref_name }}\",
-              \"commit\": \"${{ github.sha }}\",
-              \"run_id\": \"${{ github.run_id }}\"
-            }" || echo "Failed to send metrics"
-
-      # Send alerts on failure
-      - name: Send failure alert
-        if: failure()
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST "$SLACK_WEBHOOK" \
-            -H 'Content-type: application/json' \
-            --data "{
-              \"text\": \"🚨 Deployment failed in ${{ github.repository }}\",
-              \"attachments\": [{
-                \"color\": \"danger\",
-                \"fields\": [
-                  {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
-                  {\"title\": \"Commit\", \"value\": \"${{ github.sha }}\", \"short\": true},
-                  {\"title\": \"Run\", \"value\": \"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\", \"short\": false}
-                ]
-              }]
-            }"
-
-      # Send success notification for main branch deployments
-      - name: Send success notification
-        if: success() && github.ref == 'refs/heads/main'
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST "$SLACK_WEBHOOK" \
-            -H 'Content-type: application/json' \
-            --data "{
-              \"text\": \"✅ Deployment successful for ${{ github.repository }}\",
-              \"attachments\": [{
-                \"color\": \"good\",
-                \"fields\": [
-                  {\"title\": \"Commit\", \"value\": \"${{ github.sha }}\", \"short\": true},
-                  {\"title\": \"Duration\", \"value\": \"${DURATION}s\", \"short\": true}
-                ]
-              }]
-            }"
-```
-
-## Performance Metrics and Analysis
-
-Track key metrics to identify optimization opportunities:
-
-```yaml
-name: Performance Analysis
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  analyze-performance:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Get full history for comparison
-
-      - name: Analyze workflow performance
-        run: |
-          echo "=== Workflow Performance Analysis ==="
-
-          # Analyze recent workflow runs
-          echo "Recent workflow performance:"
-          gh api repos/${{ github.repository }}/actions/workflows/${{ github.workflow }}/runs \
-            --jq '.workflow_runs[0:5] | .[] | "\(.created_at) - \(.conclusion) - \(.run_started_at) to \(.updated_at)"'
-
-          # Analyze job durations
-          echo "Job duration analysis:"
-          gh api repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs \
-            --jq '.jobs[] | "\(.name): \(.started_at) to \(.completed_at)"'
-
-          # Check for performance regressions
-          echo "Checking for performance regressions..."
-
-          # Compare with previous successful run
-          PREVIOUS_RUN=$(gh api repos/${{ github.repository }}/actions/workflows/${{ github.workflow }}/runs \
-            --jq '.workflow_runs[] | select(.conclusion == "success") | .id' | head -2 | tail -1)
-
-          if [ -n "$PREVIOUS_RUN" ]; then
-            echo "Comparing with run $PREVIOUS_RUN"
-            # Add comparison logic here
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate performance report
-        run: |
-          cat > performance-report.md << 'EOF'
-          # Workflow Performance Report
-
-          **Run ID**: ${{ github.run_id }}
-          **Workflow**: ${{ github.workflow }}
-          **Commit**: ${{ github.sha }}
-          **Branch**: ${{ github.ref_name }}
-
-          ## Performance Metrics
-
-          - **Total Duration**: TBD
-          - **Queue Time**: TBD
-          - **Execution Time**: TBD
-
-          ## Recommendations
-
-          - Consider caching strategies for dependency installation
-          - Evaluate parallel job execution opportunities
-          - Monitor for external service latency issues
-
-          EOF
-
-          echo "Performance report generated"
-
-      - name: Upload performance report
-        uses: actions/upload-artifact@v4
-        with:
-          name: performance-report
-          path: performance-report.md
-```
-
-## Troubleshooting Intermittent Failures
-
-Intermittent failures are the most challenging to debug. Here's a systematic approach:
-
-```yaml
-name: Flaky Test Detection
-
-on:
-  schedule:
-    # Run multiple times to detect flaky tests
-    - cron: '0 */4 * * *'
-
-jobs:
-  flaky-test-detection:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        attempt: [1, 2, 3, 4, 5]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests (attempt ${{ matrix.attempt }})
-        id: test-run
-        run: |
-          echo "Running test attempt ${{ matrix.attempt }}"
-          npm test -- --verbose --json --outputFile=test-results-${{ matrix.attempt }}.json
-        continue-on-error: true
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results-attempt-${{ matrix.attempt }}
-          path: test-results-${{ matrix.attempt }}.json
-
-  analyze-flaky-tests:
-    needs: flaky-test-detection
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Download all test results
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-results-attempt-*
-          merge-multiple: true
-
-      - name: Analyze test consistency
-        run: |
-          echo "=== Flaky Test Analysis ==="
-
-          # Analyze test results across all attempts
-          for i in {1..5}; do
-            if [ -f "test-results-$i.json" ]; then
-              echo "Attempt $i results:"
-              cat test-results-$i.json | jq -r '.success'
-            fi
-          done
-
-          echo "Tests that failed in some attempts but not others are potentially flaky"
-```
-
-Good observability, debugging practices, and performance optimization make the difference between CI/CD that helps your team move fast and CI/CD that slows everyone down. Invest time in making your workflows debuggable and efficient - it pays dividends over the long term.
-
-In the next section, we'll explore security best practices and production patterns that ensure your automation is not just fast and reliable, but also secure and suitable for enterprise environments.
+- [Why Your CI/CD Pipeline Is Slower Than It Should Be (and How to Fix It)](/posts/why-your-ci-pipeline-is-slower)
+- [GitHub Actions Removed Node 20. Find Every node20 Action You Still Run](/posts/github-actions-node20-removed)
+- [GitHub Started Enforcing Self-Hosted Runner Versions. We Tested What Happens](/posts/github-self-hosted-runner-version-window)
