@@ -1,12 +1,12 @@
 ---
 title: 'Kubernetes 1.37 Garhwal: What Shipped and What Slipped'
-excerpt: 'Kubernetes 1.37 landed on August 26 with 67 enhancements: 16 stable, 23 beta, 27 alpha. We checked the release against the June feature-freeze plan, KEP by KEP. Pod-level resources and Pod Certificates made stable, the GPU-slicing feature everyone watched did not graduate, and the ipvs removal clock is now running.'
+excerpt: 'Kubernetes 1.37 landed on August 26 with 67 enhancements: 16 stable, 23 beta, 27 alpha. We checked the release against the June feature-freeze plan, KEP by KEP. Pod Certificates made stable, pod-level resources slipped to 1.38, the GPU-slicing feature everyone watched did not graduate, and the ipvs removal clock is now running.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
 date: '2026-08-27'
 publishedAt: '2026-08-27T15:00:00Z'
-updatedAt: '2026-08-27T15:00:00Z'
+updatedAt: '2026-10-24T09:00:00Z'
 readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
@@ -26,7 +26,8 @@ When [the 1.37 feature set froze in June](https://devops-daily.com/posts/kuberne
 
 ## TLDR
 
-- **Went stable:** pod-level resources, Pod Certificates, ClusterTrustBundles, configurable HPA tolerance, KYAML output for kubectl, and DRA device taints and tolerations.
+- **Went stable:** Pod Certificates, ClusterTrustBundles, configurable HPA tolerance, KYAML output for kubectl, and DRA device taints and tolerations.
+- **Slipped:** pod-level resources was planned to go stable, missed code freeze and stays beta; stable is now planned for 1.38.
 - **Did not graduate:** partitionable devices (KEP-4815), the GPU-slicing feature we called the line item to watch in June. It stays beta, where it has been since 1.36.
 - **New since the freeze post:** kube-proxy `ipvs` mode is now formally deprecated, with removal scheduled for 1.43.
 - **Still true from June:** cgroup v1 nodes fail to start kubelet unless you explicitly opt out, so audit before you roll.
@@ -71,29 +72,7 @@ Three releases a year makes 1.43 land around early 2028. That sounds far away; f
 
 ## What made stable, and why it matters
 
-We verified each of these against the KEP's own `kep.yaml`, which records the milestone per stage.
-
-**Pod-level resources ([KEP-2837](https://github.com/kubernetes/enhancements/issues/2837), alpha 1.33, beta 1.34, stable 1.37).** You can now set CPU and memory requests and limits for the pod as a whole, not only per container. Sidecar-heavy pods get the practical win: instead of padding every container's request for its worst case, you give the pod a shared budget that containers draw from.
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: app-with-sidecars
-spec:
-  resources:            # pod-level, stable in 1.37
-    requests:
-      cpu: '1'
-      memory: 1Gi
-    limits:
-      memory: 2Gi
-  containers:
-    - name: app
-      image: registry.example.com/app:1.4.2
-    - name: log-shipper
-      image: registry.example.com/shipper:2.1.0
-      # no per-container requests needed; the pod budget covers both
-```
+We checked each of these against the KEP's `kep.yaml` and against the enhancement issue's status at code freeze. `kep.yaml` records the planned milestone, not what merged, and that difference caught us once (see the next section).
 
 **Configurable HPA tolerance ([KEP-4951](https://github.com/kubernetes/enhancements/issues/4951), stable 1.37).** The Horizontal Pod Autoscaler's scaling tolerance was a cluster-wide constant (10%) for a decade. It is now settable per HPA, which is the difference between one twitchy workload flapping and being able to tune that one workload without touching the fleet:
 
@@ -111,6 +90,30 @@ behavior:
 
 **DRA device taints and tolerations ([KEP-5055](https://github.com/kubernetes/enhancements/issues/5055), stable 1.37).** Drivers or admins can taint a device (degraded, scheduled for maintenance) and workloads tolerate it or avoid it, the same mental model as node taints, applied per accelerator. This is the DRA graduation of the cycle.
 
+## What slipped: pod-level resources
+
+**Pod-level resources ([KEP-2837](https://github.com/kubernetes/enhancements/issues/2837), alpha 1.33, beta 1.34; stable planned for 1.37, now 1.38).** It was on the 1.37 stable list at feature freeze, but its code was not merge-ready at code freeze on 23 July, so it was removed from the 1.37 milestone and stays beta. The feature itself is unchanged: you can set CPU and memory requests and limits for the pod as a whole, not only per container. Sidecar-heavy pods get the practical win: instead of padding every container's request for its worst case, you give the pod a shared budget that containers draw from.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-with-sidecars
+spec:
+  resources:            # pod-level, still beta in 1.37 (stable planned for 1.38)
+    requests:
+      cpu: '1'
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+  containers:
+    - name: app
+      image: registry.example.com/app:1.4.2
+    - name: log-shipper
+      image: registry.example.com/shipper:2.1.0
+      # no per-container requests needed; the pod budget covers both
+```
+
 ## The GPU story: what did not graduate
 
 In June we called **partitionable devices ([KEP-4815](https://github.com/kubernetes/enhancements/issues/4815))**, the framework for slicing one physical GPU into independently schedulable logical devices, "the 1.37 line item to read the KEP on". Checking the KEP now: alpha in 1.33, beta in 1.36, and its latest recorded milestone is still **v1.36**. It did not graduate in 1.37.
@@ -122,7 +125,7 @@ That is not a failure, it is how the process is supposed to work: graduating a s
 While fact-checking this post we found third-party 1.37 roundups disagreeing with each other: one lists the CBOR serializer as graduating to stable, another lists ClusterTrustBundles as beta. The KEP files say otherwise: **CBOR ([KEP-4222](https://github.com/kubernetes/enhancements/issues/4222)) is beta in 1.37** with an empty stable milestone, and ClusterTrustBundles is stable.
 
 :::tip
-The authoritative record for any graduation claim is the KEP's own `kep.yaml` in [kubernetes/enhancements](https://github.com/kubernetes/enhancements), which lists the milestone per stage. Thirty seconds of checking beats propagating someone else's summary, and this applies to our summaries too.
+For any graduation claim, check two things in [kubernetes/enhancements](https://github.com/kubernetes/enhancements): the KEP's `kep.yaml`, which lists the planned milestone per stage, and the enhancement issue, which shows whether it stayed in the milestone after code freeze. `kep.yaml` alone is a plan, not a result: we first listed pod-level resources as stable in 1.37 from its `kep.yaml`, and it had slipped. Thirty seconds of checking beats propagating someone else's summary, and this applies to our summaries too.
 :::
 
 ## What to do now
@@ -130,7 +133,7 @@ The authoritative record for any graduation claim is the KEP's own `kep.yaml` in
 1. **Audit nodes for cgroup v1 and containerd versions** before scheduling the upgrade. The kubelet-will-not-start failure mode is the one that turns an upgrade window into an incident.
 2. **Record your kube-proxy mode.** If it is `ipvs`, open a migration ticket now with a 1.40 deadline, and evaluate nftables mode (kernel 5.13+) rather than falling back to iptables.
 3. **Grep manifests for static pods using `secretRef`/`configMapRef`** and for scripts calling `kubectl run -f`. Both are cheap to fix ahead of time.
-4. **If sidecar padding inflates your requests, trial pod-level resources** in staging; it is stable and it directly reduces over-provisioning.
+4. **If sidecar padding inflates your requests, trial pod-level resources** in staging; it is still beta in 1.37 (stable is planned for 1.38), and it directly reduces over-provisioning.
 5. **If you planned around GPU partitioning going GA, revisit the plan.** It is still beta. Test it behind the gate, do not bet capacity on it.
 
 1.37 confirms the pattern we described in June: steady hardening for AI hardware, fewer escape hatches for legacy node configuration, and deprecations that arrive with multi-release clocks attached. The upgrade should be calm, provided the checklist above is boring by the time you start it.
