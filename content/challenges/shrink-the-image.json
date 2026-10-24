@@ -34,7 +34,7 @@
     {
       "id": "non-root",
       "name": "Runs as a non-root user",
-      "description": "The image's USER resolves to a UID other than 0 (a name is looked up in the image's /etc/passwd), and no process in the running container has UID 0."
+      "description": "Docker starts the image as a UID other than 0 (the grader checks with its own static id binary, so a name that maps to UID 0 does not count), and no process in the running container has UID 0."
     },
     {
       "id": "starts",
@@ -67,7 +67,7 @@
   ],
   "localTest": {
     "intro": "From the challenge folder, with Docker installed:",
-    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\ncurl -i localhost:8000/health\ncurl --get --data-urlencode 'text=Shrink This Image' localhost:8000/slugify\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
+    "commands": "docker build -t shrink-the-image .\ndocker image ls shrink-the-image\ndocker run --rm -d --name shrink -p 8000:8000 shrink-the-image\nsleep 3\ncurl -i localhost:8000/health\ncurl --get --data-urlencode 'text=Shrink This Image' localhost:8000/slugify\ndocker top shrink -eo uid,cmd\ndocker rm -f shrink"
   },
   "related": {
     "exercises": ["docker-multi-stage-build", "docker-server-deployment"],

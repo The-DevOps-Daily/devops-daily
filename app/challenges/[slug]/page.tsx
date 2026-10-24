@@ -211,6 +211,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
           <pre
             className="overflow-x-auto rounded-lg bg-muted p-4 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             tabIndex={0}
+            role="region"
             aria-labelledby="local"
           >
             <code>{challenge.localTest.commands}</code>

@@ -66,7 +66,7 @@
   "hints": [
     {
       "title": "Getting the edge cases right",
-      "body": "Read each line with one regular expression match instead of cutting fields by position. The user agent contains spaces, so field numbers after the request are not stable."
+      "body": "Match each line against the whole pattern before you use any of its fields, so a malformed line is skipped instead of counted with wrong values."
     },
     {
       "title": "Speed",
