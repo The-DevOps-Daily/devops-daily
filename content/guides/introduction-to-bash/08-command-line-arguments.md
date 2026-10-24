@@ -1,585 +1,620 @@
 ---
-title: 'Command Line Arguments'
-description: 'Learn how to accept and process command-line arguments to create flexible and user-friendly Bash scripts'
+title: 'Bash Script Arguments: $@, shift, getopts and Long Options'
+description: 'Handle Bash script arguments: "$@" versus $*, check and validate input (numbers, ports, IP addresses), shift, getopts, long options, stdin and exit codes.'
 order: 8
 ---
 
-Command-line arguments allow users to pass information to your script when they run it. Learning to handle these arguments effectively will make your scripts more flexible and user-friendly. In this section, we'll explore how to accept, validate, and process arguments in Bash scripts.
+Arguments are how people and other programs tell your script what to do. A script with a clear interface (named options, sensible defaults, a `--help` that answers questions, errors that say what was wrong) gets used and automated. One that guesses, or breaks on a file name with a space, gets rewritten.
 
-## Basic Argument Handling
+This part covers the positional parameters, checking and validating arguments, `shift`, `getopts` for short options, a loop for long options, GNU `getopt`, reading from standard input, and building commands safely from arguments. At the end, `logstat` gets a complete command-line interface.
 
-In Bash, command-line arguments are accessible through special variables:
+## Prerequisites
 
-- `$0`: The name of the script itself
-- `$1`, `$2`, `$3`, etc.: The first, second, third arguments, and so on
-- `$@`: All arguments as separate strings
-- `$*`: All arguments as a single string
-- `$#`: The number of arguments
+- `logstat` and `lib/logstat.sh` from [Part 6](/guides/introduction-to-bash/06-functions), installed in `~/.local/bin` as in [Part 7](/guides/introduction-to-bash/07-script-permissions).
+- `case` and `[[ =~ ]]` from [Part 5](/guides/introduction-to-bash/05-control-structures).
 
-Here's a simple example:
+## "$@", "$*" and $@
 
-```bash
-#!/bin/bash
-
-echo "Script name: $0"
-echo "First argument: $1"
-echo "Second argument: $2"
-echo "Number of arguments: $#"
-echo "All arguments: $@"
-```
-
-If you save this as `args.sh` and run it with:
+`$1` to `$9` hold the first nine arguments, `${10}` and up need braces, and `$#` is the count. To pass all of them on, there are three forms that look alike and behave differently:
 
 ```bash
-./args.sh hello world
+#!/usr/bin/env bash
+# args.sh: show how the three forms expand
+printf '"$@" gives %d words:' "$#"
+for arg in "$@"; do printf ' [%s]' "$arg"; done
+echo
+printf '"$*" gives 1 word: [%s]\n' "$*"
+printf '$@ unquoted gives:'
+# shellcheck disable=SC2068 # unquoted on purpose, to show the problem
+for arg in $@; do printf ' [%s]' "$arg"; done
+echo
+if (($# > 0)); then
+    echo "last: ${!#}, all but the first: ${*:2}"
+fi
 ```
 
-You'll get output like:
-
+```terminal
+{
+  "title": "only \"$@\" keeps the arguments as they were",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash args.sh deploy \"notes api\" 'logs/*.log'",
+      "output": "\"$@\" gives 3 words: [deploy] [notes api] [logs/*.log]\n\"$*\" gives 1 word: [deploy notes api logs/*.log]\n$@ unquoted gives: [deploy] [notes] [api] [logs/access.log] [logs/app.log]\nlast: logs/*.log, all but the first: notes api logs/*.log"
+    }
+  ]
+}
 ```
-Script name: ./args.sh
-First argument: hello
-Second argument: world
-Number of arguments: 2
-All arguments: hello world
-```
 
-## Checking for Required Arguments
+`"$@"` is the one you want almost every time: each argument stays one word, spaces included. `"$*"` joins them into one string with the first character of `IFS` (a space by default), which is useful for messages. Unquoted `$@` or `$*` splits on spaces and expands wildcards: `notes api` became two words, and the pattern `logs/*.log` turned into two file names.
 
-To ensure your script receives the necessary arguments, you can check `$#`:
+`${!#}` is the last argument and `"${@:2}"` all arguments from the second on. `set -- a b c` replaces the positional parameters, which is handy in functions and tests.
+
+## Check That Arguments Were Given
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# checks.sh: different questions you can ask about the arguments
+echo "count: $#"
 
-if [ $# -lt 2 ]; then
-    echo "Error: Not enough arguments"
-    echo "Usage: $0 <source> <destination>"
-    exit 1
+if (( $# == 0 )); then
+    echo "no arguments at all"
+fi
+if [[ -n ${1-} ]]; then
+    echo "the first argument is set and not empty: $1"
+else
+    echo "the first argument is missing or empty"
 fi
 
-source_file=$1
-destination_file=$2
-
-echo "Copying from $source_file to $destination_file"
-# cp "$source_file" "$destination_file"
-```
-
-This script expects at least two arguments and exits with an error message if they're not provided.
-
-## Iterating Through Arguments
-
-You can process all arguments with a loop:
-
-```bash
-#!/bin/bash
-
-echo "Processing all arguments:"
-
-# Method 1: Using $@
-for arg in "$@"; do
-    echo "- $arg"
-done
-
-# Method 2: Using a counter
-echo "Processing with index:"
-for ((i=1; i<=$#; i++)); do
-    arg=${!i}
-    echo "$i: $arg"
+for arg in "$@"; do              # is a particular option present anywhere?
+    if [[ $arg == --dry-run ]]; then
+        echo "dry run requested"
+        break
+    fi
 done
 ```
 
-## Shifting Arguments
-
-The `shift` command moves the argument positions down, so `$2` becomes `$1`, `$3` becomes `$2`, and so on:
-
-```bash
-#!/bin/bash
-
-echo "Before shift: $1 $2 $3"
-
-shift
-
-echo "After shift: $1 $2 $3"
-
-# Shift multiple positions
-shift 2
-
-echo "After shift 2: $1 $2 $3"
+```terminal
+{
+  "title": "count, empty and present",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash checks.sh",
+      "output": "count: 0\nno arguments at all\nthe first argument is missing or empty"
+    },
+    {
+      "comment": "an empty string still counts as an argument",
+      "cmd": "bash checks.sh \"\"",
+      "output": "count: 1\nthe first argument is missing or empty"
+    },
+    {
+      "cmd": "bash checks.sh deploy --dry-run",
+      "output": "count: 2\nthe first argument is set and not empty: deploy\ndry run requested"
+    }
+  ]
+}
 ```
 
-This is useful for processing arguments one by one:
+Use `${1-}` rather than `$1` in tests like these so they also work under `set -u`. For a value the script cannot run without, `${1:?usage: deploy.sh TARGET}` checks and exits in one go ([Part 4](/guides/introduction-to-bash/04-bash-variables)). More variations: [check if an input argument exists](/posts/check-existence-of-input-argument-in-bash-shell-script).
+
+## shift
+
+`shift` drops `$1` and moves the others down; `shift 2` drops two. It fails, without changing anything, when there are fewer arguments than you asked to drop, which stops a script under `set -e`:
+
+```terminal
+{
+  "title": "shift",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "set -- --by ip access.log; shift; echo \"now: $*\"",
+      "output": "now: ip access.log"
+    },
+    {
+      "cmd": "shift 3; echo \"shift 3 status: $?, still: $*\"",
+      "output": "shift 3 status: 1, still: ip access.log"
+    }
+  ]
+}
+```
+
+A `while (( $# > 0 ))` loop with `shift` processes arguments one at a time; the long-options parser below works that way.
+
+## Validate Arguments
+
+Check every value before you use it, and say exactly what was wrong. Small functions keep the checks readable. Note what each regular expression rules out: an empty string, signs, spaces, leading zeros (which Bash would read as octal, [Part 4](/guides/introduction-to-bash/04-bash-variables)) and absurd lengths:
 
 ```bash
-#!/bin/bash
+# lib/validate.sh: argument checks that return 0 (valid) or 1 (invalid)
+# shellcheck shell=bash
 
-echo "Processing arguments:"
+# a whole number from 0 to 999999999, without leading zeros
+is_uint() { [[ $1 =~ ^(0|[1-9][0-9]{0,8})$ ]]; }
 
-while [ $# -gt 0 ]; do
-    echo "- $1"
+# a TCP or UDP port number
+is_port() { is_uint "$1" && (($1 >= 1 && $1 <= 65535)); }
+
+# a dotted IPv4 address: four numbers from 0 to 255, no leading zeros
+is_ipv4() {
+    local -a octets
+    local o
+    [[ $1 =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || return 1
+    IFS=. read -r -a octets <<<"$1"
+    for o in "${octets[@]}"; do
+        if [[ ! $o =~ ^(0|[1-9][0-9]*)$ ]] || ((o > 255)); then
+            return 1
+        fi
+    done
+}
+
+# one of a fixed list of words: is_one_of VALUE WORD...
+is_one_of() {
+    local value=$1 word
     shift
-done
+    for word in "$@"; do
+        [[ $value == "$word" ]] && return 0
+    done
+    return 1
+}
 ```
 
-## Default Values for Arguments
-
-You can provide default values for optional arguments:
-
-```bash
-#!/bin/bash
-
-# Default values
-output_file=${2:-"output.txt"}
-
-echo "Input file: $1"
-echo "Output file: $output_file"
+```terminal
+{
+  "title": "try the checks",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "source lib/validate.sh"
+    },
+    {
+      "cmd": "for p in 8080 0 65536 080 -1 \"\" 22abc; do is_port \"$p\" && r=valid || r=invalid; printf '%-7s port %s\\n' \"[$p]\" \"$r\"; done",
+      "output": "[8080]  port valid\n[0]     port invalid\n[65536] port invalid\n[080]   port invalid\n[-1]    port invalid\n[]      port invalid\n[22abc] port invalid"
+    },
+    {
+      "cmd": "for ip in 192.0.2.44 10.0.0.256 10.0.0 010.0.0.1 1.2.3.4.5 '1.2.3.4 '; do is_ipv4 \"$ip\" && r=valid || r=invalid; printf '%-12s %s\\n' \"[$ip]\" \"$r\"; done",
+      "output": "[192.0.2.44] valid\n[10.0.0.256] invalid\n[10.0.0]     invalid\n[010.0.0.1]  invalid\n[1.2.3.4.5]  invalid\n[1.2.3.4 ]   invalid"
+    },
+    {
+      "cmd": "is_one_of staging dev staging production && echo \"staging is allowed\"",
+      "output": "staging is allowed"
+    }
+  ]
+}
 ```
 
-The syntax `${variable:-default}` means "use the value of `variable` if it's set, otherwise use `default`".
+The `&& r=valid || r=invalid` form is safe here because an assignment cannot fail. For files, test with `[[ -r $file ]]` (exists and is readable) or `[[ -d $dir ]]`, as [Part 3](/guides/introduction-to-bash/03-working-with-files) shows.
 
-## Named Arguments and Flags
+Checking whether an address is **reachable** is a different question from whether it is valid. `ping -c 1 -W 2 "$ip" > /dev/null` works where ICMP is allowed, but many networks block it; for a service, test the port it should listen on, as `wait-for-port.sh` in [Part 5](/guides/introduction-to-bash/05-control-structures) does with `/dev/tcp`.
 
-For more complex scripts, you might want to support named arguments or flags:
+## Short Options With getopts
+
+`getopts` is a builtin that parses short options the POSIX way: `-v`, `-n 5`, `-n5`, and combined flags such as `-vn 5`. You give it an **option string** that lists the letters; a letter followed by `:` takes a value.
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# greet.sh: getopts example. usage: greet.sh [-v] [-n COUNT] [-g GREETING] NAME...
+verbose=0 count=1 greeting=Hello
 
-verbose=false
-output_file="output.txt"
-
-# Parse options
-while getopts ":vo:" option; do
-    case $option in
-        v)
-            verbose=true
-            ;;
-        o)
-            output_file=$OPTARG
-            ;;
-        \?)
-            echo "Error: Invalid option -$OPTARG"
-            exit 1
-            ;;
-        :)
-            echo "Error: Option -$OPTARG requires an argument"
-            exit 1
-            ;;
+while getopts ":vn:g:" opt; do
+    case $opt in
+        v) verbose=1 ;;
+        n) count=$OPTARG ;;
+        g) greeting=$OPTARG ;;
+        :) echo "greet.sh: option -$OPTARG needs a value" >&2; exit 2 ;;
+        ?) echo "greet.sh: unknown option -$OPTARG" >&2; exit 2 ;;
     esac
 done
+shift $(( OPTIND - 1 ))        # remove the options; the names are left
 
-# Skip processed options to access remaining arguments
-shift $((OPTIND - 1))
+(( $# > 0 )) || { echo "usage: greet.sh [-v] [-n COUNT] [-g GREETING] NAME..." >&2; exit 2; }
+[[ $count =~ ^[1-9][0-9]?$ ]] || { echo "greet.sh: COUNT must be 1 to 99" >&2; exit 2; }
 
-# Now $1 is the first non-option argument
-input_file=$1
-
-if [ -z "$input_file" ]; then
-    echo "Error: Input file is required"
-    echo "Usage: $0 [-v] [-o output_file] input_file"
-    exit 1
-fi
-
-# Use the arguments
-echo "Input file: $input_file"
-echo "Output file: $output_file"
-echo "Verbose mode: $verbose"
-
-if $verbose; then
-    echo "Running in verbose mode"
-fi
+(( verbose )) && echo "greeting $# name(s) $count time(s)" >&2
+for name in "$@"; do
+    for (( i = 0; i < count; i++ )); do
+        echo "$greeting, $name!"
+    done
+done
 ```
 
-This script accepts:
-
-- `-v`: A flag to enable verbose mode
-- `-o file`: An option to specify the output file
-- A required input file argument
-
-You would run it like:
-
-```bash
-./script.sh -v -o custom.txt input.txt
-```
-
-## Using getopt for Advanced Option Parsing
-
-For even more complex option parsing, especially with long options (like `--verbose`), you can use the `getopt` command:
-
-```bash
-#!/bin/bash
-
-# Define default values
-verbose=false
-output_file="output.txt"
-count=1
-
-# Define help function
-show_help() {
-    echo "Usage: $0 [options] input_file"
-    echo "Options:"
-    echo "  -v, --verbose       Enable verbose output"
-    echo "  -o, --output FILE   Specify output file (default: output.txt)"
-    echo "  -c, --count NUMBER  Specify count (default: 1)"
-    echo "  -h, --help          Show this help message"
+```terminal
+{
+  "title": "getopts at work",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash greet.sh -v -n 2 Ada",
+      "output": "greeting 1 name(s) 2 time(s)\nHello, Ada!\nHello, Ada!"
+    },
+    {
+      "comment": "combined flags and an attached value",
+      "cmd": "bash greet.sh -vn1 -gHi Ada \"Grace Hopper\"",
+      "output": "greeting 2 name(s) 1 time(s)\nHi, Ada!\nHi, Grace Hopper!"
+    },
+    {
+      "comment": "-- ends the options, so a name may start with a dash",
+      "cmd": "bash greet.sh -- -x",
+      "output": "Hello, -x!"
+    },
+    {
+      "cmd": "bash greet.sh -x Ada; echo \"exit code: $?\"",
+      "output": "greet.sh: unknown option -x\nexit code: 2"
+    },
+    {
+      "cmd": "bash greet.sh Ada -n 3",
+      "output": "Hello, Ada!\nHello, -n!\nHello, 3!"
+    }
+  ]
 }
+```
 
-# Parse options
-TEMP=$(getopt -o "vo:c:h" --long "verbose,output:,count:,help" -n "$0" -- "$@")
-if [ $? -ne 0 ]; then
-    echo "Error: Invalid options"
-    show_help
-    exit 1
-fi
+How it works:
 
-# Reset positional parameters
-eval set -- "$TEMP"
+- The leading `:` in `":vn:g:"` selects **silent mode**: instead of printing its own messages, `getopts` sets `opt` to `?` for an unknown option and to `:` for a missing value, with the letter in `OPTARG`, so your script writes the error.
+- `OPTIND` is the index of the next argument to process. `shift $(( OPTIND - 1 ))` removes everything `getopts` consumed.
+- `getopts` stops at the first argument that is not an option. In the last example, `-n 3` came after `Ada`, so it was treated as two more names. That is POSIX behaviour (GNU tools reorder arguments, `getopts` does not).
+- `getopts` only knows single-letter options. `--count` needs one of the approaches below.
 
-# Process options
-while true; do
-    case "$1" in
-        -v|--verbose)
-            verbose=true
+If you call `getopts` inside a function more than once, declare `local OPTIND` in the function. `OPTIND` is global, so the second call would otherwise start where the first one stopped and parse nothing.
+
+## Long Options With a while Loop
+
+For `--by ip` and `--by=ip` style options, which most modern tools accept, loop over the arguments with `case`. This is the version `logstat` uses; it accepts both forms, `--` and `-` for standard input:
+
+```bash
+while (($# > 0)); do
+    case $1 in
+        -b | --by)
+            (($# >= 2)) || usage_error "option $1 needs a value"
+            by=$2
+            shift 2
+            ;;
+        --by=*)
+            by=${1#*=} # everything after the first =
             shift
             ;;
-        -o|--output)
-            output_file="$2"
-            shift 2
-            ;;
-        -c|--count)
-            count="$2"
-            shift 2
-            ;;
-        -h|--help)
-            show_help
+        -h | --help)
+            usage
             exit 0
             ;;
         --)
             shift
+            files+=("$@") # everything after -- is a file name
             break
             ;;
+        -?*) usage_error "unknown option: $1" ;;
         *)
-            echo "Error: Internal error!"
-            exit 1
+            # a file name, or - for standard input
+            files+=("$1")
+            shift
             ;;
     esac
 done
-
-# Check for required input file
-if [ $# -lt 1 ]; then
-    echo "Error: Input file is required"
-    show_help
-    exit 1
-fi
-
-input_file="$1"
-
-# Use the arguments
-echo "Input file: $input_file"
-echo "Output file: $output_file"
-echo "Count: $count"
-echo "Verbose mode: $verbose"
-
-if $verbose; then
-    echo "Running in verbose mode"
-fi
 ```
 
-This script handles both short options (`-v`, `-o`) and long options (`--verbose`, `--output`). You can run it with:
+The loop collects file names in an array wherever they appear, so options may come before or after them. The price is that it does not split combined short flags such as `-vn5`; add `getopts`-style handling only if your users expect it.
 
-```bash
-./script.sh --verbose --output=custom.txt --count=5 input.txt
-# or
-./script.sh -v -o custom.txt -c 5 input.txt
+### GNU getopt
+
+On Linux, the `getopt` **program** from util-linux (not the `getopts` builtin) can do the parsing and reordering, including long options, abbreviations and `--opt=value`:
+
+```terminal
+{
+  "title": "util-linux getopt normalizes the arguments",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "getopt --version",
+      "output": "getopt from util-linux 2.39.3"
+    },
+    {
+      "cmd": "getopt -o b:n:h --long by:,top:,help -n logstat -- logs/access.log --top=3 -b ip",
+      "output": " --top '3' -b 'ip' -- 'logs/access.log'"
+    },
+    {
+      "cmd": "getopt -o b:n:h --long by:,top:,help -n logstat -- --bogus logs/access.log; echo \"exit code: $?\"",
+      "output": "logstat: unrecognized option '--bogus'\n -- 'logs/access.log'\nexit code: 1"
+    }
+  ]
+}
 ```
 
-## Validating Arguments
+A script uses it as `parsed=$(getopt ...) || exit 2` followed by `eval set -- "$parsed"`; `getopt` quotes its output so the `eval` is safe. It is not portable: macOS ships a BSD `getopt` without long options, and Alpine's BusyBox version differs again. Use it in scripts that only run on GNU/Linux, and the `while` loop everywhere else.
 
-Always validate user input to prevent errors or security issues:
+## Standard Input and the - Convention
 
-```bash
-#!/bin/bash
+Tools that read data should accept file names and, when there are none, read standard input, so they work in pipelines. A lone `-` conventionally means "standard input" too. One check makes the tool friendlier: if there are no files and standard input is a terminal, the user probably forgot an argument, so say so instead of waiting for typed input. `[[ -t 0 ]]` is true when standard input is a terminal.
 
-# Check if the number of arguments is correct
-if [ $# -ne 2 ]; then
-    echo "Error: Expected exactly 2 arguments"
-    echo "Usage: $0 <age> <name>"
-    exit 1
-fi
+## Build Commands Safely From Arguments
 
-age=$1
-name=$2
+Scripts often assemble a command from options and arguments. Build it in an **array**, and run it with `"${array[@]}"`. Each element stays one argument, whatever characters it contains:
 
-# Validate age (must be a number)
-if ! [[ "$age" =~ ^[0-9]+$ ]]; then
-    echo "Error: Age must be a number"
-    exit 1
-fi
-
-# Validate name (must be alphabetic)
-if ! [[ "$name" =~ ^[a-zA-Z]+$ ]]; then
-    echo "Error: Name must contain only letters"
-    exit 1
-fi
-
-echo "Hello, $name! You are $age years old."
+```terminal
+{
+  "title": "a command in an array versus eval",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "mkdir -p \"client's files\" && echo \"invoice\" > \"client's files/jan.txt\""
+    },
+    {
+      "cmd": "dirs=(logs \"client's files\"); excludes=('*.env' 'tmp*')"
+    },
+    {
+      "cmd": "args=(--create --gzip --file backup.tar.gz); for p in \"${excludes[@]}\"; do args+=(\"--exclude=$p\"); done"
+    },
+    {
+      "cmd": "tar \"${args[@]}\" -- \"${dirs[@]}\" && tar -tzf backup.tar.gz",
+      "output": "logs/\nlogs/access.log\nlogs/app.log\nclient's files/\nclient's files/jan.txt"
+    }
+  ]
+}
 ```
 
-## Practical Examples
-
-Let's look at some practical examples of command-line argument handling:
-
-### Example 1: File Processing Script
+The same job done the way many old scripts do it, by building a string and running it with `eval`, breaks on the first file name that contains a single quote. A name with a quote followed by `$(...)` would even run as code, because the quote ends the quoting around it:
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+# eval-tar.sh: the fragile way (do not copy this)
+dirs=(logs "client's files")
+cmd="tar -czf backup2.tar.gz"
+for d in "${dirs[@]}"; do cmd="$cmd '$d'"; done
+eval "$cmd"
+```
 
-show_usage() {
-    echo "Usage: $0 [options] input_file [input_file2 ...]"
-    echo "Options:"
-    echo "  -o, --output FILE   Output file (default: output.txt)"
-    echo "  -f, --format FMT    Output format: text, csv, json (default: text)"
-    echo "  -v, --verbose       Enable verbose mode"
-    echo "  -h, --help          Show this help message"
+```terminal
+{
+  "title": "eval breaks on a quote in a name",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash eval-tar.sh; echo \"exit code: $?\"",
+      "output": "eval-tar.sh: eval: line 6: unexpected EOF while looking for matching `''\nexit code: 2"
+    }
+  ]
+}
+```
+
+If you need to print or log the command, `printf '%q ' "${args[@]}"` shows it quoted the way Bash would need to read it back.
+
+## The Complete logstat Interface
+
+Replace `~/bash-practice/logstat` with this version. It keeps the library and the main guard from [Part 6](/guides/introduction-to-bash/06-functions) and the symlink fix from [Part 7](/guides/introduction-to-bash/07-script-permissions), and adds options, validation, help, standard input and documented exit codes:
+
+```bash
+#!/usr/bin/env bash
+# logstat: count requests in web server access logs
+# usage: logstat [-b FIELD] [-n N] [FILE...]
+
+script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+# shellcheck source=lib/logstat.sh
+source "$script_dir/lib/logstat.sh"
+
+readonly VERSION=1.0.0
+
+usage() {
+    cat <<'EOF_USAGE'
+usage: logstat [-b FIELD] [-n N] [FILE...]
+Count requests in access logs (nginx or Apache combined format).
+
+  -b, --by FIELD   ip, method, path, status or class (default: status)
+  -n, --top N      show only the N most frequent values
+  -h, --help       show this help and exit
+  -V, --version    show the version and exit
+
+With no FILE, or when FILE is -, read standard input.
+EOF_USAGE
 }
 
-# Default values
-output_file="output.txt"
-format="text"
-verbose=false
-
-# Parse options
-while [ $# -gt 0 ]; do
-    case "$1" in
-        -o|--output)
-            if [ -z "$2" ] || [ "${2:0:1}" = "-" ]; then
-                echo "Error: Option $1 requires an argument"
-                exit 1
-            fi
-            output_file="$2"
-            shift 2
-            ;;
-        --output=*)
-            output_file="${1#*=}"
-            shift
-            ;;
-        -f|--format)
-            if [ -z "$2" ] || [ "${2:0:1}" = "-" ]; then
-                echo "Error: Option $1 requires an argument"
-                exit 1
-            fi
-            format="$2"
-            shift 2
-            ;;
-        --format=*)
-            format="${1#*=}"
-            shift
-            ;;
-        -v|--verbose)
-            verbose=true
-            shift
-            ;;
-        -h|--help)
-            show_usage
-            exit 0
-            ;;
-        --)
-            shift
-            break
-            ;;
-        -*)
-            echo "Error: Unknown option: $1"
-            show_usage
-            exit 1
-            ;;
-        *)
-            break
-            ;;
-    esac
-done
-
-# Check for input files
-if [ $# -lt 1 ]; then
-    echo "Error: No input files specified"
-    show_usage
-    exit 1
-fi
-
-# Validate format
-case "$format" in
-    text|csv|json)
-        # Valid format
-        ;;
-    *)
-        echo "Error: Invalid format: $format"
-        echo "Valid formats: text, csv, json"
-        exit 1
-        ;;
-esac
-
-# Process files
-echo "Processing files: $@"
-echo "Output file: $output_file"
-echo "Format: $format"
-if $verbose; then
-    echo "Verbose mode enabled"
-fi
-
-# Create or truncate the output file
-> "$output_file"
-
-# Process each input file
-for file in "$@"; do
-    if [ ! -f "$file" ]; then
-        echo "Warning: File not found: $file"
-        continue
-    fi
-
-    if $verbose; then
-        echo "Processing file: $file"
-    fi
-
-    # Example processing
-    case "$format" in
-        text)
-            echo "--- Content of $file ---" >> "$output_file"
-            cat "$file" >> "$output_file"
-            echo "" >> "$output_file"
-            ;;
-        csv)
-            # Example: Convert spaces to commas
-            cat "$file" | tr ' ' ',' >> "$output_file"
-            ;;
-        json)
-            # Example: Wrap in JSON format
-            echo "{ \"filename\": \"$file\", \"content\": \"" >> "$output_file"
-            # Escape quotes and backslashes
-            cat "$file" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' >> "$output_file"
-            echo "\" }" >> "$output_file"
-            ;;
-    esac
-done
-
-echo "Done! Output saved to $output_file"
-```
-
-This script processes multiple input files and outputs them in different formats.
-
-### Example 2: Backup Script
-
-```bash
-#!/bin/bash
-
-show_usage() {
-    echo "Creates a backup of specified directories"
-    echo "Usage: $0 [options] [directory1 directory2 ...]"
-    echo "Options:"
-    echo "  -d, --destination DIR  Backup destination directory (default: ./backup)"
-    echo "  -n, --name NAME        Backup name (default: backup-YYYYMMDD)"
-    echo "  -z, --compress         Compress the backup with gzip"
-    echo "  -e, --exclude PATTERN  Exclude files/dirs matching PATTERN (can be used multiple times)"
-    echo "  -h, --help             Show this help message"
-    echo ""
-    echo "If no directories are specified, the current directory will be backed up."
+# usage_error MESSAGE: explain a usage mistake and exit with status 2
+usage_error() {
+    printf 'logstat: %s\n' "$1" >&2
+    printf "Try 'logstat --help' for more information.\n" >&2
+    exit 2
 }
 
-# Default values
-backup_dest="./backup"
-backup_name="backup-$(date +%Y%m%d)"
-compress=false
-exclude_patterns=()
+main() {
+    local by=status top f # top stays unset unless --top is given
+    local -a files=()
 
-# Parse options
-while [ $# -gt 0 ]; do
-    case "$1" in
-        -d|--destination)
-            backup_dest="$2"
-            shift 2
-            ;;
-        -n|--name)
-            backup_name="$2"
-            shift 2
-            ;;
-        -z|--compress)
-            compress=true
-            shift
-            ;;
-        -e|--exclude)
-            exclude_patterns+=("$2")
-            shift 2
-            ;;
-        -h|--help)
-            show_usage
-            exit 0
-            ;;
-        -*)
-            echo "Error: Unknown option: $1"
-            show_usage
-            exit 1
-            ;;
-        *)
-            break
-            ;;
+    while (($# > 0)); do
+        case $1 in
+            -b | --by)
+                (($# >= 2)) || usage_error "option $1 needs a value"
+                by=$2
+                shift 2
+                ;;
+            --by=*)
+                by=${1#*=}
+                shift
+                ;;
+            -n | --top)
+                (($# >= 2)) || usage_error "option $1 needs a value"
+                top=$2
+                shift 2
+                ;;
+            --top=*)
+                top=${1#*=}
+                shift
+                ;;
+            -h | --help)
+                usage
+                exit 0
+                ;;
+            -V | --version)
+                echo "logstat $VERSION"
+                exit 0
+                ;;
+            --)
+                shift
+                files+=("$@")
+                break
+                ;;
+            -?*) usage_error "unknown option: $1" ;;
+            *)
+                # a file name, or - for standard input
+                files+=("$1")
+                shift
+                ;;
+        esac
+    done
+
+    case $by in
+        ip | method | path | status | class) ;;
+        *) usage_error "--by must be ip, method, path, status or class, not '$by'" ;;
     esac
-done
+    if [[ -v top && ! $top =~ ^[1-9][0-9]{0,5}$ ]]; then
+        usage_error "--top needs a whole number from 1 to 999999, not '$top'"
+    fi
+    for f in "${files[@]}"; do
+        if [[ $f != - && (-d $f || ! -r $f) ]]; then
+            printf 'logstat: cannot read %s\n' "$f" >&2
+            exit 1
+        fi
+    done
+    if ((${#files[@]} == 0)) && [[ -t 0 ]]; then
+        usage_error "no input: give a FILE, or pipe a log into logstat"
+    fi
 
-# If no directories specified, use current directory
-if [ $# -eq 0 ]; then
-    directories=(".")
-else
-    directories=("$@")
-fi
+    if [[ -v top ]]; then
+        count_by "$by" "${files[@]}" | head -n "$top"
+    else
+        count_by "$by" "${files[@]}"
+    fi
+}
 
-# Create destination directory if it doesn't exist
-mkdir -p "$backup_dest"
-
-# Build tar command
-tar_cmd="tar -cf $backup_dest/$backup_name.tar"
-
-# Add exclude patterns
-for pattern in "${exclude_patterns[@]}"; do
-    tar_cmd="$tar_cmd --exclude='$pattern'"
-done
-
-# Add source directories
-for dir in "${directories[@]}"; do
-    tar_cmd="$tar_cmd '$dir'"
-done
-
-# Execute tar command
-echo "Creating backup..."
-eval $tar_cmd
-
-# Compress if requested
-if $compress; then
-    echo "Compressing backup..."
-    gzip "$backup_dest/$backup_name.tar"
-    echo "Backup created: $backup_dest/$backup_name.tar.gz"
-else
-    echo "Backup created: $backup_dest/$backup_name.tar"
+if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
+    main "$@"
 fi
 ```
 
-This script creates a backup of specified directories with various options.
+```terminal
+{
+  "title": "logstat with options",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "shellcheck -x ~/bash-practice/logstat && echo \"shellcheck: no warnings\"",
+      "output": "shellcheck: no warnings"
+    },
+    {
+      "cmd": "logstat --help",
+      "output": "usage: logstat [-b FIELD] [-n N] [FILE...]\nCount requests in access logs (nginx or Apache combined format).\n\n  -b, --by FIELD   ip, method, path, status or class (default: status)\n  -n, --top N      show only the N most frequent values\n  -h, --help       show this help and exit\n  -V, --version    show the version and exit\n\nWith no FILE, or when FILE is -, read standard input."
+    },
+    {
+      "cmd": "logstat logs/access.log",
+      "output": "20\t200\n8\t404\n4\t201\n4\t302\n4\t500"
+    },
+    {
+      "cmd": "logstat -b ip -n 2 logs/access.log",
+      "output": "12\t198.51.100.23\n9\t203.0.113.77"
+    },
+    {
+      "cmd": "logstat logs/access.log --by=path --top 3",
+      "output": "4\t/\n4\t/about.html\n4\t/api/health"
+    },
+    {
+      "comment": "standard input, alone or as - among files",
+      "cmd": "grep ' 404 ' logs/access.log | logstat --by path",
+      "output": "4\t/favicon.ico\n4\t/wp-login.php"
+    },
+    {
+      "cmd": "grep POST logs/access.log | logstat -b method - logs/app.log",
+      "output": "8\tPOST\ncount_by: skipped 6 line(s) not in the combined format"
+    }
+  ]
+}
+```
 
-## Best Practices for Command-Line Arguments
+The last command mixed a pipe (`-`) with `logs/app.log`, whose lines are not in the access log format; `count_by` skipped them and said so on standard error. The errors:
 
-When designing your script's command-line interface:
+```terminal
+{
+  "title": "every mistake gets a clear message and exit code",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "logstat --by browser logs/access.log; echo \"exit code: $?\"",
+      "output": "logstat: --by must be ip, method, path, status or class, not 'browser'\nTry 'logstat --help' for more information.\nexit code: 2"
+    },
+    {
+      "cmd": "logstat -n 0 logs/access.log; echo \"exit code: $?\"",
+      "output": "logstat: --top needs a whole number from 1 to 999999, not '0'\nTry 'logstat --help' for more information.\nexit code: 2"
+    },
+    {
+      "cmd": "logstat --top; echo \"exit code: $?\"",
+      "output": "logstat: option --top needs a value\nTry 'logstat --help' for more information.\nexit code: 2"
+    },
+    {
+      "cmd": "logstat --verbose logs/access.log; echo \"exit code: $?\"",
+      "output": "logstat: unknown option: --verbose\nTry 'logstat --help' for more information.\nexit code: 2"
+    },
+    {
+      "cmd": "logstat --top= logs/access.log; echo \"exit code: $?\"",
+      "output": "logstat: --top needs a whole number from 1 to 999999, not ''\nTry 'logstat --help' for more information.\nexit code: 2"
+    },
+    {
+      "cmd": "logstat logs/nope.log; echo \"exit code: $?\"",
+      "output": "logstat: cannot read logs/nope.log\nexit code: 1"
+    },
+    {
+      "cmd": "logstat logs; echo \"exit code: $?\"",
+      "output": "logstat: cannot read logs\nexit code: 1"
+    },
+    {
+      "comment": "a file whose name starts with a dash needs -- or ./",
+      "cmd": "cp logs/access.log ./-weird.log && logstat -n 1 -- -weird.log && rm ./-weird.log",
+      "output": "20\t200"
+    }
+  ]
+}
+```
 
-1. **Provide helpful usage information**: Include a `--help` option and clear usage instructions.
+The design choices, which you can reuse in your own tools:
 
-2. **Follow conventions**: Use standard option formats (`-s` for short options, `--long` for long options).
+- **Exit codes**: 0 for success, 1 when the work failed (an unreadable file), 2 for a usage error. CI systems and other scripts can tell them apart.
+- **Messages go to standard error** and start with the program's name, so they make sense in a log that mixes several tools. Data goes to standard output.
+- **`--help` prints to standard output and exits 0**, so `logstat --help | less` works. Errors print a one-line hint instead of the whole help text.
+- **Validation happens before any work**, including checking that every file is readable and not a directory, so the tool never prints half a report and then fails. `top` starts unset (`local top`), so `--top=` with an empty value is an error instead of being mistaken for "no `--top`" ([Part 4](/guides/introduction-to-bash/04-bash-variables) explains unset versus empty).
 
-3. **Be consistent**: If `-o` requires an argument, make all similar options consistent.
+[Part 10](/guides/introduction-to-bash/10-bash-best-practices) adds strict mode and tests for this script, and finds one more bug in the `head` pipeline.
 
-4. **Provide sensible defaults**: Make optional arguments truly optional with reasonable default values.
+## Common Mistakes
 
-5. **Validate input**: Check that arguments have appropriate values before using them.
+- **`$@` or `$*` without quotes.** Use `"$@"`.
+- **`$1` under `set -u` when it may be missing.** Use `${1-}` or check `$#` first.
+- **Forgetting `shift $(( OPTIND - 1 ))`** after `getopts`, or `local OPTIND` when `getopts` runs in a function.
+- **Expecting `getopts` to find options after the first file name.** It stops there.
+- **Using GNU `getopt` in scripts that must run on macOS.**
+- **Validating numbers with `-gt` or `(( ))` alone.** Check the format with a regex first.
+- **Building commands in strings and running them with `eval`.** Use an array.
+- **Waiting silently for input** when no file is given and standard input is a terminal.
 
-6. **Handle errors gracefully**: Give clear error messages when arguments are missing or invalid.
+## Summary
 
-7. **Support common idioms**: If your script expects file paths, support `-` to mean stdin/stdout.
+- `"$@"` passes arguments on unchanged; `$#` counts them; `${1-}` reads one safely.
+- Validate every argument with a format check (regex) before range checks or arithmetic.
+- `getopts` handles POSIX short options; a `while`/`case` loop handles long options and `--opt=value`; GNU `getopt` is a Linux-only shortcut.
+- Read standard input when no files are given, and treat `-` as standard input.
+- Build commands in arrays and run them with `"${cmd[@]}"`.
+- Exit 0, 1 or 2, send messages to standard error and make `--help` useful.
 
-8. **Document your interface**: In both usage messages and comments, explain what each option does.
+Next: [Bash Text Processing](/guides/introduction-to-bash/09-bash-tools), where `printf`, here documents, process substitution, `awk` and `jq` come in.
 
-9. **Test edge cases**: Make sure your script handles unusual inputs correctly.
+## Keep Learning
 
-By learning command-line argument handling, you can create scripts that are both powerful and user-friendly. In the next section, we'll explore common Bash tools and utilities that will further enhance your scripting capabilities.
+- [Check if an input argument exists](/posts/check-existence-of-input-argument-in-bash-shell-script)
+- [Prompt for yes, no or cancel](/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script)
+- [Create an alias that takes parameters](/posts/create-bash-alias-that-takes-parameters)
+- Interview questions: [Shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)

@@ -1,420 +1,505 @@
 ---
-title: 'Script Permissions and Execution'
-description: 'Learn how to set the right permissions, make scripts executable, and understand different ways to run Bash scripts'
+title: 'How to Make a Bash Script Executable and Run It (chmod +x)'
+description: 'Make a Bash script executable with chmod +x, pick a shebang, run it from anywhere, and fix Permission denied, bad interpreter and command not found.'
 order: 7
 ---
 
-Understanding how to properly set permissions and execute Bash scripts is crucial for any script writer. In this section, we'll explore everything you need to know about script permissions, execution methods, and the security implications of different approaches.
-
-## File Permissions Basics
-
-In Unix-like systems, every file and directory has a set of permissions that determine who can read, write, or execute it. These permissions are divided into three categories:
-
-- **Owner**: The user who created the file
-- **Group**: A set of users with specific privileges
-- **Others**: Everyone else
-
-Each category can have three possible permissions:
-
-- **Read (r)**: Allows viewing the file content
-- **Write (w)**: Allows modifying the file
-- **Execute (x)**: Allows running the file as a program
-
-## Viewing File Permissions
-
-To view the permissions of a file, use the `ls -l` command:
+To run a Bash script by its name, it needs two things: the **execute permission** and a **shebang** line that says which interpreter runs it. The short version:
 
 ```bash
-ls -l script.sh
+chmod +x deploy.sh     # once: allow the file to be executed
+./deploy.sh            # run it from the directory it is in
+bash deploy.sh         # or run it with bash, which needs no execute permission
 ```
 
-The output will look something like this:
+The rest of this part explains what actually happens when you type `./deploy.sh`, which permissions matter and for whom, how to choose a shebang, the different ways to run a script and how they differ, how to make a script a command you can run from anywhere, what changes when cron, systemd or `sudo` runs it, and how to fix the errors you will meet. By the end, the `logstat` tool from [Part 6](/guides/introduction-to-bash/06-functions) runs from any directory.
 
+## Prerequisites
+
+- The `~/bash-practice/logstat` script and `lib/logstat.sh` from [Part 6](/guides/introduction-to-bash/06-functions).
+- How Linux permissions work (owner, group and others; `rwx`; octal modes). The [file permissions section of the Linux guide](/guides/introduction-to-linux/04-file-system-hierarchy) explains them; this part covers what is specific to scripts.
+
+## What Happens When You Run ./script
+
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Bash", "sub": "forks, then exec ./logstat", "icon": "gear", "tone": "accent" },
+    { "label": "Kernel", "sub": "needs x; reads #! line", "icon": "server", "tone": "violet" },
+    { "label": "/usr/bin/env", "sub": "finds bash in PATH", "icon": "box", "tone": "slate" },
+    { "label": "bash ./logstat", "sub": "needs r to read the file", "icon": "cpu", "tone": "green" }
+  ]
+}
 ```
--rw-r--r-- 1 user group 1024 May 17 10:30 script.sh
+
+1. Your shell starts a new process and asks the kernel to execute `./logstat`.
+2. The kernel checks that you have **execute** permission, then looks at the first two bytes. `#!` marks a script, and the rest of the line names the interpreter.
+3. The kernel runs that interpreter with the script's path as an argument, here `/usr/bin/env bash ./logstat`, and `env` finds `bash` in your `PATH`.
+4. Bash opens the file and reads it, which needs **read** permission.
+
+So a script needs both `r` and `x`, unlike a compiled program, which needs only `x`.
+
+## Permissions a Script Needs
+
+```terminal
+{
+  "title": "no x, no run",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ls -l logstat",
+      "output": "-rw-rw-r-- 1 dev dev 528 Oct 24 06:21 logstat"
+    },
+    {
+      "cmd": "./logstat status logs/access.log; echo \"exit code: $?\"",
+      "output": "bash: ./logstat: Permission denied\nexit code: 126"
+    },
+    {
+      "comment": "bash reads the file itself, so it does not need x",
+      "cmd": "bash logstat class logs/access.log",
+      "output": "24\t2xx\n8\t4xx\n4\t3xx\n4\t5xx"
+    },
+    {
+      "cmd": "chmod u+x logstat && ls -l logstat",
+      "output": "-rwxrw-r-- 1 dev dev 528 Oct 24 06:21 logstat"
+    },
+    {
+      "cmd": "./logstat class logs/access.log",
+      "output": "24\t2xx\n8\t4xx\n4\t3xx\n4\t5xx"
+    }
+  ]
+}
 ```
 
-The first ten characters represent the file type and permissions:
+Execute permission without read permission is not enough for a script, as the kernel starts Bash but Bash cannot open the file:
 
-- First character: File type (`-` for regular file, `d` for directory)
-- Characters 2-4: Owner permissions (`rw-` means read and write, no execute)
-- Characters 5-7: Group permissions (`r--` means read-only)
-- Characters 8-10: Others permissions (`r--` means read-only)
+```terminal
+{
+  "title": "x without r",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "chmod 100 logstat && ls -l logstat",
+      "output": "---x------ 1 dev dev 528 Oct 24 06:21 logstat"
+    },
+    {
+      "cmd": "./logstat class logs/access.log; echo \"exit code: $?\"",
+      "output": "bash: ./logstat: Permission denied\nexit code: 126"
+    },
+    {
+      "cmd": "chmod 755 logstat"
+    }
+  ]
+}
+```
 
-## Changing File Permissions
+### Which Class of Permissions Applies
 
-To make a script executable, you need to add the execute permission. The `chmod` command is used to change file permissions:
+The kernel picks **one** set of permission bits: the owner's if you own the file, otherwise the group's if you are in the file's group, otherwise the others'. It does not fall back to a more generous set. If you own a script with mode `070`, you cannot run it, even though its group could:
+
+```terminal
+{
+  "title": "the owner gets only the owner bits",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "cp logstat owned-test && chmod 070 owned-test && ls -l owned-test",
+      "output": "----rwx--- 1 dev dev 528 Oct 24 06:21 owned-test"
+    },
+    {
+      "cmd": "./owned-test; echo \"exit code: $?\"",
+      "output": "bash: ./owned-test: Permission denied\nexit code: 126"
+    },
+    {
+      "cmd": "rm -f owned-test"
+    }
+  ]
+}
+```
+
+For the common question "who needs which permission to run a script":
+
+| Who runs it                         | Bits that must include `r` and `x` | Typical mode |
+| ----------------------------------- | ---------------------------------- | ------------ |
+| Only you (the owner)                | owner                              | `700`        |
+| You and members of the file's group | owner and group                    | `750`        |
+| Everyone on the machine             | owner, group and others            | `755`        |
+
+A script that root runs must not be writable by anyone else: owned by root, mode `755` or stricter, in a directory only root can write to. Otherwise anyone who can edit it runs code as root. A script that contains secrets must not be readable by others either (`700` or `750`); better, keep the secrets in a separate file with mode `600`.
+
+### chmod +x and the umask
+
+`chmod u+x` adds execute for the owner only. `chmod +x`, with no `u`, `g` or `o`, adds it for everyone **except** the bits your umask masks:
+
+```terminal
+{
+  "title": "chmod +x respects the umask",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "umask",
+      "output": "0002"
+    },
+    {
+      "cmd": "touch a.sh && chmod +x a.sh && ls -l a.sh",
+      "output": "-rwxrwxr-x 1 dev dev 0 Oct 24 06:21 a.sh"
+    },
+    {
+      "cmd": "umask 077; touch b.sh && chmod 600 b.sh && chmod +x b.sh && ls -l b.sh; umask 0002",
+      "output": "-rwx------ 1 dev dev 0 Oct 24 06:21 b.sh"
+    },
+    {
+      "cmd": "rm a.sh b.sh"
+    }
+  ]
+}
+```
+
+Use an explicit mode such as `chmod 755` or `chmod u+x,go-rwx` when the result matters, for example in an install script.
+
+## Choose a Shebang
+
+The shebang must be the first line, must start with `#!` and must name the interpreter by **absolute path**:
+
+| Shebang               | When to use it                                                                                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `#!/usr/bin/env bash` | Portable: uses the first `bash` in `PATH`, such as Homebrew's 5.3 on macOS. The usual choice.                                                                        |
+| `#!/bin/bash`         | Always the system Bash. Safer for root-run scripts, where `PATH` should not decide the interpreter. Fails on systems without `/bin/bash`, such as FreeBSD and NixOS. |
+| `#!/bin/sh`           | Only for scripts that use nothing but POSIX shell features. On Debian and Ubuntu, that is dash.                                                                      |
+
+On Linux, everything after the interpreter is passed as **one** argument, so `env` cannot take extra options the usual way. `env -S` (GNU coreutils 8.30+ and macOS) splits them:
+
+```terminal
+{
+  "title": "options on the shebang line",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "printf '#!/usr/bin/env bash -e\\necho \"running\"\\n' > opts.sh && chmod +x opts.sh && ./opts.sh",
+      "output": "/usr/bin/env: ‘bash -e’: No such file or directory\n/usr/bin/env: use -[v]S to pass options in shebang lines"
+    },
+    {
+      "cmd": "printf '#!/usr/bin/env -S bash -e\\necho \"running\"\\n' > opts.sh && ./opts.sh",
+      "output": "running"
+    },
+    {
+      "cmd": "rm opts.sh"
+    }
+  ]
+}
+```
+
+Even when it works, an option on the shebang line is ignored when someone runs `bash script.sh`. Put `set -euo pipefail` inside the script instead ([Part 10](/guides/introduction-to-bash/10-bash-best-practices)). [Which shebang should a Bash script use?](/posts/preferred-bash-shebang) compares the options in more detail.
+
+### A Script Without a Shebang
+
+Without a shebang, the result depends on who starts the script. Bash runs the file itself, in a child Bash. Most other programs, including `find -exec`, `xargs`, `env` and many process managers, fall back to `/bin/sh` (glibc's `execvp` does that), so a Bash script may suddenly run in dash:
+
+```terminal
+{
+  "title": "the same file, two interpreters",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "printf 'if [[ -n \"$BASH_VERSION\" ]]; then echo \"run by bash $BASH_VERSION\"; fi\\n' > noshebang.sh && chmod +x noshebang.sh"
+    },
+    {
+      "cmd": "./noshebang.sh",
+      "output": "run by bash 5.2.21(1)-release"
+    },
+    {
+      "cmd": "find . -maxdepth 1 -name noshebang.sh -exec {} \\;",
+      "output": "./noshebang.sh: 1: [[: not found"
+    },
+    {
+      "cmd": "rm noshebang.sh"
+    }
+  ]
+}
+```
+
+Always write the shebang.
+
+## Ways to Run a Script
+
+| Command                       | New process?           | Needs `x`? | Shebang used? | Variables and `cd` survive? |
+| ----------------------------- | ---------------------- | ---------- | ------------- | --------------------------- |
+| `./script`                    | yes                    | yes        | yes           | no                          |
+| `script` (in `PATH`)          | yes                    | yes        | yes           | no                          |
+| `bash script`                 | yes                    | no         | no            | no                          |
+| `source script` or `. script` | no, runs in your shell | no         | no            | yes                         |
+| `exec ./script`               | replaces your shell    | yes        | yes           | your shell is gone          |
+
+Running a script starts a new process, so nothing it does to variables or the current directory reaches your shell. Sourcing runs the commands in your shell, which is what you want for files of settings and functions, and dangerous for scripts that call `exit`:
 
 ```bash
-# Add execute permission for the owner only
-chmod u+x script.sh
-
-# Add execute permission for everyone
-chmod +x script.sh
-
-# Set specific permissions (read/write/execute for owner, read/execute for group and others)
-chmod 755 script.sh
+# env-setup.sh: settings to load into the current shell with source
+export APP_ENV=staging
+cd "$HOME/bash-practice/logs" || return
+echo "APP_ENV=$APP_ENV, now in $PWD"
 ```
 
-The numeric notation (like `755`) represents permissions in octal format:
+```terminal
+{
+  "title": "run versus source",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash env-setup.sh; echo \"after running: APP_ENV=[${APP_ENV-}], PWD=$PWD\"",
+      "output": "APP_ENV=staging, now in /home/dev/bash-practice/logs\nafter running: APP_ENV=[], PWD=/home/dev/bash-practice"
+    },
+    {
+      "cmd": "source env-setup.sh; echo \"after sourcing: APP_ENV=[${APP_ENV-}], PWD=$PWD\"",
+      "output": "APP_ENV=staging, now in /home/dev/bash-practice/logs\nafter sourcing: APP_ENV=[staging], PWD=/home/dev/bash-practice/logs"
+    },
+    {
+      "cmd": "cd ~/bash-practice"
+    },
+    {
+      "comment": "exit in a sourced file ends the shell that sourced it",
+      "cmd": "printf 'echo \"sourced\"\\nexit 0\\n' > bye.sh; bash -c 'source ./bye.sh; echo \"this line never runs\"'",
+      "output": "sourced"
+    },
+    {
+      "cmd": "rm bye.sh"
+    }
+  ]
+}
+```
 
-- First digit (`7`): Owner permissions (4=read + 2=write + 1=execute)
-- Second digit (`5`): Group permissions (4=read + 0=no write + 1=execute)
-- Third digit (`5`): Others permissions (4=read + 0=no write + 1=execute)
+A file meant to be sourced should use `return`, not `exit`, as `env-setup.sh` does after a failed `cd`. In an interactive terminal, sourcing `bye.sh` would close the terminal window.
 
-Common permission patterns for scripts:
+## Run Your Scripts From Anywhere
 
-- `700`: Only the owner can read, write, and execute (most restrictive)
-- `755`: Owner can read, write, and execute; group and others can read and execute
-- `775`: Owner and group can read, write, and execute; others can read and execute
-- `777`: Everyone can read, write, and execute (least secure, avoid if possible)
+A command name without a slash is looked up in the directories listed in `PATH`. The current directory is not one of them, which is why `logstat` alone does not work:
 
-## Making Scripts Executable
+```terminal
+{
+  "title": "the current directory is not in PATH",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "logstat class logs/access.log",
+      "output": "bash: logstat: command not found"
+    },
+    {
+      "cmd": "echo \"$PATH\" | tr ':' '\\n' | head -n 5",
+      "output": "/usr/local/sbin\n/usr/local/bin\n/usr/sbin\n/usr/bin\n/sbin"
+    }
+  ]
+}
+```
 
-For a script to be executable, you need two things:
+The standard place for your own commands is `~/.local/bin`. On Ubuntu and Debian, `~/.profile` adds it to `PATH` at login when the directory exists; on other systems, add `export PATH="$HOME/.local/bin:$PATH"` to `~/.profile` yourself. Instead of copying the script there, link it, so edits in `~/bash-practice` take effect at once:
 
-1. The execute permission, as we just discussed
-2. A proper shebang line at the beginning of the script
+```terminal
+{
+  "title": "install logstat with a symlink",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "mkdir -p ~/.local/bin && ln -sf ~/bash-practice/logstat ~/.local/bin/logstat"
+    },
+    {
+      "comment": "reload ~/.profile instead of logging out and in again",
+      "cmd": "source ~/.profile && command -v logstat",
+      "output": "/home/dev/.local/bin/logstat"
+    },
+    {
+      "cmd": "cd /tmp && logstat class ~/bash-practice/logs/access.log",
+      "output": "/home/dev/.local/bin/logstat: line 6: /home/dev/.local/bin/lib/logstat.sh: No such file or directory\n/home/dev/.local/bin/logstat: line 13: count_by: command not found"
+    }
+  ]
+}
+```
 
-The shebang line specifies which interpreter should execute the script:
+The script started, but it looked for its library next to the **link**: `${BASH_SOURCE[0]}` is `/home/dev/.local/bin/logstat`. Resolve the link first. In `~/bash-practice/logstat`, replace the two lines `# shellcheck source=lib/logstat.sh` and `source "$(dirname "${BASH_SOURCE[0]}")/lib/logstat.sh"` with:
 
 ```bash
-#!/bin/bash
-# The rest of your script...
+# resolve symlinks, so the library is found next to the real file
+script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+# shellcheck source=lib/logstat.sh
+source "$script_dir/lib/logstat.sh"
 ```
 
-This tells the system to use `/bin/bash` to interpret the script.
-
-Different shells or interpreters may be specified:
-
-```bash
-#!/bin/sh        # POSIX-compliant shell
-#!/usr/bin/env bash  # Find bash in PATH (more portable)
-#!/usr/bin/python    # Python script
-#!/usr/bin/perl      # Perl script
+```terminal
+{
+  "title": "now it works from anywhere",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "sed -n '5,8p' ~/bash-practice/logstat",
+      "output": "# resolve symlinks, so the library is found next to the real file\nscript_dir=$(dirname \"$(readlink -f \"${BASH_SOURCE[0]}\")\")\n# shellcheck source=lib/logstat.sh\nsource \"$script_dir/lib/logstat.sh\""
+    },
+    {
+      "cmd": "cd /tmp && logstat class ~/bash-practice/logs/access.log",
+      "output": "24\t2xx\n8\t4xx\n4\t3xx\n4\t5xx"
+    },
+    {
+      "cmd": "cd ~/bash-practice && shellcheck -x logstat && echo \"shellcheck: no warnings\"",
+      "output": "shellcheck: no warnings"
+    }
+  ]
+}
 ```
 
-The `#!/usr/bin/env` approach is particularly useful for portability across different systems, as it searches for the interpreter in the user's PATH.
+`readlink -f` follows every symlink to the real path (GNU coreutils; `realpath` does the same). Two more habits for commands in `PATH`:
 
-## Different Ways to Execute Bash Scripts
+- **Do not shadow existing commands.** A script called `test` never runs when you type `test`, because the builtin wins (`type test` shows it). Check a name with `type -a name` before using it.
+- **Leave off the `.sh` extension** for commands you type, as other tools do: `logstat`, not `logstat.sh`. You can then rewrite it in another language without renaming it.
 
-There are several ways to execute a Bash script, each with different implications:
+If you move a command to another directory in `PATH` and Bash keeps running the old path, run `hash -r`; Bash caches where it found each command.
 
-### 1. Direct Execution (requires execute permission)
+## Run Scripts From cron, systemd and sudo
 
-```bash
-./script.sh
+A script that works in your terminal can fail when something else starts it, because the environment is different. cron, for example, runs jobs with `SHELL=/bin/sh`, a minimal `PATH` of `/usr/bin:/bin`, your home directory as the working directory and no terminal. You can imitate that with `env -i`:
+
+```terminal
+{
+  "title": "what a cron job sees",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "env -i HOME=\"$HOME\" PATH=/usr/bin:/bin /bin/sh -c 'logstat class bash-practice/logs/access.log'",
+      "output": "/bin/sh: 1: logstat: not found"
+    },
+    {
+      "cmd": "env -i HOME=\"$HOME\" PATH=/usr/bin:/bin /bin/sh -c '\"$HOME/.local/bin/logstat\" class \"$HOME/bash-practice/logs/access.log\" | head -n 2'",
+      "output": "24\t2xx\n8\t4xx"
+    }
+  ]
+}
 ```
 
-This runs the script as an executable file. The script must have execute permissions, and the shebang line determines the interpreter.
+The rules for scripts that run unattended:
 
-### 2. Using bash Explicitly
+- **Use absolute paths** for the script and its files, or set `PATH` at the top of the script.
+- **Do not depend on `~/.bashrc`, aliases or the current directory.** `cd` to where the script needs to be, and check that it worked.
+- **Send output somewhere.** cron mails it or drops it; a line like `0 2 * * * /home/dev/.local/bin/nightly-report >> /var/tmp/nightly-report.log 2>&1` keeps it.
+- **Prevent overlapping runs** with `flock -n "$HOME/.nightly-report.lock" /home/dev/.local/bin/nightly-report`, which skips a run while the previous one still holds the lock.
 
-```bash
-bash script.sh
+systemd services and timers are the modern alternative to cron, with logging to the journal, dependencies and retries built in. The [Linux system administration part](/guides/introduction-to-linux/10-system-administration) shows a script running every night as a systemd timer.
+
+Two things to know about root:
+
+- **`sudo` uses a different `PATH`.** On Ubuntu, `sudo` replaces `PATH` with the `secure_path` from `/etc/sudoers`, which does not include `~/.local/bin`, so `sudo logstat` fails with "command not found". Use the full path, or install system-wide tools in `/usr/local/bin`.
+- **The setuid bit does nothing on scripts.** Linux ignores it for files that start with `#!`, because a script running with raised privileges is too easy to hijack. To let users run one script as root, give them a specific `sudo` rule for it instead.
+
+## Troubleshooting: Common Errors and Fixes
+
+**`Permission denied`**: the file lacks execute permission (`chmod +x`), or it is on a file system mounted with `noexec` (common for `/tmp` and `/dev/shm` on hardened servers, and for some network and USB mounts). Check with `findmnt -T script.sh -o TARGET,OPTIONS`; on a `noexec` mount, run it as `bash script.sh` or move it.
+
+**`cannot execute: required file not found`** or **`bad interpreter: No such file or directory`**: the interpreter named in the shebang does not exist. Either the path is wrong, or the file has Windows line endings, so the interpreter's name ends in an invisible carriage return. Which message you get depends on the Bash version. Bash 5.2, the version in Ubuntu 24.04, Debian 13 and RHEL 10, prints a generic one:
+
+```terminal
+{
+  "title": "Bash 5.2.21: two causes, one message",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "printf '#!/usr/local/bin/bash\\necho hi\\n' > wrong.sh && chmod +x wrong.sh && ./wrong.sh",
+      "output": "bash: ./wrong.sh: cannot execute: required file not found"
+    },
+    {
+      "cmd": "printf '#!/bin/bash\\r\\necho hi\\r\\n' > crlf.sh && chmod +x crlf.sh && ./crlf.sh",
+      "output": "bash: ./crlf.sh: cannot execute: required file not found"
+    },
+    {
+      "cmd": "sed -i 's/\\r$//' crlf.sh && ./crlf.sh",
+      "output": "hi"
+    },
+    {
+      "comment": "with #!/usr/bin/env, env reports the carriage return itself",
+      "cmd": "printf '#!/usr/bin/env bash\\r\\necho hi\\r\\n' > crlf2.sh && chmod +x crlf2.sh && ./crlf2.sh",
+      "output": "/usr/bin/env: ‘bash\\r’: No such file or directory\n/usr/bin/env: use -[v]S to pass options in shebang lines"
+    },
+    {
+      "cmd": "rm wrong.sh crlf.sh crlf2.sh"
+    }
+  ]
+}
 ```
 
-This explicitly invokes the bash interpreter on the script file. The script doesn't need execute permissions, and the shebang line is ignored since you're directly specifying the interpreter.
+Bash 5.3 (and the 3.2 on macOS) names the interpreter it could not find, which makes the carriage return visible as `^M`:
 
-### 3. Source the Script
-
-```bash
-source script.sh
-# or
-. script.sh  # Shorthand notation
+```terminal
+{
+  "title": "Bash 5.3.9 on Ubuntu 26.04.1",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "printf '#!/usr/local/bin/bash\\necho hi\\n' > wrong.sh && chmod +x wrong.sh && ./wrong.sh",
+      "output": "bash: ./wrong.sh: /usr/local/bin/bash: bad interpreter: No such file or directory"
+    },
+    {
+      "cmd": "printf '#!/bin/bash\\r\\necho hi\\r\\n' > crlf.sh && chmod +x crlf.sh && ./crlf.sh",
+      "output": "bash: ./crlf.sh: /bin/bash^M: bad interpreter: No such file or directory"
+    }
+  ]
+}
 ```
 
-This executes the script in the current shell environment rather than in a new subshell. This means:
+Fix line endings with `sed -i 's/\r$//' script.sh` or `dos2unix`, and set your editor or Git (`git config core.autocrlf input`) to save scripts with Unix line endings. For a wrong path, check where the interpreter really is with `command -v bash`, or use `#!/usr/bin/env bash`.
 
-- Variables set in the script remain available after the script finishes
-- The `exit` command in the script will exit your current shell
-- The script doesn't need execute permissions
+**`command not found`** for your own script: the directory is not in `PATH`. Use `./script`, the full path, or install it in `~/.local/bin`.
 
-This method is commonly used for loading functions or environment variables.
+**Strange errors** such as `Bad substitution`, `source: not found` or `[[: not found`, with a line number after the script name: the script is running in `sh` (dash), not Bash. Look for `sh script.sh` in whatever starts it, or for a missing shebang:
 
-## Script Execution Context
-
-Understanding the execution context of your script is important:
-
-### Subshell vs. Current Shell
-
-When you run a script using `./script.sh` or `bash script.sh`, it runs in a subshell:
-
-- Variables set in the script are not available after the script finishes
-- Changes to the working directory don't affect the parent shell
-- The `exit` command only exits the script, not your terminal session
-
-When you source a script using `source script.sh` or `. script.sh`, it runs in the current shell:
-
-- Variables remain available
-- Directory changes persist
-- The `exit` command will exit your current shell
-
-Here's a simple demonstration:
-
-```bash
-# Create a test script
-cat > test_vars.sh << 'EOF'
-#!/bin/bash
-TEST_VAR="This is a test"
-echo "Inside script: TEST_VAR=$TEST_VAR"
-cd /tmp
-echo "Inside script: PWD=$PWD"
-EOF
-
-chmod +x test_vars.sh
-
-# Run as executable
-./test_vars.sh
-echo "After running: TEST_VAR=$TEST_VAR"
-echo "After running: PWD=$PWD"
-
-# Source the script
-source test_vars.sh
-echo "After sourcing: TEST_VAR=$TEST_VAR"
-echo "After sourcing: PWD=$PWD"
+```terminal
+{
+  "title": "a Bash script run with sh",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "sh logstat class logs/access.log",
+      "output": "logstat: 6: Bad substitution\nlogstat: 8: source: not found\nlogstat: 19: Bad substitution"
+    }
+  ]
+}
 ```
 
-### Environment Variables and Subshells
-
-By default, when you create a variable in a shell, it is local to that shell and not passed to child processes:
-
-```bash
-MY_VAR="Hello"
-bash -c 'echo $MY_VAR'  # Output: (empty)
-```
-
-To make a variable available to child processes, you need to export it:
-
-```bash
-export MY_VAR="Hello"
-bash -c 'echo $MY_VAR'  # Output: Hello
-```
-
-## Running Scripts in Different Modes
-
-You can control how Bash interprets and executes your scripts with special options:
-
-### Debugging Mode
-
-To run a script in debugging mode, which prints each command before execution:
-
-```bash
-bash -x script.sh
-```
-
-Alternatively, you can enable debugging for portions of your script:
-
-```bash
-#!/bin/bash
-
-# Regular execution
-echo "This is normal output"
-
-# Start debugging
-set -x
-echo "This command is shown before execution"
-for i in {1..3}; do
-    echo "Loop iteration $i"
-done
-# Stop debugging
-set +x
-
-echo "Back to normal output"
-```
-
-### Error Handling Modes
-
-Bash provides several modes to handle errors:
-
-```bash
-# Exit immediately if a command fails
-set -e
-
-# Treat unset variables as an error
-set -u
-
-# Exit if any command in a pipe fails (not just the last one)
-set -o pipefail
-
-# Combine all three
-set -euo pipefail
-```
-
-You can add these settings at the beginning of your script for more robust error handling.
-
-## Finding and Using Interpreters
-
-The system needs to find your interpreter (like `/bin/bash`) to execute your script. This can be different across systems, which is why the `#!/usr/bin/env` approach is useful:
-
-```bash
-#!/usr/bin/env bash
-```
-
-This searches the user's PATH for `bash`, making your script more portable.
-
-To find where an interpreter is located:
-
-```bash
-which bash
-# or
-type -P bash
-```
-
-## Script Execution Permissions in Practice
-
-Let's put this all together with a practical example:
-
-```bash
-#!/bin/bash
-
-# First, create a simple script
-cat > hello.sh << 'EOF'
-#!/bin/bash
-echo "Hello from a shell script!"
-current_time=$(date)
-echo "Current time: $current_time"
-EOF
-
-# Check initial permissions
-echo "Initial permissions:"
-ls -l hello.sh
-
-# Try to execute without execute permission
-echo -e "\nTrying to execute without execute permission:"
-./hello.sh 2>&1 || echo "Failed to execute"
-
-# Add execute permission
-echo -e "\nAdding execute permission:"
-chmod +x hello.sh
-ls -l hello.sh
-
-# Execute with direct method
-echo -e "\nExecuting with ./hello.sh:"
-./hello.sh
-
-# Execute by calling bash
-echo -e "\nExecuting with bash hello.sh:"
-bash hello.sh
-
-# Create a script to demonstrate sourcing
-cat > vars.sh << 'EOF'
-#!/bin/bash
-TEST_VAR="This variable was set in the script"
-echo "Inside script: TEST_VAR is set"
-EOF
-
-chmod +x vars.sh
-
-# Execute normally
-echo -e "\nExecuting vars.sh normally:"
-./vars.sh
-echo "After normal execution, TEST_VAR='$TEST_VAR'"
-
-# Source the script
-echo -e "\nSourceing vars.sh:"
-source vars.sh
-echo "After sourcing, TEST_VAR='$TEST_VAR'"
-```
-
-## Security Considerations
-
-When working with script permissions, keep these security considerations in mind:
-
-1. **Avoid 777 permissions**: Don't give everyone write access to your scripts, as this allows anyone to modify them.
-
-2. **Be careful with setuid/setgid**: These special permissions (set with `chmod u+s` or `chmod g+s`) allow a script to run with the privileges of the owner or group, which can be a security risk.
-
-3. **Consider umask settings**: The default permissions for new files are determined by your umask value. A typical value is `022`, which means new files get `644` (rw-r--r--) permissions.
-
-4. **Beware of path injection**: When executing commands in scripts, especially with `eval` or when using variables in paths, be careful of potential injection attacks.
-
-5. **Check script sources**: Before executing scripts downloaded from the internet, review them to ensure they don't contain malicious code.
-
-6. **Use restricted environments**: For sensitive scripts, consider using restricted shells or containers to limit potential damage.
-
-## Running Scripts on System Startup
-
-To run scripts automatically when your system starts:
-
-### Using cron
-
-```bash
-# Edit your crontab
-crontab -e
-
-# Add a line to run a script at reboot
-@reboot /path/to/script.sh
-```
-
-### Using systemd (on modern Linux distributions)
-
-Create a systemd service file:
-
-```bash
-sudo nano /etc/systemd/system/myscript.service
-```
-
-Add content:
-
-```
-[Unit]
-Description=My Bash Script Service
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/path/to/script.sh
-User=yourusername
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start the service:
-
-```bash
-sudo systemctl enable myscript.service
-sudo systemctl start myscript.service
-```
-
-## Troubleshooting Permission Issues
-
-Common permission-related issues and their solutions:
-
-### "Permission denied" when trying to execute
-
-```bash
-# Make the script executable
-chmod +x script.sh
-
-# Check if the filesystem allows execution (some network filesystems don't)
-# If necessary, copy to a local filesystem
-
-# Check if the script has DOS line endings
-file script.sh  # Look for "CRLF" in the output
-dos2unix script.sh  # Convert if needed
-```
-
-### "Command not found" error
-
-```bash
-# Make sure the shebang path is correct
-which bash
-# Edit the script if necessary to use the correct path
-
-# Use the env approach for better portability
-#!/usr/bin/env bash
-```
-
-### Script runs differently when executed vs. sourced
-
-```bash
-# Remember: sourced scripts run in the current shell environment
-# Check for differences in environment variables, working directory, etc.
-
-# Add debugging to see what's happening
-set -x
-```
-
-Understanding script permissions and execution methods is fundamental to working effectively with Bash. With this knowledge, you'll be able to create scripts that can be executed reliably across different environments and by different users. In the next section, we'll explore how to handle command-line arguments in your scripts, making them more flexible and user-friendly.
+**`cannot execute binary file`**: you ran a compiled program with `bash program`; run it directly instead. With `: Exec format error` at the end, the program was built for another CPU architecture, such as an x86-64 binary on an ARM server.
+
+## Common Mistakes
+
+- **Forgetting `chmod +x`**, or adding only `x` without `r` for the people who run the script.
+- **Expecting group permissions to apply to the owner.** Only one class of bits is checked.
+- **A shebang that is not on line 1**, has a relative path, or passes options through `env` without `-S`.
+- **Leaving out the shebang.** Other programs run the file with `/bin/sh`.
+- **Sourcing a script that calls `exit`.** It closes your shell.
+- **Resolving files relative to `${BASH_SOURCE[0]}` without following symlinks.**
+- **Testing only in your terminal.** cron, systemd and `sudo` run scripts with a different `PATH` and no `~/.bashrc`.
+- **Saving scripts with Windows line endings.**
+
+## Summary
+
+- A script needs read and execute permission, and the kernel uses only the owner, group or others bits that match you.
+- `#!/usr/bin/env bash` is the usual shebang; use `#!/bin/bash` for root-run scripts.
+- `./script` and `bash script` start a new process; `source` runs the file in your shell.
+- Put your commands in `~/.local/bin`, resolve symlinks with `readlink -f`, and avoid names of existing commands.
+- Unattended scripts need absolute paths, their own `PATH` and somewhere to send output.
+
+Next: [Command Line Arguments](/guides/introduction-to-bash/08-command-line-arguments), where `logstat` gets real options.
+
+## Keep Learning
+
+- [Which shebang should a Bash script use?](/posts/preferred-bash-shebang)
+- [Get the directory of a Bash script](/posts/get-directory-bash-script-location)
+- [What is the difference between sh and Bash?](/posts/difference-between-sh-and-bash)
+- Interview questions: [Linux file permissions](/interview-questions/junior/linux-file-permissions)
+- Quiz: [Linux command line quiz](/quizzes/linux-quiz)
