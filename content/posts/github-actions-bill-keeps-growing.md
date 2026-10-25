@@ -4,9 +4,9 @@ excerpt: "Per-job rounding, macOS minutes at ten times the Linux price, re-runs 
 category:
   name: 'CI/CD'
   slug: 'ci-cd'
-date: '2026-10-19'
-publishedAt: '2026-10-19T09:00:00Z'
-updatedAt: '2026-10-19T09:00:00Z'
+date: '2026-10-26'
+publishedAt: '2026-10-26T09:00:00Z'
+updatedAt: '2026-10-26T09:00:00Z'
 readingTime: '20 min read'
 author:
   name: 'DevOps Daily Team'
