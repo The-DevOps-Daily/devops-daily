@@ -84,4 +84,4 @@ Update your IAM policy based on the errors or logs. Repeat this process until Te
 
 By following these steps, you can determine the minimum AWS permissions required for your Terraform configurations, enhancing security and compliance while maintaining functionality.
 
-To lint a policy for actions that are broader than they need to be, and to run IAM Access Analyzer's policy checks in CI against Terraform plans, read [Write Narrow Policies, and Lint Them](/guides/security-principles/03-least-privilege#h3-write-narrow-policies-and-lint-them) in our Security Principles guide.
+To lint a policy for actions that are broader than they need to be, and to check it with IAM Access Analyzer's policy validation, read [Write Narrow Policies, and Lint Them](/guides/security-principles/03-least-privilege#h3-write-narrow-policies-and-lint-them) in our Security Principles guide.
