@@ -27,14 +27,14 @@ Many products rebuild their permissions three times: first roles, then teams, th
 2. **Cerbos** policy files, evaluated by a local Cerbos policy decision point (PDP).
 3. **SpiceDB**, an open source implementation of Google's [Zanzibar](https://research.google/pubs/zanzibar-googles-consistent-global-authorization-system/) design: a schema plus relationships.
 
-A hand-written table of 84 expected decisions checked all three at every step. Then we timed them on a Raspberry Pi 4 with 10,000 documents. The absolute numbers come from a Pi, so read the ratios, not the milliseconds.
+A hand-written table of 84 expected decisions checked all three at every step. Then we timed them on a Raspberry Pi 4 with 10,000 documents. The numbers describe this setup: a Pi, one request at a time, the app database in the same process. The ratios between the designs travel better than the milliseconds, but a network, a different database or other hardware can change them too.
 
 What we found:
 
 - **A single check is cheap only in-process.** The if-statements answered in 0.14 ms. Cerbos took 3.8 ms and SpiceDB 10.8 ms (median p50). On this Pi a call to either server that does no authorization work already costs about 2.4 ms, and Cerbos's own log puts its handling time at 0.63 ms. By the bar we set before measuring (p99 under 5 ms), a check through either engine is not cheap on this machine.
-- **Listing is where they really differ.** "Which of these 10,000 documents can this member view?" took 4.4 ms as SQL, 11.9 to 31.6 ms through a Cerbos query plan turned into SQL (depending on one line of our own adapter), and 404 ms through SpiceDB when its cache was cold (77 ms warm). For an admin who can view all 10,000, SpiceDB took 3.3 seconds cold.
+- **Listing is where they really differ.** "Which of these 10,000 documents can this member view?" took 4.4 ms as SQL, 11.9 to 31.6 ms through a Cerbos query plan turned into SQL (depending on two lines of our own adapter), and 404 ms through SpiceDB when its cache was cold (77 ms warm). For an admin who can view all 10,000, SpiceDB took 3.3 seconds cold.
 - **The late rule cost little code in every design:** 22 changed lines in one file for the if-statements, 15 in two files for Cerbos, 13 in two files for SpiceDB. It never stayed out of the application: Cerbos needed a new attribute in every request, and SpiceDB needed a new relationship synced from the database. In SpiceDB it also made a cold list about 3.5 times slower.
-- **Forget one line of the late rule and every design fails open.** The table caught all three, and it also caught SpiceDB returning duplicate documents in a list.
+- **Leave out part of the late rule and every design fails open.** The table caught each of the three faults we injected, and it also caught SpiceDB returning duplicate documents in a list.
 
 ## TLDR
 
@@ -304,7 +304,7 @@ Two caveats keep these numbers honest. Line counts depend on style, so read the 
       "color": "#94a3b8"
     }
   ],
-  "caption": "Raspberry Pi 4, step 4 model, concurrency 1. Median across 3 runs of 10,000 checks each. \"New checks\" are random (user, action, document) triples; \"repeated checks\" draw from 100 triples, so SpiceDB's cache answers most of them. A no-op call does no authorization work. Absolute numbers are from a Pi: compare the bars with each other."
+  "caption": "Raspberry Pi 4, step 4 model, concurrency 1. Checks: median across 3 runs of 10,000 each. No-op calls: one run of 5,000 each. \"New checks\" are random (user, action, document) triples; \"repeated checks\" draw from 100 triples, so SpiceDB's cache answers most of them. A no-op call does no authorization work. Absolute numbers are from a Pi: compare the bars with each other."
 }
 ```
 
@@ -314,8 +314,8 @@ At the median, the in-process check (0.144 ms) was about 27 times faster than Ce
 
 - A request to either server that does no authorization work (Cerbos `ServerInfo`, SpiceDB `ReadSchema`) took 2.40 and 2.44 ms at the median on this Pi. A Node-to-Node TCP echo between two processes took 0.33 ms, so most of that is request handling in the gRPC client and server, not the loopback network.
 - Cerbos logs its own handling time for each request. Its median was 0.63 ms, against 3.8 ms seen by the client.
-- So for Cerbos, most of a check is the call. For SpiceDB on new checks, the call is about a quarter of the 10.8 ms and the rest is SpiceDB's own graph work.
-- SpiceDB's cache removes most of that work. When the same 100 checks repeated, as they do when people reopen the same documents, its p50 dropped to 2.8 ms, close to the no-op call, while Cerbos stayed at 3.8 ms.
+- So for Cerbos, a request that does nothing already costs most of what a check costs. For SpiceDB on new checks, it is about a quarter of the 10.8 ms. We did not measure where the rest goes inside SpiceDB, and a `ReadSchema` call is only a reference point, not the same work as a check minus the graph.
+- SpiceDB's cache removes most of that difference. When the same 100 checks repeated, as they do when people reopen the same documents, its p50 dropped to 2.8 ms, close to the no-op call, while Cerbos stayed at 3.8 ms.
 
 One thing the chart hides: the if-statements' check runs up to four queries against SQLite in the same process. With Postgres across a network, each of those queries is a network round trip. The Cerbos design pays the same queries and the PDP call on top. The SpiceDB design reads nothing from the app database for a check. In a typical production layout, the gap between the in-process design and the engines will be smaller than it is here. We did not measure that layout.
 
@@ -375,7 +375,7 @@ This is the question every list page asks, and the designs answer it in complete
       "color": "#f59e0b"
     }
   ],
-  "caption": "Median ms on a Raspberry Pi 4, step 4 model. \"As committed\" turns each share condition into a correlated EXISTS; the IN-subquery variant changes only those two lines. SpiceDB \"cold\" is the first call in a new 5 s revision window, \"warm\" repeats it at the same revision."
+  "caption": "Median ms on a Raspberry Pi 4, step 4 model. \"As committed\" turns each share condition into a correlated EXISTS; the IN-subquery variant changes only those two lines. SpiceDB bars come from a separate cache experiment with one unlimited LookupResources call: \"cold\" is the first call in a new 5 s revision window, \"warm\" repeats it at the same revision."
 }
 ```
 
@@ -385,7 +385,7 @@ This is the question every list page asks, and the designs answer it in complete
 | Member           | 1,020   | 4.4 ms        | 31.6 ms               | 77 ms         | 404 ms        |
 | Contractor       | 510     | 2.4 ms        | 9.6 ms                | 41 ms         | 247 ms        |
 
-The SQL and Cerbos columns are medians of the run medians from `results/final/list-*.json`. The SpiceDB columns come from `harness/spicedb-list-cache.js`, which separates the two cases on purpose, because SpiceDB's list time depends on its cache more than on anything else:
+The SQL and Cerbos columns are medians of the run medians from `results/final/list-*.json`. The SpiceDB columns come from a separate cache experiment, `harness/spicedb-list-cache.js`, which separates the two cases on purpose, because SpiceDB's list time depends on its cache more than on anything else. It differs from our adapter's list call in two ways: it makes one LookupResources call with no limit instead of pages of 1,000, and it reads with `minimize_latency` and then `at_exact_snapshot` instead of `at_least_as_fresh`. Timed through the adapter itself, the member's list had a median of 75 ms and the admin's 803 ms, mostly warm calls; see below.
 
 ```terminal
 {
@@ -399,26 +399,26 @@ The SQL and Cerbos columns are medians of the run medians from `results/final/li
 }
 ```
 
-SpiceDB caches results per revision. By default it reads at a revision rounded to a 5-second window (`--datastore-revision-quantization-interval`), and the in-memory datastore's revisions are timestamps, so every 5 seconds the read revision moves and the cache starts cold, even with no writes. Which case a request gets depends on timing. In our runs of 20 back-to-back admin lists (`results/final/list-*.json`), most found a warm cache, with a median of about 800 ms, and the slowest took about 3.6 s.
+SpiceDB caches results per revision. By default it reads at a revision rounded to a 5-second window (`--datastore-revision-quantization-interval`), and the in-memory datastore's revisions are timestamps, so every 5 seconds the read revision moves and the cache starts cold, even with no writes. Which case a request gets depends on timing. In our runs of 20 back-to-back admin lists (`results/final/list-*.json`), most found a warm cache, with a median of about 800 ms, and the slowest took about 3.7 s.
 
 Four more things we measured about lists:
 
-- **Our Cerbos adapter was the slow part, not Cerbos.** The committed adapter turns "this user is in the document's `viewers`" into a correlated `EXISTS`, which SQLite runs once per document. Changing those two lines to an uncorrelated `d.id IN (SELECT document_id FROM shares WHERE ...)` cut the member list from 31.6 ms to 11.9 ms, with the same answers (`scripts/variant.js`). The plan is only as fast as the SQL you turn it into, and that SQL is yours to write. Cerbos publishes [reference adapters](https://docs.cerbos.dev/cerbos/latest/api/) for Prisma, Drizzle, SQLAlchemy and others; we used none, because we used plain SQLite.
+- **Our Cerbos adapter was the slow part, not Cerbos.** The committed adapter turns "this user is in the document's `viewers`" into a correlated `EXISTS`, which SQLite runs once per document. Changing those two adapter lines to an uncorrelated `d.id IN (SELECT document_id FROM shares WHERE ...)` cut the member list from 31.6 ms to 11.9 ms, with the same answers (`scripts/variant.js`). The plan is only as fast as the SQL you turn it into, and that SQL is yours to write. Cerbos publishes [reference adapters](https://docs.cerbos.dev/cerbos/latest/api/) for Prisma, Drizzle, SQLAlchemy and others; we used none, because we used plain SQLite.
 - **Page size matters for LookupResources.** Our list code asks LookupResources for pages of 1,000, the default of SpiceDB's `--max-lookup-resources-limit` flag, and follows the cursor. For the admin that took 0.8 seconds over 11 calls. Pages of 100 took 7.2 seconds over 106 calls, and a single call with no limit took 0.7 seconds (`results/final/lookup-pages.json`).
-- **SpiceDB's docs already say this.** Its guide to [protecting a list endpoint](https://authzed.com/docs/spicedb/modeling/protecting-a-list-endpoint) suggests LookupResources when a user can see fewer than about 10,000 resources, and otherwise fetching a page of candidates from your own database and filtering them with CheckBulkPermissions. We timed that for "the first 50 documents in ID order". For the admin it took 18 ms with one bulk call, against 786 ms for LookupResources. For the contractor, who can see 5% of the documents, it took 167 ms over 11 bulk calls, against 37 ms. So the right pattern depends on how much of the data each user can see.
+- **SpiceDB's docs already say this.** Its guide to [protecting a list endpoint](https://authzed.com/docs/spicedb/modeling/protecting-a-list-endpoint) suggests LookupResources when a user can see fewer than about 10,000 resources, and otherwise fetching a page of candidates from your own database and filtering them with CheckBulkPermissions. We timed that for "the first 50 documents in ID order", against our adapter listing every visible ID with LookupResources, sorting them and keeping 50 (`harness/spicedb-page.js`). For the admin the bulk checks took 18 ms with one call, against 786 ms for the full LookupResources list. For the contractor, who can see 5% of the documents, it took 167 ms over 11 bulk calls, against 37 ms. So the right pattern depends on how much of the data each user can see.
 - **The late rule made SpiceDB's cold lists about 3.5 times slower.** We ran the cold and warm list test against the code of every step (`results/steps/step<N>-spicedb-list-cache.json`). From step 3 to step 4, the admin's cold list went from 928 to 3,204 ms, the member's from 108 to 390 ms and the contractor's from 64 to 227 ms. The warm lists did not move (686 to 696, 73 to 70, 42 to 38 ms). Thirteen lines of schema and sync were cheap to write; the exclusion they added is not cheap to evaluate.
 
 ## What the table caught
 
 The 84-row table was the most useful file in the repo. It caught two things we would otherwise have shipped.
 
-**SpiceDB returns duplicates.** At step 2, Kai, an admin who is also a member of `sales`, got `d3` and `d4` twice from LookupResources: once through the admin path and once through the team path. This is expected behaviour: an [issue in the SpiceDB repository](https://github.com/authzed/spicedb/issues/3190) explains that two paths to the same resource can produce two results and recommends de-duplicating on the client. We added a `Set` and recorded the failing run in `results/caught/`.
+**SpiceDB returns duplicates.** At step 2, Kai, an admin who is also a member of `sales`, got `d3` and `d4` twice from our adapter's paged LookupResources calls: once through the admin path and once through the team path. This is expected behaviour: an [issue in the SpiceDB repository](https://github.com/authzed/spicedb/issues/3190) explains that two paths to the same resource can produce two results, calls duplicates a known limitation of cursored calls, and recommends de-duplicating on the client. We added a `Set` and recorded the failing run in `results/caught/`.
 
-**Every design fails open when one line of the late rule is missing.** `scripts/break.js` removes one part of the step 4 change from each design and runs the table again:
+**Every design fails open when part of the late rule is missing.** `scripts/break.js` leaves out one part of the step 4 change in each design and runs the table again:
 
 ```terminal
 {
-  "title": "forget one line of the late rule",
+  "title": "leave out part of the late rule",
   "steps": [
     {
       "cmd": "node scripts/break.js > results/breaks.txt"
@@ -435,7 +435,7 @@ The 84-row table was the most useful file in the repo. It caught two things we w
 - **Cerbos:** the policy has the deny rule, but the app does not send `contractor`. The condition cannot match a missing attribute, so the deny never fires. Cerbos can [validate attributes](https://docs.cerbos.dev/cerbos/latest/policies/schemas) against a JSON schema; with `reject` enforcement, its docs say every action of an invalid request is denied. With `contractor` marked as required, that would turn this failure from open to closed. We did not test it.
 - **SpiceDB:** the schema has the exclusion, but `sync.js` does not write `org#contractor`. With no relationship there is nothing to exclude.
 
-None of the three designs makes a forgotten line safe. A table of expected decisions, run against every change, does.
+None of the three designs made these omissions safe. The table of expected decisions caught all three, which is why we would run it against every change.
 
 ## The costs this benchmark leaves out
 
@@ -470,12 +470,12 @@ You do not have to run either engine yourself. We did not test any of these, so 
 - **Permit.io** offers a managed cloud PDP, or a PDP container that you run next to your services and that evaluates policies with OPA or Cedar, per its [docs](https://docs.permit.io/). It lists RBAC, ABAC and ReBAC models, and bulk checks for lists and tables.
 - **WorkOS FGA** extends WorkOS RBAC with roles scoped to resources in a parent-child hierarchy, per its [docs](https://workos.com/docs/fga). Your app registers resources with WorkOS, and the API checks access and lists the resources a user can access.
 
-The trade we measured carries over to each of them: wherever the rule lives, the data it needs has to get there, either in every request or as a copy that someone keeps in sync.
+The trade we measured carries over to each of them: wherever the rule lives, it has to meet the data it needs. Either the data travels with every request, or someone keeps a copy in sync, or, as Oso's local authorization does, the rule becomes a query that runs where the data already is.
 
 ## What we could not conclude
 
-- **Production latency.** Everything ran on one Raspberry Pi 4, at concurrency 1, with the app database in the same process. The ratios between designs are the useful part; the milliseconds are not.
-- **Tuned servers.** We did not tune either engine. Both ran with their defaults, except that we turned off telemetry and SpiceDB's metrics endpoint and set SpiceDB's log level to `warn`. Cerbos, at its default `info` level, writes two log lines per request; we did not measure what that costs it. Everything, servers included, ran at the lowest CPU priority (`nice -n 19`) on a Pi shared with other work, and each timed run waited for a 1-minute load average under 1.25.
+- **Production latency.** Everything ran on one Raspberry Pi 4, at concurrency 1, with the app database in the same process. Neither the milliseconds nor the ratios predict a production system; they show how the designs differ under the same conditions.
+- **Tuned servers.** We did not tune either engine. Both ran with their defaults, except that we turned off telemetry and SpiceDB's metrics endpoint and set SpiceDB's log level to `warn`. Cerbos, at its default `info` level, writes two log lines per request; we did not measure what that costs it. Everything, servers included, ran at the lowest CPU priority (`nice -n 19`) on a Pi shared with other work, and each timed run first waited for a quiet machine: a 1-minute load average under 1.25 for the step 4 runs and under 1.5 for the per-step runs, giving up after 10 and 15 minutes. Each result file records the load average it started at.
 - **Throughput.** We measured one request at a time. We did not measure how many checks per second each design sustains.
 - **Deep hierarchies.** Our model has no nested folders or groups, which is where a relationship graph should do best and recursive SQL is hardest. This test does not cover it.
 - **Why the exclusion costs SpiceDB so much on a cold list.** We measured that it does, not where the time goes inside SpiceDB.
@@ -483,6 +483,6 @@ The trade we measured carries over to each of them: wherever the rule lives, the
 
 ## Summary
 
-We set out to show that a single check is cheap in all three designs and that listing and the late rule separate them. By the rules we wrote in `CLAIM.md` before measuring, that claim is wrong, because its first half failed. A single check is cheap only in-process: through either engine it cost a network call, and on this Pi that call alone was about 2.4 ms. The second half held. For the member, a Cerbos plan turned into SQL took 2.7 to 7 times as long as the hand-written SQL, and SpiceDB's LookupResources 17 to 92 times as long, warm to cold. The cache, the page size and our own SQL adapter moved those numbers as much as the engines did. The late rule cost every design 13 to 22 lines and still needed a change in the application, because every rule needs data and the data lives in your app.
+We set out to show that a single check is cheap in all three designs and that listing and the late rule separate them. By the rules we wrote in `CLAIM.md` before measuring, that claim is wrong, because its first half failed. A single check is cheap only in-process: through either engine it cost a network call, and on this Pi that call alone was about 2.4 ms. The second half held. For the member, a Cerbos plan turned into SQL took 2.7 to 7 times as long as the hand-written SQL, and SpiceDB's LookupResources 18 to 92 times as long, warm to cold. The cache, the page size and our own SQL adapter moved those numbers as much as the engines did. The late rule cost every design 13 to 22 lines and still needed a change in the application, because every rule needs data and the data lives in your app.
 
 If one app owns the rules, keep them in code, keep them in one module, and test them with a table like `fixture/expected.csv`. When you do move them out, plan the data path first: what each request must carry for Cerbos, what must be kept in sync for SpiceDB, and how your list pages will get their answers.
