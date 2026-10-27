@@ -462,7 +462,7 @@ The if-statements stop being enough when:
 
 ## The hosted options
 
-Several companies offer managed authorization services or control planes for these engines. Some run the decision service for you; others manage policies while evaluation stays in your environment. We did not test any of them, so this is only what their own documentation says they offer:
+Several companies offer managed authorization services or control planes, some built on these engines and some on others. Some run the decision service for you; others manage policies while evaluation stays in your environment. We did not test any of them, so this is only what their own documentation says they offer:
 
 - **Cerbos Hub** is a control plane for the open source Cerbos PDP. Per its [docs](https://docs.cerbos.dev/cerbos-hub/), it tests, signs and distributes policy bundles to your PDPs, which keep running in your own network, and it offers an embedded PDP compiled to WebAssembly for evaluation in browsers, edge functions and other JavaScript environments.
 - **AuthZed** sells hosted SpiceDB. Per its [docs](https://authzed.com/docs/authzed/guides/picking-a-product), AuthZed Cloud is a self-service platform with usage-based pricing, and AuthZed Dedicated is a private deployment in the cloud provider and regions you choose. For lists too large for LookupResources, its [list guide](https://authzed.com/docs/spicedb/modeling/protecting-a-list-endpoint) describes AuthZed Materialize, which keeps a local, denormalized copy of user permissions so that filtering becomes a JOIN.
