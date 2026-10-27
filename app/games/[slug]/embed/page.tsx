@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${game.title} - Embed`,
     description: game.description,
+    alternates: { canonical: `/games/${slug}` },
     robots: { index: false, follow: false },
   };
 }
