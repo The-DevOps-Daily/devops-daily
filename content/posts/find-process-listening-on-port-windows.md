@@ -117,3 +117,5 @@ This view shows which ports are open and which processes are using them.
 That's it, now you can quickly find out what's occupying a port in Windows using either the terminal or the GUI. This comes in handy when diagnosing port conflicts or service issues.
 
 Once you know the process, you can [close the port from the Windows command line](/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line). On Linux, see [how to close a specific port](/posts/close-specific-port-linux), and for the difference between a port and the connection using it, see [port vs socket](/posts/difference-between-port-and-socket).
+
+To see how ports, sockets and connections fit together, with real output from a small practice network, read [Network Fundamentals: Layers, IP, TCP, UDP and Ports](/guides/networking-fundamentals/01-network-fundamentals-and-protocols) in our networking guide.

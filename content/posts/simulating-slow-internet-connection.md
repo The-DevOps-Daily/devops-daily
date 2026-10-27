@@ -1,6 +1,6 @@
 ---
 title: 'How to Simulate a Slow Internet Connection for Testing'
-excerpt: "Learn how to throttle network speed on Linux, macOS, and Windows using tc, Network Link Conditioner, and other tools to test application performance under poor network conditions."
+excerpt: 'Learn how to throttle network speed on Linux, macOS, and Windows using tc, Network Link Conditioner, and other tools to test application performance under poor network conditions.'
 category:
   name: 'Networking'
   slug: 'networking'
@@ -28,12 +28,14 @@ Testing your application on fast internet is easy - that's probably what you hav
 ## Why Simulate Slow Networks
 
 Real users experience:
+
 - High latency (200-500ms on mobile, 500-1000ms+ on satellite)
 - Limited bandwidth (256kbps to 5Mbps on 3G/4G)
 - Packet loss (1-5% on WiFi, higher on mobile)
 - Variable conditions (congestion during peak hours)
 
 These conditions reveal problems:
+
 - Timeouts that don't happen on fast connections
 - UI freezes waiting for data
 - Slow page loads
@@ -259,6 +261,7 @@ Clumsy provides a GUI for network manipulation:
    - Out of order: Reorder packets
 
 Example configuration:
+
 ```
 Lag: 200ms
 Drop: 2% chance
@@ -343,6 +346,7 @@ Proxy tools work across all platforms and can throttle specific domains:
 6. Optionally, throttle only specific hosts
 
 Charles can also simulate:
+
 - High latency DNS
 - Random disconnections
 - Specific HTTP error codes
@@ -423,3 +427,5 @@ Congested WiFi:
 ```
 
 Start with the condition most common for your users, then test edge cases. Simulating slow networks during development catches issues that would otherwise surface in production with frustrated users.
+
+To see what added latency and loss do to TCP and to tools like mtr, measured on a practice network, read [Network Troubleshooting: ping, mtr, tcpdump, ss and netem](/guides/networking-fundamentals/08-network-monitoring-and-troubleshooting) in our networking guide.
