@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
 
 test('homepage renders in both themes without horizontal overflow', async ({ page }) => {
   for (const theme of ['light', 'dark']) {
@@ -48,4 +49,57 @@ test('representative article and simulator routes render', async ({ page }) => {
       exact: true,
     })
   ).toBeVisible();
+});
+
+// axe-core rules for WCAG 2.0, 2.1 and 2.2 at levels A and AA.
+const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'];
+
+const A11Y_PAGES = [
+  { name: 'homepage', path: '/' },
+  { name: 'post', path: '/posts/reliable-webhook-delivery-retries-signatures-idempotency' },
+  { name: 'guide part', path: '/guides/introduction-to-kubernetes/06-configmaps-and-secrets' },
+  { name: 'comparison', path: '/comparisons/argocd-vs-flux' },
+  { name: 'game', path: '/games/webhook-delivery-simulator' },
+  { name: 'challenges listing', path: '/challenges' },
+];
+
+async function wcagViolations(page: Page) {
+  const results = await new AxeBuilder({ page })
+    .withTags(WCAG_TAGS)
+    // The Next.js dev overlay only exists under `next dev`, not on the site.
+    .exclude('nextjs-portal')
+    .analyze();
+  return results.violations.map((violation) => ({
+    rule: violation.id,
+    impact: violation.impact,
+    help: violation.help,
+    nodes: violation.nodes.slice(0, 5).map((node) => ({
+      target: node.target.join(' '),
+      summary: node.failureSummary?.split('\n').slice(0, 2).join(' '),
+    })),
+    count: violation.nodes.length,
+  }));
+}
+
+test.describe('accessibility', () => {
+  test.slow();
+
+  for (const { name, path } of A11Y_PAGES) {
+    for (const theme of ['light', 'dark']) {
+      test(`${name} has no WCAG 2.2 AA violations in ${theme} mode`, async ({ page }) => {
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.addInitScript((selectedTheme) => {
+          localStorage.setItem('theme', selectedTheme);
+          localStorage.setItem('cookie-consent', 'rejected');
+        }, theme);
+        await page.goto(path);
+        await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`));
+        await expect(page.getByRole('main').first()).toBeVisible();
+
+        const violations = await wcagViolations(page);
+        if (violations.length) console.log(JSON.stringify({ path, theme, violations }, null, 2));
+        expect(violations).toEqual([]);
+      });
+    }
+  }
 });
