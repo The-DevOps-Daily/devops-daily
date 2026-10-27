@@ -1,13 +1,16 @@
 /// <reference types="vite/client" />
 import { readFileSync } from 'node:fs';
 import type { Metadata } from 'next';
+import { resolveAlternates } from 'next/dist/lib/metadata/resolvers/resolve-basics';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import nextConfig from '../next.config.mjs';
 import { isDynamicRedirect } from '../scripts/redirects-order';
 
 // Every app route's metadata is resolved the way Next.js does it: the layouts
 // and the page are merged shallowly, so a page without its own `alternates`
 // inherits the root layout's canonical ('/') and tells search engines it is a
-// copy of the homepage. No build runs; the test calls the generators.
+// copy of the homepage. No build runs; the test calls the generators and
+// resolves each URL with Next's own resolver.
 
 vi.mock('next/font/google', () => ({
   Inter: () => ({ className: 'font-inter', variable: '--font-inter' }),
@@ -69,21 +72,30 @@ async function metadataOf(mod: RouteModule, params: Params): Promise<Metadata | 
 }
 
 // Shallow merge, as Next.js does: the last segment that sets `alternates` wins
-// as a whole, so `alternates: { types }` without a canonical drops it.
-function canonicalOf(chain: (Metadata | undefined)[], base: URL): string | null {
-  let canonical: unknown = null;
+// as a whole (so `alternates: { types }` without a canonical drops it), and each
+// segment resolves its URLs against the metadataBase in effect at that segment.
+async function canonicalOf(chain: (Metadata | undefined)[], pathname: string) {
+  let base: URL | null = null;
+  let canonical: string | null = null;
   for (const metadata of chain) {
-    if (metadata && 'alternates' in metadata) {
-      canonical = metadata.alternates?.canonical ?? null;
+    if (!metadata) continue;
+    if (metadata.metadataBase !== undefined) {
+      base = metadata.metadataBase === null ? null : new URL(String(metadata.metadataBase));
+    }
+    if ('alternates' in metadata) {
+      const alternates = await resolveAlternates(
+        metadata.alternates,
+        base,
+        Promise.resolve(pathname),
+        { trailingSlash: Boolean(nextConfig.trailingSlash), isStaticMetadataRouteFile: false }
+      );
+      canonical = alternates?.canonical ? String(alternates.canonical.url) : null;
     }
   }
-  if (canonical === null) return null;
-  const value =
-    typeof canonical === 'object' && canonical !== null && 'url' in canonical
-      ? (canonical as { url: string | URL }).url
-      : (canonical as string | URL);
-  return new URL(String(value), base).href;
+  return canonical;
 }
+
+const sameUrl = (a: string, b: string) => new URL(a, SITE).href === new URL(b, SITE).href;
 
 const pageFiles = Object.keys(modules)
   .filter((file) => file.endsWith('/page.tsx'))
@@ -112,12 +124,8 @@ beforeAll(async () => {
       return Promise.all(
         paramSets.map(async (params) => {
           const chain = await Promise.all([...layouts, page].map((mod) => metadataOf(mod, params)));
-          return {
-            route,
-            path: fillRoute(route, params),
-            params,
-            canonical: canonicalOf(chain, metadataBase),
-          };
+          const path = fillRoute(route, params);
+          return { route, path, params, canonical: await canonicalOf(chain, path) };
         })
       );
     })
@@ -135,7 +143,7 @@ function redirectSources(): { pattern: string; dynamic: boolean }[] {
 function matchesRedirect(path: string, source: { pattern: string; dynamic: boolean }): boolean {
   if (!source.dynamic) return path === source.pattern;
   const regex = source.pattern
-    .split(/(\*|:[A-Za-z_]+)/)
+    .split(/(\*|:[A-Za-z]\w*)/)
     .map((part) =>
       part === '*'
         ? '.*'
@@ -176,8 +184,7 @@ describe('canonical URLs', () => {
   it('sets a canonical on every page instead of inheriting the homepage', () => {
     const missing = resolved
       .filter(
-        (entry) =>
-          entry.canonical === null || (entry.path !== '/' && entry.canonical === `${SITE}/`)
+        (entry) => entry.canonical === null || (entry.path !== '/' && sameUrl(entry.canonical, '/'))
       )
       .map((entry) => `${entry.path} -> ${entry.canonical}`);
     expect(missing).toEqual([]);
@@ -205,7 +212,7 @@ describe('canonical URLs', () => {
       .filter((entry) => entry.canonical !== null)
       .filter((entry) => {
         const intended = INTENDED_TARGETS[entry.route]?.(entry.params) ?? entry.path;
-        return entry.canonical !== new URL(intended, SITE).href;
+        return !sameUrl(entry.canonical!, intended);
       })
       .map((entry) => `${entry.path} -> ${entry.canonical}`);
     expect(wrong).toEqual([]);
@@ -214,12 +221,12 @@ describe('canonical URLs', () => {
   it('sends intended targets to a page that is canonical to itself', () => {
     const selfCanonical = new Set(
       resolved
-        .filter((entry) => entry.canonical === new URL(entry.path, SITE).href)
-        .map((entry) => entry.canonical)
+        .filter((entry) => entry.canonical !== null && sameUrl(entry.canonical, entry.path))
+        .map((entry) => new URL(entry.canonical!).href)
     );
     const dangling = resolved
       .filter((entry) => entry.route in INTENDED_TARGETS && entry.canonical !== null)
-      .filter((entry) => !selfCanonical.has(entry.canonical!))
+      .filter((entry) => !selfCanonical.has(new URL(entry.canonical!).href))
       .map((entry) => `${entry.path} -> ${entry.canonical}`);
     expect(dangling).toEqual([]);
   });
@@ -245,7 +252,9 @@ describe('canonical URLs', () => {
       const entry = byPath.get(parsed.pathname);
       if (parsed.origin !== SITE) return [`${url}: wrong origin`];
       if (!entry) return [`${url}: no page renders this path`];
-      if (entry.canonical !== parsed.href) return [`${url}: canonical is ${entry.canonical}`];
+      if (entry.canonical === null || !sameUrl(entry.canonical, url)) {
+        return [`${url}: canonical is ${entry.canonical}`];
+      }
       return [];
     });
     expect(problems).toEqual([]);
@@ -259,5 +268,6 @@ describe('matchesRedirect', () => {
     expect(matchesRedirect('/authors/x', { pattern: '/authors/*', dynamic: true })).toBe(true);
     expect(matchesRedirect('/a/b/c', { pattern: '/a/:id/c', dynamic: true })).toBe(true);
     expect(matchesRedirect('/a/b/d', { pattern: '/a/:id/c', dynamic: true })).toBe(false);
+    expect(matchesRedirect('/games/dns', { pattern: '/games/:slug1', dynamic: true })).toBe(true);
   });
 });
