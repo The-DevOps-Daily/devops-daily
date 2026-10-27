@@ -22,7 +22,7 @@ tags:
   - Bash
 ---
 
-Base64 is in more of your config than you think. Kubernetes Secrets store their values in it, every JWT in an `Authorization` header is three base64url strings joined by dots, kubeconfig files carry certificates in it, and CI systems ask you to paste base64 when a file has to fit in a variable. Most of the time it works. When it does not, the bug is usually small, like an extra newline or a value encoded twice, and it takes an afternoon to find because the broken value looks almost the same as the right one.
+Base64 is in more of your config than you think. Kubernetes Secrets store their values in it, a signed JWT in an `Authorization` header is three base64url strings joined by dots, kubeconfig files carry certificates in it, and CI systems ask you to paste base64 when a file has to fit in a variable. Most of the time it works. When it does not, the bug is usually small, like an extra newline or a value encoded twice, and it takes an afternoon to find because the broken value looks almost the same as the right one.
 
 This post shows how base64 works, why its output is a third bigger, and what it does not protect. Then it walks through the bugs that keep coming back. Every command and output below comes from a real run.
 
@@ -95,7 +95,7 @@ azhz
 
 One leftover byte gives 2 characters plus `==`. Two leftover bytes give 3 characters plus `=`. Padding carries no data, which is why some formats, JWT among them, drop it. That saves a few bytes and causes a bug we will get to below.
 
-Because the mapping is fixed, the start of common inputs is easy to spot. `eyJ` is base64 for `{"`, so a string that starts with `eyJ` is almost always JSON, often a JWT. `LS0tLS1CRUdJTi` is `-----BEGIN`, which marks a base64-encoded PEM certificate or key.
+Because the mapping is fixed, common inputs have recognizable prefixes. JSON that starts with `{"` followed by a letter encodes to a string starting with `eyJ`, so `eyJ...` is almost always JSON, often a JWT. Base64-encoded PEM text (`-----BEGIN ...`) starts with `LS0tLS1CRUdJTi`.
 
 ## The 33% overhead, measured
 
@@ -152,7 +152,7 @@ base64 -w0 blob.bin | gzip -9 | wc -c
 1058004
 ```
 
-So base64 inside a gzip-compressed HTTP response costs under 1% more than the raw bytes. The overhead hurts where nothing compresses it: memory, environment variables, cookies and request headers. A JWT travels uncompressed in a header on every call, so each claim costs 4/3 of its size, and nginx's default `large_client_header_buffers` allows 8 KB per header line.
+For this sample, gzip cut the overhead from 33.3% to 0.9%. The overhead still counts wherever the encoded size is what matters: memory, environment variables, cookies and request headers. A JWT is sent in a header on every call, and header size limits apply to its encoded form: each claim costs 4/3 of its size, and nginx's default `large_client_header_buffers` allows 8 KB per header line.
 
 ## Kubernetes Secrets are base64, not encryption
 
@@ -315,8 +315,8 @@ printf '%s' "$DB_URL" | base64 -w0 | openssl base64 -d -A; echo
 ```
 
 ```text
-cG9zdGdyZXNxbDovL2FwcDpodW50ZXIyLXByb2RAZGIuaW50ZXJuYWw6NTQzMi9vcmRlcnM/c3Ns
-bW9kZT1yZXF1aXJl
+cG9zdGdyZXNxbDovL2FwcDpodW50ZXIyLXByb2RAZGIuaW50ZXJuYWw6NTQzMi9v
+cmRlcnM/c3NsbW9kZT1yZXF1aXJl
 0
 rc=0
 postgresql://app:hunter2-prod@db.internal:5432/orders?sslmode=require
@@ -413,6 +413,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZXBsb3ktYm90Iiwicm9sZSI6ImFkbWl
 Both JSON parts start with `eyJ`. Now try to read the payload the obvious way:
 
 ```bash
+chmod +x make-jwt.sh
 TOKEN=$(./make-jwt.sh)
 echo "$TOKEN" | cut -d. -f2 | base64 -d; echo " rc=$?"
 ```
@@ -422,7 +423,7 @@ echo "$TOKEN" | cut -d. -f2 | base64 -d; echo " rc=$?"
  rc=1
 ```
 
-The payload part is 70 characters, not a multiple of 4, so GNU `base64` prints what it could decode and then exits with 1. A script with `set -o pipefail` stops even though the JSON looks fine, and a script without it carries on with output that may be cut short. `basenc --base64url -d` fails the same way, because it also expects padding. Translate the alphabet and put the padding back first:
+The payload part is 70 characters, not a multiple of 4, so GNU `base64` prints what it could decode and then exits with 1. The JSON looks complete, which makes this easy to miss: under `set -e` the script stops here, and without it the script carries on with output that may be cut short. `basenc --base64url -d` fails the same way, because it also expects padding. Translate the alphabet and put the padding back first:
 
 ```bash
 b64url_decode() {
@@ -446,7 +447,7 @@ echo "$TOKEN" | cut -d. -f1 | b64url_decode; echo
 
 In Python, `base64.urlsafe_b64decode(part + "=" * (-len(part) % 4))` does the same in one line.
 
-Anyone holding a JWT can read its claims, because they are only base64url. The signature stops people from changing them, not from reading them, so never put a secret in a JWT payload. For a quick look at a token, our [JWT decoder](/tools/jwt-decoder) runs in the browser, and the [base64 tool](/tools/base64) does the same for plain values.
+Anyone holding a signed JWT like this one can read its claims, because they are only base64url. The signature stops people from changing them, not from reading them, so never put a secret in a JWT payload. (Encrypted JWTs, JWE, are a different format with five parts.) For a quick look at a token, our [JWT decoder](/tools/jwt-decoder) runs in the browser, and the [base64 tool](/tools/base64) does the same for plain values.
 
 ## Data URIs
 
