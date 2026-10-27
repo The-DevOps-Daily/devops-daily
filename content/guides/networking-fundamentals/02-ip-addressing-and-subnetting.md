@@ -1,414 +1,392 @@
 ---
-title: 'IP Addressing and Subnetting'
-description: 'Planning and managing IP address spaces for applications, containers, and cloud infrastructure.'
+title: 'IP Addressing and Subnetting: CIDR, Private Ranges, NAT and IPv6'
+description: 'Read CIDR prefixes, split a network into subnets, avoid overlaps with Docker, Kubernetes and VPNs, watch NAT translate a connection, and use IPv6 in a lab.'
 order: 2
 ---
 
-IP addresses might look simple, but proper address planning prevents headaches as your infrastructure grows. Whether you're setting up development environments, designing cloud architecture, or troubleshooting connectivity issues, understanding how IP addressing works saves time and prevents conflicts.
+Addresses look like the simplest part of networking, and they cause some of its longest outages: a VPC that cannot be peered because its range overlaps another one, a Docker network that swallows the office VPN, a subnet that runs out of addresses the day the cluster scales. All of them are planning mistakes, and all of them are easy to avoid once you can read a prefix like `/20` at a glance.
+
+In this part you take an address apart bit by bit, see how a machine decides whether a destination is local, plan a cloud network with a short Python script that also catches overlaps, watch NAT rewrite a real connection, and give two lab hosts IPv6 addresses.
 
 ## Prerequisites
 
-- Understanding of basic networking from Part 1
-- Terminal access for testing commands
-- No special tools required
+- A fresh lab from [Part 1](/guides/networking-fundamentals/01-network-fundamentals-and-protocols#h2-build-the-practice-lab): run `sudo ./netlab.sh down && sudo ./netlab.sh up` before you start, because every part changes the lab.
+- `ipcalc` and `python3`, both in the Part 1 package list.
 
-## IP Address Structure
+## An IPv4 Address Is 32 Bits
 
-An IPv4 address like `192.168.1.100` represents a 32-bit number split into four parts. But there's more structure than meets the eye.
+An IPv4 address such as `10.0.2.11` is a 32-bit number written as four bytes in decimal. The **prefix length** after the slash, `/24`, says how many of those bits, counted from the left, name the network. The rest name a host on that network. `ipcalc` shows the bits:
 
-Let's check your current IP configuration:
-
-```bash
-# Show your network interfaces and IP addresses
-ip addr show
+```terminal
+{
+  "title": "one address, bit by bit",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "web1#",
+      "cmd": "ip -4 -br addr show dev eth0",
+      "output": "eth0@if9         UP             10.0.2.11/24"
+    },
+    {
+      "prompt": "web1#",
+      "cmd": "ipcalc 10.0.2.11/24",
+      "output": "Address:   10.0.2.11            00001010.00000000.00000010. 00001011\nNetmask:   255.255.255.0 = 24   11111111.11111111.11111111. 00000000\nWildcard:  0.0.0.255            00000000.00000000.00000000. 11111111\n=>\nNetwork:   10.0.2.0/24          00001010.00000000.00000010. 00000000\nHostMin:   10.0.2.1             00001010.00000000.00000010. 00000001\nHostMax:   10.0.2.254           00001010.00000000.00000010. 11111110\nBroadcast: 10.0.2.255           00001010.00000000.00000010. 11111111\nHosts/Net: 254                   Class A, Private Internet"
+    }
+  ]
+}
 ```
 
-You'll see output like:
+- **Netmask** `255.255.255.0` is the same prefix written as 32 bits: 24 ones, then zeros. Old tools and some firewalls still ask for it in this form.
+- **Network** `10.0.2.0` is the address with all host bits set to 0. It names the subnet and is not given to a host.
+- **Broadcast** `10.0.2.255` has all host bits set to 1 and means "every host on this subnet".
+- **HostMin** to **HostMax** are the 254 addresses left for machines.
+- Ignore "Class A". Classful addressing (A, B, C) was replaced by **CIDR** (Classless Inter-Domain Routing) in 1993. A `/24` inside `10.0.0.0/8` is not a "class C network"; it is just a /24.
 
-```
-2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 10.0.2.15/24 brd 10.0.2.255 scope global dynamic eth0
-```
+Each bit you take from the host part halves the subnet:
 
-The `/24` part is crucial - it tells you how much of the address identifies the network versus individual hosts.
+| Prefix | Netmask         | Addresses | Usable hosts | Typical use                            |
+| ------ | --------------- | --------- | ------------ | -------------------------------------- |
+| /16    | 255.255.0.0     | 65,536    | 65,534       | A whole VPC or site                    |
+| /19    | 255.255.224.0   | 8,192     | 8,190        | A private subnet for a Kubernetes zone |
+| /20    | 255.255.240.0   | 4,096     | 4,094        | A large private subnet                 |
+| /24    | 255.255.255.0   | 256       | 254          | A small subnet, one LAN                |
+| /26    | 255.255.255.192 | 64        | 62           | A tight subnet                         |
+| /28    | 255.255.255.240 | 16        | 14           | Smallest subnet AWS allows             |
+| /31    | 255.255.255.254 | 2         | 2            | Point-to-point links (RFC 3021)        |
+| /32    | 255.255.255.255 | 1         | 1            | One host, in routes and firewall rules |
 
-### Understanding Subnet Masks
+The number of addresses is 2 to the power of (32 minus the prefix). Cloud providers keep a few addresses in every subnet for themselves: AWS and Azure reserve 5 (the network address, the next three and the last), Google Cloud reserves 4. A /28 on AWS leaves you 11 hosts, not 14.
 
-The `/24` notation means the first 24 bits identify the network, leaving 8 bits for host addresses:
+## Local or Remote: How a Host Decides
 
-- Network portion: `10.0.2` (first 24 bits)
-- Host portion: `.15` (last 8 bits)
-- Available host addresses: `10.0.2.1` through `10.0.2.254`
+A host sends a packet **directly** to destinations inside its own subnet and hands everything else to its **default gateway** (a router). It decides by comparing prefixes, and `ip route get` shows the decision:
 
-You lose two addresses in every subnet:
-
-- Network address: `10.0.2.0` (identifies the network itself)
-- Broadcast address: `10.0.2.255` (sends to all hosts on the network)
-
-### Common Subnet Sizes
-
-Different subnet sizes give you different numbers of host addresses:
-
-```bash
-/24 = 254 usable host addresses (common for small networks)
-/16 = 65,534 usable host addresses (medium networks)
-/8  = 16,777,214 usable host addresses (very large networks)
-```
-
-Use a subnet calculator to verify your math:
-
-```bash
-# Install ipcalc if available
-sudo apt install ipcalc
-
-# Calculate subnet information
-ipcalc 192.168.1.0/24
-```
-
-## Private vs Public IP Addresses
-
-Not all IP addresses can be reached from the internet. Three ranges are reserved for private use:
-
-### Class A Private: 10.0.0.0/8
-
-This gives you over 16 million addresses, perfect for large organizations:
-
-```bash
-# Example: Enterprise network design
-10.1.0.0/16    # New York office (65k addresses)
-10.2.0.0/16    # London office (65k addresses)
-10.3.0.0/16    # Cloud infrastructure (65k addresses)
-```
-
-### Class B Private: 172.16.0.0/12
-
-Docker uses this range by default:
-
-```bash
-# Check Docker's network configuration
-docker network ls
-docker network inspect bridge
+```terminal
+{
+  "title": "same subnet or not",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "web1#",
+      "cmd": "ip route",
+      "output": "default via 10.0.2.1 dev eth0\n10.0.2.0/24 dev eth0 proto kernel scope link src 10.0.2.11"
+    },
+    {
+      "comment": "web2 is in 10.0.2.0/24: delivered directly on eth0",
+      "prompt": "web1#",
+      "cmd": "ip route get 10.0.2.12",
+      "output": "10.0.2.12 dev eth0 src 10.0.2.11 uid 0\n    cache"
+    },
+    {
+      "comment": "db is in 10.0.3.0/24: sent to the gateway 10.0.2.1",
+      "prompt": "web1#",
+      "cmd": "ip route get 10.0.3.10",
+      "output": "10.0.3.10 via 10.0.2.1 dev eth0 src 10.0.2.11 uid 0\n    cache"
+    },
+    {
+      "prompt": "web1#",
+      "cmd": "ping -c 1 10.0.2.12 > /dev/null && ping -c 1 10.0.3.10 > /dev/null"
+    },
+    {
+      "prompt": "web1#",
+      "cmd": "ip neigh",
+      "output": "10.0.2.12 dev eth0 lladdr 82:13:d3:92:98:f6 REACHABLE\n10.0.2.1 dev eth0 lladdr ae:82:ed:d1:73:e1 DELAY"
+    }
+  ]
+}
 ```
 
-You'll see Docker assigns addresses like `172.17.0.0/16` for container communication.
+To deliver a packet on the local network, the host needs the destination's MAC address, and it finds it with **ARP** ("who has 10.0.2.12?"). `ip neigh` shows the results. Notice what is missing: `web1` never learned the MAC address of `db`. For a remote destination it only needs the gateway's MAC address; the router does the next step.
 
-### Class C Private: 192.168.0.0/16
+When several routes match, the **longest prefix wins**: a route for `10.0.3.0/24` beats `default` (which is `0.0.0.0/0`, a prefix of length 0 that matches everything).
 
-Most home routers use this range:
+## Special Address Ranges
 
-```bash
-# Common home network setups
-192.168.1.0/24   # Main network
-192.168.2.0/24   # Guest network
-192.168.100.0/24 # IoT devices
+Some ranges have fixed meanings. You will meet all of these in real networks:
+
+| Range                                               | Name                            | What it is for                                                                 |
+| --------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`     | Private (RFC 1918)              | Internal networks. Not routed on the internet; reach the internet through NAT. |
+| `100.64.0.0/10`                                     | Shared address space (RFC 6598) | Carrier-grade NAT at ISPs; also used by Tailscale and some cloud services.     |
+| `127.0.0.0/8`                                       | Loopback                        | The machine itself (`127.0.0.1`).                                              |
+| `169.254.0.0/16`                                    | Link-local                      | Addresses without DHCP; cloud metadata services live at `169.254.169.254`.     |
+| `192.0.2.0/24`, `198.51.100.0/24`, `203.0.113.0/24` | Documentation (RFC 5737)        | Examples and labs. The lab's "internet" uses `203.0.113.0/24`.                 |
+| `224.0.0.0/4`                                       | Multicast                       | One sender, many receivers.                                                    |
+| `0.0.0.0/0`                                         | Default route                   | "Everything". As a listen address, `0.0.0.0` means "all addresses".            |
+
+`172.16.0.0/12` runs from `172.16.0.0` to `172.31.255.255`, not to `172.16.255.255`. Docker takes its networks from this range by default, which matters in the next section.
+
+## Plan a Network Without Overlaps
+
+Two networks that use overlapping ranges cannot be connected cleanly: a VPC peering request is refused, a VPN route sends traffic to the wrong place, a laptop on the office Wi-Fi cannot reach a server because Docker took the same range. Plan the ranges up front and check them against everything the network must ever talk to.
+
+The lab uses a simple plan: `10.0.0.0/16` for the private side, one `/24` per tier (edge, app, data). A production VPC needs more care: room for several availability zones, large subnets where containers get their own addresses, and spare space for later. Python's standard `ipaddress` module does the arithmetic. Save this as `subnet-plan.py`:
+
+```python
+#!/usr/bin/env python3
+"""Plan subnets inside a VPC range and check the plan against other networks."""
+import ipaddress
+import sys
+
+VPC = ipaddress.ip_network('10.20.0.0/16')
+ZONES = ['a', 'b', 'c']
+# tier name and prefix per zone; allocate the largest subnets first so they stay aligned
+TIERS = [('app', 19), ('data', 22), ('public', 24)]
+RESERVED = 5  # AWS keeps 5 addresses in every subnet
+
+OTHERS = {
+    'Docker default bridge': '172.17.0.0/16',
+    'Docker Swarm overlay pool': '10.0.0.0/8',
+    'Kubernetes pods (kind, flannel)': '10.244.0.0/16',
+    'Kubernetes services (kubeadm)': '10.96.0.0/12',
+    'office VPN': '192.168.1.0/24',
+    'partner VPC': '10.20.128.0/18',
+}
+
+
+def allocate(prefix, used):
+    for candidate in VPC.subnets(new_prefix=prefix):
+        if not any(candidate.overlaps(u) for u in used):
+            return candidate
+    sys.exit(f'no free /{prefix} left in {VPC}')
+
+
+plan, used = {}, []
+for tier, prefix in TIERS:
+    for zone in ZONES:
+        net = allocate(prefix, used)
+        used.append(net)
+        plan[f'{tier}-{zone}'] = net
+
+print(f'VPC {VPC} ({VPC.num_addresses:,} addresses)')
+for name, net in plan.items():
+    print(f'  {name:<9} {str(net):<16} {net.num_addresses - RESERVED:>6,} usable')
+free = VPC.num_addresses - sum(n.num_addresses for n in used)
+print(f'  unallocated: {free:,} addresses for later')
+
+print('Overlap check:')
+clashes = 0
+for name, cidr in OTHERS.items():
+    other = ipaddress.ip_network(cidr)
+    if other.overlaps(VPC):
+        hit = [k for k, n in plan.items() if n.overlaps(other)]
+        clashes += 1
+        print(f'  CLASH  {cidr:<16} {name}: overlaps the VPC ({len(hit)} of {len(plan)} subnets)')
+    else:
+        print(f'  ok     {cidr:<16} {name}')
+sys.exit(1 if clashes else 0)
 ```
 
-## Network Address Translation (NAT)
-
-Private addresses can't communicate directly with the internet. NAT solves this by translating between private and public addresses.
-
-```
-Private Network (192.168.1.0/24)      │      Internet
-                                      │
-┌─────────────┐                       │    ┌─────────────┐
-│ Laptop      │                       │    │ Google      │
-│192.168.1.100│────┐                  │    │8.8.8.8      │
-└─────────────┘    │                  │    └─────────────┘
-                   │   ┌──────────┐   │           ▲
-┌─────────────┐    └───│ Router/  │───┼───────────┘
-│ Phone       │        │ NAT      │   │
-│192.168.1.101│────────│Gateway   │   │
-└─────────────┘        │          │   │
-                       │Public IP:│   │
-                       │203.0.113.│   │
-                       │50        │   │
-                       └──────────┘   │
-
-NAT Translation Table:
-Internal IP:Port    ←→    External IP:Port
-192.168.1.100:5000  ←→    203.0.113.50:12345
-192.168.1.101:3000  ←→    203.0.113.50:12346
+```terminal
+{
+  "title": "a three-zone VPC plan, checked for overlaps",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "$",
+      "cmd": "python3 subnet-plan.py",
+      "output": "VPC 10.20.0.0/16 (65,536 addresses)\n  app-a     10.20.0.0/19      8,187 usable\n  app-b     10.20.32.0/19     8,187 usable\n  app-c     10.20.64.0/19     8,187 usable\n  data-a    10.20.96.0/22     1,019 usable\n  data-b    10.20.100.0/22    1,019 usable\n  data-c    10.20.104.0/22    1,019 usable\n  public-a  10.20.108.0/24      251 usable\n  public-b  10.20.109.0/24      251 usable\n  public-c  10.20.110.0/24      251 usable\n  unallocated: 37,120 addresses for later\nOverlap check:\n  ok     172.17.0.0/16    Docker default bridge\n  CLASH  10.0.0.0/8       Docker Swarm overlay pool: overlaps the VPC (9 of 9 subnets)\n  ok     10.244.0.0/16    Kubernetes pods (kind, flannel)\n  ok     10.96.0.0/12     Kubernetes services (kubeadm)\n  ok     192.168.1.0/24   office VPN\n  CLASH  10.20.128.0/18   partner VPC: overlaps the VPC (0 of 9 subnets)"
+    }
+  ]
+}
 ```
 
-When your laptop with IP `192.168.1.100` makes a web request:
+The plan gives each zone a large app subnet (Kubernetes clusters on AWS give every pod a VPC address, so app subnets fill up fast), a smaller data subnet and a small public subnet for load balancers and NAT gateways, and keeps more than a third of the range free.
 
-1. Your request: `192.168.1.100:5000 → google.com:443`
-2. Router translates: `203.0.113.50:12345 → google.com:443`
-3. Response: `google.com:443 → 203.0.113.50:12345`
-4. Router translates back: `google.com:443 → 192.168.1.100:5000`
+The overlap check found two real problems, and the script exits with status 1 so that a CI job would fail:
 
-Check your public IP address:
+- The **partner VPC** `10.20.128.0/18` overlaps the VPC range, although none of the planned subnets uses those addresses yet. That is still a clash: AWS refuses to peer two VPCs whose ranges overlap at all. Agree on ranges with every network you might connect to, and keep a central list (a spreadsheet works; IPAM tools such as AWS VPC IPAM or NetBox do it properly).
+- The **Docker Swarm overlay pool** `10.0.0.0/8` contains the whole VPC. Docker's local networks come from `172.17.0.0/16` to `172.31.0.0/16` and then from `192.168.0.0/16` in /20 blocks; move them with `default-address-pools` in `/etc/docker/daemon.json` (Part 6). Swarm overlays come from `10.0.0.0/8` in /24 blocks, and that pool is set separately, when you create the swarm: `docker swarm init --default-addr-pool 10.250.0.0/16 --default-addr-pool-mask-length 24`.
 
-```bash
-# See your public IP as the internet sees it
-curl ifconfig.me
+## NAT: Private Addresses on the Internet
+
+Private addresses are not routed on the internet. A host with a private address reaches the internet through **NAT** (Network Address Translation): a router replaces the private source address with its own public one, remembers the mapping, and reverses it for the replies. The lab's router does exactly this, with two rules:
+
+```terminal
+{
+  "title": "the router's NAT rules",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "router#",
+      "cmd": "nft list table ip nat",
+      "output": "table ip nat {\n\tchain prerouting {\n\t\ttype nat hook prerouting priority dstnat; policy accept;\n\t\tip daddr 203.0.113.80 tcp dport { 80, 443 } dnat to 10.0.1.10\n\t\tip daddr 203.0.113.53 meta l4proto { tcp, udp } th dport 53 dnat to 10.0.3.53\n\t}\n\n\tchain postrouting {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n\t\tip saddr 10.0.0.0/16 oifname \"br-wan\" masquerade\n\t}\n}"
+    }
+  ]
+}
 ```
 
-This is probably different from your local IP address shown by `ip addr show`.
+- **Source NAT** (`masquerade`): connections from `10.0.0.0/16` that leave through `br-wan` get the router's address `203.0.113.1` as their source. This is what your home router does, and what a cloud **NAT gateway** does for private subnets.
+- **Destination NAT** (`dnat`): connections to the public address `203.0.113.80` on ports 80 and 443 are sent to `lb` at `10.0.1.10`. This is **port forwarding**; a public IP attached to a cloud VM works the same way (a layer 7 load balancer reaches the same goal differently: it is a proxy that opens its own connection to the server, Part 5). A second rule publishes the DNS server `ns1` on `203.0.113.53`.
 
-## Practical Subnetting
+Watch source NAT happen. `web1` fetches a page from `remote`, the "internet" server, and `remote` logs who connected:
 
-Let's say you're setting up infrastructure and need to organize different types of servers. Starting with `10.0.0.0/16`, you could divide it like this:
-
-```
-Main Network: 10.0.0.0/16 (65,536 addresses)
-│
-├── Web Servers: 10.0.1.0/24 (254 addresses)
-│   ├── 10.0.1.1 - nginx-1
-│   ├── 10.0.1.2 - nginx-2
-│   └── 10.0.1.3 - nginx-3
-│
-├── App Servers: 10.0.2.0/24 (254 addresses)
-│   ├── 10.0.2.1 - api-1
-│   ├── 10.0.2.2 - api-2
-│   └── 10.0.2.3 - api-3
-│
-├── Databases: 10.0.3.0/27 (30 addresses)
-│   ├── 10.0.3.1 - postgres-primary
-│   ├── 10.0.3.2 - postgres-replica
-│   └── 10.0.3.3 - redis-cache
-│
-└── Management: 10.0.4.0/26 (62 addresses)
-    ├── 10.0.4.1 - monitoring
-    ├── 10.0.4.2 - logging
-    └── 10.0.4.3 - backup
-```
-
-This approach gives each service type its own network segment, which helps with security policies and troubleshooting.
-
-### Variable Length Subnetting
-
-You don't need to make all subnets the same size. Adjust based on your actual needs:
-
-```bash
-# Large subnet for development machines
-10.0.10.0/24   # 254 addresses
-
-# Small subnet for production databases
-10.0.20.0/28   # 14 addresses
-
-# Medium subnet for staging environment
-10.0.30.0/26   # 62 addresses
+```terminal
+{
+  "title": "source NAT, seen from both ends",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "web1#",
+      "cmd": "curl -s http://203.0.113.20/",
+      "output": "served by remote (203.0.113.20)"
+    },
+    {
+      "prompt": "remote#",
+      "cmd": "tail -n 1 /run/netlab/log/remote-app.log",
+      "output": "203.0.113.1 xff=- \"GET / HTTP/1.1\" 200 -"
+    },
+    {
+      "prompt": "client#",
+      "cmd": "curl -s -o /dev/null -w '%{http_code}\\n' http://www.shop.example/",
+      "output": "200"
+    },
+    {
+      "comment": "the connection tracking table holds every translation",
+      "prompt": "router#",
+      "cmd": "conntrack -L -p tcp 2>/dev/null | grep -E 'src=(10.0.2.11|203.0.113.10) ' | grep -E 'dport=80 '",
+      "output": "tcp      6 119 TIME_WAIT src=10.0.2.11 dst=203.0.113.20 sport=45790 dport=80 src=203.0.113.20 dst=203.0.113.1 sport=80 dport=45790 [ASSURED] mark=0 use=1\ntcp      6 119 TIME_WAIT src=203.0.113.10 dst=203.0.113.80 sport=43886 dport=80 src=10.0.1.10 dst=203.0.113.10 sport=80 dport=43886 [ASSURED] mark=0 use=1\ntcp      6 119 TIME_WAIT src=203.0.113.10 dst=203.0.113.80 sport=43876 dport=80 src=10.0.1.10 dst=203.0.113.10 sport=80 dport=43876 [ASSURED] mark=0 use=1"
+    }
+  ]
+}
 ```
 
-## Cloud Network Planning
+`remote` saw the connection come from `203.0.113.1`, the router, never from `10.0.2.11`. Each line of the **connection tracking** table holds both directions of one connection, first as it was sent and then as the reply is expected:
 
-Cloud environments require careful IP planning to avoid conflicts and enable connectivity between services.
+- The line that starts with `src=10.0.2.11` is source NAT: the original direction is `10.0.2.11` to `203.0.113.20`, and the reply comes back to `dst=203.0.113.1`. The router rewrites that back to `10.0.2.11`.
+- The lines that start with `src=203.0.113.10` are destination NAT: `client` connected to `203.0.113.80`, and the reply comes from `src=10.0.1.10`, the real server. (One of them is the health check that `netlab.sh up` ran.)
 
-### AWS VPC Example
+`TIME_WAIT` and the number before it (seconds until the entry expires) show that both connections already closed. Connection tracking is also what makes **stateful firewalls** possible (Part 4), and its table has a size limit: a busy NAT gateway or Kubernetes node that hits `nf_conntrack_max` starts dropping new connections.
 
-Here's how you might design an AWS VPC:
+NAT has costs and limits. Internet routers do not carry private ranges, so from the internet a private host is reachable only through an address that something publishes for it (destination NAT, a load balancer); inside your own networks anything with a route can reach it, as Part 4 shows. Many users behind one address (carrier-grade NAT) share its 65,535 ports per destination. And addresses change on the way: with source NAT the destination sees the NAT device's address, while destination NAT keeps the client's address (Part 1's capture on `lb` showed `203.0.113.10`). A reverse proxy is different again: it opens its own connection to the backend, so the backend sees the proxy's address, which is why proxies add headers such as `X-Forwarded-For` (Part 5).
 
-```bash
-# Main VPC: 10.0.0.0/16 (65,536 total addresses)
+## IPv6
 
-# Public subnets (for load balancers, NAT gateways)
-10.0.1.0/24    # us-east-1a public (254 addresses)
-10.0.2.0/24    # us-east-1b public (254 addresses)
+IPv6 addresses are 128 bits, written as eight groups of four hex digits: `2001:0db8:0000:0002:0000:0000:0000:0011`. Leading zeros in a group can be dropped and one run of zero groups becomes `::`, so that address is `2001:db8:0:2::11`. The space is so large that the normal subnet size is a `/64`, with 18 quintillion addresses, and nobody counts hosts any more.
 
-# Private subnets (for application servers)
-10.0.10.0/24   # us-east-1a private (254 addresses)
-10.0.20.0/24   # us-east-1b private (254 addresses)
+Every IPv6 interface gets a **link-local** address (`fe80::/10`) automatically, even in the lab, where nobody configured IPv6:
 
-# Database subnets (highly restricted access)
-10.0.100.0/28  # us-east-1a database (14 addresses)
-10.0.100.16/28 # us-east-1b database (14 addresses)
+```terminal
+{
+  "title": "IPv6 on a lab link",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "web1#",
+      "cmd": "ip -6 addr show dev eth0",
+      "output": "2: eth0@if9: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000 link-netns router\n    inet6 fe80::8482:baff:fe4f:b0fc/64 scope link proto kernel_ll\n       valid_lft forever preferred_lft forever"
+    },
+    {
+      "comment": "2001:db8::/32 is the IPv6 documentation prefix",
+      "prompt": "web1#",
+      "cmd": "ip -6 addr add 2001:db8:0:2::11/64 dev eth0"
+    },
+    {
+      "prompt": "web2#",
+      "cmd": "ip -6 addr add 2001:db8:0:2::12/64 dev eth0"
+    },
+    {
+      "comment": "give Duplicate Address Detection a moment (see below)",
+      "prompt": "web1#",
+      "cmd": "sleep 2"
+    },
+    {
+      "prompt": "web1#",
+      "cmd": "ping -6 -c 2 2001:db8:0:2::12",
+      "output": "PING 2001:db8:0:2::12 (2001:db8:0:2::12) 56 data bytes\n64 bytes from 2001:db8:0:2::12: icmp_seq=1 ttl=64 time=0.200 ms\n64 bytes from 2001:db8:0:2::12: icmp_seq=2 ttl=64 time=0.218 ms\n\n--- 2001:db8:0:2::12 ping statistics ---\n2 packets transmitted, 2 received, 0% packet loss, time 1029ms\nrtt min/avg/max/mdev = 0.200/0.209/0.218/0.009 ms"
+    },
+    {
+      "prompt": "web1#",
+      "cmd": "ip -6 neigh",
+      "output": "2001:db8:0:2::12 dev eth0 lladdr 82:13:d3:92:98:f6 REACHABLE"
+    }
+  ]
+}
 ```
 
-This design provides multiple availability zones while keeping different tiers isolated.
+IPv6 has no ARP; the **Neighbor Discovery Protocol** (NDP) does the same job with ICMPv6 messages, and `ip -6 neigh` shows its table. A new address is `tentative` for about a second while **Duplicate Address Detection** checks that no other host uses it, which is why the example waits before the ping.
 
-### Multi-Cloud Considerations
+Address types worth knowing:
 
-If you're using multiple cloud providers or connecting to on-premises networks, avoid overlapping IP ranges:
+| Prefix          | Type               | Meaning                                                                                   |
+| --------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `2000::/3`      | Global unicast     | Public, routed on the internet; your ISP or cloud gives you a prefix (often a /48 or /56) |
+| `fd00::/8`      | Unique local (ULA) | Private, like RFC 1918                                                                    |
+| `fe80::/10`     | Link-local         | Only on one link; every interface has one                                                 |
+| `::1/128`       | Loopback           | The machine itself                                                                        |
+| `2001:db8::/32` | Documentation      | Examples and labs                                                                         |
 
-```bash
-# AWS environment
-10.1.0.0/16
+The planning is simpler than IPv4: take your prefix and give every subnet a /64. A /48 holds 65,536 of them:
 
-# Azure environment
-10.2.0.0/16
-
-# Google Cloud environment
-10.3.0.0/16
-
-# On-premises office
-10.10.0.0/16
+```terminal
+{
+  "title": "IPv6 subnets from a /48",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "$",
+      "cmd": "python3 -c \"import ipaddress; p = ipaddress.ip_network('2001:db8:1234::/48'); s = list(p.subnets(new_prefix=64)); print(len(s), 'subnets:', s[0], s[1], '...', s[-1])\"",
+      "output": "65536 subnets: 2001:db8:1234::/64 2001:db8:1234:1::/64 ... 2001:db8:1234:ffff::/64"
+    }
+  ]
+}
 ```
 
-This prevents routing conflicts when you set up VPN connections between environments.
+IPv6 matters for cost as well as scale. AWS charges for every public IPv4 address (USD 0.005 per hour, about USD 3.60 a month, since February 2024), while IPv6 addresses are free, and traffic to IPv6 destinations needs no NAT gateway (an egress-only internet gateway has no hourly or processing charge). Services that only have IPv4 still need translation: IPv6-only subnets reach them through DNS64 and NAT64, which on AWS runs on a NAT gateway and is billed like one. Without NAT, IPv6 hosts are reachable from the internet unless a firewall says otherwise, so the firewall rules in Part 4 must cover both protocols.
 
-## Container Network Planning
+## Troubleshoot Address Problems
 
-Container platforms create networks automatically, but understanding the addressing helps with troubleshooting.
+**Two machines with the same address** cause intermittent failures: connections work, then break, as neighbours update their tables. `arping -D` (duplicate address detection) asks whether anyone already uses an address. Here `web3` checks `10.0.2.12`, which belongs to `web2`:
 
-### Docker Networks
-
-Docker creates several networks by default:
-
-```bash
-# List Docker networks
-docker network ls
-
-# Examine the default bridge network
-docker network inspect bridge
+```terminal
+{
+  "title": "find a duplicate address",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "web3#",
+      "cmd": "arping -D -I eth0 -c 2 10.0.2.12",
+      "output": "ARPING 10.0.2.12 from 0.0.0.0 eth0\nUnicast reply from 10.0.2.12 [82:13:D3:92:98:F6]  0.586ms\nSent 1 probes (1 broadcast(s))\nReceived 1 response(s)"
+    }
+  ]
+}
 ```
 
-You'll see Docker typically uses `172.17.0.0/16` for the default bridge network. When you run containers, they get addresses from this range.
+Any reply means the address is taken. The reply also shows the MAC address of the machine that has it, which you can look up in the switch or the cloud console.
 
-Create custom networks for better organization:
+**No address at all**, or one from `169.254.0.0/16`: DHCP failed. On Ubuntu servers, netplan configures the network (`/etc/netplan/*.yaml`) and systemd-networkd or NetworkManager applies it; `networkctl status` and `journalctl -u systemd-networkd` show what happened. Cloud VMs get their address from the provider's DHCP; changing it inside the VM does not work, change it in the cloud instead.
 
-```bash
-# Create a network for a specific application
-docker network create --subnet=10.5.0.0/16 ecommerce-network
+**Reaching some networks but not others**: read the routing table with `ip route` and ask `ip route get <address>` which route wins. A VPN that adds a route for `10.0.0.0/8` captures every `10.x` destination, including your VPC.
 
-# Run containers on the custom network
-docker run --network ecommerce-network --name web nginx
-docker run --network ecommerce-network --name db postgres
-```
+## Common Mistakes
 
-Containers on the same network can communicate using container names as hostnames.
+- **Choosing `10.0.0.0/16` or `192.168.0.0/24` for everything.** They are the defaults everyone uses, so they are the ranges most likely to clash when you connect to a partner, a VPN or another VPC. Pick less common ranges such as `10.20.0.0/16` and record them.
+- **Making subnets too small.** Kubernetes on AWS gives every pod a VPC address; a /24 per zone runs out at about 250 pods.
+- **Forgetting the reserved addresses** in cloud subnets (5 on AWS and Azure, 4 on Google Cloud).
+- **Treating NAT as security.** NAT hides addresses, but it is not a firewall. Part 4 shows a host behind NAT that is still reachable.
+- **Ignoring IPv6.** Machines often have IPv6 addresses you did not plan, and a firewall that only covers IPv4 leaves them open.
 
-### Kubernetes Networking
+## Summary
 
-Kubernetes uses more complex networking, but the same principles apply:
+- The prefix length says how many bits name the network: a /24 has 256 addresses, each bit less halves or doubles that, and clouds reserve 4 or 5 per subnet.
+- Hosts deliver to their own subnet directly (ARP or NDP) and send everything else to the gateway; the longest matching route wins.
+- Plan ranges once, leave room, and check for overlaps with Docker, Kubernetes, VPNs and every network you may peer with. A script can do it in CI.
+- NAT rewrites addresses and tracks every connection; it lets private hosts reach the internet but is not a firewall.
+- IPv6 uses /64 subnets, link-local addresses and NDP, and saves the cost of public IPv4.
 
-```bash
-# See pod network assignments
-kubectl get pods -o wide
+Next, [Part 3](/guides/networking-fundamentals/03-dns-and-domain-management) turns names into these addresses: DNS.
 
-# Check node network configuration
-kubectl describe node <node-name>
-```
+## Keep Learning
 
-Kubernetes typically uses large address spaces like `10.244.0.0/16` for pod networks.
-
-## Troubleshooting IP Address Issues
-
-### Address Conflicts
-
-When two devices have the same IP address, you'll see intermittent connectivity:
-
-```bash
-# Test for IP conflicts
-ping 192.168.1.100
-arping 192.168.1.100
-
-# Check ARP table for inconsistencies
-arp -a
-```
-
-If you see different MAC addresses for the same IP, you have a conflict.
-
-### DHCP Problems
-
-DHCP automatically assigns IP addresses, but it can fail:
-
-```bash
-# Force a new DHCP lease
-sudo dhclient -r  # Release current lease
-sudo dhclient     # Request new lease
-
-# Check current lease information
-cat /var/lib/dhcp/dhclient.leases
-```
-
-### Routing Issues
-
-Sometimes you can reach some networks but not others:
-
-```bash
-# Check your routing table
-ip route show
-
-# Add a temporary route if needed
-sudo ip route add 10.5.0.0/16 via 192.168.1.1
-```
-
-The routing table shows where packets go for different destination networks.
-
-## Network Overlap Detection
-
-Before connecting new networks, check for overlaps:
-
-```bash
-# Show all your current network routes
-ip route show
-
-# Look for conflicts before adding VPN or new segments
-# For example, if you see 192.168.1.0/24 locally,
-# don't use the same range for a VPN connection
-```
-
-Overlapping networks cause routing confusion and connectivity problems.
-
-## IPv6 Basics
-
-IPv6 adoption is growing, especially in cloud environments. The addressing works differently:
-
-```bash
-# Check IPv6 configuration
-ip -6 addr show
-
-# Test IPv6 connectivity
-ping6 google.com
-```
-
-IPv6 addresses are much longer (`2001:db8:85a3::8a2e:370:7334`) but the subnetting concepts are similar. The key difference is that IPv6 provides so many addresses that you don't need to be as careful about conservation.
-
-## Network Documentation
-
-As your infrastructure grows, document your IP allocations:
-
-```bash
-# Keep a simple text file or spreadsheet:
-# Network Plan for Production Environment
-#
-# 10.0.0.0/16 - Main VPC
-# ├── 10.0.1.0/24 - Public subnet AZ-a (load balancers)
-# ├── 10.0.2.0/24 - Public subnet AZ-b (load balancers)
-# ├── 10.0.10.0/24 - Private subnet AZ-a (app servers)
-# ├── 10.0.20.0/24 - Private subnet AZ-b (app servers)
-# └── 10.0.100.0/28 - Database subnet (restricted access)
-```
-
-This prevents conflicts and helps new team members understand your network design.
-
-## Performance Considerations
-
-Network design affects performance in subtle ways:
-
-### Broadcast Domains
-
-Larger subnets create larger broadcast domains:
-
-```bash
-# Small subnet: 10.0.1.0/28 (14 hosts)
-# - Less broadcast traffic
-# - Better performance
-# - Easier to troubleshoot
-
-# Large subnet: 10.0.1.0/22 (1022 hosts)
-# - More broadcast traffic
-# - Potential performance issues
-# - Harder to isolate problems
-```
-
-### Inter-Subnet Communication
-
-Communication within the same subnet is typically faster:
-
-```bash
-# Same subnet: Direct communication
-# 192.168.1.10 → 192.168.1.20 (fast)
-
-# Different subnets: Requires routing
-# 192.168.1.10 → 192.168.2.20 (slightly slower)
-```
-
-This matters for high-performance applications where every millisecond counts.
-
-In the next section, we'll explore DNS and domain management - how the names your applications use get translated into the IP addresses you've just learned to plan and manage.
-
-Good planning prevents most IP address problems before they occur. Take time to design your address space logically, avoid overlaps, and document your decisions.
-
-Happy subnetting!
+- Simulators: [binary and bytes](/games/binary-byte-simulator), [AWS VPC](/games/aws-vpc-simulator)
+- Interview questions: [AWS VPC networking fundamentals](/interview-questions/junior/aws-vpc-networking)
+- [How to get your local IP address](/posts/how-to-get-local-ip-address) and [list every IP address in a local network](/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network)
+- [Linux networking commands](/guides/introduction-to-linux/08-networking) in the Introduction to Linux guide
