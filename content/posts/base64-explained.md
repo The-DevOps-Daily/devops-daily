@@ -343,7 +343,7 @@ YUhWdWRHVnlNaTF3Y205aw==
 aHVudGVyMi1wcm9k
 ```
 
-The pod now gets `aHVudGVyMi1wcm9k` as its password. The giveaway is a value that still decodes cleanly after you decode it once:
+The pod now gets `aHVudGVyMi1wcm9k` as its password. The giveaway is a first decode that looks like base64 instead of the value you stored. Decode it again to confirm:
 
 ```bash
 echo 'YUhWdWRHVnlNaTF3Y205aw==' | base64 -d | base64 -d; echo
@@ -465,7 +465,7 @@ printf 'data:image/png;base64,%s' "$(base64 -w0 icon.png)" | cut -c1-60
 data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAA
 ```
 
-1,167 bytes became 1,578 characters: the 33% plus the 22-character prefix. Note `-w0` again, because a newline breaks a data URI. The image also loses its own cache entry and is downloaded again with every page or stylesheet that inlines it. That is fine for a few small icons and bad for anything large or shared across pages.
+1,167 bytes became 1,578 characters: the 33% plus the 22-character prefix. Use `-w0` again so the URI stays on one line in HTML or CSS. The image also loses its own cache entry and is downloaded again with every page or stylesheet that inlines it. That is fine for a few small icons and bad for anything large or shared across pages.
 
 For SVG, which is already text, base64 is not always the best choice. Our 110-byte SVG made a 174-character base64 data URI and a 143-character URL-encoded one (`data:image/svg+xml,%3Csvg ...`, with single quotes inside the SVG).
 
@@ -476,6 +476,6 @@ Base64 is a fixed mapping from bytes to 64 safe characters. It makes binary data
 - **Base64 does not protect Secrets.** RBAC, encryption at rest and keeping values out of Git do.
 - **`echo` adds a newline.** Use `printf '%s'` and check suspect values with `base64 -d | od -c`.
 - **GNU `base64` wraps at 76 characters.** Use `-w0`, or `| tr -d '\n'` where macOS is involved. With `openssl base64`, pass `-A` both ways.
-- **`data` takes base64; `stringData`, `--from-literal` and `--from-file` take raw values.** A value that decodes twice was encoded twice.
+- **`data` takes base64; `stringData`, `--from-literal` and `--from-file` take raw values.** If the first decode still looks like base64, check for double encoding.
 - **JWTs use base64url without padding.** Swap `-_` back to `+/` and restore the `=` before decoding.
 - **Check the exit code of `base64 -d`.** GNU prints partial output before it fails, and the Rust coreutils in Ubuntu 26.10 [behave differently on bad input](/posts/ubuntu-26-10-rust-coreutils-what-changes).
