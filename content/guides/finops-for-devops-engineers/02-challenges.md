@@ -1,381 +1,287 @@
 ---
 title: 'Common Cloud Cost Challenges for DevOps Teams'
-description: 'Identify and understand the most frequent cloud cost problems that DevOps teams encounter and why they happen.'
+description: 'Where cloud money leaks: oversized instances, idle resources, missing or inconsistent tags, always-on dev, NAT and data transfer, logs, Kubernetes and AI.'
 order: 2
 ---
 
-DevOps teams face unique cloud cost challenges that stem from the intersection of rapid deployment practices, complex cloud pricing models, and traditional financial processes. Understanding these challenges helps you identify cost optimization opportunities and prevent common pitfalls.
+**TLDR**: Most cloud waste comes from a short list: instances sized for a peak that never comes, resources nobody remembers, costs nobody can attribute, non-production environments built like production and left on all night, traffic through NAT gateways and across zones, logs kept forever, Kubernetes requests far above real use, and AI usage that grows with every request. This part shows how to spot each one, with real AWS prices and the tag problems in real billing data. Later parts fix them in code.
 
-## Over-Provisioning: The "Just to Be Safe" Problem
+None of these problems come from carelessness. They come from fast delivery with no feedback: a team ships, the bill arrives a month later, aggregated, on someone else's desk. Each section below names the pattern, shows how to find it, and points to the part of the guide that fixes it.
 
-Over-provisioning happens when teams allocate more resources than actually needed, often as insurance against performance issues. This practice stems from on-premises thinking where adding capacity required lengthy procurement processes.
+## Prerequisites
 
-### Why Over-Provisioning Happens
+- `focus.duckdb` from [Part 1](/guides/finops-for-devops-engineers/01-principles), for the tag queries.
+- For the AWS checks: AWS CLI v2 and credentials with read-only access to the account. The commands only describe resources; none of them change anything.
 
-**Fear of Performance Issues**: Teams often choose larger instance sizes to avoid potential slowdowns, especially for customer-facing applications.
+## Oversized Instances
 
-**Lack of Right-Sizing Knowledge**: Without clear usage data, teams make educated guesses that tend toward over-allocation.
+Teams pick sizes before they have data, and they pick generously: nobody gets paged for an instance that is too big. Sizes then get copied from service to service and from production to every other environment.
 
-**One-Size-Fits-All Approaches**: Using the same instance type for all environments, even when development and staging don't need production-level resources.
+The price difference is large. These are on-demand Linux prices for one instance running a full month (730 hours) in US East (N. Virginia):
 
-Here's a typical example of over-provisioning in Terraform:
-
-```terraform
-# Common over-provisioning pattern
-resource "aws_instance" "web" {
-  count         = 3
-  ami           = "ami-0abcdef1234567890"
-  instance_type = "m5.2xlarge"  # Often oversized for actual needs
-
-  tags = {
-    Name = "web-server-${count.index}"
-    Environment = var.environment
-  }
-}
-
-# Data volume that's larger than needed
-resource "aws_ebs_volume" "data" {
-  availability_zone = "us-west-2a"
-  size              = 1000  # Often allocated based on worst-case estimates
-  type              = "gp3"
-
-  tags = {
-    Name = "application-data"
-  }
-}
-```
-
-### The Real Cost Impact
-
-Over-provisioning compounds quickly across environments and teams. A single over-sized production instance might cost an extra $200/month, but when multiplied across development, staging, and production environments for multiple teams, the waste becomes significant.
-
-**Example calculation:**
-
-- Production: 3 x m5.2xlarge ($0.384/hour) = $829/month
-- Right-sized: 3 x m5.large ($0.096/hour) = $207/month
-- **Monthly waste: $622 per application**
-
-### Identifying Over-Provisioning
-
-You can identify over-provisioned resources by monitoring utilization metrics:
-
-```bash
-# AWS CLI command to get EC2 CPU utilization for the last 30 days
-aws cloudwatch get-metric-statistics \
-  --namespace AWS/EC2 \
-  --metric-name CPUUtilization \
-  --dimensions Name=InstanceId,Value=i-1234567890abcdef0 \
-  --start-time $(date -d '30 days ago' -u +%Y-%m-%dT%H:%M:%S) \
-  --end-time $(date -u +%Y-%m-%dT%H:%M:%S) \
-  --period 3600 \
-  --statistics Average,Maximum
-```
-
-Resources consistently running below 40% CPU utilization are candidates for right-sizing.
-
-## Zombie Resources: The Hidden Cost Drain
-
-Zombie resources are cloud resources that continue running and generating charges long after they're needed. These often result from development workflows, testing, or failed cleanup processes.
-
-### Common Types of Zombie Resources
-
-**Forgotten Development Environments**: Temporary environments created for testing that never get cleaned up.
-
-**Orphaned Load Balancers**: Load balancers that continue running after their target instances are terminated.
-
-**Unused Storage Volumes**: EBS volumes, S3 buckets, or database snapshots that are no longer attached to active resources.
-
-**Idle Databases**: Database instances that were created for testing and left running indefinitely.
-
-Here's an example of how zombie resources accumulate in typical development workflows:
-
-```bash
-# Developer creates a feature branch environment
-git checkout -b feature/new-payment-flow
-terraform workspace new feature-payment-flow
-terraform apply  # Spins up full infrastructure
-
-# Feature gets merged and deployed
-git checkout main
-git branch -d feature/new-payment-flow
-
-# Terraform workspace and infrastructure remain running
-# Monthly cost: $150-500 depending on services
-```
-
-### The Zombie Detection Problem
-
-Zombies are difficult to detect because:
-
-- They often have minimal usage, avoiding basic monitoring alerts
-- Resource tags may not clearly indicate their purpose or ownership
-- Development teams may fear deleting resources they don't fully understand
-
-### Implementing Zombie Detection
-
-The key to zombie detection is combining resource metadata with usage patterns. You want to identify resources that are running but not actually being used productively.
-
-A simple approach focuses on two main indicators:
-
-- **Age**: Resources that have been running for extended periods
-- **Utilization**: Very low CPU, network, or disk activity
-
-Here's a practical script that identifies potential zombie EC2 instances by checking these criteria:
-
-```python
-import boto3
-from datetime import datetime, timedelta
-
-def find_zombie_instances():
-    """Find EC2 instances that might be zombies based on age and low utilization"""
-    ec2 = boto3.client('ec2')
-    cloudwatch = boto3.client('cloudwatch')
-
-    # Get all running instances
-    instances = ec2.describe_instances(
-        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}]
-    )
-
-    zombies = []
-
-    for reservation in instances['Reservations']:
-        for instance in reservation['Instances']:
-            instance_id = instance['InstanceId']
-            launch_time = instance['LaunchTime']
-
-            # Check if instance is older than 30 days
-            days_running = (datetime.now(launch_time.tzinfo) - launch_time).days
-            if days_running > 30:
-
-                # Check average CPU over the last week
-                avg_cpu = get_average_cpu_utilization(cloudwatch, instance_id)
-
-                # Flag as potential zombie if very low CPU usage
-                if avg_cpu is not None and avg_cpu < 5:
-                    zombies.append({
-                        'InstanceId': instance_id,
-                        'DaysRunning': days_running,
-                        'AvgCPU': avg_cpu
-                    })
-
-    return zombies
-
-def get_average_cpu_utilization(cloudwatch, instance_id):
-    """Get average CPU utilization for an instance over the last 7 days"""
-    try:
-        response = cloudwatch.get_metric_statistics(
-            Namespace='AWS/EC2',
-            MetricName='CPUUtilization',
-            Dimensions=[{'Name': 'InstanceId', 'Value': instance_id}],
-            StartTime=datetime.now() - timedelta(days=7),
-            EndTime=datetime.now(),
-            Period=3600,  # 1 hour periods
-            Statistics=['Average']
-        )
-
-        if response['Datapoints']:
-            return sum(dp['Average'] for dp in response['Datapoints']) / len(response['Datapoints'])
-        return None
-    except Exception as e:
-        print(f"Could not get metrics for {instance_id}: {e}")
-        return None
-```
-
-This script identifies instances that have been running for more than 30 days with less than 5% average CPU utilization. You can customize these thresholds based on your environment.
-
-To use this effectively:
-
-1. Run it weekly as part of your cost optimization routine
-2. Review flagged instances before taking action - some may have legitimate low usage
-3. Consider adding checks for network or disk utilization for more accuracy
-4. Always verify with the resource owner before terminating anything
-
-## Lack of Cost Attribution: The Shared Account Problem
-
-Many organizations use shared cloud accounts across multiple teams, projects, or environments. Without proper cost attribution, it becomes impossible to understand which teams or projects are driving costs.
-
-### Why Cost Attribution Fails
-
-**Inconsistent Tagging**: Teams use different tagging conventions or forget to tag resources entirely.
-
-**Shared Resources**: Infrastructure components like networking or monitoring that serve multiple applications.
-
-**Resource Sprawl**: As teams scale, keeping track of resource ownership becomes increasingly difficult.
-
-### The Business Impact
-
-Without cost attribution:
-
-- Teams can't make informed decisions about feature costs
-- Finance can't allocate cloud spend to appropriate budgets
-- Cost optimization efforts lack clear priorities
-- Accountability for cloud spend becomes diffused
-
-### Implementing Effective Cost Attribution
-
-A robust tagging strategy is essential for cost attribution:
-
-```terraform
-# Terraform locals for consistent tagging
-locals {
-  common_tags = {
-    Project     = var.project_name
-    Environment = var.environment
-    Team        = var.team_name
-    Owner       = var.owner_email
-    CostCenter  = var.cost_center
-    ManagedBy   = "terraform"
-    CreatedDate = formatdate("YYYY-MM-DD", timestamp())
-  }
-}
-
-# Apply tags consistently across all resources
-resource "aws_instance" "web" {
-  ami           = var.ami_id
-  instance_type = var.instance_type
-
-  tags = merge(local.common_tags, {
-    Name        = "${var.project_name}-web-${var.environment}"
-    Component   = "web-server"
-    Billable    = "true"
-  })
-}
-
-resource "aws_s3_bucket" "assets" {
-  bucket = "${var.project_name}-assets-${var.environment}"
-
-  tags = merge(local.common_tags, {
-    Component = "static-assets"
-    Backup    = "daily"
-  })
-}
-```
-
-### Automated Tag Enforcement
-
-Use cloud provider policies to enforce tagging requirements:
-
-```json
+```chart
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Deny",
-      "Action": ["ec2:RunInstances"],
-      "Resource": ["arn:aws:ec2:*:*:instance/*"],
-      "Condition": {
-        "Null": {
-          "aws:RequestedRegion": "false",
-          "ec2:ResourceTag/Project": "true",
-          "ec2:ResourceTag/Environment": "true",
-          "ec2:ResourceTag/Team": "true"
-        }
-      }
-    }
+  "type": "bar",
+  "title": "One instance for a month, on demand",
+  "unit": "$",
+  "caption": "Hourly on-demand Linux prices in us-east-1 from the AWS Price List (EC2 offer published 23 October 2026), times 730 hours. 2 vCPU for t4g and *.large, 4 vCPU for xlarge, 8 vCPU for 2xlarge.",
+  "rows": [
+    { "label": "t4g.small", "value": 12.26, "series": "Graviton" },
+    { "label": "t4g.medium", "value": 24.53, "series": "Graviton" },
+    { "label": "m8g.large", "value": 65.52, "series": "Graviton" },
+    { "label": "m7i.large", "value": 73.58, "series": "Intel" },
+    { "label": "m7i.xlarge", "value": 147.17, "series": "Intel" },
+    { "label": "m7i.2xlarge", "value": 294.34, "series": "Intel" }
+  ],
+  "series": [
+    { "name": "Graviton", "color": "#f59e0b" },
+    { "name": "Intel", "color": "#0080ff" }
   ]
 }
 ```
 
-This IAM policy prevents launching EC2 instances without required tags.
+Three `m7i.2xlarge` instances cost USD 883.01 a month. If the service runs fine on `m7i.large`, three of those cost USD 220.75, and the difference is USD 662.26 a month, or about USD 7,947 a year, for one service in one environment. Moving to Graviton (`m8g.large`, USD 65.52 a month each) saves another 11 percent, if your software runs on arm64.
 
-## Development and Production Parity Costs
+**How to find it:**
 
-Many teams mirror production environments for development and staging, leading to unnecessary costs for non-production workloads that don't require production-level resources.
-
-### The Mirroring Trap
-
-**Database Sizing**: Running production-sized databases in development environments
-**Multi-AZ Deployments**: Using high-availability configurations in single-developer environments
-**Storage Replication**: Maintaining production backup and replication settings in test environments
-
-### Smart Environment Scaling
-
-Implement environment-specific configurations:
-
-```terraform
-# Variable-driven resource sizing based on environment
-variable "environment_configs" {
-  type = map(object({
-    instance_type     = string
-    min_capacity      = number
-    max_capacity      = number
-    multi_az          = bool
-    backup_retention  = number
-  }))
-
-  default = {
-    production = {
-      instance_type     = "m5.xlarge"
-      min_capacity      = 2
-      max_capacity      = 10
-      multi_az          = true
-      backup_retention  = 30
-    }
-    staging = {
-      instance_type     = "m5.large"
-      min_capacity      = 1
-      max_capacity      = 3
-      multi_az          = false
-      backup_retention  = 7
-    }
-    development = {
-      instance_type     = "t3.medium"
-      min_capacity      = 1
-      max_capacity      = 2
-      multi_az          = false
-      backup_retention  = 1
-    }
-  }
-}
-
-# Use environment-specific configuration
-locals {
-  config = var.environment_configs[var.environment]
-}
-
-resource "aws_db_instance" "main" {
-  identifier     = "${var.project}-${var.environment}"
-  engine         = "postgres"
-  engine_version = "13.7"
-  instance_class = "db.${local.config.instance_type}"
-
-  allocated_storage     = local.config.storage_size
-  max_allocated_storage = local.config.max_storage_size
-
-  multi_az               = local.config.multi_az
-  backup_retention_period = local.config.backup_retention
-
-  tags = local.common_tags
-}
-```
-
-### Scheduled Resource Management
-
-Implement automated scheduling for non-production environments:
+- Look at CPU and memory over two to four weeks, at the 95th percentile or the maximum, not the average. A service that idles at night and peaks at noon has a low average and still needs its peak capacity.
+- EC2 does not report memory by default. Install the CloudWatch agent, or use your existing metrics stack, before you decide memory is unused.
+- Opt in to [AWS Compute Optimizer](https://docs.aws.amazon.com/compute-optimizer/latest/ug/what-is-compute-optimizer.html) (Azure Advisor and Google Cloud's Recommender do the same job). It analyzes the last 14 days of CloudWatch metrics at no charge; the paid enhanced infrastructure metrics option extends that to 93 days. It lists over-provisioned instances:
 
 ```bash
-# Bash script to stop non-production resources during off-hours
-#!/bin/bash
-
-# Stop development environment instances at 6 PM weekdays
-if [[ $(date +%u) -le 5 ]] && [[ $(date +%H) -eq 18 ]]; then
-    aws ec2 stop-instances --instance-ids \
-        $(aws ec2 describe-instances \
-            --filters "Name=tag:Environment,Values=development" \
-                     "Name=instance-state-name,Values=running" \
-            --query 'Reservations[].Instances[].InstanceId' \
-            --output text)
-fi
-
-# Start development environment instances at 8 AM weekdays
-if [[ $(date +%u) -le 5 ]] && [[ $(date +%H) -eq 8 ]]; then
-    aws ec2 start-instances --instance-ids \
-        $(aws ec2 describe-instances \
-            --filters "Name=tag:Environment,Values=development" \
-                     "Name=instance-state-name,Values=stopped" \
-            --query 'Reservations[].Instances[].InstanceId' \
-            --output text)
-fi
+aws compute-optimizer get-ec2-instance-recommendations \
+  --filters name=Finding,values=Overprovisioned \
+  --query 'instanceRecommendations[].[instanceArn,currentInstanceType,recommendationOptions[0].instanceType]' \
+  --output text
 ```
 
-This approach can reduce development environment costs by 60-70% by only running resources during business hours.
+Right-size in non-production first, watch latency and error rates for a week, then change production. [Part 4](/guides/finops-for-devops-engineers/04-practical-examples) puts the size of each environment in one Terraform map, so a right-sizing change is a reviewed one-line diff.
+
+## Idle and Forgotten Resources
+
+Many resources keep billing when nothing uses them. They survive because nobody is sure what they belong to, and deleting the wrong thing feels worse than paying for it.
+
+| Resource                    | Why it lingers                                                              | Price in us-east-1                        | Per month (730 hours)        |
+| --------------------------- | --------------------------------------------------------------------------- | ----------------------------------------- | ---------------------------- |
+| Unattached EBS volume (gp3) | Instance terminated with `delete_on_termination = false`                    | USD 0.08 per GB-month                     | USD 8 for 100 GB             |
+| EBS snapshot                | Backups with no expiry, AMIs nobody deregistered                            | USD 0.05 per GB-month                     | USD 5 for 100 GB             |
+| Public IPv4 address         | Elastic IP kept "just in case"; every public IPv4 is billed, in use or idle | USD 0.005 per hour                        | USD 3.65 per address         |
+| NAT gateway                 | Created with a VPC template for a test environment                          | USD 0.045 per hour, plus USD 0.045 per GB | USD 32.85 before any traffic |
+| Stopped EC2 instance        | Stopped instead of terminated; its volumes keep billing                     | Volume prices above                       | Depends on the volumes       |
+| Feature environment         | Branch merged, `terraform destroy` never ran                                | Everything it contains                    | Often the largest item       |
+
+_Prices from the AWS Price List: EC2 offer published 23 October 2026, VPC offer published 16 October 2026._
+
+The last row is the expensive one. A per-branch Terraform workspace keeps all of its resources until someone destroys them, and deleting the branch in Git does nothing to the cloud. Tear the environment down before you delete the workspace:
+
+```bash
+terraform workspace select feature-payment-flow
+terraform destroy -var-file=env/dev.tfvars
+terraform workspace select default
+terraform workspace delete feature-payment-flow
+```
+
+Terraform refuses to delete a workspace that still tracks resources unless you add `-force`, and `-force` leaves the resources running with nothing tracking them. Do not use it to make the error go away.
+
+**How to find candidates:** each of these commands lists one kind of resource in the current Region. The first two print only leftovers (and nothing when there are none). The snapshot and NAT gateway lists include resources in use, so check each one before you delete it: a snapshot may be a backup someone must keep, and a NAT gateway is idle only if its `BytesOutToDestination` metric in CloudWatch stays near zero.
+
+```bash
+# EBS volumes that are not attached to an instance
+aws ec2 describe-volumes --filters Name=status,Values=available \
+  --query 'Volumes[].[VolumeId,Size,CreateTime]' --output text
+
+# Elastic IP addresses that are not associated with anything
+aws ec2 describe-addresses --query 'Addresses[?AssociationId==null].[PublicIp,AllocationId]' --output text
+
+# Your snapshots, oldest first
+aws ec2 describe-snapshots --owner-ids self \
+  --query 'sort_by(Snapshots,&StartTime)[].[SnapshotId,VolumeSize,StartTime]' --output text
+
+# NAT gateways, with their VPC
+aws ec2 describe-nat-gateways --filter Name=state,Values=available \
+  --query 'NatGateways[].[NatGatewayId,VpcId,CreateTime]' --output text
+```
+
+Run them in every Region you use. [Part 3](/guides/finops-for-devops-engineers/03-tools) turns these checks into Cloud Custodian policies that run on a schedule, and [Part 5](/guides/finops-for-devops-engineers/05-cicd-integration) destroys preview environments when their pull request closes.
+
+## Costs Nobody Can Attribute
+
+If a cost has no owner, nobody acts on it. Attribution fails in three ways: resources without tags, tags that disagree, and costs that cannot be tagged at all.
+
+The second one is the hardest to see. The FOCUS sample from Part 1 shows it well, because it is anonymized real-world data from several providers. This query lists every tag key that means "environment" and the usage cost behind each value:
+
+```sql
+-- Every tag key that means "environment", with its values and the usage
+-- cost behind each. The quotes make stray spaces in a key visible.
+SELECT ProviderName AS provider,
+       '"' || tag_key || '"' AS tag_key,
+       json_extract_string(Tags, '$."' || tag_key || '"') AS tag_value,
+       round(sum(BilledCost), 2) AS usage_usd
+FROM (
+  SELECT ProviderName, Tags, BilledCost, unnest(json_keys(Tags)) AS tag_key
+  FROM focus
+  WHERE lower(ChargeCategory) = 'usage'
+)
+WHERE lower(trim(tag_key)) IN ('env', 'environment')
+GROUP BY ALL
+ORDER BY provider, tag_key, tag_value;
+```
+
+```bash
+duckdb focus.duckdb -f focus/tag-keys.sql
+```
+
+```text
+┌───────────┬───────────────┬─────────────┬───────────┐
+│ provider  │    tag_key    │  tag_value  │ usage_usd │
+│  varchar  │    varchar    │   varchar   │  double   │
+├───────────┼───────────────┼─────────────┼───────────┤
+│ AWS       │ "environment" │ dev         │   1640.54 │
+│ AWS       │ "environment" │ prod        │    240.38 │
+│ Microsoft │ "ENV"         │ StorSimple  │       0.2 │
+│ Microsoft │ "Environment" │             │       0.0 │
+│ Microsoft │ "Environment" │ Dev         │      2.38 │
+│ Microsoft │ "Environment" │ DevTest     │       0.0 │
+│ Microsoft │ "Environment" │ Development │       0.0 │
+│ Microsoft │ "env"         │ Dev         │      -0.5 │
+│ Microsoft │ "env"         │ Production  │       0.0 │
+│ Microsoft │ "env"         │ dev         │      14.4 │
+│ Microsoft │ "env"         │ prod        │    220.68 │
+│ Microsoft │ "env"         │ trey        │      5.74 │
+│ Oracle    │ "environment" │ dev         │     11.19 │
+│ Oracle    │ "environment" │ prod        │      8.23 │
+└───────────┴───────────────┴─────────────┴───────────┘
+  14 rows                                   4 columns
+```
+
+In the AWS and Oracle data, every environment tag uses the key `environment` and the values `dev` and `prod`. The Azure data has three keys for the same idea (`env`, `ENV` and `Environment`) and values such as `Dev`, `dev`, `Production`, `DevTest`, and two that are not environments at all: `trey` and `StorSimple`. A report that groups by `environment` sees none of the Azure spend. Elsewhere in the same data, `"org"` and `" org"` (with a leading space) are two different keys.
+
+You can repair some of this at query time. This view accepts the spellings found in the data and maps the values onto a fixed list (`DevTest` and the non-environment values stay unmapped):
+
+```sql
+-- Usage charges with one environment column for every provider. The
+-- category is compared in lower case (Google Cloud writes "usage"), the
+-- key spellings found in the data are accepted, and the values are
+-- mapped onto a fixed list.
+CREATE OR REPLACE VIEW usage AS
+SELECT *,
+       CASE lower(trim(coalesce(
+              json_extract_string(Tags, '$.environment'),
+              json_extract_string(Tags, '$.Environment'),
+              json_extract_string(Tags, '$.env'),
+              json_extract_string(Tags, '$.ENV'))))
+         WHEN 'prod' THEN 'prod'
+         WHEN 'production' THEN 'prod'
+         WHEN 'dev' THEN 'dev'
+         WHEN 'development' THEN 'dev'
+       END AS env
+FROM focus
+WHERE lower(ChargeCategory) = 'usage';
+```
+
+```bash
+duckdb focus.duckdb -f focus/usage-view.sql
+```
+
+Now compare the share of usage cost that has a usable environment, first with the schema's key alone, then with the cleaned-up column:
+
+```sql
+-- Share of usage cost with a usable environment tag: first with the one
+-- key the schema asks for, then with the env column from usage-view.sql.
+SELECT ProviderName AS provider,
+       round(sum(BilledCost), 2) AS usage_usd,
+       round(100 * coalesce(sum(BilledCost) FILTER (
+         WHERE json_extract_string(Tags, '$.environment') IS NOT NULL), 0) / sum(BilledCost), 1) AS schema_key_pct,
+       round(100 * coalesce(sum(BilledCost) FILTER (WHERE env IS NOT NULL), 0) / sum(BilledCost), 1) AS cleaned_pct
+FROM usage
+GROUP BY ALL
+ORDER BY usage_usd DESC;
+```
+
+```bash
+duckdb focus.duckdb -f focus/tag-coverage.sql
+```
+
+```text
+┌──────────────┬───────────┬────────────────┬─────────────┐
+│   provider   │ usage_usd │ schema_key_pct │ cleaned_pct │
+│   varchar    │  double   │     double     │   double    │
+├──────────────┼───────────┼────────────────┼─────────────┤
+│ AWS          │   2027.75 │           92.8 │        92.8 │
+│ Microsoft    │    567.21 │            0.0 │        41.8 │
+│ Oracle       │     19.42 │          100.0 │       100.0 │
+│ Google Cloud │      0.02 │            0.0 │         0.0 │
+└──────────────┴───────────┴────────────────┴─────────────┘
+```
+
+With the agreed key alone, none of the Azure usage can be split by environment. After the cleanup, 41.8 percent can, and the rest has no usable environment tag at all. AWS stays at 92.8 percent: its tags are consistent, but 7.2 percent of its usage cost has no environment tag (in this sample, those lines carry no tags at all). The two Google Cloud lines, USD 0.02, have none either.
+
+Query-time cleanup is a stopgap, and every report has to repeat it. The fix is to make bad tags impossible to create:
+
+- Agree on one schema with lowercase keys and a fixed list of values. The [cost allocation tags post](/posts/cloud-cost-allocation-tags-aws-gcp-azure) has a schema that works across AWS, Google Cloud and Azure; this guide uses it.
+- Use separate accounts, projects or subscriptions per environment. An account boundary attributes every cost in it, including costs that cannot be tagged.
+- Enforce the schema when resources are created. [Part 4](/guides/finops-for-devops-engineers/04-practical-examples) does it in Terraform and with AWS tag policies, and Part 5 checks it in CI.
+- Decide how to split costs that cannot be tagged, such as support plans, shared networking and some data transfer. [Part 6](/guides/finops-for-devops-engineers/06-cultural-shift) shares them out by a rule.
+
+## Non-Production Built Like Production
+
+Development and staging often copy production's configuration, because it is the easiest way to make them work. They then cost almost as much as production while serving a handful of engineers.
+
+The database is a common case. In us-east-1, a PostgreSQL `db.m8g.large` costs USD 0.168 an hour as a single instance and USD 0.336 an hour as Multi-AZ, because Multi-AZ runs a standby. A development database built like production costs USD 245.28 a month; a single-AZ `db.t4g.micro` (USD 0.016 an hour) costs USD 11.68.
+
+Then there are the hours. A development environment that runs from 08:00 to 19:00 on weekdays runs 55 of the 168 hours in a week, which removes 67 percent of its compute hours. Storage, snapshots and any NAT gateway keep billing while it is off, so the saving on the total is smaller.
+
+_RDS prices from the AWS Price List, RDS offer published 26 October 2026._
+
+Part 4 gives every environment its own sizes in one map, and schedules the `dev` Auto Scaling group to office hours.
+
+## Data Transfer and NAT Gateways
+
+Networking charges rarely show up in a design review because they depend on traffic, not on what you create. In us-east-1:
+
+- A **NAT gateway** costs USD 0.045 an hour and USD 0.045 for every GB it processes. Two TB a month of S3 downloads through a NAT gateway is USD 92.16 in processing charges alone.
+- A **gateway endpoint** for S3 or DynamoDB has no hourly or per-GB charge and takes that traffic off the NAT gateway. Add one to every VPC that talks to S3.
+- **Traffic between Availability Zones** costs USD 0.01 per GB in each direction. Chatty services spread across zones, and replication between them, pay it on every byte.
+- **Interface endpoints** for other AWS services cost USD 0.01 an hour per endpoint per zone plus USD 0.01 per GB. If you keep the NAT gateway anyway, each GB moved to the endpoint saves USD 0.035, so an endpoint in one zone (USD 7.30 a month) pays for itself above about 209 GB a month of that service's traffic.
+
+To see where the money goes, group Cost Explorer by **Usage type** and look for `NatGateway-Bytes`, `DataTransfer-Regional-Bytes` and `DataTransfer-Out-Bytes`. VPC Flow Logs tell you which workloads send the bytes.
+
+## Logs and Metrics
+
+Observability data grows with traffic and with every debug statement. CloudWatch Logs charges USD 0.50 per GB ingested in the Standard log class and USD 0.03 per GB-month stored, and a new log group keeps data forever unless you set a retention period. As a worked example, a service that writes 10 GB of logs a day ingests about 300 GB a month: USD 150 a month before storage.
+
+Custom metrics are priced per metric (USD 0.30 per metric-month for the first 10,000), and every unique combination of dimensions is a separate metric. Putting a user ID or a request ID in a dimension creates thousands of them.
+
+Set a retention period on every log group, keep debug logging off in production, sample high-volume logs, and keep high-cardinality values in logs or traces rather than in metric dimensions.
+
+_CloudWatch prices from the AWS Price List, CloudWatch offer published 7 October 2026._
+
+## Kubernetes: You Pay for Requests
+
+A cloud provider bills Kubernetes nodes, not pods. The scheduler places pods by their resource **requests**, and the cluster autoscaler adds nodes when pending pods' requests do not fit. A pod that requests 2 CPUs and uses 0.1 keeps 1.9 CPUs of a node you pay for empty.
+
+The cloud bill shows only the nodes, so you need a tool that splits node cost by namespace and workload and compares requests with usage. Part 3 runs OpenCost on a local cluster with one over-requested workload and one under-requested one. For fixing requests, see [Right-Sizing Kubernetes Resources with VPA and Karpenter](/posts/right-sizing-kubernetes-resources-vpa-karpenter).
+
+## AI and GPU Spend
+
+AI features add two new kinds of cost. Model APIs charge per token, so spend grows with traffic, prompt length and retries: a longer system prompt or a retry loop multiplies the bill without any infrastructure change. GPU instances are among the most expensive instances you can run, and a GPU that waits between batch jobs bills at full price.
+
+Treat both like any other usage: attribute token spend to features (separate API keys or projects per feature make this possible), put budgets and anomaly alerts on them, cache repeated prompts, and route simple tasks to smaller models. [Knowing What Your AI Feature Costs Before Finance Does](/posts/ai-feature-cost-before-finance-does) covers the measurement side.
+
+## Summary
+
+- Size from the 95th percentile of real CPU and memory data, not from fear; right-size non-production first.
+- Volumes, snapshots, public IPv4 addresses, NAT gateways and forgotten environments bill whether or not anything uses them.
+- Inconsistent tags hide spend as well as missing ones do: in the FOCUS sample, no Azure usage matched the agreed key.
+- Give non-production its own sizes and schedule it; office hours remove two thirds of the compute hours.
+- Networking, logs, Kubernetes requests and AI tokens all grow with traffic, so watch them continuously, not only in design reviews.
+
+Next, [Part 3](/guides/finops-for-devops-engineers/03-tools) covers the tools that find these problems for you.
+
+## Keep Learning
+
+- [How to Set Up Cloud Cost Allocation Tags Across AWS, GCP, and Azure](/posts/cloud-cost-allocation-tags-aws-gcp-azure)
+- [Why Your Kafka Bill Is Mostly Network](/posts/why-your-kafka-bill-is-mostly-network)
+- [Your Logs Cost More Than the Service That Emits Them](/posts/your-logs-cost-more-than-the-service)
+- [Cloud Cost Allocation Tags Quiz](/quizzes/cloud-cost-allocation-tags-quiz)
+- [Interview questions: Essential Tags for Multi-Cloud Cost Allocation](/interview-questions/mid/essential-cloud-cost-tags)

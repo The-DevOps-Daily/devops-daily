@@ -1,912 +1,200 @@
 ---
 title: 'Building a Cost-Conscious Engineering Culture'
-description: 'Learn how to create cultural change that makes engineers care about cloud costs without stifling innovation or slowing development velocity.'
+description: 'Make teams own their cloud costs: showback before chargeback, a fair split of shared costs, unit costs, weekly reviews, and cost in design and code review.'
 order: 6
 ---
 
-The biggest challenge in FinOps isn't technical - it's cultural. Engineers often view cost optimization as someone else's responsibility, seeing it as a distraction from building features. Creating lasting change requires shifting this mindset while maintaining the innovation and velocity that DevOps teams value.
+**TLDR**: Engineers act on costs they can see, attribute and change. Give every team a weekly view of its own spend (showback) before you move money between budgets (chargeback), and agree on one rule for shared and untagged costs. Track a unit cost, such as cost per order, so growth and waste can be told apart. Hold a 15-minute cost review each week, treat anomalies like small incidents, and add a cost section to design reviews and pull request templates. Celebrate fixes; do not rank teams by spend.
 
-## Making Cost Visible and Relevant
+The tools from the earlier parts produce numbers. Whether anyone acts on them depends on who owns them, how often they see them and what happens when they do. That is the culture part of FinOps, and DevOps teams already know the pattern from reliability: clear ownership, fast feedback and blameless review.
 
-The first step in cultural change is making costs tangible and connected to daily engineering decisions. Abstract budget numbers don't motivate behavior change, but clear connections between actions and costs do.
+## Prerequisites
 
-### Real-Time Cost Dashboards for Engineering Teams
+- `focus.duckdb` with the `usage` view from [Part 2](/guides/finops-for-devops-engineers/02-challenges).
 
-Create dashboards that show costs in engineering terms rather than financial abstractions:
+## Ownership First
 
-```python
-# scripts/engineering_cost_dashboard.py
-import boto3
-import json
-from datetime import datetime, timedelta
-import pandas as pd
+Before any dashboard, make sure every cost has an owner:
 
-class EngineeringCostDashboard:
-    def __init__(self):
-        self.ce_client = boto3.client('ce')
-        self.cloudwatch = boto3.client('cloudwatch')
+- **Every resource has an `owner` and a `team` tag**, enforced as in [Part 4](/guides/finops-for-devops-engineers/04-practical-examples). Without an owner, nobody can be asked, and nobody dares to delete.
+- **The team that creates a resource owns its cost**, in the same way it owns its alerts. Separate accounts or projects per team and environment make this visible without any tagging.
+- **Cost is a requirement**, written down next to latency and availability: "checkout must stay under X per order" is something a team can design for; "keep costs down" is not.
 
-    def get_feature_cost_analysis(self, feature_name, days_back=30):
-        """Analyze costs for a specific feature or service"""
+## Showback and Chargeback
 
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+Two ways to report costs to teams:
 
-        # Get costs by feature tag
-        feature_costs = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='DAILY',
-            Metrics=['BlendedCost'],
-            Filter={
-                'Tags': {
-                    'Key': 'feature',
-                    'Values': [feature_name]
-                }
-            },
-            GroupBy=[{'Type': 'DIMENSION', 'Key': 'SERVICE'}]
-        )
+|              | Showback                               | Chargeback                                                             |
+| ------------ | -------------------------------------- | ---------------------------------------------------------------------- |
+| What happens | Teams see their costs; no money moves  | Costs are charged to the team's budget or cost center                  |
+| Needs        | Reasonable allocation, regular reports | Allocation that finance and teams trust, agreed rules for shared costs |
+| Risk         | Easy to ignore if nobody reviews it    | Arguments about allocation instead of improvements                     |
+| When to use  | Always, from the start                 | When most spend is allocated and the rules are settled                 |
 
-        # Convert to engineering-friendly metrics
-        metrics = self.calculate_engineering_metrics(feature_costs, feature_name)
+Start with showback. Move to chargeback only when the allocation is good enough that a team would accept the number on its budget.
 
-        return metrics
+### Sharing Costs That Belong to Nobody
 
-    def calculate_engineering_metrics(self, cost_data, feature_name):
-        """Convert cost data to metrics engineers care about"""
+Some spend cannot be tagged to one team: support plans, shared clusters and networking, and anything that was never tagged. The common ways to split it:
 
-        total_cost = 0
-        service_breakdown = {}
+- **Proportional**: each team gets a share in proportion to its own direct cost. Simple, and it keeps the report adding up to the bill.
+- **Even split**: the same amount for each team. Fair for small fixed costs, unfair for large ones.
+- **Fixed ratios**: an agreed percentage per team, reviewed each quarter.
+- **By a usage metric**: requests, GB stored or CPU hours from OpenCost. The most accurate, and the most work to maintain.
 
-        for result in cost_data['ResultsByTime']:
-            for group in result['Groups']:
-                service = group['Keys'][0]
-                cost = float(group['Metrics']['BlendedCost']['Amount'])
-                total_cost += cost
-                service_breakdown[service] = service_breakdown.get(service, 0) + cost
+This query from the companion repository builds a showback by environment from the FOCUS sample, and shares out the usage without a usable environment tag in proportion to each environment's direct cost:
 
-        # Calculate cost per user metrics (this would need user analytics integration)
-        # For demo purposes, using placeholder data
-        estimated_daily_users = 1000  # From analytics
-        cost_per_user_per_day = total_cost / (estimated_daily_users * 30)
-
-        # Calculate cost efficiency metrics
-        metrics = {
-            'feature_name': feature_name,
-            'total_monthly_cost': total_cost,
-            'cost_per_user_per_day': cost_per_user_per_day,
-            'cost_per_user_per_month': cost_per_user_per_day * 30,
-            'largest_cost_driver': max(service_breakdown, key=service_breakdown.get),
-            'service_breakdown': service_breakdown,
-            'efficiency_score': self.calculate_efficiency_score(total_cost, estimated_daily_users)
-        }
-
-        return metrics
-
-    def calculate_efficiency_score(self, total_cost, daily_users):
-        """Calculate an efficiency score that engineers can optimize"""
-
-        # Simple efficiency calculation - lower cost per user = higher score
-        cost_per_user = total_cost / (daily_users * 30) if daily_users > 0 else float('inf')
-
-        if cost_per_user < 0.01:
-            return 'A'
-        elif cost_per_user < 0.05:
-            return 'B'
-        elif cost_per_user < 0.10:
-            return 'C'
-        else:
-            return 'D'
-
-    def generate_team_cost_summary(self, team_name):
-        """Generate cost summary that relates to team's work"""
-
-        print(f"\n🏗️  {team_name.upper()} TEAM COST SUMMARY")
-        print("=" * 50)
-
-        # Get team's total costs
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-
-        team_costs = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='MONTHLY',
-            Metrics=['BlendedCost'],
-            Filter={
-                'Tags': {
-                    'Key': 'team',
-                    'Values': [team_name]
-                }
-            }
-        )
-
-        if team_costs['ResultsByTime']:
-            monthly_cost = float(team_costs['ResultsByTime'][0]['Total']['BlendedCost']['Amount'])
-
-            # Convert to relatable metrics
-            print(f"💰 Monthly Cost: ${monthly_cost:.2f}")
-            print(f"☕ Coffee Equivalent: {monthly_cost / 4:.0f} cups/day")
-            print(f"👨‍💻 Engineer Salary Equivalent: {monthly_cost / 8000:.1f}% of one engineer")
-            print(f"🚀 Daily Deployment Budget: ${monthly_cost / 30:.2f}")
-
-            # Get cost trend
-            prev_start = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
-            prev_end = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-
-            prev_costs = self.ce_client.get_cost_and_usage(
-                TimePeriod={'Start': prev_start, 'End': prev_end},
-                Granularity='MONTHLY',
-                Metrics=['BlendedCost'],
-                Filter={
-                    'Tags': {
-                        'Key': 'team',
-                        'Values': [team_name]
-                    }
-                }
-            )
-
-            if prev_costs['ResultsByTime']:
-                prev_monthly_cost = float(prev_costs['ResultsByTime'][0]['Total']['BlendedCost']['Amount'])
-                trend = ((monthly_cost - prev_monthly_cost) / prev_monthly_cost) * 100
-
-                trend_emoji = "📈" if trend > 5 else "📉" if trend < -5 else "➡️"
-                print(f"{trend_emoji} Month-over-month: {trend:+.1f}%")
-
-        print()
-
-# Example dashboard usage
-dashboard = EngineeringCostDashboard()
-
-# Generate team summaries
-teams = ['frontend', 'backend', 'data']
-for team in teams:
-    dashboard.generate_team_cost_summary(team)
-
-# Analyze specific features
-features = ['user-authentication', 'payment-processing', 'search-service']
-for feature in features:
-    metrics = dashboard.get_feature_cost_analysis(feature)
-    print(f"🎯 {feature.upper()}")
-    print(f"   Monthly Cost: ${metrics['total_monthly_cost']:.2f}")
-    print(f"   Cost per User: ${metrics['cost_per_user_per_month']:.4f}/month")
-    print(f"   Efficiency Score: {metrics['efficiency_score']}")
-    print()
+```sql
+-- Showback by environment. Usage without a usable environment tag is
+-- shared out in proportion to each environment's tagged cost, so the
+-- report still adds up to the total usage cost.
+WITH direct AS (
+  SELECT coalesce(env, 'untagged') AS environment,
+         sum(BilledCost) AS cost
+  FROM usage
+  GROUP BY ALL
+),
+untagged AS (
+  SELECT coalesce(sum(cost), 0) AS cost FROM direct WHERE environment = 'untagged'
+)
+SELECT d.environment,
+       round(d.cost, 2) AS direct_usd,
+       round(u.cost * d.cost / sum(d.cost) OVER (), 2) AS shared_usd,
+       round(d.cost + u.cost * d.cost / sum(d.cost) OVER (), 2) AS showback_usd
+FROM direct d, untagged u
+WHERE d.environment <> 'untagged'
+ORDER BY showback_usd DESC;
 ```
 
-### Cost Attribution by Pull Request
-
-Show engineers the cost impact of their specific changes:
-
-```python
-# scripts/pr_cost_attribution.py
-import subprocess
-import json
-import re
-from datetime import datetime, timedelta
-
-class PRCostAnalyzer:
-    def __init__(self):
-        self.cost_per_resource = {
-            'aws_instance': {
-                't3.micro': 8.76,    # Monthly cost
-                't3.small': 17.52,
-                't3.medium': 35.04,
-                'm5.large': 70.08,
-                'm5.xlarge': 140.16
-            },
-            'aws_db_instance': {
-                'db.t3.micro': 13.14,
-                'db.t3.small': 26.28,
-                'db.t3.medium': 52.56,
-                'db.r5.large': 158.40
-            },
-            'aws_s3_bucket': 0.023,  # Per GB per month
-            'aws_lb': 16.43  # Monthly for ALB
-        }
-
-    def analyze_pr_cost_impact(self, pr_diff):
-        """Analyze the cost impact of a pull request"""
-
-        added_resources = self.extract_added_resources(pr_diff)
-        removed_resources = self.extract_removed_resources(pr_diff)
-        modified_resources = self.extract_modified_resources(pr_diff)
-
-        cost_impact = {
-            'added_monthly_cost': self.calculate_resource_costs(added_resources),
-            'removed_monthly_cost': self.calculate_resource_costs(removed_resources),
-            'modified_cost_delta': self.calculate_modification_costs(modified_resources),
-            'resources_summary': {
-                'added': len(added_resources),
-                'removed': len(removed_resources),
-                'modified': len(modified_resources)
-            }
-        }
-
-        cost_impact['net_monthly_change'] = (
-            cost_impact['added_monthly_cost'] -
-            cost_impact['removed_monthly_cost'] +
-            cost_impact['modified_cost_delta']
-        )
-
-        return cost_impact
-
-    def extract_added_resources(self, diff_text):
-        """Extract newly added resources from git diff"""
-        added_resources = []
-
-        # Look for added resource blocks
-        resource_pattern = r'\+resource\s+"([^"]+)"\s+"([^"]+)"'
-        matches = re.findall(resource_pattern, diff_text)
-
-        for resource_type, resource_name in matches:
-            # Extract configuration from the diff
-            config = self.extract_resource_config(diff_text, resource_type, resource_name, '+')
-            added_resources.append({
-                'type': resource_type,
-                'name': resource_name,
-                'config': config
-            })
-
-        return added_resources
-
-    def extract_removed_resources(self, diff_text):
-        """Extract removed resources from git diff"""
-        removed_resources = []
-
-        # Look for removed resource blocks
-        resource_pattern = r'\-resource\s+"([^"]+)"\s+"([^"]+)"'
-        matches = re.findall(resource_pattern, diff_text)
-
-        for resource_type, resource_name in matches:
-            config = self.extract_resource_config(diff_text, resource_type, resource_name, '-')
-            removed_resources.append({
-                'type': resource_type,
-                'name': resource_name,
-                'config': config
-            })
-
-        return removed_resources
-
-    def extract_resource_config(self, diff_text, resource_type, resource_name, prefix):
-        """Extract resource configuration from diff"""
-        # Simplified config extraction - in practice, you'd use a proper HCL parser
-        config = {}
-
-        if resource_type == 'aws_instance':
-            instance_type_pattern = f'{prefix}\\s*instance_type\\s*=\\s*"([^"]+)"'
-            match = re.search(instance_type_pattern, diff_text)
-            if match:
-                config['instance_type'] = match.group(1)
-
-        elif resource_type == 'aws_db_instance':
-            instance_class_pattern = f'{prefix}\\s*instance_class\\s*=\\s*"([^"]+)"'
-            match = re.search(instance_class_pattern, diff_text)
-            if match:
-                config['instance_class'] = match.group(1)
-
-        return config
-
-    def calculate_resource_costs(self, resources):
-        """Calculate monthly cost for a list of resources"""
-        total_cost = 0
-
-        for resource in resources:
-            resource_type = resource['type']
-            config = resource['config']
-
-            if resource_type == 'aws_instance' and 'instance_type' in config:
-                instance_type = config['instance_type']
-                if instance_type in self.cost_per_resource[resource_type]:
-                    total_cost += self.cost_per_resource[resource_type][instance_type]
-
-            elif resource_type == 'aws_db_instance' and 'instance_class' in config:
-                instance_class = config['instance_class']
-                if instance_class in self.cost_per_resource[resource_type]:
-                    total_cost += self.cost_per_resource[resource_type][instance_class]
-
-            elif resource_type in ['aws_s3_bucket', 'aws_lb']:
-                total_cost += self.cost_per_resource.get(resource_type, 0)
-
-        return total_cost
-
-    def calculate_modification_costs(self, modified_resources):
-        """Calculate cost delta for modified resources"""
-        # Simplified - would need before/after comparison
-        return 0  # Placeholder
-
-    def generate_pr_cost_comment(self, cost_impact, pr_number):
-        """Generate a cost impact comment for the PR"""
-
-        net_change = cost_impact['net_monthly_change']
-        emoji = "💰" if net_change > 0 else "💚" if net_change < 0 else "➡️"
-
-        comment = f"## {emoji} Cost Impact Analysis\n\n"
-
-        if abs(net_change) < 0.01:
-            comment += "✅ **No significant cost impact detected**\n\n"
-        else:
-            comment += f"**Net Monthly Cost Change: ${net_change:+.2f}**\n\n"
-
-            if cost_impact['added_monthly_cost'] > 0:
-                comment += f"📈 **Added Resources**: +${cost_impact['added_monthly_cost']:.2f}/month\n"
-
-            if cost_impact['removed_monthly_cost'] > 0:
-                comment += f"📉 **Removed Resources**: -${cost_impact['removed_monthly_cost']:.2f}/month\n"
-
-            comment += "\n"
-
-            # Add context
-            if net_change > 100:
-                comment += "⚠️ **High Impact**: This change adds significant monthly costs. "
-                comment += "Please ensure this aligns with project budget.\n\n"
-            elif net_change > 50:
-                comment += "📊 **Medium Impact**: Notable cost increase. "
-                comment += "Consider if all resources are necessary.\n\n"
-
-            # Add cost-saving suggestions
-            if cost_impact['resources_summary']['added'] > 0:
-                comment += "💡 **Cost Optimization Tips**:\n"
-                comment += "- Consider using smaller instance types for development environments\n"
-                comment += "- Review if all resources need to run 24/7\n"
-                comment += "- Check if spot instances are suitable for non-critical workloads\n\n"
-
-        comment += "---\n"
-        comment += "*Cost estimates are based on list prices and may vary based on usage patterns and discounts.*"
-
-        return comment
-
-# Example usage in CI/CD
-if __name__ == "__main__":
-    # Get the diff for current PR
-    diff_command = ["git", "diff", "origin/main...HEAD", "--", "*.tf"]
-    diff_output = subprocess.check_output(diff_command, text=True)
-
-    analyzer = PRCostAnalyzer()
-    cost_impact = analyzer.analyze_pr_cost_impact(diff_output)
-
-    comment = analyzer.generate_pr_cost_comment(cost_impact, "123")
-    print(comment)
+```bash
+duckdb focus.duckdb -f focus/showback.sql
 ```
 
-## Gamification and Incentives
-
-Make cost optimization engaging by introducing friendly competition and recognition.
-
-### Cost Efficiency Leaderboards
-
-Create leaderboards that celebrate cost-efficient engineering:
-
-```python
-# scripts/cost_efficiency_leaderboard.py
-import boto3
-import json
-from datetime import datetime, timedelta
-from collections import defaultdict
-
-class CostEfficiencyLeaderboard:
-    def __init__(self):
-        self.ce_client = boto3.client('ce')
-
-    def calculate_team_efficiency_scores(self):
-        """Calculate efficiency scores for all teams"""
-
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-
-        # Get costs by team
-        team_costs = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='MONTHLY',
-            Metrics=['BlendedCost'],
-            GroupBy=[{'Type': 'TAG', 'Key': 'team'}]
-        )
-
-        team_scores = {}
-
-        for result in team_costs['ResultsByTime']:
-            for group in result['Groups']:
-                team = group['Keys'][0] if group['Keys'][0] else 'untagged'
-                cost = float(group['Metrics']['BlendedCost']['Amount'])
-
-                # Calculate efficiency metrics (placeholder - replace with real metrics)
-                efficiency_score = self.calculate_efficiency_score(team, cost)
-                team_scores[team] = efficiency_score
-
-        return team_scores
-
-    def calculate_efficiency_score(self, team, monthly_cost):
-        """Calculate efficiency score based on multiple factors"""
-
-        # This is a simplified scoring system - customize based on your metrics
-        base_score = 100
-
-        # Factor 1: Cost per engineer (lower is better)
-        # You'd get engineer count from your HR system or Git commits
-        engineers_per_team = {'frontend': 4, 'backend': 6, 'data': 3, 'devops': 2}
-        engineer_count = engineers_per_team.get(team, 1)
-        cost_per_engineer = monthly_cost / engineer_count
-
-        if cost_per_engineer < 500:
-            cost_score = 40
-        elif cost_per_engineer < 1000:
-            cost_score = 30
-        elif cost_per_engineer < 2000:
-            cost_score = 20
-        else:
-            cost_score = 10
-
-        # Factor 2: Resource utilization (would come from CloudWatch)
-        # Placeholder - you'd calculate actual utilization
-        utilization_score = 30  # Assume average utilization
-
-        # Factor 3: Cost trend (improving costs get bonus points)
-        trend_score = self.calculate_cost_trend_score(team)
-
-        # Factor 4: Waste reduction (zombie resources, over-provisioning)
-        waste_score = 20  # Placeholder
-
-        total_score = cost_score + utilization_score + trend_score + waste_score
-
-        return {
-            'total_score': total_score,
-            'monthly_cost': monthly_cost,
-            'cost_per_engineer': cost_per_engineer,
-            'breakdown': {
-                'cost_efficiency': cost_score,
-                'utilization': utilization_score,
-                'cost_trend': trend_score,
-                'waste_reduction': waste_score
-            }
-        }
-
-    def calculate_cost_trend_score(self, team):
-        """Calculate score based on cost trend improvement"""
-
-        # Compare current month to previous month
-        current_month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
-        current_month_end = datetime.now().strftime('%Y-%m-%d')
-
-        prev_month_start = (datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1).strftime('%Y-%m-%d')
-        prev_month_end = (datetime.now().replace(day=1) - timedelta(days=1)).strftime('%Y-%m-%d')
-
-        try:
-            current_cost = self.get_team_cost(team, current_month_start, current_month_end)
-            prev_cost = self.get_team_cost(team, prev_month_start, prev_month_end)
-
-            if prev_cost == 0:
-                return 10  # Neutral score for new teams
-
-            improvement = (prev_cost - current_cost) / prev_cost * 100
-
-            if improvement > 10:
-                return 20  # Excellent improvement
-            elif improvement > 5:
-                return 15  # Good improvement
-            elif improvement > 0:
-                return 10  # Slight improvement
-            elif improvement > -5:
-                return 5   # Slight increase
-            else:
-                return 0   # Significant increase
-
-        except Exception:
-            return 10  # Default score if unable to calculate
-
-    def get_team_cost(self, team, start_date, end_date):
-        """Get total cost for a team in a date range"""
-
-        team_cost = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='MONTHLY',
-            Metrics=['BlendedCost'],
-            Filter={
-                'Tags': {
-                    'Key': 'team',
-                    'Values': [team]
-                }
-            }
-        )
-
-        if team_cost['ResultsByTime']:
-            return float(team_cost['ResultsByTime'][0]['Total']['BlendedCost']['Amount'])
-        return 0
-
-    def generate_leaderboard(self):
-        """Generate the cost efficiency leaderboard"""
-
-        team_scores = self.calculate_team_efficiency_scores()
-        sorted_teams = sorted(team_scores.items(), key=lambda x: x[1]['total_score'], reverse=True)
-
-        print("🏆 COST EFFICIENCY LEADERBOARD")
-        print("=" * 60)
-        print(f"{'Rank':<6} {'Team':<12} {'Score':<8} {'Monthly Cost':<15} {'$/Engineer'}")
-        print("-" * 60)
-
-        for rank, (team, score_data) in enumerate(sorted_teams, 1):
-            emoji = "🥇" if rank == 1 else "🥈" if rank == 2 else "🥉" if rank == 3 else "  "
-
-            print(f"{emoji} {rank:<4} {team:<12} {score_data['total_score']:<8} "
-                  f"${score_data['monthly_cost']:<14.2f} ${score_data['cost_per_engineer']:.0f}")
-
-        print()
-
-        # Show improvement opportunities for bottom teams
-        if len(sorted_teams) > 1:
-            bottom_team = sorted_teams[-1]
-            top_team = sorted_teams[0]
-
-            print("💡 IMPROVEMENT OPPORTUNITIES")
-            print(f"If {bottom_team[0]} team matched {top_team[0]} team's efficiency:")
-
-            potential_savings = (bottom_team[1]['cost_per_engineer'] -
-                               top_team[1]['cost_per_engineer']) * \
-                               self.get_engineer_count(bottom_team[0])
-
-            if potential_savings > 0:
-                print(f"Potential monthly savings: ${potential_savings:.2f}")
-
-        return sorted_teams
-
-    def get_engineer_count(self, team):
-        """Get engineer count for a team"""
-        # Placeholder - integrate with your HR system or Git analytics
-        engineers_per_team = {'frontend': 4, 'backend': 6, 'data': 3, 'devops': 2}
-        return engineers_per_team.get(team, 1)
-
-# Generate monthly leaderboard
-leaderboard = CostEfficiencyLeaderboard()
-results = leaderboard.generate_leaderboard()
+```text
+┌─────────────┬────────────┬────────────┬──────────────┐
+│ environment │ direct_usd │ shared_usd │ showback_usd │
+│   varchar   │   double   │   double   │    double    │
+├─────────────┼────────────┼────────────┼──────────────┤
+│ dev         │    1668.02 │     372.33 │      2040.35 │
+│ prod        │     469.29 │     104.75 │       574.04 │
+└─────────────┴────────────┴────────────┴──────────────┘
 ```
 
-### Cost Optimization Challenges
+The direct costs add up to USD 2,137.31 and the shared costs to USD 477.08, the usage that Part 2 found without a usable environment tag. Together they match the sample's total usage cost (USD 2,614.40 across the four providers in Part 2, give or take a cent of rounding), so nothing disappears from the report. (The tags in the sample are anonymized, so the split shows how the query works, not how a real company spends.)
 
-Create monthly challenges that encourage cost optimization:
+Proportional sharing has a side effect worth using: teams that tag well pay part of the untagged spend. Show the shared amount as its own column, as above, so everyone sees how much untagged spend costs them, and the pressure to fix the tags goes where it belongs. Some teams prefer to report untagged spend as a separate line owned by the platform team until it is fixed; either works if the rule is written down.
 
-```python
-# scripts/cost_optimization_challenges.py
-from datetime import datetime, timedelta
-import random
+## Unit Costs
 
-class CostOptimizationChallenges:
-    def __init__(self):
-        self.challenges = [
-            {
-                'name': 'Right-Size October',
-                'description': 'Identify and right-size over-provisioned resources',
-                'target_savings': 15,  # Percentage
-                'duration_days': 30,
-                'difficulty': 'medium',
-                'points': 500
-            },
-            {
-                'name': 'Zombie Resource Hunt',
-                'description': 'Find and eliminate unused resources',
-                'target_savings': 10,
-                'duration_days': 14,
-                'difficulty': 'easy',
-                'points': 300
-            },
-            {
-                'name': 'Spot Instance Champion',
-                'description': 'Convert appropriate workloads to spot instances',
-                'target_savings': 25,
-                'duration_days': 21,
-                'difficulty': 'hard',
-                'points': 750
-            },
-            {
-                'name': 'Storage Optimization Specialist',
-                'description': 'Implement S3 lifecycle policies and optimize storage',
-                'target_savings': 20,
-                'duration_days': 14,
-                'difficulty': 'medium',
-                'points': 400
-            }
-        ]
+A total that goes up is not good or bad on its own: it may be growth or it may be waste. A **unit cost**, the cost of one unit of what the business sells or serves, tells them apart:
 
-    def start_monthly_challenge(self):
-        """Start a new monthly cost optimization challenge"""
-
-        current_challenge = random.choice(self.challenges)
-
-        print(f"🎯 NEW CHALLENGE: {current_challenge['name']}")
-        print("=" * 50)
-        print(f"📝 Description: {current_challenge['description']}")
-        print(f"🎯 Target: {current_challenge['target_savings']}% cost reduction")
-        print(f"⏰ Duration: {current_challenge['duration_days']} days")
-        print(f"🔥 Difficulty: {current_challenge['difficulty'].title()}")
-        print(f"🏆 Reward: {current_challenge['points']} points")
-        print()
-
-        # Generate specific tasks based on challenge type
-        tasks = self.generate_challenge_tasks(current_challenge)
-
-        print("📋 CHALLENGE TASKS:")
-        for i, task in enumerate(tasks, 1):
-            print(f"  {i}. {task}")
-
-        print()
-        print("🚀 Ready to start? Use these commands to begin:")
-        print("  • Run cost analysis: python scripts/cost_analyzer.py")
-        print("  • Generate optimization report: python scripts/optimization_finder.py")
-        print("  • Track progress: python scripts/challenge_tracker.py")
-
-        return current_challenge
-
-    def generate_challenge_tasks(self, challenge):
-        """Generate specific tasks for each challenge type"""
-
-        task_templates = {
-            'Right-Size October': [
-                'Analyze EC2 instance utilization for the last 30 days',
-                'Identify instances with <40% average CPU utilization',
-                'Create right-sizing recommendations with cost impact',
-                'Implement changes in development environment first',
-                'Measure actual cost savings after optimization'
-            ],
-            'Zombie Resource Hunt': [
-                'Scan for resources without recent activity',
-                'Identify unattached EBS volumes and snapshots',
-                'Find load balancers with no healthy targets',
-                'Locate unused security groups and network interfaces',
-                'Clean up test resources older than 30 days'
-            ],
-            'Spot Instance Champion': [
-                'Identify fault-tolerant workloads suitable for spot instances',
-                'Set up spot instance configurations with proper diversification',
-                'Implement spot instance termination handling',
-                'Migrate development/testing workloads to spot instances',
-                'Monitor spot instance savings and availability'
-            ],
-            'Storage Optimization Specialist': [
-                'Analyze S3 storage usage patterns',
-                'Implement lifecycle policies for infrequently accessed data',
-                'Optimize EBS volume types based on IOPS requirements',
-                'Set up intelligent tiering for S3 buckets',
-                'Review and optimize backup retention policies'
-            ]
-        }
-
-        return task_templates.get(challenge['name'], ['Complete the challenge objectives'])
-
-    def track_challenge_progress(self, team_name, completed_tasks):
-        """Track team progress on current challenge"""
-
-        total_tasks = 5  # Standard number of tasks per challenge
-        completion_percentage = (completed_tasks / total_tasks) * 100
-
-        print(f"📊 CHALLENGE PROGRESS: {team_name.upper()} TEAM")
-        print("=" * 40)
-        print(f"Tasks Completed: {completed_tasks}/{total_tasks}")
-        print(f"Progress: {completion_percentage:.1f}%")
-
-        # Progress bar
-        filled = int(completion_percentage // 10)
-        bar = "█" * filled + "░" * (10 - filled)
-        print(f"[{bar}] {completion_percentage:.1f}%")
-
-        if completion_percentage >= 100:
-            print("🎉 CHALLENGE COMPLETED! 🎉")
-            print("Calculating final savings and awarding points...")
-        elif completion_percentage >= 75:
-            print("🔥 Almost there! Just a few more tasks to go!")
-        elif completion_percentage >= 50:
-            print("💪 Great progress! You're halfway done!")
-        else:
-            print("🚀 Keep going! Every task completed gets you closer!")
-
-        return completion_percentage
-
-# Example usage
-challenges = CostOptimizationChallenges()
-
-# Start a new challenge
-current_challenge = challenges.start_monthly_challenge()
-
-# Track progress for a team
-progress = challenges.track_challenge_progress('backend', 3)
+```text
+unit cost = cost of the service in a period / units delivered in the same period
 ```
 
-## Embedding FinOps in Engineering Practices
+Pick a unit that the team's work changes and that product people care about: orders for `checkout`, API requests for a platform API, GB processed for a data pipeline, active customers for a SaaS product. The cost side comes from the billing data, filtered by the service tag; the units come from your application metrics or database.
 
-Make cost considerations a natural part of engineering workflows rather than an external mandate.
+With the FOCUS export loaded and a table of monthly order counts from your application, the calculation is one join:
 
-### Cost-Aware Architecture Reviews
+```sql
+WITH monthly AS (
+  SELECT date_trunc('month', ChargePeriodStart) AS month,
+         sum(EffectiveCost) AS cost
+  FROM focus
+  WHERE lower(ChargeCategory) = 'usage'
+    AND json_extract_string(Tags, '$.service') = 'checkout'
+  GROUP BY ALL
+)
+SELECT m.month,
+       round(m.cost, 2) AS cost_usd,
+       o.orders,
+       round(m.cost / o.orders, 4) AS cost_per_order_usd
+FROM monthly m
+JOIN orders o USING (month)
+ORDER BY m.month;
+```
 
-Integrate cost discussions into architecture review processes:
+Watch the trend, not one value. If cost per order falls while total cost rises, the service is growing efficiently. If both rise, something got less efficient, and the team should find out what. Shared costs need the same rule here as in showback, or unit costs drift when the allocation changes.
+
+## Habits That Keep Costs Owned
+
+**A weekly cost review per team, 15 minutes.** Put it in an existing meeting, not a new one. A fixed agenda keeps it short:
+
+1. The five largest changes in the team's costs since last week, and their cause.
+2. Budget and anomaly alerts since the last review, and what was done about them.
+3. Untagged or unowned spend in the team's accounts.
+4. One improvement to do before the next review, with an owner.
+
+**A monthly review with finance and product.** Forecast against actual, planned launches and migrations that change the forecast, unit cost trends, and the usage baseline for any commitment purchase.
+
+**Anomalies as small incidents.** When an anomaly alert fires, the owner finds the cause the same day, fixes it or explains it, and writes two lines in the team channel. Blameless, like any incident review: the question is what made the mistake easy, and how to make it harder.
+
+## Cost in Design and Code Review
+
+Design reviews already ask about failure modes and scaling. Add a short cost section to the template:
 
 ```markdown
-# Architecture Review Template with Cost Considerations
+## Cost
 
-## Architecture Review Checklist
-
-### Functional Requirements
-
-- [ ] Does the design meet all functional requirements?
-- [ ] Are performance requirements clearly defined and achievable?
-- [ ] Is the system scalable to handle expected load?
-
-### Cost Considerations
-
-- [ ] **Cost Estimation**: What is the estimated monthly cost of this architecture?
-- [ ] **Cost Drivers**: What are the primary cost drivers in this design?
-- [ ] **Alternatives Considered**: Were lower-cost alternatives evaluated?
-- [ ] **Environment Scaling**: How will costs scale across dev/staging/prod environments?
-- [ ] **Cost Monitoring**: How will costs be tracked and attributed post-launch?
-
-### Cost Optimization Opportunities
-
-- [ ] **Right-Sizing**: Are compute resources appropriately sized for the workload?
-- [ ] **Spot Instances**: Can any workloads use spot instances for cost savings?
-- [ ] **Reserved Capacity**: Should any resources use reserved instances or savings plans?
-- [ ] **Storage Optimization**: Are appropriate storage tiers and lifecycle policies planned?
-- [ ] **Serverless Opportunities**: Could any components benefit from serverless architectures?
-
-### Ongoing Cost Management
-
-- [ ] **Budget Allocation**: Is this project within the team's quarterly budget?
-- [ ] **Cost Alerts**: Will appropriate cost monitoring and alerts be implemented?
-- [ ] **Optimization Plan**: Is there a plan for ongoing cost optimization?
-- [ ] **Sunset Plan**: Is there a plan for resource cleanup when the project ends?
-
-## Cost Impact Analysis
-
-### Estimated Monthly Costs
-
-| Environment | Compute | Storage | Network | Other | Total |
-| ----------- | ------- | ------- | ------- | ----- | ----- |
-| Development | $XXX    | $XXX    | $XXX    | $XXX  | $XXX  |
-| Staging     | $XXX    | $XXX    | $XXX    | $XXX  | $XXX  |
-| Production  | $XXX    | $XXX    | $XXX    | $XXX  | $XXX  |
-
-### Cost Justification
-
-- **Business Value**: How does the cost relate to expected business value?
-- **Cost per User**: What is the expected cost per active user?
-- **Break-even Analysis**: At what usage level does this become cost-effective?
-
-### Risk Mitigation
-
-- **Cost Overruns**: What safeguards prevent unexpected cost spikes?
-- **Monitoring**: How will cost anomalies be detected and addressed?
-- **Emergency Shutdown**: Can resources be quickly scaled down if needed?
+- Estimated monthly cost per environment, with the assumptions (traffic, data size, retention)
+- The main cost drivers, and how each one scales with traffic
+- Cheaper alternatives considered, and why this design wins on value
+- How the cost will be tracked: tags, budget, anomaly monitor, unit cost
+- How it is turned off: cleanup for temporary resources, retention for data
 ```
 
-### Code Review Guidelines for Cost Impact
+For pull requests that change infrastructure, a few checklist items in the pull request template keep cost in the conversation without slowing reviews:
 
-Add cost considerations to code review guidelines:
+```markdown
+## Cost checklist (infrastructure changes)
 
-```python
-# .github/pull_request_template.md additions
-
-## Cost Impact Checklist
-
-Before merging infrastructure changes, reviewers should verify:
-
-- [ ] **Resource Sizing**: Are new resources appropriately sized for their intended use?
-- [ ] **Environment Parity**: Do non-production environments use cost-appropriate configurations?
-- [ ] **Tagging**: Are all new resources properly tagged for cost attribution?
-- [ ] **Cleanup**: Are temporary resources configured for automatic cleanup?
-- [ ] **Monitoring**: Will new resources be included in cost monitoring?
-
-## Cost Optimization Review
-
-For infrastructure changes, consider:
-
-- [ ] Could this use a smaller instance type initially and scale up if needed?
-- [ ] Are we using the most cost-effective storage type for this use case?
-- [ ] Could any of these resources benefit from scheduled scaling?
-- [ ] Have we considered serverless alternatives where appropriate?
-
-## Questions for the Author
-
-- What is the expected monthly cost impact of this change?
-- How did you determine the resource sizing?
-- Are there any cost optimization opportunities you considered?
-- How will we track the cost effectiveness of this implementation?
+- [ ] New resources carry the cost tags (the CI policy checks most of them)
+- [ ] Sizes come from the environment map, not hard-coded values
+- [ ] Non-production resources can be scheduled or scaled to zero
+- [ ] Temporary resources have a cleanup path
+- [ ] The Infracost comment matches what I expected, or I explained why not
 ```
 
-### Performance vs. Cost Trade-off Framework
+## Incentives That Work, and Ones That Backfire
 
-Help teams make informed decisions about performance vs. cost trade-offs:
+What works:
 
-```python
-# scripts/performance_cost_analyzer.py
+- **Make fixes visible.** Post the before and after numbers of a cost fix in the team channel or changelog, like a performance improvement.
+- **Let teams keep part of what they save**, for example as budget for a project they want, so saving is not only a sacrifice.
+- **Give engineers direct access** to their cost data, in the tools they already use.
+- **Put cost in the definition of done** for infrastructure work: tagged, budgeted, with a cleanup path.
 
-class PerformanceCostAnalyzer:
-    def __init__(self):
-        self.instance_specs = {
-            't3.small': {'vcpu': 2, 'memory': 2, 'cost_per_hour': 0.0208},
-            't3.medium': {'vcpu': 2, 'memory': 4, 'cost_per_hour': 0.0416},
-            't3.large': {'vcpu': 2, 'memory': 8, 'cost_per_hour': 0.0832},
-            'm5.large': {'vcpu': 2, 'memory': 8, 'cost_per_hour': 0.096},
-            'm5.xlarge': {'vcpu': 4, 'memory': 16, 'cost_per_hour': 0.192},
-            'm5.2xlarge': {'vcpu': 8, 'memory': 32, 'cost_per_hour': 0.384}
-        }
+What backfires:
 
-    def analyze_performance_cost_options(self, workload_requirements):
-        """Analyze different instance options for a workload"""
+- **Leaderboards that rank teams by spend or savings.** They punish teams that are growing and reward cuts that hurt reliability, and they invite gaming the allocation.
+- **Blame for anomalies.** People stop reporting their own mistakes, and the anomalies get bigger.
+- **Cost targets without value.** "Cut 20 percent" without context leads to cuts in the wrong places; tie targets to unit costs.
 
-        print("🔍 PERFORMANCE vs COST ANALYSIS")
-        print("=" * 50)
+## Working With Finance
 
-        suitable_instances = []
+Finance needs predictability more than a low bill. Help them by telling them early about launches, migrations and experiments that will change spend; by explaining variances in plain words ("the new search index doubled storage, as planned"); and by giving a usage forecast before commitments are bought, so a Savings Plan matches what the services will really use. Use the same data on both sides: the FOCUS export and the cost columns from [Part 1](/guides/finops-for-devops-engineers/01-principles), so nobody argues about whose number is right.
 
-        for instance_type, specs in self.instance_specs.items():
-            if (specs['vcpu'] >= workload_requirements.get('min_vcpu', 1) and
-                specs['memory'] >= workload_requirements.get('min_memory', 1)):
+## Common Mistakes
 
-                monthly_cost = specs['cost_per_hour'] * 24 * 30
+- **Dashboards without owners.** A report that nobody reviews changes nothing.
+- **Chargeback too early.** Charging teams on poor allocation starts arguments about tags instead of improvements.
+- **No rule for shared costs.** Every month becomes a negotiation; write the rule down once.
+- **Only total cost.** Without a unit cost, growth looks like waste and waste hides inside growth.
+- **Rankings and blame.** They teach teams to hide costs, not to reduce them.
 
-                # Calculate efficiency metrics
-                cost_per_vcpu = monthly_cost / specs['vcpu']
-                cost_per_gb_memory = monthly_cost / specs['memory']
+## Summary
 
-                suitable_instances.append({
-                    'instance_type': instance_type,
-                    'vcpu': specs['vcpu'],
-                    'memory': specs['memory'],
-                    'monthly_cost': monthly_cost,
-                    'cost_per_vcpu': cost_per_vcpu,
-                    'cost_per_gb_memory': cost_per_gb_memory,
-                    'efficiency_score': self.calculate_efficiency_score(specs, monthly_cost)
-                })
+- Ownership comes first: every resource has an owner, every team sees its own costs.
+- Start with showback; move to chargeback when allocation is trusted.
+- Share untagged and shared costs by one written rule, and show the shared part separately.
+- Unit costs separate growth from waste.
+- Short weekly reviews, anomaly follow-ups and a cost section in design and code reviews make cost part of normal engineering work.
 
-        # Sort by cost
-        suitable_instances.sort(key=lambda x: x['monthly_cost'])
+Next, [Part 7](/guides/finops-for-devops-engineers/07-conclusion) covers the metrics to track and a 90-day plan to put the guide into practice.
 
-        print(f"{'Instance':<12} {'vCPU':<6} {'Memory':<8} {'Monthly Cost':<14} {'Efficiency'}")
-        print("-" * 60)
+## Keep Learning
 
-        for instance in suitable_instances:
-            efficiency_emoji = self.get_efficiency_emoji(instance['efficiency_score'])
-            print(f"{instance['instance_type']:<12} {instance['vcpu']:<6} "
-                  f"{instance['memory']:<8} ${instance['monthly_cost']:<13.2f} {efficiency_emoji}")
-
-        print()
-
-        # Provide recommendations
-        if suitable_instances:
-            cheapest = suitable_instances[0]
-            most_efficient = max(suitable_instances, key=lambda x: x['efficiency_score'])
-
-            print("💡 RECOMMENDATIONS:")
-            print(f"   💰 Lowest Cost: {cheapest['instance_type']} (${cheapest['monthly_cost']:.2f}/month)")
-            print(f"   ⚡ Best Efficiency: {most_efficient['instance_type']} (score: {most_efficient['efficiency_score']:.2f})")
-
-            if cheapest != most_efficient:
-                cost_difference = most_efficient['monthly_cost'] - cheapest['monthly_cost']
-                print(f"   📊 Efficiency Premium: ${cost_difference:.2f}/month ({cost_difference/cheapest['monthly_cost']*100:.1f}%)")
-
-        return suitable_instances
-
-    def calculate_efficiency_score(self, specs, monthly_cost):
-        """Calculate efficiency score (performance per dollar)"""
-        # Simple efficiency: (vCPU + memory/4) / monthly_cost * 100
-        performance_score = specs['vcpu'] + (specs['memory'] / 4)
-        return (performance_score / monthly_cost) * 100
-
-    def get_efficiency_emoji(self, score):
-        """Get emoji representation of efficiency score"""
-        if score > 20:
-            return "🟢 Excellent"
-        elif score > 15:
-            return "🟡 Good"
-        elif score > 10:
-            return "🟠 Fair"
-        else:
-            return "🔴 Poor"
-
-# Example usage
-analyzer = PerformanceCostAnalyzer()
-
-# Analyze options for a web application
-web_app_requirements = {
-    'min_vcpu': 2,
-    'min_memory': 4,
-    'workload_type': 'web_application'
-}
-
-suitable_options = analyzer.analyze_performance_cost_options(web_app_requirements)
-```
-
-Building a cost-conscious culture requires patience and consistent effort. The key is making cost optimization feel like engineering excellence rather than financial constraint. When teams see cost efficiency as a technical challenge and a source of pride, sustainable change follows naturally.
+- [Your Cloud Bill Is an Organizational Problem, Not a Technical One](/posts/cloud-bill-organizational-problem)
+- [Why Most FinOps Initiatives Fail (and What Actually Works)](/posts/why-finops-initiatives-fail)
+- [Interview questions: Chargeback Design for Shared and Untaggable Costs](/interview-questions/senior/chargeback-shared-untaggable-costs)
+- [Interview questions: FinOps and Cloud Cost Management](/interview-questions/senior/finops-cost-management)
