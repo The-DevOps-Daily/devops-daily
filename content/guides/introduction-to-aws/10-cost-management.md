@@ -200,5 +200,6 @@ You now know the core of AWS: accounts and IAM, compute, storage, networking, da
 
 - [How to Set Up AWS Cost Explorer and Budgets for Teams](/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams)
 - [What Is FinOps? A Beginner's Guide to Cloud Cost Management](/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management)
+- [FinOps for DevOps Engineers](/guides/finops-for-devops-engineers)
 - [Cloud Cost Optimization Quiz](/quizzes/cloud-cost-optimization-quiz)
 - [AWS Well-Architected Review Checklist](/checklists/aws-well-architected)
