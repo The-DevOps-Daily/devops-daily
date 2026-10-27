@@ -344,6 +344,12 @@
   /* Better mobile readability: smaller font prevents horizontal overflow on narrow screens */
 }
 
+/* Code blocks are focusable for keyboard scrolling; <pre> clips an outside outline. */
+.prose pre code:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: -2px;
+}
+
 /* Code block wrapper */
 .code-block-wrapper {
   @apply relative my-6;
