@@ -85,6 +85,8 @@ async function wcagViolations(page: Page, theme: string) {
     .withTags(WCAG_TAGS)
     // The Next.js dev overlay only exists under `next dev`, not on the site.
     .exclude('nextjs-portal')
+    // Carbon's script injects its own ad markup here; we cannot change it.
+    .exclude('#carbon-ads-container')
     .analyze();
   return results.violations.flatMap((violation) => {
     // Group nodes by what is wrong (the color pair for contrast) so one CI log
