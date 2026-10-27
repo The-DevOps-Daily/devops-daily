@@ -78,6 +78,12 @@ export function HeroDemoTerminal() {
 
   useEffect(() => {
     const scene = SCENES[sceneIdx];
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // No typing and no scene loop: show the first scene complete and stay.
+      setVisibleLines(scene.lines);
+      setPartial(null);
+      return;
+    }
     setVisibleLines([]);
     setPartial(null);
 
@@ -154,7 +160,7 @@ export function HeroDemoTerminal() {
           )}
           {!partial && (
             <div className="text-muted-foreground/60">
-              <span className="text-green-500/70">$</span>{' '}
+              <span className="text-green-700 dark:text-green-500/70">$</span>{' '}
               <span className="inline-block w-[0.6em] h-[1em] align-middle bg-foreground/60 animate-cursor-blink" />
             </div>
           )}
