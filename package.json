@@ -123,6 +123,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@playwright/test": "1.64.1",
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4.3.3",
