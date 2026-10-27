@@ -392,3 +392,5 @@ The cost of adding pre-commit hooks to your workflow is about 30 minutes of setu
 - [Security-Focused Code Reviews](/posts/security-focused-code-reviews) - The human layer that catches logic flaws, auth bypasses, and injection patterns your hooks will miss
 
 For static analysis beyond secrets detection, see our guide on [SAST tools](/guides/sast-tools).
+
+To watch gitleaks find a deleted `.env` file in Git history, and why you rotate the secret before you rewrite history, read [Secrets in Git Stay in Git](/guides/security-principles/01-cia-triad#h3-secrets-in-git-stay-in-git) in our Security Principles guide.

@@ -397,3 +397,5 @@ Pipeline security is not a one-time project. It is an ongoing practice of reduci
 - [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide) - Automate vulnerability checks for every dependency your pipeline pulls in
 
 For a broader security strategy, see our guides on [security gates in CI/CD](/guides/security-gates) and [threat modeling](/guides/threat-modeling).
+
+To see the claims in a real GitHub Actions OIDC token, and an AWS trust policy that accepts only one repository and environment, read [Zero Trust for CI/CD](/guides/security-principles/04-zero-trust#h2-zero-trust-for-cicd) in our Security Principles guide.

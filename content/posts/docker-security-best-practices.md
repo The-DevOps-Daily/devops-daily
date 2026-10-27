@@ -641,5 +641,6 @@ Container security is an ongoing process that requires attention at every stage 
 - [Docker Security Checklist](/checklists/docker-security): verify your security setup
 - [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on practice
 - [Introduction to Docker: Best Practices](/guides/introduction-to-docker): full guide
+- [Security Principles: Defense in Depth](/guides/security-principles/02-defense-in-depth#h3-a-container-that-cannot-change-itself): a pinned, non-root, read-only container as one layer among several
 - [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge
 - [DevOps Roadmap](/roadmap): the full DevOps learning path

@@ -255,3 +255,5 @@ The honest decision rule: if your answer to "how many copies" was small and you 
 The number to take away is your own copy count. It predicts your rotation cost, it predicts your blast radius, and unlike most security metrics you can measure it this afternoon with `grep` and an honest hour.
 
 For the surrounding practice, we have written about [hardening a CI/CD pipeline](/posts/cicd-pipeline-hardening-guide) and [pre-commit hooks that catch problems before they land](/posts/pre-commit-hooks-security-guide).
+
+For two places those copies leak from, command lines and Git history, and where a secret should live instead, see [Confidentiality](/guides/security-principles/01-cia-triad#h2-confidentiality) in our Security Principles guide.

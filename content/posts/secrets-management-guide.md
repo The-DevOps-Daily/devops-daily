@@ -375,4 +375,4 @@ Whichever tool you choose, the principles stay the same: least privilege, short-
 - [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide) - Catch AWS keys, database passwords, and API tokens before they get committed to Git history
 - [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security) - Pair proper secrets management with artifact signing to secure every step from build to deploy
 
-For foundational concepts like least privilege and defense in depth, see our guide on [security principles](/guides/security-principles).
+For where a secret should live, and why one committed to Git stays there after you delete it, see [The CIA Triad](/guides/security-principles/01-cia-triad#h2-confidentiality), part 1 of our Security Principles guide.

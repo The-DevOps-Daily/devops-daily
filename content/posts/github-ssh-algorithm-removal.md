@@ -307,3 +307,5 @@ A new key type does not fix a key exchange problem. If a client's only key excha
 GitHub removes RSA with SHA-1 signatures and one Diffie-Hellman key exchange on January 13, 2027, with brownouts on November 4 and December 9. HTTPS remotes are not affected. Your RSA key can stay, but the client must sign with SHA-2 and share a modern key exchange with GitHub.
 
 Before November 4, test every place that runs Git over SSH with the old algorithms removed, and audit account keys, deploy keys and machine users. Move to Ed25519 where you can, and to ECDSA or 3072-bit RSA where you cannot. For another client-side SSH risk in some of the same libraries, see our post on [libssh2 CVE-2026-55200](/posts/libssh2-cve-2026-55200-client-side-ssh).
+
+To compare Ed25519, ECDSA and RSA keys by strength and size before you rotate, see the [key types table](/guides/cryptography-essentials/01-encryption#h3-common-key-types) in our Cryptography Essentials guide.

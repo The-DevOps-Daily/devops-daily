@@ -371,3 +371,4 @@ If a VirtualService just won't apply, check for naming conflicts. Two VirtualSer
 - Pick one production service this week and add a DestinationRule with `outlierDetection`. Even without changing routes, this alone catches a class of failures you currently miss
 - For canary work, look at Flagger or Argo Rollouts. They drive Istio VirtualService weights automatically based on metrics, so you don't shift traffic by hand
 - If you find yourself writing the same DestinationRule for every service, move the defaults into a `mesh-wide` config under `meshConfig.defaultConfig` and only override per-service when needed
+- To use the mesh for security as well, require mTLS and authorize calls by service account. [Workload Identity and Mutual TLS with Istio](/guides/security-principles/04-zero-trust#h2-workload-identity-and-mutual-tls-with-istio) in our Security Principles guide walks through it in ambient mode

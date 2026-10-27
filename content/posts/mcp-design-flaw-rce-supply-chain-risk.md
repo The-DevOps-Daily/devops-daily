@@ -265,6 +265,8 @@ We track these at [/news](/news) as they develop, and our [DevSecOps roadmap](/r
 
 Related reading on our site: [Claude Code source leak via npm source maps](/posts/claude-code-source-leak-what-devops-engineers-should-learn) and [CLI vs MCP: when to use each](/posts/cli-vs-mcp-when-to-use-each) for background on the protocol itself.
 
+For why `;` and `&&` in a string passed to a shell start new commands, and how to run a program without a shell, see [A05:2025 Injection](/guides/owasp-top-10/03-injection#h2-os-command-injection) in our OWASP Top 10 guide.
+
 ---
 
 Reply on [X](https://x.com/thedevopsdaily) or [LinkedIn](https://www.linkedin.com/company/thedevopsdaily) if your team is handling this differently. We update this post as Anthropic and downstream vendors ship patches.

@@ -360,3 +360,5 @@ The goal is not to catch every vulnerability on day one. The goal is to build a 
 - [CI/CD Pipeline Hardening](/posts/cicd-pipeline-hardening-guide) - Secure the pipeline that runs your DAST scans so attackers cannot tamper with results or skip security gates
 
 For guidance on setting pass/fail thresholds in your pipeline, see our guide on [security gates](/guides/security-gates).
+
+To see a ZAP baseline scan flag missing headers on a deliberately misconfigured app, and how to record the warnings you accept, read [A02:2025 Security Misconfiguration](/guides/owasp-top-10/05-security-misconfiguration#h2-scan-the-running-app-with-zap) in our OWASP Top 10 guide.
