@@ -10,6 +10,7 @@ import { getAllNews } from '../lib/news.js';
 import { getAllAdventDays } from '../lib/advent.js';
 import { getAllGames } from '../lib/games.js';
 import { CATEGORY_LABEL, TOOLS } from '../lib/tools.js';
+import { insertStaticRedirects } from './redirects-order.js';
 import {
   buildContentCoverSvg,
   cleanOgText,
@@ -394,9 +395,8 @@ async function addPngRedirects(): Promise<number> {
     .sort()
     .map((from) => `${from} ${from.replace(/\.png$/, '.jpg')} 301`);
   if (lines.length === 0) return 0;
-  const prefix = current.endsWith('\n') ? '' : '\n';
-  const block = current.includes(header) ? lines : [header, ...lines];
-  await fs.appendFile(redirectsPath, `${prefix}${block.join('\n')}\n`);
+  const block = current.includes(header) ? lines : ['', header, ...lines];
+  await fs.writeFile(redirectsPath, insertStaticRedirects(current, block));
   return lines.length;
 }
 

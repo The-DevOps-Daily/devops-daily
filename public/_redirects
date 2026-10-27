@@ -1,27 +1,18 @@
 # Redirect authors to experts (merged sections)
 /authors /experts 301
-/authors/* /experts/:splat 301
 
 # Canonical location for the CI/CD Stack Generator
 /tools/cicd-stack-generator /games/cicd-stack-generator 301
 
 # Short security guides converted to posts
 /guides/code-review-security /posts/security-focused-code-reviews 301
-/guides/code-review-security/* /posts/security-focused-code-reviews 301
 /guides/dast-integration /posts/dast-integration-guide 301
-/guides/dast-integration/* /posts/dast-integration-guide 301
 /guides/dependency-scanning /posts/dependency-scanning-guide 301
-/guides/dependency-scanning/* /posts/dependency-scanning-guide 301
 /guides/pipeline-hardening /posts/cicd-pipeline-hardening-guide 301
-/guides/pipeline-hardening/* /posts/cicd-pipeline-hardening-guide 301
 /guides/pre-commit-hooks /posts/pre-commit-hooks-security-guide 301
-/guides/pre-commit-hooks/* /posts/pre-commit-hooks-security-guide 301
 /guides/secrets-management /posts/secrets-management-guide 301
-/guides/secrets-management/* /posts/secrets-management-guide 301
 /guides/secure-coding-practices /posts/secure-coding-practices-guide 301
-/guides/secure-coding-practices/* /posts/secure-coding-practices-guide 301
 /guides/supply-chain-security /posts/software-supply-chain-security 301
-/guides/supply-chain-security/* /posts/software-supply-chain-security 301
 
 # Duplicate posts merged into the fuller version (Aug 2026)
 /posts/what-does-set-e-mean-in-bash /posts/what-does-set-e-mean-in-bash-script 301
@@ -1115,3 +1106,16 @@
 /images/interview-questions/zero-trust-architecture-og.png /images/interview-questions/zero-trust-architecture-og.jpg 301
 /images/comparisons/bitrise-build-hub-vs-github-hosted-runners-og.png /images/comparisons/bitrise-build-hub-vs-github-hosted-runners-og.jpg 301
 /images/posts/github-actions-bill-keeps-growing.png /images/posts/github-actions-bill-keeps-growing.jpg 301
+
+# Dynamic redirects (splats and placeholders) stay at the end of this file.
+# Cloudflare applies static redirects only when they come before the first
+# dynamic one, and allows at most 100 dynamic redirects.
+/authors/* /experts/:splat 301
+/guides/code-review-security/* /posts/security-focused-code-reviews 301
+/guides/dast-integration/* /posts/dast-integration-guide 301
+/guides/dependency-scanning/* /posts/dependency-scanning-guide 301
+/guides/pipeline-hardening/* /posts/cicd-pipeline-hardening-guide 301
+/guides/pre-commit-hooks/* /posts/pre-commit-hooks-security-guide 301
+/guides/secrets-management/* /posts/secrets-management-guide 301
+/guides/secure-coding-practices/* /posts/secure-coding-practices-guide 301
+/guides/supply-chain-security/* /posts/software-supply-chain-security 301
