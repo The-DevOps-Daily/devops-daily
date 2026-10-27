@@ -1,353 +1,347 @@
 ---
-title: 'A07: Identification and Authentication Failures'
-description: 'Learn about authentication vulnerabilities, including weak passwords, session management flaws, and credential stuffing. Understand how to implement secure authentication.'
+title: 'A07:2025 Authentication Failures'
+description: 'A07:2025 Authentication Failures: credential stuffing, rate limits, breached-password checks, NIST password rules, sessions, JWTs, MFA and passkeys.'
+order: 8
 ---
 
-Identification and Authentication Failures (previously "Broken Authentication") occur when applications incorrectly confirm a user's identity. Weak authentication is like a broken lock on a door—all other security measures become irrelevant if attackers can simply pretend to be legitimate users.
+**TLDR**: Authentication failures let an attacker log in as someone else: by trying leaked passwords at scale, guessing weak ones, abusing a recovery flow, or reusing a session that should have ended. Give the same answer for every failed login, limit failed attempts per client and per account, reject passwords that appear in breach data, follow the NIST SP 800-63B-4 password rules, issue a new random session ID at login and end it on the server at logout, validate every claim of a token, and offer phishing-resistant MFA such as passkeys.
 
-## What Are Authentication Failures?
+The 2025 edition renamed this category from "Identification and Authentication Failures" to Authentication Failures and kept it at seventh place. The [A07:2025 page](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/) maps 36 CWEs to it, including hard-coded passwords (CWE-259, CWE-798), session fixation (CWE-384) and improper certificate validation (CWE-297). OWASP notes that standard authentication frameworks have helped, and its best advice is to use a well-tested system for identity and sessions instead of building your own.
 
-Authentication failures happen when applications:
+## Prerequisites
 
-- Permit automated attacks like credential stuffing or brute force
-- Allow weak or default passwords
-- Use weak credential recovery processes
-- Store passwords incorrectly (plain text, weak hashing)
-- Lack or have ineffective multi-factor authentication
-- Expose session IDs in URLs or don't rotate them
-- Don't properly invalidate sessions on logout
+- The companion app from the [guide introduction](/guides/owasp-top-10#h2-the-companion-app), and a terminal in its directory.
+- Network access for the breached-password check.
 
-## Common Vulnerability Patterns
+## How Logins Are Attacked
 
-### 1. Credential Stuffing
+- **Credential stuffing**: trying username and password pairs leaked from other sites, because people reuse passwords.
+- **Password spraying and hybrid attacks**: trying a few common passwords against many accounts, or variations of leaked ones (OWASP's example: `Winter2025` becomes `Winter2026`).
+- **Brute force** against one account.
+- **Weak recovery**: security questions or reset links that can be guessed (see [A06](/guides/owasp-top-10/04-insecure-design#h3-recovery-flows)).
+- **Session problems**: IDs in URLs, IDs that survive login or logout, tokens accepted by services they were not issued for.
 
-**The Problem:**
+## One Answer for Every Failed Login
 
-Attackers use lists of breached credentials to attempt logins on other sites, exploiting password reuse.
-
-```javascript
-// VULNERABLE: No protection against automated attacks
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  
-  if (user && await bcrypt.compare(password, user.password)) {
-    req.session.userId = user.id;
-    return res.json({ success: true });
-  }
-  
-  res.status(401).json({ error: 'Invalid credentials' });
-});
-```
-
-**Secure Implementation:**
+The fixed login handler returns the same message for an unknown user and a wrong password, and it runs the password hash even when the user does not exist, so the response time does not reveal which case it was:
 
 ```javascript
-const rateLimit = require('express-rate-limit');
-
-// Rate limit by IP
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 5,                     // 5 attempts
-  skipSuccessfulRequests: true,
-  standardHeaders: true,
-  message: 'Too many login attempts, please try again later'
-});
-
-app.post('/login', loginLimiter, async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ email });
-  
-  // Check if account is locked
-  if (user?.lockUntil && user.lockUntil > Date.now()) {
-    return res.status(423).json({ 
-      error: 'Account temporarily locked due to failed attempts' 
-    });
-  }
-  
-  if (user && await bcrypt.compare(password, user.password)) {
-    // Reset failed attempts
-    await User.updateOne({ _id: user._id }, {
-      $set: { failedAttempts: 0, lockUntil: null }
-    });
-    
-    // Regenerate session to prevent fixation
-    req.session.regenerate((err) => {
-      req.session.userId = user.id;
-      res.json({ success: true });
-    });
-    return;
-  }
-  
-  // Track failed attempts per account
-  if (user) {
-    const attempts = (user.failedAttempts || 0) + 1;
-    const update = { failedAttempts: attempts };
-    
-    if (attempts >= 5) {
-      update.lockUntil = Date.now() + 30 * 60 * 1000; // 30 min
+// POST /api/login: same answer for an unknown user and a wrong password.
+export function login({ db, log }) {
+  return async (req, res) => {
+    const { name, password } = req.body ?? {};
+    if (typeof name !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'name and password are required strings' });
     }
-    
-    await User.updateOne({ _id: user._id }, { $set: update });
-  }
-  
-  // Use consistent response time to prevent user enumeration
-  await new Promise(resolve => setTimeout(resolve, 100));
-  res.status(401).json({ error: 'Invalid credentials' });
-});
-```
-
-### 2. Weak Password Policies
-
-**The Problem:**
-
-Allowing weak passwords makes accounts easy to compromise.
-
-```javascript
-// VULNERABLE: No password requirements
-app.post('/register', async (req, res) => {
-  const { email, password } = req.body;
-  const hash = await bcrypt.hash(password, 10);
-  // ... password could be "123456"
-});
-```
-
-**Secure Implementation:**
-
-```javascript
-const zxcvbn = require('zxcvbn');  // Password strength library
-
-function validatePassword(password, email) {
-  const errors = [];
-  
-  // Length check
-  if (password.length < 12) {
-    errors.push('Password must be at least 12 characters');
-  }
-  
-  if (password.length > 128) {
-    errors.push('Password must not exceed 128 characters');
-  }
-  
-  // Check against common passwords using zxcvbn
-  const result = zxcvbn(password, [email]);
-  if (result.score < 3) {
-    errors.push('Password is too weak: ' + result.feedback.warning);
-  }
-  
-  // Check against breached passwords (have-i-been-pwned API)
-  // Implementation shown below
-  
-  return errors;
+    if (name.length > 64 || password.length > 256) {
+      return res.status(400).json({ error: 'name or password too long' });
+    }
+    const user = db.prepare('SELECT id, name, password_hash FROM users WHERE name = ?').get(name);
+    const ok = await verifyPassword(password, user?.password_hash ?? DUMMY_HASH);
+    if (!user || !ok) {
+      log.warn({ event: `authn_login_fail:${name}`, ip: req.ip, reqId: req.id }, 'login failed');
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+    // A new random session ID on every login: 32 bytes from the CSPRNG. Expired
+    // sessions go, and each user keeps at most MAX_SESSIONS (the oldest end first).
+    const token = randomBytes(32).toString('base64url');
+    db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(Date.now());
+    db.prepare(
+      `DELETE FROM sessions WHERE user_id = ? AND token_hash NOT IN (
+         SELECT token_hash FROM sessions WHERE user_id = ? ORDER BY expires_at DESC LIMIT ?)`
+    ).run(user.id, user.id, MAX_SESSIONS - 1);
+    db.prepare('INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(
+      sha256(token),
+      user.id,
+      Date.now() + SESSION_TTL_MS
+    );
+    log.info({ event: `authn_login_success:${user.name}`, ip: req.ip, reqId: req.id }, 'login');
+    res.json({ token, expiresInSeconds: SESSION_TTL_MS / 1000 });
+  };
 }
-
-// Check if password appears in known breaches
-async function isPasswordBreached(password) {
-  const crypto = require('crypto');
-  const hash = crypto.createHash('sha1')
-    .update(password)
-    .digest('hex')
-    .toUpperCase();
-  
-  const prefix = hash.slice(0, 5);
-  const suffix = hash.slice(5);
-  
-  const response = await fetch(
-    `https://api.pwnedpasswords.com/range/${prefix}`
-  );
-  const data = await response.text();
-  
-  return data.includes(suffix);
-}
-
-app.post('/register', async (req, res) => {
-  const { email, password } = req.body;
-  
-  const errors = validatePassword(password, email);
-  if (errors.length > 0) {
-    return res.status(400).json({ errors });
-  }
-  
-  if (await isPasswordBreached(password)) {
-    return res.status(400).json({
-      error: 'This password has appeared in data breaches. Choose another.'
-    });
-  }
-  
-  const hash = await bcrypt.hash(password, 12);
-  // ...
-});
 ```
 
-### 3. Insecure Session Management
-
-**The Problem:**
-
-Poor session management can allow session hijacking or fixation.
-
-```javascript
-// VULNERABLE: Session ID in URL
-app.get('/dashboard', (req, res) => {
-  res.redirect(`/dashboard?sessionId=${req.session.id}`);
-});
-
-// VULNERABLE: Session not regenerated on login
-app.post('/login', (req, res) => {
-  req.session.userId = user.id;  // Same session ID as before login!
-});
-
-// VULNERABLE: Session not invalidated on logout
-app.post('/logout', (req, res) => {
-  req.session.userId = null;  // Session still exists!
-});
-```
-
-**Secure Implementation:**
-
-```javascript
-const session = require('express-session');
-const RedisStore = require('connect-redis').default;
-
-app.use(session({
-  store: new RedisStore({ client: redisClient }),
-  secret: process.env.SESSION_SECRET,
-  name: 'sessionId',  // Don't use default name
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'strict',
-    maxAge: 3600000  // 1 hour
-  }
-}));
-
-// Regenerate session on login
-app.post('/login', async (req, res) => {
-  // ... validate credentials ...
-  
-  // Regenerate session to prevent fixation
-  const oldSession = req.session;
-  req.session.regenerate((err) => {
-    if (err) return res.status(500).json({ error: 'Login failed' });
-    
-    req.session.userId = user.id;
-    req.session.createdAt = Date.now();
-    res.json({ success: true });
-  });
-});
-
-// Properly destroy session on logout
-app.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.status(500).json({ error: 'Logout failed' });
-    
-    res.clearCookie('sessionId');
-    res.json({ success: true });
-  });
-});
-```
-
-### 4. Missing Multi-Factor Authentication
-
-**Implementation:**
-
-```javascript
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
-
-// Setup TOTP for user
-app.post('/mfa/setup', requireAuth, async (req, res) => {
-  const secret = speakeasy.generateSecret({
-    name: `MyApp (${req.user.email})`,
-    length: 32
-  });
-  
-  // Store secret temporarily until verified
-  await User.updateOne(
-    { _id: req.user.id },
-    { $set: { mfaPending: secret.base32 } }
-  );
-  
-  // Generate QR code for authenticator app
-  const qrCode = await QRCode.toDataURL(secret.otpauth_url);
-  
-  res.json({ 
-    qrCode,
-    manualCode: secret.base32  // For manual entry
-  });
-});
-
-// Verify and enable MFA
-app.post('/mfa/verify', requireAuth, async (req, res) => {
-  const { token } = req.body;
-  const user = await User.findById(req.user.id);
-  
-  const verified = speakeasy.totp.verify({
-    secret: user.mfaPending,
-    encoding: 'base32',
-    token,
-    window: 1  // Allow 30 second clock drift
-  });
-  
-  if (!verified) {
-    return res.status(400).json({ error: 'Invalid code' });
-  }
-  
-  // Enable MFA
-  await User.updateOne(
-    { _id: user._id },
+```terminal
+{
+  "title": "an unknown user and a wrong password look the same",
+  "prompt": "$",
+  "steps": [
     {
-      $set: { mfaSecret: user.mfaPending, mfaEnabled: true },
-      $unset: { mfaPending: 1 }
+      "cmd": "export DEMO_PASSWORD='correct horse battery staple'"
+    },
+    {
+      "cmd": "node src/server.js > app.log 2>&1 &"
+    },
+    {
+      "cmd": "until curl -s -o /dev/null localhost:3000/; do sleep 0.2; done"
+    },
+    {
+      "cmd": "curl -s -w ' %{http_code}\\n' localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"alice\", \"password\": \"Winter2026!\"}'",
+      "output": "{\"error\":\"Invalid username or password\"} 401"
+    },
+    {
+      "cmd": "curl -s -w ' %{http_code}\\n' localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"mallory\", \"password\": \"Winter2026!\"}'",
+      "output": "{\"error\":\"Invalid username or password\"} 401"
     }
-  );
-  
-  res.json({ success: true });
-});
-
-// Login with MFA
-app.post('/login', async (req, res) => {
-  const { email, password, mfaToken } = req.body;
-  const user = await User.findOne({ email });
-  
-  if (!user || !await bcrypt.compare(password, user.password)) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  
-  if (user.mfaEnabled) {
-    if (!mfaToken) {
-      return res.json({ requiresMfa: true });
-    }
-    
-    const verified = speakeasy.totp.verify({
-      secret: user.mfaSecret,
-      encoding: 'base32',
-      token: mfaToken,
-      window: 1
-    });
-    
-    if (!verified) {
-      return res.status(401).json({ error: 'Invalid MFA code' });
-    }
-  }
-  
-  req.session.regenerate((err) => {
-    req.session.userId = user.id;
-    res.json({ success: true });
-  });
-});
+  ]
+}
 ```
 
-## Key Takeaways
+Apply the same rule to registration and password reset: "If that address has an account, we sent a link" for every address.
 
-1. **Implement rate limiting** on authentication endpoints
-2. **Lock accounts** after repeated failed attempts
-3. **Require strong passwords** and check against breach databases
-4. **Regenerate sessions** on login to prevent fixation
-5. **Destroy sessions** completely on logout
-6. **Use secure cookie settings** (httpOnly, secure, sameSite)
-7. **Implement MFA** especially for sensitive accounts
-8. **Avoid user enumeration** through consistent responses and timing
+## Sessions
 
-Authentication is often the first line of defense. Getting it right requires attention to detail and understanding of common attack patterns.
+A session ID is a password with a short life. The companion app's sessions follow the OWASP rules:
+
+- **New and random at every login**: 32 bytes from the cryptographically secure generator, so a session ID that existed before login (session fixation) can never become an authenticated one.
+- **Stored as a hash**, so a database leak does not hand out live sessions.
+- **Expiring and bounded**: an absolute timeout of one hour, expired rows removed at each login, and at most five sessions per user. Add an idle timeout for sensitive applications.
+- **Ended on the server at logout**, not only forgotten by the client.
+
+```javascript
+// Every protected route runs this first. No valid session, no access.
+export function authenticate({ db, log }) {
+  return (req, res, next) => {
+    const m = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.get('authorization') ?? '');
+    const row =
+      m &&
+      db
+        .prepare(
+          `SELECT u.id, u.name, u.role FROM sessions s JOIN users u ON u.id = s.user_id
+           WHERE s.token_hash = ? AND s.expires_at > ?`
+        )
+        .get(sha256(m[1]), Date.now());
+    if (!row) {
+      // A token that is wrong or expired is worth a log line; no token at all is routine.
+      if (req.get('authorization')) {
+        log.warn({ event: 'authn_token_invalid', ip: req.ip, reqId: req.id }, 'bad token');
+      }
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    req.user = row;
+    req.sessionTokenHash = sha256(m[1]);
+    next();
+  };
+}
+```
+
+```terminal
+{
+  "title": "logout ends the session on the server",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "TOKEN=$(curl -s localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"bob\", \"password\": \"correct horse battery staple\"}' | jq -r .token)"
+    },
+    {
+      "cmd": "curl -s -o /dev/null -w '%{http_code}\\n' localhost:3000/api/invoices/1002 -H \"authorization: Bearer $TOKEN\"",
+      "output": "200"
+    },
+    {
+      "cmd": "curl -s -o /dev/null -w '%{http_code}\\n' -X POST localhost:3000/api/logout -H \"authorization: Bearer $TOKEN\"",
+      "output": "204"
+    },
+    {
+      "cmd": "curl -s -w ' %{http_code}\\n' localhost:3000/api/invoices/1002 -H \"authorization: Bearer $TOKEN\"",
+      "output": "{\"error\":\"Authentication required\"} 401"
+    }
+  ]
+}
+```
+
+If you use cookies instead of bearer tokens, set `HttpOnly`, `Secure` and `SameSite`, as shown in [A02](/guides/owasp-top-10/05-security-misconfiguration#h3-cookies), and never put session IDs in URLs.
+
+### Tokens From an Identity Provider
+
+When another service issues the token (OAuth 2.0 or OpenID Connect), validate everything, not only the signature. OWASP's last point in A07 is to verify the intended use of credentials: the issuer, the audience and the scopes. With the [`jose`](https://github.com/panva/jose) library:
+
+```javascript
+import { createRemoteJWKSet, jwtVerify } from 'jose';
+
+const jwks = createRemoteJWKSet(new URL('https://auth.example.com/.well-known/jwks.json'));
+
+export async function verifyAccessToken(token) {
+  const { payload } = await jwtVerify(token, jwks, {
+    issuer: 'https://auth.example.com/',
+    audience: 'invoices-api', // a token for another API is rejected
+    algorithms: ['RS256'], // never accept "none" or an algorithm the attacker picks
+    requiredClaims: ['exp'], // a token without an expiry is rejected
+  });
+  if (
+    !String(payload.scope ?? '')
+      .split(' ')
+      .includes('invoices:read')
+  ) {
+    throw new Error('missing scope invoices:read');
+  }
+  return payload;
+}
+```
+
+`jwtVerify` checks the expiry when the token has one, and `requiredClaims` makes it mandatory. Keep access tokens short-lived and revoke refresh tokens at logout, since a stateless token cannot be ended on the server.
+
+## Limit Failed Attempts
+
+The companion app allows five failed logins per client IP address in 15 minutes, using [express-rate-limit](https://express-rate-limit.mintlify.app/):
+
+```javascript
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 5, // failed attempts per client IP per window
+  skipSuccessfulRequests: true,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  // Requests over the limit never reach the login handler, so log them here.
+  handler: (req, res, next, options) => {
+    const name = typeof req.body?.name === 'string' ? req.body.name.slice(0, 64) : '';
+    log.warn(
+      { event: `authn_login_fail_max:${name},${options.limit}`, ip: req.ip, reqId: req.id },
+      'login rate limit'
+    );
+    res.status(options.statusCode).json({ error: 'Too many login attempts, try again later' });
+  },
+});
+app.post('/api/login', loginLimiter, login({ db, log }));
+```
+
+The two failed logins above already count. Three more fail normally, and then the limiter answers for the app:
+
+```terminal
+{
+  "title": "the sixth failure is refused",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "for i in 1 2 3 4; do curl -s -o /dev/null -w '%{http_code} ' localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"alice\", \"password\": \"guess\"}'; done; echo",
+      "output": "401 401 401 429"
+    },
+    {
+      "cmd": "curl -si localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"alice\", \"password\": \"correct horse battery staple\"}' | grep -E -i '^(HTTP|ratelimit|retry-after)|error'",
+      "output": "HTTP/1.1 429 Too Many Requests\nRateLimit: \"5-in-15min\"; r=0; t=900\nRateLimit-Policy: \"5-in-15min\"; q=5; w=900; pk=:MTJjYTE3YjQ5YWYy:\nRetry-After: 900\n{\"error\":\"Too many login attempts, try again later\"}"
+    },
+    {
+      "cmd": "kill %1"
+    }
+  ]
+}
+```
+
+Even the correct password is refused until the window passes, and the `RateLimit` and `Retry-After` headers tell well-behaved clients when to come back. Refused requests never reach the login handler, so the limiter's own `handler` logs them as `authn_login_fail_max` events, which the [A09 alert rules](/guides/owasp-top-10/09-logging-failures#h2-alerts-that-someone-acts-on) use. A per-IP limit alone does not stop credential stuffing from many addresses, so combine it with:
+
+- **A per-account limit** that adds delays after repeated failures. OWASP warns not to lock accounts outright, because an attacker can then lock out any user; slow down instead, and alert.
+- **A shared store** such as Redis for the counters when you run more than one instance, and the right `trust proxy` setting behind a load balancer, so the limit sees the real client address.
+- **Bot and breached-credential signals** from your identity provider or edge network.
+- **Alerts** on spikes of failed logins across accounts ([A09](/guides/owasp-top-10/09-logging-failures) shows the events).
+
+The tests check the behaviors this part demonstrated: the uniform failure answer, new session IDs, logout, the session cap and the per-client limit:
+
+```terminal
+{
+  "title": "the authentication tests",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "npm test -- tests/auth.test.js",
+      "output": "> owasp-top-10-demo@1.0.0 test\n> node --test --test-reporter=spec tests/auth.test.js\n\n▶ A07 authentication failures\n  ✔ gives the same answer for a wrong password and an unknown user (460.779054ms)\n  ✔ issues a new random session ID at each login (292.374893ms)\n  ✔ ends the session on the server at logout (154.956673ms)\n  ✔ keeps at most 5 sessions per user (751.912666ms)\n  ✔ blocks a client after 5 failed logins in 15 minutes (557.516502ms)\n✔ A07 authentication failures (2408.691329ms)\nℹ tests 5\nℹ suites 1\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 3254.633575"
+    }
+  ]
+}
+```
+
+## Passwords: The NIST SP 800-63B-4 Rules
+
+[NIST SP 800-63B-4](https://pages.nist.gov/800-63-4/sp800-63b.html), final since July 2025, is the reference OWASP points to. Its password rules (section 3.1.1.2) are short:
+
+- At least **15 characters** when the password is the only factor, at least 8 when it is used with MFA.
+- Allow at least **64 characters**, and all printing characters including spaces.
+- **No composition rules** (no "one uppercase, one digit, one symbol").
+- **No periodic rotation**. Force a change only when there is evidence of compromise.
+- **Check new passwords against a blocklist** of common, expected and compromised passwords.
+
+Composition rules and rotation push people toward `Winter2026!`, a predictable pattern that meets every old rule. The blocklist check catches it. The [Pwned Passwords](https://haveibeenpwned.com/API/v3#PwnedPasswords) API does it without sending the password: you send the first five hex characters of its SHA-1 hash and compare the rest locally (k-anonymity), and the `Add-Padding` header hides how many results your prefix has:
+
+```terminal
+{
+  "title": "is this password in breach data?",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "HASH=$(printf '%s' 'Winter2026!' | sha1sum | cut -c1-40 | tr a-f A-F)"
+    },
+    {
+      "cmd": "curl -s \"https://api.pwnedpasswords.com/range/${HASH:0:5}\" -H 'Add-Padding: true' | grep \"^${HASH:5}:\"",
+      "output": "9594223987C8C506A1232EF4AF7788DC831:9"
+    },
+    {
+      "cmd": "HASH=$(printf '%s' 'correct horse battery staple' | sha1sum | cut -c1-40 | tr a-f A-F)"
+    },
+    {
+      "cmd": "curl -s \"https://api.pwnedpasswords.com/range/${HASH:0:5}\" -H 'Add-Padding: true' | grep \"^${HASH:5}:\"",
+      "output": "AD6438836DBE526AA231ABDE2D0EEF74D42:391"
+    }
+  ]
+}
+```
+
+The number after the colon is how often the password appears in breach data. `Winter2026!` appears 9 times, and the famous four-word example this guide uses as its demo password appears 391 times: long is not the same as unknown. Reject both at registration and at password change. In application code:
+
+```javascript
+import { createHash } from 'node:crypto';
+
+// True if the password appears in the Pwned Passwords data set.
+export async function isBreached(password) {
+  const hash = createHash('sha1').update(password).digest('hex').toUpperCase();
+  const res = await fetch(`https://api.pwnedpasswords.com/range/${hash.slice(0, 5)}`, {
+    headers: { 'Add-Padding': 'true' },
+    signal: AbortSignal.timeout(3000),
+  });
+  if (!res.ok) throw new Error(`Pwned Passwords returned ${res.status}`);
+  const suffix = hash.slice(5);
+  return (await res.text())
+    .split('\n')
+    .some((line) => line.startsWith(`${suffix}:`) && !line.trim().endsWith(':0'));
+}
+```
+
+Padding rows have a count of 0, which is why the check ignores them. Decide what happens when the API is down; for a registration form, a local list of the most common passwords is a reasonable fallback. Store passwords as described in [A04](/guides/owasp-top-10/02-cryptographic-failures#h2-passwords-hash-with-a-slow-function).
+
+## Multi-Factor Authentication and Passkeys
+
+OWASP's first prevention point is MFA wherever possible, because it stops credential stuffing and the reuse of stolen passwords. Not all second factors are equal:
+
+- **Passkeys (WebAuthn/FIDO2)** are phishing-resistant: the browser binds the credential to your site's domain, so a lookalike site cannot use it. Offer them first, and consider them as the primary login instead of a password.
+- **Authenticator app codes (TOTP)** are a solid fallback, but a phishing page can relay them in real time.
+- **SMS and email codes** are the weakest options, because of SIM swaps and mailbox takeovers.
+
+OWASP also lists weak MFA fallbacks as a failure: if "I lost my phone" leads to a security question, the attacker uses that path. Recovery codes issued at enrollment are the usual answer. For the implementation, use your identity provider's MFA, or a maintained library such as SimpleWebAuthn for passkeys, rather than writing the protocol yourself.
+
+## Credentials in Code
+
+Hard-coded passwords and keys (CWE-259 and CWE-798) count as authentication failures too: anyone with the code, or a leaked image, can log in. Do not ship default admin accounts, load secrets from a secrets manager at runtime, and scan every commit and image for secrets. [You Cannot Rotate a Secret You Cannot Find](/posts/you-cannot-rotate-a-secret-you-cannot-find) covers finding the ones already out there.
+
+## Common Mistakes
+
+- **Different errors for "no such user" and "wrong password"**, or a faster response for one of them.
+- **Account lockout without care**: it turns brute-force protection into a denial of service. Slow down and alert instead.
+- **Password complexity rules and forced rotation**, which NIST now prohibits.
+- **Sessions that survive logout**, or JWTs that live for days.
+- **Validating a token's signature but not its audience**, so a token for one service works on another.
+- **SMS as the only second factor** for high-value accounts.
+
+## Summary
+
+- Use a well-tested identity system where you can; the rest of this part is what it should do for you.
+- Same response for every failed login; limits per client and per account, without hard lockouts.
+- NIST SP 800-63B-4: 15 characters for password-only logins, no composition or rotation rules, and a breached-password check.
+- New random session IDs at login, hashed at rest, ended on the server at logout; full validation of tokens.
+- Offer passkeys first, TOTP as fallback, and safe recovery codes.
+
+Next, [A08:2025 Software or Data Integrity Failures](/guides/owasp-top-10/08-software-integrity-failures) covers trusting code and data that nobody verified.
+
+## Keep Learning
+
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [Designing Rate Limiting for APIs](/posts/designing-rate-limiting-for-apis)
+- [Ory: Identity and Auth on Kubernetes](/posts/ory-ecosystem-identity-auth-kubernetes)
+- [Rate Limiting APIs quiz](/quizzes/rate-limiting-apis-quiz)
