@@ -71,9 +71,12 @@ export function toolVars(color: string): CSSProperties {
   // A near-gray brand color (GitHub's #181717) reads as a dull gray once
   // lightened, so it follows the page's own text color instead.
   if (isNeutral(color)) return { '--tool': '#18181b', '--tool-dark': '#f4f4f5' } as CSSProperties;
+  // 5.5:1 rather than 4.5:1 on the page background: the text also sits on
+  // tints of the tool color and on green and red row highlights, which take
+  // up to 15% of the contrast away.
   return {
-    '--tool': readableOn(color, '#ffffff'),
-    '--tool-dark': readableOn(color, '#09090b'),
+    '--tool': readableOn(color, '#ffffff', 5.5),
+    '--tool-dark': readableOn(color, '#09090b', 5.5),
   } as CSSProperties;
 }
 

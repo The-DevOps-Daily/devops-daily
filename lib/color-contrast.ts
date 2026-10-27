@@ -49,11 +49,11 @@ function contrast(
 }
 
 /**
- * A brand color adjusted to reach WCAG AA text contrast (4.5:1) on the given
- * background, keeping its hue: it is mixed toward white on a dark background
- * and toward black on a light one, only as far as needed.
+ * A brand color adjusted to reach WCAG AA text contrast (4.5:1 by default) on
+ * the given background, keeping its hue: it is mixed toward white on a dark
+ * background and toward black on a light one, only as far as needed.
  */
-export function readableOn(hex: string, background: string): string {
+export function readableOn(hex: string, background: string, minRatio = 4.5): string {
   const color = hexToRgb(hex)
   const bg = hexToRgb(background)
   if (!color || !bg) return hex
@@ -64,7 +64,7 @@ export function readableOn(hex: string, background: string): string {
       g: Math.round(color.g + (target - color.g) * t),
       b: Math.round(color.b + (target - color.b) * t),
     }
-    if (contrast(mixed, bg) >= 4.5) {
+    if (contrast(mixed, bg) >= minRatio) {
       return `#${[mixed.r, mixed.g, mixed.b].map((v) => v.toString(16).padStart(2, '0')).join('')}`
     }
   }

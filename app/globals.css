@@ -205,7 +205,7 @@
 .hljs-literal,
 .hljs-doctag,
 .hljs-regexp {
-  @apply text-green-600;
+  @apply text-green-700;
 }
 
 .hljs-title,
@@ -222,7 +222,7 @@
 .hljs-template-variable,
 .hljs-class .hljs-title,
 .hljs-type {
-  @apply text-orange-600;
+  @apply text-orange-700;
 }
 
 .hljs-symbol,
@@ -230,12 +230,12 @@
 .hljs-subst,
 .hljs-meta,
 .hljs-link {
-  @apply text-red-600;
+  @apply text-red-700;
 }
 
 .hljs-built_in,
 .hljs-deletion {
-  @apply text-cyan-600;
+  @apply text-cyan-700;
 }
 
 .hljs-emphasis {
