@@ -27,7 +27,7 @@ Many products rebuild their permissions three times: first roles, then teams, th
 2. **Cerbos** policy files, evaluated by a local Cerbos policy decision point (PDP).
 3. **SpiceDB**, an open source implementation of Google's [Zanzibar](https://research.google/pubs/zanzibar-googles-consistent-global-authorization-system/) design: a schema plus relationships.
 
-A hand-written table of 84 expected decisions checked all three at every step. Then we timed them on a Raspberry Pi 4 with 10,000 documents. The numbers describe this setup: a Pi, one request at a time, the app database in the same process. The ratios between the designs travel better than the milliseconds, but a network, a different database or other hardware can change them too.
+A hand-written table of 84 expected decisions checked all three at every step. Then we timed them on a Raspberry Pi 4 with 10,000 documents. The numbers describe this setup: a Pi, one request at a time, the app database in the same process. Both the milliseconds and the ratios between the designs belong to this setup; a network, a different database or other hardware can change either.
 
 What we found:
 
@@ -317,7 +317,7 @@ At the median, the in-process check (0.144 ms) was about 27 times faster than Ce
 - So for Cerbos, a request that does nothing already costs most of what a check costs. For SpiceDB on new checks, it is about a quarter of the 10.8 ms. We did not measure where the rest goes inside SpiceDB, and a `ReadSchema` call is only a reference point, not the same work as a check minus the graph.
 - SpiceDB's cache removes most of that difference. When the same 100 checks repeated, as they do when people reopen the same documents, its p50 dropped to 2.8 ms, close to the no-op call, while Cerbos stayed at 3.8 ms.
 
-One thing the chart hides: the if-statements' check runs up to four queries against SQLite in the same process. With Postgres across a network, each of those queries is a network round trip. The Cerbos design pays the same queries and the PDP call on top. The SpiceDB design reads nothing from the app database for a check. In a typical production layout, the gap between the in-process design and the engines will be smaller than it is here. We did not measure that layout.
+One thing the chart hides: the if-statements' check runs up to four queries against SQLite in the same process. With Postgres across a network, each of those queries is a network round trip. The Cerbos design pays the same queries and the PDP call on top. The SpiceDB design reads nothing from the app database for a check. In that layout the gap between the in-process design and the engines could be smaller than it is here. We did not measure it.
 
 One of 60,000 SpiceDB checks failed with `UNAVAILABLE: Stream closed with error code NGHTTP2_REFUSED_STREAM`. SpiceDB closes client connections after 30 seconds by default (`--grpc-max-conn-age`), which is our best explanation, and the Node client did not retry it. We counted the failure and left it out of the timings. In production, give the client a retry policy for `UNAVAILABLE`.
 
@@ -456,13 +456,13 @@ In this repo the if-statements were the fastest design on every timing we took f
 The if-statements stop being enough when:
 
 - **More than one service or language needs the same answer.** Copying the rules into each one is how they drift apart.
-- **People outside the team need to read or change the rules,** for example a security review of what contractors can see. A policy file or a schema is something they can review. A SQL `UNION` inside a JavaScript function is not.
+- **People outside the team need to read or change the rules,** for example a security review of what contractors can see. A separate policy file or schema may be easier for them to review than a SQL `UNION` inside a JavaScript function, depending on what they already read.
 - **You need a record of decisions.** Cerbos can write [decision logs](https://docs.cerbos.dev/cerbos/latest/configuration/audit) (off by default, and off in our runs). Homemade code has none unless you build it.
 - **The relationships nest,** such as folders inside folders or groups inside groups. Walking a graph is what SpiceDB is built for, and it is awkward to write and to index in SQL. Our model has no nesting, so this test does not cover it.
 
 ## The hosted options
 
-You do not have to run either engine yourself. We did not test any of these, so this is only what their own documentation says they offer:
+Several companies offer managed authorization services or control planes for these engines. Some run the decision service for you; others manage policies while evaluation stays in your environment. We did not test any of them, so this is only what their own documentation says they offer:
 
 - **Cerbos Hub** is a control plane for the open source Cerbos PDP. Per its [docs](https://docs.cerbos.dev/cerbos-hub/), it tests, signs and distributes policy bundles to your PDPs, which keep running in your own network, and it offers an embedded PDP compiled to WebAssembly for evaluation in browsers, edge functions and other JavaScript environments.
 - **AuthZed** sells hosted SpiceDB. Per its [docs](https://authzed.com/docs/authzed/guides/picking-a-product), AuthZed Cloud is a self-service platform with usage-based pricing, and AuthZed Dedicated is a private deployment in the cloud provider and regions you choose. For lists too large for LookupResources, its [list guide](https://authzed.com/docs/spicedb/modeling/protecting-a-list-endpoint) describes AuthZed Materialize, which keeps a local, denormalized copy of user permissions so that filtering becomes a JOIN.
