@@ -1,391 +1,441 @@
 ---
 title: 'Essential FinOps Tools for DevOps Teams'
-description: 'Explore cloud-native and third-party tools that help DevOps teams implement effective cost monitoring, optimization, and governance.'
+description: 'Native cost tools on AWS, Azure and Google Cloud, FOCUS exports with DuckDB, Infracost, OpenCost and Cloud Custodian, and how to pick the ones you need.'
 order: 3
 ---
 
-The right tools make FinOps implementation practical and sustainable for DevOps teams. This section covers both cloud-native cost management tools and specialized third-party solutions that integrate well with existing DevOps workflows.
+**TLDR**: Start with what your cloud already gives you: a cost explorer, budgets, anomaly detection, right-sizing recommendations and a detailed billing export, now available in the FOCUS format on AWS, Azure and Google Cloud. Add Infracost to see the cost of a Terraform change before it merges, OpenCost (or Kubecost) to split Kubernetes node costs by namespace, and Cloud Custodian to find and clean up idle resources on a schedule. Buy a commercial platform when you need multi-cloud allocation rules and dashboards for people who do not write SQL.
 
-## Cloud-Native Cost Management Tools
+Each tool answers a different question at a different moment: before a change merges, while resources run, or after the bill arrives.
 
-Every major cloud provider offers built-in cost management tools. These form the foundation of your FinOps toolkit and provide direct integration with cloud services.
-
-Before diving into these tools, it's worth understanding the pricing landscape. When evaluating instance costs across providers, [Vantage's instance comparison tool](https://instances.vantage.sh/) provides an excellent resource for comparing pricing, specifications, and availability across AWS, Azure, and GCP. This becomes invaluable when making right-sizing decisions or evaluating multi-cloud strategies.
-
-### AWS Cost Management Suite
-
-AWS provides several interconnected tools for cost visibility and control:
-
-**AWS Cost Explorer** offers detailed cost analysis and forecasting capabilities:
-
-```bash
-# Get cost breakdown by service for the last 30 days
-aws ce get-cost-and-usage \
-  --time-period Start=2025-01-01,End=2025-01-31 \
-  --granularity MONTHLY \
-  --metrics BlendedCost,UsageQuantity \
-  --group-by Type=DIMENSION,Key=SERVICE \
-  --output table
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "plan", "label": "Terraform plan", "sub": "pull request", "icon": "branch", "tone": "slate" },
+      { "id": "res", "label": "Running resources", "sub": "cloud accounts", "icon": "server", "tone": "slate" },
+      { "id": "k8s", "label": "Kubernetes", "sub": "nodes and pods", "icon": "k8s", "tone": "slate" },
+      { "id": "bill", "label": "Billing export", "sub": "FOCUS files", "icon": "database", "tone": "slate" }
+    ],
+    [
+      { "id": "infracost", "label": "Infracost", "sub": "cost of the change", "icon": "gear", "tone": "amber", "detail": "Prices the resources in a Terraform change and posts the monthly difference on the pull request (Part 5)." },
+      { "id": "c7n", "label": "Cloud Custodian", "sub": "policies on resources", "icon": "shield", "tone": "violet", "detail": "Finds idle, untagged or oversized resources and reports, tags, stops or deletes them on a schedule." },
+      { "id": "opencost", "label": "OpenCost", "sub": "cost per namespace", "icon": "pod", "tone": "blue", "detail": "Splits node costs by namespace, workload and label, and compares requests with real usage." },
+      { "id": "sql", "label": "DuckDB, Athena, BigQuery", "sub": "SQL on the bill", "icon": "activity", "tone": "green", "detail": "Showback, tag coverage and unit costs from the provider's FOCUS export." }
+    ],
+    [
+      { "id": "review", "label": "Code review", "icon": "check", "tone": "green" },
+      { "id": "owners", "label": "Resource owners", "icon": "activity", "tone": "green" },
+      { "id": "teams", "label": "Teams and finance", "icon": "globe", "tone": "green" }
+    ]
+  ],
+  "edges": [
+    ["plan", "infracost"],
+    ["res", "c7n"],
+    ["k8s", "opencost"],
+    ["bill", "sql"],
+    ["infracost", "review", "PR comment"],
+    ["c7n", "owners", "report or action"],
+    ["opencost", "owners", "right-sizing"],
+    ["sql", "teams", "showback"]
+  ]
+}
 ```
 
-**AWS Budgets** enables proactive cost control through automated alerts:
+## Prerequisites
 
-```json
+- `focus.duckdb` from [Part 1](/guides/finops-for-devops-engineers/01-principles).
+- For Cloud Custodian: Python 3 with `venv`.
+- For OpenCost: Docker, [kind](https://kind.sigs.k8s.io/), `kubectl` and Helm, to run it on a local cluster, plus `jq` and `column` to format its API output (`column` comes with util-linux on Linux and with macOS).
+
+## Native Tools on Each Cloud
+
+Every major provider has the same set of built-in tools under different names:
+
+| Job                   | AWS                                      | Azure                                           | Google Cloud                                |
+| --------------------- | ---------------------------------------- | ----------------------------------------------- | ------------------------------------------- |
+| Explore costs         | Cost Explorer                            | Cost Management cost analysis                   | Cloud Billing reports                       |
+| Budgets and alerts    | AWS Budgets                              | Cost Management budgets                         | Cloud Billing budgets                       |
+| Anomaly detection     | Cost Anomaly Detection                   | Cost Management anomaly alerts                  | Cloud Billing anomalies                     |
+| Right-sizing and idle | Cost Optimization Hub, Compute Optimizer | Azure Advisor                                   | Recommender                                 |
+| Detailed billing data | Data Exports (CUR 2.0, FOCUS 1.2) to S3  | Exports (cost and usage, FOCUS) to Blob Storage | Billing export and FOCUS export to BigQuery |
+| Estimates             | AWS Pricing Calculator                   | Azure pricing calculator                        | Google Cloud Pricing Calculator             |
+
+Most of this costs nothing, with a few exceptions worth knowing on AWS: the Cost Explorer API charges USD 0.01 per request (scripts that loop over accounts and days add up), hourly and resource-level granularity in Cost Explorer is billed per usage record, and AWS Budgets monitoring is free, but action-enabled budgets beyond the first two cost USD 0.10 a day each and emailed budget reports USD 0.01 each. See the [Cost Explorer](https://aws.amazon.com/aws-cost-management/aws-cost-explorer/pricing/) and [Budgets](https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/) pricing pages.
+
+Three things to turn on in the first week, on any cloud:
+
+1. **Budgets with alerts** for every account, project or subscription, sent to the team that owns it. [Part 4](/guides/finops-for-devops-engineers/04-practical-examples) creates them in Terraform for all three clouds.
+2. **Anomaly detection.** On AWS, enabling Cost Explorer sets up an anomaly monitor for all services; add monitors per team or service, created in the management account (tag-based monitors can only be created there), and route the alerts to the owners' channel. Google Cloud's anomaly detection needs no setup, but only works for projects with at least six months of spend history.
+3. **The detailed billing export**, in FOCUS format where you can. The consoles are good for questions you already know; the export answers the rest with SQL.
+
+The AWS CLI shows the anomalies AWS found and the monitors that watch for them:
+
+```bash
+aws ce get-anomaly-monitors \
+  --query 'AnomalyMonitors[].[MonitorName,MonitorType,MonitorDimension]' --output text
+
+aws ce get-anomalies --date-interval StartDate=2026-10-01,EndDate=2026-10-27 \
+  --query 'Anomalies[].[AnomalyStartDate,DimensionValue,Impact.TotalImpact]' --output text
+```
+
+Each `aws ce` call is one paid API request, so run these by hand or from a daily job, not in a tight loop.
+
+## Billing Exports and FOCUS
+
+The consoles answer the questions their designers expected. For anything else, such as tag coverage, showback with your own allocation rules, or unit costs that join billing data with business metrics, you need the raw billing data:
+
+- **AWS**: create a Data Exports export with the **FOCUS 1.2 with AWS columns** table, delivered to S3 as Parquet and refreshed during the month. Query it with Athena, or with DuckDB straight from S3.
+- **Azure**: create a Cost Management export with the **Cost and usage details (FOCUS)** dataset, in CSV or Parquet, to a storage account. Pay-as-you-go (MOSP) billing scopes cannot export FOCUS data.
+- **Google Cloud**: enable the FOCUS export to BigQuery, a linked dataset next to the standard billing export (in preview in October 2026).
+
+Because the columns are the same, one query covers every provider. With the sample from Part 1, these are the five largest usage charges by provider, service and service category:
+
+```sql
+-- The five largest usage charges by provider, service and service category.
+SELECT ProviderName AS provider,
+       ServiceName AS service,
+       ServiceCategory AS category,
+       round(sum(BilledCost), 2) AS billed_usd
+FROM focus
+WHERE lower(ChargeCategory) = 'usage'
+GROUP BY ALL
+ORDER BY billed_usd DESC
+LIMIT 5;
+```
+
+```bash
+duckdb focus.duckdb -f focus/top-services.sql
+```
+
+```text
+┌───────────┬──────────────────────────────┬───────────┬────────────┐
+│ provider  │           service            │ category  │ billed_usd │
+│  varchar  │           varchar            │  varchar  │   double   │
+├───────────┼──────────────────────────────┼───────────┼────────────┤
+│ AWS       │ Amazon Elastic Compute Cloud │ Compute   │    1660.03 │
+│ Microsoft │ Virtual Machines             │ Compute   │     168.24 │
+│ Microsoft │ Azure SQL Database           │ Databases │     149.04 │
+│ Microsoft │ SQL Database                 │ Other     │     108.73 │
+│ AWS       │ Amazon Elastic Compute Cloud │ Storage   │      96.98 │
+└───────────┴──────────────────────────────┴───────────┴────────────┘
+```
+
+Amazon EC2 appears twice because FOCUS splits it into compute and storage (EBS volumes are billed under EC2). Look at the third and fourth rows too: the Azure data reports SQL Database under two names and in two categories (`Databases` and `Other`). FOCUS fixes the column names, not the values each provider puts in them, so check the values for the services you report on and map them once in a view, as Part 2 did for tags.
+
+Check one more thing before you point these queries at your own export: the type of the `Tags` column. In the CSV sample it is a JSON string, read with `json_extract_string(Tags, '$.service')`. In AWS's FOCUS 1.2 export it is a `map<string, string>`, so in DuckDB you write `Tags['service']` instead.
+
+## Estimating Before You Deploy: Infracost
+
+[Infracost](https://www.infracost.io/) reads Terraform (also Terragrunt and CloudFormation), prices each resource with the provider's public prices and shows the monthly cost of a change. It is the most common way to put cost into a pull request.
+
+Infracost changed in 2026, and older tutorials no longer match:
+
+- The **current CLI** is version 2 ([infracost/cli](https://github.com/infracost/cli), v2.18.2 on 22 October 2026). You log in with `infracost auth login` (or set `INFRACOST_CLI_AUTHENTICATION_TOKEN` in CI) and run `infracost scan` on a directory.
+- **In pull requests**, Infracost recommends its GitHub App; the GitHub Actions alternative is `infracost/actions` v5 (`diff` and `scan`), which runs the `ghcr.io/infracost/ci` image. [Part 5](/guides/finops-for-devops-engineers/05-cicd-integration) sets it up.
+- The **older CLI** (`infracost breakdown`, `infracost diff`, `infracost comment`, v0.10.47 on 21 October 2026) still gets releases, and the v3 `setup` action still installs it, but new integrations should use the v2 tools.
+- Every option needs an Infracost account. The [free plan](https://www.infracost.io/pricing/) covers 1,000 runs a month; paid plans add guardrails, budgets, custom price books and FinOps policies that block a pull request.
+
+An estimate covers prices that Terraform can see: instance hours, provisioned storage, load balancer hours. Usage-based charges, such as data transfer, requests and log volume, depend on traffic that is not in the code, so treat the estimate as the fixed part of the bill.
+
+## Kubernetes: OpenCost and Kubecost
+
+A Kubernetes bill shows nodes. To know what each team's workloads cost, a tool has to split each node's price by the CPU, memory and storage that pods request or use. Two tools do this:
+
+- **[OpenCost](https://opencost.io/)**, an open source CNCF project (incubating since October 2024). It allocates costs by cluster, node, namespace, controller, pod and label, prices nodes from the AWS, Azure or Google Cloud billing APIs (or from your own prices on premises) and compares requests with usage. Recent releases can run without Prometheus, using a built-in collector.
+- **IBM Kubecost**, the commercial product OpenCost came from (IBM acquired Kubecost in 2024). Kubecost 3.0, released in October 2025, replaced its Prometheus dependency with a lighter agent.
+
+This run installs OpenCost on a local kind cluster with two example workloads from the companion repository: `checkout-api` requests 500m CPU and 512 MiB per replica and sits idle, and `report-builder` requests 100m CPU but runs a busy loop with a 400m limit.
+
+```yaml
+# checkout-api reserves far more CPU and memory than it uses.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: checkout
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-api
+  namespace: checkout
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: checkout-api
+  template:
+    metadata:
+      labels:
+        app: checkout-api
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.30.6-alpine
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              memory: 512Mi
+---
+# report-builder uses more CPU than it requests.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: reports
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report-builder
+  namespace: reports
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: report-builder
+  template:
+    metadata:
+      labels:
+        app: report-builder
+    spec:
+      containers:
+        - name: builder
+          image: busybox:1.38.0
+          command: ['sh', '-c', 'while true; do :; done']
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 400m
+              memory: 64Mi
+```
+
+The Helm values turn on the collector and turn off the web UI:
+
+```yaml
+# OpenCost without Prometheus: the collector data source scrapes the
+# cluster itself. Without a cloud provider (kind), OpenCost uses its
+# default prices; set customPricing for your own rates.
+opencost:
+  exporter:
+    defaultClusterId: kind-finops
+    collectorDataSource:
+      enabled: true
+      scrapeInterval: 30s
+  ui:
+    enabled: false
+```
+
+Create the cluster, install the chart and the workloads, and forward the API port:
+
+```bash
+kind create cluster --config opencost/kind.yaml --wait 180s
+```
+
+```terminal
 {
-  "BudgetName": "DevOps-Team-Monthly-Budget",
-  "BudgetLimit": {
-    "Amount": "5000",
-    "Unit": "USD"
-  },
-  "TimeUnit": "MONTHLY",
-  "BudgetType": "COST",
-  "CostFilters": {
-    "TagKey": ["Team"],
-    "TagValue": ["DevOps"]
-  },
-  "NotificationsWithSubscribers": [
+  "title": "Install OpenCost",
+  "prompt": "$",
+  "steps": [
     {
-      "Notification": {
-        "NotificationType": "ACTUAL",
-        "ComparisonOperator": "GREATER_THAN",
-        "Threshold": 80,
-        "ThresholdType": "PERCENTAGE"
-      },
-      "Subscribers": [
-        {
-          "SubscriptionType": "EMAIL",
-          "Address": "devops-team@company.com"
-        }
-      ]
+      "cmd": "helm repo add opencost https://opencost.github.io/opencost-helm-chart",
+      "output": "\"opencost\" has been added to your repositories"
+    },
+    {
+      "cmd": "helm install opencost opencost/opencost --version 2.5.33 --namespace opencost --create-namespace --values opencost/values.yaml --wait --timeout 5m",
+      "output": "NAME: opencost\nLAST DEPLOYED: Tue Oct 27 09:12:04 2026\nNAMESPACE: opencost\nSTATUS: deployed\nREVISION: 1\nDESCRIPTION: Install complete\nTEST SUITE: None"
+    },
+    {
+      "cmd": "kubectl apply -f opencost/workloads.yaml",
+      "output": "namespace/checkout created\ndeployment.apps/checkout-api created\nnamespace/reports created\ndeployment.apps/report-builder created"
+    },
+    {
+      "cmd": "kubectl get pods -n opencost",
+      "output": "NAME                        READY   STATUS    RESTARTS   AGE\nopencost-74f98f8784-pqngx   1/1     Running   0          18s"
+    },
+    {
+      "cmd": "kubectl -n opencost port-forward service/opencost 9003:9003 > /dev/null 2>&1 &"
     }
   ]
 }
 ```
 
-**AWS Cost Anomaly Detection** uses machine learning to identify unusual spending patterns:
+Give the collector some time to gather data. After about 20 minutes, ask the allocation API for the last hour per namespace, and turn the JSON into a table with `jq`:
 
 ```bash
-# Create an anomaly detector for your services
-aws ce create-anomaly-detector \
-  --anomaly-detector AnomalyDetectorArn=string,DimensionKey=SERVICE \
-  --dimension-specifications Dimension=SERVICE,Key=EC2-Instance,MatchOptions=EQUALS
+curl -s 'http://localhost:9003/allocation?window=1h&aggregate=namespace&accumulate=true' | jq -r '["NAMESPACE", "MINUTES", "CPU_REQ", "CPU_USED", "RAM_REQ_MIB", "RAM_USED_MIB", "COST_USD"], (.data[0][] | [.name, .minutes, .cpuCoreRequestAverage, (.cpuCoreUsageAverage * 1000 | round / 1000), (.ramByteRequestAverage / 1048576 | round), (.ramByteUsageAverage / 1048576 | round), .totalCost]) | @tsv' | column -t
 ```
 
-### Azure Cost Management
-
-Azure Cost Management provides comprehensive cost tracking and optimization recommendations:
-
-```bash
-# Azure CLI command to get cost analysis
-az consumption usage list \
-  --billing-period-name "202501" \
-  --top 10 \
-  --output table
+```text
+NAMESPACE           MINUTES   CPU_REQ  CPU_USED  RAM_REQ_MIB  RAM_USED_MIB  COST_USD
+checkout            19.5      1        0         1024         9             0.01165
+kube-system         19.86667  0.95     0.051     290          419           0.0108
+local-path-storage  19.86667  0        0         0            11            0.00002
+opencost            19.86667  0.01     0.001     55           60            0.00019
+reports             19.5      0.1      0.397     64           0             0.00409
 ```
 
-**Budget creation in Azure:**
+The prices are OpenCost's defaults for a cluster without a cloud provider (USD 0.031611 per CPU-hour and USD 0.004237 per GiB-hour of memory, from its `configs/default.json`), so the dollar amounts are tiny; the shares are what matter:
 
-```bash
-# Create a budget with email notifications
-az consumption budget create \
-  --budget-name "DevOps-Monthly-Budget" \
-  --amount 5000 \
-  --time-grain Monthly \
-  --time-period start-date="2025-01-01" end-date="2025-12-31" \
-  --notifications \
-    notification-enabled=true \
-    notification-operator=GreaterThan \
-    notification-threshold=80 \
-    contact-emails="devops-team@company.com"
-```
+- **`checkout` reserves capacity it does not use.** It requests one CPU and 1,024 MiB and uses almost no CPU and 9 MiB, yet it is the largest line: USD 0.01165 of the USD 0.02675 allocated to these namespaces. (The query leaves out idle node capacity; OpenCost reports it as an `__idle__` line when you add `includeIdle=true`, which you need to reconcile the allocation with the node bill.) OpenCost charges a workload for the larger of what it requests and what it uses, because a request blocks that capacity for everyone else. Lowering the requests is the right-sizing fix.
+- **`report-builder` uses about four times its CPU request** (0.397 against 0.1, capped by its 0.4 limit), and its cost follows its usage. The scheduler only reserves 0.1 CPU for it, so on a busy node it competes for CPU it never reserved. Raise its request to what it uses.
+- **`kube-system` uses more memory than it requests**, which is common for system pods.
 
-### Google Cloud Billing and Cost Management
+On a real cluster, set the cloud provider integration (or `customPricing` with your node prices) and watch requests against usage per namespace over a few weeks before you change requests.
 
-GCP's cost management tools focus on detailed billing analysis and budget controls:
+Delete the cluster when you are done: `kind delete cluster --name finops`.
 
-```bash
-# Export billing data to BigQuery for analysis
-gcloud billing accounts list
+## Policies on Running Resources: Cloud Custodian
 
-# Set up budget alerts
-gcloud alpha billing budgets create \
-  --billing-account=0X0X0X-0X0X0X-0X0X0X \
-  --display-name="DevOps Team Budget" \
-  --budget-amount=5000USD \
-  --threshold-rules-percent=50,90 \
-  --threshold-rules-basis=CURRENT_SPEND \
-  --notification-channels="projects/PROJECT_ID/notificationChannels/CHANNEL_ID"
-```
+[Cloud Custodian](https://cloudcustodian.io/) (a CNCF incubating project since 2022) runs YAML policies against your cloud accounts. Each policy picks a resource type, filters it and optionally acts: tag, notify, stop or delete. It turns the one-off checks from Part 2 into a scheduled job.
 
-## Specialized Third-Party FinOps Tools
-
-While cloud-native tools provide a foundation, specialized tools often offer better integration with DevOps workflows and more advanced optimization capabilities.
-
-### Infracost: Cost Estimation in CI/CD
-
-Infracost shows the cost impact of infrastructure changes before deployment, making it invaluable for DevOps teams using infrastructure as code.
-
-**Installation and basic usage:**
-
-```bash
-# Install Infracost
-curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-
-# Generate cost estimate for Terraform
-infracost breakdown --path terraform/ --format table
-```
-
-**Integration with GitHub Actions:**
+These policies find the leftovers from Part 2 and give instances without an `owner` tag a four-day grace period before they are stopped:
 
 ```yaml
-name: Infracost
-on: [pull_request]
-
-jobs:
-  infracost:
-    runs-on: ubuntu-latest
-    name: Show cost estimate
-    steps:
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v2
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Checkout base branch
-        uses: actions/checkout@v3
-        with:
-          ref: '${{ github.event.pull_request.base.ref }}'
-
-      - name: Generate Infracost cost estimate baseline
-        run: |
-          infracost breakdown --path=terraform \
-                              --format=json \
-                              --out-file=/tmp/infracost-base.json
-
-      - name: Checkout PR branch
-        uses: actions/checkout@v3
-
-      - name: Generate Infracost diff
-        run: |
-          infracost diff --path=terraform \
-                        --format=json \
-                        --compare-to=/tmp/infracost-base.json \
-                        --out-file=/tmp/infracost.json
-
-      - name: Post Infracost comment
-        run: |
-          infracost comment github --path=/tmp/infracost.json \
-                                   --repo=$GITHUB_REPOSITORY \
-                                   --github-token=${{ github.token }} \
-                                   --pull-request=${{ github.event.pull_request.number }} \
-                                   --behavior=update
-```
-
-### Kubecost: Kubernetes Cost Monitoring
-
-For teams running workloads on Kubernetes, Kubecost provides granular cost allocation and optimization recommendations.
-
-**Installation via Helm:**
-
-```bash
-# Add Kubecost Helm repository
-helm repo add kubecost https://kubecost.github.io/cost-model/
-
-# Install Kubecost
-helm install kubecost kubecost/cost-analyzer \
-  --namespace kubecost \
-  --create-namespace \
-  --set global.prometheus.enabled=false \
-  --set global.grafana.enabled=false
-```
-
-**Cost allocation by namespace:**
-
-```bash
-# Query costs via Kubecost API
-curl -G "http://localhost:9090/model/allocation" \
-  -d window=today \
-  -d aggregate=namespace \
-  -d accumulate=false
-```
-
-**Example Kubecost configuration for cost allocation:**
-
-```yaml
-# kubecost-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kubecost-cost-model-config
-  namespace: kubecost
-data:
-  CLOUD_PROVIDER_API_KEY: 'YOUR_CLOUD_PROVIDER_KEY'
-  CLUSTER_ID: 'production-cluster'
-  # Configure custom pricing for on-premises
-  CPU_COST_PER_CORE_HOUR: '0.031'
-  RAM_COST_PER_GB_HOUR: '0.004'
-  # Set allocation method
-  ALLOCATION_NODE_SPLIT: 'true'
-```
-
-### Vantage: Multi-Cloud Cost Management
-
-Vantage provides unified cost visibility across multiple cloud providers, useful for organizations with multi-cloud strategies.
-
-**Key features for DevOps teams:**
-
-- Automated cost anomaly detection
-- Integration with Slack and other communication tools
-- Custom dashboards for team-specific cost tracking
-- API access for programmatic cost management
-
-```bash
-# Example API call to get cost data
-curl -H "Authorization: Bearer YOUR_API_TOKEN" \
-  "https://api.vantage.sh/v1/costs?provider=aws&start_date=2025-01-01&end_date=2025-01-31"
-```
-
-### CloudZero: Real-Time Cost Intelligence
-
-CloudZero focuses on real-time cost attribution and provides automated cost allocation without manual tagging.
-
-**Features particularly valuable for DevOps:**
-
-- Automatic cost attribution using telemetry data
-- Integration with CI/CD pipelines for cost tracking
-- Real-time alerts for cost anomalies
-- Cost impact analysis for feature releases
-
-### Harness Cloud Cost Management
-
-Harness integrates cost management with deployment pipelines, providing cost insights as part of the deployment process.
-
-**Pipeline integration example:**
-
-```yaml
-# Harness pipeline step for cost validation
-- step:
-    type: Plugin
-    name: Cost Gate
-    identifier: cost_gate
-    spec:
-      connectorRef: harness_ccm
-      image: harness/cost-gate:latest
-      settings:
-        cost_threshold: 500
-        time_period: 30d
-        resource_filter: 'environment:production'
-```
-
-## Open Source Cost Management Tools
-
-Several open source tools provide cost management capabilities that integrate well with DevOps workflows.
-
-### Cloud Custodian: Policy-Based Resource Management
-
-Cloud Custodian enables automated policy enforcement for cost optimization:
-
-```yaml
-# custodian-policy.yml
 policies:
-  - name: terminate-unused-instances
-    resource: ec2
+  - name: ebs-unattached
+    resource: aws.ebs
+    description: EBS volumes that are not attached to any instance.
     filters:
-      - 'State.Name': running
-      - type: metrics
-        name: CPUUtilization
-        days: 7
-        value: 5
-        op: less-than
-    actions:
-      - type: terminate
+      - State: available
 
-  - name: stop-after-hours
-    resource: ec2
+  - name: eip-unassociated
+    resource: aws.network-addr
+    description: Elastic IP addresses that are allocated but not associated.
     filters:
-      - 'State.Name': running
-      - type: offhour
-        tag: Schedule
-        default_tz: EST
-        offhour: 19
+      - AssociationId: absent
+
+  # Marks running instances without an owner tag once; the stop date is
+  # four days after the first run that finds them.
+  - name: ec2-missing-owner-mark
+    resource: aws.ec2
+    description: Running instances without an owner tag get a stop date.
+    filters:
+      - State.Name: running
+      - 'tag:owner': absent
+      - 'tag:c7n-missing-owner': absent
+    actions:
+      - type: mark-for-op
+        tag: c7n-missing-owner
+        op: stop
+        days: 4
+
+  # Stops marked instances whose date has passed and that still have no owner.
+  - name: ec2-missing-owner-stop
+    resource: aws.ec2
+    description: Stops instances whose grace period ended without an owner tag.
+    filters:
+      - State.Name: running
+      - 'tag:owner': absent
+      - type: marked-for-op
+        tag: c7n-missing-owner
+        op: stop
     actions:
       - stop
 ```
 
-**Running Cloud Custodian policies:**
+Install it in a virtual environment:
 
 ```bash
-# Validate policy
-custodian validate custodian-policy.yml
-
-# Run in dry-run mode
-custodian run --dryrun custodian-policy.yml -s output/
-
-# Execute the policy
-custodian run custodian-policy.yml -s output/
+python3 -m venv .venv
+. .venv/bin/activate
+pip install c7n==0.9.53.0
 ```
 
-### Komiser: Cloud Resource Discovery and Cost Analysis
+Then check the version and validate the policy file:
 
-Komiser provides open source infrastructure discovery and cost analysis:
+```terminal
+{
+  "title": "Validate the policies",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "custodian version",
+      "output": "0.9.53"
+    },
+    {
+      "cmd": "custodian validate custodian/cost.yml",
+      "output": "2026-10-27 09:11:46,975: custodian.commands:INFO Configuration valid: custodian/cost.yml"
+    }
+  ]
+}
+```
+
+A dry run applies the filters and records what matched, but takes no action. Here it ran against [moto](https://github.com/getmoto/moto), a local AWS emulator, seeded with two detached volumes, one unused Elastic IP and one running instance without an `owner` tag (`custodian/seed-moto.py`). Against your account, run the same command with read-only credentials:
+
+```terminal
+{
+  "title": "Dry run and report",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "custodian run --dryrun -s out custodian/cost.yml",
+      "output": "2026-10-27 09:11:51,876: custodian.policy:INFO policy:ebs-unattached resource:aws.ebs region:us-east-1 count:2 time:0.13\n2026-10-27 09:11:51,889: custodian.policy:INFO policy:eip-unassociated resource:aws.network-addr region:us-east-1 count:1 time:0.01\n2026-10-27 09:11:51,905: custodian.policy:INFO policy:ec2-missing-owner-mark resource:aws.ec2 region:us-east-1 count:1 time:0.01\n2026-10-27 09:11:51,906: custodian.policy:INFO policy:ec2-missing-owner-stop resource:aws.ec2 region:us-east-1 count:0 time:0.00"
+    },
+    {
+      "cmd": "custodian report -s out custodian/cost.yml -p ebs-unattached --format grid",
+      "output": "+-----------------------+-----------------------------+--------+--------------+------------+\n| VolumeId              | Attachments[0].InstanceId   |   Size | VolumeType   | KmsKeyId   |\n+=======================+=============================+========+==============+============+\n| vol-2f3a2c57ab5d1cbf5 |                             |     20 | gp3          |            |\n+-----------------------+-----------------------------+--------+--------------+------------+\n| vol-4b458d2516a5f4c77 |                             |    100 | gp3          |            |\n+-----------------------+-----------------------------+--------+--------------+------------+"
+    },
+    {
+      "cmd": "custodian report -s out custodian/cost.yml -p eip-unassociated --format grid",
+      "output": "+----------------------------+----------------+\n| AllocationId               | PublicIp       |\n+============================+================+\n| eipalloc-d8aa29fabdeafb9e1 | 127.109.87.177 |\n+----------------------------+----------------+"
+    }
+  ]
+}
+```
+
+The first three policies found what was seeded: two volumes (20 and 100 GB), one address and one instance without an owner. The stop policy found nothing, because a dry run marks nothing. To repeat the run without an AWS account, start moto in the same virtual environment and point the AWS SDK at it:
 
 ```bash
-# Install Komiser
-wget https://github.com/mlabouardy/komiser/releases/download/2.10.0/komiser_2.10.0_Linux_x86_64.tar.gz
-tar -xzf komiser_2.10.0_Linux_x86_64.tar.gz
-
-# Configure for AWS
-export AWS_ACCESS_KEY_ID="YOUR_ACCESS_KEY"
-export AWS_SECRET_ACCESS_KEY="YOUR_SECRET_KEY"
-
-# Run Komiser
-./komiser start --config=config.toml
+pip install 'moto[server]==5.2.4'
+moto_server -p 5000 > moto.log 2>&1 &
+export AWS_ENDPOINT_URL=http://127.0.0.1:5000 AWS_ACCESS_KEY_ID=testing AWS_SECRET_ACCESS_KEY=testing AWS_DEFAULT_REGION=us-east-1
+python custodian/seed-moto.py
 ```
 
-**Komiser configuration:**
+Run `unset AWS_ENDPOINT_URL AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY` before you point Custodian at a real account. Without `--dryrun`, `ec2-missing-owner-mark` tags the instance with `c7n-missing-owner` and a stop date four days out. It marks each instance only once, because it skips instances that already carry the tag; without that filter, every daily run would push the date back. On a later run, `ec2-missing-owner-stop` stops the instance if the date has passed and it still has no `owner` tag. The gap gives the owner time to add the tag or object.
 
-```toml
-# config.toml
-[aws]
-source = "CREDENTIALS_FILE"
-regions = ["us-east-1", "us-west-2"]
-profile = "default"
+To run it for real:
 
-[slack]
-webhook = "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
-channel = "komiser"
+- Run it daily from a scheduled CI job or in Custodian's Lambda mode (`mode: periodic`), with an IAM role that can only do what the policies need.
+- Start with report-only policies and send the results to the owners (the `notify` action with c7n-mailer, or a ticket). Add actions once the reports are trusted.
+- Use `--region all`, or run per Region, so leftovers in a Region nobody looks at are found too.
 
-[cost]
-enabled = true
-currency = "USD"
-```
+## Commercial Platforms
 
-## Tool Selection Criteria
+When several clouds, many accounts, SaaS bills and finance users who do not write SQL are involved, a commercial platform saves building your own. Common choices include [Vantage](https://www.vantage.sh/), [CloudZero](https://www.cloudzero.com/), Harness Cloud Cost Management, IBM Cloudability, Finout and Flexera. They differ in allocation rules for shared costs, unit cost features, Kubernetes support and how they handle commitments. Run a trial with your own billing export before you choose.
 
-When choosing FinOps tools for your DevOps workflow, consider:
+Vantage also runs [instances.vantage.sh](https://instances.vantage.sh/), a free comparison of instance types and prices across AWS, Azure and Google Cloud that is handy for right-sizing decisions.
 
-**Integration Requirements:**
+## Choosing What You Need
 
-- Does it work with your existing CI/CD pipelines?
-- Can it integrate with your monitoring and alerting systems?
-- Does it support your infrastructure as code tools?
+Add tools in this order, and only when the previous step stops answering your questions:
 
-**Cost Model Support:**
+1. **Native tools and the FOCUS export** for every team. They cover visibility, budgets and anomalies at no or low cost.
+2. **Infracost** when infrastructure changes go through pull requests and nobody can say what a change will cost.
+3. **OpenCost or Kubecost** when Kubernetes is a large share of the bill and several teams share clusters.
+4. **Cloud Custodian** when the same cleanup comes up in every review and you want it enforced.
+5. **A commercial platform** when the reporting and allocation work takes more time than the tool would cost.
 
-- Does it understand your cloud provider's pricing models?
-- Can it handle reserved instances, savings plans, and spot pricing?
-- Does it account for enterprise discounts and credits?
+For any tool, ask: does it read your provider's billing export (and FOCUS)? Does it understand commitments and credits, or does it only use list prices? Does it fit into pull requests and chat, where engineers already work? And who will look at it every week?
 
-**Automation Capabilities:**
+## Summary
 
-- Can it automatically optimize resources based on policies?
-- Does it provide API access for custom automation?
-- Can it integrate with your deployment processes?
+- Each cloud has a cost explorer, budgets, anomaly detection, recommendations and a detailed export; turn them on before buying anything.
+- AWS, Azure and Google Cloud export FOCUS data, so one SQL query covers all three, but check the values each provider writes.
+- Infracost puts the cost of a change in the pull request; its 2026 tools are CLI v2, the GitHub App and the v5 actions.
+- OpenCost splits Kubernetes node costs by namespace and shows how much of each request is used.
+- Cloud Custodian turns cleanup checks into scheduled, reviewable policies; start with reports and add actions later.
 
-**Team Workflow:**
+Next, [Part 4](/guides/finops-for-devops-engineers/04-practical-examples) builds the `checkout` service's tags, sizes, budget and anomaly alert in Terraform.
 
-- Does it fit your team's existing tools and processes?
-- Can it provide cost insights at the right time in your workflow?
-- Does it require significant process changes?
+## Keep Learning
 
-The best FinOps tool for your team balances functionality with workflow integration. Start with cloud-native tools for basic visibility, then add specialized tools as your FinOps practices mature.
+- [How to Set Up AWS Cost Explorer and Budgets for Teams](/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams)
+- [Right-Sizing Kubernetes Resources with VPA and Karpenter](/posts/right-sizing-kubernetes-resources-vpa-karpenter)
+- [Kubernetes 1.37 Really Can Flag Unused PVCs, but the Viral YAML Is Wrong](/posts/kubernetes-1-37-unused-pvc-condition)
+- [Cloud Cost Optimization Quiz](/quizzes/cloud-cost-optimization-quiz)

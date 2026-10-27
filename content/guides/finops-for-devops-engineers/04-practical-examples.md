@@ -1,635 +1,762 @@
 ---
-title: 'Practical FinOps Implementation Examples'
-description: 'Real-world examples of implementing FinOps practices including tagging strategies, cost tracking, and automated optimization workflows.'
+title: 'Practical FinOps: Tags, Budgets and Alerts as Code'
+description: 'Terraform for FinOps: a validated tag schema, the gaps in default_tags, environment sizes, office hours, budgets and an anomaly alert per service.'
 order: 4
 ---
 
-Theory becomes actionable when you see concrete examples. This section provides practical implementations you can adapt for your own infrastructure, covering tagging strategies, cost tracking automation, and optimization workflows.
+**TLDR**: Put cost controls in the same Terraform that creates the resources. Validate the tag values as variables, so a plan fails when the owner is missing. Apply them with the provider's `default_tags`, and add them by hand where `default_tags` does not reach: Auto Scaling groups and the instances and volumes they launch. Keep every environment's size in one map, run `dev` only in office hours, and give each environment a budget that alerts its team. In the management account, activate the tags for cost allocation, add an anomaly monitor per service, and enforce the tags across accounts with a tag policy and an SCP.
 
-## Implementing a Comprehensive Tagging Strategy
+This part builds the `infra/` directory of the companion repository: the `checkout` service of the `payments` team, with an Auto Scaling group, a PostgreSQL database and a budget, applied once per environment. The organization-wide pieces live in `management/`. Every plan below ran with Terraform 1.17.0 and the AWS provider 6.70.0.
 
-Effective cost attribution starts with consistent resource tagging. Without proper tags, you can't answer basic questions like "How much does our payment service cost?" or "Which team is driving our storage costs?"
+## Prerequisites
 
-A good tagging strategy serves multiple purposes:
+- Terraform 1.10 or later, and `jq`.
+- The companion repository from [Part 1](/guides/finops-for-devops-engineers/01-principles), with the repository root as your working directory.
+- To apply the code for real: an AWS account, and in the `env/*.tfvars` files your own AMI, subnets and DB subnet group instead of the placeholders.
 
-- **Financial tracking**: Allocate costs to the right teams and projects
-- **Operational management**: Identify resource owners and purposes
-- **Compliance**: Meet regulatory requirements for data classification
-- **Automation**: Enable automated policies based on resource metadata
+The runs in this part used mock credentials. The configuration reads nothing from AWS, so `terraform plan` needs no API calls, and a provider override with fake keys is enough. To follow along without an AWS account, copy it into both Terraform directories:
 
-### Designing Your Tag Schema
-
-Your tagging schema should answer key business questions while remaining simple enough for teams to implement consistently. Here's a production-ready framework:
-
-```terraform
-# terraform/modules/common/variables.tf
-variable "required_tags" {
-  description = "Tags required for all resources - these enable cost attribution"
-  type = object({
-    project      = string  # Which business project or product
-    environment  = string  # dev, staging, prod
-    team         = string  # Who owns this resource
-    cost_center  = string  # Where to allocate costs
-    owner        = string  # Primary contact (email)
-  })
-}
-
-variable "optional_tags" {
-  description = "Additional tags that provide operational context"
-  type = object({
-    backup_schedule = string  # How frequently to backup
-    monitoring      = string  # Monitoring level required
-    compliance      = string  # Compliance requirements
-    data_class      = string  # Data sensitivity level
-  })
-  default = {
-    backup_schedule = "daily"
-    monitoring      = "standard"
-    compliance      = "internal"
-    data_class      = "general"
-  }
-}
+```bash
+cp ci/mock_provider_override.tf infra/
+cp ci/mock_provider_override.tf management/
 ```
 
-This schema separates required tags (needed for basic cost management) from optional ones (useful for operations). The required tags answer "who pays for this and why?" while optional tags help with day-to-day management.
+:::warning
+Delete both copies (`rm infra/mock_provider_override.tf management/mock_provider_override.tf`) before you run Terraform with real credentials. With the override in place, Terraform uses the fake keys and skips the credential checks.
+:::
 
-### Automated Tag Enforcement
+## The Tag Schema
 
-Use terraform validation and cloud provider policies to enforce tagging:
+The schema follows the [cost allocation tags post](/posts/cloud-cost-allocation-tags-aws-gcp-azure): lowercase keys with hyphens, and values from a short list where possible.
 
-```terraform
-# terraform/modules/ec2/variables.tf
-variable "instance_tags" {
-  description = "Tags for EC2 instance"
-  type        = map(string)
+| Key           | Example                       | Used for                                       |
+| ------------- | ----------------------------- | ---------------------------------------------- |
+| `team`        | `payments`                    | Showback, budgets, who gets the alert          |
+| `service`     | `checkout`                    | Cost per service, budgets and anomaly monitors |
+| `environment` | `dev`, `staging`, `prod`      | Separating production from everything else     |
+| `cost-center` | `cc-1042`                     | Finance's chargeback                           |
+| `owner`       | `payments-oncall@example.com` | Who to ask before deleting something           |
+| `managed-by`  | `terraform`                   | Telling managed resources from hand-made ones  |
+
+Two rules matter more than the exact keys: everyone uses the same spelling, and Terraform refuses values outside the rules.
+
+## Validate the Tags in Terraform
+
+Each tag value is a variable with a `validation` block. The `environment` must come from the list, and the `owner` must be an email address:
+
+```hcl
+variable "environment" {
+  description = "Deployment environment."
+  type        = string
 
   validation {
-    condition = alltrue([
-      for required_tag in ["project", "environment", "team", "cost_center", "owner"] :
-      contains(keys(var.instance_tags), required_tag)
-    ])
-    error_message = "All instances must include required tags: project, environment, team, cost_center, owner."
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "environment must be one of: dev, staging, prod."
   }
-}
-
-# AWS Config Rule to detect untagged resources
-resource "aws_config_configuration_recorder" "main" {
-  name     = "cost-compliance-recorder"
-  role_arn = aws_iam_role.config.arn
-
-  recording_group {
-    all_supported = true
-  }
-}
-
-resource "aws_config_config_rule" "required_tags" {
-  name = "required-tags-compliance"
-
-  source {
-    owner             = "AWS"
-    source_identifier = "REQUIRED_TAGS"
-  }
-
-  input_parameters = jsonencode({
-    tag1Key   = "project"
-    tag2Key   = "environment"
-    tag3Key   = "team"
-    tag4Key   = "cost_center"
-    tag5Key   = "owner"
-  })
-
-  depends_on = [aws_config_configuration_recorder.main]
 }
 ```
 
-### Generating Actionable Cost Reports
+```hcl
+variable "owner" {
+  description = "Email address of the person or group to ask about these resources."
+  type        = string
 
-Once you have proper tagging in place, you can create reports that actually help teams make decisions. Rather than showing raw cost data, effective reports translate costs into metrics that engineers understand and can act upon.
+  validation {
+    condition     = can(regex("^[^@\\s]+@[^@\\s]+\\.[a-z]{2,}$", var.owner))
+    error_message = "owner must be an email address, for example payments-oncall@example.com."
+  }
+}
+```
 
-The goal is to answer questions like:
+Each environment keeps its own state in a Terraform workspace of the same name. Create `dev`, then try a plan with a bad value; it stops before Terraform creates anything (the `init` output is cut to its first lines):
 
-- "Is our new feature costing more than expected?"
-- "Which team should optimize their cloud usage first?"
-- "Are we getting good value from our current architecture?"
+```terminal
+{
+  "title": "A missing owner fails the plan",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "cd infra"
+    },
+    {
+      "cmd": "terraform init",
+      "output": "Initializing the backend...\n\nInitializing provider plugins...\n- Finding hashicorp/aws versions matching \"~> 6.70\"...\n- Installing hashicorp/aws v6.70.0...\n- Installed hashicorp/aws v6.70.0 (signed by HashiCorp)"
+    },
+    {
+      "cmd": "terraform workspace select -or-create dev",
+      "output": "Created and switched to workspace \"dev\"!\n\nYou're now on a new, empty workspace. Workspaces isolate their state,\nso if you run \"terraform plan\" Terraform will not see any existing state\nfor this configuration."
+    },
+    {
+      "cmd": "terraform plan -var-file=env/dev.tfvars -var owner=payments",
+      "output": "Planning failed. Terraform encountered an error while generating this plan.\n\n╷\n│ Error: Invalid value for variable\n│\n│   on variables.tf line 47:\n│   47: variable \"owner\" {\n│     ├────────────────\n│     │ var.owner is \"payments\"\n│\n│ owner must be an email address, for example payments-oncall@example.com.\n│\n│ This was checked by the validation rule at variables.tf:51,3-13.\n╵"
+    }
+  ]
+}
+```
 
-Here's how to build a cost allocation report that provides actionable insights:
+## Default Tags, and Where They Stop
 
-```python
-import boto3
-import pandas as pd
-from datetime import datetime, timedelta
+The provider's `default_tags` block puts the tags on every resource that supports tags, so nobody has to remember them:
 
-def generate_team_cost_report(team_name, days_back=30):
-    """Generate a cost report focused on actionable insights for a specific team"""
+```hcl
+provider "aws" {
+  region = var.region
 
-    ce_client = boto3.client('ce')
+  # Every resource that supports tags gets the cost allocation tags.
+  default_tags {
+    tags = local.cost_tags
+  }
+}
+```
 
-    # Get the date range for analysis
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
+The values come from one local map, so the schema lives in one place:
 
-    # Fetch cost data broken down by service
-    team_costs = ce_client.get_cost_and_usage(
-        TimePeriod={'Start': start_date, 'End': end_date},
-        Granularity='DAILY',
-        Metrics=['BlendedCost'],
-        Filter={
-            'Tags': {
-                'Key': 'team',
-                'Values': [team_name]
-            }
-        },
-        GroupBy=[{'Type': 'DIMENSION', 'Key': 'SERVICE'}]
-    )
+```hcl
+locals {
+  # The tag schema. Keys are lowercase with hyphens; activate them as cost allocation tags.
+  cost_tags = {
+    team          = var.team
+    service       = var.service
+    environment   = var.environment
+    "cost-center" = var.cost_center
+    owner         = var.owner
+    "managed-by"  = "terraform"
+  }
+```
 
-    # Process the data into actionable insights
-    insights = analyze_cost_patterns(team_costs, team_name)
+`default_tags` has two gaps that matter for cost:
 
-    return insights
+- The provider documentation says `default_tags` works on all resources that implement `tags`, [with the exception of `aws_autoscaling_group`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs#default_tags-configuration-block).
+- Terraform tags what it creates. Instances and volumes that an Auto Scaling group launches are created by AWS, not by Terraform, so they only get the tags in the launch template's `tag_specifications`. Without them, the biggest cost of the service shows up untagged.
 
-def analyze_cost_patterns(cost_data, team_name):
-    """Convert raw cost data into actionable insights"""
+The launch template and the Auto Scaling group close both gaps. The launch template also carries a precondition that ties the workspace to `var.environment`, so a plan with the `prod` variables cannot run against another environment's state:
 
-    total_cost = 0
-    service_breakdown = {}
-    daily_costs = []
+```hcl
+resource "aws_launch_template" "app" {
+  name_prefix   = "${local.name}-"
+  image_id      = var.ami_id
+  instance_type = local.instance_type
 
-    # Process each day's costs
-    for result in cost_data['ResultsByTime']:
-        day_total = 0
-        date = result['TimePeriod']['Start']
+  metadata_options {
+    http_tokens = "required"
+  }
 
-        for group in result['Groups']:
-            service = group['Keys'][0]
-            cost = float(group['Metrics']['BlendedCost']['Amount'])
+  block_device_mappings {
+    device_name = "/dev/xvda"
 
-            total_cost += cost
-            day_total += cost
-            service_breakdown[service] = service_breakdown.get(service, 0) + cost
+    ebs {
+      volume_size           = 20
+      volume_type           = "gp3"
+      encrypted             = true
+      delete_on_termination = true
+    }
+  }
 
-        daily_costs.append({'date': date, 'cost': day_total})
+  # default_tags tag the launch template itself, not the instances and
+  # volumes that the Auto Scaling group launches from it.
+  tag_specifications {
+    resource_type = "instance"
+    tags          = local.cost_tags
+  }
 
-    # Generate insights that teams can act on
-    insights = {
-        'team_name': team_name,
-        'period_days': len(daily_costs),
-        'total_cost': total_cost,
-        'average_daily_cost': total_cost / len(daily_costs) if daily_costs else 0,
-        'top_cost_drivers': get_top_cost_drivers(service_breakdown),
-        'optimization_opportunities': identify_optimization_opportunities(service_breakdown),
-        'cost_trend': calculate_cost_trend(daily_costs)
+  tag_specifications {
+    resource_type = "volume"
+    tags          = local.cost_tags
+  }
+
+  lifecycle {
+    # Plans for prod must run in the prod workspace, against prod's state.
+    # Preview workspaces (pr-<number>) use the dev settings.
+    precondition {
+      condition     = terraform.workspace == var.environment || (var.environment == "dev" && startswith(terraform.workspace, "pr-"))
+      error_message = "The workspace must match var.environment: run terraform workspace select ${var.environment}."
+    }
+  }
+}
+
+resource "aws_autoscaling_group" "app" {
+  name                = local.name
+  vpc_zone_identifier = var.subnet_ids
+  min_size            = local.size.min_size
+  max_size            = local.size.max_size
+
+  launch_template {
+    id      = aws_launch_template.app.id
+    version = aws_launch_template.app.latest_version
+  }
+
+  # A new launch template version (for example, a new instance type)
+  # replaces the running instances, starting the new ones before it
+  # stops the old ones.
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 100
+      max_healthy_percentage = 200
+    }
+  }
+
+  # The provider's default_tags skip aws_autoscaling_group, so tag it here.
+  dynamic "tag" {
+    for_each = local.cost_tags
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = false
+    }
+  }
+
+  lifecycle {
+    # Scaling policies and schedules change the desired capacity.
+    ignore_changes = [desired_capacity]
+  }
+}
+```
+
+Plan `dev`, save the plan, and check the tags that every launched instance and volume will carry (the plan's end is shown):
+
+```terminal
+{
+  "title": "Plan dev and check the launch tags",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform plan -var-file=env/dev.tfvars -out=dev.tfplan",
+      "output": "\nPlan: 9 to add, 0 to change, 0 to destroy.\n\n─────────────────────────────────────────────────────────────────────────────\n\nSaved the plan to: dev.tfplan\n\nTo perform exactly these actions, run the following command to apply:\n    terraform apply \"dev.tfplan\""
+    },
+    {
+      "cmd": "terraform show -json dev.tfplan | jq '.resource_changes[] | select(.address == \"aws_launch_template.app\") | .change.after.tag_specifications'",
+      "output": "[\n  {\n    \"resource_type\": \"instance\",\n    \"tags\": {\n      \"cost-center\": \"cc-1042\",\n      \"environment\": \"dev\",\n      \"managed-by\": \"terraform\",\n      \"owner\": \"payments-oncall@example.com\",\n      \"service\": \"checkout\",\n      \"team\": \"payments\"\n    }\n  },\n  {\n    \"resource_type\": \"volume\",\n    \"tags\": {\n      \"cost-center\": \"cc-1042\",\n      \"environment\": \"dev\",\n      \"managed-by\": \"terraform\",\n      \"owner\": \"payments-oncall@example.com\",\n      \"service\": \"checkout\",\n      \"team\": \"payments\"\n    }\n  }\n]"
+    }
+  ]
+}
+```
+
+## Activate the Tags for Cost Allocation
+
+AWS does not use resource tags in billing until you activate them as **cost allocation tags**. With AWS Organizations, that happens in the management account, which is also the only account that can create tag-based anomaly monitors. The `management/` directory of the companion repository holds those organization-wide pieces. Its first resource activates the schema's keys:
+
+```hcl
+# Billing ignores resource tags until they are activated for cost allocation.
+resource "aws_ce_cost_allocation_tag" "cost_tags" {
+  for_each = toset(["team", "service", "environment", "cost-center", "owner"])
+
+  tag_key = each.value
+  status  = "Active"
+}
+```
+
+A tag key can only be activated after billing has seen it on a resource, and activation can take up to 24 hours to show in Cost Explorer. Without Terraform, the AWS CLI does the same:
+
+```bash
+aws ce update-cost-allocation-tags-status --cost-allocation-tags-status \
+  TagKey=team,Status=Active TagKey=service,Status=Active TagKey=environment,Status=Active \
+  TagKey=cost-center,Status=Active TagKey=owner,Status=Active
+```
+
+Activation applies to costs from then on. To fill in earlier months, request a backfill; it starts on the first day of a month, at most 12 months back, and only helps for resources that already carried the tags then:
+
+```bash
+aws ce start-cost-allocation-tag-backfill --backfill-from 2026-01-01T00:00:00Z
+```
+
+## Enforce the Schema Across Accounts
+
+Terraform validation protects this module. To protect every account, add organization-wide controls:
+
+**Tag policies with required tags.** Since November 2025, an AWS Organizations tag policy can list required tag keys per resource type (`report_required_tag_for`), and the Terraform AWS provider 6.22 and later can check every plan against it. A policy for the `checkout` resources, attached in the management account:
+
+```json
+{
+  "tags": {
+    "owner": {
+      "tag_key": { "@@assign": "owner" },
+      "report_required_tag_for": {
+        "@@assign": ["ec2:instance", "ec2:volume", "ec2:launch-template", "rds:db"]
+      }
+    }
+  }
+}
+```
+
+Then turn the check on in the provider. With `"error"`, a plan that creates an `owner`-less resource of those types fails; `"warning"` only reports it. The check runs when Terraform creates a resource or changes its tags, so in this module it covers the launch template and the database; the `ec2:instance` and `ec2:volume` entries cover direct launches and AWS's compliance reports. The identity that runs Terraform needs the `tag:ListRequiredTags` permission:
+
+```hcl
+provider "aws" {
+  tag_policy_compliance = "error"
+}
+```
+
+See the provider's [tag policy compliance guide](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/tag-policy-compliance) for the resource types it covers, and AWS's [IaC enforcement page](https://docs.aws.amazon.com/organizations/latest/userguide/enforce-required-tag-keys-iac.html) for the CloudFormation and Pulumi equivalents.
+
+**A service control policy (SCP)** blocks untagged launches from anything, including the console and scripts. One statement per required key matters: several keys in one `Null` condition must all be missing before the statement denies.
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyRunInstancesWithoutTeam",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": { "Null": { "aws:RequestTag/team": "true" } }
+    },
+    {
+      "Sid": "DenyRunInstancesWithoutOwner",
+      "Effect": "Deny",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": { "Null": { "aws:RequestTag/owner": "true" } }
+    }
+  ]
+}
+```
+
+SCPs do not apply to service-linked roles, so they do not stop an Auto Scaling group from launching instances; the launch template's tags handle those. Test an SCP on a sandbox organizational unit first: a deny that is too broad breaks deployments.
+
+**Detection** catches what slips through: the AWS Config managed rule `required-tags`, or the Cloud Custodian policies from [Part 3](/guides/finops-for-devops-engineers/03-tools). AWS Config bills per configuration item recorded and per rule evaluation, so record only the resource types you need.
+
+## Size Each Environment Once
+
+Every size-related setting lives in one map, keyed by environment:
+
+```hcl
+  # Production capacity only where production needs it.
+  sizes = {
+    dev = {
+      instance_type     = "t4g.small"
+      min_size          = 0 # the office-hours schedule below sets the capacity
+      max_size          = 2
+      db_instance_class = "db.t4g.micro"
+      db_storage_gb     = 20
+      db_multi_az       = false
+      db_backup_days    = 1
+      office_hours_only = true
+    }
+    staging = {
+      instance_type     = "t4g.medium"
+      min_size          = 1
+      max_size          = 2
+      db_instance_class = "db.t4g.small"
+      db_storage_gb     = 20
+      db_multi_az       = false
+      db_backup_days    = 3
+      office_hours_only = false
+    }
+    prod = {
+      instance_type     = "m8g.large"
+      min_size          = 2
+      max_size          = 6
+      db_instance_class = "db.m8g.large"
+      db_storage_gb     = 100
+      db_multi_az       = true
+      db_backup_days    = 14
+      office_hours_only = false
+    }
+  }
+
+  size          = local.sizes[var.environment]
+  instance_type = coalesce(var.instance_type, local.size.instance_type)
+  name          = "${var.service}-${var.environment}"
+}
+```
+
+`terraform console` shows what each environment gets:
+
+```terminal
+{
+  "title": "dev and prod sizes",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "echo 'local.size' | terraform console -var-file=env/dev.tfvars",
+      "output": "{\n  \"db_backup_days\" = 1\n  \"db_instance_class\" = \"db.t4g.micro\"\n  \"db_multi_az\" = false\n  \"db_storage_gb\" = 20\n  \"instance_type\" = \"t4g.small\"\n  \"max_size\" = 2\n  \"min_size\" = 0\n  \"office_hours_only\" = true\n}"
+    },
+    {
+      "cmd": "echo 'local.size' | terraform console -var-file=env/prod.tfvars",
+      "output": "{\n  \"db_backup_days\" = 14\n  \"db_instance_class\" = \"db.m8g.large\"\n  \"db_multi_az\" = true\n  \"db_storage_gb\" = 100\n  \"instance_type\" = \"m8g.large\"\n  \"max_size\" = 6\n  \"min_size\" = 2\n  \"office_hours_only\" = false\n}"
+    }
+  ]
+}
+```
+
+With US East (N. Virginia) on-demand prices from the AWS Price List (October 2026), the difference is clear. Production's two `m8g.large` instances cost USD 131.05 a month; development's one `t4g.small`, running 55 hours a week, uses about 238 hours a month and costs about USD 4. Production's Multi-AZ `db.m8g.large` costs USD 245.28 a month; development's single-AZ `db.t4g.micro` costs USD 11.68. Storage, backups and data transfer come on top of both.
+
+A right-sizing change is now a one-line diff in this map, reviewed like any other change. When it changes the instance type, Terraform writes a new launch template version, and the Auto Scaling group's `instance_refresh` block (in the excerpt above) replaces the running instances: it starts the new ones before it stops the old ones, so capacity never drops below 100 percent. Without that block, running instances keep their old size until something replaces them.
+
+## Run Development Only in Office Hours
+
+The `dev` Auto Scaling group has `min_size = 0`, and two scheduled actions set the desired capacity:
+
+```hcl
+# Development runs on weekdays from 08:00 to 19:00 New York time.
+resource "aws_autoscaling_schedule" "office_hours_start" {
+  count = local.size.office_hours_only ? 1 : 0
+
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  scheduled_action_name  = "office-hours-start"
+  recurrence             = "0 8 * * MON-FRI"
+  time_zone              = "America/New_York"
+  min_size               = -1
+  max_size               = -1
+  desired_capacity       = 1
+}
+
+resource "aws_autoscaling_schedule" "office_hours_stop" {
+  count = local.size.office_hours_only ? 1 : 0
+
+  autoscaling_group_name = aws_autoscaling_group.app.name
+  scheduled_action_name  = "office-hours-stop"
+  recurrence             = "0 19 * * MON-FRI"
+  time_zone              = "America/New_York"
+  min_size               = -1
+  max_size               = -1
+  desired_capacity       = 0
+}
+```
+
+- `min_size` and `max_size` of `-1` leave those limits alone; only the desired capacity changes.
+- `time_zone` makes the cron expression follow New York time, including daylight saving changes.
+- The group ignores `desired_capacity` in Terraform (`ignore_changes` above), so an `apply` at 21:00 does not start the instances again.
+- A new `dev` group starts with zero instances until the next 08:00 action. To work late, set the desired capacity by hand; the 19:00 action stops the instances again the next evening.
+
+The database keeps running in this example. A stopped RDS instance starts again by itself after seven days, so for development databases that sit idle most of the time, a smaller instance class is the simpler saving. For EC2 instances outside Auto Scaling groups, the [Instance Scheduler on AWS](https://aws.amazon.com/solutions/implementations/instance-scheduler-on-aws/) solution or EventBridge Scheduler does the same job.
+
+## A Budget per Environment
+
+Budgets catch slow growth: the month is on track to end over the limit. Each `checkout` environment gets one, sent to an SNS topic:
+
+```hcl
+resource "aws_sns_topic" "cost_alerts" {
+  name = "${local.name}-cost-alerts"
+}
+
+# AWS Budgets publishes to the topic, for this account only.
+data "aws_iam_policy_document" "cost_alerts" {
+  statement {
+    sid       = "AllowBudgetsToPublish"
+    actions   = ["SNS:Publish"]
+    resources = [aws_sns_topic.cost_alerts.arn]
+
+    principals {
+      type        = "Service"
+      identifiers = ["budgets.amazonaws.com"]
     }
 
-    return insights
-```
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [split(":", aws_sns_topic.cost_alerts.arn)[4]]
+    }
+  }
+}
 
-This approach focuses on generating insights rather than just displaying numbers. The `analyze_cost_patterns` function creates data that helps teams understand where their money goes and what they can do about it.
+resource "aws_sns_topic_policy" "cost_alerts" {
+  arn    = aws_sns_topic.cost_alerts.arn
+  policy = data.aws_iam_policy_document.cost_alerts.json
+}
 
-### Understanding the Output
+resource "aws_sns_topic_subscription" "cost_alerts_email" {
+  topic_arn = aws_sns_topic.cost_alerts.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
 
-The report generates several key insights:
-
-**Top Cost Drivers**: Shows which services consume the most budget, helping teams prioritize optimization efforts.
-
-**Optimization Opportunities**: Identifies specific actions teams can take, like right-sizing instances or cleaning up storage.
-
-**Cost Trends**: Reveals whether costs are increasing, stable, or decreasing over time.
-
-Here's how you might use this in practice:
-
-```python
-def print_team_cost_summary(insights):
-    """Print a human-readable summary of cost insights"""
-
-    print(f"\n💰 COST SUMMARY: {insights['team_name'].upper()} TEAM")
-    print("=" * 50)
-    print(f"Total Cost (last {insights['period_days']} days): ${insights['total_cost']:.2f}")
-    print(f"Average Daily Cost: ${insights['average_daily_cost']:.2f}")
-
-    print(f"\n🔍 TOP COST DRIVERS:")
-    for service, cost in insights['top_cost_drivers'][:3]:
-        percentage = (cost / insights['total_cost']) * 100
-        print(f"   • {service}: ${cost:.2f} ({percentage:.1f}%)")
-
-    if insights['optimization_opportunities']:
-        print(f"\n💡 OPTIMIZATION OPPORTUNITIES:")
-        for opportunity in insights['optimization_opportunities'][:3]:
-            print(f"   • {opportunity}")
-
-    trend_emoji = "📈" if insights['cost_trend'] > 5 else "📉" if insights['cost_trend'] < -5 else "➡️"
-    print(f"\n{trend_emoji} Cost Trend: {insights['cost_trend']:+.1f}% vs previous period")
-
-# Example usage
-insights = generate_team_cost_report('backend')
-print_team_cost_summary(insights)
-```
-
-This creates reports that teams actually want to read because they provide clear direction for improvement rather than just raw numbers.
-
-## Automated Budget Monitoring and Alerts
-
-Set up sophisticated budget monitoring that integrates with your team's communication workflows.
-
-### Multi-Level Budget Structure
-
-Create budgets at different organizational levels:
-
-```terraform
-# terraform/monitoring/budgets.tf
-
-# Organization-level budget
-resource "aws_budgets_budget" "organization_monthly" {
-  name       = "organization-monthly-budget"
-  budget_type = "COST"
-  limit_amount = "50000"
+resource "aws_budgets_budget" "service" {
+  name         = "${local.name}-monthly"
+  budget_type  = "COST"
+  limit_amount = tostring(var.monthly_budget_usd)
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
+  metrics      = ["AmortizedCost"]
 
-  cost_filters {
-    dimension {
-      key    = "LINKED_ACCOUNT"
-      values = var.account_ids
+  filter_expression {
+    and {
+      tags {
+        key    = "service"
+        values = [var.service]
+      }
     }
+    and {
+      tags {
+        key    = "environment"
+        values = [var.environment]
+      }
+    }
+  }
+
+  # Early warning: the month is on track to end over budget.
+  notification {
+    comparison_operator       = "GREATER_THAN"
+    threshold                 = 100
+    threshold_type            = "PERCENTAGE"
+    notification_type         = "FORECASTED"
+    subscriber_sns_topic_arns = [aws_sns_topic.cost_alerts.arn]
   }
 
   notification {
-    comparison_operator        = "GREATER_THAN"
+    comparison_operator       = "GREATER_THAN"
     threshold                 = 80
     threshold_type            = "PERCENTAGE"
     notification_type         = "ACTUAL"
-    subscriber_email_addresses = ["finance@company.com", "cto@company.com"]
+    subscriber_sns_topic_arns = [aws_sns_topic.cost_alerts.arn]
   }
 
-  notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                 = 100
-    threshold_type            = "PERCENTAGE"
-    notification_type          = "FORECASTED"
-    subscriber_email_addresses = ["finance@company.com", "cto@company.com"]
-  }
-}
-
-# Team-specific budgets using cost allocation tags
-resource "aws_budgets_budget" "team_budgets" {
-  for_each = var.team_budgets
-
-  name        = "${each.key}-monthly-budget"
-  budget_type = "COST"
-  limit_amount = each.value.amount
-  limit_unit   = "USD"
-  time_unit    = "MONTHLY"
-
-  cost_filters {
-    tag {
-      key    = "team"
-      values = [each.key]
-    }
-  }
-
-  notification {
-    comparison_operator        = "GREATER_THAN"
-    threshold                 = 75
-    threshold_type            = "PERCENTAGE"
-    notification_type         = "ACTUAL"
-    subscriber_email_addresses = each.value.notification_emails
-  }
+  # Budgets must be allowed to publish before it sends to the topic.
+  depends_on = [aws_sns_topic_policy.cost_alerts]
 }
 ```
 
-### Advanced Budget Alert Automation
+The details that matter:
 
-Create intelligent budget alerts that provide context and actionable information:
+- **The SNS topic policy** lets AWS Budgets (`budgets.amazonaws.com`) publish, but only for this account (`aws:SourceAccount`, taken from the topic's ARN).
+- **The budget** filters on the `service` and `environment` tags, so it only works once those tags are activated for cost allocation. It uses amortized cost, so a Savings Plan purchase does not show up as a spike in one team's budget.
+- **Two notifications**: a forecast over 100 percent warns early in the month; actual spend over 80 percent confirms it.
+- **The `depends_on`** makes Terraform create the topic policy before the budget, so AWS Budgets is allowed to publish when the budget starts sending.
+- **The email subscription** sends a confirmation message; nothing arrives until someone confirms it. To post alerts to Slack or Microsoft Teams, add the topic in Amazon Q Developer in chat applications (formerly AWS Chatbot).
 
-```python
-# lambda/budget_alert_handler.py
-import json
-import boto3
-import requests
-from datetime import datetime, timedelta
+The saved `dev` plan lists the service's resources and its budget:
 
-def lambda_handler(event, context):
-    """Enhanced budget alert handler with cost breakdown and recommendations"""
-
-    # Parse SNS message
-    message = json.loads(event['Records'][0]['Sns']['Message'])
-    budget_name = message['BudgetName']
-    threshold = message['ThresholdBreached']
-
-    # Get detailed cost breakdown
-    ce_client = boto3.client('ce')
-
-    # Analyze recent cost trends
-    end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-
-    # Get service breakdown for the affected budget
-    cost_by_service = ce_client.get_cost_and_usage(
-        TimePeriod={'Start': start_date, 'End': end_date},
-        Granularity='DAILY',
-        Metrics=['BlendedCost'],
-        GroupBy=[{'Type': 'DIMENSION', 'Key': 'SERVICE'}],
-        Filter={
-            'Tags': {
-                'Key': 'team',
-                'Values': [budget_name.replace('-monthly-budget', '')]
-            }
-        }
-    )
-
-    # Identify top cost drivers
-    service_costs = {}
-    for result in cost_by_service['ResultsByTime']:
-        for group in result['Groups']:
-            service = group['Keys'][0]
-            cost = float(group['Metrics']['BlendedCost']['Amount'])
-            service_costs[service] = service_costs.get(service, 0) + cost
-
-    # Sort by cost descending
-    top_services = sorted(service_costs.items(), key=lambda x: x[1], reverse=True)[:5]
-
-    # Generate recommendations based on top services
-    recommendations = generate_recommendations(top_services)
-
-    # Create enhanced Slack alert
-    slack_payload = {
-        "text": f"🚨 Budget Alert: {budget_name}",
-        "attachments": [
-            {
-                "color": "danger" if threshold > 100 else "warning",
-                "fields": [
-                    {
-                        "title": "Threshold Breached",
-                        "value": f"{threshold}%",
-                        "short": True
-                    },
-                    {
-                        "title": "Budget Period",
-                        "value": "Current Month",
-                        "short": True
-                    },
-                    {
-                        "title": "Top Cost Drivers (Last 7 Days)",
-                        "value": "\n".join([f"• {service}: ${cost:.2f}" for service, cost in top_services]),
-                        "short": False
-                    },
-                    {
-                        "title": "Recommendations",
-                        "value": "\n".join([f"• {rec}" for rec in recommendations]),
-                        "short": False
-                    }
-                ]
-            }
-        ]
-    }
-
-    # Send to Slack
-    slack_webhook = os.environ['SLACK_WEBHOOK_URL']
-    response = requests.post(slack_webhook, json=slack_payload)
-
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Alert sent successfully')
-    }
-
-def generate_recommendations(top_services):
-    """Generate optimization recommendations based on service usage"""
-    recommendations = []
-
-    for service, cost in top_services:
-        if 'EC2' in service and cost > 100:
-            recommendations.append("Review EC2 instance utilization - consider right-sizing or scheduling")
-        elif 'RDS' in service and cost > 50:
-            recommendations.append("Check RDS instance utilization - consider Aurora Serverless for variable workloads")
-        elif 'S3' in service and cost > 25:
-            recommendations.append("Review S3 storage classes - move infrequently accessed data to IA or Glacier")
-        elif 'Lambda' in service and cost > 20:
-            recommendations.append("Optimize Lambda memory allocation and execution time")
-
-    if not recommendations:
-        recommendations.append("Costs appear normal - continue monitoring trends")
-
-    return recommendations
+```bash
+terraform show -no-color dev.tfplan | grep -E '^  # |^Plan:'
 ```
 
-### Cost Anomaly Detection with Context
-
-Implement anomaly detection that provides operational context:
-
-```python
-# scripts/cost_anomaly_detector.py
-import boto3
-import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-import smtplib
-from email.mime.text import MimeText
-from email.mime.multipart import MimeMultipart
-
-class CostAnomalyDetector:
-    def __init__(self):
-        self.ce_client = boto3.client('ce')
-        self.cloudwatch = boto3.client('cloudwatch')
-
-    def detect_anomalies(self, days_back=30, std_threshold=2):
-        """Detect cost anomalies using statistical analysis"""
-
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-
-        # Get daily costs
-        daily_costs = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='DAILY',
-            Metrics=['BlendedCost']
-        )
-
-        # Convert to pandas for analysis
-        costs_data = []
-        for result in daily_costs['ResultsByTime']:
-            date = result['TimePeriod']['Start']
-            cost = float(result['Total']['BlendedCost']['Amount'])
-            costs_data.append({'date': date, 'cost': cost})
-
-        df = pd.DataFrame(costs_data)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date')
-
-        # Calculate moving statistics
-        df['mean_7d'] = df['cost'].rolling(window=7).mean()
-        df['std_7d'] = df['cost'].rolling(window=7).std()
-        df['z_score'] = (df['cost'] - df['mean_7d']) / df['std_7d']
-
-        # Identify anomalies
-        anomalies = df[abs(df['z_score']) > std_threshold].copy()
-
-        if not anomalies.empty:
-            self.investigate_anomalies(anomalies)
-
-        return anomalies
-
-    def investigate_anomalies(self, anomalies):
-        """Investigate root causes of cost anomalies"""
-
-        for _, anomaly in anomalies.iterrows():
-            anomaly_date = anomaly['date'].strftime('%Y-%m-%d')
-            next_date = (anomaly['date'] + timedelta(days=1)).strftime('%Y-%m-%d')
-
-            # Get service breakdown for the anomaly day
-            service_costs = self.ce_client.get_cost_and_usage(
-                TimePeriod={'Start': anomaly_date, 'End': next_date},
-                Granularity='DAILY',
-                Metrics=['BlendedCost'],
-                GroupBy=[{'Type': 'DIMENSION', 'Key': 'SERVICE'}]
-            )
-
-            # Find services with unusual costs
-            suspicious_services = []
-            for result in service_costs['ResultsByTime']:
-                for group in result['Groups']:
-                    service = group['Keys'][0]
-                    cost = float(group['Metrics']['BlendedCost']['Amount'])
-
-                    if cost > 100:  # Arbitrary threshold for investigation
-                        suspicious_services.append((service, cost))
-
-            # Check for operational events that might explain the anomaly
-            operational_context = self.get_operational_context(anomaly_date)
-
-            # Send alert with context
-            self.send_anomaly_alert(anomaly, suspicious_services, operational_context)
-
-    def get_operational_context(self, date):
-        """Get operational context that might explain cost anomalies"""
-        context = []
-
-        try:
-            # Check for deployment events (this would integrate with your deployment tracking)
-            # For now, we'll use CloudWatch events as a proxy
-            start_time = datetime.strptime(date, '%Y-%m-%d')
-            end_time = start_time + timedelta(days=1)
-
-            # Check for Auto Scaling events
-            as_client = boto3.client('autoscaling')
-            activities = as_client.describe_scaling_activities(
-                MaxRecords=50
-            )
-
-            for activity in activities['Activities']:
-                if start_time <= activity['StartTime'].replace(tzinfo=None) <= end_time:
-                    context.append(f"Auto Scaling: {activity['Description']}")
-
-        except Exception as e:
-            context.append(f"Could not retrieve operational context: {str(e)}")
-
-        return context
-
-    def send_anomaly_alert(self, anomaly, suspicious_services, context):
-        """Send detailed anomaly alert"""
-
-        date = anomaly['date'].strftime('%Y-%m-%d')
-        cost = anomaly['cost']
-        z_score = anomaly['z_score']
-
-        subject = f"Cost Anomaly Detected: ${cost:.2f} on {date}"
-
-        body = f"""
-        Cost Anomaly Detection Report
-
-        Date: {date}
-        Cost: ${cost:.2f}
-        Z-Score: {z_score:.2f}
-
-        Top Services on Anomaly Date:
-        {chr(10).join([f"  • {service}: ${cost:.2f}" for service, cost in suspicious_services])}
-
-        Operational Context:
-        {chr(10).join([f"  • {event}" for event in context]) if context else "  • No significant operational events detected"}
-
-        Recommended Actions:
-        • Review resource utilization for the date in question
-        • Check for any unplanned deployments or scaling events
-        • Verify if this represents a legitimate business spike
-        • Consider implementing additional cost controls if this is waste
-        """
-
-        print(f"ANOMALY ALERT: {subject}")
-        print(body)
-
-        # In production, send email or Slack notification
-        # self.send_email(subject, body)
-
-# Run anomaly detection
-detector = CostAnomalyDetector()
-anomalies = detector.detect_anomalies()
-
-if anomalies.empty:
-    print("No cost anomalies detected in the last 30 days.")
-else:
-    print(f"Detected {len(anomalies)} cost anomalies:")
-    for _, anomaly in anomalies.iterrows():
-        print(f"  {anomaly['date'].strftime('%Y-%m-%d')}: ${anomaly['cost']:.2f} (Z-score: {anomaly['z_score']:.2f})")
+```text
+  # data.aws_iam_policy_document.cost_alerts will be read during apply
+  # (config refers to values not yet known)
+  # aws_autoscaling_group.app will be created
+  # aws_autoscaling_schedule.office_hours_start[0] will be created
+  # aws_autoscaling_schedule.office_hours_stop[0] will be created
+  # aws_budgets_budget.service will be created
+  # aws_db_instance.app will be created
+  # aws_launch_template.app will be created
+  # aws_sns_topic.cost_alerts will be created
+  # aws_sns_topic_policy.cost_alerts will be created
+  # aws_sns_topic_subscription.cost_alerts_email will be created
+Plan: 9 to add, 0 to change, 0 to destroy.
 ```
 
-## Environment-Specific Cost Optimization
+## An Anomaly Alert per Service
 
-Implement different cost optimization strategies based on environment types and usage patterns.
+Anomaly detection catches sudden changes: a service's daily spend jumps above its usual pattern. Tag-based monitors can only be created in the management account, so this one lives in `management/` and watches `checkout` in every account and environment:
 
-### Automated Development Environment Scheduling
-
-Save costs by automatically stopping non-production resources during off-hours:
-
-```terraform
-# terraform/modules/scheduled_scaling/main.tf
-resource "aws_autoscaling_schedule" "scale_down_evening" {
-  count = var.environment == "development" ? 1 : 0
-
-  scheduled_action_name  = "scale-down-evening"
-  min_size               = 0
-  max_size               = 0
-  desired_capacity       = 0
-  recurrence             = "0 18 * * MON-FRI"  # 6 PM weekdays
-  autoscaling_group_name = aws_autoscaling_group.main.name
+```hcl
+resource "aws_sns_topic" "checkout_anomalies" {
+  name = "checkout-cost-anomalies"
 }
 
-resource "aws_autoscaling_schedule" "scale_up_morning" {
-  count = var.environment == "development" ? 1 : 0
+# Cost Anomaly Detection publishes to the topic, for this account only.
+data "aws_iam_policy_document" "checkout_anomalies" {
+  statement {
+    sid       = "AllowAnomalyDetectionToPublish"
+    actions   = ["SNS:Publish"]
+    resources = [aws_sns_topic.checkout_anomalies.arn]
 
-  scheduled_action_name  = "scale-up-morning"
-  min_size               = var.min_capacity
-  max_size               = var.max_capacity
-  desired_capacity       = var.desired_capacity
-  recurrence             = "0 8 * * MON-FRI"   # 8 AM weekdays
-  autoscaling_group_name = aws_autoscaling_group.main.name
-}
+    principals {
+      type        = "Service"
+      identifiers = ["costalerts.amazonaws.com"]
+    }
 
-# Lambda function for more complex scheduling logic
-resource "aws_lambda_function" "resource_scheduler" {
-  filename         = "resource_scheduler.zip"
-  function_name    = "resource-scheduler"
-  role            = aws_iam_role.scheduler.arn
-  handler         = "index.handler"
-  runtime         = "python3.9"
-  timeout         = 300
-
-  environment {
-    variables = {
-      ENVIRONMENT = var.environment
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [split(":", aws_sns_topic.checkout_anomalies.arn)[4]]
     }
   }
 }
 
-# CloudWatch rule to trigger the scheduler
-resource "aws_cloudwatch_event_rule" "scheduler" {
-  name                = "resource-scheduler"
-  description         = "Trigger resource scheduler"
-  schedule_expression = "cron(0 8,18 * * MON-FRI)"
+resource "aws_sns_topic_policy" "checkout_anomalies" {
+  arn    = aws_sns_topic.checkout_anomalies.arn
+  policy = data.aws_iam_policy_document.checkout_anomalies.json
 }
 
-resource "aws_cloudwatch_event_target" "lambda" {
-  rule      = aws_cloudwatch_event_rule.scheduler.name
-  target_id = "ResourceSchedulerTarget"
-  arn       = aws_lambda_function.resource_scheduler.arn
+resource "aws_sns_topic_subscription" "checkout_anomalies_email" {
+  topic_arn = aws_sns_topic.checkout_anomalies.arn
+  protocol  = "email"
+  endpoint  = var.alert_email
+}
+
+# A customer managed monitor for the costs tagged service=checkout, in
+# every account and environment. The null keys follow the provider's
+# documented example for custom monitors.
+resource "aws_ce_anomaly_monitor" "checkout" {
+  name         = "checkout"
+  monitor_type = "CUSTOM"
+
+  depends_on = [aws_ce_cost_allocation_tag.cost_tags]
+
+  monitor_specification = jsonencode({
+    And            = null
+    CostCategories = null
+    Dimensions     = null
+    Not            = null
+    Or             = null
+    Tags = {
+      Key          = "service"
+      MatchOptions = null
+      Values       = ["checkout"]
+    }
+  })
+}
+
+resource "aws_ce_anomaly_subscription" "checkout" {
+  name             = "checkout"
+  frequency        = "IMMEDIATE"
+  monitor_arn_list = [aws_ce_anomaly_monitor.checkout.arn]
+
+  subscriber {
+    type    = "SNS"
+    address = aws_sns_topic.checkout_anomalies.arn
+  }
+
+  # Alert when an anomaly's total impact reaches 50 USD.
+  threshold_expression {
+    dimension {
+      key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+      match_options = ["GREATER_THAN_OR_EQUAL"]
+      values        = ["50"]
+    }
+  }
+
+  depends_on = [aws_sns_topic_policy.checkout_anomalies]
 }
 ```
 
-These practical examples provide a foundation for implementing FinOps in your DevOps workflows. Start with tagging and basic cost tracking, then gradually add more sophisticated optimization and automation capabilities as your team becomes comfortable with the tools and processes.
+- **A customer managed monitor** (`CUSTOM`) adds up the costs of the tag values you list, up to 10, as one series. One monitor per team, listing its services, is a common pattern.
+- **The subscription** sends each anomaly with a total impact of USD 50 or more as soon as it is detected. `IMMEDIATE` needs an SNS topic; daily and weekly summaries go to email.
+- **The topic policy** names Cost Anomaly Detection's service principal, `costalerts.amazonaws.com`.
+- **On a new setup, apply in two steps.** A monitor can only use a tag that is already active for cost allocation, and activation only works once billing has seen the tag on a resource, which can take a day. Apply the tag activation first (`terraform -chdir=management apply -target=aws_ce_cost_allocation_tag.cost_tags`), and the rest once the tags show as active in the Billing console. The `depends_on` keeps the order within one apply, but it cannot wait for AWS to finish the activation.
+
+Plan it from the repository root (the plan is reduced to its resource list):
+
+```terminal
+{
+  "title": "Plan the management account resources",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "cd .."
+    },
+    {
+      "cmd": "terraform -chdir=management init",
+      "output": "Initializing the backend...\n\nInitializing provider plugins...\n- Finding hashicorp/aws versions matching \"~> 6.70\"...\n- Installing hashicorp/aws v6.70.0...\n- Installed hashicorp/aws v6.70.0 (signed by HashiCorp)"
+    },
+    {
+      "cmd": "terraform -chdir=management plan -no-color | grep -E '^  # |^Plan:'",
+      "output": "  # data.aws_iam_policy_document.checkout_anomalies will be read during apply\n  # (config refers to values not yet known)\n  # aws_ce_anomaly_monitor.checkout will be created\n  # aws_ce_anomaly_subscription.checkout will be created\n  # aws_ce_cost_allocation_tag.cost_tags[\"cost-center\"] will be created\n  # aws_ce_cost_allocation_tag.cost_tags[\"environment\"] will be created\n  # aws_ce_cost_allocation_tag.cost_tags[\"owner\"] will be created\n  # aws_ce_cost_allocation_tag.cost_tags[\"service\"] will be created\n  # aws_ce_cost_allocation_tag.cost_tags[\"team\"] will be created\n  # aws_sns_topic.checkout_anomalies will be created\n  # aws_sns_topic_policy.checkout_anomalies will be created\n  # aws_sns_topic_subscription.checkout_anomalies_email will be created\nPlan: 10 to add, 0 to change, 0 to destroy."
+    }
+  ]
+}
+```
+
+AWS can also manage the monitor for you: an AWS managed monitor on the `service` tag key tracks every value separately, including services that appear later. The AWS provider 6.70 cannot express it (`monitor_dimension` conflicts with `monitor_specification`, which a tag monitor needs), so create it with the AWS CLI in the management account:
+
+```bash
+aws ce create-anomaly-monitor --anomaly-monitor \
+  '{"MonitorName": "by-service", "MonitorType": "DIMENSIONAL", "MonitorDimension": "TAG", "MonitorSpecification": {"Tags": {"Key": "service"}}}'
+```
+
+A subscription on that monitor uses one threshold for every service; to route each service's anomalies to its own team, AWS points to AWS User Notifications with filters on the alert's fields.
+
+## The Same Budget on Azure and Google Cloud
+
+The pattern carries over: a budget per scope, a forecast alert, an actual alert, sent to the owning team. The Azure and Google Cloud versions are in `multicloud/` in the companion repository:
+
+```tabs
+{
+  "title": "Budget for checkout in dev",
+  "tabs": [
+    {
+      "label": "AWS",
+      "lang": "hcl",
+      "code": "resource \"aws_budgets_budget\" \"service\" {\n  name         = \"${local.name}-monthly\"\n  budget_type  = \"COST\"\n  limit_amount = tostring(var.monthly_budget_usd)\n  limit_unit   = \"USD\"\n  time_unit    = \"MONTHLY\"\n  metrics      = [\"AmortizedCost\"]\n\n  filter_expression {\n    and {\n      tags {\n        key    = \"service\"\n        values = [var.service]\n      }\n    }\n    and {\n      tags {\n        key    = \"environment\"\n        values = [var.environment]\n      }\n    }\n  }\n\n  # Early warning: the month is on track to end over budget.\n  notification {\n    comparison_operator       = \"GREATER_THAN\"\n    threshold                 = 100\n    threshold_type            = \"PERCENTAGE\"\n    notification_type         = \"FORECASTED\"\n    subscriber_sns_topic_arns = [aws_sns_topic.cost_alerts.arn]\n  }\n\n  notification {\n    comparison_operator       = \"GREATER_THAN\"\n    threshold                 = 80\n    threshold_type            = \"PERCENTAGE\"\n    notification_type         = \"ACTUAL\"\n    subscriber_sns_topic_arns = [aws_sns_topic.cost_alerts.arn]\n  }\n\n  # Budgets must be allowed to publish before it sends to the topic.\n  depends_on = [aws_sns_topic_policy.cost_alerts]\n}"
+    },
+    {
+      "label": "Azure",
+      "lang": "hcl",
+      "code": "resource \"azurerm_consumption_budget_subscription\" \"checkout_dev\" {\n  name            = \"checkout-dev-monthly\"\n  subscription_id = \"/subscriptions/${var.subscription_id}\"\n  amount          = 150\n  time_grain      = \"Monthly\"\n\n  time_period {\n    start_date = \"2026-11-01T00:00:00Z\"\n  }\n\n  filter {\n    tag {\n      name   = \"service\"\n      values = [\"checkout\"]\n    }\n    tag {\n      name   = \"environment\"\n      values = [\"dev\"]\n    }\n  }\n\n  notification {\n    enabled        = true\n    threshold      = 100\n    threshold_type = \"Forecasted\"\n    operator       = \"GreaterThan\"\n    contact_emails = [\"payments-oncall@example.com\"]\n  }\n\n  notification {\n    enabled        = true\n    threshold      = 80\n    threshold_type = \"Actual\"\n    operator       = \"GreaterThan\"\n    contact_emails = [\"payments-oncall@example.com\"]\n  }\n}"
+    },
+    {
+      "label": "Google Cloud",
+      "lang": "hcl",
+      "code": "resource \"google_billing_budget\" \"checkout_dev\" {\n  billing_account = var.billing_account\n  display_name    = \"checkout-dev-monthly\"\n\n  budget_filter {\n    projects        = [\"projects/${var.project_number}\"]\n    labels          = { service = \"checkout\" }\n    calendar_period = \"MONTH\"\n  }\n\n  amount {\n    specified_amount {\n      currency_code = \"USD\"\n      units         = \"150\"\n    }\n  }\n\n  threshold_rules {\n    threshold_percent = 0.8\n  }\n\n  threshold_rules {\n    threshold_percent = 1.0\n    spend_basis       = \"FORECASTED_SPEND\"\n  }\n\n  all_updates_rule {\n    monitoring_notification_channels = var.notification_channels\n  }\n}"
+    }
+  ]
+}
+```
+
+Differences to know:
+
+- **Azure** filters a subscription budget by tags and sends email directly, or calls an action group. The start date must be the first day of a month.
+- **Google Cloud** budgets accept only one label in the filter, so separate environments by project and filter on the `service` label. Thresholds are fractions (`0.8`), and alerts go to Cloud Monitoring notification channels or Pub/Sub.
+
+Both configurations pass `terraform validate` with the current providers (azurerm 5.11, google 8.8; the `init` output is cut to its first lines):
+
+```terminal
+{
+  "title": "Validate the Azure and Google Cloud budgets",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform -chdir=multicloud/azure init",
+      "output": "Initializing the backend...\n\nInitializing provider plugins...\n- Finding hashicorp/azurerm versions matching \"~> 5.11\"...\n- Installing hashicorp/azurerm v5.11.0...\n- Installed hashicorp/azurerm v5.11.0 (signed by HashiCorp)"
+    },
+    {
+      "cmd": "terraform -chdir=multicloud/azure validate",
+      "output": "Success! The configuration is valid."
+    },
+    {
+      "cmd": "terraform -chdir=multicloud/google init",
+      "output": "Initializing the backend...\n\nInitializing provider plugins...\n- Finding hashicorp/google versions matching \"~> 8.8\"...\n- Installing hashicorp/google v8.8.1...\n- Installed hashicorp/google v8.8.1 (signed by HashiCorp)"
+    },
+    {
+      "cmd": "terraform -chdir=multicloud/google validate",
+      "output": "Success! The configuration is valid."
+    }
+  ]
+}
+```
+
+## Quick Reports Without an Export
+
+Until the FOCUS export from [Part 3](/guides/finops-for-devops-engineers/03-tools) is in place, the Cost Explorer API answers simple questions. This prints the amortized cost of `checkout` per environment for the month so far:
+
+```bash
+aws ce get-cost-and-usage \
+  --time-period Start=2026-10-01,End=2026-10-27 \
+  --granularity MONTHLY \
+  --metrics AmortizedCost \
+  --filter '{"Tags": {"Key": "service", "Values": ["checkout"]}}' \
+  --group-by Type=TAG,Key=environment \
+  --query 'ResultsByTime[].Groups[].[Keys[0],Metrics.AmortizedCost.Amount]' \
+  --output text
+```
+
+Each line pairs a tag value with its cost. Cost Explorer prints the key as `environment$dev`, and costs without the tag appear as `environment$`, which tells you how much is still untagged. The end date is exclusive, and each call costs USD 0.01.
+
+## Common Mistakes
+
+- **Tagging late.** Tags only attribute costs from the day they are activated (a backfill covers at most 12 months, and only resources that were already tagged).
+- **Trusting `default_tags` everywhere.** Check the Auto Scaling groups and the instances and volumes they launch.
+- **Budgets on the wrong cost type.** Unblended budgets jump when a commitment is bought; use amortized cost for team budgets.
+- **Alerts to a shared inbox.** Send them where the owning team already works, and treat an alert like an incident: find the cause the same day.
+- **Schedules nobody knows about.** Document the office hours and how to override them, or developers will work around them.
+
+## Summary
+
+- Validate tag values as Terraform variables, so missing or malformed tags fail the plan.
+- `default_tags` covers most resources, but not Auto Scaling groups or what they launch; use `tag_specifications` and `tag` blocks there.
+- Activate the tags for cost allocation in the management account, and enforce them across accounts with tag policies, the provider's `tag_policy_compliance` and SCPs.
+- Size environments in one map and schedule `dev` to office hours.
+- Give each environment a budget (forecast and actual) and each service an anomaly monitor in the management account, routed to its team.
+
+Next, [Part 5](/guides/finops-for-devops-engineers/05-cicd-integration) checks every plan of this module in CI before it merges.
+
+## Keep Learning
+
+- [Managing Your AWS Costs](/guides/introduction-to-aws/10-cost-management) in the Introduction to AWS guide
+- [Cloud Cost Allocation Tags Checklist](/checklists/cloud-cost-allocation-tags)
+- [Cloud Cost Allocation Tags Flashcards](/flashcards/cloud-cost-allocation-tags)
+- [Interview questions: Enforcing Tagging Policies Across Clouds](/interview-questions/mid/enforcing-tagging-policies-multi-cloud)
+- [Interview questions: Activating Tags in Billing Reports](/interview-questions/mid/activating-cost-allocation-tags)

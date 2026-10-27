@@ -1,31 +1,59 @@
 ---
 title: 'Integrating FinOps into CI/CD Pipelines'
-description: 'Learn how to embed cost considerations into your deployment workflows with automated cost estimation, approval gates, and post-deployment monitoring.'
+description: 'Add cost checks to pull requests: Infracost estimates, OPA policies on Terraform plans, reviews for size changes, and cleanup of preview environments.'
 order: 5
 ---
 
-Integrating FinOps into CI/CD pipelines brings cost awareness directly into the development workflow. This shift-left approach helps teams understand cost implications before changes reach production, rather than discovering them weeks later in billing reports.
+**TLDR**: Every infrastructure change passes through a pull request, so that is where cost feedback works best. Post an Infracost estimate on each pull request so reviewers see the monthly change. Check every Terraform plan against a short cost policy with Conftest, and make the check required. Route changes to sizes and policies to the people who own them with CODEOWNERS instead of a blanket approval gate. Destroy preview environments when their pull request closes, and keep the pipeline's own bill in view.
 
-## Cost Estimation in Pull Requests
+[Part 4](/guides/finops-for-devops-engineers/04-practical-examples) put the cost controls into the `checkout` Terraform. This part runs checks on every change to that code, before it merges.
 
-The most effective way to build cost awareness is showing the financial impact of infrastructure changes during code review. This "shift-left" approach helps teams understand costs before they deploy, rather than discovering surprises in next month's bill.
+## Prerequisites
 
-Think of it like a compiler for costs - just as your IDE shows syntax errors while you type, cost estimation shows financial implications while you code.
+- The `infra/` module from Part 4 in a GitHub repository, with a remote state backend (an S3 bucket) and one workspace per environment, so that plans show only the change.
+- Read-only IAM roles that GitHub Actions can assume through OIDC: read access to the resources and to the state, and nothing else. One role for development and staging, one for production, each stored in a GitHub environment (`plan-nonprod` and `plan-prod`) as described in [The Workflow](#h2-the-workflow).
+- To run the policy locally: [Conftest](https://www.conftest.dev/install/) 0.71.1 (the workflow below installs the same version).
+- For cost estimates: an Infracost account.
 
-### Setting Up Automated Cost Comments
+## Where Cost Checks Fit
 
-The goal is to have every infrastructure pull request automatically commented with cost impact analysis. This creates a natural feedback loop where engineers learn to associate their changes with financial outcomes.
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Pull request", "sub": "infra/ changed", "icon": "branch", "tone": "slate" },
+    { "label": "terraform plan", "sub": "per environment", "icon": "gear", "tone": "blue" },
+    { "label": "Checks", "sub": "Infracost estimate, Conftest policy", "icon": "shield", "tone": "amber" },
+    { "label": "Review", "sub": "CODEOWNERS for sizes", "icon": "check", "tone": "violet" },
+    { "label": "Apply", "sub": "then budgets and anomalies watch", "icon": "rocket", "tone": "green" }
+  ]
+}
+```
 
-Here's a GitHub Actions workflow that adds cost estimation to your pull request process:
+Use three kinds of check, and keep them separate:
+
+- **Information**: the cost estimate. It never blocks; it makes the cost visible to the author and the reviewer.
+- **Rules**: a short policy that everyone agreed on, such as allowed instance types per environment and required tags. A violation fails the check.
+- **Review**: changes to the things that drive cost (the sizes map, the policy itself) need a review from the people who own them.
+
+Avoid a manual "cost approval" step on every change. It turns into a queue, and teams learn to work around it. [Why Most FinOps Initiatives Fail](/posts/why-finops-initiatives-fail) describes that approval trap.
+
+## Cost Estimates on Every Pull Request
+
+Infracost's GitHub App is the simplest setup. If your organization does not allow GitHub Apps, use the `diff` action. This workflow is in the companion repository (switched off there, because it needs an Infracost token):
 
 ```yaml
-# .github/workflows/infracost.yml
-name: Infracost Cost Estimation
+name: Infracost
+
+# Posts the monthly cost change of each pull request as a comment.
+# Needs an Infracost CLI token in the INFRACOST_API_KEY secret, and the
+# repository variable INFRACOST_ENABLED set to true.
+
 on:
   pull_request:
+    types: [opened, synchronize, closed, reopened]
     paths:
-      - 'terraform/**'
-      - 'infrastructure/**'
+      - 'infra/**'
 
 permissions:
   contents: read
@@ -33,655 +61,517 @@ permissions:
 
 jobs:
   infracost:
-    name: Cost Estimation
-    runs-on: ubuntu-latest
+    if: vars.INFRACOST_ENABLED == 'true'
+    runs-on: ubuntu-24.04
     steps:
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v2
+      # A closed pull request needs no checkout: the action only marks it
+      # as merged or closed in the Infracost dashboard.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event.action != 'closed'
+        with:
+          path: head
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event.action != 'closed'
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
+          persist-credentials: false
+
+      - uses: infracost/actions/diff@a5783eb98adc93aa7a0049fce0abb06fdd30770a # v5.0.1
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Checkout base branch
-        uses: actions/checkout@v3
-        with:
-          ref: '${{ github.event.pull_request.base.ref }}'
-
-      - name: Generate cost estimate baseline
-        run: |
-          infracost breakdown --path=terraform \
-                              --format=json \
-                              --out-file=/tmp/infracost-base.json
-
-      - name: Checkout PR branch
-        uses: actions/checkout@v3
-
-      - name: Generate cost difference
-        run: |
-          infracost diff --path=terraform \
-                        --format=json \
-                        --compare-to=/tmp/infracost-base.json \
-                        --out-file=/tmp/infracost.json
-
-      - name: Post cost comment on PR
-        run: |
-          infracost comment github --path=/tmp/infracost.json \
-                                   --repo=$GITHUB_REPOSITORY \
-                                   --github-token=${{ github.token }} \
-                                   --pull-request=${{ github.event.pull_request.number }} \
-                                   --behavior=update
+          base-path: base
+          head-path: head
 ```
 
-This workflow compares the costs between your main branch and the pull request branch, then posts a comment showing the difference. Engineers immediately see if their changes will increase or decrease infrastructure costs.
+- It checks out the base branch and the pull request side by side; the action prices both and posts the difference as a comment, updated on each push.
+- On `closed`, it skips the checkouts and only marks the pull request as merged or closed in the Infracost dashboard. Set `INFRACOST_CI_DISABLE_DASHBOARD: "true"` on the step if you do not use the dashboard.
+- The `api-key` must be a CLI v2 token, created in the Infracost dashboard under the organization's CLI tokens. The v5 action does not accept older `ico-` API keys.
+- The action runs the `ghcr.io/infracost/ci` image, so it needs a Linux runner with Docker.
 
-### Adding Custom Cost Analysis
+Remember what the estimate covers (Part 3): fixed prices that Terraform can see. Reviewers should still ask about traffic-driven costs, such as a new NAT gateway path or a chatty cross-zone call.
 
-While Infracost handles the basic cost estimation, you might want to add custom logic that catches common cost optimization opportunities. This is especially useful for identifying patterns that lead to waste.
+## Cost Rules on the Plan
 
-Here's an approach that analyzes Terraform code for potential cost issues:
+A policy check reads the plan as JSON and fails on clear rules. [Conftest](https://www.conftest.dev/) runs Open Policy Agent policies written in Rego. This one, from `policy/cost.rego`:
 
-```python
-# scripts/cost_opportunity_analyzer.py
-import os
-import hcl2
-from pathlib import Path
+- takes the environment from the plan's `environment` variable, which Terraform validated, rather than from a tag that a resource could override, and rejects environments it has no rules for;
+- requires non-empty cost tags with the right environment on every taggable resource, on the instances and volumes a launch template launches and on Auto Scaling groups (the gaps from Part 4);
+- limits instance types per environment for launch templates and EC2 instances, which must set an explicit `instance_type` (extend it if you use mixed instances policies), forbids gp2 EBS volumes (also inside launch templates and in an instance's root and EBS block devices) and warns about Multi-AZ databases outside production;
+- fails tags and instance types that are only known after apply, because a value the policy cannot see cannot pass it.
 
-def analyze_terraform_for_cost_issues(terraform_path):
-    """
-    Scan Terraform files for common cost optimization opportunities.
-    This helps catch issues before they hit production.
-    """
+```rego
+package main
 
-    findings = []
+import rego.v1
 
-    # Look through all Terraform files
-    for tf_file in Path(terraform_path).glob("**/*.tf"):
-        with open(tf_file, 'r') as f:
-            try:
-                content = hcl2.loads(f.read())
-                findings.extend(check_for_cost_issues(content, tf_file))
-            except Exception as e:
-                print(f"Couldn't parse {tf_file}: {e}")
+# Instance types each environment may use. A bigger size is a policy change,
+# reviewed like any other code change.
+allowed_instance_types := {
+	"dev": {"t4g.small", "t4g.medium"},
+	"staging": {"t4g.medium", "m8g.large"},
+	"prod": {"m8g.large", "m8g.xlarge", "m8g.2xlarge"},
+}
 
-    return findings
+required_tags := {"team", "service", "environment", "cost-center", "owner"}
 
-def check_for_cost_issues(terraform_content, file_path):
-    """Look for specific patterns that often lead to cost waste"""
+# The environment comes from the plan's input variable, not from a tag that
+# a resource could override.
+environment := input.variables.environment.value
 
-    issues = []
+deny contains "the plan has no environment variable" if {
+	not input.variables.environment.value
+}
 
-    if 'resource' not in terraform_content:
-        return issues
+deny contains msg if {
+	not allowed_instance_types[environment]
+	msg := sprintf("environment %q has no list of allowed instance types", [environment])
+}
 
-    # Check each resource type for common cost issues
-    for resource_type, resources in terraform_content['resource'].items():
-        for resource_name, config in resources.items():
+# Resources that this plan creates or updates.
+changed contains rc if {
+	some rc in input.resource_changes
+	some action in rc.change.actions
+	action in {"create", "update"}
+}
 
-            # Flag over-provisioned instances in non-production
-            if resource_type == 'aws_instance':
-                issues.extend(check_instance_sizing(resource_name, config, file_path))
+# Every set of tags that ends up on billed resources: the tags of each
+# resource, the tags a launch template gives to the instances and volumes
+# it launches, and the tags of an Auto Scaling group.
+tag_sets contains [rc.address, as_tags(rc.change.after.tags_all)] if {
+	some rc in changed
+	"tags_all" in object.keys(rc.change.after)
+}
 
-            # Flag expensive storage configurations
-            elif resource_type == 'aws_ebs_volume':
-                issues.extend(check_storage_config(resource_name, config, file_path))
+as_tags(x) := x if is_object(x)
 
-            # Flag unnecessary high-availability in dev/test
-            elif resource_type == 'aws_db_instance':
-                issues.extend(check_database_config(resource_name, config, file_path))
+as_tags(x) := {} if x == null
 
-    return issues
+# Values that are only known after apply cannot be checked, so they fail:
+# resource tags, launch template and Auto Scaling group tags, and instance types.
+deny contains msg if {
+	some rc in changed
+	some attribute in ["tags_all", "tag_specifications", "tag", "instance_type"]
+	unknown := object.get(rc.change.after_unknown, attribute, false)
+	some path
+	walk(unknown, [path, true])
+	msg := sprintf("%s: %s is unknown until apply; build it from known values", [rc.address, attribute])
+}
 
-def check_instance_sizing(resource_name, config, file_path):
-    """Check if EC2 instances are appropriately sized for their environment"""
+deny contains msg if {
+	some rc in changed
+	rc.type in {"aws_launch_template", "aws_instance"}
+	not rc.change.after.instance_type
+	not rc.change.after_unknown.instance_type
+	msg := sprintf("%s: set an explicit instance_type, so the policy can check it", [rc.address])
+}
 
-    issues = []
-    instance_type = config.get('instance_type', '')
+tag_sets contains [sprintf("%s (%s)", [rc.address, spec.resource_type]), spec.tags] if {
+	some rc in changed
+	rc.type == "aws_launch_template"
+	some spec in rc.change.after.tag_specifications
+}
 
-    # Look for environment indicators in the configuration
-    config_text = str(config).lower()
-    is_non_production = any(env in config_text for env in ['dev', 'test', 'staging'])
+tag_sets contains [rc.address, {t.key: t.value | some t in rc.change.after.tag}] if {
+	some rc in changed
+	rc.type == "aws_autoscaling_group"
+}
 
-    # Flag large instances in non-production environments
-    if is_non_production and any(size in instance_type for size in ['xlarge', '2xlarge']):
-        issues.append({
-            'type': 'oversized_instance',
-            'resource': f"aws_instance.{resource_name}",
-            'file': str(file_path),
-            'message': f"Large instance type '{instance_type}' in non-production environment",
-            'recommendation': "Consider t3.medium or t3.large for development/testing",
-            'potential_savings': "50-70% on compute costs"
-        })
+deny contains msg if {
+	some [address, tags] in tag_sets
+	tags.environment != environment
+	msg := sprintf("%s: environment tag %q does not match the environment %q", [address, tags.environment, environment])
+}
 
-    return issues
+deny contains msg if {
+	some [address, tags] in tag_sets
+	present := {key | some key, value in tags; trim_space(value) != ""}
+	missing := required_tags - present
+	count(missing) > 0
+	msg := sprintf("%s: missing cost tags: %s", [address, concat(", ", sort(missing))])
+}
+
+deny contains msg if {
+	some rc in changed
+	rc.type == "aws_launch_template"
+	tagged := {spec.resource_type | some spec in rc.change.after.tag_specifications}
+	missing := {"instance", "volume"} - tagged
+	count(missing) > 0
+	msg := sprintf("%s: no tag_specifications for: %s", [rc.address, concat(", ", sort(missing))])
+}
+
+# Covers launch templates and EC2 instances. Extend it if you use
+# mixed instances policies in Auto Scaling groups.
+deny contains msg if {
+	some rc in changed
+	rc.type in {"aws_launch_template", "aws_instance"}
+	itype := rc.change.after.instance_type
+	not itype in allowed_instance_types[environment]
+	allowed := concat(", ", sort(allowed_instance_types[environment]))
+	msg := sprintf("%s: %s is not allowed in %s (allowed: %s)", [rc.address, itype, environment, allowed])
+}
+
+# gp3 costs less per GB than gp2 for EBS volumes.
+deny contains msg if {
+	some rc in changed
+	rc.type == "aws_ebs_volume"
+	rc.change.after.type == "gp2"
+	msg := sprintf("%s: use gp3 instead of gp2", [rc.address])
+}
+
+deny contains msg if {
+	some rc in changed
+	rc.type == "aws_launch_template"
+	some mapping in rc.change.after.block_device_mappings
+	some ebs in mapping.ebs
+	ebs.volume_type == "gp2"
+	msg := sprintf("%s: %s uses gp2; use gp3 instead", [rc.address, mapping.device_name])
+}
+
+deny contains msg if {
+	some rc in changed
+	rc.type == "aws_instance"
+	some block in ["root_block_device", "ebs_block_device"]
+	some device in object.get(rc.change.after, block, [])
+	device.volume_type == "gp2"
+	msg := sprintf("%s: %s uses gp2; use gp3 instead", [rc.address, block])
+}
+
+warn contains msg if {
+	some rc in changed
+	rc.type == "aws_db_instance"
+	rc.change.after.multi_az == true
+	environment != "prod"
+	msg := sprintf("%s: Multi-AZ doubles the instance cost; is it needed outside prod?", [rc.address])
+}
 ```
 
-This approach scans your Terraform code and identifies common patterns that lead to cost waste. It's particularly useful for catching issues like over-provisioned development environments or unnecessary high-availability configurations.
+Run it against the `dev` plan, the same way the workflow below does. Start from the repository root, where Part 4 ended; the `dev` workspace from Part 4 is still selected. First the plan as it is:
 
-### Making Cost Analysis Part of Code Review
+```terminal
+{
+  "title": "The dev plan passes",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "cd infra"
+    },
+    {
+      "cmd": "terraform plan -var-file=env/dev.tfvars -out=tfplan > /dev/null && terraform show -json tfplan > plan.json"
+    },
+    {
+      "cmd": "conftest test plan.json --policy ../policy",
+      "output": "12 tests, 12 passed, 0 warnings, 0 failures, 0 exceptions"
+    }
+  ]
+}
+```
 
-The key is integrating these insights into your existing code review process. Rather than requiring teams to run separate cost analysis tools, the information appears automatically where developers are already working.
+Now someone sets the `dev` instance type to `m7i.2xlarge`, a size that costs USD 294.34 a month per instance around the clock, 24 times the price of the `t4g.small` it replaces (US East on-demand prices, October 2026):
 
-When cost information appears in pull requests, it:
+```terminal
+{
+  "title": "An oversized dev instance fails",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "terraform plan -var-file=env/dev.tfvars -var instance_type=m7i.2xlarge -out=tfplan > /dev/null && terraform show -json tfplan > plan.json"
+    },
+    {
+      "cmd": "conftest test plan.json --policy ../policy",
+      "output": "FAIL - plan.json - main - aws_launch_template.app: m7i.2xlarge is not allowed in dev (allowed: t4g.medium, t4g.small)\n\n12 tests, 11 passed, 0 warnings, 1 failure, 0 exceptions"
+    },
+    {
+      "cmd": "cd .."
+    }
+  ]
+}
+```
 
-- **Educates developers** about the financial impact of their choices
-- **Creates accountability** for cost-conscious decisions
-- **Enables early optimization** before resources are deployed
-- **Builds cost awareness** as a natural part of development
+The failure names the resource, the value and what is allowed, so the author can fix it or argue for a policy change in the same pull request. Keep rules like these few and unambiguous: an allowed list per environment is easy to agree on, while a rule such as "no change above USD 500" needs context that a reviewer has and a policy does not.
 
-The goal isn't to block deployments, but to provide information that helps teams make informed trade-offs between features, performance, and cost.
+## The Workflow
 
-## Cost-Aware Deployment Gates
-
-Implement deployment gates that require approval for changes that exceed cost thresholds.
-
-### Automated Cost Approval Workflow
-
-Create a workflow that requires manual approval for high-cost changes:
+This workflow plans each environment and runs the policy when a pull request touches `infra/` or `policy/`. It is also in the companion repository, switched off until you set the repository variable `COST_CHECKS_ENABLED` to `true`:
 
 ```yaml
-# .github/workflows/cost-gate.yml
-name: Cost Gate Deployment
+name: Cost checks
+
+# Plans each environment and checks the plan against policy/cost.rego.
+#
+# A plan runs code from the pull request (providers, data sources), so the
+# AWS roles it uses are read-only: read access to the resources and to the
+# state, nothing else. Plans run with -lock=false, so they need no write
+# access to the state lock. Each GitHub environment below holds its own
+# AWS_PLAN_ROLE_ARN variable, and each role trusts only its environment
+# through the OIDC subject (repo:<org>/<repo>:environment:plan-nonprod or
+# :plan-prod). Give plan-prod required reviewers. A pull request can edit
+# this file, so the read-only permissions are the boundary for these roles.
+#
+# Turn it on with the repository variable COST_CHECKS_ENABLED=true, and make
+# "Cost checks result" a required check.
+
 on:
-  push:
-    branches: [main]
-    paths: ['terraform/**']
+  pull_request:
+
+permissions:
+  contents: read
 
 jobs:
-  cost-estimate:
-    runs-on: ubuntu-latest
+  # Runs on every pull request, so that the result job below always reports.
+  changes:
+    if: vars.COST_CHECKS_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
-      cost-increase: ${{ steps.cost-check.outputs.cost-increase }}
-      requires-approval: ${{ steps.cost-check.outputs.requires-approval }}
+      infra: ${{ steps.diff.outputs.infra }}
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Infracost
-        uses: infracost/actions/setup@v2
-        with:
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-
-      - name: Generate cost estimate
+      - id: diff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         run: |
-          infracost breakdown --path=terraform \
-                              --format=json \
-                              --out-file=/tmp/infracost.json
-
-      - name: Check cost increase
-        id: cost-check
-        run: |
-          COST_INCREASE=$(jq -r '.diffTotalMonthlyCost' /tmp/infracost.json || echo "0")
-          echo "cost-increase=$COST_INCREASE" >> $GITHUB_OUTPUT
-
-          # Require approval for increases over $500/month
-          if (( $(echo "$COST_INCREASE > 500" | bc -l) )); then
-            echo "requires-approval=true" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          files=$(gh pr diff "$PR" --repo "$REPO" --name-only)
+          if grep -Eq '^(infra|policy)/' <<< "$files"; then
+            echo "infra=true" >> "$GITHUB_OUTPUT"
           else
-            echo "requires-approval=false" >> $GITHUB_OUTPUT
+            echo "infra=false" >> "$GITHUB_OUTPUT"
           fi
 
-  approval-gate:
-    if: needs.cost-estimate.outputs.requires-approval == 'true'
-    needs: cost-estimate
-    runs-on: ubuntu-latest
-    environment: cost-approval
+  plan:
+    needs: changes
+    # Only for branches of this repository; pull requests from forks get no
+    # cloud credentials.
+    if: >-
+      needs.changes.outputs.infra == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    environment: ${{ matrix.github_environment }}
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - environment: dev
+            github_environment: plan-nonprod
+          - environment: staging
+            github_environment: plan-nonprod
+          - environment: prod
+            github_environment: plan-prod
     steps:
-      - name: Request approval for high-cost change
-        run: |
-          echo "Cost increase of ${{ needs.cost-estimate.outputs.cost-increase }} requires approval"
-          echo "Manual approval required before deployment"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-  deploy:
-    needs: [cost-estimate, approval-gate]
-    if: always() && (needs.approval-gate.result == 'success' || needs.cost-estimate.outputs.requires-approval == 'false')
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: us-east-1
 
-      - name: Deploy infrastructure
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.17.0
+          terraform_wrapper: false
+
+      - name: Install conftest
         run: |
-          cd terraform
-          terraform init
-          terraform apply -auto-approve
+          set -euo pipefail
+          cd "$(mktemp -d)"
+          curl -fsSLO https://github.com/open-policy-agent/conftest/releases/download/v0.71.1/conftest_0.71.1_Linux_x86_64.tar.gz
+          curl -fsSLO https://github.com/open-policy-agent/conftest/releases/download/v0.71.1/checksums.txt
+          grep ' conftest_0.71.1_Linux_x86_64.tar.gz$' checksums.txt | sha256sum -c
+          tar -xzf conftest_0.71.1_Linux_x86_64.tar.gz conftest
+          sudo install -m 0755 conftest /usr/local/bin/conftest
+
+      - name: Plan ${{ matrix.environment }}
+        working-directory: infra
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Notify deployment with cost info
+          ENVIRONMENT: ${{ matrix.environment }}
         run: |
-          curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
-            -H 'Content-type: application/json' \
-            --data '{
-              "text": "🚀 Infrastructure deployed",
-              "attachments": [{
-                "color": "good",
-                "fields": [
-                  {
-                    "title": "Cost Impact",
-                    "value": "${{ needs.cost-estimate.outputs.cost-increase }}/month",
-                    "short": true
-                  },
-                  {
-                    "title": "Environment", 
-                    "value": "Production",
-                    "short": true
-                  }
-                ]
-              }]
-            }'
+          set -euo pipefail
+          terraform init -input=false
+          terraform workspace select "$ENVIRONMENT"
+          terraform plan -input=false -lock=false \
+            -var-file="env/$ENVIRONMENT.tfvars" -var="environment=$ENVIRONMENT" -out=tfplan
+          terraform show -json tfplan > plan.json
+
+      - name: Check the plan against the cost policy
+        working-directory: infra
+        run: conftest test plan.json --policy ../policy
+
+  # One check with a fixed name: it passes when nothing in infra/ or policy/
+  # changed, and otherwise only when every environment's plan passed.
+  result:
+    name: Cost checks result
+    if: always() && vars.COST_CHECKS_ENABLED == 'true'
+    needs: [changes, plan]
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          CHANGES: ${{ needs.changes.result }}
+          INFRA: ${{ needs.changes.outputs.infra }}
+          PLAN: ${{ needs.plan.result }}
+          FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          echo "change detection: $CHANGES, infra or policy changed: $INFRA, plans: $PLAN"
+          if [ "$CHANGES" != success ]; then exit 1; fi
+          if [ "$INFRA" = true ] && [ "$PLAN" != success ]; then
+            if [ "$FORK" = true ]; then
+              echo "::error::Infrastructure changes from a fork are not planned with cloud credentials. A maintainer must push the branch to this repository."
+            fi
+            exit 1
+          fi
 ```
 
-### Advanced Cost Gate with Budget Validation
+- **A `changes` job instead of a `paths` filter, and one result job**: a workflow skipped by `paths` never reports its checks, and a required check that never reports blocks the pull request. The matrix has the same problem in a different form: the check names (`plan (dev)` and so on) only exist when the matrix runs. So the workflow runs on every pull request, skips the plans when `infra/` and `policy/` did not change, and reports one check with a fixed name, `Cost checks result`, which fails if change detection failed or if any plan did not pass. Make that one the required check.
+- **Read-only credentials, because a plan runs pull request code.** `terraform plan` runs the providers and data sources in the pull request's configuration, so anyone who can open a pull request can run code with the plan's credentials. Keep the plan roles read-only. Speculative plans do not need the state lock, so the job plans with `-lock=false` and the role needs no write access to the state bucket at all. (A plan that reads the state while an apply writes it can fail; run it again.)
+- **Each role trusts one GitHub environment.** The matrix runs `dev` and `staging` in the GitHub environment `plan-nonprod` and `prod` in `plan-prod`, and each environment holds its own `AWS_PLAN_ROLE_ARN` variable. The role's trust policy accepts only that environment's OIDC subject, for example `repo:example-org/checkout:environment:plan-prod`, and `plan-prod` has required reviewers, so production credentials are used only after someone approves the run. Pinning these roles to the workflow file would not add much: a pull request can edit `cost-checks.yml` itself, so the read-only permissions are the real boundary.
+- **No credentials for forks.** The `plan` job only runs for branches of this repository; GitHub also does not issue OIDC tokens to workflows from fork pull requests by default. When a fork changes `infra/`, the result check fails with a message, and a maintainer pushes the branch to the repository after reading the change.
+- **One state per environment**: each matrix job selects the workspace named after its environment and passes the same name as `-var="environment=..."`, and the precondition from Part 4 rejects a plan whose workspace and environment disagree. The policy's environment therefore always matches the state being planned.
+- **Pinned and verified tools**: actions are pinned to commit SHAs, and Conftest is downloaded with its checksum checked.
+- **`terraform_wrapper: false`** keeps `terraform show -json` output clean for the next step.
+- **Make it required**: add `Cost checks result` to the branch's required status checks (a ruleset or branch protection), or a failing policy is only advice.
 
-Implement more sophisticated cost gates that check against team budgets:
+All three workflows in this part pass actionlint 1.7.12.
 
-```python
-# scripts/budget_validator.py
-import boto3
-import json
-import sys
-from datetime import datetime, timedelta
+## Reviews for Cost-Driving Changes
 
-class BudgetValidator:
-    def __init__(self):
-        self.budgets_client = boto3.client('budgets')
-        self.ce_client = boto3.client('ce')
+Instead of a cost approval step, send the changes that drive cost to their owners with a `CODEOWNERS` file:
 
-    def validate_deployment_cost(self, team_name, estimated_monthly_increase):
-        """Validate if deployment cost increase fits within team budget"""
-
-        # Get team's current budget
-        account_id = boto3.client('sts').get_caller_identity()['Account']
-        budget_name = f"{team_name}-monthly-budget"
-
-        try:
-            budget = self.budgets_client.describe_budget(
-                AccountId=account_id,
-                BudgetName=budget_name
-            )
-
-            budget_amount = float(budget['Budget']['BudgetLimit']['Amount'])
-
-        except Exception as e:
-            print(f"Could not retrieve budget for team {team_name}: {e}")
-            return False, "Budget not found - manual approval required"
-
-        # Get current month spending
-        start_date = datetime.now().replace(day=1).strftime('%Y-%m-%d')
-        end_date = datetime.now().strftime('%Y-%m-%d')
-
-        current_spending = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='MONTHLY',
-            Metrics=['BlendedCost'],
-            Filter={
-                'Tags': {
-                    'Key': 'team',
-                    'Values': [team_name]
-                }
-            }
-        )
-
-        if current_spending['ResultsByTime']:
-            current_cost = float(
-                current_spending['ResultsByTime'][0]['Total']['BlendedCost']['Amount']
-            )
-        else:
-            current_cost = 0
-
-        # Calculate projected monthly cost
-        days_in_month = (datetime.now().replace(month=datetime.now().month+1, day=1) -
-                        datetime.now().replace(day=1)).days
-        days_elapsed = datetime.now().day
-
-        projected_monthly_cost = (current_cost / days_elapsed) * days_in_month
-        new_projected_cost = projected_monthly_cost + estimated_monthly_increase
-
-        # Check if new cost would exceed budget
-        budget_utilization = (new_projected_cost / budget_amount) * 100
-
-        if new_projected_cost > budget_amount:
-            return False, f"Deployment would exceed budget: {budget_utilization:.1f}% utilization"
-        elif budget_utilization > 85:
-            return False, f"Deployment would push budget utilization to {budget_utilization:.1f}% - approval required"
-        else:
-            return True, f"Deployment within budget: {budget_utilization:.1f}% utilization"
-
-    def generate_cost_report(self, team_name, estimated_increase):
-        """Generate detailed cost impact report"""
-
-        approved, message = self.validate_deployment_cost(team_name, estimated_increase)
-
-        report = {
-            'team': team_name,
-            'estimated_monthly_increase': estimated_increase,
-            'budget_validation': {
-                'approved': approved,
-                'message': message
-            },
-            'timestamp': datetime.now().isoformat()
-        }
-
-        return report
-
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python budget_validator.py <team_name> <estimated_monthly_increase>")
-        sys.exit(1)
-
-    team_name = sys.argv[1]
-    estimated_increase = float(sys.argv[2])
-
-    validator = BudgetValidator()
-    report = validator.generate_cost_report(team_name, estimated_increase)
-
-    print(json.dumps(report, indent=2))
-
-    # Exit with error code if not approved
-    if not report['budget_validation']['approved']:
-        sys.exit(1)
+```text
+# .github/CODEOWNERS
+/infra/locals.tf                    @example-org/payments-leads
+/policy/                            @example-org/platform-finops
+/.github/workflows/cost-checks.yml  @example-org/platform-finops
+/.github/CODEOWNERS                 @example-org/platform-finops
 ```
 
-## Post-Deployment Cost Monitoring
+With "Require review from Code Owners" turned on, a change to the sizes map needs a payments lead, and a change to the policy needs the platform or FinOps owners. The workflow and the CODEOWNERS file need the same owners: otherwise a pull request could switch the check off (a `result` job with `if: false` is skipped, and a skipped required check counts as passing) or remove itself from review. Everything else merges with the normal review. Infracost's paid plans add guardrails that require approval when a pull request raises costs past a threshold, if you want a number-based rule.
 
-Monitor actual costs after deployment to validate estimates and identify optimization opportunities.
+## Clean Up Preview Environments
 
-### Automated Cost Tracking After Deployment
-
-Set up monitoring that compares actual costs to estimates:
+Preview environments per pull request are useful and easy to forget. Destroy them when the pull request closes. If your previews run as one Terraform workspace per pull request, a workflow like this one does it (the `infra/` module in the companion repository uses fixed names, so it is switched off there):
 
 ```yaml
-# .github/workflows/post-deployment-monitoring.yml
-name: Post-Deployment Cost Monitoring
+name: Preview cleanup
+
+# Destroys the Terraform workspace of a pull request's preview environment
+# (pr-<number>) when the pull request is closed or merged. The infra/ module
+# in this repository uses fixed names, so this is switched off here; turn it
+# on with the repository variable PREVIEW_CLEANUP_ENABLED=true. The GitHub
+# environment preview-cleanup holds PREVIEW_ROLE_ARN: an IAM role that can
+# only delete preview resources and that trusts only that environment
+# through the OIDC subject (repo:<org>/<repo>:environment:preview-cleanup).
+# Any workflow on any branch that names the environment gets that subject,
+# so give the environment a deployment branch policy that allows only the
+# default branch (pull_request_target jobs run on the base branch), and
+# required reviewers if you want a person to approve each cleanup.
+#
+# pull_request_target runs this file as it is on the base branch, and the
+# checkout below is the base branch too, so no code from the pull request
+# runs with the role.
+
 on:
-  workflow_run:
-    workflows: ['Cost Gate Deployment']
-    types: [completed]
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
 
 jobs:
-  setup-monitoring:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
+  destroy:
+    if: vars.PREVIEW_CLEANUP_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: preview-cleanup
+    env:
+      WORKSPACE: pr-${{ github.event.pull_request.number }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
 
-      - name: Create cost monitoring alarm
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.PREVIEW_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.17.0
+          terraform_wrapper: false
+
+      - name: Destroy the preview environment
+        working-directory: infra
         run: |
-          python scripts/create_cost_alarm.py \
-            --deployment-id ${{ github.run_id }} \
-            --estimated-cost ${{ github.event.workflow_run.outputs.cost-increase }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Schedule cost validation
-        run: |
-          # Create a scheduled job to validate costs in 7 days
-          python scripts/schedule_cost_validation.py \
-            --deployment-id ${{ github.run_id }} \
-            --validation-date $(date -d '+7 days' '+%Y-%m-%d')
+          set -euo pipefail
+          terraform init -input=false
+          # A failed listing stops the job here instead of looking like
+          # "nothing to destroy".
+          workspaces=$(terraform workspace list)
+          if ! grep -Eq "^[* ] $WORKSPACE\$" <<< "$workspaces"; then
+            echo "No workspace $WORKSPACE, nothing to destroy."
+            exit 0
+          fi
+          terraform workspace select "$WORKSPACE"
+          terraform destroy -input=false -auto-approve -var-file=env/dev.tfvars
+          terraform workspace select default
+          terraform workspace delete "$WORKSPACE"
 ```
 
-**Cost validation script:**
+- **It runs no code from the pull request.** A destroy job needs a role that can delete things, so it must not run Terraform code that a pull request can change (a provider, a backend or a provisioner runs with the role). `pull_request_target` takes the workflow file from the base branch, and the checkout is the base branch too. Scope the role to preview resources, for example with a condition on their tags.
+- **Only this workflow gets the delete role.** The role trusts the OIDC subject of the `preview-cleanup` GitHub environment, but any workflow on any branch that names that environment gets the same subject. Give the environment a deployment branch policy that allows only the default branch (a `pull_request_target` job runs on the base branch, so cleanup still works), and required reviewers if you want a person to approve each cleanup. To pin the role to this workflow file as well, add `job_workflow_ref` to the repository's OIDC subject with GitHub's subject customization and match it in the trust policy.
+- **It destroys before it deletes the workspace**, for the reason Part 2 gave: deleting a workspace that still tracks resources leaves them running. If listing the workspaces fails, the job fails, rather than reporting that there was nothing to destroy.
+- **The base branch must be able to destroy what the preview created.** If a pull request adds a provider, the base branch configuration cannot destroy those resources; clean up such previews by hand.
 
-```python
-# scripts/create_cost_alarm.py
-import boto3
-import argparse
-import json
-from datetime import datetime, timedelta
+As a safety net, give preview resources an expiry date tag and have a scheduled [Cloud Custodian](/guides/finops-for-devops-engineers/03-tools) policy report anything past its date.
 
-def create_deployment_cost_alarm(deployment_id, estimated_monthly_cost):
-    """Create CloudWatch alarm to monitor actual vs estimated costs"""
+## After the Deploy
 
-    cloudwatch = boto3.client('cloudwatch')
+The checks above work on estimates. After a release, check the real numbers:
 
-    # Create alarm that triggers if actual costs exceed estimate by 25%
-    threshold = estimated_monthly_cost * 1.25
+- Cost data arrives with a delay: Cost Explorer refreshes at least once a day, and a newly activated tag needs up to 24 hours. Look at a change's cost a few days after it ships, grouped by the `service` tag, and compare it with the estimate.
+- The anomaly monitor and budget from Part 4 watch each service continuously and alert its team.
+- Do not build per-deployment alarms on the CloudWatch `EstimatedCharges` metric. It is the whole account's month-to-date total, published only in us-east-1 and only after you enable billing alerts, so it cannot tell one deployment from another.
+- Mark deployments on your cost dashboards (for example, as Grafana annotations), so a cost step lines up with the release that caused it.
 
-    alarm_name = f"cost-overrun-{deployment_id}"
+## The Pipeline's Own Bill
 
-    cloudwatch.put_metric_alarm(
-        AlarmName=alarm_name,
-        ComparisonOperator='GreaterThanThreshold',
-        EvaluationPeriods=1,
-        MetricName='EstimatedCharges',
-        Namespace='AWS/Billing',
-        Period=86400,  # Daily
-        Statistic='Maximum',
-        Threshold=threshold,
-        ActionsEnabled=True,
-        AlarmActions=[
-            # Replace with your SNS topic ARN
-            'arn:aws:sns:us-west-2:123456789012:cost-alerts'
-        ],
-        AlarmDescription=f'Cost overrun alert for deployment {deployment_id}',
-        Dimensions=[
-            {
-                'Name': 'Currency',
-                'Value': 'USD'
-            }
-        ],
-        Tags=[
-            {
-                'Key': 'DeploymentId',
-                'Value': deployment_id
-            },
-            {
-                'Key': 'EstimatedCost',
-                'Value': str(estimated_monthly_cost)
-            }
-        ]
-    )
+CI is infrastructure too, and it grows with every workflow. The expensive jobs in this part only run when `infra/` or `policy/` changes: Infracost through a `paths` filter (its check is informational, so it does not need to be required), and the plans through the `changes` job. Add `concurrency` with `cancel-in-progress: true` to workflows that run on every push, cache dependencies, and use larger runners only where they finish enough faster to pay for themselves. [Why Your GitHub Actions Bill Keeps Growing](/posts/github-actions-bill-keeps-growing) and [What Does One Merge Actually Cost You in CI?](/posts/what-does-one-merge-cost-in-ci) measure these effects.
 
-    print(f"Created cost monitoring alarm: {alarm_name}")
-    return alarm_name
+## Common Mistakes
 
-def schedule_cost_review(deployment_id, review_date):
-    """Schedule a cost review using EventBridge"""
+- **Blocking on estimates.** Estimates miss traffic-driven costs; use them to inform, and block only on agreed rules.
+- **A policy nobody can change.** Keep the policy in the repository, reviewed by its owners, so a valid exception is a pull request, not a ticket.
+- **Plans without state.** Without the real state, every plan shows every resource as new, and estimates and policies see the whole stack instead of the change.
+- **Optional checks.** A check that is not required is ignored the first time it is inconvenient.
+- **Forgetting the delete path.** Every workflow that creates an environment needs one that destroys it.
 
-    events = boto3.client('events')
+## Summary
 
-    rule_name = f"cost-review-{deployment_id}"
+- Pull requests are the cheapest place to see and stop a cost mistake.
+- Infracost shows the monthly change; current setups use its GitHub App or the v5 `diff` action with a CLI v2 token.
+- Conftest checks the plan JSON against a few clear rules; make the check required.
+- CODEOWNERS routes cost-driving changes to their owners without a central approval queue.
+- Destroy preview environments on close, and check the real cost a few days after each release.
 
-    # Create EventBridge rule for the review date
-    events.put_rule(
-        Name=rule_name,
-        ScheduleExpression=f"at({review_date}T09:00:00)",
-        Description=f"Cost review for deployment {deployment_id}",
-        State='ENABLED'
-    )
+Next, [Part 6](/guides/finops-for-devops-engineers/06-cultural-shift) turns these tools into team habits: showback, unit costs and regular reviews.
 
-    # Add target to trigger cost review Lambda
-    events.put_targets(
-        Rule=rule_name,
-        Targets=[
-            {
-                'Id': '1',
-                'Arn': 'arn:aws:lambda:us-west-2:123456789012:function:cost-review-handler',
-                'Input': json.dumps({
-                    'deployment_id': deployment_id,
-                    'review_type': 'post_deployment'
-                })
-            }
-        ]
-    )
+## Keep Learning
 
-    print(f"Scheduled cost review for {review_date}")
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--deployment-id', required=True)
-    parser.add_argument('--estimated-cost', type=float, required=True)
-    args = parser.parse_args()
-
-    create_deployment_cost_alarm(args.deployment_id, args.estimated_cost)
-
-    # Schedule review in 7 days
-    review_date = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
-    schedule_cost_review(args.deployment_id, review_date)
-```
-
-### Continuous Cost Optimization Feedback
-
-Implement feedback loops that help teams learn from cost patterns:
-
-```python
-# scripts/cost_feedback_analyzer.py
-import boto3
-import json
-from datetime import datetime, timedelta
-from collections import defaultdict
-
-class CostFeedbackAnalyzer:
-    def __init__(self):
-        self.ce_client = boto3.client('ce')
-
-    def analyze_team_cost_trends(self, team_name, days_back=30):
-        """Analyze cost trends and provide feedback"""
-
-        end_date = datetime.now().strftime('%Y-%m-%d')
-        start_date = (datetime.now() - timedelta(days=days_back)).strftime('%Y-%m-%d')
-
-        # Get daily costs for the team
-        team_costs = self.ce_client.get_cost_and_usage(
-            TimePeriod={'Start': start_date, 'End': end_date},
-            Granularity='DAILY',
-            Metrics=['BlendedCost'],
-            Filter={
-                'Tags': {
-                    'Key': 'team',
-                    'Values': [team_name]
-                }
-            },
-            GroupBy=[
-                {'Type': 'DIMENSION', 'Key': 'SERVICE'}
-            ]
-        )
-
-        # Analyze patterns
-        service_trends = defaultdict(list)
-
-        for result in team_costs['ResultsByTime']:
-            date = result['TimePeriod']['Start']
-            for group in result['Groups']:
-                service = group['Keys'][0]
-                cost = float(group['Metrics']['BlendedCost']['Amount'])
-                service_trends[service].append({
-                    'date': date,
-                    'cost': cost
-                })
-
-        # Generate insights
-        insights = self.generate_cost_insights(service_trends)
-
-        # Create feedback report
-        report = {
-            'team': team_name,
-            'analysis_period': f"{start_date} to {end_date}",
-            'insights': insights,
-            'recommendations': self.generate_recommendations(insights),
-            'generated_at': datetime.now().isoformat()
-        }
-
-        return report
-
-    def generate_cost_insights(self, service_trends):
-        """Generate insights from cost trend data"""
-
-        insights = []
-
-        for service, costs in service_trends.items():
-            if len(costs) < 7:  # Need at least a week of data
-                continue
-
-            # Calculate trend
-            recent_avg = sum(c['cost'] for c in costs[-7:]) / 7
-            older_avg = sum(c['cost'] for c in costs[:7]) / 7 if len(costs) >= 14 else recent_avg
-
-            trend_percentage = ((recent_avg - older_avg) / older_avg * 100) if older_avg > 0 else 0
-
-            if abs(trend_percentage) > 20:  # Significant change
-                insights.append({
-                    'service': service,
-                    'trend': 'increasing' if trend_percentage > 0 else 'decreasing',
-                    'percentage_change': trend_percentage,
-                    'recent_daily_average': recent_avg,
-                    'significance': 'high' if abs(trend_percentage) > 50 else 'medium'
-                })
-
-        return insights
-
-    def generate_recommendations(self, insights):
-        """Generate actionable recommendations based on insights"""
-
-        recommendations = []
-
-        for insight in insights:
-            service = insight['service']
-            trend = insight['trend']
-            change = insight['percentage_change']
-
-            if trend == 'increasing' and change > 30:
-                if 'EC2' in service:
-                    recommendations.append({
-                        'priority': 'high',
-                        'service': service,
-                        'action': 'Review EC2 instance utilization and consider right-sizing',
-                        'potential_savings': 'Up to 30% on compute costs'
-                    })
-                elif 'RDS' in service:
-                    recommendations.append({
-                        'priority': 'medium',
-                        'service': service,
-                        'action': 'Analyze database performance metrics and consider Aurora Serverless',
-                        'potential_savings': 'Variable based on usage patterns'
-                    })
-                elif 'S3' in service:
-                    recommendations.append({
-                        'priority': 'low',
-                        'service': service,
-                        'action': 'Review S3 storage classes and implement lifecycle policies',
-                        'potential_savings': 'Up to 60% on storage costs'
-                    })
-
-        # Add general recommendations if no specific ones
-        if not recommendations:
-            recommendations.append({
-                'priority': 'low',
-                'service': 'general',
-                'action': 'Costs appear stable. Continue monitoring and consider implementing scheduled scaling for development resources.',
-                'potential_savings': '10-20% on non-production environments'
-            })
-
-        return recommendations
-
-# Generate weekly feedback report
-if __name__ == "__main__":
-    analyzer = CostFeedbackAnalyzer()
-
-    # This would typically be called for each team
-    teams = ['frontend', 'backend', 'data', 'devops']
-
-    for team in teams:
-        try:
-            report = analyzer.analyze_team_cost_trends(team)
-
-            print(f"\n=== Cost Feedback Report for {team.upper()} Team ===")
-            print(f"Analysis Period: {report['analysis_period']}")
-
-            if report['insights']:
-                print("\nKey Insights:")
-                for insight in report['insights']:
-                    print(f"  • {insight['service']}: {insight['trend']} by {insight['percentage_change']:.1f}%")
-
-            print("\nRecommendations:")
-            for rec in report['recommendations']:
-                print(f"  • [{rec['priority'].upper()}] {rec['action']}")
-                print(f"    Potential savings: {rec['potential_savings']}")
-
-            # In production, you'd send this report via email or Slack
-
-        except Exception as e:
-            print(f"Error analyzing costs for team {team}: {e}")
-```
-
-Integrating FinOps into CI/CD pipelines transforms cost management from a reactive process to a proactive practice. Teams get immediate feedback on cost implications, automated validation against budgets, and continuous optimization insights that improve decision-making over time.
+- [Introduction to CI/CD with GitHub Actions](/guides/introduction-to-cicd)
+- [Why Your GitHub Actions Bill Keeps Growing, and What Each Fix Saves](/posts/github-actions-bill-keeps-growing)
+- [What Does One Merge Actually Cost You in CI?](/posts/what-does-one-merge-cost-in-ci)
+- [Interview questions: Cloud Cost Optimization](/interview-questions/senior/cloud-cost-optimization)
