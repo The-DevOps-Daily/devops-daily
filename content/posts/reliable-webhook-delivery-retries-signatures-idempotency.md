@@ -55,7 +55,7 @@ None of these are webhook problems. They are delivery problems, and they are the
 
 ## Why a POST is not a delivery
 
-The gap between the two is that a POST is an event and a delivery is a _state machine_. Once you accept that a customer's endpoint can be slow, down, or wrong, the send has to outlive the request that triggered it.
+The gap between the two is that a POST is an event and a delivery is a *state machine*. Once you accept that a customer's endpoint can be slow, down, or wrong, the send has to outlive the request that triggered it.
 
 ```diagram
 {
@@ -72,7 +72,7 @@ The gap between the two is that a POST is an event and a delivery is a _state ma
 }
 ```
 
-The important word is _durable_. If your retry logic is a `for` loop with a `sleep` in the request handler, then a deploy in the middle of the backoff drops the event permanently, and you will not find out, because the process that knew about it is gone. Any real implementation writes the pending delivery down first.
+The important word is *durable*. If your retry logic is a `for` loop with a `sleep` in the request handler, then a deploy in the middle of the backoff drops the event permanently, and you will not find out, because the process that knew about it is gone. Any real implementation writes the pending delivery down first.
 
 This is the same shape as the problem in our [message queue simulator](/games/message-queue-simulator), and it is worth internalising the reason: a webhook is a message queue where the consumer is a stranger who is under no obligation to be up, fast, or correct.
 
@@ -80,15 +80,15 @@ This is the same shape as the problem in our [message queue simulator](/games/me
 
 Not all failures are the same, and treating them the same is the most common mistake. What matters is whether retrying could plausibly help.
 
-| What happened                              | Retry?             | Why                                                                 |
-| ------------------------------------------ | ------------------ | ------------------------------------------------------------------- |
-| `500`, `502`, `503`                        | Yes                | The endpoint is broken now and might not be in five minutes         |
-| Connection refused, DNS failure, TLS error | Yes                | Same, plus this is often a deploy in progress                       |
-| Timeout                                    | Yes, carefully     | The receiver may have processed it anyway. See below                |
-| `429 Too Many Requests`                    | Yes, and slow down | You are the problem. Back off and rate-limit this endpoint          |
-| `400`, `422`                               | No                 | The payload is wrong. Ten more identical attempts will be wrong too |
-| `401`, `403`                               | No                 | Their auth is misconfigured. Retrying cannot fix credentials        |
-| `404`, `410`                               | No                 | The URL is gone. Retrying is noise, and `410` is an explicit "stop" |
+| What happened | Retry? | Why |
+| --- | --- | --- |
+| `500`, `502`, `503` | Yes | The endpoint is broken now and might not be in five minutes |
+| Connection refused, DNS failure, TLS error | Yes | Same, plus this is often a deploy in progress |
+| Timeout | Yes, carefully | The receiver may have processed it anyway. See below |
+| `429 Too Many Requests` | Yes, and slow down | You are the problem. Back off and rate-limit this endpoint |
+| `400`, `422` | No | The payload is wrong. Ten more identical attempts will be wrong too |
+| `401`, `403` | No | Their auth is misconfigured. Retrying cannot fix credentials |
+| `404`, `410` | No | The URL is gone. Retrying is noise, and `410` is an explicit "stop" |
 
 The timeout row is the interesting one, and it is the reason idempotency is not optional. A timeout means you do not know the outcome. The receiver may have taken the request, written it to their database, spent 35 seconds sending a confirmation email, and then failed to answer you in time. If you retry, they get it twice. If you do not retry, you might have dropped it. There is no third option that avoids both, which is why the industry settled on "retry, and make the receiver's side safe to run twice".
 
@@ -135,7 +135,7 @@ Here is what that curve looks like against the linear alternative:
 
 Two design questions matter more than the exact numbers.
 
-**Where do you give up?** You need a terminal state, or failed deliveries accumulate forever. Svix marks the message `Failed` and then sends _you_ a webhook about it, `message.attempt.exhausted`, which is a nice touch: your webhook system tells you about its own failures through the same channel your customers use.
+**Where do you give up?** You need a terminal state, or failed deliveries accumulate forever. Svix marks the message `Failed` and then sends *you* a webhook about it, `message.attempt.exhausted`, which is a nice touch: your webhook system tells you about its own failures through the same channel your customers use.
 
 **When do you stop trying an endpoint entirely?** An endpoint that has been dead for a week should not receive a fresh 8-attempt schedule for every event. Svix auto-disables an endpoint after repeated failures spanning 5 days (with at least 12 hours between the first and last failure in a 24-hour window) and fires an `EndpointDisabledEvent`. If you build this yourself, some version of this circuit breaker is load-bearing, because without it one abandoned customer integration generates traffic and log volume indefinitely.
 
@@ -208,7 +208,7 @@ Webhook delivery is at-least-once. Every provider worth using tells you this pla
 
 So the receiver has to be safe to run twice. There are two halves to get right, and they are easy to conflate.
 
-**Receiver side: deduplicate on the message ID.** The `svix-id` header (`webhook-id` in the unbranded Standard Webhooks naming) identifies the _message_, and it stays the same across every retry of that message. That property is what makes it usable as a dedup key. Svix's docs suggest caching seen IDs with a 24-hour expiry, which lines up with the ~27-hour retry window.
+**Receiver side: deduplicate on the message ID.** The `svix-id` header (`webhook-id` in the unbranded Standard Webhooks naming) identifies the *message*, and it stays the same across every retry of that message. That property is what makes it usable as a dedup key. Svix's docs suggest caching seen IDs with a 24-hour expiry, which lines up with the ~27-hour retry window.
 
 ```typescript
 // Cheap version: a unique index does the work, no cache to keep warm.
@@ -226,9 +226,9 @@ try {
 await handleEvent(event); // now safe: exactly one of these runs
 ```
 
-The subtlety is _when_ you write the dedup row. Write it before the work and a crash mid-handler means the event is marked processed but is not; write it after and two concurrent deliveries both pass the check. Doing the insert and the work in one transaction is the version that holds up.
+The subtlety is *when* you write the dedup row. Write it before the work and a crash mid-handler means the event is marked processed but is not; write it after and two concurrent deliveries both pass the check. Doing the insert and the work in one transaction is the version that holds up.
 
-**Sender side: use an idempotency key on your API calls.** This is the mirror image and it is separate. When _your_ service calls the webhook API and the connection drops, you do not know whether the event was created. Retry blindly and your customer may get the same event twice from a single business action.
+**Sender side: use an idempotency key on your API calls.** This is the mirror image and it is separate. When *your* service calls the webhook API and the connection drops, you do not know whether the event was created. Retry blindly and your customer may get the same event twice from a single business action.
 
 Svix supports [`Idempotency-Key`](https://docs.svix.com/idempotency) on POSTs. Send the same key and you get the original response back rather than a second event. Keys are retained for up to 12 hours. In the Node SDK it is a third argument:
 
@@ -251,7 +251,7 @@ await svix.message.create(
   },
   // Derive it from the business event, not randomly, so a retry of the
   // same operation reuses it. randomUUID() here would defeat the point.
-  { idempotencyKey: `invoice-paid-${invoice.id}` }
+  { idempotencyKey: `invoice-paid-${invoice.id}` },
 );
 ```
 
@@ -265,7 +265,7 @@ Svix's regular endpoints send in order on a best-effort basis: messages are queu
 
 That is head-of-line blocking, and it is inherent rather than an implementation weakness. Strict ordering means one stuck message stops everything behind it.
 
-The alternative that usually costs less: make events carry enough information to be ordered by the receiver. A monotonic sequence number or the resource's `updatedAt`, and a receiver that ignores an event older than the state it already has. That handles reordering _and_ duplicates with the same check, and it does not couple your throughput to your slowest endpoint.
+The alternative that usually costs less: make events carry enough information to be ordered by the receiver. A monotonic sequence number or the resource's `updatedAt`, and a receiver that ignores an event older than the state it already has. That handles reordering *and* duplicates with the same check, and it does not couple your throughput to your slowest endpoint.
 
 ## Rate limiting, from both directions
 
@@ -273,7 +273,7 @@ Two different concerns share the name.
 
 Your customers can be overwhelmed by you. A batch job that updates 50,000 records should not turn into 50,000 POSTs at once against a customer running one small container. Svix lets you set a [rate limit](https://docs.svix.com/rate-limit) in messages per second per application or per endpoint, and throttles to hold that rate rather than dropping.
 
-And you can be rate-limited by them, which arrives as `429`. Treat it as a retryable failure _and_ as a signal: back off, and if it keeps happening, lower that endpoint's configured rate. Our [rate limit simulator](/games/rate-limit-simulator) covers the algorithms if you want to see how the different bucket strategies behave under bursts.
+And you can be rate-limited by them, which arrives as `429`. Treat it as a retryable failure *and* as a signal: back off, and if it keeps happening, lower that endpoint's configured rate. Our [rate limit simulator](/games/rate-limit-simulator) covers the algorithms if you want to see how the different bucket strategies behave under bursts.
 
 ## Observability, which is the actual product
 
@@ -289,7 +289,7 @@ What you need to be able to answer:
 - The exact payload as sent, so signature debugging is possible
 - The current state: delivered, retrying with the next attempt at a known time, or exhausted
 
-The multiplier is letting _customers_ see it themselves. Svix's angle here is [Svix Portal](https://docs.svix.com/app-portal), an embeddable UI where your customer manages their own endpoints, reads their own delivery log, and replays their own failures without opening a ticket. That is worth pricing honestly if you are considering building: it is a whole small product, and it is the difference between "we have retries" and "our customers can debug their own integration".
+The multiplier is letting *customers* see it themselves. Svix's angle here is [Svix Portal](https://docs.svix.com/app-portal), an embeddable UI where your customer manages their own endpoints, reads their own delivery log, and replays their own failures without opening a ticket. That is worth pricing honestly if you are considering building: it is a whole small product, and it is the difference between "we have retries" and "our customers can debug their own integration".
 
 ## A working example, both halves
 
@@ -319,7 +319,7 @@ export async function configureWebhookEventTypes() {
         if (!(err instanceof ApiException) || err.code !== 404) throw err;
         await svix.eventType.create(eventType);
       }
-    })
+    }),
   );
 }
 
@@ -354,7 +354,7 @@ export async function emitInvoicePaid(customerId: string, invoice: Invoice) {
         paidAt: invoice.paidAt.toISOString(),
       },
     },
-    { idempotencyKey: `invoice-paid-${invoice.id}` }
+    { idempotencyKey: `invoice-paid-${invoice.id}` },
   );
 }
 ```
@@ -374,40 +374,44 @@ const app = express();
 const wh = new Webhook(process.env.SVIX_WEBHOOK_SECRET!);
 
 // express.raw, NOT express.json. The signature is over the bytes.
-app.post('/webhooks/billing', express.raw({ type: 'application/json' }), async (req, res) => {
-  let event: BillingEvent;
-  try {
-    event = wh.verify(req.body, req.headers as Record<string, string>) as BillingEvent;
-  } catch (err) {
-    if (err instanceof WebhookVerificationError) {
-      // 400, not 401: this is a malformed request, and a 4xx tells the
-      // sender not to waste 27 hours of retries on it.
-      return res.status(400).send('invalid signature');
+app.post(
+  '/webhooks/billing',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    let event: BillingEvent;
+    try {
+      event = wh.verify(req.body, req.headers as Record<string, string>) as BillingEvent;
+    } catch (err) {
+      if (err instanceof WebhookVerificationError) {
+        // 400, not 401: this is a malformed request, and a 4xx tells the
+        // sender not to waste 27 hours of retries on it.
+        return res.status(400).send('invalid signature');
+      }
+      throw err;
     }
-    throw err;
-  }
 
-  const messageId = req.header('svix-id')!;
+    const messageId = req.header('svix-id')!;
 
-  try {
-    // Dedup row and the work in one transaction, so a crash rolls back
-    // both and the retry gets a clean shot.
-    await db.$transaction(async (tx) => {
-      await tx.processedWebhook.create({ data: { id: messageId } });
-      await applyBillingEvent(tx, event);
-    });
-  } catch (err) {
-    if (isUniqueViolation(err)) {
-      // Seen it. 200 so the sender stops retrying.
-      return res.status(200).send('duplicate');
+    try {
+      // Dedup row and the work in one transaction, so a crash rolls back
+      // both and the retry gets a clean shot.
+      await db.$transaction(async (tx) => {
+        await tx.processedWebhook.create({ data: { id: messageId } });
+        await applyBillingEvent(tx, event);
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        // Seen it. 200 so the sender stops retrying.
+        return res.status(200).send('duplicate');
+      }
+      // Anything else: 500 on purpose, so this gets retried.
+      console.error({ messageId, err }, 'webhook handler failed');
+      return res.status(500).send('handler failed');
     }
-    // Anything else: 500 on purpose, so this gets retried.
-    console.error({ messageId, err }, 'webhook handler failed');
-    return res.status(500).send('handler failed');
-  }
 
-  res.status(200).send('ok');
-});
+    res.status(200).send('ok');
+  },
+);
 ```
 
 The status codes are doing real work here, and they are the part most handlers get wrong. A `400` on a bad signature stops the retries. A `500` on a handler error invites them. A `200` on a duplicate ends a chain that would otherwise run its full schedule. Answering "what should this endpoint return?" correctly is most of what makes a receiver well-behaved.
@@ -467,8 +471,8 @@ The delivery problems are the same everywhere, so the checklist is portable whet
 
 If those mechanics are product infrastructure rather than your product, [Svix Dispatch](https://link.svix.com/devopsdaily) packages them behind one API and gives your customers a polished place to configure endpoints, inspect attempts, and replay failures themselves. It also builds on the [Standard Webhooks](https://www.standardwebhooks.com/) signing model, so receivers get a documented verification contract instead of a proprietary signature scheme. Their [docs](https://docs.svix.com/) publish the operational details, including retry timing and ordering tradeoffs, which makes the service easier to evaluate against a home-grown implementation.
 
+To sign and check a webhook payload by hand with OpenSSL and Python, read [HMAC: Authenticating Messages](/guides/cryptography-essentials/02-hashing#h2-hmac-authenticating-messages) in our Cryptography Essentials guide.
+
 We later put that claim to the test: [Stop Building Webhook Retries Yourself](/posts/stop-building-webhook-retries-yourself) points Svix at a receiver built to fail in all the ways listed above and records what the retries, signature checks, and replay look like, with the [code on GitHub](https://github.com/The-DevOps-Daily/webhook-retries-demo). If you are also on the receiving side, the [Svix vs Hookdeck comparison](/comparisons/svix-vs-hookdeck) covers both directions.
 
 For an interactive walkthrough of retries, signatures, and duplicate handling, try the [webhook delivery simulator](/games/webhook-delivery-simulator). For related reading on the same underlying problem, our post on [designing automation with failure in mind](/posts/designing-automation-with-failure-in-mind) covers the general pattern, and the [message queue simulator](/games/message-queue-simulator) is a good way to build intuition for at-least-once delivery before you have to debug it in production.
-
-To sign and check a webhook payload by hand with OpenSSL and Python, read [HMAC: Authenticating Messages](/guides/cryptography-essentials/02-hashing#h2-hmac-authenticating-messages) in our Cryptography Essentials guide.

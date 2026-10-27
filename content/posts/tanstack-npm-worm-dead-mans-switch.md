@@ -46,22 +46,22 @@ This post walks through what the attack did, why your normal incident-response r
 
 Per the GitHub issue thread and the post-mortem at [tanstack.com/blog/npm-supply-chain-compromise-postmortem](https://tanstack.com/blog/npm-supply-chain-compromise-postmortem), the confirmed-bad versions are:
 
-| Package                           | First bad version | Second bad version (was `latest`) |
-| --------------------------------- | ----------------- | --------------------------------- |
-| `@tanstack/history`               | 1.161.9           | 1.161.12                          |
-| `@tanstack/router-utils`          | 1.161.11          | 1.161.14                          |
-| `@tanstack/router-core`           | 1.169.5           | 1.169.8                           |
-| `@tanstack/router-devtools-core`  | 1.167.6           | 1.167.9                           |
-| `@tanstack/react-router-devtools` | 1.166.16          | 1.166.19                          |
-| `@tanstack/router-generator`      | 1.166.45          | 1.166.48                          |
-| `@tanstack/virtual-file-routes`   | 1.161.10          | 1.161.13                          |
-| `@tanstack/router-plugin`         | 1.167.38          | 1.167.41                          |
-| `@tanstack/react-router`          | 1.169.5           | 1.169.8                           |
-| `@tanstack/router-devtools`       | 1.166.16          | 1.166.19                          |
-| `@tanstack/react-start`           | 1.167.68          | 1.167.71                          |
-| `@tanstack/router-cli`            | 1.166.46          | 1.166.49                          |
-| `@tanstack/router-vite-plugin`    | 1.166.53          | 1.166.56                          |
-| `@tanstack/solid-router`          | 1.169.5           | 1.169.8                           |
+| Package | First bad version | Second bad version (was `latest`) |
+|---|---|---|
+| `@tanstack/history` | 1.161.9 | 1.161.12 |
+| `@tanstack/router-utils` | 1.161.11 | 1.161.14 |
+| `@tanstack/router-core` | 1.169.5 | 1.169.8 |
+| `@tanstack/router-devtools-core` | 1.167.6 | 1.167.9 |
+| `@tanstack/react-router-devtools` | 1.166.16 | 1.166.19 |
+| `@tanstack/router-generator` | 1.166.45 | 1.166.48 |
+| `@tanstack/virtual-file-routes` | 1.161.10 | 1.161.13 |
+| `@tanstack/router-plugin` | 1.167.38 | 1.167.41 |
+| `@tanstack/react-router` | 1.169.5 | 1.169.8 |
+| `@tanstack/router-devtools` | 1.166.16 | 1.166.19 |
+| `@tanstack/react-start` | 1.167.68 | 1.167.71 |
+| `@tanstack/router-cli` | 1.166.46 | 1.166.49 |
+| `@tanstack/router-vite-plugin` | 1.166.53 | 1.166.56 |
+| `@tanstack/solid-router` | 1.169.5 | 1.169.8 |
 
 Bad versions were live from roughly 19:20 UTC to npm takedown. The worm also republished 200+ packages owned by other maintainers it touched. Socket maintains a running list at [socket.dev/supply-chain-attacks/mini-shai-hulud](https://socket.dev/supply-chain-attacks/mini-shai-hulud).
 
@@ -238,7 +238,7 @@ If any of the above returns a hit, treat the machine as compromised and follow t
 
 2. **Pin lockfiles back to a known-good version range**, delete `node_modules` and `package-lock.json` / `bun.lock` / `yarn.lock`, reinstall from scratch on a clean machine.
 
-3. **Rotate everything the payload could have touched** _after_ you have disarmed the watchdog: GitHub tokens (PATs and OAuth app installs), npm tokens, AWS access keys, GCP service-account keys, Vault tokens, SSH keys, `~/.npmrc` auth lines. If a CI runner installed an affected version, rotate that runner's IAM role too because the payload pulls IMDS credentials from inside the runner.
+3. **Rotate everything the payload could have touched** *after* you have disarmed the watchdog: GitHub tokens (PATs and OAuth app installs), npm tokens, AWS access keys, GCP service-account keys, Vault tokens, SSH keys, `~/.npmrc` auth lines. If a CI runner installed an affected version, rotate that runner's IAM role too because the payload pulls IMDS credentials from inside the runner.
 
 4. **Check your npm publish history.** If you maintain other packages on the same machine, the worm may have already republished them. Look at recent publish events on `npmjs.com/~<your-user>` for tarballs you did not push.
 
@@ -269,7 +269,7 @@ SLSA provenance answers "did this artifact come from this build pipeline?" It do
         ▲                     ▲                      ▲
         │                     │                      │
     branch              isolated runners        publish workflow
-    protection +        + pinned action SHAs    on `release`
+    protection +        + pinned action SHAs    on `release`  
     required reviews    + no `pull_request`     events only,
                         from forks               not on `push`
 ```

@@ -26,7 +26,6 @@ To use a specific SSH key with Git, you can set the `GIT_SSH_COMMAND` environmen
 ## Why Use Different SSH Keys?
 
 You might need different SSH keys for various reasons:
-
 - Separate keys for work and personal GitHub/GitLab accounts
 - Different security requirements for different projects
 - Multiple deployment keys for CI/CD systems

@@ -47,8 +47,8 @@ Before jumping into specific controls, internalize these principles. They should
 jobs:
   build:
     permissions:
-      contents: read # Only read source code
-      packages: write # Write to package registry
+      contents: read      # Only read source code
+      packages: write     # Write to package registry
     steps:
       - uses: actions/checkout@v4
 ```
@@ -86,8 +86,8 @@ Runners execute your pipeline code. A compromised runner means an attacker can s
 ```yaml
 # Self-hosted runner with ephemeral flag
 ./config.sh --url https://github.com/org/repo \
---token TOKEN \
---ephemeral
+  --token TOKEN \
+  --ephemeral
 ```
 
 For Kubernetes-based runners, use actions-runner-controller with ephemeral mode enabled.
@@ -152,12 +152,12 @@ Privileged DinD is a container escape waiting to happen. Use Kaniko instead for 
 build:
   image:
     name: gcr.io/kaniko-project/executor:latest
-    entrypoint: ['']
+    entrypoint: [""]
   script:
     - /kaniko/executor
-      --context $CI_PROJECT_DIR
-      --dockerfile Dockerfile
-      --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+        --context $CI_PROJECT_DIR
+        --dockerfile Dockerfile
+        --destination $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 ```
 
 ## Secrets and Credentials
@@ -182,7 +182,7 @@ jobs:
 
   deploy-production:
     needs: deploy-staging
-    environment: production # Requires manual approval
+    environment: production  # Requires manual approval
 ```
 
 ### Use OIDC Instead of Static Credentials
@@ -213,20 +213,18 @@ The AWS IAM trust policy locks this down to your specific repo:
 ```json
 {
   "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::123456789:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:myorg/myrepo:*"
-        }
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {
+      "Federated": "arn:aws:iam::123456789:oidc-provider/token.actions.githubusercontent.com"
+    },
+    "Action": "sts:AssumeRoleWithWebIdentity",
+    "Condition": {
+      "StringLike": {
+        "token.actions.githubusercontent.com:sub": "repo:myorg/myrepo:*"
       }
     }
-  ]
+  }]
 }
 ```
 
@@ -307,12 +305,12 @@ spec:
                 - Pod
       verifyImages:
         - imageReferences:
-            - 'ghcr.io/myorg/*'
+            - "ghcr.io/myorg/*"
           attestors:
             - entries:
                 - keyless:
-                    issuer: 'https://token.actions.githubusercontent.com'
-                    subject: 'https://github.com/myorg/*'
+                    issuer: "https://token.actions.githubusercontent.com"
+                    subject: "https://github.com/myorg/*"
 ```
 
 This means no unsigned image can run in your cluster. Period.

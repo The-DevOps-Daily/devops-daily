@@ -30,17 +30,17 @@ If you run any AI-assisted IDE or build on one of these frameworks, you are pote
 
 ## TLDR
 
-| Detail               | Info                                                                                                                                                                                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Disclosed            | April 15, 2026                                                                                                                                                                                        |
-| Researchers          | [OX Security](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/) (Moshe Siman Tov Bustan, Mustafa Naamnih, Nir Zadok, Roni Bar) |
-| Affected             | Anthropic MCP SDKs in Python, TypeScript, Java, Rust                                                                                                                                                  |
-| Root cause           | User-controlled input reaches `StdioServerParameters` without sanitization, enabling shell injection at server spawn                                                                                  |
-| Attacker capability  | Remote code execution on the host running the MCP client or server                                                                                                                                    |
-| Scale                | 150M+ downloads, 7,000+ public servers, up to 200,000 vulnerable instances                                                                                                                            |
-| Notable CVEs         | CVE-2026-30623 (LiteLLM), CVE-2026-30615 (Windsurf), CVE-2025-65720 (GPT Researcher), plus 7 more                                                                                                     |
-| Affected downstreams | LiteLLM, LangChain, LangFlow, Cursor, VS Code, Windsurf, Claude Code, Gemini CLI, Flowise                                                                                                             |
-| Anthropic's response | Behavior is "by design"; sanitization is "the developer's responsibility"                                                                                                                             |
+| Detail | Info |
+|--------|------|
+| Disclosed | April 15, 2026 |
+| Researchers | [OX Security](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/) (Moshe Siman Tov Bustan, Mustafa Naamnih, Nir Zadok, Roni Bar) |
+| Affected | Anthropic MCP SDKs in Python, TypeScript, Java, Rust |
+| Root cause | User-controlled input reaches `StdioServerParameters` without sanitization, enabling shell injection at server spawn |
+| Attacker capability | Remote code execution on the host running the MCP client or server |
+| Scale | 150M+ downloads, 7,000+ public servers, up to 200,000 vulnerable instances |
+| Notable CVEs | CVE-2026-30623 (LiteLLM), CVE-2026-30615 (Windsurf), CVE-2025-65720 (GPT Researcher), plus 7 more |
+| Affected downstreams | LiteLLM, LangChain, LangFlow, Cursor, VS Code, Windsurf, Claude Code, Gemini CLI, Flowise |
+| Anthropic's response | Behavior is "by design"; sanitization is "the developer's responsibility" |
 
 Source: [OX Security advisory](https://www.ox.security/blog/the-mother-of-all-ai-supply-chains-critical-systemic-vulnerability-at-the-core-of-the-mcp/), with downstream reporting from [TechRadar](https://www.techradar.com/pro/security/this-is-not-a-traditional-coding-error-experts-flag-potentially-critical-security-issues-at-the-heart-of-anthropics-mcp-exposes-150-million-downloads-and-thousands-of-servers-to-complete-takeover) and [The Hacker News](https://thehackernews.com/).
 

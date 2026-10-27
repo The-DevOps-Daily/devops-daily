@@ -45,15 +45,15 @@ This is about the count. Trace one credential from a laptop to production, count
 
 Before choosing a tool, answer one question: for a single credential, how many places would you have to change?
 
-Not "where is it referenced". References are the easy half and `grep` finds them. The hard half is copies of the _value_, which live in systems that do not grep: your CI provider's secret store, a running container's environment, a developer's laptop, a terminal scrollback, an error report.
+Not "where is it referenced". References are the easy half and `grep` finds them. The hard half is copies of the *value*, which live in systems that do not grep: your CI provider's secret store, a running container's environment, a developer's laptop, a terminal scrollback, an error report.
 
 Here is the reference count from one of our own repositories, a Next.js app with Stripe, Postgres and SES:
 
-| Secret                  | CI config | App code | Config files | Total files |
-| ----------------------- | --------- | -------- | ------------ | ----------- |
-| `DATABASE_URL`          | 1         | 1        | 4            | 6           |
-| `STRIPE_SECRET_KEY`     | 0         | 2        | 3            | 5           |
-| `AWS_SECRET_ACCESS_KEY` | 0         | 2        | 2            | 4           |
+| Secret | CI config | App code | Config files | Total files |
+| --- | --- | --- | --- | --- |
+| `DATABASE_URL` | 1 | 1 | 4 | 6 |
+| `STRIPE_SECRET_KEY` | 0 | 2 | 3 | 5 |
+| `AWS_SECRET_ACCESS_KEY` | 0 | 2 | 2 | 4 |
 
 You can produce the same table in a few seconds:
 
@@ -178,7 +178,7 @@ gitleaks detect --source . --redact --exit-code 1
 
 ```yaml
 permissions:
-  id-token: write # lets the runner request an OIDC token
+  id-token: write   # lets the runner request an OIDC token
   contents: read
 
 steps:

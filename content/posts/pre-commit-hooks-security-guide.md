@@ -206,14 +206,14 @@ class MyCompanyTokenDetector(RegexBasedDetector):
 
 Both tools are solid. Here is when to pick each:
 
-| Scenario                           | Best tool               |
-| ---------------------------------- | ----------------------- |
-| New repo, clean history            | Gitleaks                |
-| Legacy codebase with known secrets | Detect-secrets          |
-| Speed is critical                  | Gitleaks (Go vs Python) |
-| Need interactive audit workflow    | Detect-secrets          |
-| Git history scanning               | Gitleaks                |
-| Python-heavy team                  | Detect-secrets          |
+| Scenario | Best tool |
+|----------|-----------|
+| New repo, clean history | Gitleaks |
+| Legacy codebase with known secrets | Detect-secrets |
+| Speed is critical | Gitleaks (Go vs Python) |
+| Need interactive audit workflow | Detect-secrets |
+| Git history scanning | Gitleaks |
+| Python-heavy team | Detect-secrets |
 
 The best setup uses both: detect-secrets locally for the baseline workflow, gitleaks in CI as a backstop.
 

@@ -29,18 +29,18 @@ Here is what shipped, who needs to act, and how to roll it out without breaking 
 
 ## TLDR
 
-| Detail             | Info                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Releases           | Next.js 16.2.6 and 15.5.18                                                                                   |
-| Advisories         | 13 (7 High, 4 Moderate, 2 Low)                                                                               |
-| Worst CVSS         | 8.6 (WebSocket SSRF)                                                                                         |
-| Upstream React CVE | CVE-2026-23870 (Server Components DoS)                                                                       |
-| Affected versions  | Varies by advisory; many cover 15.x &lt; 15.5.16 and 16.x &lt; 16.2.5, with some also reaching 13.x and 14.x |
-| Patched versions   | 15.5.18 (cumulative on the 15.x line) and 16.2.6 (cumulative on the 16.x line)                               |
-| Node engine        | 15.5.18 needs `^18.18.0 \|\| ^19.8.0 \|\| >=20.0.0`; 16.2.6 needs `>=20.9.0`                                 |
-| Vercel-hosted      | Partially mitigated for some advisories                                                                      |
-| Self-hosted        | Fully exposed until upgraded                                                                                 |
-| What you do        | `npm install next@latest` on the same major, redeploy, audit middleware-only authorization                   |
+| Detail | Info |
+|--------|------|
+| Releases | Next.js 16.2.6 and 15.5.18 |
+| Advisories | 13 (7 High, 4 Moderate, 2 Low) |
+| Worst CVSS | 8.6 (WebSocket SSRF) |
+| Upstream React CVE | CVE-2026-23870 (Server Components DoS) |
+| Affected versions | Varies by advisory; many cover 15.x &lt; 15.5.16 and 16.x &lt; 16.2.5, with some also reaching 13.x and 14.x |
+| Patched versions | 15.5.18 (cumulative on the 15.x line) and 16.2.6 (cumulative on the 16.x line) |
+| Node engine | 15.5.18 needs `^18.18.0 \|\| ^19.8.0 \|\| >=20.0.0`; 16.2.6 needs `>=20.9.0` |
+| Vercel-hosted | Partially mitigated for some advisories |
+| Self-hosted | Fully exposed until upgraded |
+| What you do | `npm install next@latest` on the same major, redeploy, audit middleware-only authorization |
 
 ## What Shipped
 
@@ -122,13 +122,13 @@ cat package-lock.json 2>/dev/null | grep -A1 '"node_modules/next":'
 
 Decision matrix once you know your version:
 
-| Your version                                  | Exposure                                                                | Action                                 |
-| --------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------------- |
-| 15.5.18 or 16.2.6 (or later on the same line) | Patched                                                                 | None on framework, audit your code     |
-| 15.5.16, 15.5.17, 16.2.5                      | Most fixes landed; the cumulative patch is on 15.5.18 / 16.2.6          | Bump to the latest patch on your major |
-| 15.x below 15.5.16                            | Multiple advisories apply (exact set varies; ranges in each GHSA)       | Upgrade to 15.5.18                     |
-| 16.x below 16.2.5                             | Multiple advisories apply (exact set varies; ranges in each GHSA)       | Upgrade to 16.2.6                      |
-| 13.x or 14.x                                  | Subset of the advisories reach back to 13.x; partial backports unlikely | Plan a major upgrade                   |
+| Your version | Exposure | Action |
+|--------------|----------|--------|
+| 15.5.18 or 16.2.6 (or later on the same line) | Patched | None on framework, audit your code |
+| 15.5.16, 15.5.17, 16.2.5 | Most fixes landed; the cumulative patch is on 15.5.18 / 16.2.6 | Bump to the latest patch on your major |
+| 15.x below 15.5.16 | Multiple advisories apply (exact set varies; ranges in each GHSA) | Upgrade to 15.5.18 |
+| 16.x below 16.2.5 | Multiple advisories apply (exact set varies; ranges in each GHSA) | Upgrade to 16.2.6 |
+| 13.x or 14.x | Subset of the advisories reach back to 13.x; partial backports unlikely | Plan a major upgrade |
 
 Affected ranges vary per advisory. The simple call is "upgrade to 15.5.18 or 16.2.6 to cover the full batch." If you need the exact range for a single CVE, click into its GHSA from the release notes.
 

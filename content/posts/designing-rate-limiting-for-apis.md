@@ -227,13 +227,13 @@ The difference from token bucket matters. Token bucket allows a burst to pass th
 
 ## Which one should you use?
 
-| Algorithm              | Allows bursts         | Memory per client   | Accuracy | Use when                           |
-| ---------------------- | --------------------- | ------------------- | -------- | ---------------------------------- |
-| Fixed window           | At the boundary (bad) | 1 integer           | Low      | Rough internal limits              |
-| Sliding window log     | No                    | 1 entry per request | Exact    | Low-volume, precise rules          |
-| Sliding window counter | Smoothed              | 2 integers          | High     | General-purpose default            |
-| Token bucket           | Yes, up to capacity   | small hash          | High     | Public APIs, most cases            |
-| Leaky bucket           | No                    | queue               | High     | Protecting a fixed-rate downstream |
+| Algorithm | Allows bursts | Memory per client | Accuracy | Use when |
+| --- | --- | --- | --- | --- |
+| Fixed window | At the boundary (bad) | 1 integer | Low | Rough internal limits |
+| Sliding window log | No | 1 entry per request | Exact | Low-volume, precise rules |
+| Sliding window counter | Smoothed | 2 integers | High | General-purpose default |
+| Token bucket | Yes, up to capacity | small hash | High | Public APIs, most cases |
+| Leaky bucket | No | queue | High | Protecting a fixed-rate downstream |
 
 If you are not sure, use **token bucket**. It handles real traffic well, the burst behavior is intuitive, and the Redis implementation above is production-ready. Reach for the sliding window counter if "X requests per minute" is easier to explain to your customers than a bucket.
 

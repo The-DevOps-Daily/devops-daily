@@ -56,14 +56,14 @@ Before diving into tools, understand the principles that make secrets management
 
 Not every secret is the same. Here is how rotation frequency and storage should differ:
 
-| Secret Type      | Rotation    | Storage        | Notes                                   |
-| ---------------- | ----------- | -------------- | --------------------------------------- |
-| API Keys         | 90 days     | Vault/Cloud SM | Keep multiple active keys for rotation  |
-| Database Creds   | Dynamic     | Vault          | Generate per-session when possible      |
-| TLS Certificates | 90 days     | Vault PKI      | Automate with ACME or Vault             |
-| SSH Keys         | 1 year      | Vault SSH      | Consider signed certificates instead    |
-| Encryption Keys  | 1-2 years   | HSM/KMS        | Never export, rotate with re-encryption |
-| OAuth Tokens     | Per session | Memory only    | Use refresh tokens, short-lived access  |
+| Secret Type | Rotation | Storage | Notes |
+|-------------|----------|---------|-------|
+| API Keys | 90 days | Vault/Cloud SM | Keep multiple active keys for rotation |
+| Database Creds | Dynamic | Vault | Generate per-session when possible |
+| TLS Certificates | 90 days | Vault PKI | Automate with ACME or Vault |
+| SSH Keys | 1 year | Vault SSH | Consider signed certificates instead |
+| Encryption Keys | 1-2 years | HSM/KMS | Never export, rotate with re-encryption |
+| OAuth Tokens | Per session | Memory only | Use refresh tokens, short-lived access |
 
 ## HashiCorp Vault
 
@@ -354,14 +354,14 @@ Tools like gitleaks, truffleHog, and GitHub's built-in Secret Scanning catch cre
 
 ## Which Tool Should You Choose?
 
-| Factor           | Vault      | AWS Secrets Manager | Azure Key Vault |
-| ---------------- | ---------- | ------------------- | --------------- |
-| Dynamic secrets  | Excellent  | Limited             | Limited         |
-| Multi-cloud      | Yes        | AWS only            | Azure-focused   |
-| Self-hosted      | Yes        | No                  | No              |
-| PKI/Certificates | Built-in   | Via ACM             | Built-in        |
-| Learning curve   | Steep      | Low                 | Low             |
-| Cost             | Free (OSS) | Per-secret/API call | Per-operation   |
+| Factor | Vault | AWS Secrets Manager | Azure Key Vault |
+|--------|-------|---------------------|-----------------|
+| Dynamic secrets | Excellent | Limited | Limited |
+| Multi-cloud | Yes | AWS only | Azure-focused |
+| Self-hosted | Yes | No | No |
+| PKI/Certificates | Built-in | Via ACM | Built-in |
+| Learning curve | Steep | Low | Low |
+| Cost | Free (OSS) | Per-secret/API call | Per-operation |
 
 Pick Vault if you run multi-cloud or need dynamic secrets. Pick AWS Secrets Manager if you are all-in on AWS and want the simplest integration. Pick Azure Key Vault if you live in the Microsoft ecosystem.
 
