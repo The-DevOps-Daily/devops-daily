@@ -260,3 +260,5 @@ So you cannot keep the warning for people and hide it for one automation subnet.
 ## Summary
 
 OpenSSH 10.6 makes three changes that people will see within days of upgrading. Logins written as `CORP\alice` fail with `remote username contains invalid characters`, through ssh, scp, sftp, rsync, git and Ansible, unless the name is a literal `User` line in ssh_config or you switch to `alice@corp.example.com@host`. `ssh -C` now compresses text about 1.5x instead of 5x to 9x, and the side that sends the data decides, so move the compression to zstd or rsync. And a 10.6 sshd logs one warning per connection for paramiko and older libssh2 clients, with no way to scope that per subnet. Run `ssh -V` on your laptop today. If it says 10.6, check your inventories and scripts for `\` in usernames before the next on-call shift finds them for you.
+
+For the post-quantum key exchange behind the third change, in TLS and in SSH, read [TLS in Practice: Handshakes, Post-Quantum Key Exchange and Server Setup](/guides/cryptography-essentials/03-tls-ssl#h2-the-same-change-in-ssh) in our Cryptography Essentials guide.

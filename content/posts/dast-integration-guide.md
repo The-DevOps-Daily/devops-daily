@@ -96,27 +96,27 @@ Most applications require authentication to test protected endpoints. ZAP handle
 # zap-context.yaml
 env:
   contexts:
-    - name: "My App"
+    - name: 'My App'
       urls:
-        - "https://staging.example.com"
+        - 'https://staging.example.com'
       includePaths:
-        - "https://staging.example.com/.*"
+        - 'https://staging.example.com/.*'
       excludePaths:
-        - "https://staging.example.com/logout"
+        - 'https://staging.example.com/logout'
       authentication:
-        method: "form"
+        method: 'form'
         parameters:
-          loginUrl: "https://staging.example.com/login"
-          loginRequestData: "username={%username%}&password={%password%}"
+          loginUrl: 'https://staging.example.com/login'
+          loginRequestData: 'username={%username%}&password={%password%}'
         verification:
-          method: "response"
+          method: 'response'
           loggedInRegex: "\\QWelcome\\E"
           loggedOutRegex: "\\QLogin\\E"
       users:
-        - name: "test_user"
+        - name: 'test_user'
           credentials:
-            username: "test@example.com"
-            password: "testpass123"
+            username: 'test@example.com'
+            password: 'testpass123'
 ```
 
 Then reference it in your scan:
@@ -153,12 +153,14 @@ zap-full-scan.py \
 Burp Suite is the industry standard for manual penetration testing. While ZAP excels at automation, Burp Suite shines when a human is driving.
 
 **Use Burp Suite for:**
+
 - Deep manual testing with the Proxy, Repeater, and Intruder tools
 - Out-of-band vulnerability detection via Burp Collaborator
 - Advanced attack techniques like brute forcing and parameter fuzzing
 - Professional penetration test engagements
 
 **Use ZAP for:**
+
 - Automated CI/CD scans
 - Baseline security checks on every PR
 - API scanning with OpenAPI specs
@@ -360,3 +362,5 @@ The goal is not to catch every vulnerability on day one. The goal is to build a 
 - [CI/CD Pipeline Hardening](/posts/cicd-pipeline-hardening-guide) - Secure the pipeline that runs your DAST scans so attackers cannot tamper with results or skip security gates
 
 For guidance on setting pass/fail thresholds in your pipeline, see our guide on [security gates](/guides/security-gates).
+
+To see a ZAP baseline scan flag missing headers on a deliberately misconfigured app, and how to record the warnings you accept, read [A02:2025 Security Misconfiguration](/guides/owasp-top-10/05-security-misconfiguration#h2-scan-the-running-app-with-zap) in our OWASP Top 10 guide.

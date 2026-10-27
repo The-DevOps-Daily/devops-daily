@@ -28,20 +28,20 @@ This is the second post in two weeks where the answer to "are we exposed?" is "r
 
 ## TLDR
 
-| Detail | Info |
-|--------|------|
-| Campaign name | Mini Shai-Hulud |
-| Attribution | TeamPCP (financially motivated) |
-| Disclosed | April 30, 2026 |
-| Compromised: PyPI | `lightning` 2.6.2, 2.6.3 (safe: 2.6.1) |
-| Compromised: npm | `intercom-client` 7.0.4 |
-| Compromised: Packagist | `intercom/intercom-php` 5.0.2 |
-| Window malicious versions were live | ~42 minutes (PyPI), longer for npm/PHP |
-| Trigger | `import lightning` (PyPI) or `npm install` / `composer install` (npm/PHP) |
-| What it steals | GitHub, npm, AWS, GCP, Azure, SSH keys, kubeconfig, Vault, Docker, all `.env` files |
-| Exfil channel | `zero.masscan[.]cloud:443/v1/telemetry` (primary), public GitHub repo (fallback) |
-| Worm behavior | Republishes infected versions of any npm package the stolen tokens can write to |
-| What you do | Lockfile audit, kill compromised pins, rotate everything in scope, hunt for "A Mini Shai-Hulud has Appeared" repos under your org |
+| Detail                              | Info                                                                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Campaign name                       | Mini Shai-Hulud                                                                                                                   |
+| Attribution                         | TeamPCP (financially motivated)                                                                                                   |
+| Disclosed                           | April 30, 2026                                                                                                                    |
+| Compromised: PyPI                   | `lightning` 2.6.2, 2.6.3 (safe: 2.6.1)                                                                                            |
+| Compromised: npm                    | `intercom-client` 7.0.4                                                                                                           |
+| Compromised: Packagist              | `intercom/intercom-php` 5.0.2                                                                                                     |
+| Window malicious versions were live | ~42 minutes (PyPI), longer for npm/PHP                                                                                            |
+| Trigger                             | `import lightning` (PyPI) or `npm install` / `composer install` (npm/PHP)                                                         |
+| What it steals                      | GitHub, npm, AWS, GCP, Azure, SSH keys, kubeconfig, Vault, Docker, all `.env` files                                               |
+| Exfil channel                       | `zero.masscan[.]cloud:443/v1/telemetry` (primary), public GitHub repo (fallback)                                                  |
+| Worm behavior                       | Republishes infected versions of any npm package the stolen tokens can write to                                                   |
+| What you do                         | Lockfile audit, kill compromised pins, rotate everything in scope, hunt for "A Mini Shai-Hulud has Appeared" repos under your org |
 
 ## What Happened
 
@@ -94,19 +94,19 @@ The pattern across all three ecosystems is the same: hook a lifecycle event that
 
 `router_runtime.js` is a credential vacuum. It walks the runner filesystem and the standard environment-variable conventions for every credential type a CI/CD pipeline typically holds:
 
-| Credential | Where the malware looks |
-|------------|------------------------|
-| GitHub tokens | `GITHUB_TOKEN`, `GH_TOKEN`, `~/.netrc`, `~/.config/gh/hosts.yml`, validated against `api.github.com/user` |
-| npm tokens | `NPM_TOKEN`, `~/.npmrc` |
-| SSH keys | `~/.ssh/id_*`, `~/.ssh/authorized_keys`, `SSH_AUTH_SOCK` |
-| AWS | `~/.aws/credentials`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, IMDSv2 fetch on EC2 runners |
-| GCP | `GOOGLE_APPLICATION_CREDENTIALS`, `~/.config/gcloud/` |
-| Azure | `~/.azure/`, az-cli refresh tokens |
-| Kubernetes | `~/.kube/config`, `KUBECONFIG`, in-cluster service account tokens |
-| Vault | `VAULT_TOKEN`, `~/.vault-token` |
-| Docker | `~/.docker/config.json` (registry passwords) |
-| `.env` files | Recursive scan for `**/.env`, `**/.env.*` from the workspace root |
-| Cloud provider IMDS | `169.254.169.254` if reachable |
+| Credential          | Where the malware looks                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| GitHub tokens       | `GITHUB_TOKEN`, `GH_TOKEN`, `~/.netrc`, `~/.config/gh/hosts.yml`, validated against `api.github.com/user`            |
+| npm tokens          | `NPM_TOKEN`, `~/.npmrc`                                                                                              |
+| SSH keys            | `~/.ssh/id_*`, `~/.ssh/authorized_keys`, `SSH_AUTH_SOCK`                                                             |
+| AWS                 | `~/.aws/credentials`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`, IMDSv2 fetch on EC2 runners |
+| GCP                 | `GOOGLE_APPLICATION_CREDENTIALS`, `~/.config/gcloud/`                                                                |
+| Azure               | `~/.azure/`, az-cli refresh tokens                                                                                   |
+| Kubernetes          | `~/.kube/config`, `KUBECONFIG`, in-cluster service account tokens                                                    |
+| Vault               | `VAULT_TOKEN`, `~/.vault-token`                                                                                      |
+| Docker              | `~/.docker/config.json` (registry passwords)                                                                         |
+| `.env` files        | Recursive scan for `**/.env`, `**/.env.*` from the workspace root                                                    |
+| Cloud provider IMDS | `169.254.169.254` if reachable                                                                                       |
 
 All of it is bundled, encrypted, and posted to `zero.masscan[.]cloud:443/v1/telemetry`. If that domain is unreachable (firewall, sinkhole, etc.), the malware falls back to creating a public GitHub repository under any GitHub account whose token it just stole, with the repo description set to **"A Mini Shai-Hulud has Appeared."** That string is the cleanest indicator-of-compromise you can hunt for.
 
@@ -284,7 +284,7 @@ For Python, scope CI installs to a hash-pinned `requirements.txt` and pass `--re
 
 ### 5. Egress allowlist your runners
 
-The only mitigation that catches the *next* one of these without you knowing the bad version is egress filtering. CI runners need network access to:
+The only mitigation that catches the _next_ one of these without you knowing the bad version is egress filtering. CI runners need network access to:
 
 - Your VCS host (GitHub, GitLab, Bitbucket)
 - The package registries you actually pull from (npmjs.com, pypi.org, packagist.org)
@@ -315,4 +315,6 @@ The structural fix is some combination of sandboxed CI runners, hash-pinned depe
 
 Mini Shai-Hulud is going to keep showing up under different names. The packages will change. The hooks and the credential exfil paths will not.
 
-*Sources: [The Hacker News](https://thehackernews.com/2026/04/pytorch-lightning-compromised-in-pypi.html), [Semgrep](https://semgrep.dev/blog/2026/malicious-dependency-in-pytorch-lightning-used-for-ai-training/), [Socket.dev](https://socket.dev/blog/lightning-pypi-package-compromised), [Kodem Security](https://www.kodemsecurity.com/resources/mini-shai-hulud-strikes-pytorch-lightning-and-intercom-client-inside-the-cross-ecosystem-supply-chain-attack), [OX Security](https://www.ox.security/blog/lightning-python-package-shai-hulud-supply-chain-attack/), [Aikido](https://www.aikido.dev/blog/pytorch-lightning-pypi-compromise-mini-shai-hulud), [GitGuardian](https://blog.gitguardian.com/three-supply-chain-campaigns-hit-npm-pypi-and-docker-hub-in-48-hours/)*
+For the controls that make the next wave harder to land, such as switching off install scripts and waiting a few days before taking a new release, read [A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components) in our OWASP Top 10 guide.
+
+_Sources: [The Hacker News](https://thehackernews.com/2026/04/pytorch-lightning-compromised-in-pypi.html), [Semgrep](https://semgrep.dev/blog/2026/malicious-dependency-in-pytorch-lightning-used-for-ai-training/), [Socket.dev](https://socket.dev/blog/lightning-pypi-package-compromised), [Kodem Security](https://www.kodemsecurity.com/resources/mini-shai-hulud-strikes-pytorch-lightning-and-intercom-client-inside-the-cross-ecosystem-supply-chain-attack), [OX Security](https://www.ox.security/blog/lightning-python-package-shai-hulud-supply-chain-attack/), [Aikido](https://www.aikido.dev/blog/pytorch-lightning-pypi-compromise-mini-shai-hulud), [GitGuardian](https://blog.gitguardian.com/three-supply-chain-campaigns-hit-npm-pypi-and-docker-hub-in-48-hours/)_

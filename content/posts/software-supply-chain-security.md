@@ -103,6 +103,7 @@ Signing proves that a build artifact has not been tampered with and comes from a
 ### The Sigstore Ecosystem
 
 Sigstore has four components:
+
 - **Cosign** is the CLI tool for signing and verification
 - **Fulcio** issues short-lived certificates tied to your OIDC identity
 - **Rekor** is an immutable transparency log that records every signature
@@ -144,7 +145,7 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write  # Required for keyless signing
+  id-token: write # Required for keyless signing
 
 jobs:
   build-sign:
@@ -197,7 +198,7 @@ metadata:
   name: require-signed-images
 spec:
   images:
-    - glob: "ghcr.io/myorg/**"
+    - glob: 'ghcr.io/myorg/**'
   authorities:
     - keyless:
         identities:
@@ -216,12 +217,12 @@ kubectl run test --image=ghcr.io/myorg/unsigned:latest
 
 SLSA (pronounced "salsa") answers the question: "How can we trust this artifact?" It defines four levels of supply chain integrity that describe how secure your build process is.
 
-| Level | What It Requires | What It Prevents |
-|-------|-----------------|------------------|
-| SLSA 1 | Build process documented, provenance exists | Nothing formal, but establishes a baseline |
-| SLSA 2 | Signed provenance from a trusted service | Tampered builds |
-| SLSA 3 | Hardened build platform with access controls | Insider threats, compromised build servers |
-| SLSA 4 | Two-party review, hermetic reproducible builds | Everything up to nation-state attacks |
+| Level  | What It Requires                               | What It Prevents                           |
+| ------ | ---------------------------------------------- | ------------------------------------------ |
+| SLSA 1 | Build process documented, provenance exists    | Nothing formal, but establishes a baseline |
+| SLSA 2 | Signed provenance from a trusted service       | Tampered builds                            |
+| SLSA 3 | Hardened build platform with access controls   | Insider threats, compromised build servers |
+| SLSA 4 | Two-party review, hermetic reproducible builds | Everything up to nation-state attacks      |
 
 The SolarWinds attack would have been caught at SLSA 3 because it requires a hardened build platform where injecting malware into the build process triggers provenance verification failures.
 
@@ -418,3 +419,5 @@ The tools are mature, the workflows are documented, and most of this can be auto
 - [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Test your deployed artifacts at runtime to catch vulnerabilities that static analysis and signing cannot detect
 
 For a framework to decide which supply chain risks to address first, see our guide on [threat modeling](/guides/threat-modeling).
+
+For build provenance with `actions/attest-build-provenance` and `gh attestation verify`, and why provenance proves origin but not intent, read [A08:2025 Software or Data Integrity Failures](/guides/owasp-top-10/08-software-integrity-failures#h3-build-provenance) in our OWASP Top 10 guide.

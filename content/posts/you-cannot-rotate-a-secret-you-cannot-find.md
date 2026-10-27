@@ -45,15 +45,15 @@ This is about the count. Trace one credential from a laptop to production, count
 
 Before choosing a tool, answer one question: for a single credential, how many places would you have to change?
 
-Not "where is it referenced". References are the easy half and `grep` finds them. The hard half is copies of the *value*, which live in systems that do not grep: your CI provider's secret store, a running container's environment, a developer's laptop, a terminal scrollback, an error report.
+Not "where is it referenced". References are the easy half and `grep` finds them. The hard half is copies of the _value_, which live in systems that do not grep: your CI provider's secret store, a running container's environment, a developer's laptop, a terminal scrollback, an error report.
 
 Here is the reference count from one of our own repositories, a Next.js app with Stripe, Postgres and SES:
 
-| Secret | CI config | App code | Config files | Total files |
-| --- | --- | --- | --- | --- |
-| `DATABASE_URL` | 1 | 1 | 4 | 6 |
-| `STRIPE_SECRET_KEY` | 0 | 2 | 3 | 5 |
-| `AWS_SECRET_ACCESS_KEY` | 0 | 2 | 2 | 4 |
+| Secret                  | CI config | App code | Config files | Total files |
+| ----------------------- | --------- | -------- | ------------ | ----------- |
+| `DATABASE_URL`          | 1         | 1        | 4            | 6           |
+| `STRIPE_SECRET_KEY`     | 0         | 2        | 3            | 5           |
+| `AWS_SECRET_ACCESS_KEY` | 0         | 2        | 2            | 4           |
 
 You can produce the same table in a few seconds:
 
@@ -178,7 +178,7 @@ gitleaks detect --source . --redact --exit-code 1
 
 ```yaml
 permissions:
-  id-token: write   # lets the runner request an OIDC token
+  id-token: write # lets the runner request an OIDC token
   contents: read
 
 steps:
@@ -255,3 +255,5 @@ The honest decision rule: if your answer to "how many copies" was small and you 
 The number to take away is your own copy count. It predicts your rotation cost, it predicts your blast radius, and unlike most security metrics you can measure it this afternoon with `grep` and an honest hour.
 
 For the surrounding practice, we have written about [hardening a CI/CD pipeline](/posts/cicd-pipeline-hardening-guide) and [pre-commit hooks that catch problems before they land](/posts/pre-commit-hooks-security-guide).
+
+For two places those copies leak from, command lines and Git history, and where a secret should live instead, see [Confidentiality](/guides/security-principles/01-cia-triad#h2-confidentiality) in our Security Principles guide.

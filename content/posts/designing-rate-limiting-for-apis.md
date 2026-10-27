@@ -227,13 +227,13 @@ The difference from token bucket matters. Token bucket allows a burst to pass th
 
 ## Which one should you use?
 
-| Algorithm | Allows bursts | Memory per client | Accuracy | Use when |
-| --- | --- | --- | --- | --- |
-| Fixed window | At the boundary (bad) | 1 integer | Low | Rough internal limits |
-| Sliding window log | No | 1 entry per request | Exact | Low-volume, precise rules |
-| Sliding window counter | Smoothed | 2 integers | High | General-purpose default |
-| Token bucket | Yes, up to capacity | small hash | High | Public APIs, most cases |
-| Leaky bucket | No | queue | High | Protecting a fixed-rate downstream |
+| Algorithm              | Allows bursts         | Memory per client   | Accuracy | Use when                           |
+| ---------------------- | --------------------- | ------------------- | -------- | ---------------------------------- |
+| Fixed window           | At the boundary (bad) | 1 integer           | Low      | Rough internal limits              |
+| Sliding window log     | No                    | 1 entry per request | Exact    | Low-volume, precise rules          |
+| Sliding window counter | Smoothed              | 2 integers          | High     | General-purpose default            |
+| Token bucket           | Yes, up to capacity   | small hash          | High     | Public APIs, most cases            |
+| Leaky bucket           | No                    | queue               | High     | Protecting a fixed-rate downstream |
 
 If you are not sure, use **token bucket**. It handles real traffic well, the burst behavior is intuitive, and the Redis implementation above is production-ready. Reach for the sliding window counter if "X requests per minute" is easier to explain to your customers than a bucket.
 
@@ -351,3 +351,4 @@ Tokens at zero, last access timestamped. Wait a second and the Lua script refill
 - Add `X-RateLimit-*` headers to every response and document them so client teams can back off gracefully.
 - Put a flat per-IP `limit_req` in nginx as a cheap outer wall, even if you already limit per user in the app.
 - Alert on your 429 rate. A sudden spike means either an abusive client or a limit set too low for legitimate traffic, and you want to know which before the support tickets arrive.
+- Read [Limit What One Client Can Use](/guides/security-principles/01-cia-triad#h3-limit-what-one-client-can-use) in our Security Principles guide for why a per-client limit on a login endpoint both stops password guessing and protects availability.

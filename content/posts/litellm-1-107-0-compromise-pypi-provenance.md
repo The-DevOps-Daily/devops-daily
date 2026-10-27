@@ -392,3 +392,5 @@ python3 -I -S provenance_check.py --lock uv.lock --pins pins.json
 - The Docker image's BuildKit provenance named the fork. PyPI had no attestation to check, and a PyPI publish attestation names the uploading workflow, not the source it built.
 - 39.0% of the top 1,000 PyPI projects attest their latest release. 33.4% are attested by the repository their metadata names. 23 projects in our set stopped attesting, and we found no SLSA provenance attestation on any of the 396 attested projects.
 - What works today is a cooldown, hash locks, digest pins with a source check, and publisher pins where they exist. As of October 2026, pip and uv do not verify attestations for you.
+
+To attest a build and check it against a pinned repository and workflow with `gh attestation verify`, read [A08:2025 Software or Data Integrity Failures](/guides/owasp-top-10/08-software-integrity-failures#h3-build-provenance) in our OWASP Top 10 guide.

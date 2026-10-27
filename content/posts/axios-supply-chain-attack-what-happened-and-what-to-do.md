@@ -27,14 +27,14 @@ Here is what happened, how to check if your systems are affected, and what to ch
 
 ## TLDR
 
-| Detail | Info |
-|--------|------|
-| Affected versions | `axios@1.14.1` and `axios@0.30.4` |
-| Safe versions | `axios@1.14.0` and `axios@0.30.3` |
-| Malicious dependency | `plain-crypto-js@4.2.1` |
-| C2 server | `sfrclak.com:8000` |
-| Platforms targeted | macOS, Windows, Linux |
-| Window of exposure | Starting 2026-03-31T00:21:58Z |
+| Detail               | Info                              |
+| -------------------- | --------------------------------- |
+| Affected versions    | `axios@1.14.1` and `axios@0.30.4` |
+| Safe versions        | `axios@1.14.0` and `axios@0.30.3` |
+| Malicious dependency | `plain-crypto-js@4.2.1`           |
+| C2 server            | `sfrclak.com:8000`                |
+| Platforms targeted   | macOS, Windows, Linux             |
+| Window of exposure   | Starting 2026-03-31T00:21:58Z     |
 
 ## What Happened
 
@@ -232,4 +232,6 @@ Every one of those defaults worked in the attacker's favor.
 
 Supply chain security is not somebody else's problem. If your application has a `node_modules` directory, it is your problem.
 
-*Sources: [Socket](https://socket.dev/blog/axios-npm-package-compromised), [StepSecurity](https://www.stepsecurity.io/blog/axios-compromised-on-npm-malicious-versions-drop-remote-access-trojan), [Aikido](https://www.aikido.dev/blog/axios-npm-compromised-maintainer-hijacked-rat), [The Hacker News](https://thehackernews.com/2026/03/axios-supply-chain-attack-pushes-cross.html)*
+For `min-release-age`, `--ignore-scripts` and registry signature checks with real output, read [A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components#h2-malicious-packages-slow-down-and-switch-off-scripts) in our OWASP Top 10 guide.
+
+_Sources: [Socket](https://socket.dev/blog/axios-npm-package-compromised), [StepSecurity](https://www.stepsecurity.io/blog/axios-compromised-on-npm-malicious-versions-drop-remote-access-trojan), [Aikido](https://www.aikido.dev/blog/axios-npm-compromised-maintainer-hijacked-rat), [The Hacker News](https://thehackernews.com/2026/03/axios-supply-chain-attack-pushes-cross.html)_

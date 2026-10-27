@@ -206,19 +206,19 @@ Prototype pollution deserves special attention because it is JavaScript-specific
 ```javascript
 // VULNERABLE - attacker sends {"__proto__": {"isAdmin": true}}
 function merge(target, source) {
-    for (let key in source) {
-        target[key] = source[key];
-    }
+  for (let key in source) {
+    target[key] = source[key];
+  }
 }
 
 // SECURE - filter dangerous keys
 function safeMerge(target, source) {
-    for (let key in source) {
-        if (key === '__proto__' || key === 'constructor') continue;
-        if (source.hasOwnProperty(key)) {
-            target[key] = source[key];
-        }
+  for (let key in source) {
+    if (key === '__proto__' || key === 'constructor') continue;
+    if (source.hasOwnProperty(key)) {
+      target[key] = source[key];
     }
+  }
 }
 ```
 
@@ -320,6 +320,7 @@ When someone says "it is just internal, behind a VPN," remind them that defense 
 Keep this list handy during every review:
 
 **Always check:**
+
 - User input goes through validation before use
 - Authentication on sensitive endpoints
 - Authorization on every data access
@@ -328,6 +329,7 @@ Keep this list handy during every review:
 - Secrets not in code
 
 **Red flags:**
+
 - String concatenation near SQL or shell commands
 - `eval()`, `exec()`, `pickle`, `yaml.load()`
 - `innerHTML` with user data
@@ -346,3 +348,5 @@ Security review is a skill that improves with practice. Start by picking one cat
 - [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Validate your review findings at runtime with automated scans that probe for the vulnerabilities you flagged
 
 For a structured approach to identifying what to review first, see our guide on [threat modeling](/guides/threat-modeling).
+
+A missing access check is hard to see in review, so back each one with a test, as [A01:2025 Broken Access Control](/guides/owasp-top-10/01-broken-access-control#h2-prove-each-check-with-a-test) in our OWASP Top 10 guide shows.

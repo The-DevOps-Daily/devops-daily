@@ -1,6 +1,6 @@
 ---
 title: 'Istio Traffic Management: Routing, Retries, and Circuit Breaking'
-excerpt: "Configure weighted routing, automatic retries, and circuit breakers in Istio with copy-paste YAML examples and real kubectl output you can verify on your own cluster."
+excerpt: 'Configure weighted routing, automatic retries, and circuit breakers in Istio with copy-paste YAML examples and real kubectl output you can verify on your own cluster.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
@@ -52,8 +52,8 @@ kubectl label namespace default istio-injection=enabled
 
 Istio's traffic policies live in two CRDs:
 
-- **VirtualService**: defines *how* requests are routed. Match on host, path, header, weight.
-- **DestinationRule**: defines *what happens after* the route is picked. Subsets, load balancing, connection pools, outlier detection.
+- **VirtualService**: defines _how_ requests are routed. Match on host, path, header, weight.
+- **DestinationRule**: defines _what happens after_ the route is picked. Subsets, load balancing, connection pools, outlier detection.
 
 A common mistake is putting circuit breaker settings in a VirtualService. They don't belong there. Circuit breakers are a property of the destination, not the route.
 
@@ -187,7 +187,7 @@ spec:
 
 Some details that matter:
 
-- `attempts: 3` is the number of *retries*, not total tries. So up to 4 requests in the worst case.
+- `attempts: 3` is the number of _retries_, not total tries. So up to 4 requests in the worst case.
 - `perTryTimeout` is per attempt. Total time can be `attempts * perTryTimeout` plus backoff.
 - `retryOn` controls which failures trigger a retry. The default includes some surprises. Be explicit.
 
@@ -371,3 +371,4 @@ If a VirtualService just won't apply, check for naming conflicts. Two VirtualSer
 - Pick one production service this week and add a DestinationRule with `outlierDetection`. Even without changing routes, this alone catches a class of failures you currently miss
 - For canary work, look at Flagger or Argo Rollouts. They drive Istio VirtualService weights automatically based on metrics, so you don't shift traffic by hand
 - If you find yourself writing the same DestinationRule for every service, move the defaults into a `mesh-wide` config under `meshConfig.defaultConfig` and only override per-service when needed
+- To use the mesh for security as well, require mTLS and authorize calls by service account. [Workload Identity and Mutual TLS with Istio](/guides/security-principles/04-zero-trust#h2-workload-identity-and-mutual-tls-with-istio) in our Security Principles guide walks through it in ambient mode
