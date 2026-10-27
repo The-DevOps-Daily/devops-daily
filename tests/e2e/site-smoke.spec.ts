@@ -65,9 +65,14 @@ const A11Y_PAGES = [
 
 // Known issue, tracked in #539: the light-mode brand amber (--primary, rendered
 // as #db7706) is 3.2:1 on white, so amber text and white text on amber buttons
-// miss AA. Fixing it changes the brand color, so only that one color is skipped
-// in light mode; every other contrast failure still fails the test.
-const LIGHT_PRIMARY = '#db7706';
+// miss AA. Fixing it changes the brand color, so these exact light-mode pairs
+// are skipped; any other color pair still fails the test.
+const KNOWN_LIGHT_CONTRAST_PAIRS = new Set([
+  '#db7706 on #ffffff', // amber links and text
+  '#ffffff on #db7706', // white text on amber buttons and badges
+  '#db7706 on #f4f4f5', // amber inline code and links on muted surfaces
+  '#db7706 on #fbf1e6', // amber text on a 10% amber tint
+]);
 
 type ContrastData = { fgColor?: string; bgColor?: string; contrastRatio?: number };
 
@@ -75,7 +80,7 @@ function isKnownIssue(rule: string, data: ContrastData | undefined, theme: strin
   return (
     rule === 'color-contrast' &&
     theme === 'light' &&
-    (data?.fgColor === LIGHT_PRIMARY || data?.bgColor === LIGHT_PRIMARY)
+    KNOWN_LIGHT_CONTRAST_PAIRS.has(`${data?.fgColor} on ${data?.bgColor}`)
   );
 }
 
