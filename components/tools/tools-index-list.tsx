@@ -106,7 +106,7 @@ export function ToolsIndexList() {
                 <p className="text-muted-foreground text-xs leading-relaxed line-clamp-2 flex-1">
                   {tool.description}
                 </p>
-                <div className="flex items-center gap-1 mt-3 text-[11px] font-mono text-primary/80">
+                <div className="flex items-center gap-1 mt-3 text-[11px] font-mono text-primary">
                   <span>Open</span>
                   <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
                 </div>
