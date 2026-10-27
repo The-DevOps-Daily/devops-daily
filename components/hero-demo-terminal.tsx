@@ -61,9 +61,9 @@ const SCENES: Scene[] = [
 const TONE_CLASS: Record<NonNullable<Line['tone']>, string> = {
   default: 'text-foreground',
   muted: 'text-muted-foreground',
-  green: 'text-green-500',
+  green: 'text-green-700 dark:text-green-500',
   amber: 'text-primary',
-  red: 'text-red-400',
+  red: 'text-red-700 dark:text-red-400',
 };
 
 const TYPE_SPEED = 28; // ms per character on command lines

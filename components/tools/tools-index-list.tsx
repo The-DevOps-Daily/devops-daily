@@ -96,7 +96,7 @@ export function ToolsIndexList() {
                     className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors"
                     strokeWidth={1.5}
                   />
-                  <span className="text-[10px] font-mono text-muted-foreground/80 uppercase tracking-wider">
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
                     {CATEGORY_LABEL[tool.category]}
                   </span>
                 </div>
