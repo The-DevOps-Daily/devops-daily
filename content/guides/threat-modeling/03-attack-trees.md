@@ -318,7 +318,7 @@ In [Part 4](/guides/threat-modeling/04-practical-exercises), you practice all th
 
 ## Keep Learning
 
-- [A10: Server-Side Request Forgery](/guides/owasp-top-10/10-ssrf), one way to reach internal services in branch 3
+- [Server-Side Request Forgery (part of A01:2025)](/guides/owasp-top-10/10-ssrf), one way to reach internal services in branch 3
 - [Security-Focused Code Reviews](/posts/security-focused-code-reviews), where many of these leaves are caught
 - [Defense in depth](/guides/security-principles/02-defense-in-depth), the idea behind blocking AND nodes twice
 - [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
