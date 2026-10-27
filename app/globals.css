@@ -190,7 +190,7 @@
 
 .hljs-comment,
 .hljs-quote {
-  @apply text-muted-foreground italic;
+  @apply text-zinc-600 italic;
 }
 
 .hljs-keyword,
@@ -205,7 +205,7 @@
 .hljs-literal,
 .hljs-doctag,
 .hljs-regexp {
-  @apply text-green-700;
+  @apply text-green-800;
 }
 
 .hljs-title,
@@ -742,14 +742,14 @@ html {
 .post-callout--note .post-callout__icon,
 .post-callout--info .post-callout__icon { background: rgb(59 130 246 / 0.14); color: #3b82f6; }
 .post-callout--note .post-callout__label,
-.post-callout--info .post-callout__label { color: #3b82f6; }
+.post-callout--info .post-callout__label { color: #1d4ed8; }
 
 .post-callout--tip {
   border-color: rgb(16 185 129 / 0.3);
   background: rgb(16 185 129 / 0.055);
 }
 .post-callout--tip .post-callout__icon { background: rgb(16 185 129 / 0.14); color: #10b981; }
-.post-callout--tip .post-callout__label { color: #10b981; }
+.post-callout--tip .post-callout__label { color: #047857; }
 
 .post-callout--warning {
   border-color: rgb(245 158 11 / 0.34);
@@ -763,8 +763,11 @@ html {
   background: rgb(239 68 68 / 0.055);
 }
 .post-callout--important .post-callout__icon { background: rgb(239 68 68 / 0.14); color: #ef4444; }
-.post-callout--important .post-callout__label { color: #dc2626; }
+.post-callout--important .post-callout__label { color: #b91c1c; }
 
+.dark .post-callout--note .post-callout__label,
+.dark .post-callout--info .post-callout__label { color: #3b82f6; }
+.dark .post-callout--tip .post-callout__label { color: #10b981; }
 .dark .post-callout--warning .post-callout__icon,
 .dark .post-callout--warning .post-callout__label { color: #fbbf24; }
 .dark .post-callout--important .post-callout__icon,
