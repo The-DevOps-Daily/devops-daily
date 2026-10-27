@@ -357,3 +357,5 @@ You now have a tag schema, enforcement at apply time, and visibility in each clo
 4. **Run a tagging coverage report monthly.** AWS calls this the "Cost Allocation Tag" coverage view. GCP and Azure require a quick SQL query or KQL query against the billing export. Track it like an SLO.
 
 The day finance asks "who spent the $84,000?" again, you want the answer to be a single SQL query, not a two-week archaeology project.
+
+For tag checks in Terraform and CI, budgets per environment and anomaly alerts as code, see part 4 of our [FinOps for DevOps Engineers](/guides/finops-for-devops-engineers/04-practical-examples) guide.
