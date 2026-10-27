@@ -66,16 +66,29 @@ const A11Y_PAGES = [
 // Known issue, tracked in #539: the light-mode brand amber (--primary, rendered
 // as #db7706) is 3.2:1 on white, so amber text and white text on amber buttons
 // miss AA. Fixing it changes the brand color, so in light mode two cases are
-// skipped: amber text on the page's light surfaces (2.8:1 or better; the 10%
-// amber tint is the darkest at 2.82:1) and white text on amber. Any other
-// color, or amber text on a darker surface, still fails the test.
+// skipped: amber text on a light surface at 2.8:1 or better (the 10% amber
+// tint is the darkest at 2.82:1) and white text on amber. Any other color, or
+// amber text on a mid or dark surface, still fails the test.
 const LIGHT_PRIMARY = '#db7706';
 
 type ContrastData = { fgColor?: string; bgColor?: string; contrastRatio?: number };
 
+function isLightSurface(hex = '') {
+  const match = /^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i.exec(hex);
+  if (!match) return false;
+  const [r, g, b] = match
+    .slice(1)
+    .map((channel) => parseInt(channel, 16) / 255)
+    .map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.5;
+}
+
 function isKnownIssue(rule: string, data: ContrastData | undefined, theme: string) {
   if (rule !== 'color-contrast' || theme !== 'light' || !data) return false;
-  const amberText = data.fgColor === LIGHT_PRIMARY && (data.contrastRatio ?? 0) >= 2.8;
+  const amberText =
+    data.fgColor === LIGHT_PRIMARY &&
+    isLightSurface(data.bgColor) &&
+    (data.contrastRatio ?? 0) >= 2.8;
   const whiteOnAmber = data.fgColor === '#ffffff' && data.bgColor === LIGHT_PRIMARY;
   return amberText || whiteOnAmber;
 }
