@@ -1,0 +1,98 @@
+{
+  "id": "sqlite-production-maintenance",
+  "slug": "sqlite-production-maintenance",
+  "title": "SQLite in Production: WAL Checkpoints & Backup Checklist",
+  "description": "A production-ready operational checklist for running SQLite under high concurrency in Write-Ahead Logging (WAL) mode, executing online checkpoints, verifying page integrity, and streaming compressed backups to S3.",
+  "category": "Database",
+  "difficulty": "Intermediate",
+  "estimatedTime": "15 minutes",
+  "tags": [
+    "SQLite",
+    "Database",
+    "Backup",
+    "WAL",
+    "S3",
+    "Disaster Recovery",
+    "DevOps"
+  ],
+  "items": [
+    {
+      "id": "wal-journal-mode",
+      "title": "Enable Write-Ahead Logging (WAL) Mode",
+      "description": "Configure SQLite in WAL mode to allow concurrent readers while a write transaction is in progress, significantly reducing disk I/O bottlenecks and database lock contention.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Enable WAL and optimize synchronization",
+          "code": "PRAGMA journal_mode = WAL;\nPRAGMA synchronous = NORMAL;"
+        }
+      ]
+    },
+    {
+      "id": "busy-timeout",
+      "title": "Configure Busy Handler Timeout",
+      "description": "Set an explicit busy timeout on database connections so that concurrent write attempts wait for locks to clear instead of immediately failing with SQLITE_BUSY.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Set 5-second busy timeout",
+          "code": "PRAGMA busy_timeout = 5000;"
+        }
+      ]
+    },
+    {
+      "id": "wal-checkpointing",
+      "title": "Schedule Routine WAL Checkpoints",
+      "description": "Execute online checkpoints periodically to flush dirty pages from the -wal log file back to the primary database file, preventing unbounded log growth.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Truncate checkpoint",
+          "code": "PRAGMA wal_checkpoint(TRUNCATE);"
+        }
+      ]
+    },
+    {
+      "id": "integrity-audit",
+      "title": "Perform Pre-Backup Integrity Audits",
+      "description": "Run PRAGMA integrity_check before taking backups to ensure b-trees, free pages, and indices are completely free of corruption before archiving.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Deep integrity check",
+          "code": "PRAGMA integrity_check;\n-- Expects 'ok'"
+        }
+      ]
+    },
+    {
+      "id": "online-backup-api",
+      "title": "Use the Online Backup API for Snapshots",
+      "description": "Never copy an active SQLite database file while transactions are running. Use the SQLite online backup API or .backup CLI command to capture a point-in-time consistent snapshot without locking readers.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Online snapshot command",
+          "code": "sqlite3 /var/data/app.db \".backup '/var/backups/app-snapshot.db'\""
+        }
+      ]
+    },
+    {
+      "id": "compress-and-upload-s3",
+      "title": "Compress and Ship Immutable Artifacts to Object Storage",
+      "description": "Compress the snapshot using high-ratio compression (such as zstd) and stream it to an S3 bucket or compatible object storage with lifecycle retention policies.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Compress and upload with AWS CLI",
+          "code": "zstd -19 /var/backups/app-snapshot.db -o /var/backups/app-snapshot.db.zst\naws s3 cp /var/backups/app-snapshot.db.zst s3://my-sqlite-backups/daily/"
+        }
+      ]
+    }
+  ]
+}
