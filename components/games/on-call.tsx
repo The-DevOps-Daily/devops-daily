@@ -439,8 +439,8 @@ export default function OnCall() {
         {!finished && (
           <>
             <p className="text-xs text-zinc-600 dark:text-zinc-400">
-              Each signal you open and each cause you name costs one move. Arrow keys move between
-              items in a list.
+              Each signal you open and each cause you name costs one move.
+              <span className="hidden sm:inline"> Arrow keys move between items in a list.</span>
             </p>
             <div className="grid gap-4 md:grid-cols-2">
               {/* Evidence */}
