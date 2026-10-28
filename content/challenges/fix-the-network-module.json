@@ -82,5 +82,5 @@
     "exercises": ["terraform-aws-vpc", "terraform-digitalocean-droplet"],
     "guides": ["introduction-to-terraform", "networking-fundamentals"]
   },
-  "publishedAt": "2026-10-29"
+  "publishedAt": "2026-10-28"
 }
