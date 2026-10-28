@@ -389,6 +389,12 @@ export function isValidRound(round: StoredRound): boolean {
   if (inspects > Math.min(incident.evidence.length, MAX_MOVES - 1)) return false;
   if (diagnoses > incident.causes.length) return false;
   if (last.kind !== 'diagnose') return false;
+  // Each cause can be named once, so a verdict cannot appear more often than
+  // the incident has causes with that verdict.
+  for (const verdict of ['partial', 'wrong'] as const) {
+    const available = incident.causes.filter((c) => verdictFor(incident, c.id) === verdict);
+    if (moves.filter((m) => m.verdict === verdict).length > available.length) return false;
+  }
   return round.solved
     ? correct === 1 && last.verdict === 'correct'
     : correct === 0 && moves.length === MAX_MOVES;
@@ -481,7 +487,9 @@ function isValidSummary(value: Record<string, unknown>): value is BackupSummary 
     best <= solved &&
     solved <= played &&
     played <= lastDay + 1 &&
-    (solved === 0 || best >= 1)
+    (solved === 0 || best >= 1) &&
+    // When every round was solved, the latest one was too, so a streak is running.
+    (current >= 1 || solved < played)
   );
 }
 
@@ -524,29 +532,43 @@ export function decodeBackup(input: unknown, today: number): DecodeResult {
 
 export type RestoreResult = { ok: true; state: OnCallState } | { ok: false; error: string };
 
+const COUNTERS = ['lastDay', 'current', 'best', 'played', 'solved'] as const;
+
 /**
- * Restores the counters from a backup. When this browser has played since the
- * backup was made (a wiped browser that played a day before restoring), those
- * rounds are replayed on top so the streak continues. That is only possible
- * when every local round is still in the history and newer than the backup;
- * otherwise restoring would lose progress, so it is refused.
+ * Restores the counters from a backup without losing progress. Rounds this
+ * browser finished after the backup are replayed on top. The restore goes
+ * ahead when:
+ * - every round this browser ever played is newer than the code (a cleared
+ *   or new browser), or
+ * - replaying gives back exactly what is here (the code is this browser's own
+ *   earlier state), or
+ * - the code is at least as recent and has at least as much progress.
+ * Anything else would drop rounds the code does not know about, so it is
+ * refused.
  */
 export function restoreBackup(local: OnCallState, summary: BackupSummary): RestoreResult {
   const days = Object.keys(local.rounds)
     .map(Number)
     .sort((a, b) => a - b);
-  let next: OnCallState = { ...summary, rounds: {}, active: local.active };
-  if (local.lastDay > summary.lastDay) {
-    const replayable = days.length === local.played && days.every((d) => d > summary.lastDay);
-    if (!replayable) {
-      return { ok: false, error: 'This browser already has newer progress than that code.' };
-    }
-    for (const day of days) next = applyResult(next, day, local.rounds[day]);
-    return { ok: true, state: next };
-  }
-  // The backup is as new or newer: its counters win, local rounds stay as history.
-  const rounds: Record<number, StoredRound> = {};
-  for (const day of days) rounds[day] = local.rounds[day];
-  next.rounds = pruneRounds(rounds, summary.lastDay);
-  return { ok: true, state: next };
+  const newer = days.filter((day) => day > summary.lastDay);
+  let replayed: OnCallState = { ...summary, rounds: {}, active: local.active };
+  for (const day of newer) replayed = applyResult(replayed, day, local.rounds[day]);
+  const history: Record<number, StoredRound> = { ...replayed.rounds };
+  for (const day of days) if (day <= summary.lastDay) history[day] = local.rounds[day];
+  replayed = { ...replayed, rounds: pruneRounds(history, replayed.lastDay) };
+
+  const allNewer = days.length === local.played && newer.length === days.length;
+  if (allNewer) return { ok: true, state: replayed };
+  if (COUNTERS.every((key) => replayed[key] === local[key])) return { ok: true, state: local };
+  const atLeastAsMuch =
+    local.lastDay <= summary.lastDay &&
+    summary.played >= local.played &&
+    summary.solved >= local.solved &&
+    summary.best >= local.best;
+  if (atLeastAsMuch) return { ok: true, state: replayed };
+  return {
+    ok: false,
+    error:
+      'This browser has progress that the code does not include, so restoring it would lose some.',
+  };
 }

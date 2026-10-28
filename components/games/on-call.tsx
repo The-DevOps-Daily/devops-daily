@@ -233,7 +233,7 @@ export default function OnCall() {
     if (day === null) return;
     const onStorage = (event: StorageEvent) => {
       if (event.key !== STORAGE_KEY) return;
-      const latest = readState(day) ?? emptyState();
+      const latest = readState(playableDay(Date.now())) ?? emptyState();
       setState(latest);
       const finishedThere = latest.rounds[day];
       if (finishedThere) {
@@ -261,19 +261,23 @@ export default function OnCall() {
   const act = useCallback(
     (action: Action) => {
       if (!incident || day === null || !view || finished) return;
-      // Start from what is stored now, not from this tab's copy.
-      const base = readState(day) ?? state;
+      // Start from what is stored now, not from this tab's copy. Validate it
+      // against the real date: this tab may still show an older day.
+      const base = readState(playableDay(Date.now())) ?? state;
       if (base.rounds[day]) {
         setState(base); // finished in another tab
         return;
       }
-      const next = playRound(incident, [...view.actions, action]);
-      if (next.actions.length === view.actions.length) return; // not a valid move
+      const sameRound = base.active?.day === day && base.active.incident === incident.number;
+      const before = sameRound && base.active ? base.active.actions : view.actions;
+      const next = playRound(incident, [...before, action]);
+      if (next.actions.length === playRound(incident, before).actions.length) return; // not a valid move
       setActions(next.actions);
 
       let nextState: OnCallState;
       if (next.finished) {
-        nextState = applyResult({ ...base, active: null }, day, {
+        // applyResult clears the saved round only if it is this day's.
+        nextState = applyResult(base, day, {
           incident: incident.number,
           solved: next.solved,
           moves: next.moves,
@@ -288,6 +292,9 @@ export default function OnCall() {
             disableForReducedMotion: true,
           });
         }
+      } else if (base.active && base.active.day > day) {
+        // A newer day is in progress in another tab; do not replace it.
+        nextState = base;
       } else {
         nextState = {
           ...base,
@@ -295,7 +302,7 @@ export default function OnCall() {
         };
       }
       setState(nextState);
-      saveState(nextState);
+      if (nextState !== base) saveState(nextState);
 
       const left = `${next.movesLeft} ${next.movesLeft === 1 ? 'move' : 'moves'} left.`;
       if (action.kind === 'inspect') {
@@ -649,7 +656,8 @@ export default function OnCall() {
 
             {notCounted && (
               <p className="text-xs text-zinc-300">
-                Your stats already include this day (from a backup code), so they did not change.
+                This round is saved, but your stats did not change: they already include this day or
+                a later one.
               </p>
             )}
 
@@ -785,12 +793,13 @@ function StreakPanel({
 
   const restore = (event: React.FormEvent) => {
     event.preventDefault();
-    const result = decodeBackup(input, day);
+    const today = playableDay(Date.now());
+    const result = decodeBackup(input, today);
     if (!result.ok) {
       setMessage({ ok: false, text: result.error });
       return;
     }
-    const restored = restoreBackup(readState(day) ?? state, result.summary);
+    const restored = restoreBackup(readState(today) ?? state, result.summary);
     if (!restored.ok) {
       setMessage({ ok: false, text: restored.error });
       return;

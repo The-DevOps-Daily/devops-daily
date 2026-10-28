@@ -6,8 +6,11 @@ import { usePathname } from 'next/navigation'
 
 export function BackToTop() {
   const [visible, setVisible] = useState(false)
+  const pathname = usePathname() ?? ''
   // Guide parts have a fixed bottom bar on small screens; sit above it.
-  const onGuidePart = /^\/guides\/[^/]+\/[^/]+/.test(usePathname() ?? '')
+  const onGuidePart = /^\/guides\/[^/]+\/[^/]+/.test(pathname)
+  // On phones the button covers the On-Call game's answer buttons.
+  const hidden = /^\/games\/on-call\/?$/.test(pathname)
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -36,7 +39,7 @@ export function BackToTop() {
    }
  }
 
- if (!visible) return null
+ if (!visible || hidden) return null
 
  return (
    <button

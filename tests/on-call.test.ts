@@ -401,8 +401,10 @@ describe('stored state', () => {
   });
 
   it('accepts only rounds the rules could produce', () => {
+    // Incident 1 has two causes in the right area and three in the wrong one.
     const miss: MoveRecord = { kind: 'diagnose', verdict: 'wrong' };
-    const lost: MoveRecord[] = [{ kind: 'inspect' }, miss, miss, miss, miss, miss];
+    const near: MoveRecord = { kind: 'diagnose', verdict: 'partial' };
+    const lost: MoveRecord[] = [{ kind: 'inspect' }, near, near, miss, miss, miss];
     expect(isValidRound({ incident: 1, solved: true, moves: WIN })).toBe(true);
     expect(isValidRound({ incident: 1, solved: false, moves: lost })).toBe(true);
     for (const round of [
@@ -412,6 +414,12 @@ describe('stored state', () => {
       { incident: 1, solved: true, moves: [...WIN, miss] },
       { incident: 1, solved: false, moves: [...lost.slice(0, 5), { kind: 'inspect' as const }] },
       { incident: 999, solved: true, moves: WIN },
+      {
+        incident: 1,
+        solved: false,
+        moves: [{ kind: 'inspect' as const }, miss, miss, miss, miss, miss],
+      },
+      { incident: 1, solved: false, moves: [near, near, near, miss, miss, miss] },
     ]) {
       expect(isValidRound(round), JSON.stringify(round)).toBe(false);
     }
@@ -472,6 +480,7 @@ describe('backup codes', () => {
     for (const counters of [
       { current: 9, best: 9 },
       { lastDay: 0, current: 0, best: 0, played: 1, solved: 1 },
+      { lastDay: 0, current: 0, best: 1, played: 1, solved: 1 },
       { played: 50 },
     ]) {
       const forged = encodeBackup({ ...played(), ...counters })!;
@@ -518,5 +527,44 @@ describe('backup codes', () => {
     const decoded = decodeBackup(encodeBackup(first)!, 100);
     if (!decoded.ok) throw new Error(decoded.error);
     expect(restoreBackup(s, decoded.summary).ok).toBe(false);
+  });
+
+  const solvedDays = (days: number[]) =>
+    days.reduce(
+      (s, day) => applyResult(s, day, { incident: 1, solved: true, moves: [] }),
+      emptyState()
+    );
+  const summaryOf = (s: OnCallState, today: number) => {
+    const decoded = decodeBackup(encodeBackup(s)!, today);
+    if (!decoded.ok) throw new Error(decoded.error);
+    return decoded.summary;
+  };
+
+  it("accepts this browser's own earlier code as a no-op", () => {
+    const local = solvedDays([0, 1]);
+    const result = restoreBackup(local, summaryOf(solvedDays([0]), 1));
+    expect(result).toEqual({ ok: true, state: local });
+  });
+
+  it('accepts the same code again after one more day', () => {
+    const fromCode = summaryOf(solvedDays([5, 6, 7, 8, 9, 10]), 10);
+    const first = restoreBackup(emptyState(), fromCode);
+    if (!first.ok) throw new Error(first.error);
+    const local = applyResult(first.state, 11, { incident: 1, solved: true, moves: [] });
+    const again = restoreBackup(local, fromCode);
+    expect(again.ok && again.state.played).toBe(7);
+    expect(again.ok && again.state.current).toBe(7);
+  });
+
+  it('refuses a code of the same date with less progress', () => {
+    const local = solvedDays([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(restoreBackup(local, summaryOf(solvedDays([10]), 10)).ok).toBe(false);
+  });
+
+  it('takes a newer code with more progress', () => {
+    const local = solvedDays([0, 1, 2]);
+    const result = restoreBackup(local, summaryOf(solvedDays([2, 3, 4, 5, 6, 7, 8, 9, 10]), 10));
+    expect(result.ok && result.state.played).toBe(9);
+    expect(result.ok && result.state.lastDay).toBe(10);
   });
 });

@@ -474,7 +474,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'keepalive',
     resolution:
-      "Node's HTTP server closes an idle keep-alive connection after about 5 seconds (keepAliveTimeout defaults to 5000 ms), as the tcpdump shows. The load balancer keeps idle backend connections for 60 seconds and reuses them. Now and then it sends a request on a connection at the same moment the app closes it: the app answers with a reset and the load balancer returns 502. It is worse at quiet times because connections sit idle longer. Fix: make the backend keep-alive timeout longer than the load balancer idle timeout, for example server.keepAliveTimeout = 65000 with headersTimeout a little higher.",
+      "Node's HTTP server closes an idle keep-alive connection after about 5 seconds (keepAliveTimeout defaults to 5000 ms; newer Node versions add a 1 second buffer), as the tcpdump shows. The load balancer keeps idle backend connections for 60 seconds and reuses them. Now and then it sends a request on a connection at the same moment the app closes it: the app answers with a reset and the load balancer returns 502. It is worse at quiet times because connections sit idle longer. Fix: make the backend keep-alive timeout longer than the load balancer idle timeout, for example server.keepAliveTimeout = 65000 with headersTimeout a little higher.",
     lesson:
       'On every hop that reuses connections, the server side must keep idle connections open longer than the client side. Check these timeouts whenever a proxy or load balancer changes.',
   },
@@ -1134,7 +1134,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'overlap',
     resolution:
-      'Today the job had ten times more invoices than usual, so a run took about half an hour instead of three minutes. The CronJob uses concurrencyPolicy: Allow, so a new run started every 10 minutes while the old ones were still going. Each run selected invoices with emailed_at still empty, because a run sets it only at the end, so three runs sent the same invoices. Fix: set concurrencyPolicy: Forbid. Then make each send idempotent: claim invoices with a lease that expires (or SELECT ... FOR UPDATE SKIP LOCKED), pass an idempotency key to the mail provider if it supports one, and mark each invoice as emailed right after its own send succeeds.',
+      'Today the job had ten times more invoices than usual, so a run took about half an hour instead of three minutes. The CronJob uses concurrencyPolicy: Allow, so a new run started every 10 minutes while the old ones were still going. Each run selected invoices with emailed_at still empty, because a run sets it only at the end, so three runs sent the same invoices. Fix: set concurrencyPolicy: Forbid. Then claim invoices with a lease that expires (or SELECT ... FOR UPDATE SKIP LOCKED) and mark each one as emailed right after its own send succeeds. Only a stable idempotency key per invoice, honoured by the mail provider, makes a send exactly once; without one, a crash between sending and marking can still send one duplicate, so log each send and reconcile.',
     lesson:
       'Assume a scheduled job will one day run longer than its interval. Forbid overlapping runs, and make each unit of work idempotent so a second run cannot repeat side effects.',
   },
