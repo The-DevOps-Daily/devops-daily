@@ -54,7 +54,7 @@ export function GuideMobileNav({ guide, activePart, previousPart, nextPart }: Gu
         <Link
           href={previousHref}
           className="flex h-10 items-center gap-1 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label={previousPart ? `Previous: ${previousPart.title}` : 'Guide overview'}
+          aria-label={previousPart ? `Prev: ${previousPart.title}` : 'Guide overview'}
         >
           <ChevronLeft className="h-4 w-4" />
           <span>{previousPart ? 'Prev' : 'Overview'}</span>
