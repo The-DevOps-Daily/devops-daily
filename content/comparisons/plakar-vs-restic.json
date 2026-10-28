@@ -1,0 +1,398 @@
+{
+  "id": "plakar-vs-restic",
+  "slug": "plakar-vs-restic",
+  "title": "Plakar vs restic",
+  "seoTitle": "Plakar vs restic (and Borg): Open-Source Backup Compared",
+  "description": "Plakar and restic both make encrypted, deduplicated backups to disk, SFTP or S3. Compare a built-in web UI, restore straight into PostgreSQL, MySQL and MongoDB, single-file ptar archives, per-path checks and delete protection, with Borg 1.4 in the FAQ.",
+  "category": "Backup & Recovery",
+  "tags": ["Backup", "Plakar", "restic", "Borg", "Disaster Recovery", "PostgreSQL", "Open Source"],
+  "createdDate": "2026-10-28T09:00:00Z",
+  "updatedDate": "2026-10-28T09:00:00Z",
+  "estimatedReadTime": "13 min read",
+  "sponsorCampaign": "plakar",
+  "introduction": "Plakar and restic both make encrypted, deduplicated backups with a single Go binary, and both can keep the backup repository on local disk, on an SFTP server or in S3-compatible object storage. restic has been developed since 2014 and has about 36,900 stars on GitHub. It does one job well: it backs up files, and anything you can pipe into it, and restores them. Plakar's 1.0 line started in May 2025. It runs on its own storage engine, Kloset, and adds more around the backup itself: a web UI, connectors for databases and services, a single-file archive format and a backup server that refuses deletes by default.\n\nThe biggest difference shows up at restore time. With restic, a PostgreSQL backup is usually pg_dump piped into restic backup, and a restore is restic dump piped into pg_restore, in a script you write and test. Plakar's PostgreSQL connector runs pg_dumpall for roles and one pg_dump per database, and its restore runs psql and pg_restore for you, with an option that creates the database first. MySQL, MariaDB and MongoDB have connectors that work the same way. To find and download one file, Plakar has a web UI in the same binary. With restic, you use the command line, a FUSE mount or a third-party tool such as Backrest.\n\nBorg is the other tool people ask about. Borg 1.4.5 is stable and well proven, but it keeps repositories only on local disk or on a server over SSH, and has no official UI. Its append-only mode keeps old data, but delete and prune still run. Borg 2 is in beta (2.0.0b25), and its README says not to use it for production backups. The FAQ below covers where Borg fits.\n\nThis page compares the documented features of Plakar v1.1.8 (20 October 2026) and restic 0.19.1 (5 July 2026), taken from each project's docs, man pages, release notes and source code and checked on 28 October 2026. It covers features and design, not speed, memory use or deduplication ratios. Plakar sponsored this comparison.",
+  "relatedLinks": [
+    {
+      "label": "Someone ran migrate:fresh on production: a timed database recovery",
+      "href": "/posts/someone-ran-migrate-fresh-on-production"
+    },
+    {
+      "label": "Free egress has fine print: what restores from S3, R2, B2 and Wasabi cost",
+      "href": "/posts/object-storage-free-egress-fine-print"
+    },
+    {
+      "label": "Introduction to PostgreSQL: backup and recovery (free guide)",
+      "href": "/guides/introduction-to-postgres/09-backup-and-recovery"
+    },
+    {
+      "label": "Practice a recovery plan in the BCDR simulator",
+      "href": "/games/bcdr-simulator"
+    }
+  ],
+  "toolA": {
+    "name": "Plakar",
+    "icon": "Layers",
+    "website": "https://go.devops-daily.com/plakar?p=comparison",
+    "description": "Open-source backup and restore tool (ISC license) built on Kloset, an immutable, encrypted storage engine. One Go binary backs up files, databases and services, restores them to files or straight into the service, and ships a web UI. Plakar Control Plane adds self-hosted central management, with a free plan.",
+    "color": "#524cff",
+    "pros": [
+      "A web UI in the same binary (plakar ui) to browse snapshots, preview files and download a file, a folder or a whole snapshot",
+      "Connectors back up and restore PostgreSQL, MySQL, MariaDB and MongoDB directly, so there is no dump-and-pipe script to maintain",
+      "Sources beyond files: Kubernetes, etcd, Proxmox, VMware, OpenStack, IMAP, Notion and cloud drives",
+      "ptar: a whole backup in one encrypted, deduplicated file that you can list, check and restore like a repository",
+      "plakar server refuses delete operations unless you start it with -allow-delete",
+      "AES-256-GCM-SIV, Argon2id and keyed BLAKE3, reviewed in an external cryptography audit in 2025",
+      "Refuses to open an unencrypted store by default since v1.1.5",
+      "Check one path inside a snapshot instead of the whole repository",
+      "ISC license, frequent releases, and an optional Control Plane with a free plan up to 500 GB of managed data"
+    ],
+    "cons": [
+      "A younger project: the 1.0 line started in May 2025, and it has about 2,100 GitHub stars against restic's 36,900",
+      "Only local disk and HTTP stores are built in. S3, SFTP and the database connectors are packages that need a free plakar login to download, or a build from source",
+      "Some connectors, such as Windows VSS and SQL Server, are closed source (free for registered users)",
+      "The local cache can grow large: open issues report it filling the disk",
+      "Fewer platforms than restic: Linux, macOS, Windows, FreeBSD and OpenBSD on amd64 and arm64"
+    ]
+  },
+  "toolB": {
+    "name": "restic",
+    "icon": "Terminal",
+    "website": "https://restic.net/",
+    "description": "Open-source backup program (BSD 2-Clause) developed since 2014. One Go binary backs up files and command output into an encrypted, deduplicated repository, with local, SFTP, REST server, S3, B2, Azure, Google Cloud Storage, Swift and rclone backends all built in.",
+    "color": "#0f766e",
+    "pros": [
+      "Mature and widely used: developed since 2014, with about 36,900 GitHub stars",
+      "Every common backend is built into the binary: S3 and S3-compatible storage, B2, Azure Blob, Google Cloud Storage, Swift, SFTP, REST server and rclone, with no account or plugin",
+      "restore exits with status 1 if there was any error, and restore --verify checks the restored files",
+      "backup --stdin-from-command stores a database dump without a temporary file",
+      "Crypto design reviewed in public by Filippo Valsorda in 2017",
+      "Release binaries for many platforms, including Linux on arm, RISC-V and s390x, the BSDs and Solaris",
+      "BSD 2-Clause license and a large set of third-party tools, such as the Backrest web UI"
+    ],
+    "cons": [
+      "No official UI: you browse and restore with the command line, a FUSE mount or third-party tools",
+      "Database backups and restores are pipes you script and test yourself",
+      "Delete protection needs rest-server with --append-only, which is off unless you turn it on",
+      "Sources are files, stdin and command output; there are no connectors for Kubernetes, VMs, mail or SaaS apps",
+      "No central management from the project; scheduling and policies are up to you or third-party tools"
+    ]
+  },
+  "features": [
+    {
+      "name": "Storage design",
+      "category": "Architecture",
+      "toolA": {
+        "value": "Kloset engine: content-defined chunks, compressed and encrypted on the client, written to immutable packfiles. Snapshots carry their own file tree index, so ls, cat, mount and the UI read one file without a full restore",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Content-defined chunks (Rabin fingerprints, 512 KiB to 8 MiB), encrypted and stored in pack files with an index, addressed by SHA-256",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Web UI",
+      "category": "Features",
+      "toolA": {
+        "value": "plakar ui, in the same binary: browse snapshots, preview files, download a file, a folder or a whole snapshot as .tar.gz. The URL carries an access token",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "None in the project. Third-party tools such as Backrest add a web UI",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Restore into a database",
+      "category": "Integrations",
+      "toolA": {
+        "value": "restore -to a PostgreSQL destination runs psql and pg_restore (recreate=true creates the database); MySQL and MariaDB (create_db=true) and MongoDB (mongorestore --drop) work the same way",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Restores files. For a database, you pipe restic dump into pg_restore, mysql or mongorestore yourself",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Database backups",
+      "category": "Integrations",
+      "toolA": {
+        "value": "PostgreSQL connector runs pg_dumpall --globals-only plus one pg_dump -Fc per database, or pg_basebackup for a physical copy. On managed services it falls back to --no-role-passwords",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "backup --stdin-from-command -- pg_dump ... stores one dump per command; a loop over databases and roles is your script",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Other sources",
+      "category": "Integrations",
+      "toolA": {
+        "value": "Connectors for Kubernetes, etcd, Proxmox, VMware, OpenStack, SQL Server, IMAP, Notion, Google Drive, Dropbox, OneDrive and more",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Files and directories, stdin and command output",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Storage backends",
+      "category": "Integrations",
+      "toolA": {
+        "value": "Local disk and HTTP built in. S3, SFTP, Azure Blob, Google Cloud Storage, WebDAV, OCI registries and rclone are packages: plakar pkg add after a free login, or plakar pkg build from source",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Local, SFTP, REST server, S3 and S3-compatible, B2, Azure Blob, Google Cloud Storage, Swift and rclone, all built in",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Single-file archive",
+      "category": "Features",
+      "toolA": {
+        "value": "plakar ptar writes one .ptar file with snapshots and data, encrypted unless -plaintext. You can list, check and restore it like a repository, as a local file or over HTTP range requests",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "restic dump writes a snapshot path as a plain tar or zip",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Integrity check scope",
+      "category": "Operations",
+      "toolA": {
+        "value": "plakar check snapshot:path checks one path and verifies its MACs; -fast checks structure only; no argument checks the whole store",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "check verifies the repository structure; --read-data or --read-data-subset reads pack data. Since 0.19.0, pack checks can be limited to snapshots picked by filters",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Delete protection on the backup server",
+      "category": "Security",
+      "toolA": {
+        "value": "plakar server refuses delete operations unless started with -allow-delete; -token requires a bearer token",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "rest-server --append-only allows new backups and blocks deletes and changes; you turn it on",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Encryption",
+      "category": "Security",
+      "toolA": {
+        "value": "AES-256-GCM-SIV for data, AES-256-KW for subkeys, Argon2id key derivation, keyed BLAKE3 MACs. Refuses unencrypted stores unless PLAKAR_INSECURE_PLAINTEXT is set (since v1.1.5)",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "AES-256 in counter mode with Poly1305-AES authentication, scrypt key derivation; every repository is encrypted",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Cryptography review",
+      "category": "Security",
+      "toolA": {
+        "value": "External audit by Jean-Philippe Aumasson, published February 2025: no major security issues; the changes he recommended were made and reviewed again",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Public review of the design and code by Filippo Valsorda in August 2017: \"the design might not be perfect, but it's good\"",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Mount a snapshot",
+      "category": "Features",
+      "toolA": {
+        "value": "plakar mount as a read-only FUSE file system, or served over HTTP on a host and port",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "restic mount as a FUSE file system on Linux, macOS and FreeBSD",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Central management",
+      "category": "Operations",
+      "toolA": {
+        "value": "Plakar Control Plane, self-hosted: backup policies, scheduling, secrets and one dashboard. Free plan up to 500 GB of managed data; Community plan for qualifying organizations; Enterprise on request",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "None from the project. You schedule with cron or systemd timers, or use a third-party tool",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Platforms",
+      "category": "Operations",
+      "toolA": {
+        "value": "Linux, macOS, Windows, FreeBSD and OpenBSD on amd64 and arm64; deb, rpm, apk and Arch packages",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Linux on many architectures (including arm, RISC-V and s390x), macOS, Windows, FreeBSD, OpenBSD, NetBSD and Solaris",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "License",
+      "category": "Licensing & Governance",
+      "toolA": {
+        "value": "ISC for Plakar and the Kloset engine. Some connectors, such as Windows VSS and SQL Server, are closed source and free for registered users",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "BSD 2-Clause",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Release cadence",
+      "category": "Licensing & Governance",
+      "toolA": {
+        "value": "Nine releases from v1.1.0 (5 June 2026) to v1.1.8 (20 October 2026)",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "0.19.0 (9 June 2026) and 0.19.1 (5 July 2026); about one feature release a year since 2024",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Track record",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "1.0 line since May 2025; about 2,100 GitHub stars",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Developed since 2014; about 36,900 GitHub stars and many third-party tools",
+        "rating": "good"
+      }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "A team that runs PostgreSQL or MySQL and wants database restores without scripts",
+      "recommendation": "toolA",
+      "explanation": "Plakar's connectors do both halves. The PostgreSQL connector backs up roles with pg_dumpall --globals-only and each database with pg_dump -Fc, and a restore to a PostgreSQL destination runs psql and pg_restore, creating the database first with recreate=true. MySQL, MariaDB and MongoDB have the same kind of connector. With restic, the same result is a pg_dump pipe at backup time and a restic dump pipe at restore time, which you write, keep up to date and test. The dumps Plakar stores are standard pg_dump and SQL files, so you can still restore them by hand."
+    },
+    {
+      "scenario": "On-call engineers who need one file back from last week's backup",
+      "recommendation": "toolA",
+      "explanation": "plakar ui opens a web page from the same binary. You pick a snapshot, browse to the file, preview it and download it, or download a whole folder as a .tar.gz. With restic, you find the file with restic find or ls and restore it with restic restore --include or restic dump, or mount the repository with FUSE. Both work. The UI is faster for someone who does not run restores every week."
+    },
+    {
+      "scenario": "Backups must survive an attacker who controls the client machine",
+      "recommendation": "toolA",
+      "explanation": "Both tools can do this if the repository sits behind a server on another host. plakar server refuses delete operations unless it is started with -allow-delete, so the safe setting is the default. restic's rest-server blocks deletes and changes when you start it with --append-only. In both setups, remove old snapshots from the backup host itself, not from the client."
+    },
+    {
+      "scenario": "An offline or air-gapped copy, or a backup handed to another team",
+      "recommendation": "toolA",
+      "explanation": "plakar ptar writes the backup into one encrypted, deduplicated file. The receiver can list, check and restore it like a repository, or sync it into a normal store. restic dump can export a snapshot path as a tar or zip, but that file is not encrypted or deduplicated."
+    },
+    {
+      "scenario": "Backing up Kubernetes, VMs, mailboxes or SaaS data next to servers",
+      "recommendation": "toolA",
+      "explanation": "Plakar has connectors for Kubernetes, etcd, Proxmox, VMware, OpenStack, IMAP, Notion and cloud drives, and stores them all in the same kind of encrypted repository. restic backs up files and command output, so each of these sources needs its own export step before restic sees the data."
+    },
+    {
+      "scenario": "A few Linux servers back up files to S3 from cron, with no accounts",
+      "recommendation": "toolB",
+      "explanation": "restic has S3, B2, Azure, Google Cloud Storage, SFTP and rclone built in, so one binary and a repository URL are enough. Plakar does the same job, but its S3 and SFTP support comes as a package that you download after a free plakar login or build from source."
+    },
+    {
+      "scenario": "A team that values a long track record above new features",
+      "recommendation": "toolB",
+      "explanation": "restic has been developed since 2014, has about 36,900 GitHub stars and a large set of third-party tools, guides and answers. Plakar's 1.0 line is from May 2025. If you want the most proven option for plain file backups, restic is it."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Where does Borg fit?",
+      "answer": "Borg 1.4.5 (18 July 2026, BSD 3-Clause) is a stable, well-proven backup tool. It keeps repositories on local disk or on a remote server over SSH, so it has no direct S3 support. It has no official UI; Vorta is a third-party desktop client. borg create --content-from-command backs up a database dump, and borg export-tar writes a plain tar. In append-only mode, Borg never deletes committed data, so you can roll back a bad transaction, but borg delete and borg prune still run. Borg 2 does not work with existing Borg 1.x repositories (borg transfer copies archives over), and it is still in beta (2.0.0b25, 27 September 2026); its README says not to use it for production backups. Compared with Plakar, Borg 1.4 has no web UI, no database restore connectors and no object storage support."
+    },
+    {
+      "question": "Does Plakar need an account?",
+      "answer": "Not for backups and restores. Plakar works without an account, and local disk and HTTP stores are built in. A free login, with GitHub or an email link, lets plakar pkg add download pre-built packages such as S3, SFTP and PostgreSQL. Without a login, you can build the same packages from source. For CI, plakar token create gives a PLAKAR_TOKEN that the plakar command reads from the environment. restic needs no account for any of its backends."
+    },
+    {
+      "question": "Can I restore a Plakar database backup without the connector?",
+      "answer": "Yes. The PostgreSQL connector stores a globals SQL file and one pg_dump custom-format file per database, and the MySQL connector stores plain SQL files. You can restore those files to disk with plakar restore and run pg_restore, psql or mysql on them yourself."
+    },
+    {
+      "question": "What is a ptar file?",
+      "answer": "A ptar file is a complete, read-only Kloset repository in one file: the configuration, one packfile with every snapshot's data and one state index. It is encrypted unless you create it with -plaintext. You can list, check and restore it like any repository, open it as a local file or over HTTP range requests, or sync it into a normal store. It is useful for an offline copy, or for handing a backup to someone else."
+    },
+    {
+      "question": "Can a hacked client delete its own backups?",
+      "answer": "Not if the repository sits behind a protected server on another host. plakar server refuses delete operations unless you start it with -allow-delete, and -token makes clients send a bearer token. restic's rest-server gives the same protection with --append-only, which you must turn on. If the client writes straight to S3 with credentials that can delete objects, neither tool can stop it: use bucket policies or object lock on the storage side."
+    },
+    {
+      "question": "Is Plakar free?",
+      "answer": "Yes. Plakar and its Kloset engine are open source under the ISC license. The company sells Plakar Control Plane, a self-hosted management layer with backup policies, scheduling, secrets and a dashboard. It has a free plan for up to 500 GB of managed data, a Community plan for qualifying organizations such as non-profits and startups under three years old and before Series A, and an Enterprise plan priced on request. A few connectors, such as Windows VSS and SQL Server, are closed source but free for registered users."
+    },
+    {
+      "question": "What about Kopia?",
+      "answer": "Kopia (v0.23.1, Apache-2.0) is not part of this comparison. Like Plakar, and unlike restic and Borg, it has an official graphical interface, KopiaUI. If a UI is the main thing you miss in restic, look at both."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You want a web UI to browse snapshots and download files",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You restore PostgreSQL, MySQL or MongoDB databases",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the backup server to refuse deletes by default",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want to keep or ship a backup as one encrypted file",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You back up Kubernetes, VMs, mailboxes or SaaS data",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want central policies and scheduling for many hosts",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need S3 or SFTP with no account and no plugins",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "A long track record matters more than new features",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You only back up files on a few servers from cron",
+      "recommendation": "either"
+    }
+  ],
+  "verdict": {
+    "summary": "restic is a mature, focused backup tool with every common storage backend built in, and for plain file backups it is hard to beat on simplicity. Plakar covers the same ground and adds what restic leaves to scripts and third-party tools: a web UI, connectors that back up and restore PostgreSQL, MySQL and MongoDB directly, sources such as Kubernetes and VMs, a single-file encrypted archive, per-path checks and a backup server that refuses deletes by default. It also uses newer cryptography with a recent external audit. The trade-offs are a younger project and S3 and SFTP support that comes as a package after a free login or a source build.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.1,
+    "recommendation": "Choose Plakar if you back up databases and services and want restores without scripts, a web UI for finding files, delete protection on by default, or offline single-file archives. Choose restic for file backups to S3 or SFTP with no account and no plugins, and when a long track record matters most."
+  },
+  "relatedTags": ["Backup", "Disaster Recovery", "PostgreSQL", "Storage", "Security", "DevOps"]
+}
