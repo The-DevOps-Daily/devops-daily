@@ -127,7 +127,7 @@ const WHY = [
   {
     title: 'Measurable lift',
     description:
-      'A private live report, updated every day: clicks, logo impressions, page views and newsletter numbers, with bots and email scanners left out.',
+      'A private live report, updated every day: clicks, logo impressions, page views and newsletter numbers.',
     icon: BarChart,
   },
 ];
@@ -202,7 +202,7 @@ const STEPS = [
 ];
 
 const REPORT_POINTS = [
-  'Clicks per placement and per day, with bots and email scanners left out',
+  'Clicks per placement and per day',
   'Logo impressions that were on screen for at least 1 second, and the click rate',
   'Page views and readers on the pages we write for you',
   'Newsletter recipients, opens and clicks for every issue',
@@ -234,10 +234,6 @@ const FAQ = [
   {
     q: 'What is in the report?',
     a: 'Clicks on your links per placement and per day, logo impressions (on screen for at least 1 second) with the click rate, page views and readers on the pages we write for you, newsletter recipients, opens and clicks per issue, and every piece we published with its numbers on DevOps Daily, dev.to and daily.dev. It updates every day, and you can download the data as CSV.',
-  },
-  {
-    q: 'How do you handle bots and email scanners?',
-    a: 'Every click is checked. Bot user agents, link checkers, browser prefetches and requests from cloud networks, where email security scanners run, are counted apart and left out of your numbers. We set no cookies and never store IP addresses.',
   },
   {
     q: 'Is there a minimum commitment?',
