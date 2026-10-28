@@ -40,12 +40,12 @@
     {
       "id": "error-rate",
       "name": "Error rate",
-      "description": "Random scenarios: a service-wide 5xx share over 5% alerts after 5 minutes but not in the first 2, whatever the 5xx codes and even next to a busy healthy service; a few 5xx, many 4xx, under 1 request per second, and one small failing instance do not alert."
+      "description": "Random scenarios: a service-wide 5xx share over 5% alerts once it has lasted 5 minutes, not sooner or later, whatever the 5xx codes and routes and even next to a busy healthy service; a few 5xx, many 4xx, under 1 request per second, and one small failing route or instance do not alert."
     },
     {
       "id": "slow-requests",
       "name": "Slow requests",
-      "description": "Random scenarios: a p95 for checkout's /api/checkout well over 500 ms alerts after 10 minutes with severity ticket, even next to a busy fast service; fast requests, a slow route or job elsewhere, one small slow instance and a 7-minute slowdown do not alert."
+      "description": "Random scenarios: a p95 for checkout's /api/checkout well over 500 ms alerts once it has lasted 10 minutes, not sooner or later, with severity ticket, even next to a busy fast service; fast requests, a slow route or job elsewhere, one small slow instance and a 7-minute slowdown do not alert."
     }
   ],
   "solutionFiles": ["challenges/write-the-alerts/alerts.yml"],

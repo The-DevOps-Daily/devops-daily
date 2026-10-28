@@ -12,12 +12,12 @@
   "situation": [
     "The shop's database passed 400,000 orders this year, and three pages got slow at the same time. The order history of a business customer times out, logging in takes a second, and the finance dashboard spins. Each of the three queries behind them reads a whole table on every call.",
     "The database team left a note on the ticket: add indexes, but not one on every column. And one of these queries cannot use an index the way it is written.",
-    "The test data is like production's: 50,000 customers, 400,000 orders placed during 2026 and stored in the order they were placed, a few large business customers with thousands of orders each, and email addresses typed in any mix of upper and lower case."
+    "The test data is like production's: 50,000 customers and about 408,000 orders placed during 2026, a few large business customers with thousands of orders each, and email addresses typed in any mix of upper and lower case. Most orders are stored in the order they were placed, but some came in later from an import, so a higher ID is not always a newer order."
   ],
   "task": [
     "The order history query (the 20 newest orders of one customer) reads at most 60 pages.",
     "The email lookup (find a customer by email, in any case) reads at most 20 pages.",
-    "The revenue query (paid orders and revenue for one day, in UTC) reads at most 100 pages.",
+    "The revenue query (paid orders and revenue for one day, in UTC) reads at most 200 pages.",
     "Every query returns the same columns and rows, in the same order, as it does today. You may rewrite the queries, but each stays one SELECT with the same parameter.",
     "indexes.sql runs on the empty tables and may only create or drop indexes: no new tables, columns, views, functions or triggers."
   ],
@@ -30,17 +30,17 @@
     {
       "id": "orders-for-customer",
       "name": "Order history",
-      "description": "For 5 random customers (large, regular and small), queries/orders_for_customer.sql returns the same rows as the original query, and EXPLAIN ANALYZE shows it reading at most 60 pages, with no sequential scan."
+      "description": "For random customers (large, regular, small, and one with two orders at the same time among its newest), queries/orders_for_customer.sql returns the same rows in the same order as the original query, and EXPLAIN ANALYZE shows it reading at most 60 pages, with no sequential scan."
     },
     {
       "id": "find-customer",
       "name": "Find a customer by email",
-      "description": "For 5 random email addresses in random upper and lower case, one of them unknown, queries/find_customer.sql returns the same rows as the original query and reads at most 20 pages, with no sequential scan."
+      "description": "For 5 random email addresses in random upper and lower case, one of them shared by two customers and one unknown, queries/find_customer.sql returns the same rows as the original query and reads at most 20 pages, with no sequential scan."
     },
     {
       "id": "revenue-for-day",
       "name": "Revenue for a day",
-      "description": "For 4 random days, one of them with no orders, queries/revenue_for_day.sql returns the same totals as the original query and reads at most 100 pages, with no sequential scan."
+      "description": "For 4 random days, one of them with no orders, queries/revenue_for_day.sql returns the same totals as the original query and reads at most 200 pages, with no sequential scan."
     }
   ],
   "solutionFiles": [
