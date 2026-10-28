@@ -1,0 +1,78 @@
+{
+  "id": "speed-up-the-queries",
+  "slug": "speed-up-the-queries",
+  "title": "Speed Up the Slow Queries",
+  "description": "Three PostgreSQL queries read whole tables. Add the right indexes and fix the query an index cannot help. CI checks the rows and the pages read.",
+  "summary": "Three queries behind the shop's busiest pages read whole tables. Add the right PostgreSQL indexes, and fix the query an index cannot help, so each one reads a few pages and returns the same rows.",
+  "topic": "PostgreSQL",
+  "category": "Databases",
+  "difficulty": "intermediate",
+  "minutes": 45,
+  "tags": ["postgresql", "sql", "indexes", "performance", "databases", "explain"],
+  "situation": [
+    "The shop's database passed 400,000 orders this year, and three pages got slow at the same time. The order history of a business customer times out, logging in takes a second, and the finance dashboard spins. Each of the three queries behind them reads a whole table on every call.",
+    "The database team left a note on the ticket: add indexes, but not one on every column. And one of these queries cannot use an index the way it is written.",
+    "The test data is like production's: 50,000 customers, 400,000 orders placed during 2026 and stored in the order they were placed, a few large business customers with thousands of orders each, and email addresses typed in any mix of upper and lower case."
+  ],
+  "task": [
+    "The order history query (the 20 newest orders of one customer) reads at most 60 pages.",
+    "The email lookup (find a customer by email, in any case) reads at most 20 pages.",
+    "The revenue query (paid orders and revenue for one day, in UTC) reads at most 100 pages.",
+    "Every query returns the same columns and rows, in the same order, as it does today. You may rewrite the queries, but each stays one SELECT with the same parameter.",
+    "indexes.sql runs on the empty tables and may only create or drop indexes: no new tables, columns, views, functions or triggers."
+  ],
+  "checks": [
+    {
+      "id": "indexes",
+      "name": "The migration runs",
+      "description": "indexes.sql runs without errors as the app's database user, on the empty tables, within 2 minutes, and leaves only indexes behind: the tables, columns and constraints stay as they are, and there are no new functions, views, triggers or other objects."
+    },
+    {
+      "id": "orders-for-customer",
+      "name": "Order history",
+      "description": "For 5 random customers (large, regular and small), queries/orders_for_customer.sql returns the same rows as the original query, and EXPLAIN ANALYZE shows it reading at most 60 pages, with no sequential scan."
+    },
+    {
+      "id": "find-customer",
+      "name": "Find a customer by email",
+      "description": "For 5 random email addresses in random upper and lower case, one of them unknown, queries/find_customer.sql returns the same rows as the original query and reads at most 20 pages, with no sequential scan."
+    },
+    {
+      "id": "revenue-for-day",
+      "name": "Revenue for a day",
+      "description": "For 4 random days, one of them with no orders, queries/revenue_for_day.sql returns the same totals as the original query and reads at most 100 pages, with no sequential scan."
+    }
+  ],
+  "solutionFiles": [
+    "challenges/speed-up-the-queries/indexes.sql",
+    "challenges/speed-up-the-queries/queries/orders_for_customer.sql",
+    "challenges/speed-up-the-queries/queries/find_customer.sql",
+    "challenges/speed-up-the-queries/queries/revenue_for_day.sql"
+  ],
+  "hints": [
+    {
+      "title": "Read the plan",
+      "body": "EXPLAIN (ANALYZE, BUFFERS) in front of a query shows each step of the plan, how many rows it produced, and how many pages it touched."
+    },
+    {
+      "title": "Let the index do the sorting",
+      "body": "An index on customer_id alone finds a customer's orders, but they still have to be sorted, and a large customer has thousands. LIMIT 20 can stop after 20 rows only when the index hands out the rows in the order the query wants."
+    },
+    {
+      "title": "An index on a column does not help a function of it",
+      "body": "The index on email is no use for lower(email) = ... PostgreSQL can index an expression too."
+    },
+    {
+      "title": "created_at::date",
+      "body": "PostgreSQL cannot use the index on created_at for created_at::date = $1, and it cannot index created_at::date either, because the result depends on the time zone setting. Ask for a range of created_at instead."
+    }
+  ],
+  "localTest": {
+    "intro": "From the challenge folder, with Docker and psql. Then put EXPLAIN (ANALYZE, BUFFERS) in front of a query, with a real value in place of $1:",
+    "commands": "docker run -d --name shop-db -e POSTGRES_PASSWORD=shop -p 5432:5432 postgres:18.6\nexport PGHOST=localhost PGUSER=postgres PGPASSWORD=shop PGTZ=UTC\npsql -c 'CREATE DATABASE shop'\npsql -d shop -v ON_ERROR_STOP=1 -f schema.sql -f indexes.sql -f seed.sql -c 'ANALYZE'\npsql -d shop"
+  },
+  "related": {
+    "guides": ["introduction-to-postgres"]
+  },
+  "publishedAt": "2026-10-28"
+}

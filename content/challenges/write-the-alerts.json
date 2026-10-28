@@ -1,0 +1,78 @@
+{
+  "id": "write-the-alerts",
+  "slug": "write-the-alerts",
+  "title": "Write the Alerts",
+  "description": "Write four Prometheus alert rules for a checkout service that page for real outages and stay quiet for blips. CI grades them with promtool tests.",
+  "summary": "The checkout service has metrics but no useful alerts. Write four Prometheus alert rules that page for real outages and stay quiet for blips, quiet nights and other services.",
+  "topic": "Prometheus",
+  "category": "Monitoring",
+  "difficulty": "intermediate",
+  "minutes": 45,
+  "tags": ["prometheus", "alerting", "promql", "observability", "monitoring", "sre"],
+  "situation": [
+    "Last week the checkout service had a bad night. One instance was down for an hour, then a deploy made one checkout in five fail with a 500. Customers noticed before anyone on the team did.",
+    "Prometheus scrapes the service and there is a dashboard, but alerts.yml has only two rules. One pages for every missed scrape of anything Prometheus watches. The other was copied from a blog post years ago, and nobody trusts it.",
+    "The service exports up, a counter of requests by instance, route and status code (http_requests_total), and a histogram of request durations (http_request_duration_seconds). Other services are scraped by the same Prometheus."
+  ],
+  "task": [
+    "CheckoutInstanceDown (severity page): a checkout instance fails its scrapes for 3 minutes. One alert per instance.",
+    "CheckoutTargetsMissing (severity page): there has been no up series for the checkout job at all for 5 minutes.",
+    "CheckoutHighErrorRate (severity page): over 5 minutes, more than 5% of all checkout requests got a 5xx answer, at 1 request per second or more, and it has held for 5 minutes. One alert for the whole service.",
+    "CheckoutSlowRequests (severity ticket): the 95th percentile duration of /api/checkout, for all instances together, has been above 500 ms for 10 minutes.",
+    "Every alert has a summary annotation and a runbook_url annotation with an https link."
+  ],
+  "checks": [
+    {
+      "id": "rules-load",
+      "name": "The rules load",
+      "description": "promtool check rules passes, and alerts.yml defines CheckoutInstanceDown, CheckoutTargetsMissing, CheckoutHighErrorRate and CheckoutSlowRequests once each, with the severity label from the brief and a summary and an https runbook_url annotation."
+    },
+    {
+      "id": "instance-down",
+      "name": "Instance down",
+      "description": "Random scenarios: an instance that stays down alerts after 3 minutes, one alert per instance; a 2-minute blip does not alert; an instance of another job does not alert."
+    },
+    {
+      "id": "targets-missing",
+      "name": "Targets missing",
+      "description": "Random scenarios: when every checkout target disappears, or was never scraped, it alerts after 5 minutes; instances that are down but still scraped and another job's targets do not count."
+    },
+    {
+      "id": "error-rate",
+      "name": "Error rate",
+      "description": "Random scenarios: a service-wide 5xx share over 5% alerts after 5 minutes but not in the first 2, whatever the 5xx codes and even next to a busy healthy service; a few 5xx, many 4xx, under 1 request per second, and one small failing instance do not alert."
+    },
+    {
+      "id": "slow-requests",
+      "name": "Slow requests",
+      "description": "Random scenarios: a p95 for checkout's /api/checkout well over 500 ms alerts after 10 minutes with severity ticket, even next to a busy fast service; fast requests, a slow route or job elsewhere, one small slow instance and a 7-minute slowdown do not alert."
+    }
+  ],
+  "solutionFiles": ["challenges/write-the-alerts/alerts.yml"],
+  "hints": [
+    {
+      "title": "One missed scrape is not an outage",
+      "body": "An alert can wait before it fires. Read about the for field in the Prometheus alerting rules documentation."
+    },
+    {
+      "title": "A target that is gone has no up series",
+      "body": "up == 0 needs an up series to compare. When every target disappears, there is nothing to compare. Look at absent()."
+    },
+    {
+      "title": "A ratio for the whole service",
+      "body": "rate() gives requests per second per series. Add up the 5xx rates and divide by the sum of all rates to get one ratio for the service. Two conditions can be joined with and."
+    },
+    {
+      "title": "Percentiles from a histogram",
+      "body": "histogram_quantile() works on bucket rates. When you sum the buckets of several instances, keep the le label."
+    }
+  ],
+  "localTest": {
+    "intro": "From the challenge folder, with promtool (it ships with Prometheus) and Python 3:",
+    "commands": "promtool check rules alerts.yml\npromtool test rules tests/example.test.yml\npython3 grade/gen_tests.py --out /tmp/alert-tests --rules \"$PWD/alerts.yml\"\nfor f in /tmp/alert-tests/*.yml; do promtool test rules \"$f\" > /dev/null || echo \"FAILED: $f\"; done"
+  },
+  "related": {
+    "exercises": ["prometheus-grafana-monitoring", "microservices-observability-opentelemetry"]
+  },
+  "publishedAt": "2026-10-28"
+}

@@ -1,0 +1,86 @@
+{
+  "id": "fix-the-network-module",
+  "slug": "fix-the-network-module",
+  "title": "Fix the Network Module",
+  "description": "Fix a Terraform VPC module that broke in a refactor: it does not validate, its subnets overlap and it takes any input. CI plans it with no AWS account.",
+  "summary": "A Terraform module for a VPC and its subnets broke in a refactor: it does not validate, its subnets overlap and it accepts any input. Fix it until its tests and random plans pass, with no AWS account.",
+  "topic": "Terraform",
+  "category": "Infrastructure as Code",
+  "difficulty": "intermediate",
+  "minutes": 60,
+  "tags": ["terraform", "aws", "vpc", "infrastructure-as-code", "networking", "testing"],
+  "situation": [
+    "Every team builds its VPC with the platform team's network module. Last sprint someone refactored it, and it has not worked since: terraform validate fails, and the private subnet of one availability zone still overlaps the public subnet of the next.",
+    "Subnets are created with count, so when a team removed eu-west-1a from a test stack, Terraform wanted to destroy and recreate every subnet. Nothing checks the inputs: last month someone created a VPC with a public /8 range. And a team that passed its own Name tag gave every resource in its VPC that one name."
+  ],
+  "task": [
+    "Validate the inputs: name (3 to 20 lowercase letters, digits and hyphens), environment (dev, staging or prod), vpc_cidr (a private IPv4 block from /16 to /24) and azs (2 to 4 different AZs in one region, ending in a to f).",
+    "Create aws_vpc.this with DNS support and DNS hostnames, and one public and one private subnet per AZ, keyed by the AZ name.",
+    "Split the VPC into 16 blocks. The AZ letter picks the public subnet's block (a is 0, f is 5), and the private subnet is 8 blocks higher, wherever the AZ is in the list.",
+    "Tag every resource with the caller's tags plus Name, Environment, ManagedBy and, on subnets, Tier. The module's values win.",
+    "Output the VPC ID, and maps from AZ to subnet ID and subnet CIDR block."
+  ],
+  "checks": [
+    {
+      "id": "fmt-validate",
+      "name": "Formatted and valid",
+      "description": "terraform init works with no network and only the AWS provider, terraform validate passes, and terraform fmt has nothing to change in main.tf, variables.tf and outputs.tf."
+    },
+    {
+      "id": "module-tests",
+      "name": "The module's tests pass",
+      "description": "terraform test passes every run in tests/network.tftest.hcl, with a mock AWS provider. One run gives the VPC and subnets known IDs to check the outputs and that every subnet is in the VPC."
+    },
+    {
+      "id": "inputs",
+      "name": "Inputs are validated",
+      "description": "For every input rule in the brief, a random value that breaks it (20 in all) is rejected by a variable validation rule, and three random sets of good inputs plan without errors."
+    },
+    {
+      "id": "subnets",
+      "name": "Subnets for random inputs",
+      "description": "For three random sets of good inputs, the plan has aws_vpc.this with DNS turned on, and one public and one private subnet per AZ in that VPC, keyed by AZ name, with the range the AZ letter picks. The outputs map AZs to subnet ranges and IDs."
+    },
+    {
+      "id": "tags",
+      "name": "Tags",
+      "description": "In the same plans, the VPC and every subnet have the caller's tags plus Name, Environment, ManagedBy and, on subnets, Tier from the module, and the module's values win."
+    }
+  ],
+  "solutionFiles": [
+    "challenges/fix-the-network-module/main.tf",
+    "challenges/fix-the-network-module/variables.tf",
+    "challenges/fix-the-network-module/outputs.tf"
+  ],
+  "hints": [
+    {
+      "title": "Start with what Terraform tells you",
+      "body": "Run terraform validate and read each error. It names the file and the line."
+    },
+    {
+      "title": "count or for_each",
+      "body": "Resources created with count are known by their position in the list, so removing the first AZ shifts every other subnet. Resources created with for_each are known by their key."
+    },
+    {
+      "title": "From AZ letter to block number",
+      "body": "Look at substr(), index() and cidrsubnet() in the Terraform function documentation."
+    },
+    {
+      "title": "Validation rules that do not crash",
+      "body": "cidrhost() fails on a value that is not a CIDR block. can() turns that failure into false. A variable can have more than one validation block, each with its own error message."
+    },
+    {
+      "title": "Which tag wins",
+      "body": "merge() keeps the value from the last map that has the key."
+    }
+  ],
+  "localTest": {
+    "intro": "From the challenge folder, with Terraform 1.11 or later. You do not need an AWS account: the tests use a mock provider.",
+    "commands": "terraform init\nterraform validate\nterraform fmt -check\nterraform test"
+  },
+  "related": {
+    "exercises": ["terraform-aws-vpc", "terraform-digitalocean-droplet"],
+    "guides": ["introduction-to-terraform", "networking-fundamentals"]
+  },
+  "publishedAt": "2026-10-28"
+}
