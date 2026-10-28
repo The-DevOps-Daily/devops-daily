@@ -18,13 +18,13 @@
     "Create aws_vpc.this with DNS support and DNS hostnames, and one public and one private subnet per AZ, keyed by the AZ name.",
     "Split the VPC into 16 blocks. The AZ letter picks the public subnet's block (a is 0, f is 5), and the private subnet is 8 blocks higher, wherever the AZ is in the list.",
     "Tag every resource with the caller's tags plus Name, Environment, ManagedBy and, on subnets, Tier. The module's values win.",
-    "Output the VPC ID, and maps from AZ to subnet ID and subnet CIDR block. The module may not read files or configure the AWS provider."
+    "Output the VPC ID, and maps from AZ to subnet ID and subnet CIDR block. The module has only aws_vpc and aws_subnet resources, may not read files or configure the AWS provider, and reads only id, cidr_block, availability_zone and vpc_id from its resources."
   ],
   "checks": [
     {
       "id": "fmt-validate",
       "name": "Formatted and valid",
-      "description": "The module calls no file function and has no provider block, terraform init works with no network and only the AWS provider, terraform validate passes, and terraform fmt has nothing to change in main.tf, variables.tf and outputs.tf."
+      "description": "The module has only variable, locals, resource (aws_vpc and aws_subnet) and output blocks, reads no files or paths, calls no provider functions, and reads only id, cidr_block, availability_zone and vpc_id from its resources. terraform init works with no network and only the AWS provider, terraform validate passes, and terraform fmt has nothing to change in main.tf, variables.tf and outputs.tf."
     },
     {
       "id": "module-tests",
@@ -82,5 +82,5 @@
     "exercises": ["terraform-aws-vpc", "terraform-digitalocean-droplet"],
     "guides": ["introduction-to-terraform", "networking-fundamentals"]
   },
-  "publishedAt": "2026-10-28"
+  "publishedAt": "2026-10-29"
 }

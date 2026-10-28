@@ -19,13 +19,13 @@
     "The email lookup (find a customer by email, in any case) reads at most 20 pages.",
     "The revenue query (paid orders and revenue for one day, in UTC) reads at most 200 pages.",
     "Every query returns the same columns and rows, in the same order, as it does today. You may rewrite the queries, but each stays one SELECT with the same parameter.",
-    "indexes.sql runs on the empty tables and may only create or drop indexes: no new tables, columns, views, functions or triggers."
+    "indexes.sql runs on the empty tables and may only hold CREATE INDEX and DROP INDEX statements: no new tables, columns, views, functions, triggers or rows."
   ],
   "checks": [
     {
       "id": "indexes",
       "name": "The migration runs",
-      "description": "indexes.sql runs without errors as the app's database user, on the empty tables, within 2 minutes, and leaves only indexes behind: the tables, columns and constraints stay as they are, and there are no new functions, views, triggers or other objects."
+      "description": "indexes.sql holds only CREATE INDEX and DROP INDEX statements, runs without errors as the app's database user, on the empty tables, within 2 minutes, and leaves only indexes behind: the tables, columns and constraints stay as they are, the tables stay empty, and there are no new functions, views, triggers or other objects."
     },
     {
       "id": "orders-for-customer",
@@ -74,5 +74,5 @@
   "related": {
     "guides": ["introduction-to-postgres"]
   },
-  "publishedAt": "2026-10-28"
+  "publishedAt": "2026-10-29"
 }

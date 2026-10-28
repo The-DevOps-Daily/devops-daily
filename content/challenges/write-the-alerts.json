@@ -19,18 +19,18 @@
     "CheckoutTargetsMissing (severity page): there has been no up series for the checkout job at all for 5 minutes.",
     "CheckoutHighErrorRate (severity page): over 5 minutes, more than 5% of all checkout requests got a 5xx answer, at 1 request per second or more, and it has held for 5 minutes. One alert for the whole service.",
     "CheckoutSlowRequests (severity ticket): the 95th percentile duration of /api/checkout, for all instances together, has been above 500 ms for 10 minutes.",
-    "Every alert has a summary annotation and a runbook_url annotation with an https link."
+    "Every alert has a summary annotation and a runbook_url annotation with an https link. Every selector names one of the given metrics or a recording rule, and label values are plain text."
   ],
   "checks": [
     {
       "id": "rules-load",
       "name": "The rules load",
-      "description": "promtool check rules passes, and alerts.yml defines CheckoutInstanceDown, CheckoutTargetsMissing, CheckoutHighErrorRate and CheckoutSlowRequests once each, with the severity label from the brief and a summary and an https runbook_url annotation, and no rule uses keep_firing_for."
+      "description": "promtool check rules passes, and alerts.yml defines CheckoutInstanceDown, CheckoutTargetsMissing, CheckoutHighErrorRate and CheckoutSlowRequests once each, with the severity label from the brief and a summary and an https runbook_url annotation. No rule uses keep_firing_for, reads a series other than the metrics in the brief and its own recording rules (ALERTS included), reads the clock, uses @ or offset, or looks back more than an hour (also through recording rules), no recording rule reads itself, no group sets its own interval, and label values are plain text, not templates."
     },
     {
       "id": "instance-down",
       "name": "Instance down",
-      "description": "Random scenarios: an instance that stays down alerts after 3 minutes, one alert per instance; a 2-minute blip does not alert; an instance of another job does not alert."
+      "description": "Random scenarios: an instance that stays down alerts after 3 minutes, one alert per instance, even while the others fail and are slow; a 2-minute blip does not alert; an instance of another job does not alert."
     },
     {
       "id": "targets-missing",
@@ -40,12 +40,12 @@
     {
       "id": "error-rate",
       "name": "Error rate",
-      "description": "Random scenarios: a service-wide 5xx share over 5% across 5 minutes, even just over, at 1 request per second or more, alerts once it has lasted 5 minutes, not sooner or later, and stops after the errors end; whatever the 5xx codes and routes, for a flaky dependency, and next to a busy healthy service. Under 5%, many 4xx, under 1 request per second, and one small failing route or instance do not alert."
+      "description": "Random scenarios: a service-wide 5xx share over 5% across 5 minutes, even just over, at 1 request per second or more, alerts once it has lasted 5 minutes, not sooner or later, and stops after the errors end; whatever the 5xx codes and routes, for a flaky dependency, next to a busy healthy service, and while an instance is down and requests are slow. Under 5%, many 4xx, under 1 request per second, and one small failing route or instance do not alert."
     },
     {
       "id": "slow-requests",
       "name": "Slow requests",
-      "description": "Random scenarios: a p95 for checkout's /api/checkout over 500 ms, even only about 750 ms, alerts once it has lasted 10 minutes, not sooner or later, with severity ticket, even next to a busy fast service. A p95 under 500 ms (even about 375 ms), a slow route or job elsewhere, one small slow instance and a 7-minute slowdown do not alert."
+      "description": "Random scenarios: a p95 for checkout's /api/checkout over 500 ms, even only about 750 ms, alerts once it has lasted 10 minutes, not sooner or later, with severity ticket, even next to a busy fast service and while an instance is down and many requests fail. A p95 under 500 ms (even about 375 ms), a slow route or job elsewhere, one small slow instance and a 7-minute slowdown do not alert."
     }
   ],
   "solutionFiles": ["challenges/write-the-alerts/alerts.yml"],
@@ -74,5 +74,5 @@
   "related": {
     "exercises": ["prometheus-grafana-monitoring", "microservices-observability-opentelemetry"]
   },
-  "publishedAt": "2026-10-28"
+  "publishedAt": "2026-10-29"
 }
