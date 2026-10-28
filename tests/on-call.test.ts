@@ -12,9 +12,12 @@ import {
   getDailyIncident,
   getIncidentByNumber,
   getIncidentForDay,
+  isValidRound,
   LAUNCH_ISO,
   MAX_MOVES,
   MIN_REPEAT_GAP_DAYS,
+  nextIncidentAt,
+  orderedCauses,
   playRound,
   puzzleNumber,
   restoreBackup,
@@ -53,6 +56,13 @@ describe('on-call daily selection', () => {
   it('clamps clock skew before launch to the first incident', () => {
     expect(getIncidentForDay(-3)).toBe(INCIDENTS[0]);
     expect(puzzleNumber(-3)).toBe(1);
+  });
+
+  it('starts the next incident at the following UTC midnight', () => {
+    const launch = Date.parse(`${LAUNCH_ISO}T00:00:00Z`);
+    expect(nextIncidentAt(0)).toBe(launch + DAY_MS);
+    expect(nextIncidentAt(9)).toBe(launch + 10 * DAY_MS);
+    expect(dayNumber(new Date(nextIncidentAt(9)))).toBe(10);
   });
 
   it('wraps around the pool', () => {
@@ -178,6 +188,29 @@ describe('incident content', () => {
       });
     });
   }
+});
+
+describe('cause order', () => {
+  it('is the same on every call', () => {
+    for (const incident of INCIDENTS) {
+      expect(orderedCauses(incident).map((c) => c.id)).toEqual(
+        orderedCauses(incident).map((c) => c.id)
+      );
+      expect(orderedCauses(incident)).toHaveLength(incident.causes.length);
+    }
+  });
+
+  it('does not keep the root cause in one place', () => {
+    const positions = INCIDENTS.map((incident) =>
+      orderedCauses(incident).findIndex((c) => c.id === incident.correctCauseId)
+    );
+    expect(new Set(positions).size).toBeGreaterThanOrEqual(4);
+    for (let slot = 0; slot < 6; slot += 1) {
+      expect(positions.filter((p) => p === slot).length, `slot ${slot}`).toBeLessThanOrEqual(
+        Math.ceil(INCIDENTS.length * 0.35)
+      );
+    }
+  });
 });
 
 describe('playing a round', () => {
@@ -322,32 +355,66 @@ describe('share text', () => {
   });
 });
 
+const WIN: MoveRecord[] = [{ kind: 'inspect' }, { kind: 'diagnose', verdict: 'correct' }];
+
 describe('stored state', () => {
   it('falls back to an empty state for garbage', () => {
     for (const raw of [null, 'x', 42, [], { lastDay: 'x' }, { lastDay: 3, current: 9, best: 1 }]) {
-      expect(sanitizeState(raw)).toEqual(emptyState());
+      expect(sanitizeState(raw, 10)).toEqual(emptyState());
     }
   });
 
   it('keeps a valid state and drops broken rounds', () => {
     let s = emptyState();
-    s = applyResult(s, 3, { incident: 4, solved: true, moves: [{ kind: 'inspect' }] });
+    s = applyResult(s, 3, { incident: 4, solved: true, moves: WIN });
     const raw = JSON.parse(JSON.stringify(s));
-    raw.rounds['2'] = { incident: 3, solved: 'yes', moves: [] };
+    raw.rounds['2'] = { incident: 3, solved: 'yes', moves: WIN };
     raw.rounds['1'] = { incident: 2, solved: true, moves: [{ kind: 'hack' }] };
+    raw.rounds['0'] = { incident: 2, solved: true, moves: [{ kind: 'inspect' }] };
     raw.active = { day: 4, incident: 5, actions: [{ kind: 'inspect', index: 1 }] };
-    const clean = sanitizeState(raw);
+    const clean = sanitizeState(raw, 4);
     expect(clean.rounds).toEqual(s.rounds);
     expect(clean.current).toBe(1);
     expect(clean.active).toEqual({ day: 4, incident: 5, actions: [{ kind: 'inspect', index: 1 }] });
   });
 
   it('drops a malformed in-progress round', () => {
-    const clean = sanitizeState({
-      ...emptyState(),
-      active: { day: 1, incident: 1, actions: [{ kind: 'diagnose', causeId: 7 }] },
-    });
-    expect(clean.active).toBeNull();
+    for (const active of [
+      { day: 1, incident: 1, actions: [{ kind: 'diagnose', causeId: 7 }] },
+      { day: 1, incident: 999, actions: [] },
+      { day: 9, incident: 1, actions: [] },
+    ]) {
+      expect(sanitizeState({ ...emptyState(), active }, 1).active).toBeNull();
+    }
+  });
+
+  it('does not trust a last day in the future', () => {
+    const s = applyResult(emptyState(), 30, { incident: 1, solved: true, moves: WIN });
+    expect(sanitizeState(s, 29).lastDay).toBe(30); // one day of clock slack
+    expect(sanitizeState(s, 20)).toEqual(emptyState());
+  });
+
+  it('drops rounds after the last counted day', () => {
+    const s = applyResult(emptyState(), 3, { incident: 1, solved: true, moves: WIN });
+    const raw = { ...s, rounds: { ...s.rounds, 7: { incident: 1, solved: true, moves: WIN } } };
+    expect(Object.keys(sanitizeState(raw, 7).rounds)).toEqual(['3']);
+  });
+
+  it('accepts only rounds the rules could produce', () => {
+    const miss: MoveRecord = { kind: 'diagnose', verdict: 'wrong' };
+    const lost: MoveRecord[] = [{ kind: 'inspect' }, miss, miss, miss, miss, miss];
+    expect(isValidRound({ incident: 1, solved: true, moves: WIN })).toBe(true);
+    expect(isValidRound({ incident: 1, solved: false, moves: lost })).toBe(true);
+    for (const round of [
+      { incident: 1, solved: true, moves: [] },
+      { incident: 1, solved: true, moves: [{ kind: 'inspect' as const }] },
+      { incident: 1, solved: false, moves: [miss] },
+      { incident: 1, solved: true, moves: [...WIN, miss] },
+      { incident: 1, solved: false, moves: [...lost.slice(0, 5), { kind: 'inspect' as const }] },
+      { incident: 999, solved: true, moves: WIN },
+    ]) {
+      expect(isValidRound(round), JSON.stringify(round)).toBe(false);
+    }
   });
 });
 
@@ -401,9 +468,15 @@ describe('backup codes', () => {
     ]) {
       expect(decodeBackup(input, 43).ok, String(input)).toBe(false);
     }
-    // Streak longer than the number of solved rounds, with a valid checksum.
-    const forged = encodeBackup({ ...played(), current: 9, best: 9 })!;
-    expect(decodeBackup(forged, 43).ok).toBe(false);
+    // Impossible counters with a valid checksum.
+    for (const counters of [
+      { current: 9, best: 9 },
+      { lastDay: 0, current: 0, best: 0, played: 1, solved: 1 },
+      { played: 50 },
+    ]) {
+      const forged = encodeBackup({ ...played(), ...counters })!;
+      expect(decodeBackup(forged, 43).ok, JSON.stringify(counters)).toBe(false);
+    }
   });
 
   it('rejects a code from the future', () => {
@@ -418,7 +491,9 @@ describe('backup codes', () => {
     if (!decoded.ok) throw new Error(decoded.error);
     // A wiped browser that already played day 44 before restoring.
     const fresh = applyResult(emptyState(), 44, { incident: 5, solved: true, moves: [] });
-    const restored = restoreBackup(fresh, decoded.summary);
+    const result = restoreBackup(fresh, decoded.summary);
+    if (!result.ok) throw new Error(result.error);
+    const restored = result.state;
     expect(restored.current).toBe(3);
     expect(restored.best).toBe(3);
     expect(restored.played).toBe(5);
@@ -430,8 +505,18 @@ describe('backup codes', () => {
     const s = played();
     const decoded = decodeBackup(encodeBackup(s)!, 43);
     if (!decoded.ok) throw new Error(decoded.error);
-    const restored = restoreBackup(s, decoded.summary);
-    expect(restored.played).toBe(s.played);
-    expect(restored.current).toBe(s.current);
+    const result = restoreBackup(s, decoded.summary);
+    expect(result.ok && result.state.played).toBe(s.played);
+    expect(result.ok && result.state.current).toBe(s.current);
+  });
+
+  it('refuses an old code that would lose newer progress', () => {
+    let s = emptyState();
+    for (let day = 0; day <= 100; day += 1)
+      s = applyResult(s, day, { incident: 1, solved: true, moves: [] });
+    const first = applyResult(emptyState(), 0, { incident: 1, solved: true, moves: [] });
+    const decoded = decodeBackup(encodeBackup(first)!, 100);
+    if (!decoded.ok) throw new Error(decoded.error);
+    expect(restoreBackup(s, decoded.summary).ok).toBe(false);
   });
 });

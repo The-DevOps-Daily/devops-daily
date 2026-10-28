@@ -143,12 +143,10 @@ export const INCIDENTS: Incident[] = [
         ),
       },
       {
-        label: 'Redis stats',
-        command: "redis-cli INFO stats | grep -E 'keyspace_(hits|misses)'",
+        label: 'Cache hit rate',
         output: lines(
-          'keyspace_hits:91234112',
-          'keyspace_misses:5820044',
-          '# hit rate 94%, the same as last week'
+          'redis hit rate per 5 min   02:30 94%   02:50 94%   03:10 93%   03:30 94%',
+          'same window last week      94%'
         ),
       },
     ],
@@ -213,7 +211,7 @@ export const INCIDENTS: Incident[] = [
           '09:14:02 INFO starting search-api v88',
           '09:14:02 INFO loading index shards (38)',
           '09:14:31 INFO loaded 21 of 38 shards',
-          '09:14:41 INFO received SIGTERM, shutting down'
+          '09:14:32 INFO received SIGTERM, shutting down'
         ),
       },
       {
@@ -230,13 +228,11 @@ export const INCIDENTS: Incident[] = [
         ),
       },
       {
-        label: 'Pod resources',
-        command: 'kubectl top pod -l app=search-api',
+        label: 'Pod memory',
         output: lines(
-          'NAME                         CPU(cores)   MEMORY(bytes)',
-          'search-api-5f8b7d9c6-2lq8v   410m         2210Mi',
-          'search-api-7c9d5b6f4-q4wzt   980m         1630Mi',
-          '# memory limit 4Gi'
+          'pod                          version   memory   limit',
+          'search-api-5f8b7d9c6-2lq8v   v87       2210Mi   4Gi',
+          'search-api-7c9d5b6f4-q4wzt   v88       1630Mi   4Gi   (still loading)'
         ),
       },
     ],
@@ -258,7 +254,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'probe',
     resolution:
-      'v88 loads 38 index shards instead of 30 and needs about a minute before it listens on port 8080. The liveness probe starts after 10 seconds and restarts the container after three failed checks, about 40 seconds in. The pod gets SIGTERM (exit code 143) while still loading, so v88 never finishes starting and the rollout stalls on the old pods. Fix: add a startupProbe (for example periodSeconds 5 and failureThreshold 30) so the liveness probe only begins once the app is up.',
+      'v88 loads 38 index shards instead of 30 and needs about a minute before it listens on port 8080. The liveness probe starts after 10 seconds and restarts the container after three failed checks, about 30 seconds in. The pod gets SIGTERM (exit code 143) while still loading, so v88 never finishes starting and the rollout stalls on the old pods. Fix: add a startupProbe (for example periodSeconds 5 and failureThreshold 30) so the liveness probe only begins once the app is up.',
     lesson:
       'Liveness probes are for apps that hang, not for apps that start slowly. Give slow starters a startupProbe, and check startup time whenever a release loads more data at boot.',
   },
@@ -298,11 +294,11 @@ export const INCIDENTS: Incident[] = [
         label: 'DS and DNSKEY',
         command: 'dig +short DS example.com; dig DNSKEY example.com +multiline +noall +answer',
         output: lines(
-          '31589 13 2 3490A6806D47F17A34C29E2CE80E8A999FFBE4BE8D5C6E2F4A1B3C9D2E7F0A1B',
+          '31589 13 2 D30EEC6C142BA05528FE621F4A9D2924DCDE2A06D3EE1C4F979C9EEF E719A1F3',
           'example.com. 3600 IN DNSKEY 257 3 13 (',
-          '        mdsswUyr3DPW132mOi8V9xESWE8jTo0dxCjjnopKl+GqJxpVXckHAeF+',
-          '        KkxLbxILfDLUT0rAK9iUzy1L53eKGQ==',
-          '        ) ; KSK; alg = ECDSAP256SHA256 ; key id = 2371'
+          '        BOKcTiVsbfC1u0ByqEpwUSn7d49/5P5FZ511V0Jz0bREdrAAtoas9kn46D/y',
+          '        h43jXc4ZYZAlfH/F2BjOjgXq5w==',
+          '        ) ; KSK; alg = ECDSAP256SHA256 ; key id = 15928'
         ),
       },
       {
@@ -330,7 +326,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'ds',
     resolution:
-      'The old provider signed the zone with DNSSEC, and the registrar still publishes a DS record for the old key (key tag 31589). The new provider signs with a different key (2371). Resolvers that validate DNSSEC cannot build a chain of trust from the DS to a DNSKEY, so they return SERVFAIL. The office resolver does not validate, so it works, and dig +cd (checking disabled) gets an answer. Fix: publish the new DS at the registrar, or remove the DS to serve the zone unsigned, and wait for the old DS TTL to expire.',
+      'The old provider signed the zone with DNSSEC, and the registrar still publishes a DS record for the old key (key tag 31589). The new provider signs with a different key (15928). Resolvers that validate DNSSEC cannot build a chain of trust from the DS to a DNSKEY, so they return SERVFAIL. The office resolver does not validate, so it works, and dig +cd (checking disabled) gets an answer. Fix: publish the new DS at the registrar, or remove the DS to serve the zone unsigned, and wait for the old DS TTL to expire.',
     lesson:
       'Moving a signed zone needs a DNSSEC plan: publish the new DS before the switch, or remove the DS and wait out its TTL first. If dig +cd answers while a normal query gets SERVFAIL, look at DNSSEC.',
   },
@@ -442,16 +438,17 @@ export const INCIDENTS: Incident[] = [
       },
       {
         label: 'App logs',
-        command: "kubectl logs -l app=orders-api --since=2h | grep -c ' 5[0-9][0-9] '",
+        command: "kubectl logs -l app=orders-api --since=2h --tail=-1 | grep -c ' 5[0-9][0-9] '",
         output: '0',
       },
       {
         label: 'tcpdump on a pod',
         command: 'tcpdump -nn -i eth0 port 3000',
         output: lines(
-          '03:12:44.101 IP 10.0.4.12.3000 > 10.0.1.7.41022: Flags [F.], seq 1, ack 1',
-          '03:12:44.101 IP 10.0.1.7.41022 > 10.0.4.12.3000: Flags [P.], seq 1:412, ack 1',
-          '03:12:44.102 IP 10.0.4.12.3000 > 10.0.1.7.41022: Flags [R], seq 2'
+          '03:12:39.087 IP 10.0.4.12.3000 > 10.0.1.7.41022: Flags [P.], seq 17010:18240, ack 3305, length 1230',
+          '03:12:44.101 IP 10.0.4.12.3000 > 10.0.1.7.41022: Flags [F.], seq 18240, ack 3305, length 0',
+          '03:12:44.101 IP 10.0.1.7.41022 > 10.0.4.12.3000: Flags [P.], seq 3305:3717, ack 18240, length 412',
+          '03:12:44.102 IP 10.0.4.12.3000 > 10.0.1.7.41022: Flags [R], seq 18241, win 0, length 0'
         ),
       },
     ],
@@ -477,7 +474,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'keepalive',
     resolution:
-      "Node's HTTP server closes a keep-alive connection after 5 seconds idle. The load balancer keeps idle backend connections for 60 seconds and reuses them. Now and then it sends a request on a connection at the same moment the app closes it: the app answers with a reset and the load balancer returns 502. It is worse at quiet times because connections sit idle longer. Fix: make the backend keep-alive timeout longer than the load balancer idle timeout, for example server.keepAliveTimeout = 65000 with headersTimeout a little higher.",
+      "Node's HTTP server closes an idle keep-alive connection after about 5 seconds (keepAliveTimeout defaults to 5000 ms), as the tcpdump shows. The load balancer keeps idle backend connections for 60 seconds and reuses them. Now and then it sends a request on a connection at the same moment the app closes it: the app answers with a reset and the load balancer returns 502. It is worse at quiet times because connections sit idle longer. Fix: make the backend keep-alive timeout longer than the load balancer idle timeout, for example server.keepAliveTimeout = 65000 with headersTimeout a little higher.",
     lesson:
       'On every hop that reuses connections, the server side must keep idle connections open longer than the client side. Check these timeouts whenever a proxy or load balancer changes.',
   },
@@ -510,7 +507,8 @@ export const INCIDENTS: Incident[] = [
         label: 'JVM options',
         command:
           "kubectl get deploy billing-worker -o jsonpath='{.spec.template.spec.containers[0].env}'",
-        output: '[{"name":"JAVA_TOOL_OPTIONS","value":"-Xms2g -Xmx2g"}]',
+        output:
+          '[{"name":"JAVA_TOOL_OPTIONS","value":"-Xms2g -Xmx2g -XX:NativeMemoryTracking=summary"}]',
       },
       {
         label: 'Pod spec history',
@@ -523,9 +521,9 @@ export const INCIDENTS: Incident[] = [
       },
       {
         label: 'JVM native memory',
-        command: 'jcmd 1 VM.native_memory summary',
+        command: 'jcmd 1 VM.native_memory summary scale=MB',
         output: lines(
-          'Total: reserved=3412MB, committed=2391MB',
+          'Total: reserved=3644MB, committed=2391MB',
           '-                 Java Heap (reserved=2048MB, committed=2048MB)',
           '-                     Class (reserved=1031MB, committed=19MB)',
           '-                    Thread (reserved=91MB, committed=91MB)',
@@ -564,7 +562,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'heap',
     resolution:
-      '-Xmx2g sets only the heap. The JVM also needs memory for metaspace, thread stacks, the JIT code cache, garbage collector data and direct buffers. When the limit dropped from 3Gi to 2Gi, heap plus everything else went over 2Gi during big runs, and the kernel OOM killer ended the process with SIGKILL (exit code 137). The JVM never saw an allocation fail, so it logged no OutOfMemoryError. Fix: raise the limit back, or size the heap below it, for example -XX:MaxRAMPercentage=75 instead of a fixed -Xmx.',
+      '-Xmx2g sets only the heap. The JVM also needs memory for metaspace, thread stacks, the JIT code cache, garbage collector data and direct buffers. When the limit dropped from 3Gi to 2Gi, heap plus everything else went over 2Gi during big runs, and the kernel OOM killer ended the process with SIGKILL (exit code 137). The JVM never saw an allocation fail, so it logged no OutOfMemoryError. Fix: raise the limit back, or size the heap below it, for example replace -Xms2g -Xmx2g with -XX:MaxRAMPercentage=75.',
     lesson:
       'A container memory limit covers the whole process, not just the heap. Leave at least a quarter of the limit for non-heap memory, and let the JVM size the heap from the container limit.',
   },
@@ -588,7 +586,7 @@ export const INCIDENTS: Incident[] = [
       },
       {
         label: 'Consumer logs',
-        command: 'kubectl logs deploy/fulfilment --since=15m | grep -i poll',
+        command: "kubectl logs deploy/fulfilment --since=15m | grep -Ei 'poll|LeaveGroup'",
         output: lines(
           '10:27:41 WARN [Consumer clientId=fulfilment-2, groupId=fulfilment] consumer poll timeout has expired. This means the time between subsequent calls to poll() was longer than the configured max.poll.interval.ms, which typically implies that the poll loop is spending too much time processing messages.',
           '10:27:41 INFO [Consumer clientId=fulfilment-2, groupId=fulfilment] Member fulfilment-2-4c1e sending LeaveGroup request to coordinator kafka-1:9092'
@@ -741,18 +739,19 @@ export const INCIDENTS: Incident[] = [
         label: 'users table',
         command: "psql -c '\\d users'",
         output: lines(
-          '   Column   |           Type           ',
-          '------------+--------------------------',
-          ' id         | bigint                   ',
-          ' email      | text                     ',
-          ' full_name  | text                     ',
-          ' created_at | timestamp with time zone '
+          '                         Table "public.users"',
+          '   Column   |           Type           | Collation | Nullable | Default',
+          '------------+--------------------------+-----------+----------+---------',
+          ' id         | bigint                   |           | not null |',
+          ' email      | text                     |           | not null |',
+          ' full_name  | text                     |           |          |',
+          ' created_at | timestamp with time zone |           | not null | now()'
         ),
       },
       {
         label: 'Running image',
         command:
-          'kubectl get pods -l app=accounts-api -o jsonpath="{..image}" | tr " " "\\n" | sort | uniq -c',
+          'kubectl get pods -l app=accounts-api -o jsonpath="{.items[*].spec.containers[*].image}" | tr " " "\\n" | sort | uniq -c',
         output: '      4 registry.example.com/accounts-api:v51',
       },
       {
@@ -845,7 +844,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'nottl',
     resolution:
-      'Three weeks ago session storage moved from SETEX (a value with a 14 day TTL) to HSET, which sets no expiry. Since then no session has expired. Today Redis reached maxmemory, and with the noeviction policy it rejects every write with an OOM error. Reads still work, so some existing sessions survive, but new logins cannot save a session. Fix: set EXPIRE right after HSET (in the same transaction or pipeline), give the existing keys a TTL in batches, and alert on memory use well before the limit.',
+      'Three weeks ago session storage moved from SETEX (a value with a 14 day TTL) to HSET, which sets no expiry. Since then no session has expired. Today Redis reached maxmemory, and with the noeviction policy it rejects every write with an OOM error. Reads still work, so some existing sessions survive, but new logins cannot save a session. Fix: write HSET and EXPIRE together in MULTI/EXEC (or a Lua script) so no session is left without a TTL, delete old session keys in batches to free memory now (or raise maxmemory for a while), and alert on memory use well before the limit.',
     lesson:
       'Every session or cache key needs a TTL. In INFO keyspace, a large keys count with expires=0 is a warning sign.',
   },
@@ -854,7 +853,7 @@ export const INCIDENTS: Incident[] = [
     title: 'Everyone is getting 429 Too Many Requests',
     topic: 'rate-limits',
     severity: 'SEV2',
-    page: 'public-api: 429 responses are 61% of traffic since 13:10.',
+    page: 'public-api: 429 responses are 94% of traffic since 13:10.',
     symptoms: [
       'Traffic volume is normal for this hour.',
       'Customers in different countries hit the limit at the same time.',
@@ -879,11 +878,12 @@ export const INCIDENTS: Incident[] = [
       },
       {
         label: 'Ingress pods',
-        command: 'kubectl get pods -n ingress -o wide',
+        command:
+          'kubectl get pods -n ingress -o custom-columns=NAME:.metadata.name,IP:.status.podIP',
         output: lines(
-          'NAME                   READY   STATUS    IP',
-          'ingress-7f9c4d-2kq9z   1/1     Running   10.0.3.17',
-          'ingress-7f9c4d-x8mwd   1/1     Running   10.0.3.18'
+          'NAME                   IP',
+          'ingress-7f9c4d-2kq9z   10.0.3.17',
+          'ingress-7f9c4d-x8mwd   10.0.3.18'
         ),
       },
       {
@@ -909,7 +909,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'key',
     resolution:
-      'Before the migration, clients connected straight to the API, so remote_addr was the client address. Now every request arrives from one of two ingress pods, so the limiter puts all users into two buckets of 1000 requests a minute, and most requests get 429. Fix: key the limiter on the client IP from X-Forwarded-For, trusting only the hops you run, or on an API key or user ID.',
+      'Before the migration, clients connected straight to the API, so remote_addr was the client address. Now every request arrives from one of two ingress pods, so the limiter puts all users into two buckets of 1000 requests a minute. Only about 2,000 of 31,400 requests a minute get through, and the rest get 429. Fix: key the limiter on the client IP from X-Forwarded-For, trusting only the hops you run, or on an API key or user ID.',
     lesson:
       'When you add a proxy, check everything that uses the client IP: rate limits, allow lists, audit logs and geo rules. Only trust X-Forwarded-For entries added by your own proxies.',
   },
@@ -1001,7 +1001,7 @@ export const INCIDENTS: Incident[] = [
         output: lines(
           ' pid  |        state        |  wait  | xact_age |                     query',
           '------+---------------------+--------+----------+-----------------------------------------------',
-          ' 4120 | idle in transaction | Client | 02:14:09 | SELECT * FROM orders WHERE id = 991 FOR UPDATE',
+          ' 4120 | idle in transaction | Client | 02:18:42 | SELECT * FROM orders WHERE id = 991 FOR UPDATE',
           ' 5333 | active              | Lock   | 00:04:51 | ALTER TABLE orders ADD COLUMN gift_note text',
           ' 5340 | active              | Lock   | 00:04:50 | SELECT * FROM orders WHERE customer_id = $1',
           ' 5341 | active              | Lock   | 00:04:50 | SELECT * FROM orders WHERE id = $1'
@@ -1058,7 +1058,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'lockq',
     resolution:
-      "At 08:47 someone ran SELECT ... FOR UPDATE in psql inside a transaction and left it open. That transaction holds a lock on orders. ALTER TABLE needs an ACCESS EXCLUSIVE lock, so it waits for the transaction to end. Postgres grants locks in queue order, so every later query on orders, even a plain SELECT, waits behind the ALTER. Fix: end session 4120 (pg_terminate_backend). The ALTER finishes at once and the queue drains. Prevent it with SET lock_timeout = '5s' in migrations, retried later on failure, and with idle_in_transaction_session_timeout.",
+      "Just before 08:49 someone opened psql, ran SELECT ... FOR UPDATE inside a transaction and left it open. That transaction holds a lock on orders. ALTER TABLE needs an ACCESS EXCLUSIVE lock, so it waits for the transaction to end. Postgres grants locks in queue order, so every later query on orders, even a plain SELECT, waits behind the ALTER. Fix: end session 4120 (pg_terminate_backend). The ALTER finishes at once and the queue drains. Prevent it with SET lock_timeout = '5s' in migrations, retried later on failure, and with idle_in_transaction_session_timeout.",
     lesson:
       'A migration that runs in milliseconds can still stop all traffic while it waits for its lock. Always set lock_timeout for schema changes, and do not leave interactive transactions open on production.',
   },
@@ -1071,7 +1071,7 @@ export const INCIDENTS: Incident[] = [
     symptoms: [
       'The invoice mailer runs every 10 minutes as a Kubernetes CronJob.',
       'It has run that way for a year without problems.',
-      'Today is the first business day of the month.',
+      "This morning's billing run created far more invoices than usual.",
     ],
     evidence: [
       {
@@ -1134,18 +1134,18 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'overlap',
     resolution:
-      'At the start of the month the job had ten times more invoices, so a run took about half an hour instead of three minutes. The CronJob uses concurrencyPolicy: Allow, so a new run started every 10 minutes while the old ones were still going. Each run selected invoices with emailed_at still empty, because a run sets it only at the end, so three runs sent the same invoices. Fix: set concurrencyPolicy: Forbid, and claim each invoice before sending it (UPDATE ... SET emailed_at = now() ... RETURNING, or SELECT ... FOR UPDATE SKIP LOCKED).',
+      'Today the job had ten times more invoices than usual, so a run took about half an hour instead of three minutes. The CronJob uses concurrencyPolicy: Allow, so a new run started every 10 minutes while the old ones were still going. Each run selected invoices with emailed_at still empty, because a run sets it only at the end, so three runs sent the same invoices. Fix: set concurrencyPolicy: Forbid. Then make each send idempotent: claim invoices with a lease that expires (or SELECT ... FOR UPDATE SKIP LOCKED), pass an idempotency key to the mail provider if it supports one, and mark each invoice as emailed right after its own send succeeds.',
     lesson:
       'Assume a scheduled job will one day run longer than its interval. Forbid overlapping runs, and make each unit of work idempotent so a second run cannot repeat side effects.',
   },
   {
     number: 16,
-    title: 'The whole storefront returns 503 after a label cleanup',
+    title: 'The whole storefront returns 503 while every pod is healthy',
     topic: 'kubernetes',
     severity: 'SEV1',
     page: 'storefront: 503 rate 100% since 16:20. The ingress returns "503 Service Temporarily Unavailable".',
     symptoms: [
-      'A pull request that "tidied up labels" in the Helm chart was deployed at 16:19.',
+      'A Helm chart change was deployed at 16:19.',
       'All storefront pods are Running and Ready.',
       'Port-forwarding to a pod directly works.',
     ],
@@ -1174,6 +1174,7 @@ export const INCIDENTS: Incident[] = [
       {
         label: 'Release diff',
         output: lines(
+          '# PR #812 "tidy up labels"',
           '- Deployment/storefront       removed',
           '+ Deployment/storefront-web   selector: app.kubernetes.io/name=storefront,app.kubernetes.io/component=web',
           '  Service/storefront          unchanged'
@@ -1187,8 +1188,12 @@ export const INCIDENTS: Incident[] = [
       {
         label: 'Direct test',
         command:
-          'kubectl port-forward pod/storefront-web-6b7f9d8c5d-4hzx9 8080 & curl -s localhost:8080/healthz',
-        output: 'ok',
+          'kubectl port-forward pod/storefront-web-6b7f9d8c5d-4hzx9 8080:8080   # in a second terminal: curl -s localhost:8080/healthz',
+        output: lines(
+          'Forwarding from 127.0.0.1:8080 -> 8080',
+          'Handling connection for 8080',
+          'ok'
+        ),
       },
     ],
     causes: [
@@ -1264,10 +1269,11 @@ export const INCIDENTS: Incident[] = [
         output: lines('tunnel dc2-vpn   mtu 1400', 'tcp mss clamping   off'),
       },
       {
-        label: 'Edge firewall rules',
+        label: 'Edge firewall rules (both sites)',
         output: lines(
           'rule 10  allow tcp any -> 10.20.0.0/16 port 443',
-          'rule 40  deny icmp any any        # "hardening", added 2024'
+          'rule 30  allow icmp type 0,8 (echo) any any',
+          'rule 40  deny icmp type 3 (unreachable) any any   # "hardening", added 2024'
         ),
       },
     ],
@@ -1285,9 +1291,9 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'pmtu',
     resolution:
-      'The VPN tunnel has an MTU of 1400 because of encryption overhead, but both hosts use 1500 and agree on an MSS of 1460. Small packets such as the TCP handshake and the TLS Client Hello pass. The server\'s first large reply, with its certificate chain, does not fit. The VPN gateway drops it and sends an ICMP "fragmentation needed" message so the server can send smaller packets, but the edge firewall drops all ICMP. The server never learns, keeps resending the same large packets, and the request hangs. Fix: allow ICMP type 3 code 4 (and ICMPv6 Packet Too Big), and clamp the TCP MSS on the tunnel to 1360.',
+      'The VPN tunnel has an MTU of 1400 because of encryption overhead, but both hosts use 1500 and agree on an MSS of 1460. Small packets such as the TCP handshake and the TLS Client Hello pass. The server\'s first large reply, with its certificate chain, does not fit. The VPN gateway drops it and sends an ICMP "fragmentation needed" message so the server can send smaller packets, but the edge firewalls drop every ICMP "destination unreachable" message, which includes it. The server never learns, keeps resending the same large packets, and the request hangs. Fix: allow ICMP type 3 code 4 (and ICMPv6 Packet Too Big), and clamp the TCP MSS on the tunnel to 1360.',
     lesson:
-      'Do not block all ICMP: path MTU discovery depends on it. When connections open but hang on the first large transfer, test with ping -M do at different sizes.',
+      'Do not block ICMP type 3 ("destination unreachable"): path MTU discovery depends on it. When connections open but hang on the first large transfer, test with ping -M do at different sizes.',
   },
   {
     number: 18,
@@ -1513,7 +1519,11 @@ export const INCIDENTS: Incident[] = [
         label: 'The deploy made every response publicly cacheable, so the CDN shares pages',
         subsystem: 'cache',
       },
-      { id: 'cachekey', label: 'The CDN cache key ignores cookies', subsystem: 'cache' },
+      {
+        id: 'cachekey',
+        label: 'A CDN change made the cache key ignore cookies',
+        subsystem: 'cache',
+      },
       {
         id: 'browser',
         label: 'Browsers on shared computers show cached pages',
@@ -1607,7 +1617,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'leak',
     resolution:
-      'Three days ago a change added an in-process Map to cache price quotes. The key includes Date.now(), so no two requests share a key: the cache never gets a hit and never removes anything. Each pod grows by about 120 MB an hour until it reaches the 1Gi limit and is OOMKilled. Fix: take the timestamp out of the key and use a bounded cache with a maximum size and a TTL, or keep shared caches in Redis.',
+      'Three days ago a change added an in-process Map to cache price quotes. The key includes Date.now(), so almost every request creates a new key: the cache almost never gets a hit and never removes anything. Each pod grows by about 120 MB an hour until it reaches the 1Gi limit and is OOMKilled. Fix: take the timestamp out of the key and use a bounded cache with a maximum size and a TTL, or keep shared caches in Redis.',
     lesson:
       'Every cache needs a size limit and an eviction policy. A sawtooth memory graph that drops on each restart is a leak until proven otherwise.',
   },
@@ -1635,11 +1645,11 @@ export const INCIDENTS: Incident[] = [
       {
         label: 'CoreDNS query log',
         output: lines(
-          '[INFO] 10.42.1.9:41022 - 3311 "A IN api.payments.example.net.shop.svc.cluster.local. udp 74 false 512" NXDOMAIN qr,aa,rd 167 0.0003s',
-          '[INFO] 10.42.1.9:41022 - 3312 "AAAA IN api.payments.example.net.shop.svc.cluster.local. udp 74 false 512" NXDOMAIN qr,aa,rd 167 0.0003s',
-          '[INFO] 10.42.1.9:51877 - 1840 "A IN api.payments.example.net.svc.cluster.local. udp 69 false 512" NXDOMAIN qr,aa,rd 162 0.0002s',
-          '[INFO] 10.42.1.9:33105 - 9921 "A IN api.payments.example.net.cluster.local. udp 65 false 512" NXDOMAIN qr,aa,rd 158 0.0002s',
-          '[INFO] 10.42.1.9:46610 - 2207 "A IN api.payments.example.net. udp 53 false 512" NOERROR qr,rd,ra 110 0.0841s'
+          '[INFO] 10.42.1.9:41022 - 3311 "A IN api.payments.example.net.shop.svc.cluster.local. udp 65 false 512" NXDOMAIN qr,aa,rd 158 0.0003s',
+          '[INFO] 10.42.1.9:41022 - 3312 "AAAA IN api.payments.example.net.shop.svc.cluster.local. udp 65 false 512" NXDOMAIN qr,aa,rd 158 0.0003s',
+          '[INFO] 10.42.1.9:51877 - 1840 "A IN api.payments.example.net.svc.cluster.local. udp 60 false 512" NXDOMAIN qr,aa,rd 153 0.0002s',
+          '[INFO] 10.42.1.9:33105 - 9921 "A IN api.payments.example.net.cluster.local. udp 56 false 512" NXDOMAIN qr,aa,rd 149 0.0002s',
+          '[INFO] 10.42.1.9:46610 - 2207 "A IN api.payments.example.net. udp 42 false 512" NOERROR qr,rd,ra 58 0.0841s'
         ),
       },
       {
@@ -1648,12 +1658,13 @@ export const INCIDENTS: Incident[] = [
           'PAYMENT_API_URL=https://api.payments.example.net   keepAlive=false (new connection per call)',
       },
       {
-        label: 'Payment call timing',
-        output: 'p99 912 ms = dns 610 ms + connect 38 ms + tls 61 ms + response 190 ms',
+        label: 'One slow payment call',
+        output: 'total 912 ms = dns 620 ms + connect 39 ms + tls 63 ms + response 190 ms',
       },
       {
         label: 'CoreDNS metrics',
-        output: 'queries 48k/s (last week 11k/s)   NXDOMAIN 81%   replicas 2   cpu throttled 34%',
+        output:
+          'queries 48k/s (last week 11k/s)   NXDOMAIN 81%   replicas 2 (unchanged for 6 months)   cpu throttled 34%',
       },
     ],
     causes: [
@@ -1662,7 +1673,7 @@ export const INCIDENTS: Incident[] = [
         label: 'With ndots:5, each external lookup tries every search domain first',
         subsystem: 'dns',
       },
-      { id: 'replicas', label: 'CoreDNS needs more replicas', subsystem: 'dns' },
+      { id: 'replicas', label: 'Someone scaled CoreDNS down this week', subsystem: 'dns' },
       { id: 'upstream', label: 'The upstream DNS resolver is slow', subsystem: 'dns' },
       { id: 'provider', label: 'The payment provider is slow', subsystem: 'third-party' },
       { id: 'netpol', label: 'A NetworkPolicy drops some DNS packets', subsystem: 'kubernetes' },
@@ -1670,7 +1681,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'ndots',
     resolution:
-      'Pods get ndots:5 and three search domains. api.payments.example.net has only three dots, so the resolver first tries it with each search domain appended, for A and AAAA, before it asks for the real name: up to 8 queries per lookup. The HTTP client opens a new connection, with a new lookup, for every call. CoreDNS is flooded with NXDOMAIN answers, gets CPU throttled, and DNS becomes most of the latency. Fix: use the fully qualified name with a trailing dot (api.payments.example.net.) or set dnsConfig ndots: 2 for this workload, turn on keep-alive, and consider NodeLocal DNSCache. More CoreDNS replicas would only hide it.',
+      'Pods get ndots:5 and three search domains. api.payments.example.net has only three dots, so the resolver first tries it with each search domain appended, for A and AAAA, before it asks for the real name: up to 8 queries per lookup. The HTTP client opens a new connection, with a new lookup, for every call. CoreDNS is flooded with NXDOMAIN answers, gets CPU throttled, and DNS becomes most of the latency. Fix: use the fully qualified name with a trailing dot (api.payments.example.net.) or set dnsConfig ndots: 2 for this workload, turn on keep-alive, and consider NodeLocal DNSCache. More CoreDNS replicas would ease the symptom but not remove the extra queries.',
     lesson:
       'Check resolv.conf when a service moves into Kubernetes. Under ndots:5 every external name costs several lookups, so reuse connections and use fully qualified names for busy external calls.',
   },
@@ -1773,10 +1784,10 @@ export const INCIDENTS: Incident[] = [
         label: 'orders table',
         command: "psql -c '\\d orders' | head -n 5",
         output: lines(
-          '                       Table "public.orders"',
-          ' Column |  Type   | Nullable |              Default',
-          '--------+---------+----------+------------------------------------',
-          " id     | integer | not null | nextval('orders_id_seq'::regclass)"
+          '                                   Table "public.orders"',
+          ' Column |  Type   | Collation | Nullable |              Default',
+          '--------+---------+-----------+----------+------------------------------------',
+          " id     | integer |           | not null | nextval('orders_id_seq'::regclass)"
         ),
       },
       {
@@ -1793,7 +1804,7 @@ export const INCIDENTS: Incident[] = [
         label: 'Row count',
         command:
           'psql -c "SELECT reltuples::bigint AS estimate FROM pg_class WHERE relname = \'orders\';"',
-        output: lines('  estimate', '------------', ' 1204551203'),
+        output: lines('  estimate', '------------', ' 1204551168'),
       },
       {
         label: 'Locks and replication',
@@ -1905,11 +1916,11 @@ export const INCIDENTS: Incident[] = [
       },
       {
         label: 'The new policy',
-        command: 'kubectl get networkpolicy default-deny -n payments -o yaml',
+        command: "sed -n '/^spec:/,$p' k8s/payments/default-deny.yaml",
         output: lines(
           'spec:',
           '  podSelector: {}',
-          '  policyTypes: [Ingress, Egress]',
+          '  policyTypes: [Egress]',
           '  egress:',
           '  - to: [{podSelector: {matchLabels: {app: payments-db}}}]',
           '    ports: [{protocol: TCP, port: 5432}]',
@@ -1923,7 +1934,7 @@ export const INCIDENTS: Incident[] = [
           'kubectl exec -n payments deploy/payments-api -- sh -c "nslookup payments-db; nc -zv -w 3 10.42.3.15 5432"',
         output: lines(
           ';; connection timed out; no servers could be reached',
-          '10.42.3.15 (10.42.3.15:5432) open'
+          'Connection to 10.42.3.15 5432 port [tcp/postgresql] succeeded!'
         ),
       },
       {
@@ -1984,9 +1995,11 @@ export const INCIDENTS: Incident[] = [
         ),
       },
       {
-        label: 'Logs from the other pods',
-        command: 'kubectl logs -l app=email-consumer --previous | grep -c "id=7f3a1c"',
-        output: '96',
+        label: 'Log search, last hour',
+        output: lines(
+          'query: app=email-consumer AND "panic"   96 matches',
+          'message consumed just before each panic: id=7f3a1c (96 of 96)'
+        ),
       },
       {
         label: 'Queue status',
@@ -2055,7 +2068,7 @@ export const INCIDENTS: Incident[] = [
         label: 'Pipeline run',
         output: lines(
           'test          passed    1m52s',
-          'build-image   failed    2m10s   COPY failed: file not found in build context: dist/',
+          'build-image   failed    2m10s   failed to compute cache key: "/dist": not found',
           'push-image    skipped',
           'deploy        passed    0m14s   kubectl set image deployment/api api=registry.example.com/shop/api:4f2c9e1'
         ),
@@ -2176,7 +2189,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'tz',
     resolution:
-      "Coupon expiry is stored as a timestamp without a time zone, written in New York time, and the code compares it with datetime.now(), which returns the container's local time. The old image set TZ=America/New_York. The new slim image dropped that line, so the container runs in UTC, four hours ahead of New York in October. At 20:00 in New York it was already midnight UTC, so every coupon looked expired. Fix: store expiry as timestamptz (an absolute moment) and compare it with an aware datetime.now(timezone.utc), so the server time zone no longer matters.",
+      "Coupon expiry is stored as a timestamp without a time zone, written in New York time, and the code compares it with datetime.now(), which returns the container's local time. The old image set TZ=America/New_York. The new slim image dropped that line, so the container runs in UTC, four hours ahead of New York in October. At 20:00 in New York it was already midnight UTC, so every coupon looked expired. Fix: convert the column to timestamptz, reading the old values as New York time (ALTER COLUMN expires_at TYPE timestamptz USING expires_at AT TIME ZONE 'America/New_York'), and compare it with an aware datetime.now(timezone.utc), so the server time zone no longer matters.",
     lesson:
       'Run servers in UTC, store moments with a time zone, and convert to local time only for display. Code that depends on the machine time zone breaks when the image or host changes.',
   },
@@ -2188,8 +2201,8 @@ export const INCIDENTS: Incident[] = [
     page: 'support: users say profile changes "do not save". Every write returns success.',
     symptoms: [
       'The changes appear after about a minute.',
-      'Reads go to a read replica; writes go to the primary.',
-      'A data backfill job started at 13:00.',
+      'Nothing was deployed today.',
+      'The database dashboards show no errors.',
     ],
     evidence: [
       {
@@ -2203,25 +2216,24 @@ export const INCIDENTS: Incident[] = [
         ),
       },
       {
-        label: 'WAL written per minute',
-        output: '12:50  0.2 GB   13:05  3.8 GB   13:20  4.1 GB',
-      },
-      {
-        label: 'Backfill job',
+        label: 'Batch jobs and WAL volume',
         output: lines(
-          'backfill-search-vector: UPDATE users SET search_vector = ... WHERE id BETWEEN $1 AND $2',
-          'batches of 50,000 rows, no pause between batches',
-          'progress 18.2M of 40M rows'
+          'backfill-search-vector  started 13:00  UPDATE users SET search_vector = ... WHERE id BETWEEN $1 AND $2',
+          '                        batches of 50,000 rows, no pause, 18.2M of 40M rows done',
+          'WAL written per minute  12:50 0.2 GB   13:05 3.8 GB   13:20 4.1 GB'
         ),
       },
       {
-        label: 'Replica processes',
-        command: 'ps -o pid,pcpu,cmd -u postgres | grep -E "startup|walreceiver"',
+        label: 'Replica activity',
         output: lines(
-          '  812 99.1 postgres: startup recovering 0000000100000A2F000000C3',
-          '  815  3.2 postgres: walreceiver streaming A2F/C3F81E20',
-          '# longest query on the replica: 0.8 s, recovery conflicts: 0'
+          'WAL replay (startup) process   cpu 99%',
+          'longest running query          0.8 s',
+          'recovery conflicts today       0'
         ),
+      },
+      {
+        label: 'App database routing',
+        output: 'GET requests -> replica1   writes -> primary   no read-your-writes routing',
       },
       {
         label: 'Profile API headers',
@@ -2308,9 +2320,12 @@ export const INCIDENTS: Incident[] = [
         ),
       },
       {
-        label: 'DNS from pool-b',
-        command: 'dig +short orders-db.internal',
-        output: '10.10.20.5',
+        label: 'Firewall flow log',
+        output: lines(
+          '08:41:02 DENY tcp 10.10.2.14:43122 -> 10.10.20.5:5432   (pool-b-1 node address)',
+          '08:41:02 DENY tcp 10.10.2.27:51870 -> 10.10.20.5:5432   (pool-b-2 node address)',
+          '08:41:03 ALLOW tcp 10.10.1.11:38004 -> 10.10.20.5:5432  (pool-a-1 node address)'
+        ),
       },
     ],
     causes: [
@@ -2335,7 +2350,7 @@ export const INCIDENTS: Incident[] = [
     ],
     correctCauseId: 'firewall',
     resolution:
-      'The database firewall allows port 5432 only from 10.10.1.0/24, the subnet of the original node pool. The new pool lives in 10.10.2.0/24, so connections from pods scheduled there are dropped silently and time out. Two of six pods run on the new nodes, which matches the 33% error rate, and the same nodes reach Redis in the same network, so routing works. Fix: allow the new subnet, or better, allow the nodes by security group or tag instead of by address range, and add a dependency check to node pool rollouts.',
+      'The database firewall allows port 5432 only from 10.10.1.0/24, the subnet of the original node pool. The new pool lives in 10.10.2.0/24, and pod traffic leaves each node with the node address, as the flow log shows, so connections from pods scheduled there are dropped silently and time out. Two of six pods run on the new nodes, which matches the 33% error rate, and the same nodes reach Redis in the same network, so routing works. Fix: allow the new subnet, or better, allow the nodes by security group or tag instead of by address range, and add a dependency check to node pool rollouts.',
     lesson:
       'Rules based on IP ranges break silently when capacity is added somewhere else. Reference groups or tags instead of subnets, and test every dependency from new nodes before they take traffic.',
   },

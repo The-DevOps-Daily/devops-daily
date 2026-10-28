@@ -12,6 +12,7 @@ import {
   Flame,
   KeyRound,
   Minus,
+  RotateCw,
   Search,
   Share2,
   ShieldCheck,
@@ -34,6 +35,8 @@ import {
   getIncidentByNumber,
   getIncidentForDay,
   MAX_MOVES,
+  nextIncidentAt,
+  orderedCauses,
   playRound,
   puzzleNumber,
   restoreBackup,
@@ -79,13 +82,19 @@ const TILE_LABEL = {
 const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950';
 
-function loadState(): OnCallState {
+/** Null when storage is empty, unreadable or blocked. */
+function readState(today: number): OnCallState | null {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? sanitizeState(JSON.parse(raw)) : emptyState();
+    return raw ? sanitizeState(JSON.parse(raw), today) : null;
   } catch {
-    return emptyState();
+    return null;
   }
+}
+
+/** Days before launch (a clock running behind) play day 0. */
+function playableDay(now: number): number {
+  return Math.max(dayNumber(new Date(now)), 0);
 }
 
 function saveState(state: OnCallState) {
@@ -96,10 +105,8 @@ function saveState(state: OnCallState) {
   }
 }
 
-function untilNextIncident(now: number): string | null {
-  const next = new Date(now);
-  next.setUTCHours(24, 0, 0, 0);
-  const minutes = Math.ceil((next.getTime() - now) / 60_000);
+function untilNextIncident(now: number, day: number): string | null {
+  const minutes = Math.ceil((nextIncidentAt(day) - now) / 60_000);
   if (minutes <= 0) return null;
   const hours = Math.floor(minutes / 60);
   return hours > 0 ? `${hours} h ${minutes % 60} min` : `${minutes} min`;
@@ -143,11 +150,27 @@ function MoveTile({ move, size = 'sm' }: { move?: MoveRecord; size?: 'sm' | 'lg'
   );
 }
 
-function SignalOutput({ command, output }: { command?: string; output: string }) {
+function SignalOutput({
+  label,
+  command,
+  output,
+}: {
+  label: string;
+  command?: string;
+  output: string;
+}) {
   return (
     <div className="min-w-0 space-y-1">
       {command && <p className="break-all text-xs text-emerald-300">$ {command}</p>}
-      <pre className="max-w-full overflow-x-auto whitespace-pre pb-1 text-xs leading-relaxed text-zinc-200 [scrollbar-width:thin]">
+      {/* Focusable so keyboard users can scroll long lines sideways. */}
+      <pre
+        tabIndex={0}
+        aria-label={`${label} output`}
+        className={cn(
+          'max-w-full overflow-x-auto whitespace-pre rounded pb-1 text-xs leading-relaxed text-zinc-200 [scrollbar-width:thin]',
+          FOCUS_RING
+        )}
+      >
         {output}
       </pre>
     </div>
@@ -165,23 +188,66 @@ export default function OnCall() {
   const [lastVerdict, setLastVerdict] = useState<Verdict | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const [copied, setCopied] = useState(false);
+  const [notCounted, setNotCounted] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const resultHeading = useRef<HTMLHeadingElement>(null);
   const focusResult = useRef(false);
 
-  // Hydrate from storage and resume today's round, finished or not.
-  useEffect(() => {
-    const today = dayNumber(new Date());
-    const loaded = loadState();
+  // Load storage and resume today's round, finished or not. Also used when a
+  // new UTC day starts while the page is open.
+  const hydrate = useCallback(() => {
+    const at = Date.now();
+    const today = playableDay(at);
+    const loaded = readState(today) ?? emptyState();
     const stored = loaded.rounds[today];
     const active = loaded.active?.day === today ? loaded.active : null;
     const number = stored?.incident ?? active?.incident;
+    setNow(at);
     setDay(today);
     setState(loaded);
     setIncident((number && getIncidentByNumber(number)) || getIncidentForDay(today));
-    if (!stored && active) setActions(active.actions);
+    setActions(!stored && active ? active.actions : []);
+    setCollapsed(new Set());
+    setLastVerdict(null);
+    setNotCounted(false);
   }, []);
 
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  // Keeps the countdown current and notices the UTC rollover.
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    const timer = window.setInterval(tick, 30_000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, []);
+
+  // Another tab played, or restored a backup: follow it instead of
+  // overwriting it later with this tab's older copy.
+  useEffect(() => {
+    if (day === null) return;
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return;
+      const latest = readState(day) ?? emptyState();
+      setState(latest);
+      const finishedThere = latest.rounds[day];
+      if (finishedThere) {
+        setIncident((current) => getIncidentByNumber(finishedThere.incident) ?? current);
+      } else if (latest.active?.day === day && latest.active.incident === incident?.number) {
+        setActions(latest.active.actions);
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [day, incident]);
+
   const view = useMemo(() => (incident ? playRound(incident, actions) : null), [incident, actions]);
+  const causes = useMemo(() => (incident ? orderedCauses(incident) : []), [incident]);
   const stored = day !== null ? state.rounds[day] : undefined;
   const finished = Boolean(stored) || Boolean(view?.finished);
 
@@ -195,17 +261,24 @@ export default function OnCall() {
   const act = useCallback(
     (action: Action) => {
       if (!incident || day === null || !view || finished) return;
+      // Start from what is stored now, not from this tab's copy.
+      const base = readState(day) ?? state;
+      if (base.rounds[day]) {
+        setState(base); // finished in another tab
+        return;
+      }
       const next = playRound(incident, [...view.actions, action]);
       if (next.actions.length === view.actions.length) return; // not a valid move
       setActions(next.actions);
 
       let nextState: OnCallState;
       if (next.finished) {
-        nextState = applyResult({ ...state, active: null }, day, {
+        nextState = applyResult({ ...base, active: null }, day, {
           incident: incident.number,
           solved: next.solved,
           moves: next.moves,
         });
+        setNotCounted(nextState.played === base.played);
         focusResult.current = true;
         if (next.solved) {
           confetti({
@@ -217,7 +290,7 @@ export default function OnCall() {
         }
       } else {
         nextState = {
-          ...state,
+          ...base,
           active: { day, incident: incident.number, actions: next.actions },
         };
       }
@@ -267,10 +340,28 @@ export default function OnCall() {
   const puzzle = puzzleNumber(day);
   const streak = currentStreak(state, day);
   const correct = getCorrectCause(incident);
+  const newDayOut = playableDay(now) > day;
 
   return (
     <MotionConfig reducedMotion="user">
       <div className="mx-auto max-w-3xl space-y-4 font-mono">
+        {newDayOut && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-500/40 bg-zinc-950 px-4 py-3 text-sm text-sky-100">
+            <span>A new incident is out.</span>
+            <button
+              type="button"
+              onClick={hydrate}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-md bg-sky-400 px-3 py-1.5 text-xs font-bold text-black hover:bg-sky-300',
+                FOCUS_RING
+              )}
+            >
+              <RotateCw className="h-3.5 w-3.5" aria-hidden /> Play #
+              {puzzleNumber(playableDay(now))}
+            </button>
+          </div>
+        )}
+
         {/* Pager header */}
         <motion.section
           aria-labelledby="oncall-title"
@@ -407,7 +498,11 @@ export default function OnCall() {
                               exit={{ opacity: 0 }}
                               className="border-t border-zinc-800 px-3 pb-3 pt-2"
                             >
-                              <SignalOutput command={evidence.command} output={evidence.output} />
+                              <SignalOutput
+                                label={evidence.label}
+                                command={evidence.command}
+                                output={evidence.output}
+                              />
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -427,7 +522,7 @@ export default function OnCall() {
                   cause
                 </h3>
                 <ul className="space-y-2" onKeyDown={moveFocus}>
-                  {incident.causes.map((cause) => {
+                  {causes.map((cause) => {
                     const tried = view.tried.includes(cause.id);
                     const verdict = tried ? verdictFor(incident, cause.id) : null;
                     return (
@@ -552,8 +647,15 @@ export default function OnCall() {
               </p>
             </div>
 
+            {notCounted && (
+              <p className="text-xs text-zinc-300">
+                Your stats already include this day (from a backup code), so they did not change.
+              </p>
+            )}
+
             <ShareRow
               text={buildShareText({ puzzle, severity: incident.severity, solved, moves })}
+              next={untilNextIncident(now, day)}
               copied={copied}
               setCopied={setCopied}
             />
@@ -575,7 +677,11 @@ export default function OnCall() {
                 {incident.evidence.map((evidence) => (
                   <li key={evidence.label} className="min-w-0">
                     <p className="mb-1 text-sm font-semibold text-zinc-100">{evidence.label}</p>
-                    <SignalOutput command={evidence.command} output={evidence.output} />
+                    <SignalOutput
+                      label={evidence.label}
+                      command={evidence.command}
+                      output={evidence.output}
+                    />
                   </li>
                 ))}
               </ul>
@@ -595,10 +701,12 @@ export default function OnCall() {
 
 function ShareRow({
   text,
+  next,
   copied,
   setCopied,
 }: {
   text: string;
+  next: string | null;
   copied: boolean;
   setCopied: (value: boolean) => void;
 }) {
@@ -616,8 +724,6 @@ function ShareRow({
       /* dismissed share sheet or no clipboard access: the text is shown below */
     }
   }, [text, setCopied]);
-
-  const next = untilNextIncident(Date.now());
 
   return (
     <div className="space-y-2">
@@ -641,7 +747,7 @@ function ShareRow({
           {copied ? 'Result copied. ' : ''}
           {next
             ? `Spoiler-free. Next incident in ${next} (00:00 UTC).`
-            : 'A new incident is out. Reload the page to play it.'}
+            : 'Spoiler-free. A new incident is out.'}
         </span>
       </div>
       <pre className="overflow-x-auto rounded-md border border-zinc-800 bg-black/40 p-2 text-xs text-zinc-300">
@@ -684,7 +790,12 @@ function StreakPanel({
       setMessage({ ok: false, text: result.error });
       return;
     }
-    const next = restoreBackup(state, result.summary);
+    const restored = restoreBackup(readState(day) ?? state, result.summary);
+    if (!restored.ok) {
+      setMessage({ ok: false, text: restored.error });
+      return;
+    }
+    const next = restored.state;
     setState(next);
     saveState(next);
     setInput('');

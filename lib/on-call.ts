@@ -111,6 +111,11 @@ export function dayNumber(date: Date): number {
   return Math.floor((today - launch) / MS_PER_DAY);
 }
 
+/** When the incident after this day's goes live, in epoch milliseconds. */
+export function nextIncidentAt(day: number): number {
+  return Date.parse(`${LAUNCH_ISO}T00:00:00Z`) + (Math.max(day, 0) + 1) * MS_PER_DAY;
+}
+
 /** The number players see and share ("On-Call #12"). */
 export function puzzleNumber(day: number): number {
   return Math.max(day, 0) + 1;
@@ -143,6 +148,25 @@ export function getCorrectCause(incident: Incident): Cause {
   const cause = incident.causes.find((c) => c.id === incident.correctCauseId);
   if (!cause) throw new Error(`Incident ${incident.number} has no correct cause`);
   return cause;
+}
+
+function fnv1a(text: string): number {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash;
+}
+
+/**
+ * The causes in the order players see them. Authors write the root cause
+ * first; this mixes the list in a fixed way per incident, so the order is the
+ * same for everyone and on every reload, but the answer is not always on top.
+ */
+export function orderedCauses(incident: Incident): Cause[] {
+  const rank = (cause: Cause) => fnv1a(`on-call:${incident.number}:${cause.id}`);
+  return [...incident.causes].sort((a, b) => rank(a) - rank(b));
 }
 
 // --- A round ----------------------------------------------------------------
@@ -353,12 +377,29 @@ function sanitizeActions(value: unknown): Action[] | null {
   return actions;
 }
 
+/** A finished round that the rules could have produced. */
+export function isValidRound(round: StoredRound): boolean {
+  const incident = getIncidentByNumber(round.incident);
+  const { moves } = round;
+  if (!incident || moves.length === 0 || moves.length > MAX_MOVES) return false;
+  const inspects = moves.filter((m) => m.kind === 'inspect').length;
+  const diagnoses = moves.length - inspects;
+  const correct = moves.filter((m) => m.verdict === 'correct').length;
+  const last = moves[moves.length - 1];
+  if (inspects > Math.min(incident.evidence.length, MAX_MOVES - 1)) return false;
+  if (diagnoses > incident.causes.length) return false;
+  if (last.kind !== 'diagnose') return false;
+  return round.solved
+    ? correct === 1 && last.verdict === 'correct'
+    : correct === 0 && moves.length === MAX_MOVES;
+}
+
 /**
  * Turns whatever localStorage holds into a valid state. Anything malformed is
  * dropped rather than trusted: a hand-edited or half-written value must not
  * break the page.
  */
-export function sanitizeState(raw: unknown): OnCallState {
+export function sanitizeState(raw: unknown, today: number): OnCallState {
   const state = emptyState();
   if (!raw || typeof raw !== 'object') return state;
   const input = raw as Record<string, unknown>;
@@ -371,7 +412,8 @@ export function sanitizeState(raw: unknown): OnCallState {
       const moves = sanitizeMoves(round?.moves);
       if (!isCount(day) || !round || !moves) continue;
       if (!isCount(round.incident) || typeof round.solved !== 'boolean') continue;
-      rounds[day] = { incident: round.incident, solved: round.solved, moves };
+      const stored = { incident: round.incident, solved: round.solved, moves };
+      if (isValidRound(stored)) rounds[day] = stored;
     }
   }
 
@@ -382,13 +424,27 @@ export function sanitizeState(raw: unknown): OnCallState {
     played: input.played,
     solved: input.solved,
   };
-  if (!isValidSummary(summary)) return state;
+  // A day more than one ahead of today means a hand-edited value or a clock
+  // that was far ahead; neither can be trusted.
+  if (!isValidSummary(summary) || summary.lastDay > today + 1) return state;
   Object.assign(state, summary);
-  state.rounds = state.lastDay >= 0 ? pruneRounds(rounds, state.lastDay) : rounds;
+  // Every finished round moves lastDay forward or sits behind it, so a round
+  // after lastDay was never counted and cannot be real.
+  for (const day of Object.keys(rounds).map(Number)) {
+    if (day > state.lastDay) delete rounds[day];
+  }
+  state.rounds = pruneRounds(rounds, state.lastDay);
 
   const active = input.active as Record<string, unknown> | null | undefined;
   const actions = sanitizeActions(active?.actions);
-  if (active && isCount(active.day) && isCount(active.incident) && actions) {
+  if (
+    active &&
+    isCount(active.day) &&
+    active.day <= today + 1 &&
+    isCount(active.incident) &&
+    getIncidentByNumber(active.incident) &&
+    actions
+  ) {
     state.active = { day: active.day, incident: active.incident, actions };
   }
   return state;
@@ -408,13 +464,7 @@ const MAX_BACKUP_INPUT = 80;
 const BACKUP_PATTERN = /^OC1((?:-[0-9A-Z]{1,6}){5})-([0-9A-Z]{4})$/;
 
 function checksum(payload: string): string {
-  // FNV-1a, 32 bit.
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < payload.length; i += 1) {
-    hash ^= payload.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return (hash % 36 ** 4).toString(36).toUpperCase().padStart(4, '0');
+  return (fnv1a(payload) % 36 ** 4).toString(36).toUpperCase().padStart(4, '0');
 }
 
 function isValidSummary(value: Record<string, unknown>): value is BackupSummary {
@@ -426,10 +476,12 @@ function isValidSummary(value: Record<string, unknown>): value is BackupSummary 
     isCount(best) &&
     isCount(played) &&
     isCount(solved) &&
+    played >= 1 &&
     current <= best &&
     best <= solved &&
     solved <= played &&
-    played <= lastDay + 1
+    played <= lastDay + 1 &&
+    (solved === 0 || best >= 1)
   );
 }
 
@@ -470,22 +522,31 @@ export function decodeBackup(input: unknown, today: number): DecodeResult {
   return { ok: true, summary };
 }
 
+export type RestoreResult = { ok: true; state: OnCallState } | { ok: false; error: string };
+
 /**
- * Restores the counters from a backup, then replays any rounds this browser
- * finished after the backup was made, so playing first and restoring later
- * still continues the streak.
+ * Restores the counters from a backup. When this browser has played since the
+ * backup was made (a wiped browser that played a day before restoring), those
+ * rounds are replayed on top so the streak continues. That is only possible
+ * when every local round is still in the history and newer than the backup;
+ * otherwise restoring would lose progress, so it is refused.
  */
-export function restoreBackup(local: OnCallState, summary: BackupSummary): OnCallState {
-  let next: OnCallState = { ...summary, rounds: {}, active: local.active };
+export function restoreBackup(local: OnCallState, summary: BackupSummary): RestoreResult {
   const days = Object.keys(local.rounds)
     .map(Number)
     .sort((a, b) => a - b);
-  for (const day of days) {
-    const round = local.rounds[day];
-    next =
-      day > summary.lastDay
-        ? applyResult(next, day, round)
-        : { ...next, rounds: { ...next.rounds, [day]: round } };
+  let next: OnCallState = { ...summary, rounds: {}, active: local.active };
+  if (local.lastDay > summary.lastDay) {
+    const replayable = days.length === local.played && days.every((d) => d > summary.lastDay);
+    if (!replayable) {
+      return { ok: false, error: 'This browser already has newer progress than that code.' };
+    }
+    for (const day of days) next = applyResult(next, day, local.rounds[day]);
+    return { ok: true, state: next };
   }
-  return next;
+  // The backup is as new or newer: its counters win, local rounds stay as history.
+  const rounds: Record<number, StoredRound> = {};
+  for (const day of days) rounds[day] = local.rounds[day];
+  next.rounds = pruneRounds(rounds, summary.lastDay);
+  return { ok: true, state: next };
 }
