@@ -40,7 +40,7 @@
     {
       "id": "error-rate",
       "name": "Error rate",
-      "description": "Random scenarios: a service-wide 5xx share over 5%, even just over, at 1 request per second or more, alerts once it has lasted 5 minutes, not sooner or later, whatever the 5xx codes and routes and even next to a busy healthy service. Under 5%, even just under, many 4xx, under 1 request per second, and one small failing route or instance do not alert."
+      "description": "Random scenarios: a service-wide 5xx share over 5% across 5 minutes, even just over, at 1 request per second or more, alerts once it has lasted 5 minutes, not sooner or later, and stops after the errors end; whatever the 5xx codes and routes, for a flaky dependency, and next to a busy healthy service. Under 5%, many 4xx, under 1 request per second, and one small failing route or instance do not alert."
     },
     {
       "id": "slow-requests",
