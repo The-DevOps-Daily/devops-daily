@@ -1626,6 +1626,46 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     ],
   },
 
+  'on-call': {
+    summary:
+      'Most on-call work is reading signals under pressure. A page fires, an error rate jumps, and you have to choose which logs, metrics and commands to check before you name a cause. On-Call: The Daily Incident turns that into a daily puzzle. Every day, everyone gets the same production incident: the alert that paged you and a few symptoms. You have six moves. Opening a signal, such as kubectl output, a Postgres query, dig, curl, openssl or a load balancer log, costs one move, and naming a cause costs one move too. Green means you found the root cause, yellow means the cause is in the right area but did not cause this incident, and grey means the wrong area. After the round you see what happened and how to stop it happening again. The incidents cover Kubernetes, DNS, TLS certificates, databases, CI/CD, cloud networking, memory, cron and time zones, rate limits, caches, queues, feature flags, and deploys and rollbacks. The habit it trains is to gather the right evidence before you guess, and to tell a symptom apart from its cause.',
+    teaches: [
+      'Incident triage',
+      'Root cause analysis',
+      'Reading logs, metrics and command output',
+      'Kubernetes and database troubleshooting',
+      'DNS, TLS and network debugging',
+    ],
+    level: 'Intermediate',
+    tryThis: [
+      'Read the page and the symptoms, then open only the signal that would best prove or rule out your first idea before you name a cause.',
+      'If a cause comes back yellow, use the area it names to narrow your next pick instead of guessing again.',
+      'Finish the round, open "Review every signal" to see the evidence you skipped, then copy your spoiler-free result with Share result.',
+    ],
+    faq: [
+      {
+        question: 'How does the daily incident work?',
+        answer:
+          'Everyone gets the same incident on the same UTC day, and a new one starts at 00:00 UTC. You have six moves: each signal you open and each cause you name uses one.',
+      },
+      {
+        question: 'What do the colors mean?',
+        answer:
+          'Green is the root cause. Yellow is a cause in the same area as the root cause, for example another database problem, but not the one behind this incident. Grey is a cause in a different area. A magnifying glass marks a move spent on a signal.',
+      },
+      {
+        question: 'Where is my streak stored?',
+        answer:
+          'Only in your browser. There is no account. Under "Stats and streak backup" you can copy a short backup code, then paste it later to get your streak back after clearing your browser or on another device.',
+      },
+      {
+        question: 'Are the incidents real?',
+        answer:
+          'They are made up, but each one is built from a failure that teams hit in production, such as connection pool exhaustion, an expired certificate, a DNSSEC mistake or a replication slot that fills a disk. The signals are written to look like real command output.',
+      },
+    ],
+  },
+
   'terraform-puzzle': {
     summary:
       'Most Terraform trouble is not about writing resources, it is about state: what Terraform thinks exists compared with what really does. This puzzle game gives you real situations to untangle. A plan wants to build production again because you are in the wrong workspace. A tidy-up rename makes Terraform want to destroy and recreate a database. Someone deleted an alarm by hand. A state lock will not go away. An apply was killed halfway. A database built by hand needs to be adopted, and staging has to be retired without touching production. For each one you inspect the evidence, such as the workspace list, the state, the plan and the pull request diff, then pick a fix. Answers are graded as the best fix, a fix that works with a catch, a safe step that does not finish the job, or an unsafe action that does damage, and you see the plan each choice would produce. The recurring lesson is to prefer declarative blocks in code, such as moved, import and removed, over one-off state commands, so the fix is reviewed and repeatable.',
