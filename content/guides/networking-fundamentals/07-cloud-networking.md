@@ -1,634 +1,355 @@
 ---
-title: 'Cloud Networking'
-description: 'Understanding Virtual Private Clouds, security groups, and cloud-native networking patterns across AWS, Azure, and Google Cloud.'
+title: 'Cloud Networking: VPCs, Subnets, Security Groups and NAT'
+description: 'Map a lab network onto an AWS VPC: subnets across zones, route tables, NAT gateways, security groups vs NACLs, endpoints, peering, flow logs and costs.'
 order: 7
 ---
 
-Cloud networking provides powerful abstractions over physical network infrastructure, but with great power comes complexity. Understanding how cloud providers handle networking helps you design secure, scalable applications and troubleshoot connectivity issues in cloud environments.
+A cloud **VPC** (Virtual Private Cloud) is the lab from Part 1, run by someone else. You still choose address ranges and subnets, you still write routes and firewall rules, and NAT still decides how private machines reach the internet. What changes is that every piece is an API object with a price, and that the provider spreads your network over several data centres (**availability zones**) so that one of them can fail.
+
+In this part you translate the lab into an AWS VPC, build the core of it with the AWS CLI, and compare AWS with Google Cloud, Azure and DigitalOcean. Then you look at the parts that cause most cloud networking surprises: security groups versus network ACLs, connecting VPCs, private access to cloud services, and the bill.
 
 ## Prerequisites
 
-- Basic understanding of IP addressing and subnetting
-- Familiarity with at least one major cloud provider (AWS, Azure, or GCP)
-- Knowledge of firewalls and network security concepts
+- Subnetting and NAT from [Part 2](/guides/networking-fundamentals/02-ip-addressing-and-subnetting), firewalls from [Part 4](/guides/networking-fundamentals/04-network-security-and-firewalls-basics).
+- To run the commands: an AWS account, the [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) with credentials, and a region (`export AWS_REGION=us-east-1`). The commands create resources that cost money, mainly the NAT gateway and public IPv4 addresses; the cleanup is at the end of the section. Reading along works too: each command's syntax was checked with AWS CLI v2 in the guide's companion repository.
 
-## Virtual Private Clouds (VPCs)
+## The Lab, Translated
 
-A VPC is your private network in the cloud - isolated from other customers but connected to the internet when you need it.
+Every piece of the lab has a managed counterpart:
 
-```
-AWS VPC (10.0.0.0/16)
-┌───────────────────────────────────────────────────────────────────────┐
-│                                                                       │
-│  Availability Zone A              │         Availability Zone B       │
-│  ┌─────────────────────────────┐  │  ┌─────────────────────────────┐  │
-│  │     Public Subnet           │  │  │     Public Subnet           │  │
-│  │     10.0.1.0/24             │  │  │     10.0.2.0/24             │  │
-│  │  ┌─────────┐ ┌─────────┐    │  │  │  ┌─────────┐ ┌─────────┐    │  │
-│  │  │   ALB   │ │   NAT   │    │  │  │  │   ALB   │ │   NAT   │    │  │
-│  │  │10.0.1.10│ │10.0.1.20│    │  │  │  │10.0.2.10│ │10.0.2.20│    │  │
-│  │  └─────────┘ └─────────┘    │  │  │  └─────────┘ └─────────┘    │  │
-│  └─────────────────────────────┘  │  └─────────────────────────────┘  │
-│  ┌─────────────────────────────┐  │  ┌─────────────────────────────┐  │
-│  │     Private Subnet          │  │  │     Private Subnet          │  │
-│  │     10.0.10.0/24            │  │  │     10.0.20.0/24            │  │
-│  │  ┌─────────┐ ┌─────────┐    │  │  │  ┌─────────┐ ┌─────────┐    │  │
-│  │  │  Web-1  │ │  API-1  │    │  │  │  │  Web-2  │ │  API-2  │    │  │
-│  │  │10.0.10.1│ │10.0.10.2│    │  │  │  │10.0.20.1│ │10.0.20.2│    │  │
-│  │  └─────────┘ └─────────┘    │  │  │  └─────────┘ └─────────┘    │  │
-│  └─────────────────────────────┘  │  └─────────────────────────────┘  │
-│  ┌─────────────────────────────┐  │  ┌─────────────────────────────┐  │
-│  │     Database Subnet         │  │  │     Database Subnet         │  │
-│  │     10.0.100.0/28           │  │  │     10.0.100.16/28          │  │
-│  │  ┌─────────┐                │  │  │  ┌─────────┐                │  │
-│  │  │  RDS    │                │  │  │  │  RDS    │                │  │
-│  │  │Primary  │                │  │  │  │Replica  │                │  │
-│  │  └─────────┘                │  │  │  └─────────┘                │  │
-│  └─────────────────────────────┘  │  └─────────────────────────────┘  │
-└───────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-                            Internet Gateway
-                                    │
-                                    ▼
-                                Internet
+| In the lab                                                         | In an AWS VPC                                                         | Notes                                                                 |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `10.0.0.0/16` behind the router                                    | The VPC's CIDR block                                                  | Pick it once; you can add blocks later, not change the first          |
+| One bridge per subnet                                              | A **subnet**, in one availability zone                                | AWS subnets never span zones                                          |
+| The router's routing                                               | **Route tables**, one per group of subnets                            | Each subnet uses exactly one route table                              |
+| The router's connection to the simulated internet through `br-wan` | An **internet gateway**                                               | A route to it is what makes a subnet "public"                         |
+| `masquerade` for private subnets                                   | A **NAT gateway**                                                     | Outbound only; costs per hour and per GB                              |
+| `dnat` to `lb` on `203.0.113.80`                                   | A public IP on a load balancer or instance                            | The internet gateway does the 1:1 translation                         |
+| nftables on the router and hosts                                   | **Security groups** (per interface) and **network ACLs** (per subnet) | Security groups are stateful, NACLs are not                           |
+| Unbound on the router                                              | The **Route 53 Resolver** at the VPC base address + 2                 | `10.20.0.2` in a `10.20.0.0/16` VPC, and `169.254.169.253` everywhere |
+| BIND's `shop.internal` zone                                        | A Route 53 **private hosted zone**                                    | Answers only inside associated VPCs                                   |
 
-Traffic Flow:
-Internet > Internet Gateway > Public Subnet (ALB) > Private Subnet (Apps) > Database Subnet (RDS)
-Private Subnet > NAT Gateway > Internet Gateway > Internet (for outbound)
-```
+## Design the VPC
 
-Let's create a basic VPC to understand the concepts:
+Use the plan from Part 2: `10.20.0.0/16`, with a public, an app and a data subnet in each zone. Two zones are the minimum for availability; three are common for production. The internet reaches only the load balancer in the public subnets; everything else has private addresses:
 
-```bash
-# Create a VPC with CLI
-aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications \
-  'ResourceType=vpc,Tags=[{Key=Name,Value=demo-vpc}]'
-
-# Create subnets within the VPC
-aws ec2 create-subnet --vpc-id vpc-12345678 --cidr-block 10.0.1.0/24 \
-  --availability-zone us-east-1a --tag-specifications \
-  'ResourceType=subnet,Tags=[{Key=Name,Value=public-subnet-1a}]'
-
-aws ec2 create-subnet --vpc-id vpc-12345678 --cidr-block 10.0.2.0/24 \
-  --availability-zone us-east-1b --tag-specifications \
-  'ResourceType=subnet,Tags=[{Key=Name,Value=private-subnet-1b}]'
-```
-
-This creates a VPC with two subnets in different availability zones for high availability.
-
-### Subnet Types
-
-**Public Subnets**: Have direct internet access via Internet Gateway
-
-```bash
-# Create internet gateway
-aws ec2 create-internet-gateway --tag-specifications \
-  'ResourceType=internet-gateway,Tags=[{Key=Name,Value=demo-igw}]'
-
-# Attach to VPC
-aws ec2 attach-internet-gateway --vpc-id vpc-12345678 --internet-gateway-id igw-87654321
-
-# Create route table for public subnet
-aws ec2 create-route-table --vpc-id vpc-12345678 --tag-specifications \
-  'ResourceType=route-table,Tags=[{Key=Name,Value=public-rt}]'
-
-# Add route to internet gateway
-aws ec2 create-route --route-table-id rtb-11111111 \
-  --destination-cidr-block 0.0.0.0/0 --gateway-id igw-87654321
-```
-
-**Private Subnets**: No direct internet access, use NAT for outbound traffic
-
-```bash
-# Create NAT gateway in public subnet
-aws ec2 create-nat-gateway --subnet-id subnet-public --allocation-id eipalloc-12345
-
-# Create route table for private subnet
-aws ec2 create-route-table --vpc-id vpc-12345678 --tag-specifications \
-  'ResourceType=route-table,Tags=[{Key=Name,Value=private-rt}]'
-
-# Route private traffic through NAT gateway
-aws ec2 create-route --route-table-id rtb-22222222 \
-  --destination-cidr-block 0.0.0.0/0 --nat-gateway-id nat-12345678
-```
-
-## Security Groups vs Network ACLs
-
-Cloud providers offer multiple layers of network security.
-
-### Security Groups (Stateful)
-
-Security groups act like firewalls attached to individual instances:
-
-```bash
-# Create security group for web servers
-aws ec2 create-security-group --group-name web-servers \
-  --description "Security group for web servers" --vpc-id vpc-12345678
-
-# Allow HTTP and HTTPS traffic
-aws ec2 authorize-security-group-ingress --group-id sg-web12345 \
-  --protocol tcp --port 80 --cidr 0.0.0.0/0
-
-aws ec2 authorize-security-group-ingress --group-id sg-web12345 \
-  --protocol tcp --port 443 --cidr 0.0.0.0/0
-
-# Allow SSH from management subnet only
-aws ec2 authorize-security-group-ingress --group-id sg-web12345 \
-  --protocol tcp --port 22 --cidr 10.0.100.0/24
-```
-
-Security groups are stateful - if you allow inbound traffic, the return traffic is automatically allowed.
-
-### Network ACLs (Stateless)
-
-Network ACLs provide subnet-level filtering:
-
-```bash
-# Create custom network ACL
-aws ec2 create-network-acl --vpc-id vpc-12345678
-
-# Add rules (must specify both inbound and outbound)
-aws ec2 create-network-acl-entry --network-acl-id acl-12345678 \
-  --rule-number 100 --protocol tcp --port-range From=80,To=80 \
-  --cidr-block 0.0.0.0/0 --rule-action allow
-
-# Add corresponding outbound rule for stateless operation
-aws ec2 create-network-acl-entry --network-acl-id acl-12345678 \
-  --rule-number 100 --protocol tcp --port-range From=32768,To=65535 \
-  --cidr-block 0.0.0.0/0 --rule-action allow --egress
-```
-
-Network ACLs are stateless - you must explicitly allow both directions of traffic.
-
-## Cloud Load Balancing
-
-Cloud providers offer managed load balancing services.
-
-### Application Load Balancer (AWS)
-
-Application Load Balancers operate at Layer 7 and can route based on content:
-
-```bash
-# Create application load balancer
-aws elbv2 create-load-balancer --name demo-alb \
-  --subnets subnet-12345678 subnet-87654321 \
-  --security-groups sg-alb12345
-
-# Create target group
-aws elbv2 create-target-group --name web-targets \
-  --protocol HTTP --port 80 --vpc-id vpc-12345678 \
-  --health-check-path /health
-
-# Register targets
-aws elbv2 register-targets --target-group-arn arn:aws:elasticloadbalancing:... \
-  --targets Id=i-instance1,Port=80 Id=i-instance2,Port=80
-
-# Create listener
-aws elbv2 create-listener --load-balancer-arn arn:aws:elasticloadbalancing:... \
-  --protocol HTTP --port 80 \
-  --default-actions Type=forward,TargetGroupArn=arn:aws:elasticloadbalancing:...
-```
-
-### Advanced Load Balancer Features
-
-Route traffic based on request attributes:
-
-```json
+```diagram
 {
-  "Type": "forward",
-  "ForwardConfig": {
-    "TargetGroups": [
-      {
-        "TargetGroupArn": "arn:aws:elasticloadbalancing:...:targetgroup/api-v1/...",
-        "Weight": 90
-      },
-      {
-        "TargetGroupArn": "arn:aws:elasticloadbalancing:...:targetgroup/api-v2/...",
-        "Weight": 10
-      }
-    ]
-  },
-  "Conditions": [
+  "type": "infra",
+  "flow": [
+    { "label": "Internet", "icon": "globe", "tone": "slate" },
+    { "label": "Internet gateway", "icon": "net", "tone": "amber" },
+    { "label": "Load balancer", "sub": "public subnets", "icon": "server", "tone": "green" },
+    { "label": "App instances", "sub": "app subnets :8080", "icon": "box", "tone": "blue" },
+    { "label": "Database", "sub": "data subnets :5432", "icon": "database", "tone": "violet" }
+  ],
+  "groups": [
     {
-      "Field": "path-pattern",
-      "Values": ["/api/*"]
+      "label": "VPC 10.20.0.0/16",
+      "icon": "cloud",
+      "tone": "amber",
+      "groups": [
+        {
+          "label": "VPC-wide",
+          "icon": "net",
+          "tone": "amber",
+          "nodes": [
+            { "label": "Internet gateway", "sub": "routes for public subnets", "icon": "globe", "tone": "amber" },
+            { "label": "NAT gateway", "sub": "regional: serves every zone", "icon": "net", "tone": "amber" }
+          ]
+        },
+        {
+          "label": "zone a",
+          "icon": "net",
+          "tone": "slate",
+          "nodes": [
+            { "label": "public-a", "sub": "10.20.108.0/24: LB", "icon": "net", "tone": "green" },
+            { "label": "app-a", "sub": "10.20.0.0/19", "icon": "box", "tone": "blue" },
+            { "label": "data-a", "sub": "10.20.96.0/22", "icon": "database", "tone": "violet" }
+          ]
+        },
+        {
+          "label": "zone b",
+          "icon": "net",
+          "tone": "slate",
+          "nodes": [
+            { "label": "public-b", "sub": "10.20.109.0/24: LB", "icon": "net", "tone": "green" },
+            { "label": "app-b", "sub": "10.20.32.0/19", "icon": "box", "tone": "blue" },
+            { "label": "data-b", "sub": "10.20.100.0/22", "icon": "database", "tone": "violet" }
+          ]
+        }
+      ]
     }
   ]
 }
 ```
 
-This configuration sends 90% of API traffic to v1 and 10% to v2 for gradual rollouts.
+A subnet is **public** only because its route table sends `0.0.0.0/0` to the internet gateway. Nothing else about it is special. A **private** subnet's route table sends `0.0.0.0/0` to a NAT gateway instead, or nowhere at all for a data tier that never needs the internet.
 
-## Multi-Cloud Networking
+## Build It with the AWS CLI
 
-Organizations often use multiple cloud providers for redundancy or specific services.
-
-```
-Multi-Cloud Architecture
-
-┌───────────────────────────────────────────────────────────────┐
-│                       Internet                                │
-└────────────────────┬──────────────────┬───────────────────────┘
-                     │                  │
-┌────────────────────▼────────────────┐ │ ┌─────────────────────▼───────────┐
-│        AWS (us-east-1)              │ │ │         Azure (eastus)          │
-│ ┌─────────────────────────────────┐ │ │ │  ┌───────────────────────────┐  │
-│ │     VPC (10.1.0.0/16)           │ │ │ │  │     VNet (10.2.0.0/16)    │  │
-│ │  ┌─────────┐ ┌─────────┐        │ │ │ │  │  ┌─────────┐ ┌─────────┐  │  │
-│ │  │   ALB   │ │   EC2   │        │ │ │ │  │  │   ALB   │ │   VM    │  │  │
-│ │  │         │ │ Web App │        │ │ │ │  │  │         │ │ Web App │  │  │
-│ │  └─────────┘ └─────────┘        │ │ │ │  │  └─────────┘ └─────────┘  │  │
-│ └─────────────────────────────────┘ │ │ │  └───────────────────────────┘  │
-└──────────────┬──────────────────────┘ │ └──────────────┬──────────────────┘
-               │                        │                │
-               │      VPN Tunnel        │                │
-               │  (IPSec/Site-to-Site)  │                │
-               └────────────────────────┼────────────────┘
-                                        │
-              ┌─────────────────────────▼──────────────────┐
-              │                  GCP (us-central1)         │
-              │ ┌───────────────────────────────────────┐  │
-              │ │                VPC (10.3.0.0/16)      │  │
-              │ │  ┌─────────┐ ┌─────────┐ ┌─────────┐  │  │
-              │ │  │   LB    │ │   GKE   │ │Database │  │  │
-              │ │  │         │ │Cluster  │ │(Global) │  │  │
-              │ │  └─────────┘ └─────────┘ └─────────┘  │  │
-              │ └───────────────────────────────────────┘  │
-              └────────────────────────────────────────────┘
-
-Connectivity Matrix:
-AWS ←→ Azure: VPN Gateway (IPSec)
-AWS ←→ GCP:   Cloud Interconnect
-Azure ←→ GCP: ExpressRoute + Cloud Interconnect
-All ←→ Users: Global DNS (Route 53/Traffic Manager/Cloud DNS)
-```
-
-### VPN Connections
-
-Connect your VPCs across cloud providers:
+Each create command prints the new resource's ID with `--query ... --output text`, which you keep in a shell variable for the next command. First the VPC with DNS host names turned on (needed for private hosted zones and for interface endpoints), and the subnets of zone `a`:
 
 ```bash
-# AWS: Create VPN gateway
-aws ec2 create-vpn-gateway --type ipsec.1
+VPC=$(aws ec2 create-vpc --cidr-block 10.20.0.0/16 \
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=shop}]' \
+  --query Vpc.VpcId --output text)
+aws ec2 modify-vpc-attribute --vpc-id "$VPC" --enable-dns-hostnames '{"Value":true}'
 
-# Create customer gateway (representing your on-premises or other cloud)
-aws ec2 create-customer-gateway --type ipsec.1 \
-  --public-ip 203.0.113.12 --bgp-asn 65000
-
-# Create VPN connection
-aws ec2 create-vpn-connection --type ipsec.1 \
-  --customer-gateway-id cgw-12345678 --vpn-gateway-id vgw-87654321
+PUB_A=$(aws ec2 create-subnet --vpc-id "$VPC" --cidr-block 10.20.108.0/24 --availability-zone us-east-1a \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=public-a}]' \
+  --query Subnet.SubnetId --output text)
+APP_A=$(aws ec2 create-subnet --vpc-id "$VPC" --cidr-block 10.20.0.0/19 --availability-zone us-east-1a \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=app-a}]' \
+  --query Subnet.SubnetId --output text)
+PUB_B=$(aws ec2 create-subnet --vpc-id "$VPC" --cidr-block 10.20.109.0/24 --availability-zone us-east-1b \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=public-b}]' \
+  --query Subnet.SubnetId --output text)
+APP_B=$(aws ec2 create-subnet --vpc-id "$VPC" --cidr-block 10.20.32.0/19 --availability-zone us-east-1b \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=app-b}]' \
+  --query Subnet.SubnetId --output text)
 ```
 
-### VPC Peering
+The data subnets (`10.20.96.0/22` and `10.20.100.0/22`) follow the same pattern. Zone names such as `us-east-1a` map to different physical zones in different AWS accounts; when you coordinate across accounts, use zone IDs (`use1-az1`), which `aws ec2 describe-availability-zones` lists.
 
-Connect VPCs within the same cloud provider:
+Now the way out. An internet gateway, attached to the VPC, and a public route table that sends everything else to it:
 
 ```bash
-# Create peering connection between VPCs
-aws ec2 create-vpc-peering-connection \
-  --vpc-id vpc-12345678 --peer-vpc-id vpc-87654321
+IGW=$(aws ec2 create-internet-gateway --query InternetGateway.InternetGatewayId --output text)
+aws ec2 attach-internet-gateway --vpc-id "$VPC" --internet-gateway-id "$IGW"
 
-# Accept the peering connection
-aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id pcx-12345678
-
-# Update route tables to enable communication
-aws ec2 create-route --route-table-id rtb-11111111 \
-  --destination-cidr-block 10.1.0.0/16 --vpc-peering-connection-id pcx-12345678
+PUBLIC_RT=$(aws ec2 create-route-table --vpc-id "$VPC" --query RouteTable.RouteTableId --output text)
+aws ec2 create-route --route-table-id "$PUBLIC_RT" --destination-cidr-block 0.0.0.0/0 --gateway-id "$IGW"
+aws ec2 associate-route-table --route-table-id "$PUBLIC_RT" --subnet-id "$PUB_A"
+aws ec2 associate-route-table --route-table-id "$PUBLIC_RT" --subnet-id "$PUB_B"
 ```
 
-## Cloud DNS Services
+The private subnets get outbound access through a NAT gateway. A **regional** NAT gateway is a single gateway that serves every zone of the VPC, so you no longer need one zonal NAT gateway per zone (the default `zonal` mode still exists and is what older guides show):
 
-Cloud providers offer managed DNS services with advanced features.
+```bash
+NAT=$(aws ec2 create-nat-gateway --availability-mode regional --vpc-id "$VPC" \
+  --query NatGateway.NatGatewayId --output text)
+aws ec2 wait nat-gateway-available --nat-gateway-ids "$NAT"
 
-### Route 53 (AWS) Advanced Routing
+PRIVATE_RT=$(aws ec2 create-route-table --vpc-id "$VPC" --query RouteTable.RouteTableId --output text)
+aws ec2 create-route --route-table-id "$PRIVATE_RT" --destination-cidr-block 0.0.0.0/0 --nat-gateway-id "$NAT"
+aws ec2 associate-route-table --route-table-id "$PRIVATE_RT" --subnet-id "$APP_A"
+aws ec2 associate-route-table --route-table-id "$PRIVATE_RT" --subnet-id "$APP_B"
+```
 
-Health-based routing automatically removes unhealthy endpoints:
+Check what a subnet actually uses. A subnet without an explicit association falls back to the VPC's **main route table**, a frequent source of "why can this subnet reach the internet":
 
-```json
+```bash
+aws ec2 describe-route-tables --filters "Name=association.subnet-id,Values=$APP_A" \
+  --query 'RouteTables[].Routes[].[DestinationCidrBlock,GatewayId,NatGatewayId]' --output table
+```
+
+The rest of this part adds security groups, an endpoint and flow logs to the same VPC; [Clean Up](#h2-clean-up) at the end removes everything in the right order. Clicking or scripting this is how you learn it. For anything you keep, use infrastructure as code; [Part 9](/guides/networking-fundamentals/09-network-automation) builds the same VPC with Terraform.
+
+### The Same Network on Other Clouds
+
+The ideas carry over, but the scope of a subnet does not. On AWS a subnet lives in one zone; on Google Cloud and Azure a subnet is regional and spans zones; on DigitalOcean a VPC is a single regional range with no subnets at all. These are standalone examples for comparison, not steps of the exercise above (the AWS one uses its own variable, so it does not overwrite `$VPC`):
+
+```tabs
 {
-  "Changes": [
+  "title": "Create a VPC network and one subnet",
+  "tabs": [
     {
-      "Action": "CREATE",
-      "ResourceRecordSet": {
-        "Name": "api.example.com",
-        "Type": "A",
-        "SetIdentifier": "primary",
-        "TTL": 60,
-        "ResourceRecords": [{ "Value": "203.0.113.10" }],
-        "HealthCheckId": "12345678-1234-1234-1234-123456789012"
-      }
+      "label": "AWS",
+      "lang": "bash",
+      "code": "# subnets are zonal: one per tier per zone\nDEMO_VPC=$(aws ec2 create-vpc --cidr-block 10.20.0.0/16 --query Vpc.VpcId --output text)\naws ec2 create-subnet --vpc-id \"$DEMO_VPC\" --cidr-block 10.20.0.0/19 --availability-zone us-east-1a"
     },
     {
-      "Action": "CREATE",
-      "ResourceRecordSet": {
-        "Name": "api.example.com",
-        "Type": "A",
-        "SetIdentifier": "secondary",
-        "TTL": 60,
-        "ResourceRecords": [{ "Value": "203.0.113.20" }],
-        "HealthCheckId": "87654321-4321-4321-4321-210987654321",
-        "Failover": "SECONDARY"
-      }
+      "label": "Google Cloud",
+      "lang": "bash",
+      "code": "# the network is global, subnets are regional (they span all zones of the region)\ngcloud compute networks create shop --subnet-mode=custom\ngcloud compute networks subnets create app --network=shop --region=us-central1 --range=10.20.0.0/19"
+    },
+    {
+      "label": "Azure",
+      "lang": "bash",
+      "code": "# a VNet is regional; subnets span the region's zones\naz network vnet create --resource-group shop --name shop --address-prefixes 10.20.0.0/16 \\\n  --subnet-name app --subnet-prefixes 10.20.0.0/19"
+    },
+    {
+      "label": "DigitalOcean",
+      "lang": "bash",
+      "code": "# one regional range per VPC; Droplets in the region pick addresses from it\ndoctl vpcs create --name shop --region fra1 --ip-range 10.20.0.0/16"
     }
   ]
 }
 ```
 
-### Geolocation Routing
+Firewalls follow the same split: AWS security groups and Azure network security groups attach to interfaces (and Azure's also to subnets), Google Cloud firewall rules apply to the whole network and select instances by tag or service account, and DigitalOcean Cloud Firewalls attach to Droplets by ID or tag.
 
-Route users to the nearest datacenter:
+## Security Groups and Network ACLs
 
-```bash
-# Create records for different geographic locations
-aws route53 change-resource-record-sets --hosted-zone-id Z12345678 --change-batch '{
-  "Changes": [
-    {
-      "Action": "CREATE",
-      "ResourceRecordSet": {
-        "Name": "api.example.com",
-        "Type": "A",
-        "SetIdentifier": "US-East",
-        "GeoLocation": {"ContinentCode": "NA"},
-        "TTL": 300,
-        "ResourceRecords": [{"Value": "203.0.113.10"}]
-      }
-    },
-    {
-      "Action": "CREATE",
-      "ResourceRecordSet": {
-        "Name": "api.example.com",
-        "Type": "A",
-        "SetIdentifier": "Europe",
-        "GeoLocation": {"ContinentCode": "EU"},
-        "TTL": 300,
-        "ResourceRecords": [{"Value": "203.0.113.20"}]
-      }
-    }
-  ]
-}'
-```
+AWS has two firewalls, and they behave differently:
 
-## Container Networking in the Cloud
+|             | Security group                                                 | Network ACL                                |
+| ----------- | -------------------------------------------------------------- | ------------------------------------------ |
+| Attached to | Network interfaces (instances, load balancers, RDS, endpoints) | Subnets                                    |
+| State       | **Stateful**: replies are allowed automatically                | **Stateless**: replies need their own rule |
+| Rules       | Allow only                                                     | Allow and deny, numbered, first match wins |
+| Sources     | CIDR blocks, prefix lists, **other security groups**           | CIDR blocks only                           |
+| Default     | Deny all inbound, allow all outbound                           | The default NACL allows everything         |
 
-Cloud platforms provide specialized networking for containers.
-
-### AWS EKS Networking
-
-EKS uses the Amazon VPC CNI plugin for pod networking:
-
-```yaml
-# aws-node-daemonset.yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: aws-node
-  namespace: kube-system
-spec:
-  template:
-    spec:
-      containers:
-        - name: aws-node
-          image: amazon/amazon-k8s-cni:v1.11.4
-          env:
-            - name: AWS_VPC_K8S_CNI_VETHPREFIX
-              value: eni
-            - name: AWS_VPC_ENI_MTU
-              value: '9001'
-            - name: AWS_VPC_K8S_CNI_LOG_LEVEL
-              value: DEBUG
-```
-
-Each pod gets an IP address from your VPC subnet range:
+Security groups do almost all the work. Their best feature is referencing another security group as the source: "the app may accept 8080 from anything that has the load balancer's security group", whatever its addresses are. That is the Part 4 zone model, expressed as identities instead of subnets:
 
 ```bash
-# Check pod IP addresses
-kubectl get pods -o wide
+LB_SG=$(aws ec2 create-security-group --vpc-id "$VPC" --group-name shop-lb \
+  --description "load balancer" --query GroupId --output text)
+APP_SG=$(aws ec2 create-security-group --vpc-id "$VPC" --group-name shop-app \
+  --description "app instances" --query GroupId --output text)
+DB_SG=$(aws ec2 create-security-group --vpc-id "$VPC" --group-name shop-db \
+  --description "database" --query GroupId --output text)
 
-# Pods can be reached directly from other VPC resources
-aws ec2 describe-instances --filters "Name=private-ip-address,Values=10.0.1.100"
+aws ec2 authorize-security-group-ingress --group-id "$LB_SG" --protocol tcp --port 443 --cidr 0.0.0.0/0
+aws ec2 authorize-security-group-ingress --group-id "$APP_SG" --protocol tcp --port 8080 --source-group "$LB_SG"
+aws ec2 authorize-security-group-ingress --group-id "$DB_SG" --protocol tcp --port 5432 --source-group "$APP_SG"
 ```
 
-### Service Mesh in the Cloud
-
-Cloud providers offer managed service mesh services:
-
-```yaml
-# AWS App Mesh virtual service
-apiVersion: appmesh.k8s.aws/v1beta2
-kind: VirtualService
-metadata:
-  name: productpage
-  namespace: bookinfo
-spec:
-  awsName: productpage
-  provider:
-    virtualRouter:
-      virtualRouterRef:
-        name: productpage-router
-```
-
-## Cloud Network Monitoring
-
-Cloud providers offer extensive networking monitoring and logging.
-
-### VPC Flow Logs
-
-Capture network traffic for analysis:
+Because a NACL is stateless, allowing inbound HTTPS also needs an outbound rule for the replies, which go to the client's **ephemeral port** (Part 1): 1024 to 65535 covers every operating system. Most teams leave NACLs open and use them only for broad blocks, such as denying a hostile address range for a whole subnet. A new NACL denies everything until you add rules, and you still have to associate it with subnets:
 
 ```bash
-# Enable VPC Flow Logs
-aws ec2 create-flow-logs --resource-type VPC --resource-ids vpc-12345678 \
-  --traffic-type ALL --log-destination-type cloud-watch-logs \
-  --log-group-name VPCFlowLogs
-
-# Query flow logs
-aws logs filter-log-events --log-group-name VPCFlowLogs \
-  --filter-pattern '[version, account, eni, source, destination, srcport, destport="22", protocol="6", packets, bytes, windowstart, windowend, action="REJECT", flowlogstatus]'
+NACL=$(aws ec2 create-network-acl --vpc-id "$VPC" --query NetworkAcl.NetworkAclId --output text)
+aws ec2 create-network-acl-entry --network-acl-id "$NACL" --ingress --rule-number 100 \
+  --protocol tcp --port-range From=443,To=443 --cidr-block 0.0.0.0/0 --rule-action allow
+aws ec2 create-network-acl-entry --network-acl-id "$NACL" --egress --rule-number 100 \
+  --protocol tcp --port-range From=1024,To=65535 --cidr-block 0.0.0.0/0 --rule-action allow
 ```
 
-This query finds rejected SSH connection attempts.
+Admin access does not need SSH open to the internet. **Systems Manager Session Manager** gives a shell through AWS's API with no inbound port at all, controlled by IAM and logged. **EC2 Instance Connect Endpoint** reaches instances in private subnets without public addresses, but it still uses SSH: the instance's security group must allow port 22 from the endpoint's security group (and nowhere else).
 
-### CloudWatch Network Insights
+## Connecting Networks
 
-Monitor application performance across network boundaries:
+A VPC rarely stays alone. The options, from simplest to most general:
+
+- **VPC peering** connects two VPCs (also across accounts and regions). It is not transitive: if A peers with B and B with C, A still cannot reach C. Both sides need routes, and the ranges must not overlap (Part 2).
+- **Transit Gateway** is a regional router that many VPCs and VPNs attach to; routes between them are managed in one place. It charges per attachment hour and per GB.
+- **Site-to-site VPN** (IPsec) and **Direct Connect** (a dedicated line) connect a data centre or office.
+- **PrivateLink** publishes one service from a VPC to other VPCs as an endpoint, without connecting the networks at all, and with overlapping ranges allowed.
+
+### Private Access to AWS Services
+
+Instances in private subnets reach S3, DynamoDB, ECR and other AWS APIs through the NAT gateway by default, and you pay NAT processing for every GB. **VPC endpoints** avoid that:
+
+- **Gateway endpoints** (S3 and DynamoDB only) are route table entries, with no hourly or per-GB charge. Add one to every VPC that uses S3:
 
 ```bash
-# Create network insights path
-aws ec2 create-network-insights-path \
-  --source i-instance1 --destination i-instance2 \
-  --protocol tcp --destination-port 443
-
-# Analyze the path
-aws ec2 start-network-insights-analysis --network-insights-path-id nip-12345678
+S3_ENDPOINT=$(aws ec2 create-vpc-endpoint --vpc-id "$VPC" --vpc-endpoint-type Gateway \
+  --service-name "com.amazonaws.$AWS_REGION.s3" --route-table-ids "$PRIVATE_RT" \
+  --query VpcEndpoint.VpcEndpointId --output text)
 ```
 
-## Cloud Cost Optimization
+- **Interface endpoints** put a network interface for a service (ECR, Secrets Manager, CloudWatch, STS and hundreds more) into your subnets. They cost per zone per hour and per GB, so they pay off for heavy traffic or for subnets with no internet access at all.
 
-Cloud networking can generate significant costs.
+## DNS Inside the VPC
 
-### Data Transfer Costs
+The VPC's resolver answers at the VPC base address plus two (`10.20.0.2`) and at `169.254.169.253` from every subnet. It resolves public names, AWS's internal host names (`ip-10-20-0-15.ec2.internal`), and **private hosted zones** associated with the VPC. A private zone such as `shop.internal` works like the lab's `ns1`: internal names with internal addresses, invisible from the internet. **Route 53 Resolver endpoints** forward queries between the VPC and on-premises DNS servers in either direction.
 
-Understand how data transfer pricing works:
+## Load Balancers and Kubernetes
+
+AWS's managed load balancers map onto Part 5: the **Application Load Balancer** works at layer 7 (paths, host names, headers, weighted target groups for canaries), the **Network Load Balancer** at layer 4 (TCP, UDP, TLS passthrough, static addresses per zone). Both live in the public subnets of each zone and send traffic to **target groups** with their own health checks. The [load balancing part](/guides/introduction-to-aws/07-load-balancing) of the AWS guide sets one up.
+
+Kubernetes on AWS (EKS) uses the **VPC CNI** by default: every pod gets a real VPC address from the node's subnet, so pods are reachable from anywhere in the VPC without overlays, and security groups and flow logs see pod addresses. The cost is address space: a node reserves addresses for the pods it may run. That is why Part 2 gave the app subnets a /19 each. Prefix delegation (a /28 per node interface instead of single addresses) packs more pods per node, and a secondary CIDR from `100.64.0.0/10` can host pods when the main range runs low.
+
+## See the Traffic
+
+**VPC Flow Logs** record accepted and rejected traffic per network interface, aggregated into records over a short capture window and sent to CloudWatch Logs or S3. Some traffic is never logged, such as queries to the Amazon-provided DNS server and instance metadata requests, and records can be skipped under load, so treat them as a sample of the truth rather than a packet log. A record in the default format looks like this (an example from the format AWS documents, not a captured log):
+
+```text
+2 123456789012 eni-0a1b2c3d4e5f67890 203.0.113.10 10.20.0.15 51616 22 6 1 60 1793091600 1793091660 REJECT OK
+```
+
+The fields are the version, account, interface, source and destination address, source and destination port, protocol (6 is TCP), packets, bytes, the capture window, and the action. A burst of `REJECT` records to port 22 from one address is a scan. A `REJECT` for traffic you expected to work means a security group or a network ACL blocked it (or a packet arrived for a connection that was already closed); check both. Turn them on for the VPC (`$FLOW_LOGS_ROLE_ARN` is an IAM role that allows the flow logs service to write to CloudWatch Logs):
 
 ```bash
-# Same AZ: Usually free
-# Same region, different AZ: ~$0.01/GB
-# Different regions: ~$0.02/GB
-# Internet egress: ~$0.09/GB (first 1TB free per month)
+FLOW_LOG=$(aws ec2 create-flow-logs --resource-type VPC --resource-ids "$VPC" --traffic-type REJECT \
+  --log-destination-type cloud-watch-logs --log-group-name /vpc/shop/flow-logs \
+  --deliver-logs-permission-arn "$FLOW_LOGS_ROLE_ARN" --query 'FlowLogIds[0]' --output text)
 ```
 
-Optimize by:
-
-- Keeping related services in the same AZ when possible
-- Using CloudFront or other CDNs for static content
-- Compressing data before transfer
-
-### NAT Gateway Alternatives
-
-NAT Gateways charge for data processing:
+**Reachability Analyzer** answers "can A reach B on this port, and if not, which rule blocks it" by analysing the configuration, without sending a packet. The exercise above creates no instances, so this one is optional: run it when you have two instances in the VPC and have put their IDs in `APP_INSTANCE` and `DB_INSTANCE`:
 
 ```bash
-# Instead of NAT Gateway for all traffic
-# Use VPC endpoints for AWS services
-aws ec2 create-vpc-endpoint --vpc-id vpc-12345678 \
-  --service-name com.amazonaws.us-east-1.s3 \
-  --route-table-ids rtb-11111111
-
-# This allows direct access to S3 without NAT Gateway costs
+PATH_ID=$(aws ec2 create-network-insights-path --source "$APP_INSTANCE" --destination "$DB_INSTANCE" \
+  --protocol tcp --destination-port 5432 --query NetworkInsightsPath.NetworkInsightsPathId --output text)
+ANALYSIS_ID=$(aws ec2 start-network-insights-analysis --network-insights-path-id "$PATH_ID" \
+  --query NetworkInsightsAnalysis.NetworkInsightsAnalysisId --output text)
+aws ec2 describe-network-insights-analyses --network-insights-analysis-ids "$ANALYSIS_ID" \
+  --query 'NetworkInsightsAnalyses[0].[Status,NetworkPathFound]' --output text
 ```
 
-## Troubleshooting Cloud Networking
+## What Networking Costs
 
-Cloud networking issues require systematic debugging.
+Network charges are easy to miss until the bill arrives. The main items on AWS, from AWS's pricing pages in October 2026:
 
-### Connectivity Testing
+| Item                    | Price                                                                                                             | How to keep it down                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| NAT gateway             | USD 0.045 per hour and 0.045 per GB processed (AWS's US East example; regional NAT gateways bill per active zone) | Gateway endpoints for S3 and DynamoDB; interface endpoints for heavy AWS API traffic; IPv6 with an egress-only internet gateway |
+| Public IPv4 address     | USD 0.005 per hour, in use or idle (about USD 3.60 a month)                                                       | Load balancers and NAT instead of public IPs per instance; IPv6                                                                 |
+| Traffic between zones   | USD 0.01 per GB in each direction                                                                                 | Keep chatty services in one zone where availability allows; topology-aware routing in Kubernetes                                |
+| Traffic to the internet | First 100 GB a month free across services, then per GB by region                                                  | CDN caching; compression                                                                                                        |
+| Gateway endpoints       | No charge                                                                                                         | Add them by default                                                                                                             |
+| Interface endpoints     | USD 0.01 per zone per hour and 0.01 per GB                                                                        | Share them across VPCs, or only add the ones you use                                                                            |
 
-Test connectivity step by step:
+Two numbers explain most surprise bills: the NAT gateway's per-GB charge on traffic that could have used a gateway endpoint (container image pulls from ECR, backups to S3), and cross-zone traffic between services that talk constantly. The post on [object storage egress fine print](/posts/object-storage-free-egress-fine-print) compares egress across providers.
+
+## Clean Up
+
+Delete what you created in dependency order: the analysis and flow logs, the endpoint, the NAT gateway (it costs money every hour, so do not skip it), the internet gateway, the security groups from the inside out (each one is referenced by the next), the network ACL, the subnets, the route tables, and finally the VPC. Add the data subnets if you created them:
 
 ```bash
-# 1. Can the instance reach the internet?
-curl -I http://google.com
-
-# 2. Can it reach other instances in the VPC?
-ping 10.0.1.100
-
-# 3. Are security groups allowing the traffic?
-aws ec2 describe-security-groups --group-ids sg-12345678
-
-# 4. Are network ACLs blocking traffic?
-aws ec2 describe-network-acls --network-acl-ids acl-12345678
-
-# 5. Is the route table configured correctly?
-aws ec2 describe-route-tables --route-table-ids rtb-11111111
+# only if you ran the optional Reachability Analyzer example
+aws ec2 delete-network-insights-analysis --network-insights-analysis-id "$ANALYSIS_ID"
+aws ec2 delete-network-insights-path --network-insights-path-id "$PATH_ID"
+aws ec2 delete-flow-logs --flow-log-ids "$FLOW_LOG"
+aws logs delete-log-group --log-group-name /vpc/shop/flow-logs
+aws ec2 delete-vpc-endpoints --vpc-endpoint-ids "$S3_ENDPOINT"
+aws ec2 delete-nat-gateway --nat-gateway-id "$NAT"
+aws ec2 wait nat-gateway-deleted --nat-gateway-ids "$NAT"
+aws ec2 detach-internet-gateway --internet-gateway-id "$IGW" --vpc-id "$VPC"
+aws ec2 delete-internet-gateway --internet-gateway-id "$IGW"
+aws ec2 delete-security-group --group-id "$DB_SG"
+aws ec2 delete-security-group --group-id "$APP_SG"
+aws ec2 delete-security-group --group-id "$LB_SG"
+aws ec2 delete-network-acl --network-acl-id "$NACL"
+aws ec2 delete-subnet --subnet-id "$PUB_A"
+aws ec2 delete-subnet --subnet-id "$APP_A"
+aws ec2 delete-subnet --subnet-id "$PUB_B"
+aws ec2 delete-subnet --subnet-id "$APP_B"
+aws ec2 delete-route-table --route-table-id "$PUBLIC_RT"
+aws ec2 delete-route-table --route-table-id "$PRIVATE_RT"
+aws ec2 delete-vpc --vpc-id "$VPC"
 ```
 
-### Flow Log Analysis
-
-Use flow logs to understand traffic patterns:
+Then check for leftovers that keep billing, such as Elastic IP addresses that nothing uses any more (release them with `aws ec2 release-address --allocation-id ...`):
 
 ```bash
-# Analyze rejected connections
-aws logs filter-log-events --log-group-name VPCFlowLogs \
-  --filter-pattern '[version, account, eni, source, destination, srcport, destport, protocol, packets, bytes, windowstart, windowend, action="REJECT", flowlogstatus]' \
-  --start-time $(date -d '1 hour ago' +%s)000
+aws ec2 describe-addresses --query 'Addresses[].[AllocationId,PublicIp,AssociationId]' --output table
 ```
 
-### Load Balancer Health Checks
+## Common Mistakes
 
-Debug load balancer health check failures:
+- **Overlapping CIDRs** between VPCs, offices and Kubernetes ranges: peering refuses them, and fixing them later means rebuilding. Plan with Part 2's script.
+- **One zonal NAT gateway for all zones.** When its zone fails, every private subnet loses the internet, and traffic from other zones pays cross-zone charges. Use one per zone, or a regional NAT gateway.
+- **SSH or databases open to `0.0.0.0/0`.** Use Session Manager or Instance Connect Endpoint for shells, and security group references for databases. **VPC Block Public Access** can forbid internet access for whole VPCs or subnets at the account level.
+- **Forgetting the route table.** A subnet without an explicit association uses the main route table, which may route to places you did not intend.
+- **Subnets too small for Kubernetes**, where every pod takes a VPC address.
+- **Treating NACLs like security groups.** They are stateless; a missing outbound rule for ephemeral ports breaks every connection in a way that looks like a timeout.
 
-```bash
-# Check target health
-aws elbv2 describe-target-health --target-group-arn arn:aws:elasticloadbalancing:...
+## Summary
 
-# Review load balancer logs
-aws s3 ls s3://my-alb-logs/AWSLogs/123456789012/elasticloadbalancing/us-east-1/
-```
+- A VPC is a private range split into subnets; on AWS each subnet lives in one zone, on Google Cloud and Azure subnets span the region.
+- Route tables decide everything: a route to an internet gateway makes a subnet public, a route to a NAT gateway gives private subnets outbound access.
+- Security groups are stateful and can reference each other; NACLs are stateless subnet filters for broad rules.
+- Peering, Transit Gateway, VPN and PrivateLink connect networks; gateway endpoints keep S3 and DynamoDB traffic off the NAT gateway for free.
+- Flow logs and Reachability Analyzer show what is allowed and what is blocked; NAT processing, public IPv4 and cross-zone traffic dominate the network bill.
 
-## Multi-Region Architecture
+Next, [Part 8](/guides/networking-fundamentals/08-network-monitoring-and-troubleshooting) is a toolkit for the day something in the network breaks.
 
-Design applications that span multiple geographic regions.
+## Keep Learning
 
-### Database Replication
-
-Set up cross-region database replication:
-
-```bash
-# RDS read replica in different region
-aws rds create-db-instance-read-replica \
-  --db-instance-identifier replica-west \
-  --source-db-instance-identifier arn:aws:rds:us-east-1:123456789012:db:primary-db \
-  --db-instance-class db.r5.large
-```
-
-### Global Load Balancing
-
-Use Route 53 for global traffic distribution:
-
-```json
-{
-  "Changes": [
-    {
-      "Action": "CREATE",
-      "ResourceRecordSet": {
-        "Name": "app.example.com",
-        "Type": "A",
-        "SetIdentifier": "us-east-1",
-        "Latency": "us-east-1",
-        "TTL": 60,
-        "ResourceRecords": [{ "Value": "203.0.113.10" }]
-      }
-    },
-    {
-      "Action": "CREATE",
-      "ResourceRecordSet": {
-        "Name": "app.example.com",
-        "Type": "A",
-        "SetIdentifier": "us-west-2",
-        "Latency": "us-west-2",
-        "TTL": 60,
-        "ResourceRecords": [{ "Value": "203.0.113.20" }]
-      }
-    }
-  ]
-}
-```
-
-## Security Best Practices
-
-Cloud networking security requires multiple layers of protection.
-
-### Network Segmentation
-
-Use multiple VPCs for isolation:
-
-```bash
-# Production VPC: 10.0.0.0/16
-# Staging VPC: 10.1.0.0/16
-# Development VPC: 10.2.0.0/16
-# Management VPC: 10.3.0.0/16
-
-# Connect with peering or transit gateway as needed
-```
-
-### Principle of Least Privilege
-
-Only allow necessary network access:
-
-```bash
-# Instead of allowing all traffic from a subnet
-aws ec2 authorize-security-group-ingress --group-id sg-12345678 \
-  --protocol tcp --port 5432 --cidr 10.0.0.0/24
-
-# Allow only from specific security group
-aws ec2 authorize-security-group-ingress --group-id sg-db12345 \
-  --protocol tcp --port 5432 --source-group sg-app12345
-```
-
-In the next section, we'll explore network monitoring and troubleshooting tools that help you maintain visibility into your cloud and on-premises network infrastructure.
-
-Cloud networking provides powerful capabilities, but complexity increases with scale. Start simple, document your architecture, and gradually add advanced features as your needs grow.
-
-Happy cloud networking!
+- [AWS VPC simulator](/games/aws-vpc-simulator)
+- Interview questions: [AWS VPC networking fundamentals](/interview-questions/junior/aws-vpc-networking)
+- Exercise: [build an AWS VPC with Terraform](/exercises/terraform-aws-vpc)
+- [VPC networking](/guides/introduction-to-aws/05-vpc-networking) in the Introduction to AWS guide

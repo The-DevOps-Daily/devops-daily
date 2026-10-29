@@ -36,6 +36,7 @@ Heroku bills can escalate quickly. A typical production application with standar
 The infrastructure price gap is real. But comparing prices alone is misleading.
 
 This analysis examines:
+
 - **Direct costs**: Heroku vs self-hosting infrastructure pricing
 - **Hidden costs**: Engineer time, operational overhead, tooling, incidents
 - **Total Cost of Ownership (TCO)**: What it actually costs to run production infrastructure
@@ -178,10 +179,10 @@ TOTAL: $233/month
 
 ### Infrastructure Cost Comparison
 
-| Scenario | Heroku | Self-Hosted | Savings |
-|----------|--------|-------------|----------|
-| Small production | $380/mo | $29-71/mo | $309-351/mo (82-92%) |
-| Medium production | $2,300/mo | $233/mo | $2,067/mo (90%) |
+| Scenario          | Heroku    | Self-Hosted | Savings              |
+| ----------------- | --------- | ----------- | -------------------- |
+| Small production  | $380/mo   | $29-71/mo   | $309-351/mo (82-92%) |
+| Medium production | $2,300/mo | $233/mo     | $2,067/mo (90%)      |
 
 The infrastructure savings are **dramatic and real**.
 
@@ -197,32 +198,33 @@ Self-hosting requires operational work that Heroku handles automatically.
 
 **Initial Setup (one-time):**
 
-| Task | Hours | Engineer Cost @ $100/hr |
-|------|-------|-------------------------|
-| Server provisioning | 2 | $200 |
-| Security hardening | 4 | $400 |
-| Database setup & tuning | 3 | $300 |
-| SSL certificate automation | 1 | $100 |
-| Deployment pipeline setup | 8 | $800 |
-| Monitoring/alerting setup | 4 | $400 |
-| Backup automation | 3 | $300 |
-| Documentation | 2 | $200 |
-| **TOTAL SETUP** | **27 hrs** | **$2,700** |
+| Task                       | Hours      | Engineer Cost @ $100/hr |
+| -------------------------- | ---------- | ----------------------- |
+| Server provisioning        | 2          | $200                    |
+| Security hardening         | 4          | $400                    |
+| Database setup & tuning    | 3          | $300                    |
+| SSL certificate automation | 1          | $100                    |
+| Deployment pipeline setup  | 8          | $800                    |
+| Monitoring/alerting setup  | 4          | $400                    |
+| Backup automation          | 3          | $300                    |
+| Documentation              | 2          | $200                    |
+| **TOTAL SETUP**            | **27 hrs** | **$2,700**              |
 
 **Ongoing Monthly Maintenance:**
 
-| Task | Hours/mo | Cost/mo @ $100/hr |
-|------|----------|-------------------|
-| Security patches | 2 | $200 |
-| Incident response (avg) | 3 | $300 |
-| Performance monitoring | 1 | $100 |
-| Backup verification | 1 | $100 |
-| Dependency updates | 2 | $200 |
-| Capacity planning | 1 | $100 |
-| On-call rotation overhead | 4 | $400 |
-| **TOTAL MONTHLY** | **14 hrs** | **$1,400/month** |
+| Task                      | Hours/mo   | Cost/mo @ $100/hr |
+| ------------------------- | ---------- | ----------------- |
+| Security patches          | 2          | $200              |
+| Incident response (avg)   | 3          | $300              |
+| Performance monitoring    | 1          | $100              |
+| Backup verification       | 1          | $100              |
+| Dependency updates        | 2          | $200              |
+| Capacity planning         | 1          | $100              |
+| On-call rotation overhead | 4          | $400              |
+| **TOTAL MONTHLY**         | **14 hrs** | **$1,400/month**  |
 
 **This assumes:**
+
 - Mid-level engineer at $100/hour (conservative)
 - Smooth operations (no major incidents)
 - One application/service
@@ -273,6 +275,7 @@ Break-even: $2,700 / $667 = 4.0 months
 If you stay self-hosted for more than 4 months, you come out ahead financially.
 
 **But this assumes:**
+
 - No major incidents requiring significant engineer time
 - Engineer time is actually available (not pulled from product work)
 - You value engineer time at market rate
@@ -280,12 +283,14 @@ If you stay self-hosted for more than 4 months, you come out ahead financially.
 ### Other Hidden Costs
 
 **Risk costs** (hard to quantify):
+
 - **Downtime**: Self-managed means you own incidents. Average cost of downtime varies by business ($5,000-100,000/hour for e-commerce)
 - **Security**: You're responsible for hardening, patches, compliance. Breach costs can be catastrophic
 - **Scaling delays**: Heroku scales instantly. Self-hosted requires capacity planning
 - **Knowledge concentration**: If your DevOps engineer leaves, who maintains infrastructure?
 
 **Tooling costs:**
+
 - Deployment automation (if not using Coolify/CapRover): $500-2,000 setup
 - Monitoring (beyond free tiers): $50-500/month
 - Log aggregation (beyond free tiers): $50-300/month
@@ -293,6 +298,7 @@ If you stay self-hosted for more than 4 months, you come out ahead financially.
 - Security scanning: $50-200/month
 
 **Opportunity cost:**
+
 - Engineer time spent on infrastructure isn't spent on product features
 - For early-stage startups, this can be the most expensive "hidden" cost
 
@@ -507,15 +513,17 @@ Don't migrate everything at once. Use this staged approach:
 
 **Self-hosting is cheaper.** But not 90% cheaper when you factor in engineer time.
 
-**The real question isn't cost.** It's whether you want to own your infrastructure. 
+**The real question isn't cost.** It's whether you want to own your infrastructure.
 
 **Choose Heroku if**:
+
 - You want to focus on product, not infrastructure
 - You're pre-PMF and iterating rapidly
 - Your team lacks ops expertise
 - You value sleep and peace of mind
 
 **Choose self-hosting if**:
+
 - Your Heroku bill is legitimately painful (>$1,000/month)
 - You have ops capability or want to build it
 - You're willing to trade convenience for control
@@ -532,21 +540,29 @@ Make an informed decision based on your actual situation, not mythical 98% savin
 ## Resources for Self-Hosting
 
 **Deployment Tools:**
+
 - [Coolify](https://coolify.io) - Open-source Heroku alternative
 - [CapRover](https://caprover.com) - Easy Docker deployment
 - [Dokku](http://dokku.viewdocs.io/dokku/) - Heroku on your server
 - [Kamal](https://kamal-deploy.org/) - From 37signals
 
 **Cloud Providers:**
+
 - [DigitalOcean](https://www.digitalocean.com/pricing) - Simple, predictable pricing
 - [Hetzner Cloud](https://www.hetzner.com/cloud) - EU-based, very cheap
 - [Linode/Akamai](https://www.linode.com/pricing/) - Alternative to DO
 
 **Monitoring:**
+
 - [Uptime Robot](https://uptimerobot.com) - Free uptime monitoring
 - [Netdata](https://www.netdata.cloud/) - Real-time performance monitoring
 
 **TCO Calculators:**
+
 - Build your own spreadsheet with this article's framework
 - Include infrastructure costs, engineer time, tooling, and risk factors
 - [DigitalOcean](https://m.do.co/c/2a9bba940f39) - Simple, predictable pricing
+
+**Keep the bill in check after the move:**
+
+- [FinOps for DevOps Engineers](/guides/finops-for-devops-engineers): tags, budgets and cost checks for teams that run their own infrastructure

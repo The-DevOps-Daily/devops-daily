@@ -146,3 +146,5 @@ Postgres TLS starts with an in-protocol handshake (that 8-byte `SSLRequest` mess
 - For Supabase specifically: grab their root CA, expect IPv6-only direct hosts on the free plan, and read the pooler hostname from your own project settings.
 
 The full context, with measured numbers around it, is in our [Neon vs Supabase free tier benchmarks](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks), and the harness where we hit this is open at [The-DevOps-Daily/serverless-postgres-benchmarks](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks) with a [live results dashboard](https://postgres-benchmarks.devops-daily.com/).
+
+For what `self-signed certificate in certificate chain` and other certificate errors mean, and the usual fix for each, see [Common PKI Problems](/guides/cryptography-essentials/04-pki#h2-common-pki-problems) in our Cryptography Essentials guide.

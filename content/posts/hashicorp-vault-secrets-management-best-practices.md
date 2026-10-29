@@ -369,3 +369,5 @@ Concrete next steps:
 5. **Ship the audit log to your SIEM** so secret access shows up next to the rest of your security telemetry.
 
 Start with step one. Turning a single forever-password into a one-hour credential is the smallest change that removes the largest class of secret leaks you have.
+
+For the same idea applied to database roles, Linux service users, Kubernetes RBAC and cloud IAM, read [Least Privilege: Databases, Linux, Kubernetes and Cloud IAM](/guides/security-principles/03-least-privilege) in our Security Principles guide.

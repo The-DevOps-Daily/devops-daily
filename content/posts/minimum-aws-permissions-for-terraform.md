@@ -83,3 +83,5 @@ Update your IAM policy based on the errors or logs. Repeat this process until Te
 - **Test in Non-Production**: Validate your permissions in a non-production environment before applying them to production.
 
 By following these steps, you can determine the minimum AWS permissions required for your Terraform configurations, enhancing security and compliance while maintaining functionality.
+
+To lint a policy for actions that are broader than they need to be, and to check it with IAM Access Analyzer's policy validation, read [Write Narrow Policies, and Lint Them](/guides/security-principles/03-least-privilege#h3-write-narrow-policies-and-lint-them) in our Security Principles guide.

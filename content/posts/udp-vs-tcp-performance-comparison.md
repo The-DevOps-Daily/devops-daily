@@ -259,6 +259,7 @@ This is why protocols like QUIC exist - they use UDP as a transport but implemen
 ## Practical Recommendations
 
 Choose UDP when:
+
 - You're sending small, independent messages
 - Occasional data loss is acceptable
 - You need multicast or broadcast
@@ -266,6 +267,7 @@ Choose UDP when:
 - Latency is more important than reliability
 
 Choose TCP when:
+
 - You need reliable, ordered delivery
 - You're transferring files or bulk data
 - You don't want to implement reliability logic yourself
@@ -275,3 +277,5 @@ Choose TCP when:
 The speed difference between UDP and TCP is real but often overstated. In many real-world scenarios, the difference is less than 2x, and once you add necessary reliability features to UDP, TCP's battle-tested implementation often wins.
 
 Your network conditions, message patterns, and reliability requirements matter far more than the raw protocol speed. Profile your specific use case before optimizing.
+
+To see TCP and UDP side by side on a practice network you build yourself, read [Network Fundamentals: Layers, IP, TCP, UDP and Ports](/guides/networking-fundamentals/01-network-fundamentals-and-protocols) in our networking guide.

@@ -315,3 +315,5 @@ ssh-add -l
 When using the agent, SSH automatically tries all loaded keys. While convenient, this can cause issues if you hit authentication attempt limits. The SSH config approach with `IdentitiesOnly yes` prevents this by only trying the specified key.
 
 Each method has its place: environment variables for one-off commands, SSH config for permanent multi-key setups, Git config for repository-specific settings, and SSH agent for interactive sessions. Choose based on whether you need temporary flexibility or persistent configuration. For most development workflows, the SSH config approach offers the best balance of convenience and control.
+
+Git can also sign your commits with an SSH key, so you do not need GPG. The [signed Git commits section](/guides/cryptography-essentials/04-pki#h3-signed-git-commits-with-an-ssh-key) of our Cryptography Essentials guide shows the setup and the allowed signers file that verifies them.

@@ -1,340 +1,284 @@
 ---
-title: 'A04: Insecure Design'
-description: 'Learn about insecure design vulnerabilities, the difference between secure design and secure implementation, and how to build security into your applications from the start.'
+title: 'A06:2025 Insecure Design'
+description: 'A06:2025 Insecure Design: business logic flaws, threat modeling, abuse cases turned into tests, safe recovery flows and paved roads for secure defaults.'
+order: 7
 ---
 
-Insecure Design is a new category in the 2021 OWASP Top 10, focusing on risks related to design and architectural flaws. This is different from implementation bugs—insecure design means that even a perfect implementation of a flawed design is still insecure.
+**TLDR**: Insecure design means a security control was never planned, so no amount of careful coding adds it later: a checkout that trusts the price the browser sends, a booking flow with no limit on group size, a password reset based on security questions. Find these flaws before code exists, with threat modeling during refinement, and write down the abuse cases next to the user stories. Then turn each abuse case into a test, and give teams secure building blocks (paved roads) so the safe way is also the easy way.
 
-## What is Insecure Design?
+The OWASP Top 10 separates two kinds of flaws. An **implementation defect** is a mistake in building a control that was designed correctly, such as the SQL injection in [A05](/guides/owasp-top-10/03-injection). An **insecure design** is a control that is missing from the design itself. The [A06:2025 page](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/) puts it plainly: an insecure design cannot be fixed by a perfect implementation.
 
-Insecure design occurs when security requirements and controls are not considered during the design phase. It's the difference between:
+The category slid from fourth to sixth place in 2025, and OWASP credits better threat modeling and secure design practices across the industry. It groups 39 CWEs, including trust boundary violations (CWE-501), unrestricted file upload (CWE-434) and unprotected storage of credentials (CWE-256), and it explicitly includes flaws in business logic.
 
-- **Insecure Implementation** - A flaw in how you built something (e.g., SQL injection from string concatenation)
-- **Insecure Design** - A flaw in what you decided to build (e.g., no rate limiting on password attempts)
+## Prerequisites
 
-You can't fix insecure design with a perfect implementation. If you design a house with no locks on the doors, installing the doors perfectly doesn't make the house secure.
+- The companion app from the [guide introduction](/guides/owasp-top-10#h2-the-companion-app), and a terminal in its directory.
+- The basics of threat modeling help. The [Threat Modeling guide](/guides/threat-modeling) covers STRIDE and attack trees.
 
-## Common Insecure Design Patterns
+## Design Security In, Then Test It
 
-### 1. Missing Rate Limiting
+OWASP describes three parts of secure design: gathering security requirements with the business, creating a secure design with threat modeling, and a secure development lifecycle that learns from mistakes. In day-to-day work that becomes a loop for every significant feature:
 
-**The Problem:**
-
-Without rate limiting, attackers can make unlimited attempts at guessing passwords, brute-forcing tokens, or overwhelming your system.
-
-```javascript
-// INSECURE DESIGN: No rate limiting on login
-app.post('/login', async (req, res) => {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
-  
-  if (user && await bcrypt.compare(password, user.password)) {
-    return res.json({ token: generateToken(user) });
-  }
-  
-  res.status(401).json({ error: 'Invalid credentials' });
-});
-```
-
-An attacker can try millions of password combinations with no restrictions.
-
-**Secure Design:**
-
-```javascript
-const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
-
-// Global rate limiter for all requests
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 100,                   // 100 requests per window
-  message: 'Too many requests, please try again later'
-});
-
-// Strict limiter for authentication endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 5,                     // 5 attempts per window
-  skipSuccessfulRequests: true,
-  message: 'Too many login attempts, please try again later',
-  // Use Redis for distributed rate limiting across multiple servers
-  store: new RedisStore({ client: redisClient })
-});
-
-// Apply limiters
-app.use(globalLimiter);
-app.post('/login', authLimiter, loginHandler);
-app.post('/forgot-password', authLimiter, forgotPasswordHandler);
-```
-
-Also implement account lockout after repeated failures:
-
-```javascript
-async function loginHandler(req, res) {
-  const { username, password } = req.body;
-  const user = await User.findOne({ username });
-  
-  // Check if account is locked
-  if (user?.lockedUntil && user.lockedUntil > new Date()) {
-    const remainingTime = Math.ceil((user.lockedUntil - new Date()) / 60000);
-    return res.status(423).json({
-      error: `Account locked. Try again in ${remainingTime} minutes.`
-    });
-  }
-  
-  if (user && await bcrypt.compare(password, user.password)) {
-    // Reset failed attempts on successful login
-    await User.updateOne(
-      { _id: user._id },
-      { $set: { failedAttempts: 0, lockedUntil: null } }
-    );
-    return res.json({ token: generateToken(user) });
-  }
-  
-  // Track failed attempts
-  if (user) {
-    const failedAttempts = (user.failedAttempts || 0) + 1;
-    const update = { failedAttempts };
-    
-    // Lock account after 5 failed attempts
-    if (failedAttempts >= 5) {
-      update.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-    }
-    
-    await User.updateOne({ _id: user._id }, { $set: update });
-  }
-  
-  res.status(401).json({ error: 'Invalid credentials' });
+```diagram
+{
+  "type": "loop",
+  "nodes": [
+    { "label": "Requirements", "sub": "data, users, limits", "variant": "soft" },
+    { "label": "Threat model", "sub": "what can go wrong?", "variant": "soft" },
+    { "label": "Abuse cases", "sub": "written into the story", "variant": "solid" },
+    { "label": "Tests", "sub": "one per abuse case", "variant": "solid" },
+    { "label": "Review", "sub": "incidents and findings", "variant": "accent" }
+  ],
+  "loopBack": "update the model when the feature changes",
+  "goal": "controls that exist because someone planned them"
 }
 ```
 
-### 2. Predictable Resource Identifiers
+The useful questions in a refinement session are short:
 
-**The Problem:**
+- What data does this feature touch, and who may see or change it?
+- Which values come from the client, and which must the server decide?
+- What are the business limits (amounts, quantities, rates), and where are they enforced?
+- What happens when a step fails halfway, or runs twice, or runs in parallel?
+- How would someone abuse this feature at scale, with a script?
 
-Using sequential or predictable identifiers makes it easy for attackers to enumerate resources.
+## Business Logic: Trust the Server, Not the Client
+
+The vulnerable app's checkout accepts the total that the client sends:
 
 ```javascript
-// INSECURE DESIGN: Sequential user IDs
-// /api/users/1, /api/users/2, /api/users/3...
-const user = await User.findById(req.params.id);  // id = 1, 2, 3...
-
-// INSECURE DESIGN: Predictable reset tokens
-const resetToken = `reset-${userId}-${Date.now()}`;
+// A06: the client sends the total and the server believes it
+app.post('/api/orders', (req, res) => {
+  const { totalCents } = req.body;
+  const { lastInsertRowid } = db
+    .prepare('INSERT INTO orders (user_id, total_cents) VALUES (?, ?)')
+    .run(req.user.id, totalCents);
+  res.status(201).json({ orderId: Number(lastInsertRowid), totalCents });
+});
 ```
 
-**Secure Design:**
+Nothing in that code is "injection" or a "missing check" in the usual sense; it does exactly what it was designed to do. The design is the problem: the browser decides the price. The fixed design lets the client choose only what it is allowed to choose, the product and the quantity, and derives everything else on the server, including a business limit that came from the requirements:
 
 ```javascript
-const { v4: uuidv4 } = require('uuid');
-const crypto = require('crypto');
+// POST /api/orders: the server sets the price and enforces the business limits.
+const MAX_QUANTITY = 10; // a business rule, written down in the user story
 
-// Use UUIDs for resource identifiers
-const newUser = new User({
-  publicId: uuidv4(),  // 550e8400-e29b-41d4-a716-446655440000
-  // ...
-});
+export function createOrder({ db }) {
+  const product = db.prepare('SELECT id, price_cents FROM products WHERE id = ?');
+  const insert = db.prepare('INSERT INTO orders (user_id, total_cents) VALUES (?, ?)');
 
-// Use cryptographically random tokens
-function generateSecureToken() {
-  return crypto.randomBytes(32).toString('hex');  // 64 character hex string
+  return (req, res) => {
+    const { productId, quantity } = req.body ?? {};
+    if (!Number.isSafeInteger(productId) || !Number.isSafeInteger(quantity)) {
+      return res.status(400).json({ error: 'productId and quantity must be integers' });
+    }
+    if (quantity < 1 || quantity > MAX_QUANTITY) {
+      return res.status(422).json({ error: `quantity must be between 1 and ${MAX_QUANTITY}` });
+    }
+    const p = product.get(productId);
+    if (!p) return res.status(404).json({ error: 'Unknown product' });
+    // Any price or total in the request body is ignored.
+    const totalCents = p.price_cents * quantity;
+    const { lastInsertRowid } = insert.run(req.user.id, totalCents);
+    res.status(201).json({ orderId: Number(lastInsertRowid), totalCents });
+  };
 }
-
-const resetToken = generateSecureToken();
-// Store hashed version of token, send plain version to user
-const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 ```
 
-### 3. Missing Business Logic Validation
-
-**The Problem:**
-
-Trusting client-side validation or not validating business rules on the server.
-
-```javascript
-// INSECURE DESIGN: Trust client-provided price
-app.post('/checkout', async (req, res) => {
-  const { items, total } = req.body;  // Client sends the total!
-  
-  await Order.create({
-    items,
-    total,  // Attacker could send total: 0.01
-    userId: req.user.id
-  });
-});
-```
-
-**Secure Design:**
-
-```javascript
-// SECURE: Calculate total server-side
-app.post('/checkout', async (req, res) => {
-  const { items } = req.body;
-  
-  // Fetch current prices from database
-  const productIds = items.map(item => item.productId);
-  const products = await Product.find({ _id: { $in: productIds } });
-  
-  // Create price lookup map
-  const priceMap = new Map(products.map(p => [p._id.toString(), p.price]));
-  
-  // Calculate total server-side with validation
-  let total = 0;
-  for (const item of items) {
-    const price = priceMap.get(item.productId);
-    if (!price) {
-      return res.status(400).json({ error: `Invalid product: ${item.productId}` });
-    }
-    if (item.quantity < 1 || item.quantity > 100) {
-      return res.status(400).json({ error: 'Invalid quantity' });
-    }
-    total += price * item.quantity;
-  }
-  
-  await Order.create({
-    items,
-    total,  // Server-calculated, tamper-proof
-    userId: req.user.id
-  });
-});
-```
-
-### 4. Insufficient Anti-Automation
-
-**The Problem:**
-
-Not protecting sensitive operations from automated abuse.
-
-```javascript
-// INSECURE DESIGN: No CAPTCHA on registration
-app.post('/register', async (req, res) => {
-  const user = await User.create(req.body);
-  res.json({ success: true });
-});
-// Bots can create thousands of fake accounts
-```
-
-**Secure Design:**
-
-```javascript
-const axios = require('axios');
-
-async function verifyCaptcha(token) {
-  const response = await axios.post(
-    'https://www.google.com/recaptcha/api/siteverify',
-    null,
+```terminal
+{
+  "title": "the server sets the price and the limits",
+  "prompt": "$",
+  "steps": [
     {
-      params: {
-        secret: process.env.RECAPTCHA_SECRET,
-        response: token
-      }
+      "cmd": "export DEMO_PASSWORD='correct horse battery staple'"
+    },
+    {
+      "cmd": "node src/server.js > app.log 2>&1 &"
+    },
+    {
+      "cmd": "until curl -s -o /dev/null localhost:3000/; do sleep 0.2; done"
+    },
+    {
+      "cmd": "ALICE=$(curl -s localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"alice\", \"password\": \"correct horse battery staple\"}' | jq -r .token)"
+    },
+    {
+      "cmd": "curl -s localhost:3000/api/orders -H \"authorization: Bearer $ALICE\" -H 'content-type: application/json' -d '{\"productId\": 1, \"quantity\": 2, \"totalCents\": 1}'; echo",
+      "output": "{\"orderId\":1,\"totalCents\":99800}"
+    },
+    {
+      "cmd": "curl -s localhost:3000/api/orders -H \"authorization: Bearer $ALICE\" -H 'content-type: application/json' -d '{\"productId\": 2, \"quantity\": 600}'; echo",
+      "output": "{\"error\":\"quantity must be between 1 and 10\"}"
+    },
+    {
+      "cmd": "kill %1"
     }
-  );
-  return response.data.success && response.data.score >= 0.5;
+  ]
 }
+```
 
-app.post('/register', async (req, res) => {
-  // Verify CAPTCHA first
-  const captchaValid = await verifyCaptcha(req.body.captchaToken);
-  if (!captchaValid) {
-    return res.status(400).json({ error: 'CAPTCHA verification failed' });
-  }
-  
-  const user = await User.create(req.body);
-  res.json({ success: true });
+The `totalCents` that the client sent was ignored. The second request is OWASP's cinema example in miniature: a group booking flow with no upper limit lets one request book hundreds of seats. The limit belongs in the requirements, and the code enforces what the requirements say.
+
+## Turn Abuse Cases Into Tests
+
+OWASP recommends writing use cases and misuse cases for each tier and testing that critical flows resist the threat model. The companion app's design tests are two abuse cases written as code:
+
+```javascript
+import assert from 'node:assert/strict';
+import { after, before, describe, it } from 'node:test';
+import { startApp } from './helpers.js';
+
+describe('A06 insecure design: orders', () => {
+  let app, alice;
+  before(async () => {
+    app = await startApp();
+    alice = await app.loginAs('alice');
+  });
+  after(() => app.close());
+
+  const order = (body) => app.call('POST', '/api/orders', { token: alice, body });
+
+  it('ignores a total sent by the client', async () => {
+    const res = await order({ productId: 1, quantity: 2, totalCents: 1 });
+    assert.equal(res.status, 201);
+    assert.equal(res.json.totalCents, 2 * 49900);
+  });
+
+  it('enforces the quantity limit from the business rules', async () => {
+    assert.equal((await order({ productId: 2, quantity: 600 })).status, 422);
+  });
 });
 ```
 
-## Secure Design Principles
-
-### 1. Threat Modeling
-
-Before writing code, identify potential threats using frameworks like STRIDE:
-
-- **S**poofing - Can someone impersonate a user?
-- **T**ampering - Can data be modified in transit or at rest?
-- **R**epudiation - Can actions be denied without proof?
-- **I**nformation Disclosure - Can sensitive data leak?
-- **D**enial of Service - Can the system be overwhelmed?
-- **E**levation of Privilege - Can users gain unauthorized access?
-
-### 2. Defense in Depth
-
-Don't rely on a single security control. Layer multiple defenses:
-
-```javascript
-// Multiple layers protecting sensitive data
-app.get('/api/admin/users', 
-  authenticateRequest,     // Layer 1: Must be logged in
-  requireRole('admin'),    // Layer 2: Must be admin
-  rateLimit({ max: 100 }), // Layer 3: Rate limiting
-  validateQuery,           // Layer 4: Input validation
-  auditLog,                // Layer 5: Logging for detection
-  adminUsersHandler
-);
-```
-
-### 3. Secure by Default
-
-Default configurations should be secure. Users should have to explicitly enable risky features.
-
-```javascript
-// Secure defaults for session configuration
-const sessionConfig = {
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true,        // Default: HTTPS only
-    httpOnly: true,      // Default: No JavaScript access
-    sameSite: 'strict',  // Default: CSRF protection
-    maxAge: 3600000      // Default: 1 hour expiry
-  }
-};
-
-// Only allow insecure cookies in development
-if (process.env.NODE_ENV === 'development') {
-  sessionConfig.cookie.secure = false;
+```terminal
+{
+  "title": "the abuse cases as tests",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "npm test -- tests/design.test.js",
+      "output": "> owasp-top-10-demo@1.0.0 test\n> node --test --test-reporter=spec tests/design.test.js\n\n▶ A06 insecure design: orders\n  ✔ ignores a total sent by the client (39.788155ms)\n  ✔ enforces the quantity limit from the business rules (29.672456ms)\n✔ A06 insecure design: orders (526.774299ms)\nℹ tests 2\nℹ suites 1\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1519.860053"
+    }
+  ]
 }
 ```
 
-### 4. Fail Securely
+Good abuse cases name the attacker's goal, not a technical trick: "a customer pays less than the price", "a user reads another tenant's report", "a bot buys the whole stock in the first second". Each one should end up as at least one test.
 
-When errors occur, fail in a secure state:
+## Common Design Flaws
+
+### Recovery Flows
+
+OWASP's first example is a credential recovery flow based on security questions, which NIST SP 800-63B, the OWASP ASVS and the Top 10 all reject, because other people can know or find the answers. Design account recovery around something the user has: a reset link sent to a verified email address, or a recovery code issued when the account was created. Reset tokens need their own design:
 
 ```javascript
-// INSECURE: Fail open
-async function checkPermission(userId, resource) {
-  try {
-    const hasAccess = await permissionService.check(userId, resource);
-    return hasAccess;
-  } catch (error) {
-    console.error('Permission check failed:', error);
-    return true;  // WRONG: Allow access on error
-  }
-}
+import { createHash, randomBytes } from 'node:crypto';
 
-// SECURE: Fail closed
-async function checkPermission(userId, resource) {
-  try {
-    const hasAccess = await permissionService.check(userId, resource);
-    return hasAccess;
-  } catch (error) {
-    console.error('Permission check failed:', error);
-    return false;  // CORRECT: Deny access on error
-  }
+// Store only a hash of the token, give it a short life, and allow one use.
+export function createResetToken(db, userId) {
+  const token = randomBytes(32).toString('base64url');
+  const tokenHash = createHash('sha256').update(token).digest('hex');
+  db.prepare('DELETE FROM password_resets WHERE user_id = ?').run(userId);
+  db.prepare('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES (?, ?, ?)').run(
+    userId,
+    tokenHash,
+    Date.now() + 15 * 60 * 1000
+  );
+  return token; // goes into the email link, never into a log
 }
 ```
 
-## Key Takeaways
+When the user follows the link, look the token up by its hash, check the expiry, delete the row in the same transaction that changes the password, and end the user's other sessions. Answer the reset request with the same message whether or not the address has an account.
 
-1. **Design security in from the start** - Retrofitting security is expensive and often incomplete
-2. **Perform threat modeling** - Identify risks before they become vulnerabilities
-3. **Never trust client input** - Validate all business logic server-side
-4. **Implement rate limiting** - Protect against brute force and enumeration
-5. **Use unpredictable identifiers** - UUIDs and cryptographic tokens
-6. **Apply defense in depth** - Multiple layers of security controls
-7. **Fail securely** - Deny access when something goes wrong
-8. **Secure by default** - Require explicit action to enable risky features
+### Automation and Abuse at Scale
 
-Secure design requires thinking like an attacker during the planning phase. The effort invested in secure design pays dividends throughout the application's lifetime.
+Rate limits protect against more than password guessing. OWASP's scalper example is a store where bots buy every graphics card in the first seconds of a launch. Each business action that has value at scale (sign-ups, coupons, bookings, purchases of scarce stock, sending messages) needs its own limit and its own signals, such as purchases within seconds of availability. Decide them in the design, because they change the user experience.
+
+### Trust Boundaries and Tenants
+
+Write down where data crosses a trust boundary (browser to API, API to a partner, one tenant to another) and what is checked at each crossing. In a multi-tenant system, carry the tenant ID from the session through every layer, and segregate tenants by design: separate schemas, databases or row-level policies, not only a `WHERE tenant_id = ?` that every query must remember. File uploads are another boundary: decide the allowed types, sizes and storage location (outside the web root, on a separate domain) before writing the upload handler.
+
+## Paved Roads
+
+The most effective secure design work makes the safe way the default. OWASP calls these paved roads and secure component libraries: a shared project template, internal libraries and platform defaults that already include the controls, so each team does not design them again.
+
+The companion app's `createApp` is a small example: every route it serves gets security headers, a request ID, a body size limit, `no-store` on API responses, authentication by default under `/api`, and the central error handler, without the route's author doing anything:
+
+```javascript
+export function createApp({ db, log, safeFetch = createSafeFetch() }) {
+  const app = express();
+  // Security headers; helmet also removes X-Powered-By. The CSP replaces helmet's
+  // "https:" and "data:" sources with 'self', since this app loads nothing else.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          'font-src': ["'self'"],
+          'img-src': ["'self'"],
+          'style-src': ["'self'"],
+          'frame-ancestors': ["'none'"],
+        },
+      },
+    })
+  );
+  app.use((req, res, next) => {
+    res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    next();
+  });
+  app.use(requestId);
+  app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store'); // API responses hold private data and tokens
+    next();
+  });
+  app.use(express.json({ limit: '10kb' })); // nothing without a limit
+
+  app.get('/', home);
+  app.get('/hello', hello);
+
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5, // failed attempts per client IP per window
+    skipSuccessfulRequests: true,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    // Requests over the limit never reach the login handler, so log them here.
+    handler: (req, res, next, options) => {
+      const name = typeof req.body?.name === 'string' ? req.body.name.slice(0, 64) : '';
+      log.warn(
+        { event: `authn_login_fail_max:${name},${options.limit}`, ip: req.ip, reqId: req.id },
+        'login rate limit'
+      );
+      res.status(options.statusCode).json({ error: 'Too many login attempts, try again later' });
+    },
+  });
+  app.post('/api/login', loginLimiter, login({ db, log }));
+```
+
+In a larger organization, the same idea scales to a service template, an internal SDK with an SSRF-safe HTTP client, a shared authorization module and infrastructure modules with secure defaults.
+
+## Common Mistakes
+
+- **Threat modeling once.** Update the model when the data flows or permissions change.
+- **Requirements without limits.** "Users can book seats" needs "up to 15 per booking".
+- **Trusting values the client computes**: prices, totals, discounts, roles, account IDs.
+- **Security questions and other knowledge-based recovery.**
+- **Testing only the happy path.** Every abuse case from the threat model needs a test.
+- **Leaving each team to design its own controls.** Build paved roads instead.
+
+## Summary
+
+- Insecure design is a missing control, and code alone cannot add it later.
+- Threat model features during refinement, and write abuse cases into the stories.
+- Derive prices, totals and limits on the server; the client chooses only what it may choose.
+- Design recovery, rate limits, trust boundaries and tenant isolation up front.
+- Turn abuse cases into tests, and give teams secure defaults they get for free.
+
+Next, [A07:2025 Authentication Failures](/guides/owasp-top-10/07-authentication-failures) covers logins, passwords, sessions and MFA.
+
+## Keep Learning
+
+- [Threat Modeling guide](/guides/threat-modeling)
+- [Practical exercises in the Threat Modeling guide](/guides/threat-modeling/04-practical-exercises)
+- [Designing Rate Limiting for APIs](/posts/designing-rate-limiting-for-apis)
+- [Interview questions: Security Architecture and DevSecOps](/interview-questions/senior/security-architecture)

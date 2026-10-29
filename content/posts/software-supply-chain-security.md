@@ -418,3 +418,5 @@ The tools are mature, the workflows are documented, and most of this can be auto
 - [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Test your deployed artifacts at runtime to catch vulnerabilities that static analysis and signing cannot detect
 
 For a framework to decide which supply chain risks to address first, see our guide on [threat modeling](/guides/threat-modeling).
+
+For build provenance with `actions/attest-build-provenance` and `gh attestation verify`, and why provenance proves origin but not intent, read [A08:2025 Software or Data Integrity Failures](/guides/owasp-top-10/08-software-integrity-failures#h3-build-provenance) in our OWASP Top 10 guide.

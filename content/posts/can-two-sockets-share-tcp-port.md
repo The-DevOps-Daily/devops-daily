@@ -1,6 +1,6 @@
 ---
 title: 'Can Two Different Sockets Share a TCP Port?'
-excerpt: "Understand how TCP port sharing works with SO_REUSEADDR and SO_REUSEPORT, when multiple sockets can bind to the same port, and the limitations you need to know."
+excerpt: 'Understand how TCP port sharing works with SO_REUSEADDR and SO_REUSEPORT, when multiple sockets can bind to the same port, and the limitations you need to know.'
 category:
   name: 'Networking'
   slug: 'networking'
@@ -252,6 +252,7 @@ print("Listening on 192.168.1.10:8080 and 10.0.0.5:8080")
 ```
 
 This works because the bind addresses are different:
+
 - `192.168.1.10:8080` vs `10.0.0.5:8080`
 
 If you bind to `0.0.0.0:8080` (all interfaces), you cannot bind another socket to any specific IP on port 8080.
@@ -277,6 +278,7 @@ sock2.bind(('0.0.0.0', 9090))
 ```
 
 Both sockets receive a copy of each incoming packet. This is useful for:
+
 - Multiple processes monitoring the same data
 - Service discovery protocols
 - Multicast receivers
@@ -349,19 +351,24 @@ else:
 ## When to Use Port Sharing
 
 **Use `SO_REUSEADDR`:**
+
 - Always, for server applications
 - Allows quick restart after crashes
 - Standard practice
 
 **Use `SO_REUSEPORT`:**
+
 - Multi-process servers for parallel processing
 - Taking advantage of multiple CPU cores
 - When you want the kernel to load balance
 - Only when available on your platform
 
 **Use multiple IPs with same port:**
+
 - When you want different services on different interfaces
 - Internal vs external access on same port
 - Segregating traffic by network
 
 Two sockets can share a port in multiple ways - through accepting multiple connections on a listening socket, using `SO_REUSEPORT` for multi-process load balancing, or binding to different IP addresses. Understanding these mechanisms helps you build reliable, high-performance network applications.
+
+For a hands-on walk through addresses, ports, sockets and TCP connection states, see [Network Fundamentals: Layers, IP, TCP, UDP and Ports](/guides/networking-fundamentals/01-network-fundamentals-and-protocols), part 1 of our networking guide.

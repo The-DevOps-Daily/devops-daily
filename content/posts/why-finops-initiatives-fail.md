@@ -182,3 +182,5 @@ The model that works:
 - **Cost optimization** happens continuously by teams with context, not episodically by a central team without it
 
 Stop trying to optimize for teams. Enable teams to optimize themselves.
+
+For the team side in practice, showback, unit costs and a weekly cost review, see part 6 of our [FinOps for DevOps Engineers](/guides/finops-for-devops-engineers/06-cultural-shift) guide.

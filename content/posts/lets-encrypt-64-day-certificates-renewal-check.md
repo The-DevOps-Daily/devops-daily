@@ -239,3 +239,5 @@ Then:
 - **Staging, not production.** Production should behave the same way from February, but we only issued staging certificates.
 
 The short version: in our tests, the clients with ARI enabled renewed on Let's Encrypt's window, and that window was the same share of the lifetime at 45, 64 and 90 days. If it does not, find out what number it renews on, because that number was chosen for 90 days.
+
+For an expiry check that tests what your servers actually present, with a threshold set relative to the certificate's lifetime, read [Monitor Certificate Expiry](/guides/cryptography-essentials/03-tls-ssl#h2-monitor-certificate-expiry) in our Cryptography Essentials guide.

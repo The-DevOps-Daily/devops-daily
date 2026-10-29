@@ -140,6 +140,8 @@ A new Shai-Hulud wave landed on npm at 01:56 UTC on May 19, 2026 through the com
 
 Run the grep above against every lockfile in your stack right now. If you have a match in the malicious window, rotate npm publish tokens first, then GitHub tokens, then cloud IAM, then service-account tokens, then SSH keys. After that, harden CI with `--ignore-scripts`, exact pins, and an egress allowlist so the next wave does not get the same easy ride.
 
+For `--ignore-scripts`, release-age delays and a pull request workflow with a read-only token and pinned actions, read [A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components) in our OWASP Top 10 guide.
+
 ## Source
 
 Socket's running disclosure: [`socket.dev/blog/antv-packages-compromised`](https://socket.dev/blog/antv-packages-compromised). The page is updated as the investigation continues.

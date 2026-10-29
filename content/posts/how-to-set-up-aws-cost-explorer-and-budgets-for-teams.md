@@ -1,6 +1,6 @@
 ---
 title: 'How to Set Up AWS Cost Explorer and Budgets for Teams'
-excerpt: "Learn how to set up AWS Cost Explorer and Budgets to track cloud spending, prevent cost overruns, and keep your team informed about AWS expenses."
+excerpt: 'Learn how to set up AWS Cost Explorer and Budgets to track cloud spending, prevent cost overruns, and keep your team informed about AWS expenses.'
 category:
   name: 'AWS'
   slug: 'aws'
@@ -134,6 +134,7 @@ Apply filters to narrow the budget scope:
 - **Linked accounts** - Monitor spending in specific AWS accounts
 
 For example, create separate budgets for:
+
 - Development environment
 - Production environment
 - Specific team or project
@@ -224,11 +225,7 @@ Not everyone needs full billing access. Use IAM to grant appropriate permissions
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "ce:Get*",
-        "ce:Describe*",
-        "ce:List*"
-      ],
+      "Action": ["ce:Get*", "ce:Describe*", "ce:List*"],
       "Resource": "*"
     }
   ]
@@ -247,10 +244,7 @@ For team leads who need to manage budgets:
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "budgets:*",
-        "ce:*"
-      ],
+      "Action": ["budgets:*", "ce:*"],
       "Resource": "*"
     }
   ]
@@ -309,6 +303,6 @@ Once you have Cost Explorer and Budgets configured:
 4. Track cost optimization efforts over time
 5. Share cost data with stakeholders regularly
 
-Cost management is an ongoing process. The tools AWS provides give you visibility, but you need to act on the insights they provide.
+Cost management is an ongoing process. The tools AWS provides give you visibility, but you need to act on the insights they provide. To manage budgets and anomaly alerts as Terraform code, see [Practical FinOps: Tags, Budgets and Alerts as Code](/guides/finops-for-devops-engineers/04-practical-examples).
 
 Start with simple budgets and reports, then refine them as you learn more about your spending patterns. Your future self (and your finance team) will thank you.

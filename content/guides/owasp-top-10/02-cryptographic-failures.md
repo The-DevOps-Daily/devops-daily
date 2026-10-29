@@ -1,417 +1,306 @@
 ---
-title: 'A02: Cryptographic Failures'
-description: 'Learn how cryptographic failures expose sensitive data and how to properly implement encryption, hashing, and secure data handling in your applications.'
+title: 'A04:2025 Cryptographic Failures'
+description: 'A04:2025 Cryptographic Failures: Argon2id password hashing, AES-GCM with key rotation, secure randomness and TLS with post-quantum key exchange in Node.js.'
+order: 5
 ---
 
-Previously known as "Sensitive Data Exposure," Cryptographic Failures focuses on failures related to cryptography that lead to exposure of sensitive data. This vulnerability sits at #2 on the OWASP Top 10 because improper cryptography has led to some of the most devastating data breaches in history.
+**TLDR**: Cryptographic failures are missing, weak or misused cryptography: passwords stored with a fast hash, data encrypted without integrity protection, keys in source code, tokens from a predictable random number generator, or traffic without TLS. Hash passwords with Argon2id, encrypt sensitive data with an authenticated cipher such as AES-256-GCM and keys from a key management service, use the cryptographically secure random generator for anything secret, and require TLS 1.2 or later everywhere. Start planning for post-quantum cryptography now; your TLS library may already use it.
 
-## What are Cryptographic Failures?
+Cryptographic Failures moved from second place in 2021 to fourth in 2025. The [A04:2025 page](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/) maps 32 CWEs to it, and three of the most common involve weak random numbers. It also adds a new deadline: prepare for post-quantum cryptography so that high-risk systems are safe by the end of 2030.
 
-Cryptographic failures occur when applications:
+The usual advice applies first: do not write your own cryptographic algorithms or protocols. Use the primitives of a well-maintained library (here Node.js's built-in `crypto` module, which uses OpenSSL) in the standard ways shown below.
 
-- **Transmit sensitive data in clear text** (HTTP, FTP, SMTP without TLS)
-- **Use weak or outdated cryptographic algorithms** (MD5, SHA1, DES)
-- **Store passwords incorrectly** (plain text, simple hashing, weak salts)
-- **Use hard-coded or weak encryption keys**
-- **Fail to enforce encryption** (mixed content, optional TLS)
+## Prerequisites
 
-The consequences range from stolen credentials to complete database exposure. When cryptography fails, there's often no second chance—once data is exposed, it can't be un-exposed.
+- The companion app from the [guide introduction](/guides/owasp-top-10#h2-the-companion-app), on Node.js 24.7 or later.
+- The basics of hashing and symmetric encryption. The [Cryptography Essentials guide](/guides/cryptography-essentials) explains them.
 
-## Common Vulnerability Patterns
+## What Goes Wrong
 
-### 1. Passwords Stored Incorrectly
+The OWASP description is a checklist. You have a cryptographic failure if:
 
-Password storage is where many applications fail. Let's look at the progression from worst to best:
+- data moves in clear text (HTTP, FTP, SMTP without TLS), or TLS certificates are not validated;
+- old algorithms are in use: MD5, SHA-1, DES, RC4, ECB mode, or RSA with PKCS#1 v1.5 padding;
+- passwords are stored in plain text, encrypted, or hashed with a fast hash;
+- keys are hard-coded, reused across environments, checked into Git, or never rotated;
+- initialization vectors (IVs) or nonces are reused or predictable;
+- encryption is used without integrity protection where data could be changed;
+- secrets come from a random generator that was not designed for security.
 
-**Level 0 - Plain Text (Never do this):**
+## Passwords: Hash With a Slow Function
 
-```javascript
-// CATASTROPHIC: Plain text password storage
-const user = new User({
-  email: req.body.email,
-  password: req.body.password  // Stored as-is!
-});
-```
+A password database leaks eventually, through a backup, a log, an injection bug. What the attacker can do with it depends on how the passwords were stored:
 
-If your database is breached, every password is immediately compromised. Users often reuse passwords, so this breach extends to their other accounts.
+- **Plain text or encrypted**: every password is exposed (the encryption key usually leaks with the database).
+- **A fast hash such as SHA-256**: precomputed tables crack common passwords instantly, and a salt only forces the attacker to guess each user's password separately. Fast hashes are designed for speed, and a GPU computes billions of them per second.
+- **A password hashing function** such as Argon2id is slow and memory-hard on purpose, so each guess is expensive, and the memory cost limits how many guesses a GPU can run in parallel.
 
-**Level 1 - Simple Hashing (Still dangerous):**
+The difference on one CPU core of a small ARM board, measured with a script from the companion repository:
 
-```javascript
-// DANGEROUS: Simple hash without salt
-const crypto = require('crypto');
-const hashedPassword = crypto.createHash('sha256')
-  .update(req.body.password)
-  .digest('hex');
-```
-
-This is vulnerable to rainbow table attacks. Attackers have precomputed hashes for millions of common passwords. A lookup takes milliseconds.
-
-**Level 2 - Hash with Salt (Better, but not enough):**
-
-```javascript
-// INSUFFICIENT: SHA-256 with salt
-const salt = crypto.randomBytes(16).toString('hex');
-const hashedPassword = crypto.createHash('sha256')
-  .update(salt + req.body.password)
-  .digest('hex');
-```
-
-Salting defeats rainbow tables, but SHA-256 is too fast. Modern GPUs can compute billions of SHA-256 hashes per second, making brute force attacks feasible.
-
-**Level 3 - Password Hashing Function (Correct approach):**
-
-```javascript
-// SECURE: Use bcrypt with appropriate cost factor
-const bcrypt = require('bcrypt');
-
-// Cost factor of 12 means 2^12 iterations
-// Adjust based on your security needs and hardware
-const SALT_ROUNDS = 12;
-
-async function hashPassword(plainPassword) {
-  // bcrypt automatically generates a salt and includes it in the output
-  return await bcrypt.hash(plainPassword, SALT_ROUNDS);
-}
-
-async function verifyPassword(plainPassword, hashedPassword) {
-  return await bcrypt.compare(plainPassword, hashedPassword);
-}
-
-// Usage
-const hash = await hashPassword('userPassword123');
-// Result: $2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VTtYE7zNqK7Kxy
-// Contains: algorithm version, cost factor, salt, and hash
-```
-
-Bcrypt, Argon2, and scrypt are designed to be slow and memory-intensive, making brute force attacks impractical. Argon2 is the winner of the Password Hashing Competition and is recommended for new applications:
-
-```javascript
-// RECOMMENDED: Argon2id for new applications
-const argon2 = require('argon2');
-
-async function hashPassword(plainPassword) {
-  return await argon2.hash(plainPassword, {
-    type: argon2.argon2id,  // Hybrid of Argon2i and Argon2d
-    memoryCost: 65536,       // 64 MB memory
-    timeCost: 3,             // 3 iterations
-    parallelism: 4           // 4 parallel threads
-  });
-}
-
-async function verifyPassword(plainPassword, hashedPassword) {
-  return await argon2.verify(hashedPassword, plainPassword);
+```terminal
+{
+  "title": "the cost of one guess",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "node scripts/hash-cost.mjs",
+      "output": "SHA-256:     69,561 guesses per second\nArgon2id:         9 guesses per second (19 MiB, t=2, p=1)"
+    }
+  ]
 }
 ```
 
-### 2. Sensitive Data in Transit
+A server pays that cost once per login, which is acceptable. An attacker pays it for every guess.
 
-Data transmitted without encryption can be intercepted by anyone on the network path.
+The [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html) recommends, in order:
 
-**Vulnerable Pattern:**
+1. **Argon2id** with at least 19 MiB of memory, 2 iterations and 1 degree of parallelism.
+2. **scrypt** with N=2^17, r=8, p=1, if Argon2id is not available.
+3. **PBKDF2-HMAC-SHA256** with 600,000 iterations, when you need FIPS-140 validated algorithms.
+4. **bcrypt** only in legacy systems, with a work factor of 10 or more. It ignores everything after 72 bytes of input.
 
-```javascript
-// VULNERABLE: HTTP API calls
-fetch('http://api.example.com/users', {
-  method: 'POST',
-  body: JSON.stringify({ email, password })
-});
-```
-
-**Secure Implementation:**
+Node.js 24.7 added Argon2 to the built-in `crypto` module (stable since 24.19), so the companion app needs no native add-on:
 
 ```javascript
-// Server configuration - enforce HTTPS
-const express = require('express');
-const helmet = require('helmet');
+import { argon2, randomBytes, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
 
-const app = express();
+const argon2Async = promisify(argon2);
 
-// Helmet adds security headers including HSTS
-app.use(helmet());
+// OWASP Password Storage Cheat Sheet minimum for Argon2id:
+// 19 MiB of memory, 2 iterations, 1 degree of parallelism.
+const PARAMS = { memory: 19456, passes: 2, parallelism: 1, tagLength: 32 };
 
-// Force HTTPS redirect
-app.use((req, res, next) => {
-  if (req.header('x-forwarded-proto') !== 'https') {
-    return res.redirect(`https://${req.header('host')}${req.url}`);
-  }
-  next();
-});
+const b64 = (buf) => buf.toString('base64').replace(/=+$/, '');
 
-// Set secure cookie options
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  cookie: {
-    secure: true,      // Only send over HTTPS
-    httpOnly: true,    // Not accessible via JavaScript
-    sameSite: 'strict' // CSRF protection
-  }
-}));
-```
-
-Configure HSTS (HTTP Strict Transport Security) to ensure browsers always use HTTPS:
-
-```nginx
-# Nginx configuration
-server {
-    listen 443 ssl http2;
-    
-    # HSTS header - browser will refuse HTTP for 1 year
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-    
-    # Modern TLS configuration
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-    ssl_prefer_server_ciphers off;
-}
-```
-
-### 3. Weak Encryption for Data at Rest
-
-Encrypting sensitive data at rest protects against database breaches, but only if done correctly.
-
-**Vulnerable Patterns:**
-
-```javascript
-// VULNERABLE: ECB mode preserves patterns in data
-const cipher = crypto.createCipher('aes-256-ecb', key);
-
-// VULNERABLE: Hard-coded encryption key
-const ENCRYPTION_KEY = 'my-super-secret-key-12345';
-
-// VULNERABLE: Predictable IV (Initialization Vector)
-const iv = Buffer.alloc(16, 0);  // All zeros!
-```
-
-**Secure Implementation:**
-
-```javascript
-const crypto = require('crypto');
-
-// Key should come from environment/secrets manager
-// Must be 32 bytes for AES-256
-const ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
-
-function encrypt(plainText) {
-  // Generate a random IV for each encryption
-  // IV doesn't need to be secret, but must be unique
-  const iv = crypto.randomBytes(16);
-  
-  // Use AES-256-GCM (authenticated encryption)
-  const cipher = crypto.createCipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
-  
-  let encrypted = cipher.update(plainText, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  
-  // GCM provides an authentication tag - store this too
-  const authTag = cipher.getAuthTag();
-  
-  // Return IV + authTag + ciphertext (all needed for decryption)
-  return {
-    iv: iv.toString('hex'),
-    authTag: authTag.toString('hex'),
-    content: encrypted
-  };
+// Returns a PHC-format string: algorithm, version, parameters, salt and hash.
+export async function hashPassword(password) {
+  const nonce = randomBytes(16);
+  const hash = await argon2Async('argon2id', { message: password, nonce, ...PARAMS });
+  const { memory: m, passes: t, parallelism: p } = PARAMS;
+  return `$argon2id$v=19$m=${m},t=${t},p=${p}$${b64(nonce)}$${b64(hash)}`;
 }
 
-function decrypt(encryptedData) {
-  const iv = Buffer.from(encryptedData.iv, 'hex');
-  const authTag = Buffer.from(encryptedData.authTag, 'hex');
-  
-  const decipher = crypto.createDecipheriv('aes-256-gcm', ENCRYPTION_KEY, iv);
-  decipher.setAuthTag(authTag);
-  
-  let decrypted = decipher.update(encryptedData.content, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  
-  return decrypted;
-}
-```
-
-AES-GCM provides authenticated encryption, meaning it both encrypts the data AND verifies it hasn't been tampered with. The authentication tag will cause decryption to fail if the ciphertext has been modified.
-
-### 4. Improper Key Management
-
-The strongest encryption is worthless if keys are mishandled.
-
-**Common Mistakes:**
-
-```javascript
-// WRONG: Key in source code
-const API_KEY = 'sk-1234567890abcdef';
-
-// WRONG: Key in version control
-// .env file committed to git
-
-// WRONG: Same key for all environments
-// Production using the same key as development
-```
-
-**Proper Key Management:**
-
-```javascript
-// Use environment variables at minimum
-const apiKey = process.env.API_KEY;
-if (!apiKey) {
-  throw new Error('API_KEY environment variable is required');
-}
-
-// Better: Use a secrets manager
-const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
-
-async function getSecret(secretName) {
-  const client = new SecretManagerServiceClient();
-  const [version] = await client.accessSecretVersion({
-    name: `projects/my-project/secrets/${secretName}/versions/latest`
-  });
-  return version.payload.data.toString();
-}
-
-// AWS Secrets Manager example
-const AWS = require('aws-sdk');
-const secretsManager = new AWS.SecretsManager();
-
-async function getAWSSecret(secretId) {
-  const data = await secretsManager.getSecretValue({ SecretId: secretId }).promise();
-  return JSON.parse(data.SecretString);
-}
-```
-
-## Prevention Best Practices
-
-### 1. Classify Your Data
-
-Not all data needs the same level of protection. Classify data by sensitivity:
-
-```javascript
-// Data classification example
-const DataClassification = {
-  PUBLIC: 'public',           // Marketing content, public docs
-  INTERNAL: 'internal',       // Employee directory, internal docs
-  CONFIDENTIAL: 'confidential', // Customer data, financial records
-  RESTRICTED: 'restricted'    // PII, payment data, health records
-};
-
-// Apply appropriate controls based on classification
-function getEncryptionRequirements(classification) {
-  switch (classification) {
-    case DataClassification.RESTRICTED:
-      return {
-        atRest: true,
-        inTransit: true,
-        algorithm: 'aes-256-gcm',
-        keyRotation: '30d'
-      };
-    case DataClassification.CONFIDENTIAL:
-      return {
-        atRest: true,
-        inTransit: true,
-        algorithm: 'aes-256-gcm',
-        keyRotation: '90d'
-      };
-    default:
-      return {
-        atRest: false,
-        inTransit: true,  // Always encrypt in transit
-        algorithm: null,
-        keyRotation: null
-      };
+export async function verifyPassword(password, phc) {
+  try {
+    const [, alg, , params, salt, expected] = phc.split('$');
+    if (alg !== 'argon2id') return false;
+    const p = Object.fromEntries(params.split(',').map((kv) => kv.split('=')));
+    const want = Buffer.from(expected, 'base64');
+    const got = await argon2Async('argon2id', {
+      message: password,
+      nonce: Buffer.from(salt, 'base64'),
+      memory: Number(p.m),
+      passes: Number(p.t),
+      parallelism: Number(p.p),
+      tagLength: want.length,
+    });
+    return timingSafeEqual(got, want);
+  } catch {
+    return false; // a malformed hash never verifies
   }
 }
+
+// Used when the user does not exist, so a failed login costs the same time either way.
+export const DUMMY_HASH = await hashPassword(randomBytes(32).toString('hex'));
 ```
 
-### 2. Use Modern TLS Configuration
+The stored string records the algorithm, version, parameters and salt next to the hash, so you can raise the parameters later: verify with the stored parameters, and when a user logs in successfully with an old hash, rehash the password with the new ones. Each call produces a different string, because the salt is random:
 
-```yaml
-# Example: Kubernetes Ingress with modern TLS
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: secure-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-ssl-protocols: "TLSv1.2 TLSv1.3"
-spec:
-  tls:
-  - hosts:
-    - api.example.com
-    secretName: api-tls-cert
-  rules:
-  - host: api.example.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api-service
-            port:
-              number: 443
+```terminal
+{
+  "title": "two hashes of the same password",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "node --input-type=module -e \"import { hashPassword } from './src/passwords.js'; for (let i = 0; i < 2; i++) console.log(await hashPassword('correct horse battery staple'));\"",
+      "output": "$argon2id$v=19$m=19456,t=2,p=1$KJETjAwY7g9vWLWF3Us8MA$xyxYQ+Hx9R1qhUjYF18MCwzyRGd2Yj7mlBtBgfi8NuU\n$argon2id$v=19$m=19456,t=2,p=1$1r5QtehTxDDcC3iIp51JaQ$XqjawPy+wbIYa3IJDgpLrL7asJSP/xXkNVfMa/Mw/9c"
+    }
+  ]
+}
 ```
 
-### 3. Implement Key Rotation
+## Encrypt Data With Authenticated Encryption
 
-Encryption keys should be rotated regularly. Here's a pattern for supporting key rotation:
+Some data must be readable again: an API key you call on the user's behalf, a bank account number for payouts. Encrypt it with an authenticated cipher. AES-256-GCM encrypts and also produces an authentication tag, so any change to the ciphertext makes decryption fail instead of returning altered data.
+
+Older Node.js code used `crypto.createCipher('aes-256-cbc', password)`, which derived the key with MD5 and no salt and reused a fixed IV. Node.js 22 removed it:
+
+```terminal
+{
+  "title": "createCipher is gone",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "node -p \"typeof require('node:crypto').createCipher\"",
+      "output": "undefined"
+    }
+  ]
+}
+```
+
+The companion app's `crypto-box.js` shows the current pattern, with key versions for rotation and additional authenticated data (AAD) that binds each ciphertext to its record:
 
 ```javascript
-// Support multiple key versions for rotation
-const keys = {
-  'v1': Buffer.from(process.env.ENCRYPTION_KEY_V1, 'hex'),
-  'v2': Buffer.from(process.env.ENCRYPTION_KEY_V2, 'hex'),  // Current
-};
-const CURRENT_KEY_VERSION = 'v2';
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
-function encrypt(plainText) {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv('aes-256-gcm', keys[CURRENT_KEY_VERSION], iv);
-  
-  let encrypted = cipher.update(plainText, 'utf8', 'hex');
-  encrypted += cipher.final('hex');
-  
-  return {
-    keyVersion: CURRENT_KEY_VERSION,  // Store which key was used
-    iv: iv.toString('hex'),
-    authTag: cipher.getAuthTag().toString('hex'),
-    content: encrypted
-  };
-}
-
-function decrypt(encryptedData) {
-  // Use the key version that was used for encryption
-  const key = keys[encryptedData.keyVersion];
-  if (!key) {
-    throw new Error(`Unknown key version: ${encryptedData.keyVersion}`);
+// keys: { v1: <32-byte Buffer>, v2: ... } loaded from a secrets manager or KMS,
+// never from source code. New data always uses the current key.
+export function createBox({ keys, current }) {
+  for (const [version, key] of Object.entries(keys)) {
+    if (!/^v\d+$/.test(version)) throw new Error(`bad key version ${version}`);
+    if (!Buffer.isBuffer(key) || key.length !== 32) {
+      throw new Error(`key ${version} must be 32 bytes`);
+    }
   }
-  
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, 
-    Buffer.from(encryptedData.iv, 'hex'));
-  decipher.setAuthTag(Buffer.from(encryptedData.authTag, 'hex'));
-  
-  let decrypted = decipher.update(encryptedData.content, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  
-  return decrypted;
-}
+  if (!keys[current]) throw new Error(`no key for current version ${current}`);
 
-// Re-encrypt data with new key during rotation
-async function rotateEncryption(record) {
-  if (record.encryptedData.keyVersion !== CURRENT_KEY_VERSION) {
-    const plainText = decrypt(record.encryptedData);
-    record.encryptedData = encrypt(plainText);
-    await record.save();
+  // context binds the ciphertext to one record (for example "invoice:1001"),
+  // so a ciphertext copied to another row fails to decrypt.
+  function seal(plaintext, context) {
+    const iv = randomBytes(12); // 96-bit nonce, new for every message
+    const cipher = createCipheriv('aes-256-gcm', keys[current], iv);
+    cipher.setAAD(Buffer.from(context));
+    const data = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return [current, iv, tag, data]
+      .map((p) => (Buffer.isBuffer(p) ? p.toString('base64url') : p))
+      .join('.');
   }
+
+  function open(sealed, context) {
+    const [version, iv, tag, data] = sealed.split('.');
+    const key = Object.hasOwn(keys, version) ? keys[version] : undefined;
+    if (!key) throw new Error(`unknown key version ${version}`);
+    const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'base64url'), {
+      authTagLength: 16,
+    });
+    decipher.setAAD(Buffer.from(context));
+    decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+    return Buffer.concat([
+      decipher.update(Buffer.from(data, 'base64url')),
+      decipher.final(),
+    ]).toString('utf8');
+  }
+
+  return { seal, open, needsRotation: (sealed) => !sealed.startsWith(`${current}.`) };
 }
 ```
 
-## Key Takeaways
+The rules it follows:
 
-1. **Use password hashing functions** (bcrypt, Argon2) not general-purpose hashes
-2. **Encrypt data in transit** - HTTPS everywhere, no exceptions
-3. **Use authenticated encryption** (AES-GCM) for data at rest
-4. **Never hard-code keys** - use environment variables or secrets managers
-5. **Generate unique IVs** for each encryption operation
-6. **Plan for key rotation** - include key version in encrypted data
-7. **Classify your data** - apply appropriate controls based on sensitivity
-8. **Use modern TLS** - TLS 1.2+ with strong cipher suites
+- **A new random 12-byte nonce for every message.** Reusing a nonce with the same key breaks GCM's confidentiality and integrity. With random nonces, stay well below 2^32 messages per key, then rotate.
+- **The key version travels with the ciphertext**, so old data stays readable after a new key becomes current, and a background job can re-encrypt it (`needsRotation` finds it).
+- **The context is authenticated but not encrypted.** A ciphertext copied from invoice 1001 to invoice 1002 fails to decrypt, so an attacker with database write access cannot swap encrypted values between rows.
 
-Cryptographic failures are often invisible until a breach occurs. By following these practices, you ensure that even if an attacker gains access to your storage, the data remains protected.
+The tests check those properties:
+
+```terminal
+{
+  "title": "the cryptography tests",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "npm test -- tests/crypto.test.js",
+      "output": "> owasp-top-10-demo@1.0.0 test\n> node --test --test-reporter=spec tests/crypto.test.js\n\n▶ A04 cryptographic failures\n  ✔ round-trips a value with AES-256-GCM (6.202585ms)\n  ✔ detects a changed ciphertext (3.405066ms)\n  ✔ refuses a ciphertext copied to another record (5.008804ms)\n  ✔ opens data sealed with the previous key and flags it for rotation (1.563276ms)\n  ✔ hashes passwords with Argon2id and a random salt (480.617325ms)\n✔ A04 cryptographic failures (503.86296ms)\nℹ tests 5\nℹ suites 1\nℹ pass 5\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 899.435714"
+    }
+  ]
+}
+```
+
+## Keys Belong in a Key Service
+
+The strongest cipher is useless if the key sits in the repository next to the data. Keep keys in a key management service (AWS KMS, Google Cloud KMS, Azure Key Vault) or a secrets manager such as HashiCorp Vault, and use **envelope encryption** for large amounts of data: the service holds a key-encryption key that never leaves it, and you store each data key only in encrypted form, next to the data it protects. Rotating the key-encryption key does not require re-encrypting the data.
+
+- Use a different key per environment, and never copy production keys to development.
+- Give each service access only to the keys it needs, and log every use.
+- Scan commits for secrets before they are pushed; [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide) shows how.
+- OWASP recommends hardware security modules (HSMs) or cloud HSM-backed keys for the most sensitive keys.
+
+## Randomness for Secrets
+
+Session IDs, reset tokens, API keys and nonces must be unpredictable. `Math.random()` is not designed for that: its output can be predicted from earlier values.
+
+```javascript
+// VULNERABLE: predictable reset token
+const resetToken = Math.random().toString(36).slice(2);
+```
+
+Use the cryptographically secure generator, which the operating system seeds:
+
+```javascript
+import { randomBytes, randomInt, randomUUID } from 'node:crypto';
+
+const resetToken = randomBytes(32).toString('base64url'); // 256 bits
+const sessionId = randomUUID(); // random (version 4) UUID
+const otp = randomInt(0, 1_000_000).toString().padStart(6, '0'); // uniform, no modulo bias
+```
+
+In browsers, the same functions are `crypto.getRandomValues()` and `crypto.randomUUID()`.
+
+## Data in Transit
+
+Encrypt every connection that carries sensitive data, inside your network too: browser to load balancer, service to service, and application to database.
+
+- Accept TLS 1.2 and 1.3 only, with forward-secret key exchange. Prefer TLS 1.3.
+- Send `Strict-Transport-Security` so browsers never fall back to HTTP ([A02](/guides/owasp-top-10/05-security-misconfiguration#h2-security-headers) shows the header).
+- Validate certificates. Setting `NODE_TLS_REJECT_UNAUTHORIZED=0` or `rejectUnauthorized: false` to "fix" a certificate error turns TLS into encryption to whoever answers. For databases, check that the client really verifies the server: [node-postgres Silently Ignores Your TLS Config When the URL Says sslmode](/posts/node-postgres-sslmode-silently-ignores-ssl-options) shows a case where it does not.
+- Do not use STARTTLS or SMTP for confidential data, as OWASP notes, and turn off caching for responses with sensitive data.
+
+### Post-Quantum Key Exchange
+
+A large enough quantum computer would break the elliptic curve and RSA key exchanges that TLS uses today. Traffic recorded now could be decrypted then ("harvest now, decrypt later"), which is why OWASP asks you to prepare now. The first step is already shipping: hybrid key exchanges that combine X25519 with ML-KEM, the post-quantum algorithm NIST standardized in 2024 (FIPS 203). Node.js 24 uses OpenSSL 3.5, which offers `X25519MLKEM768` by default. The companion repository has a small script that prints what a connection negotiates:
+
+```terminal
+{
+  "title": "which key exchange does the server choose?",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "node scripts/tls-check.mjs devops-daily.com",
+      "output": "devops-daily.com: TLSv1.3, TLS_AES_256_GCM_SHA384, X25519MLKEM768"
+    },
+    {
+      "cmd": "node scripts/tls-check.mjs github.com",
+      "output": "github.com: TLSv1.3, TLS_AES_128_GCM_SHA256, X25519"
+    },
+    {
+      "cmd": "node scripts/tls-check.mjs registry.npmjs.org",
+      "output": "registry.npmjs.org: TLSv1.2, ECDHE-ECDSA-AES128-GCM-SHA256, X25519"
+    }
+  ]
+}
+```
+
+The client offered the hybrid group to all three servers; the first accepted it, the others chose classical X25519, and the npm registry negotiated TLS 1.2. Results change as providers roll out support. For your own services, check what your load balancers and TLS libraries support, keep an inventory of where you use public-key cryptography, and prefer libraries and protocols that can switch algorithms through configuration.
+
+## Keep Less Data
+
+OWASP's simplest advice: data you do not store cannot be stolen. Classify the data you handle (public, internal, confidential, regulated), keep sensitive data only as long as you need it, store only the last digits of card numbers or use a payment provider's tokens, and send `Cache-Control: no-store` on responses that contain it.
+
+## Common Mistakes
+
+- **Encrypting passwords** instead of hashing them, or hashing them with SHA-256.
+- **Using a password as a key directly.** Derive keys from passwords with a key derivation function, or better, generate random keys.
+- **Reusing a nonce with GCM**, for example a counter that restarts at zero after a deploy.
+- **Encryption without authentication** (CBC or CTR mode without a MAC), which lets attackers change data and sometimes decrypt it through error messages.
+- **One key for everything, forever.** Version and rotate keys.
+- **Disabling certificate checks** to get past an error.
+
+## Summary
+
+- Hash passwords with Argon2id (built into Node.js 24), and store the parameters with the hash.
+- Encrypt with AES-256-GCM: a random nonce per message, a key version, and context as AAD.
+- Keep keys in a key service, per environment, with rotation.
+- Use `crypto.randomBytes()` and friends for every secret value.
+- Require TLS 1.2+ with certificate validation everywhere, and plan the move to post-quantum key exchange.
+
+Next, [A05:2025 Injection](/guides/owasp-top-10/03-injection) covers what happens when data turns into code.
+
+## Keep Learning
+
+- [Cryptography Essentials guide](/guides/cryptography-essentials)
+- [Secrets Management Best Practices with HashiCorp Vault](/posts/hashicorp-vault-secrets-management-best-practices)
+- [You Cannot Rotate a Secret You Cannot Find](/posts/you-cannot-rotate-a-secret-you-cannot-find)
+- [HashiCorp Vault Secrets Management checklist](/checklists/hashicorp-vault-secrets-management)

@@ -315,4 +315,6 @@ The structural fix is some combination of sandboxed CI runners, hash-pinned depe
 
 Mini Shai-Hulud is going to keep showing up under different names. The packages will change. The hooks and the credential exfil paths will not.
 
+For the controls that make the next wave harder to land, such as switching off install scripts and waiting a few days before taking a new release, read [A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components) in our OWASP Top 10 guide.
+
 *Sources: [The Hacker News](https://thehackernews.com/2026/04/pytorch-lightning-compromised-in-pypi.html), [Semgrep](https://semgrep.dev/blog/2026/malicious-dependency-in-pytorch-lightning-used-for-ai-training/), [Socket.dev](https://socket.dev/blog/lightning-pypi-package-compromised), [Kodem Security](https://www.kodemsecurity.com/resources/mini-shai-hulud-strikes-pytorch-lightning-and-intercom-client-inside-the-cross-ecosystem-supply-chain-attack), [OX Security](https://www.ox.security/blog/lightning-python-package-shai-hulud-supply-chain-attack/), [Aikido](https://www.aikido.dev/blog/pytorch-lightning-pypi-compromise-mini-shai-hulud), [GitGuardian](https://blog.gitguardian.com/three-supply-chain-campaigns-hit-npm-pypi-and-docker-hub-in-48-hours/)*

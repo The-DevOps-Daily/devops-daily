@@ -190,7 +190,7 @@
 
 .hljs-comment,
 .hljs-quote {
-  @apply text-muted-foreground italic;
+  @apply text-zinc-600 italic;
 }
 
 .hljs-keyword,
@@ -205,7 +205,7 @@
 .hljs-literal,
 .hljs-doctag,
 .hljs-regexp {
-  @apply text-green-600;
+  @apply text-green-800;
 }
 
 .hljs-title,
@@ -222,7 +222,7 @@
 .hljs-template-variable,
 .hljs-class .hljs-title,
 .hljs-type {
-  @apply text-orange-600;
+  @apply text-orange-700;
 }
 
 .hljs-symbol,
@@ -230,12 +230,12 @@
 .hljs-subst,
 .hljs-meta,
 .hljs-link {
-  @apply text-red-600;
+  @apply text-red-700;
 }
 
 .hljs-built_in,
 .hljs-deletion {
-  @apply text-cyan-600;
+  @apply text-cyan-700;
 }
 
 .hljs-emphasis {
@@ -342,6 +342,12 @@
 .prose pre code {
   @apply block p-4 text-xs sm:text-sm font-mono overflow-x-auto;
   /* Better mobile readability: smaller font prevents horizontal overflow on narrow screens */
+}
+
+/* Code blocks are focusable for keyboard scrolling; <pre> clips an outside outline. */
+.prose pre code:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: -2px;
 }
 
 /* Code block wrapper */
@@ -742,14 +748,14 @@ html {
 .post-callout--note .post-callout__icon,
 .post-callout--info .post-callout__icon { background: rgb(59 130 246 / 0.14); color: #3b82f6; }
 .post-callout--note .post-callout__label,
-.post-callout--info .post-callout__label { color: #3b82f6; }
+.post-callout--info .post-callout__label { color: #1d4ed8; }
 
 .post-callout--tip {
   border-color: rgb(16 185 129 / 0.3);
   background: rgb(16 185 129 / 0.055);
 }
 .post-callout--tip .post-callout__icon { background: rgb(16 185 129 / 0.14); color: #10b981; }
-.post-callout--tip .post-callout__label { color: #10b981; }
+.post-callout--tip .post-callout__label { color: #047857; }
 
 .post-callout--warning {
   border-color: rgb(245 158 11 / 0.34);
@@ -763,8 +769,11 @@ html {
   background: rgb(239 68 68 / 0.055);
 }
 .post-callout--important .post-callout__icon { background: rgb(239 68 68 / 0.14); color: #ef4444; }
-.post-callout--important .post-callout__label { color: #dc2626; }
+.post-callout--important .post-callout__label { color: #b91c1c; }
 
+.dark .post-callout--note .post-callout__label,
+.dark .post-callout--info .post-callout__label { color: #3b82f6; }
+.dark .post-callout--tip .post-callout__label { color: #10b981; }
 .dark .post-callout--warning .post-callout__icon,
 .dark .post-callout--warning .post-callout__label { color: #fbbf24; }
 .dark .post-callout--important .post-callout__icon,

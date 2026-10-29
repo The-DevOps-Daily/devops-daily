@@ -61,6 +61,16 @@ Validates news item structure when news content is present:
 
 Skipped if no news content exists.
 
+### 7. Canonical URLs (`canonical-urls.test.ts`)
+
+Calls the metadata generators of every page in `app/` (no build) and merges them the way Next.js does:
+
+- **Own canonical**: A page without its own `alternates` inherits the root canonical (`/`), so the test fails it
+- **Format**: Absolute `https://devops-daily.com` URL with no query, hash or trailing slash
+- **Target**: Each page points at itself, or at a target listed in `INTENDED_TARGETS`
+- **Redirects**: No canonical points at a source path in `public/_redirects`
+- **Sitemap**: Every sitemap URL is a page that is canonical to itself
+
 ## Running Tests
 
 ### Run all tests

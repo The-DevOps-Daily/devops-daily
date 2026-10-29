@@ -227,6 +227,8 @@ Thirteen advisories in one release is a lot, but the rollout path is short: inst
 
 If you operate Next.js anywhere reachable from the internet, this one is not optional. Patch today.
 
+For access checks in the route handler itself, and for why SSRF reaches cloud metadata endpoints, see [A01:2025 Broken Access Control](/guides/owasp-top-10/01-broken-access-control) and [SSRF](/guides/owasp-top-10/10-ssrf) in our OWASP Top 10 guide.
+
 ### Reference Links
 
 - [Next.js 16.2.6 release notes](https://github.com/vercel/next.js/releases/tag/v16.2.6)

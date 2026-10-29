@@ -465,11 +465,11 @@ You can also explore more advanced Karpenter features like multiple NodePools fo
 
 The key is to treat right-sizing as an ongoing process. As your applications evolve and traffic patterns change, continue monitoring and adjusting to maintain optimal resource utilization.
 
-
 ## Related Resources
 
 - [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
 - [Kubernetes HPA Lab Exercise](/exercises/kubernetes-hpa-lab)
 - [Introduction to Kubernetes: Resource Management](/guides/introduction-to-kubernetes)
+- [FinOps for DevOps Engineers: where cloud cost comes from, Kubernetes requests included](/guides/finops-for-devops-engineers/02-challenges)
 - [DevOps Roadmap](/roadmap)
 - [DevOps Survival Guide](/books/devops-survival-guide)

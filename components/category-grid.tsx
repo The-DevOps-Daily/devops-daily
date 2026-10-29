@@ -145,7 +145,7 @@ export async function CategoryGrid({
                   {category.description}
                 </p>
               )}
-              <div className="mt-3 text-[11px] font-mono tabular-nums text-muted-foreground/80">
+              <div className="mt-3 text-[11px] font-mono tabular-nums text-muted-foreground">
                 {category.count} {category.count === 1 ? 'item' : 'items'}
               </div>
             </Link>

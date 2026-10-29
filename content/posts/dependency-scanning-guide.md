@@ -359,3 +359,5 @@ Your dependencies are your responsibility, even the ones you did not choose dire
 - [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide) - Even with clean dependencies, your own code can introduce injection flaws and broken auth
 
 For a deeper look at choosing and configuring static analysis tools, see our guide on [SAST tools](/guides/sast-tools).
+
+Scanners report known vulnerabilities. For malicious packages that no advisory lists yet, see [A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components) in our OWASP Top 10 guide.

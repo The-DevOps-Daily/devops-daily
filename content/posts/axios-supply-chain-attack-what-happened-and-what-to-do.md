@@ -232,4 +232,6 @@ Every one of those defaults worked in the attacker's favor.
 
 Supply chain security is not somebody else's problem. If your application has a `node_modules` directory, it is your problem.
 
+For `min-release-age`, `--ignore-scripts` and registry signature checks with real output, read [A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components#h2-malicious-packages-slow-down-and-switch-off-scripts) in our OWASP Top 10 guide.
+
 *Sources: [Socket](https://socket.dev/blog/axios-npm-package-compromised), [StepSecurity](https://www.stepsecurity.io/blog/axios-compromised-on-npm-malicious-versions-drop-remote-access-trojan), [Aikido](https://www.aikido.dev/blog/axios-npm-compromised-maintainer-hijacked-rat), [The Hacker News](https://thehackernews.com/2026/03/axios-supply-chain-attack-pushes-cross.html)*

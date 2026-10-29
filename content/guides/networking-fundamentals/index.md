@@ -1,11 +1,12 @@
 ---
 title: 'Networking Fundamentals for Developers'
-description: 'A comprehensive guide to computer networking concepts, from basic protocols to advanced cloud networking and automation.'
+seoTitle: 'Networking Fundamentals for Developers: TCP/IP, DNS, Subnets and Firewalls'
+description: 'Learn networking in a lab you build on one Linux VM: TCP/IP, subnets, DNS, firewalls, load balancing, Docker, Kubernetes, VPCs and troubleshooting.'
 category:
   name: 'Networking'
   slug: 'networking'
 publishedAt: '2024-11-24T10:00:00Z'
-updatedAt: '2024-11-24T10:00:00Z'
+updatedAt: '2026-10-27T09:00:00Z'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -13,58 +14,57 @@ tags:
   - Networking
   - TCP/IP
   - DNS
-  - Infrastructure
+  - Subnetting
+  - Firewalls
+  - Load Balancing
+  - Kubernetes
   - DevOps
-  - Cloud
 ---
 
-Computer networking is the backbone of modern software development. Whether you're building web applications, deploying microservices, or managing cloud infrastructure, understanding how data flows between systems is essential for creating reliable, scalable solutions.
+Every request your software makes crosses a network: a name lookup, a TCP connection, maybe TLS, a load balancer, a firewall, a NAT gateway. When one of those steps fails, the error message names it, and engineers who know the steps fix the problem in minutes instead of hours. This guide teaches those steps by building them.
 
-This comprehensive guide takes you from networking basics to advanced concepts you'll use in production environments. You'll learn practical skills for troubleshooting connectivity issues, securing network traffic, and designing robust distributed systems.
+You start by building a small practice network on one Linux machine, with Linux network namespaces: a client on a stand-in internet, a router with NAT, a firewall and a DNS resolver, a load balancer, three app servers, a database and an authoritative DNS server. Every part starts from a fresh copy of it, changes it, breaks it on purpose and fixes it again, so you see real packets, real DNS answers and real error messages instead of diagrams alone:
 
-## What You'll Learn
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "client", "sub": "203.0.113.10", "icon": "globe", "tone": "slate" },
+    { "label": "router", "sub": "NAT, firewall, DNS", "icon": "net", "tone": "amber" },
+    { "label": "lb", "sub": "nginx, HAProxy", "icon": "server", "tone": "green" },
+    { "label": "web1-3", "sub": "app :8080", "icon": "box", "tone": "blue" },
+    { "label": "db", "sub": ":5432", "icon": "database", "tone": "violet" }
+  ]
+}
+```
 
-This guide covers networking from a developer's perspective, focusing on real-world scenarios you'll encounter when building and operating software systems.
+## What You Will Learn
 
-**Core Networking Concepts**: Start with IP addresses, protocols, and how data travels across networks. You'll understand the difference between TCP and UDP, learn about ports and routing, and see how these concepts apply to everyday development tasks.
-
-**DNS and Domain Management**: Discover how domain names resolve to IP addresses, configure DNS records for your applications, and troubleshoot common DNS issues that can break deployments.
-
-**Network Security**: Learn to implement firewalls, understand network access controls, and secure communication between services. You'll see practical examples of protecting applications without over-engineering security.
-
-**Modern Infrastructure**: Explore container networking, cloud networking concepts, and how services communicate in distributed architectures. This includes Docker networks, Kubernetes networking, and cloud provider networking services.
-
-**Monitoring and Automation**: Build skills in network monitoring, automated troubleshooting, and infrastructure-as-code approaches to network management.
+1. [Network Fundamentals: Layers, IP, TCP, UDP and Ports](/guides/networking-fundamentals/01-network-fundamentals-and-protocols): build the lab, follow one request through DNS, TCP, HTTP and TLS, and measure what each handshake costs.
+2. [IP Addressing and Subnetting](/guides/networking-fundamentals/02-ip-addressing-and-subnetting): CIDR prefixes, private ranges, a subnet plan with an overlap check, NAT in the connection tracking table, and IPv6.
+3. [DNS Explained](/guides/networking-fundamentals/03-dns-and-domain-management): a lookup from the root servers down, record types, TTLs and caching, and every common DNS error.
+4. [Firewalls and Network Security](/guides/networking-fundamentals/04-network-security-and-firewalls-basics): stateful nftables rules, drop versus reject, network segmentation, mutual TLS and rate limits.
+5. [Load Balancing](/guides/networking-fundamentals/05-load-balancing): nginx and HAProxy, algorithms, health checks, dead and hung servers, and client addresses behind proxies.
+6. [Container Networking](/guides/networking-fundamentals/06-container-networking): a container network built by hand, then Docker's networks and DNS, Kubernetes Services, EndpointSlices and NetworkPolicies.
+7. [Cloud Networking](/guides/networking-fundamentals/07-cloud-networking): the lab as an AWS VPC, subnets across zones, security groups and NACLs, endpoints, peering, flow logs and costs.
+8. [Network Troubleshooting](/guides/networking-fundamentals/08-network-monitoring-and-troubleshooting): a layer-by-layer method, simulated latency and loss, packet captures, MTU problems and monitoring.
+9. [Network Automation](/guides/networking-fundamentals/09-network-automation): firewall changes that roll back on their own, Ansible, a Terraform VPC and a pipeline for network changes.
+10. [Advanced Networking](/guides/networking-fundamentals/10-network-concepts): WireGuard tunnels, service meshes, zero trust, Gateway API, eBPF and HTTP/3.
 
 ## Prerequisites
 
-You'll need:
+- A Linux machine where you can use `sudo`, ideally a throwaway VM or cloud server with Ubuntu 26.04 or 24.04 LTS. Part 1 lists the packages.
+- Comfort with a terminal. No networking knowledge is needed.
+- For Parts 6, 7 and 9, optionally Docker, a local Kubernetes cluster (kind), an AWS account, Terraform and Ansible. Every part also works as a read-through.
 
-- Basic command line experience on Linux, macOS, or Windows
-- Familiarity with running applications locally
-- No prior networking experience required
+## How the Examples Were Made
 
-The guide includes hands-on examples you can run on your own machine, with clear explanations of what each command does and why it matters.
+The terminal output in this guide is real. The lab output comes from the practice network on Ubuntu 26.04.1 LTS; timings come from a small ARM board, so yours will differ. The Docker, Kubernetes, Terraform, Ansible and Prometheus output comes from the guide's companion repository, whose GitHub Actions workflow runs those commands on fresh Ubuntu runners and also tests the lab script on Ubuntu 24.04 and 26.04. The cloud CLI commands in Part 7 were checked for syntax without credentials, and the one sample record there (a VPC flow log line) is labelled as an example.
 
-## How This Guide Is Organized
+```github
+The-DevOps-Daily/guide-networking-demo-2026-10-27
+```
 
-Each section builds on previous concepts while remaining practical and actionable:
+## Practice in Your Browser
 
-1. **Network Fundamentals and Protocols** - Core concepts, OSI model, and protocol basics
-2. **IP Addressing and Subnetting** - How network addressing works in practice
-3. **DNS and Domain Management** - Domain resolution, DNS records, and troubleshooting
-4. **Network Security and Firewalls** - Protecting network traffic and controlling access
-5. **Load Balancing and High Availability** - Distributing traffic and ensuring reliability
-6. **Container Networking** - Docker and Kubernetes networking concepts
-7. **Cloud Networking** - VPCs, security groups, and cloud-native networking
-8. **Network Monitoring and Troubleshooting** - Tools and techniques for diagnosing issues
-9. **Network Automation** - Infrastructure as code and automated network management
-10. **Advanced Networking Concepts** - Service meshes, network policies, and emerging patterns
-
-You can work through the guide sequentially or jump to specific sections based on your immediate needs. Each section includes practical examples and real-world scenarios.
-
-By the end of this guide, you'll have the networking knowledge to debug connectivity issues, design secure network architectures, and implement reliable communication patterns in your applications.
-
-## Practice hands-on
-
-Reinforce what you learn here with the interactive [DNS Resolution simulator](/games/dns-simulator), right in your browser with no setup required.
+The simulators cover the same ideas with no setup: [a packet's journey](/games/packet-journey), [TCP vs UDP](/games/tcp-vs-udp), [DNS resolution](/games/dns-simulator), [the TLS handshake](/games/ssl-tls-handshake), [load balancing](/games/load-balancer-simulator), [Kubernetes networking](/games/kubernetes-networking-cni-simulator) and [AWS VPC](/games/aws-vpc-simulator).

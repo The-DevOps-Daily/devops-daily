@@ -1,354 +1,371 @@
 ---
-title: 'A01: Broken Access Control'
-description: 'Learn about broken access control vulnerabilities, how attackers exploit them, and best practices to prevent unauthorized access in your applications.'
+title: 'A01:2025 Broken Access Control'
+description: 'A01:2025 Broken Access Control: IDOR, missing role checks, CORS, path traversal and CSRF, with Express fixes and tests that prove every check.'
+order: 1
 ---
 
-Broken Access Control moved up from the fifth position in the 2017 OWASP Top 10 to become the **#1 most critical** web application security risk in 2021. This isn't surprising—access control determines who can do what in your application, and getting it wrong has devastating consequences.
+**TLDR**: Broken access control means a user can read or change something that is not theirs, or call a function above their role. It is first in the OWASP Top 10:2025, as it was in 2021, and now also covers server-side request forgery. Check ownership on the server for every request, ideally inside the database query; deny by default; return 404 for records that exist but are not the caller's; and write a test for each check, so removing one fails the build.
 
-## What is Broken Access Control?
+Access control decides who may do what. Authentication answers "who is this?"; access control (authorization) answers "may this user do this to this record?". A login screen does not protect anything on its own: once a user has a session, every route still has to check what that session is allowed to touch.
 
-Access control enforces policy such that users cannot act outside of their intended permissions. When access control is broken, attackers can:
+In the 2025 data, every tested application had some form of broken access control. The category groups 40 CWEs, the most occurrences of any category (1.8 million) and the second most CVEs, according to the [A01:2025 page](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/). Server-side request forgery (CWE-918, covered in [the next part](/guides/owasp-top-10/10-ssrf)) joined it in 2025, next to weaknesses it already included, such as cross-site request forgery (CWE-352).
 
-- **View other users' data** - Accessing records they shouldn't see
-- **Modify data** - Changing someone else's profile, posts, or settings
-- **Perform privileged actions** - Admin functions without admin rights
-- **Delete resources** - Removing content belonging to others
+## Prerequisites
 
-Think of it like a hotel key card system that's broken—your card should only open your room, but a flaw lets you access any room in the building.
+- The companion app set up as described in the [guide introduction](/guides/owasp-top-10#h2-the-companion-app), and a terminal in its directory.
+- `curl` and `jq` to call the API.
 
-## Common Vulnerability Patterns
+## How Access Control Fails
 
-### 1. Insecure Direct Object References (IDOR)
+The OWASP description lists the usual ways:
 
-IDOR occurs when an application uses user-supplied input to access objects directly without proper authorization checks.
+- **Insecure direct object references (IDOR)**: changing an ID in a URL or request body to reach someone else's record.
+- **Missing function-level checks**: an admin route that checks for a login but not for the admin role, often on `POST`, `PUT` and `DELETE`.
+- **Force browsing**: requesting URLs the interface never links to, such as `/admin`.
+- **Checks only in the front end**: hiding a button is not access control; anyone can send the request with `curl`.
+- **Tampered tokens and metadata**: editing a cookie, a hidden field or an unverified JWT claim such as `role: admin`.
+- **CORS misconfiguration**: letting any website call your API with the user's credentials.
+- **Path traversal**: a file name such as `../../etc/passwd` that escapes the intended directory.
 
-**Vulnerable Example:**
+The companion app shows the first two in code, and the other patterns follow later in this part.
 
-Imagine an API endpoint that retrieves user invoices:
+## Insecure Direct Object References
+
+Here is the invoice route in the vulnerable version. It checks that the caller is logged in (the `authenticate` middleware runs before it), but not whose invoice it is:
 
 ```javascript
-// VULNERABLE: No authorization check!
-app.get('/api/invoices/:invoiceId', async (req, res) => {
-  const invoice = await Invoice.findById(req.params.invoiceId);
+// A01: any logged-in user can read any invoice by changing the ID
+app.get('/api/invoices/:id', (req, res) => {
+  const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(req.params.id);
+  if (!invoice) return res.status(404).json({ error: 'Not found' });
   res.json(invoice);
 });
 ```
 
-The problem here is obvious once you see it: any authenticated user can request ANY invoice by simply changing the `invoiceId` parameter. User A could access User B's invoices by guessing or incrementing IDs.
+Invoice IDs are sequential, so a logged-in user can walk through all of them. Unpredictable IDs such as UUIDs make guessing harder, but they are not access control: IDs leak through logs, shared links and browser history.
 
-**Secure Implementation:**
+The fixed route puts the owner into the query itself. A record that exists but belongs to someone else is indistinguishable from one that does not exist:
 
 ```javascript
-// SECURE: Verify the invoice belongs to the requesting user
-app.get('/api/invoices/:invoiceId', async (req, res) => {
-  const invoice = await Invoice.findById(req.params.invoiceId);
-  
-  // First, check if the invoice even exists
+// GET /api/invoices/:id: the owner check is part of the query itself.
+r.get('/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id)) return res.status(400).json({ error: 'Invalid id' });
+  const invoice = db
+    .prepare('SELECT id, amount_cents, memo FROM invoices WHERE id = ? AND user_id = ?')
+    .get(id, req.user.id);
   if (!invoice) {
-    return res.status(404).json({ error: 'Invoice not found' });
-  }
-  
-  // Then verify the requesting user owns this invoice
-  // req.user is set by authentication middleware
-  if (invoice.userId !== req.user.id) {
-    // Return 404 instead of 403 to avoid revealing that the resource exists
-    return res.status(404).json({ error: 'Invoice not found' });
-  }
-  
-  res.json(invoice);
-});
-```
-
-The key insight is that **authentication is not authorization**. Just because someone is logged in doesn't mean they can access everything. Every request must verify the user has permission to access that specific resource.
-
-### 2. Privilege Escalation
-
-Privilege escalation happens when users gain access to functions or data reserved for higher privilege levels.
-
-**Horizontal Escalation** - Accessing another user's resources at the same privilege level (like the IDOR example above).
-
-**Vertical Escalation** - Gaining higher privileges, such as a regular user accessing admin functionality.
-
-**Vulnerable Example:**
-
-```javascript
-// VULNERABLE: Only checks if user is logged in, not their role
-app.delete('/api/admin/users/:userId', isAuthenticated, async (req, res) => {
-  await User.delete(req.params.userId);
-  res.json({ message: 'User deleted' });
-});
-```
-
-This endpoint uses authentication middleware but doesn't verify the user has admin privileges. Any logged-in user could delete other users!
-
-**Secure Implementation:**
-
-```javascript
-// Middleware to check admin role
-const requireAdmin = (req, res, next) => {
-  // isAuthenticated middleware already verified the user
-  // Now check their role
-  if (req.user.role !== 'admin') {
-    // Log the attempt - this could be an attack
-    logger.warn('Unauthorized admin access attempt', {
-      userId: req.user.id,
-      attemptedAction: 'delete_user',
-      targetUserId: req.params.userId,
-      ip: req.ip
-    });
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-};
-
-// SECURE: Chain both authentication AND authorization middleware
-app.delete('/api/admin/users/:userId', isAuthenticated, requireAdmin, async (req, res) => {
-  await User.delete(req.params.userId);
-  res.json({ message: 'User deleted' });
-});
-```
-
-### 3. Missing Function Level Access Control
-
-This occurs when the application doesn't properly restrict access to certain functions or pages. A common mistake is hiding admin links in the UI but not protecting the actual endpoints.
-
-**Vulnerable Pattern:**
-
-```javascript
-// Frontend "security" - just hiding the button
-{user.isAdmin && <button onClick={deleteAllUsers}>Delete All Users</button>}
-
-// Backend has no protection - security through obscurity doesn't work!
-app.post('/api/danger/delete-all-users', async (req, res) => {
-  await User.deleteMany({});
-  res.json({ message: 'All users deleted' });
-});
-```
-
-Attackers don't use your UI—they send requests directly to your API. If the endpoint exists and isn't protected, they will find it.
-
-**Secure Implementation:**
-
-```javascript
-// Defense in depth: protect BOTH frontend and backend
-
-// Backend protection is mandatory
-app.post('/api/admin/delete-all-users', 
-  isAuthenticated,      // Must be logged in
-  requireAdmin,         // Must be an admin
-  requireMFA,           // Sensitive action - require MFA confirmation
-  rateLimit({ max: 1, windowMs: 60000 }), // Rate limit dangerous operations
-  async (req, res) => {
-    // Log this action for audit purposes
-    logger.info('Admin initiated user deletion', {
-      adminId: req.user.id,
-      timestamp: new Date().toISOString()
-    });
-    
-    await User.deleteMany({});
-    res.json({ message: 'All users deleted' });
-  }
-);
-```
-
-## Prevention Best Practices
-
-### 1. Deny by Default
-
-Start with everything locked down and explicitly grant access. This is the opposite of allowing everything and trying to block specific actions.
-
-```javascript
-// Create a permission system that denies by default
-const permissions = {
-  'invoice:read': ['user', 'admin', 'accountant'],
-  'invoice:create': ['user', 'admin', 'accountant'],
-  'invoice:delete': ['admin', 'accountant'],
-  'user:delete': ['admin'],
-  'settings:modify': ['admin']
-};
-
-function hasPermission(userRole, action) {
-  // If the action isn't defined, deny by default
-  const allowedRoles = permissions[action];
-  if (!allowedRoles) {
-    logger.warn(`Undefined permission requested: ${action}`);
-    return false;
-  }
-  return allowedRoles.includes(userRole);
-}
-
-// Middleware using the permission system
-const requirePermission = (action) => (req, res, next) => {
-  if (!hasPermission(req.user.role, action)) {
-    return res.status(403).json({ error: 'Permission denied' });
-  }
-  next();
-};
-
-// Usage
-app.delete('/api/invoices/:id', 
-  isAuthenticated, 
-  requirePermission('invoice:delete'),
-  deleteInvoiceHandler
-);
-```
-
-### 2. Use Indirect References
-
-Instead of exposing database IDs (which are often sequential), use non-guessable references.
-
-```javascript
-// Instead of /api/users/1, /api/users/2, etc.
-// Use UUIDs: /api/users/550e8400-e29b-41d4-a716-446655440000
-
-const { v4: uuidv4 } = require('uuid');
-
-// When creating resources
-const newInvoice = new Invoice({
-  publicId: uuidv4(),  // Use this in URLs
-  userId: req.user.id,
-  amount: req.body.amount
-});
-
-// When querying, use the public ID
-app.get('/api/invoices/:publicId', async (req, res) => {
-  const invoice = await Invoice.findOne({ 
-    publicId: req.params.publicId,
-    userId: req.user.id  // Still verify ownership!
-  });
-  // ...
-});
-```
-
-Using UUIDs makes it impossible to enumerate resources by incrementing IDs. However, **this is not a substitute for proper authorization checks**—it's an additional layer of defense.
-
-### 3. Implement Row-Level Security
-
-Many databases support row-level security (RLS), which enforces access control at the database level. This provides defense in depth—even if your application code has a bug, the database won't return unauthorized data.
-
-```sql
--- PostgreSQL Row Level Security Example
-
--- Enable RLS on the invoices table
-ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
-
--- Create a policy: users can only see their own invoices
--- current_user_id() is a function that returns the authenticated user's ID
-CREATE POLICY user_invoices ON invoices
-  FOR SELECT
-  USING (user_id = current_user_id());
-
--- Admins can see all invoices
-CREATE POLICY admin_all_invoices ON invoices
-  FOR ALL
-  USING (current_user_role() = 'admin');
-```
-
-With RLS enabled, even if your application code forgets to filter by user ID, the database will automatically apply the restriction.
-
-### 4. Centralize Access Control Logic
-
-Don't scatter authorization checks throughout your codebase. Centralize them to reduce the chance of mistakes.
-
-```javascript
-// access-control.js - Centralized authorization
-class AccessControl {
-  static async canAccessInvoice(user, invoiceId) {
-    if (user.role === 'admin') return true;
-    
-    const invoice = await Invoice.findById(invoiceId);
-    if (!invoice) return false;
-    
-    // User can access their own invoices
-    if (invoice.userId === user.id) return true;
-    
-    // Accountants can access invoices from their assigned companies
-    if (user.role === 'accountant') {
-      return user.assignedCompanies.includes(invoice.companyId);
-    }
-    
-    return false;
-  }
-  
-  static async canDeleteUser(actor, targetUserId) {
-    // Only admins can delete users
-    if (actor.role !== 'admin') return false;
-    
-    // Admins cannot delete themselves (prevent lockout)
-    if (actor.id === targetUserId) return false;
-    
-    // Super admins cannot be deleted by regular admins
-    const target = await User.findById(targetUserId);
-    if (target?.role === 'super_admin' && actor.role !== 'super_admin') {
-      return false;
-    }
-    
-    return true;
-  }
-}
-
-// Usage in route handlers
-app.get('/api/invoices/:id', isAuthenticated, async (req, res) => {
-  if (!await AccessControl.canAccessInvoice(req.user, req.params.id)) {
+    // 404 for "missing" and "not yours", so IDs cannot be probed.
+    log.warn(
+      { event: `authz_fail:${req.user.name},invoice ${id}`, ip: req.ip, reqId: req.id },
+      'not found'
+    );
     return res.status(404).json({ error: 'Not found' });
   }
-  // ... fetch and return invoice
+  res.json(invoice);
 });
 ```
 
-## Testing for Broken Access Control
+Three details matter here:
 
-### Manual Testing Checklist
+- **The check is part of the data access.** `WHERE id = ? AND user_id = ?` cannot forget the owner the way a separate `if` after the query can.
+- **404, not 403.** A 403 would confirm that invoice 1002 exists. Use 403 when the caller may know the resource exists but may not use it, such as an admin page.
+- **The failure is logged** with a standard event name, `authz_fail`, so repeated attempts can raise an alert ([A09](/guides/owasp-top-10/09-logging-failures) covers this).
 
-When testing your application, try these common attack patterns:
+## Missing Function-Level Checks
 
-1. **IDOR Testing**: Change resource IDs in URLs and request bodies
-2. **Role Testing**: Access admin endpoints as a regular user
-3. **HTTP Method Testing**: Try DELETE/PUT on resources you can only GET
-4. **Parameter Manipulation**: Modify user IDs, role parameters in requests
-5. **Force Browsing**: Access URLs directly without going through the UI
-
-### Automated Testing
-
-Include access control tests in your test suite:
+The vulnerable app's admin endpoint is only behind the login check:
 
 ```javascript
-// Example test using Jest
-describe('Invoice Access Control', () => {
-  test('users cannot access other users invoices', async () => {
-    const user1 = await createTestUser();
-    const user2 = await createTestUser();
-    const invoice = await createInvoice({ userId: user1.id });
-    
-    // User2 tries to access User1's invoice
-    const response = await request(app)
-      .get(`/api/invoices/${invoice.id}`)
-      .set('Authorization', `Bearer ${user2.token}`);
-    
-    // Should return 404 (not 403, to avoid revealing existence)
-    expect(response.status).toBe(404);
+// A01: an admin function that only checks for a login, not for the admin role
+app.get('/api/admin/users', (req, res) => {
+  res.json(db.prepare('SELECT id, name, role FROM users ORDER BY id').all());
+});
+```
+
+The fixed app adds a role check middleware in front of the handler:
+
+```javascript
+// Vertical access control: deny unless the role matches.
+export function requireRole(role, { log }) {
+  return (req, res, next) => {
+    if (req.user?.role === role) return next();
+    log.warn(
+      {
+        event: `authz_fail:${req.user?.name},${req.method} ${req.path}`,
+        ip: req.ip,
+        reqId: req.id,
+      },
+      'forbidden'
+    );
+    res.status(403).json({ error: 'Forbidden' });
+  };
+}
+```
+
+```javascript
+app.get('/api/admin/users', requireRole('admin', { log }), (req, res) => {
+  res.json(db.prepare('SELECT id, name, role FROM users ORDER BY id').all());
+});
+```
+
+## Try It
+
+Start the fixed app, log in as `alice`, and request her invoice, Bob's invoice and the admin list:
+
+```terminal
+{
+  "title": "access control in the fixed app",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "export DEMO_PASSWORD='correct horse battery staple'"
+    },
+    {
+      "cmd": "node src/server.js > app.log 2>&1 &"
+    },
+    {
+      "comment": "wait until the server answers",
+      "cmd": "until curl -s -o /dev/null localhost:3000/; do sleep 0.2; done"
+    },
+    {
+      "cmd": "ALICE=$(curl -s localhost:3000/api/login -H 'content-type: application/json' -d '{\"name\": \"alice\", \"password\": \"correct horse battery staple\"}' | jq -r .token)"
+    },
+    {
+      "cmd": "curl -s localhost:3000/api/invoices/1001 -H \"authorization: Bearer $ALICE\"; echo",
+      "output": "{\"id\":1001,\"amount_cents\":12000,\"memo\":\"Alice: hosting, October\"}"
+    },
+    {
+      "cmd": "curl -s -w ' %{http_code}\\n' localhost:3000/api/invoices/1002 -H \"authorization: Bearer $ALICE\"",
+      "output": "{\"error\":\"Not found\"} 404"
+    },
+    {
+      "cmd": "curl -s -w ' %{http_code}\\n' localhost:3000/api/admin/users -H \"authorization: Bearer $ALICE\"",
+      "output": "{\"error\":\"Forbidden\"} 403"
+    },
+    {
+      "cmd": "curl -s -w ' %{http_code}\\n' localhost:3000/api/invoices/1001",
+      "output": "{\"error\":\"Authentication required\"} 401"
+    }
+  ]
+}
+```
+
+Alice gets her own invoice, a 404 for Bob's, a 403 for the admin function, and a request without a token gets a 401. Stop the server when you are done:
+
+```terminal
+{
+  "title": "stop the server",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kill %1"
+    }
+  ]
+}
+```
+
+## Prove Each Check With a Test
+
+Code review misses access checks because a missing line is hard to see. A test that logs in as one user and asks for another user's data catches it every time. This is the access control test file from the companion app:
+
+```javascript
+import assert from 'node:assert/strict';
+import { after, before, describe, it } from 'node:test';
+import { startApp } from './helpers.js';
+
+describe('A01 broken access control', () => {
+  let app, alice, admin;
+  before(async () => {
+    app = await startApp();
+    alice = await app.loginAs('alice');
+    admin = await app.loginAs('admin');
   });
-  
-  test('regular users cannot access admin endpoints', async () => {
-    const regularUser = await createTestUser({ role: 'user' });
-    
-    const response = await request(app)
-      .get('/api/admin/users')
-      .set('Authorization', `Bearer ${regularUser.token}`);
-    
-    expect(response.status).toBe(403);
+  after(() => app.close());
+
+  it('rejects requests without a session', async () => {
+    assert.equal((await app.call('GET', '/api/invoices/1001')).status, 401);
+  });
+
+  it('lets alice read her own invoice', async () => {
+    const res = await app.call('GET', '/api/invoices/1001', { token: alice });
+    assert.equal(res.status, 200);
+    assert.equal(res.json.id, 1001);
+  });
+
+  it("does not let alice read bob's invoice", async () => {
+    const res = await app.call('GET', '/api/invoices/1002', { token: alice });
+    assert.equal(res.status, 404);
+  });
+
+  it('keeps the admin user list from regular users', async () => {
+    assert.equal((await app.call('GET', '/api/admin/users', { token: alice })).status, 403);
+    assert.equal((await app.call('GET', '/api/admin/users', { token: admin })).status, 200);
   });
 });
 ```
 
-## Key Takeaways
+Against the fixed app, all four tests pass:
 
-1. **Authentication ≠ Authorization**: Being logged in doesn't grant access to everything
-2. **Deny by default**: Start restrictive and explicitly grant permissions
-3. **Validate on every request**: Don't assume previous checks are sufficient
-4. **Server-side enforcement**: Never rely solely on client-side restrictions
-5. **Use indirect references**: UUIDs are harder to guess than sequential IDs
-6. **Test extensively**: Include access control tests in your automated test suite
-7. **Log failures**: Access control violations might indicate an attack
+```terminal
+{
+  "title": "the tests against the fixed app",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "npm test -- tests/access.test.js",
+      "output": "> owasp-top-10-demo@1.0.0 test\n> node --test --test-reporter=spec tests/access.test.js\n\n▶ A01 broken access control\n  ✔ rejects requests without a session (25.831397ms)\n  ✔ lets alice read her own invoice (20.389544ms)\n  ✔ does not let alice read bob's invoice (17.297918ms)\n  ✔ keeps the admin user list from regular users (30.725647ms)\n✔ A01 broken access control (726.224167ms)\nℹ tests 4\nℹ suites 1\nℹ pass 4\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1550.242313"
+    }
+  ]
+}
+```
 
-Broken access control is the #1 vulnerability for a reason—it's easy to get wrong and devastating when exploited. Take the time to design your authorization system carefully and test it thoroughly.
+Now run the same file against the vulnerable version. This is what your CI shows when someone removes an ownership check:
+
+```terminal
+{
+  "title": "the same tests against the vulnerable app",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "APP=vulnerable npm test -- tests/access.test.js",
+      "output": "> owasp-top-10-demo@1.0.0 test\n> node --test --test-reporter=spec tests/access.test.js\n\n▶ A01 broken access control\n  ✔ rejects requests without a session (22.918399ms)\n  ✔ lets alice read her own invoice (24.182345ms)\n  ✖ does not let alice read bob's invoice (26.899605ms)\n  ✖ keeps the admin user list from regular users (20.478876ms)\n✖ A01 broken access control (660.415224ms)\nℹ tests 4\nℹ suites 1\nℹ pass 2\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1602.084435\n\n✖ failing tests:\n\ntest at tests/access.test.js:24:3\n✖ does not let alice read bob's invoice (26.899605ms)\n  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n  200 !== 404"
+    }
+  ]
+}
+```
+
+Write one such test for each resource type and each role boundary. They are cheap, fast and permanent, unlike a one-off penetration test.
+
+## Deny by Default
+
+Most access control bugs are a route that nobody remembered to protect. Structure the app so that a new route is protected unless someone opts out on purpose. In the companion app, the login route and the public pages are registered first, and everything under `/api` registered after them goes through `authenticate`:
+
+```javascript
+app.post('/api/login', loginLimiter, login({ db, log }));
+
+// Everything below needs a valid session.
+app.use('/api', authenticate({ db, log }));
+app.post('/api/logout', logout({ db, log }));
+app.use('/api/invoices', invoiceRoutes({ db, log }));
+```
+
+The same idea applies at every layer: an API gateway or ingress that rejects unauthenticated requests by default, a cloud IAM policy that starts from no permissions, and a database role that can read only the tables it needs.
+
+As the rules grow (teams, shared documents, delegated access), move them out of scattered `if` statements into one policy module or a policy engine. [Moving Authorization Out of Your App Code](/posts/authorization-if-statements-vs-cerbos-vs-spicedb) compares plain code, Cerbos and SpiceDB with measurements.
+
+## Other Access Control Failures
+
+### Checks Only in the Front End
+
+The third example attack in the OWASP A01 page is an application that keeps all its access control in browser JavaScript. The attacker skips the browser and calls the API with `curl`. Hiding a menu item is good user experience; the server must still enforce the same rule.
+
+### CORS Misconfiguration
+
+Cross-Origin Resource Sharing (CORS) tells browsers which other websites may call your API from JavaScript. Reflecting every origin while allowing credentials lets any website make requests with your users' cookies:
+
+```javascript
+import cors from 'cors';
+
+// VULNERABLE: any website may call the API with the user's cookies
+app.use(cors({ origin: true, credentials: true }));
+```
+
+Allow only the origins you serve, and only on the routes that need it:
+
+```javascript
+import cors from 'cors';
+
+const allowedOrigins = new Set(['https://app.example.com', 'https://admin.example.com']);
+
+app.use(
+  '/api',
+  cors({
+    origin: (origin, callback) => callback(null, allowedOrigins.has(origin)),
+    credentials: true,
+  })
+);
+```
+
+CORS is a browser rule, not access control. It does nothing against `curl` or a server-side client, so the checks above still apply.
+
+### Path Traversal
+
+A route that serves files by name must not let the name leave its directory:
+
+```javascript
+import path from 'node:path';
+
+// VULNERABLE: "../../etc/passwd" leaves the uploads directory
+app.get('/files/:name', (req, res) => {
+  res.sendFile(path.join('/srv/uploads', req.params.name));
+});
+```
+
+Use the `root` option of `res.sendFile`, which rejects paths that try to leave the root, and validate the name against what your application creates:
+
+```javascript
+const FILE_NAME = /^[a-z0-9-]{1,64}\.(pdf|png)$/;
+
+app.get('/files/:name', (req, res) => {
+  if (!FILE_NAME.test(req.params.name)) return res.status(400).end();
+  res.sendFile(req.params.name, { root: '/srv/uploads' });
+});
+```
+
+Then apply the ownership check to the file as to any other record: a valid file name is not permission to read it.
+
+### Sessions, Tokens and CSRF
+
+- End sessions on the server at logout. A stateless JWT stays valid until it expires, so keep access tokens short-lived and revoke refresh tokens. [Part 8](/guides/owasp-top-10/07-authentication-failures) covers session handling.
+- Never trust a role or user ID that the client can edit, such as a claim in an unverified token or a hidden form field. Read it from the server-side session or a verified token.
+- Cross-site request forgery (CSRF) affects applications that authenticate with cookies, because browsers attach cookies to requests from other sites. Use `SameSite=Lax` or `Strict` cookies and a CSRF token, or reject state-changing requests whose `Origin` or `Sec-Fetch-Site` header shows another site. The companion app uses bearer tokens in the `Authorization` header, which browsers never add on their own, so CSRF does not apply to it.
+
+## Defense in Depth: Row-Level Security
+
+If your database supports row-level security (RLS), it can enforce ownership even when application code forgets. In PostgreSQL, the application sets the current user for each transaction, and a policy filters every query:
+
+```sql
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invoices FORCE ROW LEVEL SECURITY; -- apply it to the table owner too
+
+CREATE POLICY invoices_owner ON invoices
+  USING (user_id = current_setting('app.user_id')::integer)
+  WITH CHECK (user_id = current_setting('app.user_id')::integer);
+
+-- In the application, inside each transaction:
+BEGIN;
+SELECT set_config('app.user_id', '1', true); -- true: only for this transaction
+SELECT id, memo FROM invoices; -- returns only user 1's rows
+COMMIT;
+```
+
+Two caveats: superusers and roles with `BYPASSRLS` skip the policies, so connect as an ordinary role; and with a connection pool, always set the user inside the transaction (the `true` argument), so it cannot leak to the next request on the same connection.
+
+## Common Mistakes
+
+- **Checking authentication only.** A valid session says who the user is, not what they may access.
+- **Fetching first, checking later.** A check after the query is easy to skip in one handler. Put the owner in the query.
+- **Trusting IDs from the client for ownership.** Take the user ID from the session, never from the request body.
+- **Protecting `GET` but not `PUT` and `DELETE`.** Test every method on every route.
+- **Relying on UUIDs.** Hard-to-guess IDs reduce enumeration; they do not replace a check.
+- **No tests.** An access check without a test disappears in the next refactor.
+
+## Summary
+
+- Broken access control is still the most common serious risk, and in 2025 it also includes SSRF.
+- Enforce ownership on the server, inside the data access, for every request and method.
+- Deny by default: protect a whole route prefix, then open specific routes on purpose.
+- Return 404 for records that are not the caller's, and log the failure.
+- Write a test per boundary, and run it against a broken version once to see it fail.
+
+Next, the [SSRF part](/guides/owasp-top-10/10-ssrf) covers the access control failure that turns your own server into the attacker's client.
+
+## Keep Learning
+
+- [Moving Authorization Out of Your App Code: If-Statements vs Cerbos vs SpiceDB](/posts/authorization-if-statements-vs-cerbos-vs-spicedb)
+- [The gRPC-Go Auth Bypass Hiding in Your Dependency Tree](/posts/grpc-go-authorization-bypass-cve-2026-33186)
+- [STRIDE in the Threat Modeling guide](/guides/threat-modeling/01-stride), for finding access control gaps before you write code
+- [Security-Focused Code Reviews](/posts/security-focused-code-reviews)

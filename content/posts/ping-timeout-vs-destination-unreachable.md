@@ -308,6 +308,7 @@ Request timeout for icmp_seq 3
 ```
 
 This pattern indicates:
+
 - Initially, ARP lookup fails (unreachable)
 - Then ARP cache times out and ping just waits (timeout)
 - Then ARP tries again (unreachable)
@@ -363,6 +364,7 @@ telnet database.example.com 5432
 ```
 
 This means:
+
 - Host is reachable (ping works)
 - ICMP is allowed
 - But the specific service port (5432) is blocked or not running
@@ -372,6 +374,7 @@ Ping only tests ICMP connectivity, not TCP/UDP services.
 ## Practical Tips
 
 **For timeouts:**
+
 1. Verify the host IP is correct
 2. Check if the host is powered on
 3. Try pinging from a different location
@@ -379,6 +382,7 @@ Ping only tests ICMP connectivity, not TCP/UDP services.
 5. Consider that ICMP might be intentionally blocked
 
 **For unreachable:**
+
 1. Note which router sent the error
 2. Check routing tables
 3. Verify network cables and WiFi connection
@@ -404,3 +408,5 @@ mtr google.com
 ```
 
 The key difference is that "request timed out" means silence (packet sent, no reply), while "destination unreachable" means active rejection (router explicitly saying it cannot reach the destination). Understanding this distinction helps you troubleshoot network issues faster.
+
+For a full troubleshooting order with mtr, tcpdump and ss, and what real packet loss looks like, read [Network Troubleshooting: ping, mtr, tcpdump, ss and netem](/guides/networking-fundamentals/08-network-monitoring-and-troubleshooting) in our networking guide.

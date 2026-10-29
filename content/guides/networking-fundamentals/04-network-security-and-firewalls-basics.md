@@ -1,572 +1,469 @@
 ---
-title: 'Network Security and Firewalls'
-description: 'Protecting network traffic, controlling access, and implementing security policies without breaking functionality.'
+title: 'Firewalls and Network Security: nftables, Segmentation, mTLS'
+description: 'Write stateful nftables rules, see drop vs reject from the client side, segment a network into zones, then add mTLS and rate limiting to a proxy in a lab.'
 order: 4
 ---
 
-Network security is about controlling who can communicate with what, when, and how. Good security policies protect your applications while still allowing legitimate traffic to flow. Poor security policies either leave you vulnerable or break functionality in confusing ways.
+A firewall decides which packets may pass, based on where they come from, where they go, which protocol and port they use, and whether they belong to a connection that is already allowed. That last part, **connection state**, is what makes modern firewalls usable: you allow the request, and the reply is allowed automatically.
+
+In this part you start from a network with no firewall at all and close it down: first on a single host, then between the network's zones on the router. Along the way you see what a dropped packet and a rejected packet look like from the client, which is how you tell a firewall problem from a dead service. The last sections go above the packet level, with mutual TLS and rate limiting on the load balancer.
 
 ## Prerequisites
 
-- Understanding of IP addressing and ports from previous sections
-- Terminal access with sudo privileges for firewall configuration
-- Basic understanding of your application's communication patterns
+- A fresh lab from [Part 1](/guides/networking-fundamentals/01-network-fundamentals-and-protocols#h2-build-the-practice-lab): run `sudo ./netlab.sh down && sudo ./netlab.sh up` before you start, because every part changes the lab.
+- The addressing from [Part 2](/guides/networking-fundamentals/02-ip-addressing-and-subnetting).
+- `nft` from the `nftables` package. Every command here changes only the lab's namespaces.
 
-## Network Security Fundamentals
+## NAT Is Not a Firewall
 
-Every network connection has three key attributes you can control:
+The shop's servers have private addresses behind NAT, so they feel hidden. They are not. Anything that can route packets to the private network reaches them, and `client` can, because its gateway is the lab router:
 
-1. **Source**: Where is the traffic coming from?
-2. **Destination**: Where is it trying to go?
-3. **Protocol/Port**: What type of communication is it?
-
-Let's see what connections currently exist on your system:
-
-```bash
-# Show all network connections
-netstat -tuln
-
-# Show connections with process information
-sudo netstat -tulnp
+```terminal
+{
+  "title": "private addresses, reachable",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "client#",
+      "cmd": "curl -s -m 3 http://10.0.2.11:8080/",
+      "output": "served by web1 (10.0.2.11)"
+    },
+    {
+      "prompt": "client#",
+      "cmd": "nc -zv -w 3 10.0.3.10 5432",
+      "output": "Connection to 10.0.3.10 5432 port [tcp/postgresql] succeeded!"
+    }
+  ]
+}
 ```
 
-This reveals what services are listening and what connections are active. Each line represents a potential security consideration.
+On the public internet, ISPs drop packets to private addresses, but plenty of networks can route to yours: a peered VPC, a VPN, a partner link, another machine in the same subnet that an attacker controls. Only a firewall decides what may connect.
 
-### Default Security Posture
+## nftables in Five Minutes
 
-Most systems start with relatively open networking. Let's check your current firewall status:
+On Linux the firewall is part of the kernel (**netfilter**), and **nftables** (`nft`) is its current interface. The tools you may know, `ufw`, `firewalld` and `iptables` (which on current distributions is `iptables-nft`), all write nftables rules underneath.
 
-```bash
-# Ubuntu/Debian firewall status
-sudo ufw status
+- A **table** holds chains and belongs to a family: `ip` (IPv4), `ip6`, or `inet` (both, which is what you want for filtering).
+- A **chain** with a **hook** sees packets at one point: `input` (to this machine), `output` (from this machine), `forward` (through this machine, as on a router). Its **policy** is what happens to packets that no rule matched.
+- **Rules** are checked in order. `drop` ends the packet's journey; `accept` ends only this chain, and another chain on the same hook (one that Docker or firewalld added, for example) can still drop the packet.
 
-# CentOS/RHEL firewall status
-sudo firewall-cmd --list-all
+Three rules appear in almost every ruleset:
 
-# Raw iptables rules (Linux)
-sudo iptables -L
+- `ct state established,related accept`: let replies and related packets (such as ICMP errors) through. This is the stateful part, based on the connection tracking table you saw in Part 2.
+- `ct state invalid drop`: drop packets that connection tracking cannot place in a valid state, such as a stray ACK for a connection that never started or a malformed header.
+- `iif "lo" accept`: never block the machine talking to itself.
+
+## A Host Firewall: Protect the Database
+
+`db` should accept PostgreSQL connections from the app servers only, and ping from anywhere. Write the ruleset to a file so that you can check it before loading it:
+
+```text
+#!/usr/sbin/nft -f
+# db: only the app subnet may reach PostgreSQL
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        iif "lo" accept
+        ct state established,related accept
+        ct state invalid drop
+        meta l4proto { icmp, ipv6-icmp } accept
+
+        ip saddr 10.0.2.0/24 tcp dport 5432 accept
+
+        counter comment "everything else"
+    }
+}
 ```
 
-If you see "inactive" or minimal rules, your system is probably accepting all connections by default.
-
-## Firewall Types and Tools
-
-### Host-Based Firewalls
-
-Host-based firewalls run on individual servers and control traffic to/from that specific machine.
-
-**UFW (Ubuntu/Debian):**
-
-```bash
-# Enable the firewall
-sudo ufw enable
-
-# Allow SSH access (important - don't lock yourself out!)
-sudo ufw allow ssh
-
-# Allow specific ports
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-
-# Allow from specific IP addresses
-sudo ufw allow from 192.168.1.100 to any port 22
+```terminal
+{
+  "title": "check, load and test the db firewall",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "-c checks the file without changing anything",
+      "prompt": "db#",
+      "cmd": "nft -c -f /etc/netlab/db-firewall.nft && echo \"syntax ok\"",
+      "output": "syntax ok"
+    },
+    {
+      "prompt": "db#",
+      "cmd": "nft -f /etc/netlab/db-firewall.nft"
+    },
+    {
+      "comment": "from the app subnet: allowed",
+      "prompt": "web1#",
+      "cmd": "nc -zv -w 3 db 5432",
+      "output": "Connection to db (10.0.3.10) 5432 port [tcp/postgresql] succeeded!"
+    },
+    {
+      "comment": "from the data subnet: dropped",
+      "prompt": "ns1#",
+      "cmd": "nc -zv -w 3 10.0.3.10 5432",
+      "output": "nc: connect to 10.0.3.10 port 5432 (tcp) timed out: Operation now in progress"
+    },
+    {
+      "prompt": "db#",
+      "cmd": "nft list chain inet filter input",
+      "output": "table inet filter {\n\tchain input {\n\t\ttype filter hook input priority filter; policy drop;\n\t\tiif \"lo\" accept\n\t\tct state established,related accept\n\t\tct state invalid drop\n\t\tmeta l4proto { icmp, ipv6-icmp } accept\n\t\tip saddr 10.0.2.0/24 tcp dport 5432 accept\n\t\tcounter packets 3 bytes 180 comment \"everything else\"\n\t}\n}"
+    }
+  ]
+}
 ```
 
-**firewalld (CentOS/RHEL):**
+`flush ruleset` at the top makes the file complete: loading it replaces everything, and nftables loads the whole file **atomically**, so there is never a moment with half the rules. The `counter` at the end shows how many packets reached the policy, which is the first thing to look at when something is blocked and you do not know why.
 
-```bash
-# Check current zones and rules
-sudo firewall-cmd --list-all
+## Drop or Reject
 
-# Allow specific services
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
+The `ns1` test waited 3 seconds and gave up. That is **drop**: the packet disappears and the client hears nothing. The alternative is **reject**: the firewall answers that the connection is not allowed. Change the last rule and try again, then try the ICMP variant that firewalld uses by default:
 
-# Allow specific ports
-sudo firewall-cmd --permanent --add-port=8080/tcp
-
-# Reload configuration
-sudo firewall-cmd --reload
+```terminal
+{
+  "title": "what the client sees: drop, reject, host-prohibited",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "drop: silence until the client gives up",
+      "prompt": "ns1#",
+      "cmd": "time nc -zv -w 3 10.0.3.10 5432",
+      "output": "nc: connect to 10.0.3.10 port 5432 (tcp) timed out: Operation now in progress\n\nreal\t0m3.019s\nuser\t0m0.001s\nsys\t0m0.005s"
+    },
+    {
+      "prompt": "db#",
+      "cmd": "nft add rule inet filter input reject with tcp reset"
+    },
+    {
+      "comment": "reject with a TCP reset: immediate 'Connection refused'",
+      "prompt": "ns1#",
+      "cmd": "time nc -zv -w 3 10.0.3.10 5432",
+      "output": "nc: connect to 10.0.3.10 port 5432 (tcp) failed: Connection refused\n\nreal\t0m0.003s\nuser\t0m0.000s\nsys\t0m0.003s"
+    },
+    {
+      "comment": "start again from the file, so that the TCP reset rule is gone",
+      "prompt": "db#",
+      "cmd": "nft -f /etc/netlab/db-firewall.nft"
+    },
+    {
+      "prompt": "db#",
+      "cmd": "nft add rule inet filter input reject with icmpx admin-prohibited"
+    },
+    {
+      "comment": "reject with ICMP 'administratively prohibited': looks like a routing error",
+      "prompt": "ns1#",
+      "cmd": "nc -zv -w 3 10.0.3.10 5432",
+      "output": "nc: connect to 10.0.3.10 port 5432 (tcp) failed: No route to host"
+    }
+  ]
+}
 ```
 
-### Network-Based Firewalls
+| Firewall action                      | What the client sees                                                                                 | Good for                                                                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `drop`                               | A timeout after the client's own limit (curl and most TCP stacks wait more than a minute by default) | Traffic from the internet: scanners learn nothing, and you send no replies                                                      |
+| `reject with tcp reset`              | `Connection refused` at once                                                                         | Internal networks: clients fail fast instead of hanging                                                                         |
+| `reject with icmpx admin-prohibited` | `No route to host`                                                                                   | Same, but confusing: firewalld rejects this way by default, so "No route to host" on a host you can ping often means a firewall |
 
-Network firewalls control traffic between network segments. Cloud providers offer these as security groups or network ACLs.
+A timeout is the most expensive failure in production, because every caller waits for its full timeout before it can retry or fail over. Inside your own network, rejecting is often kinder than dropping.
 
-**AWS Security Groups example:**
+## Segment the Network on the Router
 
-```bash
-# Allow HTTP traffic from anywhere
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-12345678 \
-  --protocol tcp \
-  --port 80 \
-  --cidr 0.0.0.0/0
+A host firewall protects one machine. **Segmentation** puts the rules between zones, so that a compromised web server cannot even try the database's SSH port. The lab already has zones as subnets; the router decides what may cross between them:
 
-# Allow database access only from application servers
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-database \
-  --protocol tcp \
-  --port 5432 \
-  --source-group sg-application
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [ { "id": "inet", "label": "internet", "sub": "client, remote", "icon": "globe", "tone": "slate" } ],
+    [ { "id": "edge", "label": "edge zone", "sub": "lb 10.0.1.0/24", "icon": "server", "tone": "green" } ],
+    [ { "id": "app", "label": "app zone", "sub": "web1-3 10.0.2.0/24", "icon": "box", "tone": "blue" } ],
+    [ { "id": "data", "label": "data zone", "sub": "db, ns1 10.0.3.0/24", "icon": "database", "tone": "violet" } ]
+  ],
+  "edges": [
+    ["inet", "edge", "80, 443 (DNAT)"],
+    ["edge", "app", "8080"],
+    ["app", "data", "5432"]
+  ]
+}
 ```
 
-## Practical Firewall Configuration
+Every arrow is one allow rule on the router's `forward` chain; everything else is dropped. Outbound connections to the internet stay allowed for the private zones, so servers can still fetch packages:
 
-Let's configure a typical web server firewall policy:
+```text
+#!/usr/sbin/nft -f
+# router: what may cross between the zones
+table inet filter
+delete table inet filter
 
-### Web Server Setup
+table inet filter {
+    chain forward {
+        type filter hook forward priority filter; policy drop;
 
-Start with a deny-all policy, then explicitly allow needed traffic:
+        ct state established,related accept
+        ct state invalid drop
 
-```bash
-# Reset firewall to defaults
-sudo ufw --force reset
+        # internet -> only what the router publishes with DNAT (the shop and its DNS server)
+        iifname "br-wan" ct status dnat accept
 
-# Default policies: deny incoming, allow outgoing
-sudo ufw default deny incoming
-sudo ufw default allow outgoing
+        # zone to zone: one rule per arrow
+        iifname "br-edge" oifname "br-app" tcp dport 8080 accept
+        iifname "br-app" oifname "br-data" tcp dport 5432 accept
 
-# Allow SSH (adjust port if you use non-standard)
-sudo ufw allow 22/tcp
+        # private zones -> internet, and ping inside the private network for troubleshooting
+        ip saddr 10.0.0.0/16 oifname "br-wan" accept
+        ip saddr 10.0.0.0/16 ip daddr 10.0.0.0/16 icmp type echo-request accept
 
-# Allow web traffic
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-
-# Enable the firewall
-sudo ufw enable
+        counter comment "dropped by policy"
+    }
+}
 ```
 
-Test that your web server still works after enabling the firewall.
+The first two lines create the table if it does not exist and then delete it, so that the file replaces the table cleanly every time you load it, without touching the router's NAT table.
 
-### Database Server Security
-
-Database servers need more restrictive policies:
-
-```bash
-# Allow database connections only from application servers
-sudo ufw allow from 10.0.1.0/24 to any port 5432
-
-# Allow SSH from management network only
-sudo ufw allow from 10.0.100.0/24 to any port 22
-
-# Deny everything else (default policy)
-sudo ufw default deny incoming
+```terminal
+{
+  "title": "load the zone rules and test every path",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "router#",
+      "cmd": "nft -c -f /etc/netlab/router-filter.nft && nft -f /etc/netlab/router-filter.nft"
+    },
+    {
+      "comment": "the published site still works",
+      "prompt": "client#",
+      "cmd": "curl -s -m 3 http://www.shop.example/",
+      "output": "served by web1 (10.0.2.11)"
+    },
+    {
+      "comment": "the private address does not, any more",
+      "prompt": "client#",
+      "cmd": "curl -sS -m 3 http://10.0.2.11:8080/",
+      "output": "curl: (28) Connection timed out after 3006 milliseconds"
+    },
+    {
+      "comment": "edge -> app on 8080: allowed",
+      "prompt": "lb#",
+      "cmd": "curl -s -m 3 http://web1:8080/health",
+      "output": "ok"
+    },
+    {
+      "comment": "edge -> data: not allowed, not even to PostgreSQL",
+      "prompt": "lb#",
+      "cmd": "nc -zv -w 3 db 5432",
+      "output": "nc: connect to db (10.0.3.10) port 5432 (tcp) timed out: Operation now in progress"
+    },
+    {
+      "comment": "app -> data on 5432: allowed",
+      "prompt": "web1#",
+      "cmd": "nc -zv -w 3 db 5432",
+      "output": "Connection to db (10.0.3.10) 5432 port [tcp/postgresql] succeeded!"
+    },
+    {
+      "comment": "private -> internet: allowed",
+      "prompt": "web1#",
+      "cmd": "curl -s -m 3 http://203.0.113.20/",
+      "output": "served by remote (203.0.113.20)"
+    },
+    {
+      "prompt": "router#",
+      "cmd": "nft list chain inet filter forward | grep -E 'counter|policy'",
+      "output": "\t\ttype filter hook forward priority filter; policy drop;\n\t\tcounter packets 6 bytes 360 comment \"dropped by policy\""
+    }
+  ]
+}
 ```
 
-### Application Server Configuration
+The counter shows the packets that the policy dropped: the retried SYNs of the two blocked tests. In a real network you add `log prefix "fw-drop: "` before the final counter and read the messages with `journalctl -k`, but rate-limit it (`limit rate 10/minute`), because a port scan can write thousands of lines a second.
 
-Application servers often need to make outbound connections:
+## The Same Rules with ufw, firewalld and nftables
 
-```bash
-# Allow inbound connections from load balancer
-sudo ufw allow from 10.0.2.0/24 to any port 8080
+On a real server you usually use the distribution's front end. These are the `db` rules from above, for the three common tools. Run them on a real server, not in the lab: they change the machine's own firewall and its boot configuration.
 
-# Outbound connections are allowed by default
-# But you can restrict them if needed:
-sudo ufw default deny outgoing
-sudo ufw allow out 53      # DNS
-sudo ufw allow out 80      # HTTP
-sudo ufw allow out 443     # HTTPS
-sudo ufw allow out 5432    # Database
+:::warning
+Allow SSH before you turn on a firewall on a remote server, and keep a second session open while you test. On a cloud server, also check that you have console access, or that the provider's own firewall (security group) lets you back in.
+:::
+
+```tabs
+{
+  "title": "Allow PostgreSQL from the app subnet only",
+  "tabs": [
+    {
+      "label": "ufw (Ubuntu)",
+      "lang": "bash",
+      "code": "sudo ufw default deny incoming\nsudo ufw default allow outgoing\nsudo ufw allow 22/tcp\nsudo ufw allow from 10.0.2.0/24 to any port 5432 proto tcp\nsudo ufw enable\nsudo ufw status verbose"
+    },
+    {
+      "label": "firewalld (Fedora, RHEL)",
+      "lang": "bash",
+      "code": "sudo firewall-cmd --permanent --zone=public --add-rich-rule='rule family=\"ipv4\" source address=\"10.0.2.0/24\" port port=\"5432\" protocol=\"tcp\" accept'\nsudo firewall-cmd --reload\nsudo firewall-cmd --zone=public --list-all"
+    },
+    {
+      "label": "nftables (any distribution)",
+      "lang": "bash",
+      "code": "# put the ruleset in /etc/nftables.conf (the db-firewall.nft file from above, plus SSH),\n# check it, then load it now and at every boot\nsudo nft -c -f /etc/nftables.conf\nsudo systemctl enable --now nftables\nsudo nft list ruleset"
+    }
+  ]
+}
 ```
 
-## Network Segmentation
+Two front-end details cause real outages:
 
-Segmentation divides your network into zones with different security policies.
+- **Docker bypasses ufw and firewalld for published ports.** `docker run -p 5432:5432` adds its own NAT and forward rules, and the forwarded traffic never passes the `input` chain that ufw manages. Publish on `127.0.0.1:5432:5432` or put rules in Docker's `DOCKER-USER` chain. Part 6 shows what Docker does.
+- **IPv6.** A `table ip` ruleset or an iptables-only setup leaves IPv6 open. Use the `inet` family, and make sure ufw has `IPV6=yes` in `/etc/default/ufw` (the default on Ubuntu).
 
-```
-                           Internet
-                              │
-                              ▼
-┌────────────────────────────────────────────────────────────┐
-│                    DMZ (10.0.1.0/24)                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │Load Balancer│  │ Web Server  │  │ Web Server  │         │
-│  │10.0.1.10    │  │10.0.1.20    │  │10.0.1.21    │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-└─────────────────────┬──────────────────────────────────────┘
-                      │ Firewall Rules:
-                      │ ✓ HTTP/HTTPS from Internet
-                      │ ✓ Limited access to Internal
-                      ▼
-┌────────────────────────────────────────────────────────────┐
-│                Internal Zone (10.0.2.0/24)                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │API Server   │  │App Server   │  │App Server   │         │
-│  │10.0.2.10    │  │10.0.2.20    │  │10.0.2.21    │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-└─────────────────────┬──────────────────────────────────────┘
-                      │ Firewall Rules:
-                      │ ✓ Access from DMZ only
-                      │ ✓ Specific ports to Secure Zone
-                      ▼
-┌───────────────────────────────────────────────────────────┐
-│                 Secure Zone (10.0.3.0/24)                 │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │Database     │  │File Server  │  │Backup       │        │
-│  │10.0.3.10    │  │10.0.3.20    │  │10.0.3.30    │        │
-│  └─────────────┘  └─────────────┘  └─────────────┘        │
-│                                                           │
-│  Firewall Rules:                                          │
-│  ✓ Access from Internal Zone only                         │
-│  ✓ Management access from Admin network                   │
-│  ✗ No direct Internet access                              │
-└───────────────────────────────────────────────────────────┘
+In the cloud, the same rules usually live in the provider's **security groups**, which are stateful firewalls attached to each VM or network interface. Part 7 covers them; most teams use both, the cloud firewall as the outer layer and a host firewall as the inner one.
+
+## Above the Packets: Mutual TLS
+
+A firewall rule like "the app subnet may reach the database" trusts an address. Anything that gets an address in that subnet is trusted too. **Mutual TLS** (mTLS) trusts an identity instead: the server asks the client for a certificate signed by a CA it trusts, and refuses the connection without one. Service meshes (Part 10) do this between every pair of services automatically; here you do it by hand for an admin area.
+
+Create a client certificate from the lab CA. `extendedKeyUsage=clientAuth` marks it as a client certificate:
+
+```terminal
+{
+  "title": "issue a client certificate",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "$",
+      "cmd": "cd /etc/netlab/tls && sudo openssl req -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -subj '/CN=ops-laptop' -keyout ops.key -out ops.csr 2>/dev/null"
+    },
+    {
+      "prompt": "$",
+      "cmd": "sudo bash -c 'openssl x509 -req -in ops.csr -CA ca.crt -CAkey ca.key -days 30 -out ops.crt -extfile <(echo extendedKeyUsage=clientAuth)'",
+      "output": "Certificate request self-signature ok\nsubject=CN=ops-laptop"
+    },
+    {
+      "prompt": "$",
+      "cmd": "openssl x509 -in ops.crt -noout -subject -issuer -ext extendedKeyUsage",
+      "output": "subject=CN=ops-laptop\nissuer=CN=netlab CA\nX509v3 Extended Key Usage:\n    TLS Web Client Authentication"
+    }
+  ]
+}
 ```
 
-### Basic Network Zones
+## Above the Packets: Rate Limits
 
-**DMZ (Demilitarized Zone)**: Public-facing servers
+Firewalls count packets; they do not know that `/login` is cheap to call and expensive to serve. A reverse proxy can limit requests per client. This version of the lab's nginx config adds both protections: `/admin/` requires a client certificate, and every client gets 5 requests per second with a burst of 10. Replace `/etc/netlab/lb-nginx.conf` with it:
 
-```bash
-# DMZ subnet: 10.0.1.0/24
-# - Web servers
-# - Load balancers
-# - Reverse proxies
-# Allow: Internet → DMZ (ports 80, 443)
-# Allow: DMZ → Internal (specific ports only)
-```
+```nginx
+# nginx on lb: reverse proxy with mTLS for /admin/ and a per-client rate limit
+worker_processes 1;
+pid /run/netlab/lb-nginx.pid;
+error_log /run/netlab/log/lb-nginx-error.log;
 
-**Internal Zone**: Application servers
+events {
+    worker_connections 256;
+}
 
-```bash
-# Internal subnet: 10.0.2.0/24
-# - Application servers
-# - API services
-# - Microservices
-# Allow: DMZ → Internal (application ports)
-# Deny: Internet → Internal
-```
-
-**Secure Zone**: Data and management
-
-```bash
-# Secure subnet: 10.0.3.0/24
-# - Database servers
-# - File servers
-# - Management tools
-# Allow: Internal → Secure (specific ports)
-# Allow: Management → Secure (SSH, monitoring)
-# Deny: DMZ → Secure, Internet → Secure
-```
-
-### Implementing Segmentation
-
-Use subnets and firewall rules to enforce segmentation:
-
-```bash
-# Allow web servers to reach app servers
-sudo ufw allow from 10.0.1.0/24 to 10.0.2.0/24 port 8080
-
-# Allow app servers to reach databases
-sudo ufw allow from 10.0.2.0/24 to 10.0.3.0/24 port 5432
-
-# Deny direct web-to-database connections
-sudo ufw deny from 10.0.1.0/24 to 10.0.3.0/24
-```
-
-## Container Security
-
-Container environments need special security considerations.
-
-### Docker Network Security
-
-By default, Docker containers can reach each other freely:
-
-```bash
-# Create isolated networks for different applications
-docker network create --driver bridge app1-network
-docker network create --driver bridge app2-network
-
-# Run containers on isolated networks
-docker run --network app1-network --name app1-web nginx
-docker run --network app1-network --name app1-db postgres
-
-docker run --network app2-network --name app2-web nginx
-docker run --network app2-network --name app2-db postgres
-```
-
-Containers on different networks cannot communicate unless explicitly connected.
-
-### Kubernetes Network Policies
-
-Kubernetes allows fine-grained network policies:
-
-```yaml
-# NetworkPolicy: Allow only specific pod-to-pod communication
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: deny-all-ingress
-  namespace: production
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-web-to-api
-  namespace: production
-spec:
-  podSelector:
-    matchLabels:
-      app: api
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: web
-      ports:
-        - protocol: TCP
-          port: 8080
-```
-
-Apply these policies:
-
-```bash
-# Apply network policies
-kubectl apply -f network-policies.yaml
-
-# Verify policies are active
-kubectl get networkpolicies -n production
-```
-
-## Service-to-Service Authentication
-
-Network security alone isn't enough. Services should authenticate each other.
-
-### API Keys and Tokens
-
-Services can authenticate using API keys:
-
-```bash
-# Service A calls Service B with authentication
-curl -H "Authorization: Bearer $API_TOKEN" \
-  http://service-b.internal.com/api/data
-```
-
-### Mutual TLS (mTLS)
-
-For highly secure environments, use mutual TLS where both client and server authenticate:
-
-```bash
-# Client provides certificate to server
-curl --cert client.pem --key client-key.pem \
-  --cacert ca.pem \
-  https://secure-service.internal.com/api
-```
-
-### Service Meshes
-
-Service mesh tools like Istio provide automatic mTLS:
-
-```yaml
-# Istio: Require mTLS for all service communication
-apiVersion: security.istio.io/v1beta1
-kind: PeerAuthentication
-metadata:
-  name: require-mtls
-  namespace: production
-spec:
-  mtls:
-    mode: STRICT
-```
-
-## Monitoring and Logging
-
-Security policies are only effective if you monitor them.
-
-### Connection Monitoring
-
-Monitor active connections for unusual patterns:
-
-```bash
-# Watch active connections in real-time
-watch 'netstat -tuln | grep ESTABLISHED'
-
-# Log connection attempts
-sudo ufw logging on
-tail -f /var/log/ufw.log
-```
-
-### Failed Connection Attempts
-
-Failed connections often indicate attacks or misconfigurations:
-
-```bash
-# Check for blocked connections in UFW logs
-sudo grep "BLOCK" /var/log/ufw.log
-
-# Look for patterns in failed attempts
-sudo grep "DPT=22" /var/log/ufw.log | grep "BLOCK"
-```
-
-### Application-Level Monitoring
-
-Monitor your applications for authentication failures:
-
-```bash
-# Web server access logs
-tail -f /var/log/nginx/access.log | grep "401\|403"
-
-# Application logs
-tail -f /var/log/app/auth.log | grep "FAILED"
-```
-
-## Common Security Mistakes
-
-### Overly Permissive Rules
-
-Avoid rules that allow too much access:
-
-```bash
-# Bad: Allow everything from internal network
-sudo ufw allow from 10.0.0.0/8
-
-# Better: Allow specific services from specific subnets
-sudo ufw allow from 10.0.1.0/24 to any port 8080
-sudo ufw allow from 10.0.2.0/24 to any port 5432
-```
-
-### Forgetting Outbound Rules
-
-Don't forget that compromised services can make outbound connections:
-
-```bash
-# Consider restricting outbound connections
-sudo ufw default deny outgoing
-
-# Then explicitly allow needed outbound traffic
-sudo ufw allow out 53   # DNS
-sudo ufw allow out 80   # HTTP
-sudo ufw allow out 443  # HTTPS
-```
-
-### Not Testing Changes
-
-Always test firewall changes before applying them to production:
-
-```bash
-# Test firewall rules in a non-production environment first
-# Use automation to apply consistent rules across environments
-
-# Keep a rollback plan ready
-sudo ufw disable  # Emergency rollback command
-```
-
-## Advanced Security Patterns
-
-### Zero Trust Networking
-
-Zero trust assumes no network location is inherently trustworthy:
-
-```bash
-# Every connection requires authentication
-# Even "internal" services verify each request
-# Network location grants no implicit access
-```
-
-### Defense in Depth
-
-Layer multiple security controls:
-
-1. **Network firewalls**: Control traffic between segments
-2. **Host firewalls**: Control traffic to individual servers
-3. **Application authentication**: Verify every request
-4. **Encryption**: Protect data in transit
-5. **Monitoring**: Detect unusual patterns
-
-### Rate Limiting
-
-Protect against abuse with rate limiting:
-
-```bash
-# nginx rate limiting example
 http {
-    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    access_log /run/netlab/log/lb-nginx-access.log;
+
+    # 10 MB of state keyed by client address: about 80,000 clients (128 bytes each on 64-bit)
+    limit_req_zone $binary_remote_addr zone=perclient:10m rate=5r/s;
+    limit_req_status 429;
 
     server {
-        location /api/ {
-            limit_req zone=api burst=20 nodelay;
-            proxy_pass http://backend;
+        listen 80;
+        listen 443 ssl;
+        http2 on;
+        server_name www.shop.example shop.example;
+
+        ssl_certificate     /etc/netlab/tls/shop.crt;
+        ssl_certificate_key /etc/netlab/tls/shop.key;
+
+        # ask for a client certificate; only /admin/ insists on one
+        ssl_client_certificate /etc/netlab/tls/ca.crt;
+        ssl_verify_client optional;
+
+        location /admin/ {
+            if ($ssl_client_verify != SUCCESS) {
+                return 403 "client certificate required\n";
+            }
+            return 200 "admin area: hello $ssl_client_s_dn\n";
+        }
+
+        location / {
+            limit_req zone=perclient burst=10 nodelay;
+            proxy_pass http://10.0.2.11:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
         }
     }
 }
 ```
 
-## Cloud Security Groups
+:::note
+On Ubuntu 24.04, nginx 1.24 does not know `http2 on;` (it arrived in 1.25.1): delete that line and write `listen 443 ssl http2;` instead. `netlab.sh` makes the same change in its own config on older nginx.
+:::
 
-Cloud providers offer network security as a service:
-
-### AWS Security Groups
-
-Security groups act as virtual firewalls:
-
-```bash
-# Create security group
-aws ec2 create-security-group \
-  --group-name web-servers \
-  --description "Security group for web servers"
-
-# Add rules
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-12345678 \
-  --protocol tcp --port 80 --cidr 0.0.0.0/0
-
-aws ec2 authorize-security-group-ingress \
-  --group-id sg-12345678 \
-  --protocol tcp --port 443 --cidr 0.0.0.0/0
+```terminal
+{
+  "title": "reload nginx, then test mTLS and the rate limit",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "prompt": "lb#",
+      "cmd": "nginx -t -c /etc/netlab/lb-nginx.conf && nginx -c /etc/netlab/lb-nginx.conf -s reload",
+      "output": "nginx: the configuration file /etc/netlab/lb-nginx.conf syntax is ok\nnginx: configuration file /etc/netlab/lb-nginx.conf test is successful\n2026/10/27 09:34:49 [notice] 250#250: signal process started"
+    },
+    {
+      "comment": "no client certificate",
+      "prompt": "client#",
+      "cmd": "curl -s --cacert /etc/netlab/tls/ca.crt https://www.shop.example/admin/",
+      "output": "client certificate required"
+    },
+    {
+      "comment": "with the certificate and its key",
+      "prompt": "client#",
+      "cmd": "curl -s --cacert /etc/netlab/tls/ca.crt --cert /etc/netlab/tls/ops.crt --key /etc/netlab/tls/ops.key https://www.shop.example/admin/",
+      "output": "admin area: hello CN=ops-laptop"
+    },
+    {
+      "comment": "30 requests as fast as possible: count the status codes",
+      "prompt": "client#",
+      "cmd": "for i in $(seq 30); do curl -s -o /dev/null -w '%{http_code}\\n' http://www.shop.example/; done | sort | uniq -c",
+      "output": "     14 200\n     16 429"
+    }
+  ]
+}
 ```
 
-### Network ACLs
+Eleven requests pass at once (one at the rate plus the burst of 10), a few more pass because the bucket refills at 5 per second while the loop runs, and the rest get `429 Too Many Requests`. Return 429 rather than nginx's default 503, so that clients and dashboards can tell "slow down" from "broken". Limit by API key or user ID instead of address when many users share one address behind NAT, and keep the limits in the application too if it is ever reachable without the proxy.
 
-Network ACLs provide subnet-level filtering:
+## Common Mistakes
 
-```bash
-# Network ACLs are stateless (must allow both inbound and outbound)
-# Security groups are stateful (return traffic is automatically allowed)
-```
+- **Locking yourself out.** Allow SSH first and keep a second session open. On remote machines, save the current rules and schedule their restore before you change anything, with a timer that survives a dropped SSH session: `{ echo 'flush ruleset'; nft list ruleset; } > /root/rules.before` and `systemd-run --on-active=120 --unit=fw-rollback /usr/sbin/nft -f /root/rules.before`, then cancel it with `systemctl stop fw-rollback.timer` once the new rules work. Part 9 wraps this in a script.
+- **Allow rules that are too broad.** `ip saddr 10.0.0.0/8 accept` trusts every internal network, including the ones you have not built yet. Name the source subnet and the port.
+- **Filtering only inbound traffic.** Malware and data leaks go outbound. On sensitive hosts, restrict `output` to the destinations the service needs.
+- **Relying on NAT or on "nobody knows the address".** Scanners find every public address within minutes, and private networks are only as private as their routes.
+- **Forgetting IPv6 and Docker.** Use the `inet` family, and remember that Docker's published ports skip ufw.
+- **No counters, no logs.** When a connection fails, you need to know which rule dropped it. Count and log the final drop, with a rate limit.
 
-## Troubleshooting Security Issues
+## Summary
 
-### Connection Refused vs Connection Timeout
+- nftables tables hold chains on hooks (`input`, `forward`, `output`); rules match in order, the policy catches the rest, and `ct state established,related accept` makes it stateful.
+- Check rulesets with `nft -c -f` and load them from files; a file is applied atomically.
+- Drop means a timeout for the client, reject means an instant error; "No route to host" from a reachable host often means an ICMP reject.
+- Segment zones on the router or in the cloud, one allow rule per required path, and keep host firewalls as a second layer.
+- mTLS authenticates services by certificate, and a proxy's rate limits protect expensive endpoints; both work above the packet level.
 
-Different error messages indicate different problems:
+Next, [Part 5](/guides/networking-fundamentals/05-load-balancing) spreads the shop's traffic over all three web servers.
 
-```bash
-# Connection refused: Service is reachable but not listening on port
-telnet server.com 80
-# Immediate "Connection refused" = firewall allows, service unavailable
+## Keep Learning
 
-# Connection timeout: Firewall blocking or network unreachable
-telnet server.com 80
-# Hangs then times out = firewall blocking or routing problem
-```
-
-### Testing Firewall Rules
-
-Verify rules work as expected:
-
-```bash
-# Test from allowed source
-ssh user@allowed-ip "curl -I http://your-server"
-
-# Test from blocked source
-ssh user@blocked-ip "curl -I http://your-server"
-
-# Check firewall logs for blocked attempts
-sudo tail -f /var/log/ufw.log
-```
-
-In the next section, we'll explore load balancing and high availability - distributing traffic across multiple servers while maintaining security boundaries.
-
-Network security is about finding the right balance between protection and functionality. Start with restrictive policies and explicitly allow only the traffic your applications need.
-
-Happy securing!
+- [Network & Security Fundamentals quiz](/quizzes/network-security-quiz)
+- Simulators: [rate limiting](/games/rate-limit-simulator), [DDoS](/games/ddos-simulator)
+- [How to artificially create a connection timeout](/posts/how-to-artificially-create-connection-timeout-error)
+- [We put localhost on the internet and watched who turned up](/posts/what-happens-when-you-put-localhost-on-the-internet)
+- The [Security Principles](/guides/security-principles) guide for defence in depth and least privilege

@@ -191,26 +191,26 @@ export default async function Home() {
             <div className="bg-card p-4">
               <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">Free</dt>
               <dd className="text-lg tabular-nums font-semibold mt-1">$0</dd>
-              <dd className="text-xs text-muted-foreground/80 mt-0.5">forever</dd>
+              <dd className="text-xs text-muted-foreground mt-0.5">forever</dd>
             </div>
             <div className="bg-card p-4">
               <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">Tools</dt>
               <dd className="text-lg tabular-nums font-semibold mt-1">{activeToolCount}</dd>
-              <dd className="text-xs text-muted-foreground/80 mt-0.5">interactive</dd>
+              <dd className="text-xs text-muted-foreground mt-0.5">interactive</dd>
             </div>
             <div className="bg-card p-4">
               <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 Subscribers
               </dt>
               <dd className="text-lg tabular-nums font-semibold mt-1">1,500+</dd>
-              <dd className="text-xs text-muted-foreground/80 mt-0.5">engineers</dd>
+              <dd className="text-xs text-muted-foreground mt-0.5">engineers</dd>
             </div>
             <div className="bg-card p-4">
               <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 Cadence
               </dt>
               <dd className="text-lg tabular-nums font-semibold mt-1">Weekly</dd>
-              <dd className="text-xs text-muted-foreground/80 mt-0.5">no spam</dd>
+              <dd className="text-xs text-muted-foreground mt-0.5">no spam</dd>
             </div>
           </dl>
         </section>

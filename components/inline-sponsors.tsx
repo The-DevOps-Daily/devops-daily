@@ -185,7 +185,7 @@ export function InlineSponsors({
                       <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
                         {sponsor.name}
                       </h3>
-                      <p className="text-sm text-primary/80 font-medium mb-2">{sponsor.tagline}</p>
+                      <p className="text-sm text-primary font-medium mb-2">{sponsor.tagline}</p>
                       {sponsor.description && (
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {sponsor.description}

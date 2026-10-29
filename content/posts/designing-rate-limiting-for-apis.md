@@ -351,3 +351,4 @@ Tokens at zero, last access timestamped. Wait a second and the Lua script refill
 - Add `X-RateLimit-*` headers to every response and document them so client teams can back off gracefully.
 - Put a flat per-IP `limit_req` in nginx as a cheap outer wall, even if you already limit per user in the app.
 - Alert on your 429 rate. A sudden spike means either an abusive client or a limit set too low for legitimate traffic, and you want to know which before the support tickets arrive.
+- Read [Limit What One Client Can Use](/guides/security-principles/01-cia-triad#h3-limit-what-one-client-can-use) in our Security Principles guide for why a per-client limit on a login endpoint both slows password guessing and protects availability.

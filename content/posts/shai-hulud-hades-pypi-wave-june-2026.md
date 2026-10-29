@@ -205,3 +205,5 @@ The mental model to keep:
 - The fix order is rotate, rebuild, and pin, in that order, and then make the next wave easier to catch with hash pinning and isolated installs.
 
 Check your environment with the commands above, rotate anything that was exposed, and pin your dependencies so the next mass patch release cannot walk straight in.
+
+[A03:2025 Software Supply Chain Failures](/guides/owasp-top-10/06-vulnerable-components) in our OWASP Top 10 guide shows the same controls on npm: install scripts switched off, a release-age delay and a locked-down CI workflow.

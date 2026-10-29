@@ -287,6 +287,8 @@ Other concrete actions:
 - **Audit `optionalDependencies`** specifically. The clever trick in this attack is that the malicious dependency is technically optional, so its failure does not break installs and does not show up in normal install logs. `npm install --dry-run` against a confirmed-bad version still shows the `tanstack/router#<sha>` reference, which is the cleanest signal.
 - **Treat your OIDC trust binding as a high-value secret.** Rotating npm tokens does nothing if the workflow itself is what republishes packages. The TanStack team's post-mortem explicitly notes this: until the OIDC binding was revoked, the worm could keep publishing.
 
+For why provenance proves where a package was built but not what it does, and how to pin the expected repository and workflow when you verify it, read [A08:2025 Software or Data Integrity Failures](/guides/owasp-top-10/08-software-integrity-failures#h3-build-provenance) in our OWASP Top 10 guide.
+
 ## What we are watching
 
 A few open threads as of May 12 morning:

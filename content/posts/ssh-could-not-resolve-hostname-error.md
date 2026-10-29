@@ -361,3 +361,5 @@ dig example.server AAAA   # IPv6
 The most reliable fix for "Could not resolve hostname" is to verify the hostname is correct, test DNS resolution independently, and use IP addresses or the hosts file as a fallback. Most issues stem from typos, DNS misconfigurations, or trying to reach internal hostnames from the wrong network.
 
 If the name resolves but logins started failing after an upgrade, check [what OpenSSH 10.6 changed](/posts/openssh-10-6-domain-usernames-and-compression). To check all of a domain's DNS records at once, see how [DNS Detective](/posts/dns-detective-digitalocean-inference) probes a domain.
+
+For how resolvers, caches and TTLs work, and each DNS error with its fix, read [DNS Explained: Records, TTLs, Caching and Troubleshooting](/guides/networking-fundamentals/03-dns-and-domain-management) in our networking guide.

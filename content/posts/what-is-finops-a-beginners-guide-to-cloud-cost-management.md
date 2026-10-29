@@ -168,49 +168,35 @@ The right tools can make the difference between FinOps success and failure. Star
 AWS Cost Explorer provides detailed cost and usage reports with filtering and grouping capabilities. Azure Cost Management + Billing offers similar functionality for Microsoft's cloud. Google Cloud's Cost Management tools provide budgeting, alerts, and recommendations.
 
 ```hcl
-# Terraform configuration for AWS Cost Anomaly Detection
-resource "aws_ce_anomaly_detector" "cost_anomaly_detector" {
-    name         = "service-cost-anomaly-detector"
-    monitor_type = "DIMENSIONAL"
-
-    specification {
-        dimension     = "SERVICE"
-        match_options = ["EQUALS"]
-        values        = ["EC2-Instance", "RDS"]
-    }
-
-    tags = {
-        Environment = "production"
-        Purpose     = "cost-monitoring"
-    }
+# AWS Cost Anomaly Detection: one monitor across all AWS services,
+# and a daily email when an anomaly's total impact reaches $100.
+resource "aws_ce_anomaly_monitor" "services" {
+  name              = "service-cost-anomalies"
+  monitor_type      = "DIMENSIONAL"
+  monitor_dimension = "SERVICE"
 }
 
-resource "aws_ce_anomaly_subscription" "cost_anomaly_subscription" {
-    name      = "cost-anomaly-alerts"
-    frequency = "DAILY"
+resource "aws_ce_anomaly_subscription" "daily" {
+  name             = "cost-anomaly-alerts"
+  frequency        = "DAILY"
+  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
 
-    monitor_arn_list = [
-    aws_ce_anomaly_detector.cost_anomaly_detector.arn
-]
-
-subscriber {
+  subscriber {
     type    = "EMAIL"
-    address = "finops-team@company.com"
-}
+    address = "finops-team@example.com"
+  }
 
-threshold_expression {
-    and {
-        dimension {
-                key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
-                values        = ["100"]
-                match_options = ["GREATER_THAN_OR_EQUAL"]
-            }
-        }
+  threshold_expression {
+    dimension {
+      key           = "ANOMALY_TOTAL_IMPACT_ABSOLUTE"
+      values        = ["100"]
+      match_options = ["GREATER_THAN_OR_EQUAL"]
     }
+  }
 }
 ```
 
-This Terraform configuration sets up AWS Cost Anomaly Detection to automatically identify unusual spending patterns and alert your team when anomalies exceed $100. It's monitoring EC2 and RDS services specifically, which are often significant cost drivers.
+This Terraform configuration sets up AWS Cost Anomaly Detection: the monitor watches spend per AWS service, and the subscription emails a daily summary when an anomaly's total impact reaches $100. A `DIMENSIONAL` monitor covers every service. A `CUSTOM` monitor can watch one slice of the bill instead, such as a linked account, a cost allocation tag or a cost category. Our [FinOps for DevOps Engineers guide](/guides/finops-for-devops-engineers/04-practical-examples) builds budgets per environment and anomaly alerts per service as code.
 
 For more advanced needs, consider third-party platforms like Spot.io, CloudHealth, or Apptio Cloudability. These tools often provide enhanced analytics, automation capabilities, and multi-cloud visibility that native tools don't offer.
 
@@ -307,4 +293,4 @@ Artificial intelligence and machine learning are making cost optimization more i
 
 The rise of cloud-native architectures and serverless computing is creating new challenges and opportunities for cost management. FinOps practices are adapting to handle these new consumption models effectively.
 
-FinOps represents a fundamental shift in how organizations approach cloud financial management. By bringing together people, processes, and technology around the common goal of cost optimization, you can transform cloud spending from a necessary evil into a strategic advantage. Start with the basics, visibility and accountability, then build from there. Remember that FinOps is a journey, not a destination, and the most successful organizations are those that commit to continuous improvement and learning.
+FinOps represents a fundamental shift in how organizations approach cloud financial management. By bringing together people, processes, and technology around the common goal of cost optimization, you can transform cloud spending from a necessary evil into a strategic advantage. Start with the basics, visibility and accountability, then build from there. For a hands-on path, the [FinOps for DevOps Engineers](/guides/finops-for-devops-engineers) guide walks through tags, budgets, cost checks in CI and the team habits with real examples. Remember that FinOps is a journey, not a destination, and the most successful organizations are those that commit to continuous improvement and learning.
