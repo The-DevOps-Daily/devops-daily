@@ -56,7 +56,7 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'SRE',
-    createdAt: '2026-10-28',
+    createdAt: '2026-10-29',
   },
   {
     id: 'preview-environment-simulator',

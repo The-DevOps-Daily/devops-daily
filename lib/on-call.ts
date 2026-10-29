@@ -93,7 +93,7 @@ export interface Incident {
 export const MAX_MOVES = 6;
 
 /** Day 0, puzzle #1. Kept in UTC so the daily rollover is the same for everyone. */
-export const LAUNCH_ISO = '2026-10-28';
+export const LAUNCH_ISO = '2026-10-29';
 
 /**
  * The schedule walks the pool in order, so an incident comes back exactly
