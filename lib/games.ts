@@ -33,6 +33,32 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'on-call',
+    type: 'game',
+    title: 'On-Call: The Daily Incident',
+    seoTitle: 'On-Call: A Daily Production Incident Puzzle for SREs',
+    description:
+      'A new production incident every day. Six moves to find the root cause: read logs, metrics and kubectl output, then name the cause. Same incident for everyone. Keep a streak and share a spoiler-free result, like a daily word puzzle for on-call engineers.',
+    iconName: 'Siren',
+    badgeText: 'New',
+    color: 'from-red-500 to-amber-600',
+    href: '/games/on-call',
+    tags: [
+      'game',
+      'sre',
+      'on-call',
+      'incident-response',
+      'troubleshooting',
+      'debugging',
+      'daily-puzzle',
+      'interactive',
+    ],
+    isNew: true,
+    featured: true,
+    category: 'SRE',
+    createdAt: '2026-10-29',
+  },
+  {
     id: 'preview-environment-simulator',
     type: 'simulator',
     title: 'Preview Environment Simulator',
