@@ -30,6 +30,7 @@ import {
   Webhook,
   Shield,
   Calculator,
+  Package,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -431,6 +432,19 @@ const tools: Tool[] = [
       { text: 'Security', variant: 'outline' },
       { text: 'Vulnerability Scanning', variant: 'secondary' },
       { text: 'New', variant: 'default' },
+    ],
+  },
+  {
+    name: 'Helm',
+    description:
+      'The package manager for Kubernetes that helps you define, install, and upgrade complex Kubernetes applications.',
+    href: 'https://helm.sh/',
+    category: 'containers',
+    icon: Package,
+    badges: [
+      { text: 'Kubernetes', variant: 'outline' },
+      { text: 'Package Manager', variant: 'secondary' },
+      { text: 'Open Source', variant: 'default' },
     ],
   },
 ];
