@@ -29,14 +29,14 @@ We collected 34 trust stores from package files, published bundles and source tr
 
 Three results matter if you run anything outside a browser:
 
-- **Two roots, not one.** Each compromised TLS key chains to `emSign ECC Root CA - G3` and, through a Sectigo cross-sign, to `AAA Certificate Services`. Debian 11, 12 and 13, Ubuntu 24.04 as released, Alpine 3.18 and OpenJDK's `cacerts` held both. There, removing only the emSign root leaves the Sectigo path open.
-- **The root list predicts everything.** In 560 OpenSSL verifications, the two roots decided every result. The fixed Go, Node.js, Bun and CPython releases reject the keys whatever the store says, even with the old Debian 12 bundle.
+- **Two roots, not one.** Each compromised TLS key chains to `emSign ECC Root CA - G3` and, through a Sectigo cross-sign, to `AAA Certificate Services`. Before the fix, Debian 11, 12 and 13, Ubuntu 24.04 as released, Alpine 3.18 and OpenJDK's `cacerts` held both. There, removing only the emSign root leaves the Sectigo path open.
+- **The root list predicts everything.** In 560 OpenSSL verifications, the two roots decided every result. The fixed Go, Node.js, Bun and CPython releases block the keys in code. Node.js 24.22.1 and Go 1.26.10 rejected them even with the old Debian 12 bundle.
 - **Removing AAA broke one chain in our test.** Of 16,125 served chains that verified before Debian's fix, one (`jisc.ac.uk`) failed after it with OpenSSL 3. GnuTLS and Go also failed on that site. 262 more fail only for a client that never looks for another path.
 
 ## TL;DR
 
 - Update `ca-certificates` and rebuild images from a fresh base. A digest pinned before 20 October keeps the old bundle.
-- Debian 11, Alpine 3.18 and 3.19 and Node.js 20 get no fix. Their newest packages still trust the keys.
+- Debian 11, Alpine 3.18 and 3.19 and Node.js 20 get no fix. Their newest releases still trust the keys.
 - On Debian and Ubuntu, delete `/etc/ssl/certs/java/cacerts` and run `update-ca-certificates --fresh`; the Java keystore is not rebuilt on its own.
 - Upgrade to runtimes that block the keys in code: Go 1.26.10 or 1.27.3 (then rebuild your Go binaries), Node.js 22.23.4, 24.22.1 or 26.12.1, Bun 1.4.4, Python 3.11.18, 3.12.16, 3.13.18, 3.14.10 or 3.15.2.
 - If you run a server, do not end your chain at a certificate issued by `AAA Certificate Services`.
@@ -50,7 +50,7 @@ Three results matter if you run anything outside a browser:
 
 ## What happened, in short
 
-On 17 October, a researcher reported to the Apple, Chrome, Microsoft and Mozilla root programs that the private keys of eight eMudhra intermediate CAs could be computed from their public certificates. Mozilla confirmed it and had Firefox blocking them through OneCRL by 22:59 UTC the same day. Six of the eight CAs issue TLS certificates; two are code signing CAs ([Mozilla bug 2083449](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)).
+On 17 October, a researcher reported to the Apple, Chrome, Microsoft and Mozilla root programs that the private keys of eight eMudhra intermediate CAs could be computed from their public certificates. Mozilla confirmed it and had Firefox blocking the TLS intermediates through OneCRL by 22:59 UTC the same day. Six of the eight CAs issue TLS certificates; two are code signing CAs ([Mozilla bug 2083449](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)).
 
 The keys are not theoretical. Between 20 and 21 October, people other than eMudhra logged 107,107 certificates signed with six of the keys to Certificate Transparency. 106,050 of them are proof-of-concept certificates for `google.com` ([comment 44](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c44)). Almost none of them carry a revocation URL.
 
@@ -122,8 +122,8 @@ The result: 560 verifications, 0 that differed from the prediction. A store acce
 Three details from the table are easy to miss:
 
 - **Temurin is not OpenJDK.** OpenJDK's own `cacerts` holds both roots, and OpenJDK [tells you](https://openjdk.org/emudhra) to delete four of them by hand. Temurin builds its `cacerts` from Mozilla's data, so its 23 October release already holds neither. A JDK from another vendor can be either; check the file, not the version.
-- **certifi over-removed first.** certifi 2026.10.18 removed every emSign root, including `emSign Root CA - G1`, which Mozilla still trusts. Users of the InCommon certificate service, which many US universities use, reported breakage in [issue #439](https://github.com/certifi/python-certifi/issues/439), and 2026.10.19 put the unaffected roots back. In our scan below, 47 of the top 20,000 sites chain to `emSign Root CA - G1`.
-- **Removing one root is not enough everywhere.** We built one synthetic store, Debian 12's old bundle minus only `emSign ECC Root CA - G3`. It rejected all eight emSign-path chains and accepted all eight Sectigo-path chains. That is what you get if you apply the one-root workaround, which is right for Alpine, to a Debian image.
+- **certifi over-removed first.** certifi 2026.10.18 removed every emSign root, including `emSign Root CA - G1`, which Mozilla still trusts. Users of the InCommon certificate service, which many US universities use, reported breakage in [issue #439](https://github.com/certifi/python-certifi/issues/439), and 2026.10.19 put the unaffected roots back. In our scan below, 47 of the served chains end at `emSign Root CA - G1`.
+- **Removing one root is not enough everywhere.** We built one synthetic store, Debian 12's old bundle minus only `emSign ECC Root CA - G3`. It rejected all eight emSign-path chains and accepted all eight Sectigo-path chains. That is what you get if you apply the one-root workaround, which is right for Alpine 3.19 and later, to a Debian image.
 
 ```terminal
 {
@@ -140,11 +140,11 @@ Three details from the table are easy to miss:
 }
 ```
 
-`-no-CApath -no-CAstore` keeps the machine's own `/etc/ssl/certs` out of the test, and `-attime` makes the result repeatable. This command does not check revocation. The real clients in the next section did not catch it either. All 16 intermediate certificates were revoked on 18 and 19 October, but the clients still accepted chains through them with their default settings.
+`-no-CApath -no-CAstore` keeps the machine's own `/etc/ssl/certs` out of the test, and `-attime` makes the result repeatable. This command does not check revocation. The 16 intermediate certificates were revoked on 18 and 19 October. In the next section, our client commands did not turn on CRL or OCSP checking either, and with the old bundles they accepted the two public test chains.
 
 ## Finding 2: a blocklist in the runtime beats a stale store
 
-Four runtimes did not wait for trust stores: Go 1.26.10 and 1.27.3 ([go.dev/issue/82345](https://go.dev/issue/82345)), Node.js 22.23.4, 24.22.1 and 26.12.1, Bun 1.4.4 and the October 26 CPython releases. Each compiles a list of the eight compromised public keys into its TLS code and rejects any chain that contains one of them. Bun's release notes mention only a root update; the list is in `blocked_spkis.cpp`. Our first stage downloads the four source files from the fix commits: all four hold the same eight SHA-256 hashes of the SubjectPublicKeyInfo. Because they match the key, not a certificate, they cover both certificates of every key, and the rollover chains.
+Four runtimes did not wait for trust stores. They are Go 1.26.10 and 1.27.3 ([go.dev/issue/82345](https://go.dev/issue/82345)), Node.js 22.23.4, 24.22.1 and 26.12.1, Bun 1.4.4, and the October 26 CPython releases. Each one compiles a list of the eight compromised public keys into its TLS code. It rejects any chain that contains one of them. Bun's release notes mention only a root update; the list is in `blocked_spkis.cpp`. Our first stage downloads the four source files from the fix commits. All four hold the same eight SHA-256 hashes of the SubjectPublicKeyInfo. The lists match the key, not a certificate. So they cover both certificates of every key, and the rollover chains.
 
 To see the difference with real clients, we connected curl, Python, Node.js and Go on a Debian 12 machine to two of the public test hosts: one serves the emSign path, the other the Sectigo path. Each client got a trust store from the matrix above. For Go, we built the same small HTTPS client with Go 1.26.9 and 1.26.10. All 24 results matched the prediction:
 
@@ -183,7 +183,7 @@ Debian 12's own Python (`3.11.2-6+deb12u9` on our machine) has no denylist, and 
 
 Removing `AAA Certificate Services` closes the Sectigo path, but other chains still use this 2004 root, and Apple and the incident tracker both warn that removing it can break sites. We measured how many.
 
-We connected once to each of the top 20,000 domains of the Tranco list `PYK6J`, or to `www.` if the bare name failed. All connections came from one IPv4 address on 30 October between 11:11 and 11:36 UTC, and we saved the chain each server sent. 16,348 answered. A small C program on OpenSSL 3.0.22 then verified every chain against Debian 12's bundle before and after the fix (Debian 13's bundles hold the same certificates), in three ways:
+We connected once to each of the top 20,000 domains of the Tranco list `PYK6J`, or to `www.` if the bare name failed. All connections came from one IPv4 address on 30 October between 11:11 and 11:36 UTC, and we saved the chain each server sent. 16,348 answered. Then a small C program on OpenSSL 3.0.22 verified every chain against Debian 12's bundle before and after the fix. Debian 13's bundles hold the same certificates. The program verified each chain in three ways:
 
 - **modern**: the OpenSSL default since 1.1.0, which looks in the trust store first at each step
 - **nofirst**: trust store first turned off, alternative chain search on
@@ -282,14 +282,14 @@ TRUSTS*  fixture/usr/lib/python3.11/lib-dynload/_ssl.cpython-311-aarch64-linux-g
 TRUSTS   fixture/usr/lib/jvm/temurin-11/lib/security/cacerts
          CA bundle with 118 certificates holds emSign ECC Root CA - G3
 ok       fixture/opt/node-24.22.1/bin/node
-         carries the eMudhra SPKI blocklist (all 8 keys)
+         holds all 8 eMudhra blocklist keys (a byte match, not a runtime test)
 
 4 finding(s) that still trust a chain through the compromised keys.
 TRUSTS*: safe only if every trust store the program reads at run time is fixed.
 No finding is not proof: only the bundle, keystore and binary formats listed in --help are checked.
 ```
 
-`TRUSTS*` means the program has no blocklist of its own, so it is only as safe as the bundle it reads. For a container image, export the filesystem and scan it:
+`TRUSTS*` means the program has no blocklist of its own, so it is only as safe as the bundle it reads. An `ok` is a byte match for all eight keys, not a test of the running program. For a container image, export the filesystem and scan it:
 
 ```bash
 mkdir rootfs && docker export "$(docker create IMAGE)" | tar -xf - -C rootfs
