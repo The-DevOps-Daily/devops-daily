@@ -6,7 +6,7 @@
   "icon": "Activity",
   "difficulty": "intermediate",
   "estimatedTime": "18 minutes",
-  "cardCount": 16,
+  "cardCount": 18,
   "theme": {
     "primaryColor": "cyan",
     "gradientFrom": "from-cyan-500",
@@ -124,6 +124,20 @@
       "back": "Rotate on-call schedules, provide escalation paths, maintain runbooks, post-incident reviews (blameless), compensate on-call time, limit alert volume, automate common fixes, establish response SLOs, practice incident response, use incident commanders for major outages.",
       "category": "Operations",
       "tags": ["on-call", "incident-response", "sre"]
+    },
+    {
+      "id": "opentelemetry-framework",
+      "front": "What is OpenTelemetry (OTel)?",
+      "back": "OpenTelemetry is a vendor-neutral CNCF open source observability framework that provides standardized APIs, SDKs, and agents (such as the OTel Collector) to generate, collect, and export metrics, logs, and distributed traces.",
+      "category": "Tools",
+      "tags": ["opentelemetry", "otel", "observability", "standards"]
+    },
+    {
+      "id": "use-method",
+      "front": "What is the USE Method?",
+      "back": "Created by Brendan Gregg, the USE Method analyzes server and hardware performance by inspecting every resource for: Utilization (time resource is busy), Saturation (extra queued work), and Errors (error counts).",
+      "category": "Best Practices",
+      "tags": ["use-method", "performance", "monitoring", "sre"]
     }
   ]
 }
