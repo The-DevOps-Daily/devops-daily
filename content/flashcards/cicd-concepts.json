@@ -6,7 +6,7 @@
   "icon": "GitMerge",
   "difficulty": "beginner",
   "estimatedTime": "18 minutes",
-  "cardCount": 17,
+  "cardCount": 18,
   "theme": {
     "primaryColor": "purple",
     "gradientFrom": "from-purple-500",
@@ -131,6 +131,13 @@
       "back": "Key practices: Secure secrets management (vaults, not code), SAST/DAST scanning, dependency vulnerability scanning, container image scanning, signed commits, least privilege for pipeline permissions, audit logging.",
       "category": "Security",
       "tags": ["security", "best-practices", "scanning"]
+    },
+    {
+      "id": "gitops-definition",
+      "front": "What is GitOps?",
+      "back": "GitOps is an operational framework that uses Git repositories as the single source of truth for infrastructure and application declarations. Automated agents (like ArgoCD or Flux) continuously synchronize the live environment with the Git state, preventing manual configuration drift.",
+      "category": "Deployment Patterns",
+      "tags": ["gitops", "argocd", "kubernetes", "automation"]
     }
   ]
 }
