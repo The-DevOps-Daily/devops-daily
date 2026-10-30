@@ -1,6 +1,5 @@
 'use client';
 
-import Script from 'next/script';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 /**
@@ -18,18 +17,5 @@ import { GoogleAnalytics } from '@next/third-parties/google';
  * so it counts adblocked visitors that no script here ever will.
  */
 export function SiteAnalytics() {
-  return (
-    <>
-      <GoogleAnalytics gaId="G-DRHMSC6G9R" />
-
-      {/* lazyOnload so it does not compete with first paint or early
-          interactions (INP). */}
-      <Script
-        id="ahrefs-analytics"
-        src="https://analytics.ahrefs.com/analytics.js"
-        data-key="DDU3onGEafDWd/obeLf2Pw"
-        strategy="lazyOnload"
-      />
-    </>
-  );
+  return <GoogleAnalytics gaId="G-DRHMSC6G9R" />;
 }
