@@ -1,0 +1,81 @@
+{
+  "id": "azure-data-pipeline-release-readiness",
+  "slug": "azure-data-pipeline-release-readiness",
+  "title": "Azure Data Pipeline Release Readiness",
+  "description": "Review an Azure data pipeline before release: deployment repeatability, identity, data correctness, replay safety, observability, recovery, and cost controls.",
+  "category": "Cloud",
+  "difficulty": "intermediate",
+  "estimatedTime": "45-60 minutes",
+  "tags": ["azure", "data-pipelines", "ci-cd", "monitoring", "release-readiness"],
+  "items": [
+    {
+      "id": "version-deployment-artifacts",
+      "title": "Version and promote one deployment artifact",
+      "description": "Export pipeline definitions and infrastructure configuration from source control, validate them in CI, and promote the same version through environments. Keep environment values in parameters rather than making portal-only edits that cannot be reviewed or reproduced.",
+      "critical": true,
+      "codeBlocks": []
+    },
+    {
+      "id": "use-managed-identities",
+      "title": "Use managed identities with least-privilege access",
+      "description": "Prefer managed identities over embedded keys or connection strings. Grant each pipeline identity only the data-plane and control-plane permissions it needs, and verify that development identities cannot read production data.",
+      "critical": true,
+      "codeBlocks": []
+    },
+    {
+      "id": "make-loads-replay-safe",
+      "title": "Make incremental loads safe to retry",
+      "description": "Define the watermark, partition, or change-tracking boundary explicitly. A retry must not duplicate rows or skip a partially processed interval. Persist run metadata and use deterministic merge keys so an operator can replay a failed slice safely.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Idempotent merge pattern",
+          "code": "MERGE INTO target AS t\nUSING staged_batch AS s\nON t.business_key = s.business_key\nWHEN MATCHED THEN UPDATE SET t.value = s.value, t.updated_at = s.updated_at\nWHEN NOT MATCHED THEN INSERT (business_key, value, updated_at)\nVALUES (s.business_key, s.value, s.updated_at);"
+        }
+      ]
+    },
+    {
+      "id": "validate-data-contracts",
+      "title": "Validate schema and data-quality contracts",
+      "description": "Check required columns, types, nullability, accepted ranges, and uniqueness before publishing downstream. Quarantine unexpected records with the run identifier and reason instead of silently dropping them or allowing schema drift to corrupt consumers.",
+      "critical": true,
+      "codeBlocks": []
+    },
+    {
+      "id": "test-production-shaped-path",
+      "title": "Run a production-shaped smoke test",
+      "description": "Exercise source access, transformation, destination writes, and downstream visibility with a small representative dataset. Confirm that the test uses the same identity and network path as production without copying sensitive production data into lower environments.",
+      "critical": true,
+      "codeBlocks": []
+    },
+    {
+      "id": "monitor-freshness-and-silence",
+      "title": "Alert on freshness, failures, and missing runs",
+      "description": "Track run status, duration, rows processed, data freshness, and the last successful completion. Alert when expected telemetry or scheduled runs are absent, not only when the orchestrator reports an explicit failure.",
+      "critical": true,
+      "codeBlocks": []
+    },
+    {
+      "id": "bound-retries-and-quarantine",
+      "title": "Bound retries and quarantine poison records",
+      "description": "Set timeouts and capped retries with backoff for transient failures. Route repeatedly failing records to a quarantine location with enough context to diagnose and replay them; an unbounded retry loop can increase both cost and incident duration.",
+      "critical": false,
+      "codeBlocks": []
+    },
+    {
+      "id": "document-recovery",
+      "title": "Document rollback and forward-recovery steps",
+      "description": "Record how to stop new schedules, restore a previous definition, identify affected partitions, and replay them after a fix. Assign an owner and verify that recovery does not require undocumented portal changes.",
+      "critical": true,
+      "codeBlocks": []
+    },
+    {
+      "id": "review-capacity-and-cost",
+      "title": "Review concurrency, capacity, and cost limits",
+      "description": "Set concurrency and integration-runtime capacity for the expected workload, then add budget and abnormal-duration alerts. Confirm that backfills cannot starve regular schedules or scale without a deliberate upper bound.",
+      "critical": false,
+      "codeBlocks": []
+    }
+  ]
+}
