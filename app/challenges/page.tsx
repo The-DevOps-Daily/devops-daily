@@ -7,7 +7,7 @@ import { getAllChallenges } from '@/lib/challenges';
 import { CHALLENGES_REPO_URL } from '@/lib/challenge-types';
 
 const description =
-  'Hands-on DevOps challenges: fix a broken Dockerfile, script or Kubernetes deployment in your fork, open a pull request, and CI grades it.';
+  'Hands-on DevOps challenges in Docker, Bash, Kubernetes, Terraform, Prometheus and PostgreSQL: fix it in your fork, open a pull request, and CI grades it.';
 
 export const metadata: Metadata = {
   title: 'DevOps Challenges: Fix It, Open a PR, Get Graded',

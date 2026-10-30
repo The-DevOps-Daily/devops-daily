@@ -120,7 +120,7 @@ function FlowNode({
     <div className={`min-w-0 flex-1 rounded-md border p-3 ${FLOW_TONES[tone]}`}>
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="text-[10px] font-semibold uppercase opacity-70">{label}</span>
+        <span className="text-[10px] font-semibold uppercase">{label}</span>
       </div>
       <p className="mt-2 truncate text-xs font-semibold text-foreground" title={value}>
         {value}
@@ -583,7 +583,12 @@ export default function WebhookDeliverySimulator() {
           )}
         </div>
 
-        <div className="overflow-x-auto pb-1">
+        <div
+          className="overflow-x-auto pb-1"
+          tabIndex={0}
+          role="region"
+          aria-label="Delivery attempts"
+        >
           <div className="relative min-w-[640px]">
             <ol className="relative grid grid-cols-8 gap-2" aria-live="polite">
               {Array.from({ length: MAX_ATTEMPTS }, (_, index) => {
@@ -601,9 +606,6 @@ export default function WebhookDeliverySimulator() {
                       ref={(node) => {
                         attemptRefs.current[index] = node;
                       }}
-                      aria-label={`Attempt ${index + 1}${
-                        attempt ? ` at ${formatDelay(attempt.atSeconds)}` : ''
-                      }`}
                       className={`relative z-10 w-full rounded-md border px-2 py-2 text-left transition-colors ${
                         isSelected
                           ? attempt
@@ -615,7 +617,7 @@ export default function WebhookDeliverySimulator() {
                       } ${isUnused ? 'opacity-40' : ''}`}
                     >
                       <span className="block text-[10px] font-semibold uppercase">
-                        A{index + 1}
+                        <span className="sr-only">Attempt </span>A{index + 1}
                       </span>
                       <span className="mt-1 block truncate font-mono text-[10px]">
                         {attempt

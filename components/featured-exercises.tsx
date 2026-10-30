@@ -40,9 +40,9 @@ const iconComponents: Record<string, LucideIcon> = {
 };
 
 const difficultyColors: Record<string, string> = {
-  beginner: 'bg-green-500/10 text-green-600 dark:text-green-400',
-  intermediate: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
-  advanced: 'bg-red-500/10 text-red-600 dark:text-red-400',
+  beginner: 'bg-green-500/10 text-green-700 dark:text-green-400',
+  intermediate: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
+  advanced: 'bg-red-500/10 text-red-700 dark:text-red-400',
 };
 
 function ExerciseCard({ exercise }: { exercise: Exercise }) {

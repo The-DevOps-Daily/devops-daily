@@ -5,6 +5,7 @@ import CronExpressionSimulator from '@/components/games/cron-expression-simulato
 import K8sRbacSimulator from '@/components/games/k8s-rbac-simulator';
 import HerokuStyleNameGenerator from '@/components/games/heroku-style-name-generator';
 import IncidentCommanderSimulator from '@/components/games/incident-commander-simulator';
+import OnCall from '@/components/games/on-call';
 import BinaryByteSimulator from '@/components/games/binary-byte-simulator';
 import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
 import AwsVpcSimulator from '@/components/games/aws-vpc-simulator';
@@ -82,6 +83,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'load-balancer-simulator': LoadBalancerSimulator,
   'heroku-style-name-generator': HerokuStyleNameGenerator,
   'incident-commander-simulator': IncidentCommanderSimulator,
+  'on-call': OnCall,
   'terraform-puzzle': TerraformPuzzle,
   'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
   'message-queue-simulator': MessageQueueSimulator,

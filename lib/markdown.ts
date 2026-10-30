@@ -374,6 +374,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     td: ['align', 'colspan', 'rowspan'],
     input: ['type', 'checked', 'disabled'],
     button: ['type', 'data-heading-id'],
+    code: ['tabindex'],
     div: ['data-chart', 'data-terminal', 'data-tabs', 'data-diagram', 'data-repo'],
     svg: ['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'xmlns'],
     path: ['d', 'fill', 'stroke', 'stroke-linecap', 'stroke-linejoin', 'stroke-width'],
@@ -388,6 +389,13 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   // GFM task lists render disabled checkboxes; nothing else may be an input.
   exclusiveFilter: (frame) => frame.tag === 'input' && frame.attribs.type !== 'checkbox',
   transformTags: {
+    // A highlighted block scrolls sideways, so keyboard users need to focus it.
+    code: (tagName, attribs) => {
+      const next = { ...attribs };
+      delete next.tabindex;
+      if (/\bhljs\b/.test(next.class ?? '')) next.tabindex = '0';
+      return { tagName, attribs: next };
+    },
     a: (tagName, attribs) => {
       const href = attribs.href ?? '';
       const external = /^https?:\/\//i.test(href);
