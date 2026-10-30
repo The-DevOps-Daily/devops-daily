@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2025-06-10T09:00:00.000Z'
 publishedAt: '2025-06-10T09:00:00.000Z'
-updatedAt: '2026-03-01T09:00:00Z'
+updatedAt: '2026-10-30T09:00:00Z'
 readingTime: '4 min read'
 author:
   name: 'DevOps Daily Team'
@@ -25,6 +25,16 @@ Most slow pipelines are a matter of configuration, not raw compute. Parallelize 
 ## Why this matters
 
 Slow pipelines cost time and momentum. Every extra minute waiting for feedback lowers developer velocity and increases the cost of iteration. The steps below are practical and platform agnostic. I include short examples for GitHub Actions and GitLab CI because they are easy to adapt.
+
+## Measure the Critical Path Before Optimizing
+
+A pipeline's duration is determined by its longest dependency chain, not by the sum of every job. A five-minute job that runs entirely alongside a seven-minute job may add no wall-clock time, while a one-minute setup step that blocks every downstream job can delay the whole pipeline.
+
+Before buying larger runners or adding caches, compare each job's queued, started, and completed timestamps. Separate runner queue time from execution time, then trace the chain that ends at the final required check. Optimize that critical path first; speeding up work outside it improves compute usage but may not shorten developer feedback time.
+
+:::tip
+Measure the pipeline twice: once with a warm cache and once with a cold cache. This keeps an occasional cache miss from looking like a permanent runner or test bottleneck.
+:::
 
 ## 1) Too many serial steps
 
