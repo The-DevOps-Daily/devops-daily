@@ -1,6 +1,6 @@
 ---
-title: 'eMudhra CA Compromise: Two Roots to Remove, and Dropping Comodo AAA Broke 1 of 16,125 Sites'
-excerpt: 'Browsers blocked the eight compromised eMudhra keys in hours; your images and runtimes read their own trust stores. We tested 34 stores from package files, real curl, Python, Node.js, Go and GnuTLS clients, and the chains served by the top 20,000 sites. Debian needed two roots removed because of a Sectigo cross-sign, and removing Comodo AAA broke one site for current OpenSSL.'
+title: 'eMudhra CA Compromise: Two Roots to Remove, and Dropping Comodo AAA Broke 1 of 16,125 Chains'
+excerpt: 'Browsers blocked the compromised eMudhra TLS intermediates in hours, but images and runtimes read their own trust stores. We tested 34 stores, real curl, Python, Node.js and Go clients, and the chains that the top 20,000 sites send. Debian had to remove two roots because of a Sectigo cross-sign. Removing Comodo AAA broke 1 of 16,125 chains in our OpenSSL test.'
 category:
   name: 'Security'
   slug: 'security'
@@ -23,15 +23,15 @@ tags:
   - Go
 ---
 
-Firefox and Chrome stopped trusting the eight compromised eMudhra intermediate CA keys within hours of the report on 17 October 2026. Your containers, JVMs, virtualenvs and Go binaries did not get that update. Each of them reads its own copy of a trust store, and that copy decides whether a forged certificate for any hostname is accepted.
+Firefox and Chrome stopped trusting the six compromised eMudhra TLS intermediate CAs within hours of the report on 17 October 2026. Your containers, JVMs, virtualenvs and Go binaries did not get that update. Each of them reads its own copy of a trust store, and that copy decides whether a forged certificate for any hostname is accepted.
 
-We took 34 trust stores out of package files and verified the public test chains for the compromised keys against each one. Then we connected real clients to the public test hosts, and checked what Debian's fix does to the chains that 16,348 of the top 20,000 sites send.
+We collected 34 trust stores from package files, published bundles and source trees, and verified the public test chains for the compromised keys against each one. Then we connected real clients to the public test hosts, and checked what Debian's fix does to the chains that 16,348 of the top 20,000 sites send.
 
 Three results matter if you run anything outside a browser:
 
 - **Two roots, not one.** Each compromised TLS key chains to `emSign ECC Root CA - G3` and, through a Sectigo cross-sign, to `AAA Certificate Services`. Debian 11, 12 and 13, Ubuntu 24.04 as released, Alpine 3.18 and OpenJDK's `cacerts` held both. There, removing only the emSign root leaves the Sectigo path open.
 - **The root list predicts everything.** In 560 OpenSSL verifications, the two roots decided every result. The fixed Go, Node.js, Bun and CPython releases reject the keys whatever the store says, even with the old Debian 12 bundle.
-- **Removing AAA broke one site.** Of 16,125 served chains, one (`jisc.ac.uk`) failed after Debian's fix with current OpenSSL, GnuTLS and Go. 262 more fail only for a client that never looks for another path.
+- **Removing AAA broke one chain in our test.** Of 16,125 served chains that verified before Debian's fix, one (`jisc.ac.uk`) failed after it with OpenSSL 3. GnuTLS and Go also failed on that site. 262 more fail only for a client that never looks for another path.
 
 ## TL;DR
 
@@ -52,7 +52,7 @@ Three results matter if you run anything outside a browser:
 
 On 17 October, a researcher reported to the Apple, Chrome, Microsoft and Mozilla root programs that the private keys of eight eMudhra intermediate CAs could be computed from their public certificates. Mozilla confirmed it and had Firefox blocking them through OneCRL by 22:59 UTC the same day. Six of the eight CAs issue TLS certificates; two are code signing CAs ([Mozilla bug 2083449](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449)).
 
-The keys are not theoretical. Between 20 and 21 October, 107,107 certificates signed with six of the keys were logged to Certificate Transparency by people other than eMudhra, including 106,050 proof-of-concept certificates for `google.com` ([comment 44](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c44)). Almost none of them carry a revocation URL.
+The keys are not theoretical. Between 20 and 21 October, people other than eMudhra logged 107,107 certificates signed with six of the keys to Certificate Transparency. 106,050 of them are proof-of-concept certificates for `google.com` ([comment 44](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c44)). Almost none of them carry a revocation URL.
 
 Browsers get blocks through OneCRL, CRLSets and Apple's and Microsoft's trust updates. Almost everything else reads a file. We used the public chains and test hosts of the [incident tracker](https://emudhra.we-have-a-problem.com/), which also lists the patched versions.
 
@@ -88,7 +88,7 @@ Each of the six TLS keys appears in two intermediate certificates with the same 
 }
 ```
 
-Mozilla stopped trusting `AAA Certificate Services` for TLS in April 2025: its root data (NSS builtins) marks the root as trusted for server authentication in version 2.74 and not in 2.76, which came with NSS 3.111. Debian's `20250419` package is built from 2.74, so Debian 11, 12 and 13 hold AAA, and so do Ubuntu 24.04's release-pocket package and Alpine 3.18. Bundles built from later data (Ubuntu's June 2026 update, Alpine 3.19, certifi, curl, Node.js, Bun, RHEL, Temurin) held only the emSign root. Debian's own August 2026 unstable package, built from 2.90, has no AAA either: the cause is the age of the data. That is why Debian removed two roots and the others removed one.
+Mozilla stopped trusting `AAA Certificate Services` for TLS in April 2025. Its root data (NSS builtins) marks the root as trusted for server authentication in version 2.74. Version 2.76, which came with NSS 3.111, does not ([`aaa-trust-history.txt`](https://github.com/The-DevOps-Daily/emudhra-trust-store-check/blob/main/results/aaa-trust-history.txt) reads it from the Firefox source). Debian's `20250419` package is built from 2.74, so Debian 11, 12 and 13 hold AAA, and so do Ubuntu 24.04's release-pocket package and Alpine 3.18. Before the fix, bundles built from later data held only the emSign root. These include Ubuntu's June 2026 update, Alpine 3.19, certifi, curl, Node.js, Bun, RHEL and Temurin. Debian's own August 2026 unstable package, built from 2.90, has no AAA either. So the cause is the age of the data, not Debian's packaging. That is why Debian removed two roots and the others removed one.
 
 ## Finding 1: the root list decides it
 
@@ -98,26 +98,26 @@ Every script, recorded result and the scanner are in the companion repository. E
 https://github.com/The-DevOps-Daily/emudhra-trust-store-check
 ```
 
-We took each trust store out of its package file, so we know exactly which version we tested; the repository records the URL and SHA-256 of every download. For each store, a script first predicted the result: it accepts the emSign path if it holds `emSign ECC Root CA - G3`, and the Sectigo path if it holds `AAA Certificate Services`. Then `openssl verify` checked the 16 public test chains (eight per path, including leaves never logged to CT and chains through a rollover certificate) against each store, with the clock fixed at 30 October 00:00 UTC.
+We took each trust store from a fixed file (a package, a published bundle or a source tree), so we know exactly which version we tested. The repository records the URL and SHA-256 of every download. For each store, a script first predicted the result: it accepts the emSign path if it holds `emSign ECC Root CA - G3`, and the Sectigo path if it holds `AAA Certificate Services`. Then `openssl verify` checked the 16 public test chains against each store, with the clock fixed at 30 October 00:00 UTC. There are eight chains per path, including leaves never logged to CT and chains through a rollover certificate.
 
 The result: 560 verifications, 0 that differed from the prediction. A store accepts all eight chains of a path, or none.
 
-| Trust store                   | Before the fix                                                            | Fixed in                                                |
-| ----------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| Debian 11 bullseye            | both paths (`20250419~deb12u1~deb11u1`, the newest)                       | no fix, LTS ended 31 August 2026                        |
-| Debian 12 bookworm            | both paths (`20250419~deb12u1`)                                           | `20250419~deb12u2`                                      |
-| Debian 13 trixie              | both paths (`20250419`)                                                   | `20250419+deb13u1`                                      |
-| Ubuntu 24.04                  | both paths (`20240203`, release pocket); emSign path (`20260601~24.04.1`) | `20260816ubuntu0.24.04.1`                               |
-| Ubuntu 22.04                  | emSign path (`20260601~22.04.1`)                                          | `20260816ubuntu0.22.04.1`                               |
-| Alpine 3.18, 3.19 (EOL)       | both paths (3.18), emSign path (3.19)                                     | no fix in either branch                                 |
-| Alpine 3.22                   | not tested                                                                | `20261020-r0` (also in 3.20, 3.21, 3.23, 3.24 and edge) |
-| RHEL 9 family                 | emSign path (`2025.2.80_v9.0.305-91.el9`)                                 | `2026.2.92_v9.0.319-90.3.el9_8`                         |
-| Python certifi                | emSign path (2025.8.3, 2026.7.22)                                         | 2026.10.18                                              |
-| curl CA bundle                | emSign path (2026-09-25)                                                  | 2026-10-20                                              |
-| Node.js bundled roots         | emSign path (20.20.2, 22.23.3, 24.22.0)                                   | 22.23.4, 24.22.1                                        |
-| Bun bundled roots             | emSign path (1.4.3)                                                       | 1.4.4                                                   |
-| OpenJDK source `cacerts`      | both paths (jdk21u before JDK-8395690)                                    | in source since 27 October; no update release yet       |
-| Eclipse Temurin JRE `cacerts` | emSign path (21.0.12.1+1; 11.0.32.1+1, the newest 11 build)               | 21.0.13+9 holds neither root                            |
+| Trust store                     | Before the fix                                                            | Fixed in                                                |
+| ------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Debian 11 bullseye              | both paths (`20250419~deb12u1~deb11u1`, the newest)                       | no fix, LTS ended 31 August 2026                        |
+| Debian 12 bookworm              | both paths (`20250419~deb12u1`)                                           | `20250419~deb12u2`                                      |
+| Debian 13 trixie                | both paths (`20250419`)                                                   | `20250419+deb13u1`                                      |
+| Ubuntu 24.04                    | both paths (`20240203`, release pocket); emSign path (`20260601~24.04.1`) | `20260816ubuntu0.24.04.1`                               |
+| Ubuntu 22.04                    | emSign path (`20260601~22.04.1`)                                          | `20260816ubuntu0.22.04.1`                               |
+| Alpine 3.18, 3.19 (EOL)         | both paths (3.18), emSign path (3.19)                                     | no fix in either branch                                 |
+| Alpine 3.22                     | not tested                                                                | `20261020-r0` (also in 3.20, 3.21, 3.23, 3.24 and edge) |
+| RHEL 9 family (p11-kit, parsed) | emSign path (`2025.2.80_v9.0.305-91.el9`)                                 | `2026.2.92_v9.0.319-90.3.el9_8`                         |
+| Python certifi                  | emSign path (2025.8.3, 2026.7.22)                                         | 2026.10.18                                              |
+| curl CA bundle                  | emSign path (2026-09-25)                                                  | 2026-10-20                                              |
+| Node.js bundled roots           | emSign path (20.20.2, 22.23.3, 24.22.0)                                   | 22.23.4, 24.22.1                                        |
+| Bun bundled roots               | emSign path (1.4.3)                                                       | 1.4.4                                                   |
+| OpenJDK source `cacerts`        | both paths (jdk21u before JDK-8395690)                                    | in source since 27 October; no update release yet       |
+| Eclipse Temurin JRE `cacerts`   | emSign path (21.0.12.1+1; 11.0.32.1+1, the newest 11 build)               | 21.0.13+9 holds neither root                            |
 
 Three details from the table are easy to miss:
 
@@ -140,11 +140,11 @@ Three details from the table are easy to miss:
 }
 ```
 
-`-no-CApath -no-CAstore` keeps the machine's own `/etc/ssl/certs` out of the test, and `-attime` makes the result repeatable. There is no revocation check, which is also the default in curl, Python's `ssl` module, Node.js, Go and Java.
+`-no-CApath -no-CAstore` keeps the machine's own `/etc/ssl/certs` out of the test, and `-attime` makes the result repeatable. This command does not check revocation. The real clients in the next section did not catch it either. All 16 intermediate certificates were revoked on 18 and 19 October, but the clients still accepted chains through them with their default settings.
 
 ## Finding 2: a blocklist in the runtime beats a stale store
 
-Four runtimes did not wait for trust stores. Go 1.26.10 and 1.27.3 ([go.dev/issue/82345](https://go.dev/issue/82345)), Node.js 22.23.4, 24.22.1 and 26.12.1, Bun 1.4.4 and the October 26 CPython releases compile a list of the eight compromised public keys into their TLS code, and reject any chain that contains one of them. Bun's release notes mention only a root update; the list is in `blocked_spkis.cpp`. Our first stage downloads the four source files from the fix commits: all four hold the same eight SHA-256 hashes of the SubjectPublicKeyInfo. Because they match the key, not a certificate, they cover both certificates of every key, and the rollover chains.
+Four runtimes did not wait for trust stores: Go 1.26.10 and 1.27.3 ([go.dev/issue/82345](https://go.dev/issue/82345)), Node.js 22.23.4, 24.22.1 and 26.12.1, Bun 1.4.4 and the October 26 CPython releases. Each compiles a list of the eight compromised public keys into its TLS code and rejects any chain that contains one of them. Bun's release notes mention only a root update; the list is in `blocked_spkis.cpp`. Our first stage downloads the four source files from the fix commits: all four hold the same eight SHA-256 hashes of the SubjectPublicKeyInfo. Because they match the key, not a certificate, they cover both certificates of every key, and the rollover chains.
 
 To see the difference with real clients, we connected curl, Python, Node.js and Go on a Debian 12 machine to two of the public test hosts: one serves the emSign path, the other the Sectigo path. Each client got a trust store from the matrix above. For Go, we built the same small HTTPS client with Go 1.26.9 and 1.26.10. All 24 results matched the prediction:
 
@@ -183,7 +183,7 @@ Debian 12's own Python (`3.11.2-6+deb12u9` on our machine) has no denylist, and 
 
 Removing `AAA Certificate Services` closes the Sectigo path, but other chains still use this 2004 root, and Apple and the incident tracker both warn that removing it can break sites. We measured how many.
 
-We connected once to each of the top 20,000 domains of the Tranco list `PYK6J` (or to `www.` if the bare name failed), from one IPv4 address on 30 October between 11:11 and 11:36 UTC, and saved the chain each server sent. 16,348 answered. A small C program on OpenSSL 3.0.22 then verified every chain against Debian 12's bundle before and after the fix (Debian 13's bundles hold the same certificates), in three ways:
+We connected once to each of the top 20,000 domains of the Tranco list `PYK6J`, or to `www.` if the bare name failed. All connections came from one IPv4 address on 30 October between 11:11 and 11:36 UTC, and we saved the chain each server sent. 16,348 answered. A small C program on OpenSSL 3.0.22 then verified every chain against Debian 12's bundle before and after the fix (Debian 13's bundles hold the same certificates), in three ways:
 
 - **modern**: the OpenSSL default since 1.1.0, which looks in the trust store first at each step
 - **nofirst**: trust store first turned off, alternative chain search on
@@ -233,7 +233,7 @@ No chain was anchored at `emSign ECC Root CA - G3`, so every break comes from AA
 }
 ```
 
-The one real break is `jisc.ac.uk`, and it is not a Sectigo certificate. The server sends its leaf and `SSL.com TLS Issuing ECC CA R2`, cross-signed by AAA, and nothing else. The same key also has a certificate from `SSL.com TLS ECC Root CA 2022` ([crt.sh 8505503579](https://crt.sh/?id=8505503579)), which Debian holds, but the server does not send it, and OpenSSL does not fetch missing intermediates. So on our Debian 12 machine after the fix, curl fails:
+The one real break is `jisc.ac.uk`, and it is not a Sectigo certificate. The server sends its leaf and `SSL.com TLS Issuing ECC CA R2`, cross-signed by AAA, and nothing else. The same key also has a certificate from `SSL.com TLS ECC Root CA 2022` ([crt.sh 8505503579](https://crt.sh/?id=8505503579)), which Debian holds. The server does not send it, and OpenSSL does not fetch missing intermediates. So on our Debian 12 machine after the fix, curl fails:
 
 ```terminal
 {
@@ -244,7 +244,7 @@ The one real break is `jisc.ac.uk`, and it is not a Sectigo certificate. The ser
       "comment": "Debian 12, ca-certificates 20250419~deb12u2, 30 October 11:44 UTC"
     },
     {
-      "cmd": "curl -sS -o /dev/null --max-time 20 -w '%{http_code}\\n' https://jisc.ac.uk/",
+      "cmd": "curl -sS -o /dev/null --max-time 20 -w '%{http_code}\\n'  https://jisc.ac.uk/",
       "output": "curl: (60) SSL certificate problem: unable to get local issuer certificate\nMore details here: https://curl.se/docs/sslcerts.html\n\ncurl failed to verify the legitimacy of the server and therefore could not\nestablish a secure connection to it. To learn more about this situation and\nhow to fix it, please visit the web page mentioned above.\n000"
     },
     {
@@ -255,9 +255,9 @@ The one real break is `jisc.ac.uk`, and it is not a Sectigo certificate. The ser
 }
 ```
 
-To check this with a second TLS stack, we ran `git ls-remote` (git 2.39.5, which uses GnuTLS 3.7.9 on Debian 12) against `jisc.ac.uk` and a seeded random sample of 20 of the other 261 strict-mode breaks, with both bundles. GnuTLS rejected `jisc.ac.uk` after the fix and accepted the 20 others. Our Go client, built with Go 1.26.9 and 1.26.10, also failed on `jisc.ac.uk` with the fixed bundle (`x509: certificate signed by unknown authority`).
+To check this with a second TLS stack, we ran `git ls-remote` with both bundles. On Debian 12, git 2.39.5 uses GnuTLS 3.7.9. The targets were `jisc.ac.uk` and a seeded random sample of 20 of the other 261 strict-mode breaks. GnuTLS rejected `jisc.ac.uk` after the fix and accepted the 20 others. Our Go client, built with Go 1.26.9 and 1.26.10, also failed on `jisc.ac.uk` with the fixed bundle (`x509: certificate signed by unknown authority`).
 
-So the AAA removal costs little with current OpenSSL, GnuTLS and Go. The risk is in servers that send only an AAA cross-sign of an intermediate, like `jisc.ac.uk`, where the fix is to send the intermediate that the current root issued, and in clients that cannot search for another path, which we modelled but did not identify.
+So in our tests the AAA removal costs little: one chain in 16,125 for OpenSSL 3, and GnuTLS and Go agreed on the chains we gave them. The risk is in two places. The first is servers that send only an AAA cross-sign of an intermediate, like `jisc.ac.uk`; the fix is to send the intermediate that the current root issued. The second is clients that cannot search for another path, which we modelled but did not identify.
 
 ## Where the old roots hide
 
@@ -286,6 +286,7 @@ ok       fixture/opt/node-24.22.1/bin/node
 
 4 finding(s) that still trust a chain through the compromised keys.
 TRUSTS*: safe only if every trust store the program reads at run time is fixed.
+No finding is not proof: only the bundle, keystore and binary formats listed in --help are checked.
 ```
 
 `TRUSTS*` means the program has no blocklist of its own, so it is only as safe as the bundle it reads. For a container image, export the filesystem and scan it:
@@ -314,9 +315,9 @@ rpm -q ca-certificates   # RHEL 9 fixed: 2026.2.92_v9.0.319-90.3.el9_8
 ## What we could not conclude
 
 - **How many systems are still exposed.** The matrix says what each version does, not how many copies of each version are running. We picked old versions on purpose.
-- **Other JDKs and platform verifiers.** We did not check the `cacerts` of Amazon Corretto, Azul Zulu, Microsoft's build, Oracle JDK or distribution packages, and did not test Windows, macOS or Android; for those we relied on the vendors.
+- **Other JDKs and platform verifiers.** We did not check the `cacerts` of Amazon Corretto, Azul Zulu, Microsoft's build, Oracle JDK or distribution packages. We did not test Windows, macOS or Android, and relied on the vendors for those.
 - **RHEL's real extraction.** We did not run `trust extract`; we parsed the p11-kit file and kept certificates trusted for server authentication. Our fixed RHEL 9 store has 118 certificates, the same count as the curl bundle of 20 October, which is a cross-check, not proof.
-- **Revocation.** We did not test clients with CRL or OCSP checks turned on. The leaves on the test hosts have no revocation pointers, and the eMudhra CRL endpoint refused some User-Agents ([comment 44](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c44)), so we would not count on it.
+- **Revocation.** We did not test clients with CRL or OCSP checks turned on. The leaves on the test hosts have no revocation pointers. The eMudhra CRL endpoint also refused some User-Agents ([comment 44](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449#c44)), so we would not count on it.
 - **AAA beyond the top 20,000.** One IPv4 address, one morning, the bare name or `www.` only. Internal services, other host names, mail servers and the long tail can differ, and a CDN can send a different chain to a different network.
 - **Which real clients behave like "strict" mode.** We modelled them with two OpenSSL flags. OpenSSL 3.0 in modern mode handled 261 of the 262 chains, and GnuTLS 3.7.9 the 20 we sampled. We did not test Java, rustls, Windows, macOS or embedded TLS libraries on them, or Go beyond `jisc.ac.uk`.
 
@@ -325,4 +326,4 @@ rpm -q ca-certificates   # RHEL 9 fixed: 2026.2.92_v9.0.319-90.3.el9_8
 - Each compromised key chains to two roots. Stores built from Mozilla data older than April 2025, including Debian 11, 12 and 13, need both `emSign ECC Root CA - G3` and `AAA Certificate Services` removed.
 - The roots in a store predicted all 560 of our verifications. Check the file, not the version string; `scan-tree.py` does that for a whole image.
 - The fixed Go, Node.js, Bun and Python releases block the keys whatever the store says. Debian 11, Alpine 3.18 and 3.19 and Node.js 20 get no fix.
-- Removing AAA broke one site in the top 20,000 for current OpenSSL, GnuTLS and Go, and the fix for it is on the server.
+- In our OpenSSL test, removing AAA broke 1 of 16,125 served chains (`jisc.ac.uk`). GnuTLS and Go failed on it too, and the fix for it is on the server.
