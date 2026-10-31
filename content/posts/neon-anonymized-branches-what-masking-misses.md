@@ -290,7 +290,7 @@ The wait matters if you use Neon's GitHub Action. [`neondatabase/create-branch-a
 Two more things to know about the template branch:
 
 - **Do not give it an expiry.** The API refused to create a child from an anonymized branch with `expires_at`: `Branches with an expiration date cannot have child branches`. Set `expires_at` on the previews instead.
-- **Check the data before you make previews.** A scan report is only good for the data it read. `04-previews.mjs` refuses to branch from the template unless its report is a pass, the branch has no database the scan did not read, and the data still has the scanned fingerprint. It then checks each preview against the same fingerprint.
+- **Check the data before you make previews.** A scan report is only good for the data it read. `04-previews.mjs` refuses to branch from the template unless its report is a pass, the branch has no database and no data that the scan did not read, and the data still has the scanned fingerprint. It then checks each preview against the same fingerprint.
 
 From the passing template, three previews were ready in 2.4 to 2.6 seconds each, and each one matched the scanned fingerprint. To see the check refuse, the script makes a copy of the template, scans it, and writes one support ticket with a real user's email into it, the way someone might paste a production row into a shared branch:
 
