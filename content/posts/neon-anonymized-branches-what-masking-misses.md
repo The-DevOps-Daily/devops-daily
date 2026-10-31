@@ -251,8 +251,6 @@ The events table has no rule because we could not write one that keeps the paylo
 
 The rule parser accepts function calls, and only functions from the `anon` schema and 36 `pg_catalog` functions that the extension labels as trusted, such as `concat`, `regexp_replace`, `md5`, `jsonb_build_object` and `to_jsonb`. `jsonb_set` is not one of them. Without casts, a rule cannot turn `jsonb` into text and back. We found no other way to edit a document in place, so in our tests a JSON column had two options. You can rebuild the whole document from fake values, which loses its shape when the shape changes from row to row (our events have four). Or you can replace it with a constant.
 
-Each rejected call also left its new branch behind, even though the API returned 400. The scripts delete it. If you create anonymized branches from CI, add the same cleanup, or the branches add up.
-
 ## Round 3: replace what you cannot edit
 
 The third rule set (`v3-strict`) replaces what round 2 could only edit: ticket bodies become `anon.lorem_ipsum(words := 20)`, invitation messages become `anon.lorem_ipsum(words := 10)`, and event payloads become `{}`. It also takes IP addresses and phone numbers from ranges that no real value can be in (more on that below). That passed:
