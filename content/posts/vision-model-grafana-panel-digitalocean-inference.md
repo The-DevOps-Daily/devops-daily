@@ -45,7 +45,9 @@ So the numbers in an alert message should come from the alert payload, not the m
 - Node.js 22 or later
 - About $1 of inference if you rerun every model; the reasoning-mode run is most of it
 
-<!-- TODO: add the github repo card fence for The-DevOps-Daily/grafana-panel-vision here when the repo is public -->
+```github
+https://github.com/The-DevOps-Daily/grafana-panel-vision
+```
 
 ## The job and the claim
 
