@@ -23,11 +23,11 @@ tags:
 sponsorCampaign: 'digitalocean'
 ---
 
-Grafana can attach a screenshot of the alerting panel to a notification. A bot can send that image to a vision model and post one line next to the page. NVIDIA Nemotron 3.5 Super VL came to DigitalOcean Serverless Inference on 15 October 2026, so we tested it on that job.
+Grafana can attach a screenshot of the alerting panel to a notification. A bot can send that image to a vision model and post one line next to the page. NVIDIA Nemotron 3.5 Super VL came to DigitalOcean Serverless Inference on 15 October 2026 ([release notes](https://docs.digitalocean.com/release-notes/)), so we tested it on that job.
 
 We drew 100 dashboard panels with known answers and asked four questions about each: the peak value, the time of the peak, whether the data crossed the threshold, and which series is highest. Our claim, written before we measured: Nemotron 3.5 Super VL gets all four right on at least 90 of 100 panels, for under $0.001 per screenshot. It got all four right on **48** panels with reasoning off and **54** with reasoning on. The claim failed. The cost limit held only with reasoning off: **$0.00026** per screenshot, against **$0.0024** with reasoning on.
 
-No model we could call came close to 90. Qwen3.8-Max got 65 and Gemma 4 got 64, at **$0.11 per 1,000 screenshots** for Gemma. Log-scale axes broke every model.
+None of the four models we tested came close to 90. Qwen3.8-Max got 65 and Gemma 4 got 64, at **$0.11 per 1,000 screenshots** for Gemma. Log-scale axes broke every model.
 
 So the numbers in an alert message should come from the alert payload, not the model. The more useful result is a small bot that lets the model describe the screenshot and lets rules decide whether to trust it. On Nemotron's 300 reads, the rules caught 63 percent of the wrong reads and blocked no correct read. With the wrong screenshot attached on purpose, the bot refused it 99 times in 100.
 
@@ -63,19 +63,19 @@ Each model got the same prompt for every panel, with the panel as a PNG, and had
 }
 ```
 
-The truth for that panel is 1.85 s at 13:55, not crossed, `search`, so this read passes. The tolerances, set before the first run:
+The truth for that panel is 1.85 s at 13:55 UTC, not crossed, `search`, so this read passes. The tolerances, set before the first run:
 
 - **Peak value**: within 5 percent of the true peak, after unit conversion. A unit from the wrong family, such as MiB on a latency panel, is wrong. "MB" counts as "MiB", because the axis says MiB.
 - **Peak time**: within 5 percent of the panel's time range. That is 3 minutes on a 1-hour panel, 18 on 6 hours and 72 on 24 hours.
 - **Threshold crossed**: exact. The answer is "yes", "no" or "no threshold".
-- **Top series**: the answer is matched to the nearest legend name, with at most 2 typing errors (1 for short names). A tie counts as wrong. On a stacked panel, the top series is the one with the thickest band at the peak, not the band drawn on top, and the prompt says so.
+- **Top series**: the answer is matched to the nearest legend name, with at most 2 typing errors (1 for short names). A tie, or an answer that names two legend entries, counts as wrong. On a stacked panel, the top series is the one with the thickest band at the peak, not the band drawn on top, and the prompt says so.
 
 A panel counts as read only when all four facts are right.
 
 ## 100 panels with known answers
 
 :::warning
-These are **Grafana-style panels drawn by our own renderer, not screenshots from Grafana**. Real data has plateaus and near-equal peaks, which our generator rejects so that each question has one answer. Many real dashboards show a legend with Max or Last columns, which would turn the value question into text reading and help the models. Real panels also have annotations and longer legends. A model trained on real Grafana screenshots could read real panels better or worse than ours. We do not know which.
+These are **Grafana-style panels drawn by our own renderer, not screenshots from Grafana**. Real data has plateaus and near-equal peaks, which our generator rejects so that each question has one answer. Many real dashboards show a legend with Max or Last columns, which would turn the value question into text reading and help the models. A model trained on real Grafana screenshots could read real panels better or worse than ours. We do not know which.
 :::
 
 The renderer writes SVG and converts it to PNG with `@resvg/resvg-js`. It copies the Grafana dark theme: panel background, Inter font, classic palette, grid, axis labels with units, a list legend, and thresholds as a dashed line, a shaded region or both. There are no tooltips and no legend values. A seeded generator (mulberry32) draws the data, and the truth comes from the same numbers.
@@ -93,7 +93,7 @@ The renderer writes SVG and converts it to PNG with `@resvg/resvg-js`. It copies
 | Time range 1 h, 6 h, 24 h (UTC clock) | 33, 36, 31                            |
 | Noise low, medium, high               | 32, 42, 26                            |
 
-In an earlier project, a bug in our own test data made strong models look wrong, so we checked the truth first. A second script reads every panel back from the SVG alone, the way a reader would: the peak from the tick labels, the time from the clock labels, the series from the line colour and the legend. It agreed with the truth on all 100 panels, with a largest peak error of 0.011 percent. To prove the check can fail, a third script breaks the renderer in a copy: wrong byte labels gave 38 problems, and lines drawn 3 percent too high gave 204. We also viewed 14 panels next to their truth records.
+In an earlier project, a bug in our own test data made strong models look wrong, so we checked the truth first. A second script reads every panel back from the SVG alone, the way a reader would: the peak from the tick labels, the time from the clock labels, and the top series from the line colours and the legend (on the 19 stacked panels, from the band heights at the peak). It agreed with the truth on all 100 panels, with a largest peak error of 0.011 percent. To prove the check can fail, a third script breaks the renderer in a copy: wrong byte labels gave 38 problems, lines drawn 3 percent too high gave 204, and stacked bands drawn in the wrong colours failed the band check on all 19 stacked panels. We also viewed 14 panels next to their truth records.
 
 ## Which models we tested
 
@@ -101,7 +101,7 @@ A probe sent the same question to 15 models, with no image and then with the sma
 
 Several vision models reason before they answer, which is too slow for a page. On the two probe panels, Kimi K3 took 28 and 165 seconds, DeepSeek V4.1 Flash 45 and 13, and Qwen 3.5 397B 71 (with no answer) and 42. We kept **Nemotron 3.5 Super VL** (`nemotron-3.5-super-vl`), with reasoning off and on, and three models that answered in 1.5 to 3 seconds: **Qwen3.8-Max** (`qwen3.8-max`), **Gemma 4** (`gemma-4-31B-it`) and **Llama 4 Maverick** (`llama-4-maverick`). Nemotron Nano 12B v2 VL was also fast; we left it out to keep the test to four models.
 
-Every call used temperature 0 and at most 1,024 output tokens (16,384 with reasoning on). Each model read every panel three times. Reasoning calls took about 20 seconds each, so that mode read all 100 panels once and a fixed 34-panel subset two more times.
+Every call in the comparison used temperature 0 and at most 1,024 output tokens. Reasoning mode got 16,384, because the reasoning counts against that limit. Each model read every panel three times. Reasoning calls took about 20 seconds each, so that mode read all 100 panels once and a fixed 34-panel subset two more times.
 
 Nemotron reasons by default. Two request settings turn it off. The `/no_think` system prompt does not:
 
@@ -110,7 +110,10 @@ Nemotron reasons by default. Two request settings turn it off. The `/no_think` s
   "title": "stage 0b: turning reasoning off on one 1000x500 panel",
   "prompt": "$",
   "steps": [
-    { "cmd": "node scripts/00b-reasoning-switch.mjs nemotron-3.5-super-vl", "output": "nemotron-3.5-super-vl | default                                    | HTTP 200 | 22795 ms | completion 4096 | reasoning chars 13191 | $0.00291\nnemotron-3.5-super-vl | reasoning_effort=low                       | HTTP 200 | 22271 ms | completion 4096 | reasoning chars 14191 | $0.00291\nnemotron-3.5-super-vl | reasoning_effort=none                      | HTTP 200 | 1207 ms | completion 99 | reasoning chars 0 | $0.00031\nnemotron-3.5-super-vl | chat_template_kwargs.enable_thinking=false | HTTP 200 | 1268 ms | completion 92 | reasoning chars 0 | $0.00031\nnemotron-3.5-super-vl | system prompt /no_think                    | HTTP 200 | 21921 ms | completion 4096 | reasoning chars 14294 | $0.00291" }
+    {
+      "cmd": "node scripts/00b-reasoning-switch.mjs nemotron-3.5-super-vl",
+      "output": "nemotron-3.5-super-vl | default                                      | HTTP 200 | 22795 ms | completion 4096 | reasoning chars 13191 | $0.00291\nnemotron-3.5-super-vl | reasoning_effort=low                         | HTTP 200 | 22271 ms | completion 4096 | reasoning chars 14191 | $0.00291\nnemotron-3.5-super-vl | reasoning_effort=none                        | HTTP 200 | 1207 ms | completion 99 | reasoning chars 0 | $0.00031\nnemotron-3.5-super-vl | chat_template_kwargs.enable_thinking=false   | HTTP 200 | 1268 ms | completion 92 | reasoning chars 0 | $0.00031\nnemotron-3.5-super-vl | system prompt /no_think                      | HTTP 200 | 21921 ms | completion 4096 | reasoning chars 14294 | $0.00291"
+    }
   ]
 }
 ```
@@ -119,7 +122,7 @@ That probe had a 4,096-token limit, and the reasoning runs used all of it withou
 
 ## Results
 
-| Model, run 1                         | All four right (95% CI) | Peak value | Peak time | Threshold | Top series | $ per 1,000 | Latency p50 / p95 |
+| Model                                | All four right (95% CI) | Peak value | Peak time | Threshold | Top series | $ per 1,000 | Latency p50 / p95 |
 | ------------------------------------ | ----------------------- | ---------- | --------- | --------- | ---------- | ----------- | ----------------- |
 | Qwen3.8-Max                          | 65 (55 to 74)           | 77         | 97        | 97        | 91         | 1.47        | 1.5 s / 2.2 s     |
 | Gemma 4                              | 64 (54 to 73)           | 77         | 99        | 96        | 86         | 0.11        | 2.7 s / 3.4 s     |
@@ -127,7 +130,7 @@ That probe had a 4,096-token limit, and the reasoning runs used all of it withou
 | Nemotron 3.5 Super VL, reasoning off | 48 (39 to 58)           | 69         | 96        | 91        | 75         | 0.26        | 1.4 s / 1.8 s     |
 | Llama 4 Maverick                     | 21 (14 to 30)           | 34         | 89        | 86        | 81         | 0.28        | 2.7 s / 9.1 s     |
 
-Latency is the attempt that succeeded. The parallel runs hit HTTP 429 often (88 retried attempts for Nemotron, 99 for Qwen3.8-Max, 75 for Gemma 4), and those waits are not in the latency figures.
+Accuracy and cost are from run 1. Latency covers every successful call in all runs, and it is the time of the attempt that succeeded. The parallel runs hit HTTP 429 often (retried attempts: 88 for Nemotron with reasoning off, 7 with reasoning on, 99 for Qwen3.8-Max, 75 for Gemma 4), and those waits are not in the latency figures.
 
 ```chart
 {
@@ -178,7 +181,7 @@ Repeat runs at temperature 0 showed another difference. Qwen3.8-Max and Gemma 4 
 
 ![A Grafana-style log-scale panel where POST /login spikes to 21.3K req/s between the 10K and 100K ticks](../../public/images/posts/vision-model-grafana-panel-digitalocean-inference/log-axis-p003.png)
 
-The spike peaks at 21.3K req/s at 14:28. Every model found the series and the time. Qwen3.8-Max and Gemma 4 said 20,000 every time, 6.2 percent low. Nemotron's three runs said 30 req/s, 45,000 req/s and 30K req/s.
+The spike peaks at 21.3K req/s at 14:28 UTC. Every model found the series and the time. Qwen3.8-Max and Gemma 4 said 20,000 every time, 6.2 percent low. Nemotron's three runs said 30 req/s, 45,000 req/s and 30K req/s.
 
 **The threshold label as the answer.** When a spike crosses a dashed line, the label of that line is the easiest number on the panel to read.
 
@@ -202,7 +205,7 @@ With reasoning on, Nemotron got 54 panels right against 48. Only reasoning got 1
 
 ## What a screenshot costs
 
-DigitalOcean's [pricing page](https://docs.digitalocean.com/products/inference/details/pricing/) ("Last verified 30 Oct 2026", read on 31 October) lists no separate image rate for these models. We priced each call from the token counts the API reported, at list input and output prices.
+DigitalOcean's [pricing page](https://docs.digitalocean.com/products/inference/details/pricing/) ("Last verified 30 Oct 2026", read on 31 October) lists no separate image rate for these models. We priced each call from the token counts the API reported, at list input and output prices. That assumes the image tokens inside `prompt_tokens` are billed at the input rate. We did not check it against an invoice.
 
 | Model                                | Image tokens, 360x200 | Image tokens, 1000x500 | Prompt tokens (cached) | Output tokens | $ per screenshot |
 | ------------------------------------ | --------------------- | ---------------------- | ---------------------- | ------------- | ---------------- |
@@ -270,7 +273,7 @@ Over all recorded reads:
 | Gemma 4                              | 111 of 300  | 54 (49%)      | 98 (88%)     | 0                     |
 | Llama 4 Maverick                     | 236 of 300  | 143 (61%)     | 214 (91%)    | 0                     |
 
-"Correct reads blocked: 0" is partly by design: a value within our 5 percent scoring tolerance is also within the bot's 10 percent. What the 10 percent check let through for Nemotron:
+"Correct reads blocked: 0" is by construction. Our alert value is the true peak and the bot's checks are looser than the scorer's, so a correct read cannot fail them. A real alert that reduces differently from the panel would add false flags. What the 10 percent check let through for Nemotron:
 
 - 24 reads with only a value error between 5 and 10 percent, such as 300 ms for 331 ms
 - 21 wrong series names, all on stacked panels, where the alert is on the sum and has no series to compare
@@ -283,7 +286,7 @@ We expected the model to copy the alert's numbers if the prompt contained them, 
 
 ## What 100 panels cannot tell you
 
-- **The claim failed by a wide margin.** The 95 percent intervals for Nemotron end at 58 and 63 panels. More panels would not move either result to 90.
+- **The claim failed by a wide margin.** The 95 percent intervals for Nemotron end at 58 and 63 panels, far below 90.
 - **We cannot rank Qwen3.8-Max against Gemma 4,** or Nemotron with reasoning against without. Both gaps are too small for 100 panels.
 - **Feature rows are directions, not rates.** Each covers 17 to 36 panels. Gemma 4's 8 of 25 on log axes has a 95 percent interval of 17 to 52 percent.
 - **The panels are ours.** Real Grafana screenshots are a different input, easier in some ways and harder in others.
@@ -292,7 +295,7 @@ We expected the model to copy the alert's numbers if the prompt contained them, 
 
 ## Run it yourself
 
-Each stage writes a file that the next one reads. Every recorded call is stamped with a hash of the runner code and the inputs, and the scorer refuses unstamped, mixed or stale files. The runner stops before its own count of spend passes a cap ($3.50 by default).
+Each stage writes a file that the next one reads. Every recorded call is stamped with a hash of the runner code and the inputs. The scorer refuses unstamped, mixed or stale files, and records filed under the wrong configuration. The runner stops before its own count of spend passes a cap ($3.50 by default).
 
 ```bash
 git clone https://github.com/The-DevOps-Daily/grafana-panel-vision
