@@ -1,6 +1,6 @@
 ---
 title: 'Neon Anonymized Branches: Mask the Columns, Then Scan the Rest'
-excerpt: 'We gave a Neon anonymized branch masking rules for every PII column of a 20,000-user table. The masked columns came out clean, and all 20,000 original emails were still readable elsewhere on the branch: in order copies, JSON payloads, support tickets, and an audit table that the masking run itself filled. Here is the scanner we use as a CI gate, and the rules it took to pass it.'
+excerpt: 'We gave a Neon anonymized branch masking rules for every PII column of a 20,000-user table. The masking replaced the values in those columns, and all 20,000 original emails were still readable elsewhere on the branch: in order copies, JSON payloads, support tickets, and an audit table that the masking run itself filled. Here is the scanner we use as a CI gate, and the rules it took to pass it.'
 category:
   name: 'Security'
   slug: 'security'
@@ -24,7 +24,7 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
-We created an anonymized branch of a 20,000-user SaaS database on Neon. It had masking rules for the six PII columns of the `users` table: email, name, phone, street address, date of birth and signup IP. The masking run took 9 seconds. Afterwards, no row in `users` held its original email, name, phone, address or IP. Then we read every text and JSON column on the branch. **All 20,000 original email addresses were still there**, and so was every original name, phone number, street address and IP address.
+We created an anonymized branch of a 20,000-user SaaS database on Neon. It had masking rules for the six PII columns of the `users` table: email, name, phone, street address, date of birth and signup IP. The masking run took 9 seconds. Afterwards, no row in `users` held its original email, name, phone, address or IP (3 of the 20,000 random dates of birth matched the original by chance). Then we read every text and JSON column on the branch. **All 20,000 original email addresses were still there**, and so was every original name, phone number, street address and IP address.
 
 Most of them were in places nobody writes a rule for: the email copied onto each order at checkout, the JSON payloads of login and checkout events, the text of support tickets. The other 20,000 copies came from the masking run itself. The masking updates each row of `users`, so the audit trigger on that table fired 20,000 times and saved every original row into `audit_log`.
 
@@ -37,7 +37,7 @@ Anonymized branches mask the columns you list, and in our runs they did. This po
 - **The masking run fires your triggers.** `audit_log` grew from 1,888 to 21,888 rows during masking, and each new row held one user's full original row. The branch refuses connections until the run ends, so you cannot switch the trigger off first.
 - **Free text and JSON need a decision.** We found no rule that edits JSON in place, and `regexp_replace` removed emails and phone numbers from ticket bodies but not names. Only replacing free text and JSON passed the gate.
 - **Pick generators with care.** `anon.dummy_free_email()` and `anon.dummy_safe_email()` made the run fail on a unique column at 20,000 rows, and random IP addresses and phone numbers can be equal to real ones.
-- **Previews from the passing template were ready in 2.4 to 2.6 seconds.** The same rules failed the scan after a migration copied emails into a new table.
+- **Previews from the passing template were ready in 2.3 to 2.5 seconds.** The same rules failed the scan after a migration copied emails into a new table.
 
 ## Prerequisites
 
@@ -64,7 +64,7 @@ curl -X POST "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branch_anony
 
 Three details matter later:
 
-1. The branch refuses connections until the run ends (`Access to this endpoint is temporarily disabled`). We saw the same error after a run failed, so a failed run does not hand out unmasked data.
+1. The branch refuses connections until the run ends (`Access to this endpoint is temporarily disabled`). We saw the same error after each of our failed runs, so in our tests a failed run did not hand out unmasked data.
 2. `GET /branches/{id}/anonymized_status` reports `anonymizing`, then `anonymized` or `error`.
 3. Each rule names one column. Nothing in the API looks at the columns you did not name.
 
@@ -109,17 +109,19 @@ A seeded generator writes 20,000 users, 40,191 orders, 6,558 tickets, 59,738 eve
 
 ## The scanner
 
-<!-- TODO(repo-url): add the GitHub repo card fence for The-DevOps-Daily/neon-anonymized-branches here once the repository exists. -->
+```github
+https://github.com/The-DevOps-Daily/neon-anonymized-branches
+```
 
-`scan.mjs` takes two branches: the anonymized branch and its parent. It reads the PII columns you list in `pii-sources.json` on the parent (here five columns of `users`), then reads every text, JSON, `tsvector` and `inet` column of every table and materialized view on the anonymized branch. Per column it reports:
+`scan.mjs` takes two branches: the anonymized branch and its parent. It reads the PII columns you list in `pii-sources.json` on the parent (here five columns of `users`), then reads every text, JSON, `tsvector`, `inet` and `xml` column of the user tables and materialized views on the anonymized branch (the `anon` extension's own tables are left out). Per column it reports:
 
 - **known**: rows that still hold a value from the parent, also inside free text and JSON. Phone numbers match on their last 10 digits, and a full name matches as two neighbouring words, so `/team/tarek-stratkett` in a URL matches "Tarek Stratkett".
 - **pattern**: values shaped like an email, phone number, IP address or street address that are not known values, such as former emails and people who are not users.
-- **row counts** of every table that changed during masking, and a **fingerprint** of the data it scanned (per table, the row count and a sha256 over the sorted md5 of each row).
+- **row counts** of every table that changed during masking, and a **fingerprint** of the data on the branch (per table, the row count and a sha256 over the sorted md5 of each row).
 
-It fails when a column holds a known value, when a column with no rule holds PII-shaped values, when a rule changed no row, when the branch has a database it did not read, when the branch holds data it cannot read (such as a `bytea` column, large objects or foreign tables), or when the data changed during the scan. Two columns here are computed only from masked columns, a materialized view and a generated search column. They are on a review list: their PII-shaped values go to a person instead of failing the gate, and known values in them still fail.
+It fails when a column holds a known value, when a column that no rule replaces holds PII-shaped values, when a rule changed no row, when the branch has a database it did not read, when the branch holds data it cannot read (such as a `bytea` column, large objects or foreign tables), or when the data changed during the scan. Two columns here are computed only from masked columns, a materialized view and a generated search column. They are on a review list: their PII-shaped values go to a person instead of failing the gate, and known values in them still fail.
 
-A pass means the scan found none of the values and shapes it knows. It does not mean the branch is clean. The scanner does not know phone numbers outside the US format, nicknames or encoded values, and it does not read numeric columns.
+A pass means the scan found no known value anywhere, and no PII-shaped value outside replaced and review columns. It does not mean the branch is clean. The scanner does not know phone numbers outside the US format, nicknames or encoded values, and it does not read numeric columns.
 
 Against the unmasked parent, the rows it found matched the planted ground truth for all 33 combinations of column and kind. That is not an independent test of recall, because we planted the data in formats the scanner knows. It shows that the scanner counts what it should on this data. A second check, `08-predict.mjs`, predicts each column from the parent's data and the rules, without Neon. Where the real scan differs from the prediction, the masking run did something on its own.
 
@@ -140,7 +142,7 @@ The first rule set masks the PII columns of `users`, the way the docs and the Gi
   "steps": [
     {
       "cmd": "node scripts/scan.mjs --target template-v1 --known main --evidence --out results/scan-template-v1.json",
-      "output": "scanned 26 columns in 7 tables of template-v1 (58.0 s)\n  audit_log.old_row                  rule=none      known: email 20938, name 21888, phone 18552, address 20950, ip 21888 pattern: email 950, address 938\n  audit_log.new_row                  rule=none      known: email 1888, name 1888, phone 1585, address 1888, ip 1888 pattern: email 20000, phone 17780, address 976, ip 20000\n  customer_summary.email             rule=review    known: -                                            pattern: email 20000, phone 196\n  events.payload                     rule=none      known: email 19931, name 12816, ip 11888            pattern: ip 8017\n  invitations.invitee_email          rule=none      known: email 585                                    pattern: email 1450\n  invitations.invitee_name           rule=none      known: name 585                                     pattern: -\n  invitations.message                rule=none      known: name 2035                                    pattern: -\n  orders.contact_email               rule=none      known: email 40191                                  pattern: -\n  orders.shipping_name               rule=none      known: name 36939                                   pattern: -\n  orders.shipping_address            rule=none      known: phone 31371, address 36939                   pattern: phone 3252, address 3252\n  support_tickets.body               rule=none      known: email 1324, name 1231, phone 1162, address 588 pattern: email 687, phone 622\n  users.search                       rule=review    known: -                                            pattern: email 20000, phone 191\n  warning: public.audit_log has 21888 rows, the parent has 1888 (+20000)\n  review: customer_summary.email: 20000 rows hold PII-shaped values (review: materialized view of users.email)\n  review: users.search: 20000 rows hold PII-shaped values (review: generated from users.full_name and users.email)\nFAIL: 16 problems"
+      "output": "scanned 26 columns in 7 tables of template-v1 (68.8 s)\n  audit_log.old_row                  rule=none      known: email 20938, name 21888, phone 18552, address 20950, ip 21888 pattern: email 950, address 938\n  audit_log.new_row                  rule=none      known: email 1888, name 1888, phone 1585, address 1888, ip 1888 pattern: email 20000, phone 17807, address 954, ip 20000\n  customer_summary.email             rule=review    known: -                                            pattern: email 20000, phone 227\n  events.payload                     rule=none      known: email 19931, name 12816, ip 11888            pattern: ip 8017\n  invitations.invitee_email          rule=none      known: email 585                                    pattern: email 1450\n  invitations.invitee_name           rule=none      known: name 585                                     pattern: -\n  invitations.message                rule=none      known: name 2035                                    pattern: -\n  orders.contact_email               rule=none      known: email 40191                                  pattern: -\n  orders.shipping_name               rule=none      known: name 36939                                   pattern: -\n  orders.shipping_address            rule=none      known: phone 31371, address 36939                   pattern: phone 3252, address 3252\n  support_tickets.body               rule=none      known: email 1324, name 1231, phone 1162, address 588 pattern: email 687, phone 622\n  users.search                       rule=review    known: -                                            pattern: email 20000, phone 220\n  warning: public.audit_log has 21888 rows, the parent has 1888 (+20000)\n  review: customer_summary.email: 20000 rows hold PII-shaped values (review: materialized view of users.email)\n  review: users.search: 20000 rows hold PII-shaped values (review: generated from users.full_name and users.email)\nFAIL: 16 problems"
     }
   ]
 }
@@ -170,7 +172,7 @@ Counted as distinct values, this is how much is still readable on the branch:
 | Street address | 20,000 of 20,000  | 15,907 (79.5%)               |
 | IP address     | 20,000 of 20,000  | 9,208 (46.0%)                |
 
-The scan also flagged PII of people who are not users, such as 1,450 invitee emails and 8,017 login IPs that are not signup IPs. The prediction matched 21 of the 26 columns, and the masking run caused every difference. Two of them are good news: the generated `search` column and the materialized view `customer_summary` held no original value, because Postgres computes a generated column again on every `UPDATE` and Neon refreshes materialized views after the run. The audit trigger caused the others.
+The scan also flagged PII of people who are not users, such as 1,450 invitee emails and 8,017 login IPs that are not signup IPs. The prediction matched 21 of the 26 columns, and each difference points to something the masking run did. Two of them are good news: the generated `search` column and the materialized view `customer_summary` held no original value, because Postgres computes a generated column again on every `UPDATE` and Neon refreshes materialized views after the run. The audit trigger caused the others.
 
 ### The masking run fires your triggers
 
@@ -238,13 +240,13 @@ The third rule set (`v3-strict`) replaces what round 2 could only edit: ticket b
   "steps": [
     {
       "cmd": "node scripts/scan.mjs --target template-v3 --known main --evidence --out results/scan-template-v3.json",
-      "output": "scanned 26 columns in 7 tables of template-v3 (49.4 s)\n  customer_summary.email             rule=review    known: -                                            pattern: email 20000, phone 210\n  users.search                       rule=review    known: -                                            pattern: email 20000, phone 207\n  warning: public.audit_log has 21888 rows, the parent has 1888 (+20000)\n  review: customer_summary.email: 20000 rows hold PII-shaped values (review: materialized view of users.email)\n  review: users.search: 20000 rows hold PII-shaped values (review: generated from users.full_name and users.email)\nPASS: no PII from the source columns and no PII-shaped values found outside replaced and review columns (2 to review)"
+      "output": "scanned 26 columns in 7 tables of template-v3 (41.7 s)\n  customer_summary.email             rule=review    known: -                                            pattern: email 20000, phone 212\n  users.search                       rule=review    known: -                                            pattern: email 20000, phone 207\n  warning: public.audit_log has 21888 rows, the parent has 1888 (+20000)\n  review: customer_summary.email: 20000 rows hold PII-shaped values (review: materialized view of users.email)\n  review: users.search: 20000 rows hold PII-shaped values (review: generated from users.full_name and users.email)\nPASS: no PII from the source columns and no PII-shaped values found outside replaced and review columns (2 to review)"
     }
   ]
 }
 ```
 
-It took 36 seconds to mask six tables. This is how much of the original PII each round left readable, counted as distinct values:
+It took 37 seconds to mask six tables. This is how much of the original PII each round left readable, counted as distinct values:
 
 ```chart
 {
@@ -285,14 +287,14 @@ The workflow we tested is: create the anonymized branch, wait for the run, scan 
 }
 ```
 
-The wait matters if you use Neon's GitHub Action. [`neondatabase/create-branch-action`](https://github.com/neondatabase/create-branch-action) v6 accepts `masking_rules` and returns the connection string right away, before the masking run ends. A job that connects next gets `Access to this endpoint is temporarily disabled`, and after a failed run the branch stays closed, so a job that only retries waits until it times out. `scan.mjs --wait` polls `anonymized_status` first and fails if the run did not finish. The repository has an example nightly workflow with these steps. We ran the steps through the scripts, not in GitHub Actions.
+The wait matters if you use Neon's GitHub Action. [`neondatabase/create-branch-action`](https://github.com/neondatabase/create-branch-action) v6 accepts `masking_rules` and returns the connection string right away, before the masking run ends. A job that connects next gets `Access to this endpoint is temporarily disabled`, and after our failed runs the branch stayed closed, so a job that only retries waits until it times out. `scan.mjs --wait` polls `anonymized_status` first and fails if the run did not finish. The repository has an example nightly workflow with these steps. We ran the steps through the scripts, not in GitHub Actions.
 
 Two more things to know about the template branch:
 
 - **Do not give it an expiry.** The API refused to create a child from an anonymized branch with `expires_at`: `Branches with an expiration date cannot have child branches`. Set `expires_at` on the previews instead.
 - **Check the data before you make previews.** A scan report is only good for the data it read. `04-previews.mjs` refuses to branch from the template unless its report is a pass, the branch has no database and no data that the scan did not read, and the data still has the scanned fingerprint. It then checks each preview against the same fingerprint.
 
-From the passing template, three previews were ready in 2.4 to 2.6 seconds each, and each one matched the scanned fingerprint. To see the check refuse, the script makes a copy of the template, scans it, and writes one support ticket with a real user's email into it, the way someone might paste a production row into a shared branch:
+From the passing template, three previews were ready in 2.3 to 2.5 seconds each, and each one matched the scanned fingerprint. To see the check refuse, the script makes a copy of the template, scans it, and writes one support ticket with a real user's email into it, the way someone might paste a production row into a shared branch:
 
 ```terminal
 {
@@ -301,7 +303,7 @@ From the passing template, three previews were ready in 2.4 to 2.6 seconds each,
   "steps": [
     {
       "cmd": "node scripts/04-previews.mjs --template template-v3",
-      "output": "gate: template-v3 passed its scan and still has the scanned data (93d1a68c197956d4)\npreview-pr-101: ready in 2.4 s, checked after 5.5 s, same data as scanned: true\npreview-pr-102: ready in 2.6 s, checked after 5.8 s, same data as scanned: true\npreview-pr-103: ready in 2.6 s, checked after 6.1 s, same data as scanned: true\nreset br-damp-leaf-b9jbyrph to the template in 3.1 s; same data as scanned again: true\nstale gate: after the scan open; after one INSERT refused: data changed since the scan: public.support_tickets (rows 6558 -> 6559)"
+      "output": "gate: template-v3 passed its scan and still has the scanned data (0ff0ef425216dfe8)\npreview-pr-101: ready in 2.4 s, checked after 6.1 s, same data as scanned: true\npreview-pr-102: ready in 2.3 s, checked after 6.0 s, same data as scanned: true\npreview-pr-103: ready in 2.5 s, checked after 6.1 s, same data as scanned: true\nreset br-restless-paper-b9i5hgnz to the template in 3.9 s; same data as scanned again: true\nstale gate: after the scan open; after one INSERT refused: data changed since the scan: public.support_tickets (rows 6558 -> 6559)"
     }
   ]
 }
@@ -317,14 +319,14 @@ Then we broke it on purpose. `07-break.mjs` runs a migration on a branch of main
   "prompt": "$",
   "steps": [
     {
-      "cmd": "node scripts/scan.mjs --target template-drift --known main-drift --evidence --out results/scan-template-drift.json",
-      "output": "scanned 29 columns in 8 tables of template-drift (35.5 s)\n  customer_summary.email             rule=review    known: -                                            pattern: email 20000, phone 219\n  newsletter_signups.email           rule=none      known: email 9956                                   pattern: -\n  newsletter_signups.full_name       rule=none      known: name 9956                                    pattern: -\n  users.search                       rule=review    known: -                                            pattern: email 20000, phone 212\n  warning: public.audit_log has 21888 rows, the parent has 1888 (+20000)\n  review: customer_summary.email: 20000 rows hold PII-shaped values (review: materialized view of users.email)\n  review: users.search: 20000 rows hold PII-shaped values (review: generated from users.full_name and users.email)\nFAIL: 2 problems"
+      "cmd": "node scripts/scan.mjs --target template-drift --known main-drift --out results/scan-template-drift.json",
+      "output": "scanned 29 columns in 8 tables of template-drift (39.1 s)\n  customer_summary.email             rule=review    known: -                                            pattern: email 20000, phone 213\n  newsletter_signups.email           rule=none      known: email 9956                                   pattern: -\n  newsletter_signups.full_name       rule=none      known: name 9956                                    pattern: -\n  users.search                       rule=review    known: -                                            pattern: email 20000, phone 207\n  warning: public.audit_log has 21888 rows, the parent has 1888 (+20000)\n  review: customer_summary.email: 20000 rows hold PII-shaped values (review: materialized view of users.email)\n  review: users.search: 20000 rows hold PII-shaped values (review: generated from users.full_name and users.email)\nFAIL: 2 problems"
     }
   ]
 }
 ```
 
-This is why the scan reads every text and JSON column, and not only the columns in the rules file. Rules describe the schema as it was when someone wrote them. The scan checks the schema as it is now. The new `first_name` column was not flagged, because a first name alone is not a full name.
+This is why the scan reads all the text and JSON columns, and not only the columns in the rules file. Rules describe the schema as it was when someone wrote them. The scan checks the schema as it is now. The new `first_name` column was not flagged, because a first name alone is not a full name.
 
 ## What your tests will notice
 
@@ -332,18 +334,18 @@ This is why the scan reads every text and JSON column, and not only the columns 
 
 | Function                                                            | Repeats in 1,000 | Repeats in 20,000 | Repeats in 100,000 |
 | ------------------------------------------------------------------- | ---------------- | ----------------- | ------------------ |
-| `anon.dummy_free_email()`                                           | 0                | 180               | 4,561              |
-| `anon.dummy_safe_email()`                                           | 46               | 12,000            | 90,979             |
+| `anon.dummy_free_email()`                                           | 0                | 180               | 4,504              |
+| `anon.dummy_safe_email()`                                           | 57               | 11,967            | 90,980             |
 | Random Unique Email (`concat(anon.dummy_uuidv4(), '@example.com')`) | 0                | 0                 | 0                  |
-| `anon.fake_email()`                                                 | 369              | 19,001            | 99,001             |
+| `anon.fake_email()`                                                 | 378              | 19,001            | 99,001             |
 
-On the unique `users.email` column, masking runs with `dummy_free_email()` and `dummy_safe_email()` both failed with `duplicate key value violates unique constraint "users_email_key"`. The unmasked data stayed unreachable, but a nightly template job fails.
+On the unique `users.email` column, masking runs with `dummy_free_email()` and `dummy_safe_email()` both failed with `duplicate key value violates unique constraint "users_email_key"`. In the final rule lab run, `dummy_free_email()` also failed on a 200-row table with a unique column, so a small table is no guarantee. The unmasked data stayed unreachable, but a nightly template job fails.
 
 **Where fake emails point.** `dummy_free_email()` writes addresses at yahoo.com, hotmail.com and gmail.com, so a fake address can belong to a real person. If a preview app sends password resets or receipts, use a function that writes `example.com` addresses, or switch email off in previews.
 
 **Stability.** Two templates made from the same parent with the round 1 rules shared no masked email, name, phone, address or IP, so a test that expects "user 42 is called X" fails on the next template. Values derived from the primary key do not move: with `pg_catalog.concat('user-', id, '@example.com')` and `anon.pseudo_first_name(id)`, both templates matched in 20,000 of 20,000 rows. Only use such rules where the input is not PII itself, because anyone with the function can compute the output again.
 
-**Foreign keys.** The docs say foreign key columns cannot be masked directly, and that the Console shows an alert instead. Through the API, a rule on `orders.user_id` was accepted and the run completed. Afterwards, 40,190 of the 40,191 orders belonged to a different user than on the parent, so joins between orders and users no longer match the parent.
+**Foreign keys.** The docs say foreign key columns cannot be masked directly, and that the Console shows an alert instead. Through the API, a rule on `orders.user_id` was accepted and the run completed. Afterwards, all 40,191 orders belonged to a different user than on the parent, so joins between orders and users no longer match the parent.
 
 **Generators that can produce real values.** With the first gate, 2 masked IP addresses from `anon.dummy_ipv4()` and 1 phone number from `anon.dummy_phone_number()` were equal to real values of other users. The round 3 rules take IP addresses from the 198.51.100.0/24 documentation range and give phone numbers the area code 000, which no real number has. Names are harder, because `anon.dummy_name()` returns real names.
 
@@ -355,11 +357,11 @@ The masking run rewrites every row of every table that has a rule. `06-timing.mj
 
 | Rows      | Table size | Masking run (median, min to max) | API call to usable branch (median) |
 | --------- | ---------- | -------------------------------- | ---------------------------------- |
-| 10,000    | 2.3 MB     | 3 s (3 to 4)                     | 12.8 s                             |
-| 100,000   | 22.1 MB    | 4 s (4 to 5)                     | 14.1 s                             |
-| 1,000,000 | 226.6 MB   | 17 s (17 to 17)                  | 26.9 s                             |
+| 10,000    | 2.3 MB     | 3 s (3 to 4)                     | 13.2 s                             |
+| 100,000   | 22.1 MB    | 6 s (5 to 10)                    | 15.6 s                             |
+| 1,000,000 | 226.6 MB   | 22 s (17 to 32)                  | 33.8 s                             |
 
-The time grew much less than the row count, but three runs per size cannot show why, and Neon reports the run's start and end in whole seconds. The time to a usable branch also includes creating the branch and starting its compute. For our 47.6 MB database it was 18.9 seconds for round 1 and 47.7 seconds for round 3, which rewrote six tables. We did not measure storage.
+The time grew much less than the row count: 100 times the rows took about 7 times as long. It also varied between runs, from 17 to 32 seconds at 1,000,000 rows, and three runs per size cannot show why. Neon reports the run's start and end in whole seconds. The time to a usable branch also includes creating the branch and starting its compute. For our 47.6 MB database it was 20.3 seconds for round 1 and 47.6 seconds for round 3, which rewrote six tables. We did not measure storage.
 
 ## What we could not conclude
 
@@ -371,7 +373,7 @@ The time grew much less than the row count, but three runs per size cannot show 
 
 ## Summary
 
-Anonymized branches did what they promise for every column we named. The leaks were all in our schema: copies made at checkout, free text, JSON payloads, a trigger, a new table from a migration. A rules file cannot list what nobody knows is there, so treat the masked branch the way you treat a build: test it before anyone gets a connection string.
+Anonymized branches masked every column we named. The leaks were all in our schema: copies made at checkout, free text, JSON payloads, a trigger, a new table from a migration. A rules file cannot list what nobody knows is there, so treat the masked branch the way you treat a build: test it before anyone gets a connection string.
 
 What to do:
 
@@ -383,8 +385,6 @@ What to do:
 6. Gate on the scan, wait for the masking run before you connect, and make previews only from a template that passed. Do not give the template an expiry.
 
 Run it against your own project:
-
-<!-- TODO(repo-url): confirm the clone URL once the repository exists. -->
 
 ```bash
 git clone https://github.com/The-DevOps-Daily/neon-anonymized-branches
