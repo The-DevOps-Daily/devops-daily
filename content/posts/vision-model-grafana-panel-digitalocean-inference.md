@@ -101,7 +101,7 @@ A probe sent the same question to 15 models, with no image and then with the sma
 
 Several vision models reason before they answer, which is too slow for a page. On the two probe panels, Kimi K3 took 28 and 165 seconds, DeepSeek V4.1 Flash 45 and 13, and Qwen 3.5 397B 71 (with no answer) and 42. We kept **Nemotron 3.5 Super VL** (`nemotron-3.5-super-vl`), with reasoning off and on, and three models that answered in 1.5 to 3 seconds: **Qwen3.8-Max** (`qwen3.8-max`), **Gemma 4** (`gemma-4-31B-it`) and **Llama 4 Maverick** (`llama-4-maverick`). Nemotron Nano 12B v2 VL was also fast; we left it out to keep the test to four models.
 
-Every call in the comparison used temperature 0 and at most 1,024 output tokens. Reasoning mode got 16,384, because the reasoning counts against that limit. Each model read every panel three times. Reasoning calls took about 20 seconds each, so that mode read all 100 panels once and a fixed 34-panel subset two more times.
+Every call in the comparison used temperature 0 and at most 1,024 output tokens. Reasoning mode got 16,384, because the reasoning counts against that limit. Without reasoning, each model read every panel three times. Reasoning calls took about 20 seconds each, so that mode read all 100 panels once and a fixed 34-panel subset two more times.
 
 Nemotron reasons by default. Two request settings turn it off. The `/no_think` system prompt does not:
 
