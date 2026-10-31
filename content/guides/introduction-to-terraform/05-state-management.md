@@ -212,7 +212,7 @@ Sometimes the manual change is correct (an emergency fix in the console, a size 
 }
 ```
 
-Two flags change how much Terraform refreshes. `-refresh=false` skips the refresh entirely (faster, but blind to drift), and `-minimal-refresh`, new in Terraform 1.17, only refreshes resources that have changes in your configuration, which speeds up plans of large configurations. The post [What Does Terraform Refresh Really Do?](/posts/terraform-refresh-explained) goes deeper.
+Two flags change how much Terraform refreshes. `-refresh=false` skips the refresh entirely (faster, but blind to drift), and `-minimal-refresh`, new in Terraform 1.17, only refreshes resources that have changes in your configuration, which speeds up plans of large configurations. The post [What Does Terraform Refresh Really Do?](/posts/terraform-refresh-explained) goes deeper, and [-minimal-refresh, measured](/posts/terraform-1-17-minimal-refresh-measured) shows what the flag saves on 202 resources and which drift it misses.
 
 ## Refactor Without Destroying Anything
 
