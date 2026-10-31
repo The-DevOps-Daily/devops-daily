@@ -1,13 +1,13 @@
 ---
-title: 'Neon Anonymized Branches: We Masked the PII Columns and Every Email Survived'
-excerpt: 'We gave a Neon anonymized branch masking rules for every PII column of a 20,000-user table. The masking worked, and all 20,000 original emails were still readable on the branch: in order copies, JSON payloads, support tickets, and an audit table that the masking run itself filled. Here is the scanner we used as a CI gate, and what it took to pass it.'
+title: 'Neon Anonymized Branches: Mask the Columns, Then Scan the Rest'
+excerpt: 'We gave a Neon anonymized branch masking rules for every PII column of a 20,000-user table. The masked columns came out clean, and all 20,000 original emails were still readable elsewhere on the branch: in order copies, JSON payloads, support tickets, and an audit table that the masking run itself filled. Here is the scanner we use as a CI gate, and the rules it took to pass it.'
 category:
   name: 'Security'
   slug: 'security'
-date: '2026-11-03'
-publishedAt: '2026-11-03T09:00:00Z'
-updatedAt: '2026-11-03T09:00:00Z'
-readingTime: '18 min read'
+date: '2026-11-04'
+publishedAt: '2026-11-04T09:00:00Z'
+updatedAt: '2026-11-04T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -24,22 +24,20 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
-We created an anonymized branch of a 20,000-user SaaS database on Neon. It had masking rules for the six PII columns of the `users` table: email, name, phone, street address, date of birth and signup IP. The masking run took 9 seconds. Afterwards, no row in `users` held its original email, name, phone, address or IP. (Two random dates of birth came out equal by chance.) Then we read every text and JSON column on the branch. **All 20,000 original email addresses were still there**, and so was every original name, phone number, street address and IP address.
+We created an anonymized branch of a 20,000-user SaaS database on Neon. It had masking rules for the six PII columns of the `users` table: email, name, phone, street address, date of birth and signup IP. The masking run took 9 seconds. Afterwards, no row in `users` held its original email, name, phone, address or IP. Then we read every text and JSON column on the branch. **All 20,000 original email addresses were still there**, and so was every original name, phone number, street address and IP address.
 
 Most of them were in places nobody writes a rule for: the email copied onto each order at checkout, the JSON payloads of login and checkout events, the text of support tickets. The other 20,000 copies came from the masking run itself. The masking updates each row of `users`, so the audit trigger on that table fired 20,000 times and saved every original row into `audit_log`.
 
-Anonymized branches mask the columns you list, and in our runs they did. This post measures what is left in the rest of a realistic schema. It also shows the scanner we used to find it, which runs as a CI gate before preview branches are made from the masked branch. Other topics: which masking expressions Neon accepts, unique columns, stable values for tests, and preview branches from the masked template. Everything ran on a real Neon project through the Neon API. The scripts are public.
+Anonymized branches mask the columns you list, and in our runs they did. This post measures what is left in the rest of a realistic schema, and shows the scanner we run as a CI gate before preview branches are made from the masked branch. Everything ran on a real Neon project through the Neon API, and the scripts are public.
 
 ## TL;DR
 
-- **Masking the listed columns works.** No masked email, name, phone, address or IP kept its original value. The generated search column and the materialized view held only masked values after the run.
-- **The copies are not masked.** After masking only `users`, 18,776 of the 20,000 original emails (93.9%) were still readable outside the audit table: 40,191 order rows, 34,689 event payloads, 2,486 support tickets and 2,035 invitations still held a user's original PII.
-- **The masking run fires your triggers.** `audit_log` grew from 1,888 to 21,888 rows during masking, and each new row held one user's full original row. In our project the trigger recorded `neondb_owner`, the same role as the app, as the user. The branch refuses connections until the run ends, so you cannot switch the trigger off first.
-- **We found no rule that edits JSON in place.** Neon rejected casts, `CASE` and `jsonb_set`, and `regexp_replace` on a `jsonb` column failed during the run. In our tests, a JSON column could be rebuilt or replaced, not edited.
-- **`regexp_replace` cleans emails and phone numbers out of free text, not names.** It removed all of them from 6,558 ticket bodies, and our JavaScript copy of the rule predicted the result exactly. 1,231 bodies still named a user, because names have no pattern.
-- **Only replacing free text and JSON passed the gate.** Ticket bodies became lorem ipsum and event payloads became `{}`. That costs realism, and you have to decide if it is worth it.
-- **Pick generators with care.** On the unique `users.email` column, `anon.dummy_free_email()` and `anon.dummy_safe_email()` both made the masking run fail at 20,000 rows. `dummy_free_email()` writes addresses at gmail.com, yahoo.com and hotmail.com. Random IP addresses and phone numbers can be equal to real ones, so our passing rules take IPs from a documentation range and give phone numbers the area code 000.
-- **Preview branches from the masked template were ready in 2.4 to 2.6 seconds** and matched the data fingerprint that the scan recorded. The same scan, run after a migration that copied emails into a new table, failed on that table.
+- **Masking the listed columns works.** No masked email, name, phone, address or IP kept its original value.
+- **The copies are not masked.** After round 1, 18,776 of the 20,000 original emails (93.9%) were still readable outside the audit table: in orders, event payloads, support tickets and invitations.
+- **The masking run fires your triggers.** `audit_log` grew from 1,888 to 21,888 rows during masking, and each new row held one user's full original row. The branch refuses connections until the run ends, so you cannot switch the trigger off first.
+- **Free text and JSON need a decision.** We found no rule that edits JSON in place, and `regexp_replace` removed emails and phone numbers from ticket bodies but not names. Only replacing free text and JSON passed the gate.
+- **Pick generators with care.** `anon.dummy_free_email()` and `anon.dummy_safe_email()` made the run fail on a unique column at 20,000 rows, and random IP addresses and phone numbers can be equal to real ones.
+- **Previews from the passing template were ready in 2.4 to 2.6 seconds.** The same rules failed the scan after a migration copied emails into a new table.
 
 ## Prerequisites
 
@@ -49,7 +47,7 @@ Anonymized branches mask the columns you list, and in our runs they did. This po
 
 ## What an anonymized branch does
 
-Neon's [data anonymization](https://neon.com/docs/workflows/data-anonymization) creates a branch of a Lakebase Postgres database from a parent branch, then masks it with [PostgreSQL Anonymizer](https://postgresql-anonymizer.readthedocs.io/) (the `anon` extension, version 2.5.1 on our branches). The masking is static: the run rewrites the rows on the new branch, and the parent does not change. You send the rules with the create call, or set them later and start the run with `POST /branches/{id}/anonymize`:
+Neon's [data anonymization](https://neon.com/docs/workflows/data-anonymization) creates a branch of a Lakebase Postgres database from a parent branch, then masks it with [PostgreSQL Anonymizer](https://postgresql-anonymizer.readthedocs.io/) (the `anon` extension, version 2.5.1 on our branches). The masking is static: the run rewrites the rows on the new branch, and the parent does not change. You send the rules with the create call:
 
 ```bash
 curl -X POST "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branch_anonymized" \
@@ -64,13 +62,13 @@ curl -X POST "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branch_anony
   }'
 ```
 
-Three details matter later in this post:
+Three details matter later:
 
-1. The branch refuses connections until the run ends (`Access to this endpoint is temporarily disabled`). We saw the same error before a run started and after a run failed, so a failed run does not hand out unmasked data.
-2. `GET /branches/{id}/anonymized_status` reports `anonymizing`, then `anonymized` or `error`, with the table it is working on.
+1. The branch refuses connections until the run ends (`Access to this endpoint is temporarily disabled`). We saw the same error after a run failed, so a failed run does not hand out unmasked data.
+2. `GET /branches/{id}/anonymized_status` reports `anonymizing`, then `anonymized` or `error`.
 3. Each rule names one column. Nothing in the API looks at the columns you did not name.
 
-That is by design, and Neon's [pg_redact post](https://neon.com/blog/pg-redact-content-aware-pii-redaction-with-jev-enforced-in-postgres) makes the same point: column rules cannot reach PII inside free text. What we wanted to know is how much PII that is in an ordinary schema, where it sits, and how to find it before someone gets a connection string.
+That is by design, and Neon's [pg_redact post](https://neon.com/blog/pg-redact-content-aware-pii-redaction-with-jev-enforced-in-postgres) makes the same point: column rules cannot reach PII inside free text. We wanted to know how much PII that is in an ordinary schema, where it sits, and how to find it before someone gets a connection string.
 
 ## The test database
 
@@ -107,45 +105,29 @@ The schema is a small invoicing SaaS. `users` holds the PII on purpose. Everythi
 }
 ```
 
-A seeded generator writes 20,000 users, 40,191 orders, 6,558 tickets, 59,738 events and 2,035 invitations (47.7 MB). Then it changes the email or the address of 1,888 users, so the audit trigger has history with former values. All names are made up, emails use the reserved `.example` and `.test` domains, and phone numbers use the fictional 555-01xx range.
-
-The generator also records every PII value it writes into each row. That record is the ground truth: for each column, how many rows hold a user's value, a former value, or the details of someone who is not a user. Decoys that look like PII are mixed in: invoice numbers, order numbers, tracking numbers and the app's own support address.
+A seeded generator writes 20,000 users, 40,191 orders, 6,558 tickets, 59,738 events and 2,035 invitations (47.6 MB). Then it changes the email or the address of 1,888 users, so the audit trigger has history with former values. All names are made up, emails use the reserved `.example` and `.test` domains, and phone numbers use the fictional 555-01xx range. The generator records every PII value it writes into each row, so we know what each column holds, and it mixes in decoys such as invoice numbers, tracking numbers and the app's own support address.
 
 ## The scanner
 
 <!-- TODO(repo-url): add the GitHub repo card fence for The-DevOps-Daily/neon-anonymized-branches here once the repository exists. -->
 
-`scan.mjs` takes two branches: the anonymized branch to check, and its parent. It reads the PII columns you list in `pii-sources.json` on the parent. Here that is five columns of `users`. They give 20,000 emails, 17,396 distinct full names, 16,967 phone numbers, 20,000 addresses and 20,000 IP addresses. Then it reads every text, JSON, `tsvector` and `inet` column of every table and materialized view on the anonymized branch. It does not read numeric columns or numbers inside JSON, so a phone number stored as a number is invisible to it. It reports per column:
+`scan.mjs` takes two branches: the anonymized branch and its parent. It reads the PII columns you list in `pii-sources.json` on the parent (here five columns of `users`), then reads every text, JSON, `tsvector` and `inet` column of every table and materialized view on the anonymized branch. Per column it reports:
 
-- **known**: rows that still hold a value from the parent, also inside free text and JSON. Emails and IP addresses are matched exactly. Phone numbers are matched on their last 10 digits, so `(542) 555-0151` matches `+15425550151`. A full name is matched as two neighbouring words, so `/team/tarek-stratkett` in a URL matches "Tarek Stratkett".
-- **pattern**: rows that hold something shaped like an email, phone number, IP address or street address that is not a known value. This finds former emails and people who are not users.
-- **unchanged**: rows of a masked column that kept the parent's value.
-- **row counts** of every table that changed during masking, and the **databases** on the branch.
-- a **fingerprint** of the data it scanned: per table, the row count and an order-independent sum of md5 over every whole row, taken before and after the scan.
+- **known**: rows that still hold a value from the parent, also inside free text and JSON. Phone numbers match on their last 10 digits, and a full name matches as two neighbouring words, so `/team/tarek-stratkett` in a URL matches "Tarek Stratkett".
+- **pattern**: values shaped like an email, phone number, IP address or street address that are not known values, such as former emails and people who are not users.
+- **row counts** of every table that changed during masking, and a **fingerprint** of the data it scanned (per table, the row count and a sha256 over the sorted md5 of each row).
 
-Fake values in a replaced column have the shape of PII on purpose, so PII-shaped values there do not fail the gate. Two columns in our schema are computed only from masked columns: the materialized view `customer_summary` and the generated `search` column. They hold fake emails too, so we listed them under `review` in `pii-sources.json`. Their PII-shaped values are reported for a person to check, and do not fail the gate. Known values in them still fail.
+It fails when a column holds a known value, when a column with no rule holds PII-shaped values, when a rule changed no row, when the branch has a database it did not read, when the branch holds data it cannot read (such as a `bytea` column, large objects or foreign tables), or when the data changed during the scan. Two columns here are computed only from masked columns, a materialized view and a generated search column. They are on a review list: their PII-shaped values go to a person instead of failing the gate, and known values in them still fail.
 
-It exits with 1 in these cases:
+A pass means the scan found none of the values and shapes it knows. It does not mean the branch is clean. The scanner does not know phone numbers outside the US format, nicknames or encoded values, and it does not read numeric columns.
 
-- a column holds a known value;
-- a column that no rule replaces, and that is not on the review list, holds a PII-shaped value;
-- a rule changed no row;
-- the branch has a database that the scan did not read;
-- the data changed during the scan.
+Against the unmasked parent, the rows it found matched the planted ground truth for all 33 combinations of column and kind. That is not an independent test of recall, because we planted the data in formats the scanner knows. It shows that the scanner counts what it should on this data. A second check, `08-predict.mjs`, predicts each column from the parent's data and the rules, without Neon. Where the real scan differs from the prediction, the masking run did something on its own.
 
-The output has counts and JSON paths, not values. A pass means that the scan found none of the values and shapes it knows. It does not mean the branch is clean. The scanner does not know IPv6 addresses, phone numbers outside the US format, nicknames or encoded values. It also skips emails at the app's own domain (`allow_domains` in `pii-sources.json`).
+### The first gate was too clever
 
-Before we trusted it, we ran it against the unmasked parent. For all 33 combinations of column and kind, the rows it found matched the planted ground truth exactly. This is not an independent test of recall. We wrote the data in formats the scanner knows, and the seed uses the scanner's own normalizer. The test shows that the scanner counts what it should on this data. No decoy matched, at the value level. The scanner found 687 email-shaped values in ticket bodies that are not user emails: 661 belonged to colleagues and 26 were former addresses. Its blind spot was there too. It cannot find the 5,985 distinct names of people who are not users, because no pattern finds a name.
+The first version of the gate raised four false alarms on two templates. Three were values that the fake data generator made by chance and that belong to other users: 2 masked IP addresses and 1 phone number. The fourth was our bug in the `tsvector` name check. We first excused any known value that also appeared in a masked column. A review showed that this fails open: a real leak with the same value would pass too.
 
-A second check runs without Neon. `08-predict.mjs` takes the parent's data and a rule set and predicts each column of the scan: unmasked columns keep their values, replaced columns hold none, and `regexp_replace` rules are applied in JavaScript. Where the real scan differs from that prediction, the masking run did something on its own.
-
-### Four false alarms, and two fixes that were too clever
-
-The first version of the gate raised four false alarms on two templates. Three were real values of other users that the fake data generator had produced by chance: 2 masked IP addresses and 1 rebuilt shipping phone number. The fourth was our bug. The tsvector name check paired every two words it found, so the letters `ada` at the start of a uuid email (`ada8272f-...@example.com`) and the fake first name Garrick made "ada garrick", the name of a real user. The scans are kept in `results/first-gate/`.
-
-The tsvector check now uses whole lexemes only. For the chance matches we first ignored any value that also appeared in a masked column. A review showed that this fails open: a real leak with the same value would be ignored too. Our second try proved each match row by row, and a second review found that it still excused too much.
-
-So the gate now has no exception for chance matches. Every known value fails it, and a person looks at the report. On real data this will happen more often than in ours, because `anon.dummy_name()` returns real first and last names, and in a table of real people many fake names are somebody's real name. A gate that stops for a false alarm costs a person a few minutes. A gate that lets a real leak through costs much more.
+So the gate has no exception for chance matches. Every known value fails it, and a person reads the report. On real data this happens more often than in ours, because `anon.dummy_name()` returns real first and last names. A false alarm costs a few minutes. A leak costs much more. The old scans are in `results/first-gate/`.
 
 ## Round 1: the columns everyone lists
 
@@ -178,7 +160,7 @@ These are the rows that still hold a user's original PII:
 | `audit_log.new_row`                         | 21,888 | 1,888                           | history from before the branch                          |
 | `invitations.invitee_email`, `invitee_name` | 2,035  | 585                             | invitees who are users                                  |
 
-Counted as distinct values from the five source columns, this is how much is still readable on the branch. These are values, not people: 20,000 users have 17,396 distinct full names, and phone numbers are compared by their last 10 digits.
+Counted as distinct values, this is how much is still readable on the branch:
 
 | Kind           | Readable anywhere | Readable outside `audit_log` |
 | -------------- | ----------------- | ---------------------------- |
@@ -188,9 +170,7 @@ Counted as distinct values from the five source columns, this is how much is sti
 | Street address | 20,000 of 20,000  | 15,907 (79.5%)               |
 | IP address     | 20,000 of 20,000  | 9,208 (46.0%)                |
 
-The scan also flagged PII of people who are not users: 1,450 invitee emails, 3,252 gift shipping addresses and phone numbers, 687 emails and 622 phone numbers in tickets, and 8,017 login IPs that are not signup IPs. It also counted 20,000 rows of `audit_log.new_row` with PII-shaped values that it does not know (emails in 20,000 rows, phone numbers in 17,780, street addresses in 976 and IP addresses in 20,000). These are the fake values that the trigger copied from each masked row. Outside a replaced column, the scanner does not try to tell fake values from real ones, so it counts them.
-
-The prediction matched 21 of the 26 columns, and the masking run itself caused every difference. Three differences are good news. The generated `search` column held no original value, as expected: Postgres computes a stored generated column again on every `UPDATE`. The two columns of the materialized view `customer_summary` held no original value either. The status messages of the run included `Refreshing materialized view neondb.public.customer_summary`, and the [changelog](https://neon.com/docs/changelog) says Neon refreshes materialized views after anonymization. The other differences come from the audit trigger.
+The scan also flagged PII of people who are not users, such as 1,450 invitee emails and 8,017 login IPs that are not signup IPs. The prediction matched 21 of the 26 columns, and the masking run caused every difference. Two of them are good news: the generated `search` column and the materialized view `customer_summary` held no original value, because Postgres computes a generated column again on every `UPDATE` and Neon refreshes materialized views after the run. The audit trigger caused the others.
 
 ### The masking run fires your triggers
 
@@ -209,10 +189,10 @@ So the masking wrote 20,000 new audit rows, and each `old_row` holds one user's 
 
 There is no clean way to stop this on the branch:
 
-- The branch refuses connections before the run starts. With `start_anonymization: false` the state was `initialized` and our client was refused, so you cannot run `ALTER TABLE ... DISABLE TRIGGER` first.
-- In our project, the trigger could not skip the masking run by role. The audit rows record `current_user`, and all 21,888 rows on the masked branch say `neondb_owner`, the role the app uses too.
+- The branch refuses connections before the run starts. With `start_anonymization: false` our client was refused too, so you cannot run `ALTER TABLE ... DISABLE TRIGGER` first.
+- The trigger cannot skip the masking run by role. All 21,888 audit rows on the masked branch record `neondb_owner`, the role the app uses too.
 
-What worked was a rule on the audit table itself (`old_row` and `new_row` masked with `NULL`). In both of our runs, Neon masked `users` first and `audit_log` after it, so the masking also cleared the rows that its own trigger had written. In a second run (`v2-audit-first`) we put the audit rules first in the rules file. The status still showed `users` as table 1 of 5, and the audit table was clean again. We did not find this order documented, so do not depend on it. The 20,000 extra rows stay on the branch with `NULL` in both columns. That is why the scanner reports tables whose row count changed.
+What worked was a rule on the audit table itself (`old_row` and `new_row` masked with `NULL`). In our runs Neon masked `users` first and `audit_log` after it, so the masking also cleared the rows that its own trigger had written. We put the audit rules first in one rules file (`v2-audit-first`), and the order did not change. We did not find this order documented, so do not depend on it. The 20,000 extra rows stay on the branch with `NULL` in both columns, which is why the scanner reports tables whose row count changed.
 
 ## Round 2: mask the copies, edit the free text
 
@@ -232,24 +212,20 @@ Three columns still failed:
 | `invitations.message`  | none             | 2,035 (names)                                    |
 | `support_tickets.body` | `regexp_replace` | 1,819 (names 1,231, addresses 588)               |
 
-The `regexp_replace` rule did its job. No email or phone number was left in any ticket body, of users or of anyone else, and the JavaScript prediction matched the scan exactly. But regular expressions find shapes, and a name has no shape. "Contact Maeve Ashquist on [phone] before 5pm" is still personal data.
+The `regexp_replace` rule did its job. No email or phone number was left in any ticket body, and the JavaScript prediction matched the scan exactly. But regular expressions find shapes, and a name has no shape. "Contact Maeve Ashquist on [phone] before 5pm" is still personal data.
 
 The events table has no rule because we could not write one that keeps the payload. The rule lab (`03-rule-lab.mjs`) tried 17 expressions, each on its own anonymized branch:
 
-| Expression                                                                                                   | Result                                          |
-| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| `anon.dummy_ipv4()` on an `inet` column                                                                      | masked; the text result is accepted             |
-| `anon.dummy_ipv4()::inet`, `CAST(... AS inet)`                                                               | rejected with 400: not a valid label            |
-| `CASE WHEN id % 2 = 0 THEN 'even' ELSE 'odd' END`                                                            | rejected with 400                               |
-| `pg_catalog.jsonb_set(doc, '{email}', ...)`                                                                  | rejected with 400                               |
-| `pg_catalog.regexp_replace(doc, ...)` on `jsonb`                                                             | the run failed: no `regexp_replace(jsonb, ...)` |
-| `pg_catalog.jsonb_build_object('email', anon.dummy_safe_email(), ...)`                                       | masked: the whole document is rebuilt           |
-| `masking_value: '{}'`                                                                                        | masked                                          |
-| `pg_catalog.regexp_replace(note, ...)` on `text`                                                             | masked                                          |
-| `anon.pseudo_email(id)`, `anon.partial_email(note)`, `pg_catalog.md5(note)`, `anon.lorem_ipsum(words := 12)` | masked                                          |
-| `masking_value: 'NULL'` on a `NOT NULL` column                                                               | the run failed on the constraint                |
+| Expression                                                             | Result                                          |
+| ---------------------------------------------------------------------- | ----------------------------------------------- |
+| `anon.dummy_ipv4()::inet`, `CAST(... AS inet)`                         | rejected with 400: not a valid label            |
+| `CASE WHEN id % 2 = 0 THEN 'even' ELSE 'odd' END`                      | rejected with 400                               |
+| `pg_catalog.jsonb_set(doc, '{email}', ...)`                            | rejected with 400                               |
+| `pg_catalog.regexp_replace(doc, ...)` on `jsonb`                       | the run failed: no `regexp_replace(jsonb, ...)` |
+| `pg_catalog.jsonb_build_object('email', anon.dummy_safe_email(), ...)` | masked: the whole document is rebuilt           |
+| `masking_value: '{}'`                                                  | masked                                          |
 
-The rule parser accepts function calls, and only functions from the `anon` schema and 36 `pg_catalog` functions that the extension labels as trusted, such as `concat`, `regexp_replace`, `md5`, `jsonb_build_object` and `to_jsonb`. `jsonb_set` is not one of them. Without casts, a rule cannot turn `jsonb` into text and back. We found no other way to edit a document in place, so in our tests a JSON column had two options. You can rebuild the whole document from fake values, which loses its shape when the shape changes from row to row (our events have four). Or you can replace it with a constant.
+The rule parser accepts function calls from the `anon` schema and 36 `pg_catalog` functions that the extension labels as trusted, such as `concat`, `regexp_replace`, `md5` and `jsonb_build_object`. `jsonb_set` is not one of them, and without casts a rule cannot turn `jsonb` into text and back. So in our tests a JSON column had two options: rebuild the whole document from fake values, which loses its shape when the shape changes from row to row (our events have four), or replace it with a constant.
 
 ## Round 3: replace what you cannot edit
 
@@ -268,9 +244,7 @@ The third rule set (`v3-strict`) replaces what round 2 could only edit: ticket b
 }
 ```
 
-It took 36 seconds to mask six tables. The only warning left is the 20,000 audit rows the trigger added.
-
-This is how much of the original PII each round left readable, counted as distinct values:
+It took 36 seconds to mask six tables. This is how much of the original PII each round left readable, counted as distinct values:
 
 ```chart
 {
@@ -278,57 +252,18 @@ This is how much of the original PII each round left readable, counted as distin
   "title": "Original PII still readable on the masked branch",
   "unit": "%",
   "caption": "Distinct original values of the 20,000 users found anywhere on each template, as a share of all distinct values of that kind (20,000 emails, 17,396 full names, 16,967 phones, 20,000 addresses, 20,000 IPs). Round 1: 6 rules on users. Round 2: 14 rules, regexp_replace on ticket bodies. Round 3: 16 rules, free text and JSON replaced.",
-  "x": [
-    "round 1",
-    "round 2",
-    "round 3"
-  ],
+  "x": ["round 1", "round 2", "round 3"],
   "series": [
-    {
-      "name": "Email",
-      "data": [
-        100.0,
-        65.2,
-        0.0
-      ]
-    },
-    {
-      "name": "Full name",
-      "data": [
-        100.0,
-        59.5,
-        0.0
-      ]
-    },
-    {
-      "name": "Phone",
-      "data": [
-        100.0,
-        0.0,
-        0.0
-      ]
-    },
-    {
-      "name": "Street address",
-      "data": [
-        100.0,
-        2.9,
-        0.0
-      ]
-    },
-    {
-      "name": "IP address",
-      "data": [
-        100.0,
-        46.0,
-        0.0
-      ]
-    }
+    { "name": "Email", "data": [100.0, 65.2, 0.0] },
+    { "name": "Full name", "data": [100.0, 59.5, 0.0] },
+    { "name": "Phone", "data": [100.0, 0.0, 0.0] },
+    { "name": "Street address", "data": [100.0, 2.9, 0.0] },
+    { "name": "IP address", "data": [100.0, 46.0, 0.0] }
   ]
 }
 ```
 
-The pass has a price. The support inbox in a preview now shows lorem ipsum, and the events table has no payloads. Your analytics code and anything else that reads payloads has nothing to test against. If those features need realistic data, there are two honest options. You can generate synthetic tickets and events for the template. Or you can accept the risk and keep the free text, for a smaller group of people. Our regex rule did not give a middle ground, because it cannot find names.
+The pass has a price. The support inbox in a preview shows lorem ipsum, and the events table has no payloads, so code that reads payloads has nothing to test against. If those features need realistic data, you can generate synthetic tickets and events for the template, or keep the free text and give the branch to fewer people. The regex rule is not a middle ground, because it cannot find names.
 
 ## The gate, and preview branches from the template
 
@@ -350,16 +285,14 @@ The workflow we tested is: create the anonymized branch, wait for the run, scan 
 }
 ```
 
-The wait matters if you use Neon's GitHub Action. [`neondatabase/create-branch-action`](https://github.com/neondatabase/create-branch-action) v6 accepts `masking_rules`, creates the branch with `start_anonymization: true`, and returns the connection string right away. It does not wait for the masking run. A job that connects next gets `Access to this endpoint is temporarily disabled`. After our failed runs, the branch stayed closed. So a job that only retries the connection waits until it times out, and the reason is in `anonymized_status`, not in the job log. `scan.mjs --wait` polls `anonymized_status` first and fails if the run did not finish. The repository has an example workflow that does this every night. We did not run that workflow in CI; the same steps ran through the scripts.
+The wait matters if you use Neon's GitHub Action. [`neondatabase/create-branch-action`](https://github.com/neondatabase/create-branch-action) v6 accepts `masking_rules` and returns the connection string right away, before the masking run ends. A job that connects next gets `Access to this endpoint is temporarily disabled`, and after a failed run the branch stays closed, so a job that only retries waits until it times out. `scan.mjs --wait` polls `anonymized_status` first and fails if the run did not finish. The repository has an example nightly workflow with these steps. We ran the steps through the scripts, not in GitHub Actions.
 
 Two more things to know about the template branch:
 
-- **Do not give it an expiry.** We gave an anonymized branch `expires_at`, and the API refused to create a child from it: `Branches with an expiration date cannot have child branches`. Set `expires_at` on the previews instead.
-- **Check the data before you make previews.** A scan report is only good for the data it read. `04-previews.mjs` refuses to branch from the template unless three things are true. The report is a pass for this branch. The branch has no database that the scan did not read. The data still has the fingerprint that the scan recorded. Then the script creates each preview as a normal child branch, and checks that the preview has the same fingerprint. The fingerprint is a check for changes, not a proof: it is a row count and a 64-bit sum of md5 values per table.
+- **Do not give it an expiry.** The API refused to create a child from an anonymized branch with `expires_at`: `Branches with an expiration date cannot have child branches`. Set `expires_at` on the previews instead.
+- **Check the data before you make previews.** A scan report is only good for the data it read. `04-previews.mjs` refuses to branch from the template unless its report is a pass, the branch has no database the scan did not read, and the data still has the scanned fingerprint. It then checks each preview against the same fingerprint.
 
-From the passing template, three previews were ready in 2.4 to 2.6 seconds each, and each one matched the scanned fingerprint. A preview is a normal branch: it has no anonymization status and no restricted actions. After a test run wrote to one preview, resetting it to its parent took 3.1 seconds, and the preview matched the scanned fingerprint again.
-
-To see the check refuse, the script makes a copy of the template, scans it, and writes one support ticket with a real user's email into it, the way someone might paste a production row into a shared branch:
+From the passing template, three previews were ready in 2.4 to 2.6 seconds each, and each one matched the scanned fingerprint. To see the check refuse, the script makes a copy of the template, scans it, and writes one support ticket with a real user's email into it, the way someone might paste a production row into a shared branch:
 
 ```terminal
 {
@@ -376,7 +309,7 @@ To see the check refuse, the script makes a copy of the template, scans it, and 
 
 So treat the template as read-only once it passes: hand out preview branches, never the template's own connection string, and scan again after any change to it.
 
-Then we broke it on purpose. `07-break.mjs` runs a migration on a branch of main that adds a `newsletter_signups` table, a copy of 9,956 users' emails and names. The rules that passed in round 3 do not know that table, so we made a new template with them and scanned it:
+Then we broke it on purpose. `07-break.mjs` runs a migration on a branch of main that adds a `newsletter_signups` table, a copy of 9,956 users' emails and names. The round 3 rules do not know that table, so we made a new template with them and scanned it:
 
 ```terminal
 {
@@ -391,102 +324,50 @@ Then we broke it on purpose. `07-break.mjs` runs a migration on a branch of main
 }
 ```
 
-This is the reason to scan every text and JSON column, and not only the columns in the rules file. Rules describe the schema as it was when someone wrote them. The scan checks the schema as it is now. The new `first_name` column was not flagged, because a first name alone is not a full name. That is a limit of the scanner, and the next section has more of them.
+This is why the scan reads every text and JSON column, and not only the columns in the rules file. Rules describe the schema as it was when someone wrote them. The scan checks the schema as it is now. The new `first_name` column was not flagged, because a first name alone is not a full name.
 
 ## What your tests will notice
 
 **Unique columns.** Fake data generators repeat themselves. We generated each email function many times and counted the repeats:
 
-| Function                                                            | Repeats in 1,000 | Repeats in 5,000 | Repeats in 20,000 | Repeats in 100,000 |
-| ------------------------------------------------------------------- | ---------------- | ---------------- | ----------------- | ------------------ |
-| `anon.dummy_free_email()`                                           | 0                | 11               | 180               | 4,561              |
-| `anon.dummy_safe_email()`                                           | 46               | 1,145            | 12,000            | 90,979             |
-| Random Unique Email (`concat(anon.dummy_uuidv4(), '@example.com')`) | 0                | 0                | 0                 | 0                  |
-| `anon.fake_email()`                                                 | 369              | 4,009            | 19,001            | 99,001             |
+| Function                                                            | Repeats in 1,000 | Repeats in 20,000 | Repeats in 100,000 |
+| ------------------------------------------------------------------- | ---------------- | ----------------- | ------------------ |
+| `anon.dummy_free_email()`                                           | 0                | 180               | 4,561              |
+| `anon.dummy_safe_email()`                                           | 46               | 12,000            | 90,979             |
+| Random Unique Email (`concat(anon.dummy_uuidv4(), '@example.com')`) | 0                | 0                 | 0                  |
+| `anon.fake_email()`                                                 | 369              | 19,001            | 99,001             |
 
-On the unique `users.email` column, a masking run with `dummy_free_email()` failed with `duplicate key value violates unique constraint "users_email_key"`, and so did `dummy_safe_email()`. The run ended in `error`, and our client was refused after both failed runs, so the unmasked data was not reachable. But a nightly template job fails. Random Unique Email had no repeats.
+On the unique `users.email` column, masking runs with `dummy_free_email()` and `dummy_safe_email()` both failed with `duplicate key value violates unique constraint "users_email_key"`. The unmasked data stayed unreachable, but a nightly template job fails.
 
-**Where fake emails point.** `dummy_free_email()` writes addresses at yahoo.com, hotmail.com and gmail.com (about a third each, in 20,000 values). Those are public mail services, so a fake address there can belong to a real person. If a preview app sends password resets or receipts, use a function that writes `example.com` addresses, or switch email off in previews.
+**Where fake emails point.** `dummy_free_email()` writes addresses at yahoo.com, hotmail.com and gmail.com, so a fake address can belong to a real person. If a preview app sends password resets or receipts, use a function that writes `example.com` addresses, or switch email off in previews.
 
-**Stability.** Two templates made from the same parent with the round 1 rules shared no masked email, name, phone, address or IP. (One date of birth matched by chance.) So a test that expects "user 42 is called X" fails on the next template. Values derived from the primary key do not move: with `pg_catalog.concat('user-', id, '@example.com')` and `anon.pseudo_first_name(id)`, both templates matched in 20,000 of 20,000 rows. The email from the id is unique too. Only use such rules where the input is not PII itself, because anyone with the function can compute the output again.
+**Stability.** Two templates made from the same parent with the round 1 rules shared no masked email, name, phone, address or IP, so a test that expects "user 42 is called X" fails on the next template. Values derived from the primary key do not move: with `pg_catalog.concat('user-', id, '@example.com')` and `anon.pseudo_first_name(id)`, both templates matched in 20,000 of 20,000 rows. Only use such rules where the input is not PII itself, because anyone with the function can compute the output again.
 
-**Foreign keys.** The docs say foreign key columns cannot be masked directly, and that the Console shows an alert instead. Through the API, a rule on `orders.user_id` was accepted and the run completed. Afterwards, 40,190 of the 40,191 orders belonged to a different user than on the parent. Joins between orders and users on that branch no longer match the parent. We did not test the docs' advice to mask the primary key instead.
+**Foreign keys.** The docs say foreign key columns cannot be masked directly, and that the Console shows an alert instead. Through the API, a rule on `orders.user_id` was accepted and the run completed. Afterwards, 40,190 of the 40,191 orders belonged to a different user than on the parent, so joins between orders and users no longer match the parent.
 
-**Generators that can produce real values.** In the first version's runs, 2 masked IP addresses from `anon.dummy_ipv4()` and 1 phone number from `anon.dummy_phone_number()` were equal to real values of other users. Our gate fails on such a match. To make that rare, the round 3 rules take IP addresses from the 198.51.100.0/24 documentation range (`pg_catalog.concat('198.51.100.', anon.random_int_between(1, 254))`) and give phone numbers the area code 000, which no real number has. In the final runs, no generated value was equal to a real one. Names are harder, because `anon.dummy_name()` returns real names.
+**Generators that can produce real values.** With the first gate, 2 masked IP addresses from `anon.dummy_ipv4()` and 1 phone number from `anon.dummy_phone_number()` were equal to real values of other users. The round 3 rules take IP addresses from the 198.51.100.0/24 documentation range and give phone numbers the area code 000, which no real number has. Names are harder, because `anon.dummy_name()` returns real names.
 
-**`anon.detect()`.** PostgreSQL Anonymizer has a detector that suggests PII columns from their names. On our schema it suggested `users.city`, `users.email`, `users.phone`, the `users_email_key` index and `customer_summary.email`. It did not suggest `full_name`, `street_address`, `signup_ip`, or any of the copies, because their names are not in its dictionary. It is a start for a rules file, not a check.
+**`anon.detect()`** suggests PII columns from their names. On our schema it missed `full_name`, `street_address`, `signup_ip` and every copy. It is a start for a rules file, not a check.
 
 ## How long masking takes
 
-The masking run rewrites every row of every table that has a rule. To see how that grows, `06-timing.mjs` masked three columns of one table at three sizes, three runs each, with the compute fixed at 1 CU:
+The masking run rewrites every row of every table that has a rule. `06-timing.mjs` masked three columns of one table at three sizes, three runs each, with the compute fixed at 1 CU:
 
 | Rows      | Table size | Masking run (median, min to max) | API call to usable branch (median) |
 | --------- | ---------- | -------------------------------- | ---------------------------------- |
-| 10,000    | 2.3 MB     | 3 s (3 to 4), 3 of 3 runs        | 12.8 s                             |
-| 100,000   | 22.1 MB    | 4 s (4 to 5), 3 of 3 runs        | 14.1 s                             |
-| 1,000,000 | 226.6 MB   | 17 s (17 to 17), 3 of 3 runs     | 26.9 s                             |
+| 10,000    | 2.3 MB     | 3 s (3 to 4)                     | 12.8 s                             |
+| 100,000   | 22.1 MB    | 4 s (4 to 5)                     | 14.1 s                             |
+| 1,000,000 | 226.6 MB   | 17 s (17 to 17)                  | 26.9 s                             |
 
-```chart
-{
-  "type": "bar",
-  "title": "Masking run time by table size",
-  "unit": "s",
-  "caption": "Three masked columns (email, name, phone), compute fixed at 1 CU, aws-eu-central-1, median of three runs. The run time is Neon's started_at to completed_at, which are whole seconds.",
-  "rows": [
-    {
-      "label": "10,000 rows",
-      "value": 3,
-      "series": "masking run"
-    },
-    {
-      "label": "100,000 rows",
-      "value": 4,
-      "series": "masking run"
-    },
-    {
-      "label": "1,000,000 rows",
-      "value": 17,
-      "series": "masking run"
-    },
-    {
-      "label": "10,000 rows",
-      "value": 12.8,
-      "series": "API call to usable branch"
-    },
-    {
-      "label": "100,000 rows",
-      "value": 14.1,
-      "series": "API call to usable branch"
-    },
-    {
-      "label": "1,000,000 rows",
-      "value": 26.9,
-      "series": "API call to usable branch"
-    }
-  ],
-  "series": [
-    {
-      "name": "masking run",
-      "color": "#f59e0b"
-    },
-    {
-      "name": "API call to usable branch",
-      "color": "#38bdf8"
-    }
-  ]
-}
-```
-
-At 10,000 and 100,000 rows the runs took 3 to 5 seconds, and at 1,000,000 rows 17 seconds. So the time grew much less than the row count. A possible reason is a fixed cost for each run, but three runs per size cannot show that. Neon reports the run's start and end in whole seconds, so the small runs are rough. The time from the API call to a usable branch also includes creating the branch and starting its compute. For our 47.7 MB database it was 18.9 seconds for round 1. It was 47.7 seconds for round 3, which rewrote six tables. A [Neon blog post](https://neon.com/blog/branching-environments-anonymized-pii) from November 2025 notes that static masking adds storage for the rewritten rows. We did not measure storage.
+The time grew much less than the row count, but three runs per size cannot show why, and Neon reports the run's start and end in whole seconds. The time to a usable branch also includes creating the branch and starting its compute. For our 47.6 MB database it was 18.9 seconds for round 1 and 47.7 seconds for round 3, which rewrote six tables. We did not measure storage.
 
 ## What we could not conclude
 
-- **One schema and data we wrote.** The scanner found everything we planted, in the formats we chose to plant. Real free text has misspellings, nicknames, names in other scripts and formats we did not think of. On real data, its recall will be lower, and we cannot say by how much.
-- **Names of people who are not users are invisible.** The scanner finds a name only when it is the full name of a user. In our data that left 5,985 names it could not see by design: gift recipients, colleagues, accountants. If your free text names third parties, a pass from this scanner does not mean the text is clean.
-- **The table order is observed, not documented.** In two runs with different rule orders, Neon masked `users` first and `audit_log` after it. With a different schema the order may be different, and then the trigger's copies would stay unmasked.
+- **One schema and data we wrote.** The scanner found everything we planted, in the formats we chose. Real free text has misspellings, nicknames and names in other scripts, so its recall on real data will be lower, and we cannot say by how much.
+- **Names of people who are not users are invisible.** In our data that left 5,985 names the scanner could not see by design: gift recipients, colleagues, accountants.
+- **The table order is observed, not documented.** With a different schema Neon may mask the audit table first, and then the trigger's copies would stay unmasked.
 - **Small sizes and one region.** One project in `aws-eu-central-1`, PostgreSQL 18, tables up to 1,000,000 rows, three runs per size.
-- **The GitHub workflow is an example.** It is written from the same steps the scripts ran, but we did not run it in GitHub Actions.
-- **Static masking only.** The same Neon blog post says dynamic masking is planned. We tested what is available now.
+- **Static masking only.** A [Neon blog post](https://neon.com/blog/branching-environments-anonymized-pii) says dynamic masking is planned. We tested what is available now.
 
 ## Summary
 
