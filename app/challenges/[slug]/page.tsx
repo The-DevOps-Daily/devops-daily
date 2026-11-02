@@ -217,6 +217,30 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
           >
             <code>{challenge.localTest.commands}</code>
           </pre>
+          {challenge.cloudTest && (
+            <>
+              <h3 id="cloud" className="mb-3 mt-6 text-lg font-semibold">
+                {challenge.cloudTest.title}
+              </h3>
+              <p className="mb-3 text-foreground/90">
+                {challenge.cloudTest.intro}{' '}
+                <a
+                  href={challenge.cloudTest.link.href}
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  {challenge.cloudTest.link.label}
+                </a>
+              </p>
+              <pre
+                className="overflow-x-auto rounded-lg bg-muted p-4 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                tabIndex={0}
+                role="region"
+                aria-labelledby="cloud"
+              >
+                <code>{challenge.cloudTest.commands}</code>
+              </pre>
+            </>
+          )}
         </section>
 
         <section className="mb-10">

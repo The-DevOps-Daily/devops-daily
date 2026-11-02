@@ -46,6 +46,13 @@ export interface Challenge {
     intro: string;
     commands: string;
   };
+  /** An optional second way to test without a local server, for example a hosted database. */
+  cloudTest?: {
+    title: string;
+    intro: string;
+    commands: string;
+    link: { href: string; label: string };
+  };
   related?: {
     exercises?: string[];
     guides?: string[];
