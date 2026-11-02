@@ -4,9 +4,9 @@ excerpt: 'We gave a Neon anonymized branch masking rules for every PII column of
 category:
   name: 'Security'
   slug: 'security'
-date: '2026-11-04'
-publishedAt: '2026-11-04T09:00:00Z'
-updatedAt: '2026-11-04T09:00:00Z'
+date: '2026-11-03'
+publishedAt: '2026-11-03T15:00:00Z'
+updatedAt: '2026-11-03T15:00:00Z'
 readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
