@@ -207,7 +207,7 @@ With reasoning on, Nemotron got 54 panels right against 48. Only reasoning got 1
 
 ## What a screenshot costs
 
-DigitalOcean's [pricing page](https://docs.digitalocean.com/products/inference/details/pricing/) ("Last verified 30 Oct 2026", read on 31 October) lists no separate image rate for these models. We priced each call from the token counts the API reported, at list input and output prices. That assumes the image tokens inside `prompt_tokens` are billed at the input rate. We did not check it against an invoice.
+DigitalOcean's [pricing page](https://docs.digitalocean.com/products/inference/details/pricing/) ("Last verified 30 Oct 2026", read on 31 October) lists no separate image rate for these models. We priced each call from the token counts the API reported, at list input and output prices. That assumes the image tokens inside `prompt_tokens` are billed at the input rate. The closed October invoice agrees with this. For each of the four models, the change in billed input, cached input and output tokens is equal to the totals the API reported for our 1,522 recorded calls. Each rate on the invoice is the list price, and the invoice has no separate charge for images.
 
 | Model                                | Image tokens, 360x200 | Image tokens, 1000x500 | Prompt tokens (cached) | Output tokens | $ per screenshot |
 | ------------------------------------ | --------------------- | ---------------------- | ---------------------- | ------------- | ---------------- |
@@ -293,7 +293,7 @@ We expected the model to copy the alert's numbers if the prompt contained them, 
 - **Feature rows are directions, not rates.** Each covers 17 to 36 panels. Gemma 4's 8 of 25 on log axes has a 95 percent interval of 17 to 52 percent.
 - **The panels are ours.** Real Grafana screenshots are a different input, easier in some ways and harder in others.
 - **One prompt.** We did not try a prompt that warns about log axes. We did not use a JSON response mode, and Qwen3.8-Max wrote invalid JSON twice in 300 calls (`"thresholdCrossed": no`).
-- **One day of one service.** The models DigitalOcean served on 31 October 2026, at temperature 0. Prices are list prices times reported tokens, not an invoice.
+- **One day of one service.** The models DigitalOcean served on 31 October 2026, at temperature 0. Prices are list prices times reported tokens. The closed October invoice billed the same token totals at the list prices.
 
 ## Run it yourself
 
