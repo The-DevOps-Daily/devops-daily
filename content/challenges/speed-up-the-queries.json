@@ -71,8 +71,18 @@
     "intro": "From the challenge folder, with Docker and psql. Then put EXPLAIN (ANALYZE, BUFFERS) in front of a query, with a real value in place of $1:",
     "commands": "docker run -d --name shop-db -e POSTGRES_PASSWORD=shop -p 5432:5432 postgres:18.6\nexport PGHOST=localhost PGUSER=postgres PGPASSWORD=shop PGTZ=UTC\npsql -c 'CREATE DATABASE shop'\npsql -d shop -v ON_ERROR_STOP=1 -f schema.sql -f indexes.sql -f seed.sql -c 'ANALYZE'\npsql -d shop"
   },
+  "cloudTest": {
+    "title": "No Docker? Use a free Neon database",
+    "intro": "Neon runs Postgres in the cloud, and its free plan is enough for this challenge: the data is about 64 MB and loads in a few seconds. Create a project with Postgres 18, copy its connection string, and load everything the same way. To try an idea without loading the data again, test it on a branch, which is a copy of the loaded data, and delete the branch after. The grader runs indexes.sql on empty tables, so for the final check start again from an empty schema.",
+    "commands": "export DATABASE_URL='postgresql://...'   # from the Neon console, Connect\nexport PGTZ=UTC\npsql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f schema.sql -f indexes.sql -f seed.sql -c 'ANALYZE'\npsql \"$DATABASE_URL\"\n\n# Try an idea on a branch (neonctl is Neon's CLI)\nneonctl branches create --name attempt-1\npsql \"$(neonctl connection-string attempt-1)\"\nneonctl branches delete attempt-1\n\n# Final check: empty tables first, like the grader\npsql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -c 'DROP SCHEMA public CASCADE' -c 'CREATE SCHEMA public' -f schema.sql -f indexes.sql -f seed.sql -c 'ANALYZE'",
+    "link": {
+      "href": "https://neon.com",
+      "label": "Create a free Neon project"
+    }
+  },
   "related": {
     "guides": ["introduction-to-postgres"]
   },
-  "publishedAt": "2026-10-28"
+  "publishedAt": "2026-10-28",
+  "updatedAt": "2026-11-02"
 }

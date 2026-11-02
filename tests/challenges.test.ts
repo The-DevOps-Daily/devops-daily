@@ -43,6 +43,11 @@ describe('challenges content', () => {
         expect(data.task.length).toBeGreaterThan(0);
         expect(data.hints.length).toBeGreaterThan(0);
         expect(data.localTest.commands.trim()).not.toBe('');
+        if (data.cloudTest) {
+          expect(data.cloudTest.title.trim()).not.toBe('');
+          expect(data.cloudTest.commands.trim()).not.toBe('');
+          expect(data.cloudTest.link.href).toMatch(/^https:\/\//);
+        }
       });
 
       it('lists checks with unique ids', () => {
