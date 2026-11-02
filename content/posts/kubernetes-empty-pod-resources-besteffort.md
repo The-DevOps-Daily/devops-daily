@@ -4,9 +4,9 @@ excerpt: 'An empty pod-level block makes a pod with requests and limits BestEffo
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
-date: '2026-11-06'
-publishedAt: '2026-11-06T09:00:00Z'
-updatedAt: '2026-11-06T09:00:00Z'
+date: '2026-11-04'
+publishedAt: '2026-11-04T15:00:00Z'
+updatedAt: '2026-11-04T15:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
