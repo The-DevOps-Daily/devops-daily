@@ -42,7 +42,7 @@ One thing did not change, and the research we started from got it wrong. It said
 - A cluster on Kubernetes 1.34, 1.35 or 1.36 (`kubectl version`), or a machine where you can run the lab
 - `kubectl` and `jq`
 - If you run GitLab Runner with the Kubernetes executor: its version (`gitlab-runner --version`)
-- To run the lab: a DigitalOcean token; one `s-2vcpu-4gb` droplet for about an hour costs a few cents
+- To run the lab: a [DigitalOcean](https://m.do.co/c/2a9bba940f39) token (referral link); one `s-2vcpu-4gb` droplet for about an hour costs a few cents
 
 ## Where the empty block comes from
 
