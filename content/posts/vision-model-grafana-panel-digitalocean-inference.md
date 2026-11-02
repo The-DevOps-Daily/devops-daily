@@ -4,9 +4,9 @@ excerpt: 'We drew 100 Grafana-style panels with known answers and asked NVIDIA N
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-11-05'
-publishedAt: '2026-11-05T09:00:00Z'
-updatedAt: '2026-11-05T09:00:00Z'
+date: '2026-11-04'
+publishedAt: '2026-11-04T07:00:00Z'
+updatedAt: '2026-11-04T07:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
