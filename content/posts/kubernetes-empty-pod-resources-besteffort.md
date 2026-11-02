@@ -22,17 +22,17 @@ tags:
   - CI/CD
 ---
 
-On Kubernetes 1.34, 1.35 and 1.36, one empty block in a pod spec changes how the node treats the pod. If the pod sets `spec.resources: {}` at pod level, the kubelet gives it QoS class **BestEffort**, even when every container sets requests and limits. GitLab Runner's Kubernetes executor sent that empty block with every job pod from version 18.10.0 to 19.4.x, unless its config set pod-level values.
+On Kubernetes 1.34, 1.35 and 1.36, one empty block in a pod spec changes how the node treats the pod. If the pod sets `spec.resources: {}` at pod level, the kubelet gives it QoS class **BestEffort**. This happens even when every container sets requests and limits. GitLab Runner's Kubernetes executor builds its job pods with that empty block. Its source does this from 18.10.0 to 19.4.3, unless the runner config sets pod-level values.
 
-We ran the same pods on k3s v1.34.12, v1.35.9, v1.36.5 and v1.37.1. On the three older versions the empty block moved the pod into the BestEffort cgroup slice and set its `oom_score_adj` to 1000, the highest value the kernel allows. Next to a busy neighbour, a pod that requested half a CPU got 0.06 to 0.08 cores instead of 0.57 to 0.58. A namespace quota that blocks BestEffort pods rejected it. On 1.37.1 the same pods kept their Burstable and Guaranteed classes.
+We ran the same pods on k3s v1.34.12, v1.35.9, v1.36.5 and v1.37.1. On the three older versions, the empty block moved the pod into the BestEffort cgroup slice. The kubelet set its `oom_score_adj` to 1000, the highest value the kernel accepts. Next to a busy neighbour, a pod that requested half a CPU got 0.06 to 0.08 cores instead of 0.57 to 0.58. A namespace quota that blocks BestEffort pods rejected it. On 1.37.1 the same pods kept their Burstable and Guaranteed classes.
 
-One thing did not change, and the research we started from got it wrong. It said these pods are first in line for kubelet eviction under memory pressure. They are not. The kubelet ranks pods for eviction by their container memory requests, not by their QoS class, and it evicted our pods in the same order on every version.
+One thing did not change, and the research we started from got it wrong. It said these pods are first in line for kubelet eviction under memory pressure. They are not. The kubelet's eviction ranking compares memory usage with the memory request. For an empty block, that request still comes from the containers. The QoS class is not part of the ranking, and the kubelet evicted our pods in the same order on every version.
 
 ## TL;DR
 
 - On k3s v1.34.12, v1.35.9 and v1.36.5, a pod with container requests and limits plus `spec.resources: {}` reported `qosClass: BestEffort`. The Guaranteed variant did too. On v1.37.1 they reported Burstable and Guaranteed. With the new `PodLevelResourcesFixKubeletQOSClass` feature gate turned off, 1.37.1 went back to BestEffort.
-- The kernel saw the new class. `oom_score_adj` went from 935 (Burstable) and -997 (Guaranteed) to 1000, and the pod cgroup moved to `kubepods-besteffort.slice` with `cpu.weight` 1 and no pod-level `memory.max`. The container-level limits stayed in place.
-- Next to a neighbour that kept both vCPUs busy, the BestEffort-classified pod got a median of 0.061 to 0.083 cores against 0.573 to 0.580 for the same pod without the empty block (10.6% to 14.3%), on all three affected versions. On 1.37.1 the two were equal.
+- The node settings followed the class. `oom_score_adj` went from 935 (Burstable) and -997 (Guaranteed) to 1000, and the pod cgroup moved to `kubepods-besteffort.slice` with `cpu.weight` 1 and no pod-level `memory.max`. The container-level limits stayed in place.
+- A neighbour pod kept both vCPUs busy. Next to it, the BestEffort-classified pod got a median of 0.061 to 0.083 cores on the three affected versions. The same pod without the empty block got 0.573 to 0.580 (so 10.6% to 14.3%). On 1.37.1 the two were equal.
 - A `ResourceQuota` with scope `BestEffort` and `pods: "0"` rejected the pod on 1.34 to 1.36 and admitted it on 1.37.
 - The kubelet's memory-pressure eviction order was the same on all four versions, in all 12 repetitions: the true BestEffort pod first, then by memory usage relative to the container request. The empty block did not move a pod forward.
 - If you run GitLab Runner on Kubernetes, upgrade to 19.5.0 or later. As of 2 November 2026 the latest Kubernetes patch releases for 1.34, 1.35 and 1.36 still have the bug.
@@ -57,11 +57,11 @@ if utilfeature.DefaultFeatureGate.Enabled(features.PodLevelResources) &&
     pod.Spec.Resources != nil {
 ```
 
-An empty block is not nil. It has no requests and no limits, so the function returns BestEffort and never looks at the containers. Most other code paths use `IsPodLevelResourcesSet` instead, which treats `{}` as not set and falls back to the container values. That mismatch was reported in [issue #135082](https://github.com/kubernetes/kubernetes/issues/135082) in November 2025.
+An empty block is not nil. It has no requests and no limits, so the function returns BestEffort. The loop over the containers never runs. The issue that reported this, [#135082](https://github.com/kubernetes/kubernetes/issues/135082) from November 2025, says that almost everywhere else Kubernetes does not differentiate between nil and empty pod-level resources. The helper for that, `IsPodLevelResourcesSet`, treats `{}` as not set.
 
 The fix is [PR #137150](https://github.com/kubernetes/kubernetes/pull/137150), merged on 15 July 2026 for 1.37. It adds the condition `IsPodLevelResourcesSet(pod)` behind a new gate, `PodLevelResourcesFixKubeletQOSClass`, beta and on by default from 1.37. It was not backported. The patch releases of 27 October 2026, v1.34.13, v1.35.10 and v1.36.6, still have the old condition. The rest of that release is in [our Kubernetes 1.37 review](/posts/kubernetes-1-37-garhwal-what-shipped); `PodLevelResources` itself stays beta in 1.37.
 
-GitLab Runner added pod-level resources to its job pods in 18.10.0 ([MR !5922](https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/5922)). The helper that builds the block always returns a non-nil object:
+GitLab Runner added pod-level resources to its job pods in 18.10.0 ([MR !5922](https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/5922)). At every tag we read (18.10.0, 19.3.5 and 19.4.3), the helper that builds the block returns a non-nil object:
 
 ```go
 // executors/kubernetes/kubernetes.go, GitLab Runner v19.4.3
@@ -77,11 +77,11 @@ func (s *executor) podResourcesReference() *api.ResourceRequirements {
 }
 ```
 
-If you do not set `pod_cpu_request`, `pod_memory_request`, `pod_cpu_limit` or `pod_memory_limit` in the runner config, both maps are empty and the pod goes to the API server with `"resources": {}`. [MR !7346](https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/7346) changed the function to return `nil` in that case. It merged on 1 October 2026 and shipped in 19.5.0. The 19.4.3 and 19.3.5 patch releases of 28 October 2026 still have the old function. Job pods are affected only when the runner gives the build, helper or service containers requests or limits; with none at all, they were BestEffort anyway.
+If the runner config sets none of `pod_cpu_request`, `pod_memory_request`, `pod_cpu_limit` and `pod_memory_limit`, both maps are empty. The pod then goes to the API server with `resources: {}`. The MR that fixed it, [!7346](https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/7346), says the same: job pods "were showing `qosClass: BestEffort` instead of the expected `Burstable`", and after the fix `.spec.resources` "should now be empty/absent (was `{}`)". It merged on 1 October 2026 and shipped in 19.5.0. The 19.4.3 and 19.3.5 tags of 28 October 2026 still have the old function. The class matters only when the runner config gives the job containers requests or limits. Without them, the pods were BestEffort anyway.
 
 ## The lab
 
-The lab runs on one DigitalOcean droplet: `s-2vcpu-4gb` in `fra1`, Ubuntu 24.04, cgroup v2. A cloud firewall allows SSH from one address and nothing else, so the Kubernetes API port is never exposed and `kubectl` runs on the node over SSH. For each version, a script removes k3s, installs the pinned release, and runs five stages. The kubelet gets an explicit hard eviction threshold, `memory.available<2Gi`, and a 30 second pressure transition period, so repetitions do not wait five minutes for the node condition to clear.
+The lab runs on one DigitalOcean droplet: `s-2vcpu-4gb` in `fra1`, Ubuntu 24.04, cgroup v2. A cloud firewall allows SSH from one address and nothing else. The Kubernetes API port is never exposed, and `kubectl` runs on the node over SSH. For each version, a script removes k3s, installs the pinned release, and runs five stages. The kubelet gets an explicit hard eviction threshold, `memory.available<2Gi`. It also gets a 30 second pressure transition period instead of the default 5 minutes, so repetitions do not wait for the node condition to clear.
 
 ```diagram
 {
@@ -142,11 +142,17 @@ The API server stored the empty block exactly as written. On v1.34.12, v1.35.9 a
       "comment": "k3s v1.36.5+k3s1"
     },
     {
+      "comment": "... kubectl apply and wait omitted; the whole session is in the file"
+    },
+    {
       "cmd": "kubectl get pods -n demo -o custom-columns='NAME:.metadata.name,POD-LEVEL:.spec.resources,QOS:.status.qosClass'",
       "output": "NAME             POD-LEVEL   QOS\nctl-burstable    <none>      Burstable\nctl-guaranteed   <none>      Guaranteed\nemp-burstable    map[]       BestEffort\nemp-guaranteed   map[]       BestEffort"
     },
     {
       "comment": "k3s v1.37.1+k3s1, same manifests"
+    },
+    {
+      "comment": "... kubectl apply and wait omitted"
     },
     {
       "cmd": "kubectl get pods -n demo -o custom-columns='NAME:.metadata.name,POD-LEVEL:.spec.resources,QOS:.status.qosClass'",
@@ -179,7 +185,7 @@ QoS is not only a label. The kubelet turns it into numbers that the kernel uses.
 {
   "type": "bar",
   "title": "oom_score_adj of the main container process",
-  "caption": "Read from /proc/<pid>/oom_score_adj on the node. The 1.34.12, 1.35.9 and 1.36.5 values are identical. Range -1000 to 1000; higher is killed first. Source: results/summary.md.",
+  "caption": "Read from /proc/<pid>/oom_score_adj on the node. The 1.34.12, 1.35.9 and 1.36.5 values are identical. The kernel adds this value to a process's badness score when it picks one to kill. Source: results/summary.md.",
   "rows": [
     {
       "label": "ctl-burstable, every version",
@@ -229,7 +235,7 @@ QoS is not only a label. The kubelet turns it into numbers that the kernel uses.
 }
 ```
 
-`oom_score_adj` ranges from -1000 to 1000. A Burstable container gets `1000 - 1000 * request / node memory`, which is 935 for a 256Mi request on this node, and a Guaranteed one gets -997. The empty block gave both 1000, the same as a pod with no resources at all. `oom_score`, the number the kernel compares when it picks a process to kill, went from 1290 (Burstable) and 4 (Guaranteed) to 1334.
+The kernel adds `oom_score_adj` to each process's badness score before it picks a process to kill, and it accepts values from -1000 to +1000 ([proc.rst](https://github.com/torvalds/linux/blob/v6.8/Documentation/filesystems/proc.rst)). A Burstable container gets `1000 - 1000 * request / node memory`, which is 935 for a 256Mi request on this node. A Guaranteed container gets -997. The empty block gave both 1000, the same as a pod with no resources at all. `oom_score`, the current OOM killer score the kernel shows for the process, went from 1290 (Burstable) and 4 (Guaranteed) to 1334.
 
 The cgroup changed too. On v1.36.5:
 
@@ -243,7 +249,7 @@ The cgroup changed too. On v1.36.5:
 | container `memory.max` | 512 MiB                    | 512 MiB                     | 256 MiB          | 256 MiB                     |
 | `oom_score`            | 1290                       | 1334                        | 4                | 1334                        |
 
-The container cgroup still has its own limits, so `emp-burstable` cannot use more than 512 MiB or half a CPU. What it loses is everything the kubelet sets at pod and QoS level: the pod cgroup has no memory limit and no CPU quota of its own, and it sits in `kubepods-besteffort.slice`, where the kubelet sets `cpu.weight` to 1 for the whole slice.
+The container cgroup still has its own limits, so `emp-burstable` cannot use more than 512 MiB or half a CPU. What it loses is everything the kubelet sets at pod and QoS level. The pod cgroup has no memory limit and no CPU quota of its own. It sits in `kubepods-besteffort.slice`, where the kubelet sets `cpu.weight` to 1 for the whole slice.
 
 ## Finding 3: half a CPU requested, 0.06 to 0.08 cores received
 
@@ -312,7 +318,9 @@ The container cgroup still has its own limits, so `emp-burstable` cannot use mor
 
 On the three affected versions, `cpu-emp` got a median of 0.083, 0.070 and 0.061 cores, against 0.579, 0.580 and 0.573 for `cpu-ctl`. That is 14.3%, 12.1% and 10.6% of the control's CPU, or 7.0 to 9.4 times less. On v1.37.1 the two were the same: 0.576 and 0.577 cores.
 
-The weights explain the direction. `cpu-ctl`'s pod cgroup has `cpu.weight` 20 for its 500m request and sits in the burstable slice next to the neighbour. The kubelet sets the burstable slice's weight from the sum of the CPU requests of the Burstable pods in it, which gave 63 here. `cpu-emp`'s pod cgroup has `cpu.weight` 1 and sits in the besteffort slice, which the kubelet always sets to the minimum, `cpu.weight` 1. Its 500m request still sets a weight on the container cgroup, but that only counts against other containers in the same pod. For a CI job this is likely the most visible effect: a build that requested CPU gets only what the Burstable and Guaranteed pods leave over.
+The weights explain the direction. `cpu-ctl`'s pod cgroup has `cpu.weight` 20 for its 500m request and sits in the burstable slice next to the neighbour. The kubelet sets the burstable slice's weight from the sum of the CPU requests of the Burstable pods in it, which gave 63 here. `cpu-emp`'s pod cgroup has `cpu.weight` 1 and sits in the besteffort slice. The kubelet always sets that slice to the minimum, `cpu.weight` 1. The 500m request of `cpu-emp` still sets a weight on its container cgroup, but that only counts against other containers in the same pod. On a node like this one, a CI build that requested CPU would get only what the Burstable and Guaranteed pods leave. We did not run a build.
+
+The runs were short and sequential. Each pod ran three times in a fixed alternating order, and we did not record the neighbour's own usage or other load on the host. On the affected versions, each of the nine `cpu-emp` runs got less CPU than every `cpu-ctl` run, including the runs where `cpu-emp` went first. The exact percentages still belong to this setup.
 
 ## Finding 4: a "no BestEffort" quota rejects the pod
 
@@ -344,7 +352,7 @@ The API server applies the scope at create time, before any kubelet sees the pod
 }
 ```
 
-On v1.37.1 the API server admitted `emp-burstable`, and still rejected `be`. We did not run a runner, but a job pod from 18.10.0 to 19.4.x carries the same empty block, so in a namespace with this quota it should fail the same way on 1.34 to 1.36. The PR author named the reverse risk in the fix discussion: with a 1.37 API server and an older kubelet, a pod can pass admission as Guaranteed and still run as BestEffort on the node.
+On v1.37.1 the API server admitted `emp-burstable`, and still rejected `be`. We did not run a runner. But a job pod from 18.10.0 to 19.4.x carries the same empty block, so in a namespace with this quota it should fail the same way on 1.34 to 1.36. The fix discussion names the reverse risk: a pod "could theoretically bypass restricted BestEffort quotas by being classified as Guaranteed during admission, while still behaving as BestEffort at the node level". That can happen when the API server has the fix and the kubelet does not.
 
 ## Finding 5: the eviction order did not change
 
@@ -360,7 +368,7 @@ The five eviction pods each allocate a fixed amount of memory and then sleep. Th
 
 If the kubelet ranked by QoS class, `emp` and `gua-emp` would go out together with `be`, before `ctl` and `gua-ctl`. If it ranks by container requests, `be` goes first because any usage exceeds a request of zero, and the rest follow in order of usage minus request: `ctl`, `gua-ctl`, `emp`, `gua-emp`.
 
-A host process outside every pod, `hog.py`, then holds `MemAvailable` at 1000 MiB. That is below the 2Gi threshold even after all five pods are gone, so the kubelet keeps evicting until nothing evictable is left. The kubelet cannot evict the hog.
+A host process outside every pod, `hog.py`, then holds `MemAvailable` at 1000 MiB. That is below the 2Gi threshold even after all five pods are gone, so the kubelet keeps evicting until nothing evictable is left. The kubelet cannot evict the hog. The pods differ in size on purpose, to separate the two models, so this is not a matched pair. CoreDNS also ran on the node. It is a critical pod, so the kubelet ranked it last every time and logged `cannot evict a critical pod` when only CoreDNS was left.
 
 Every repetition on every version gave the request order. This is the kubelet's own ranking on v1.36.5, while it reported `emp` and `gua-emp` as BestEffort:
 
@@ -377,7 +385,7 @@ Every repetition on every version gave the request order. This is the kubelet's 
       "output": "{\"be\":\"BestEffort\",\"ctl\":\"Burstable\",\"emp\":\"BestEffort\",\"gua-ctl\":\"Guaranteed\",\"gua-emp\":\"BestEffort\"}"
     },
     {
-      "comment": "the kubelet's ranking before each eviction"
+      "comment": "the kubelet's ranking before each eviction; sed keeps the journald time and the message, and drops the host name, PID and source file"
     },
     {
       "cmd": "grep -E 'ranked for eviction|evicted successfully' results/k3s-v1.36.5/40-kubelet-rep1.log | sed -E 's/^([^ ]+) .*eviction_manager.go:[0-9]+\\] /\\1 /'",
@@ -387,7 +395,7 @@ Every repetition on every version gave the request order. This is the kubelet's 
 }
 ```
 
-The source explains it. `rankMemoryPressure` sorts by three keys: whether usage exceeds the memory request, then pod priority, then usage minus request. All three read the request through `GetResourceRequestQuantity`, which asks `IsPodLevelResourcesSet` and so falls back to the container requests for an empty block. The QoS class is not an input. If the kubelet had treated the request of `emp` as zero, `emp` would have been in the first group with `be`. It came fourth.
+The source explains it. `rankMemoryPressure` sorts by three keys. First, whether usage exceeds the memory request. Then pod priority. Then usage minus the memory request. The first and third keys get the request from `GetResourceRequestQuantity`. For an empty block, that helper asks `IsPodLevelResourcesSet`, gets false, and uses the container requests. Priority does not read requests, and the QoS class is not an input at all. If the kubelet had used a request of zero for `emp`, `emp` would have been in the first group with `be`. It came fourth.
 
 ```chart
 {
@@ -490,15 +498,15 @@ The source explains it. `rankMemoryPressure` sorts by three keys: whether usage 
 }
 ```
 
-In all 12 repetitions the kubelet started to reclaim 3.0 to 9.2 s after the hog started, and evicted the first pod 2.3 to 3.3 s later. After that it evicted one pod at a time: 41 of the 48 gaps between evictions were 4.0 s or less (median 3.6 s, longest 8.2 s), and the last pod was gone 19.5 to 29.9 s after the hog started. It does not wait 10 seconds between evictions: after each one it waits for the pod to be cleaned up and then checks again. Its own `available` figure at the first eviction was 931 to 1212 MiB, well under the 2Gi threshold and far from empty. The kernel logged no OOM kill in any repetition, so the order is the kubelet's alone.
+In all 12 repetitions the kubelet started to reclaim 3.0 to 9.2 s after the hog started, and evicted the first pod 2.3 to 3.3 s later. After that it evicted one pod at a time. 41 of the 48 gaps between evictions were 4.0 s or less (median 3.6 s, longest 8.2 s). The last pod was gone 19.5 to 29.9 s after the hog started. It does not wait 10 seconds between evictions: after each one it waits for the pod to be cleaned up and then checks again. Its own `available` figure at the first eviction was 931 to 1212 MiB, well under the 2Gi threshold and far from empty. The kernel logged no OOM kill in any repetition, so the order is the kubelet's alone.
 
-The two mechanisms are easy to mix up. The kubelet's eviction manager, which checks every 10 seconds by default when it has nothing to evict, ignores the class. The kernel OOM killer, which acts when memory runs out before the kubelet does anything, reads `oom_score_adj`, and there the empty block puts the pod in the same group as a pod with no resources at all, at the front of the queue (Finding 2).
+The two mechanisms are easy to mix up. The kubelet's eviction manager checks every 10 seconds by default when it has nothing to evict, and it ignores the class. The kernel OOM killer acts when memory runs out before the kubelet frees any. It adds `oom_score_adj` to each process's badness score, and the empty block gives the pod the same 1000 as a pod with no resources at all (Finding 2). We did not trigger a kernel OOM, so we did not watch the kernel make that choice.
 
 ## What we got wrong before measuring
 
 The research note we started from had the core right and two details wrong.
 
-- **Right:** Kubernetes 1.34 to 1.36 compute BestEffort for an empty pod-level block, GitLab Runner 18.10 to 19.4 send that block, 1.37 fixes it, and the pods get `oom_score_adj` 1000.
+- **Right:** Kubernetes 1.34 to 1.36 compute BestEffort for an empty pod-level block. GitLab Runner 18.10 to 19.4 build their job pods with that block (from the source and the fix MR). 1.37 fixes it, and the pods get `oom_score_adj` 1000.
 - **Wrong:** it called #137150 the upstream issue. That is the fix PR. The issue is #135082.
 - **Wrong, and it matters:** it said these pods are first in line for kubelet eviction under memory pressure. Finding 5 shows they are not.
 - **Missing:** the 1.37 fix is a beta feature gate, not a plain code change, and nothing was backported to the 1.34, 1.35 or 1.36 patch releases.
@@ -542,8 +550,9 @@ An empty `resources: {}` inside a container is harmless. Only the pod-level one 
 - **We did not trigger a kernel OOM kill.** The `oom_score` values are the numbers the kernel uses to choose a victim, read from `/proc`. We did not watch it choose.
 - **The eviction timing is ours.** It depends on the 2Gi threshold, the hog's 1000 MiB target and how fast it allocates. The order is the finding, not the seconds.
 - **The CPU gap depends on the neighbours.** One neighbour with a 1 CPU request on a 2 vCPU node gave the numbers above. More Burstable or Guaranteed load should make the BestEffort slice's share smaller. On an idle node the weights do not matter, because they only divide contended CPU time; we did not measure that case.
-- **Other consumers of the class were not tested.** From the source, the kubelet also rejects new BestEffort pods while the node has the `MemoryPressure` condition, and the static CPU manager gives exclusive CPUs only to Guaranteed pods. We did not measure either.
+- **One node, one admission check.** We did not test scheduling across nodes, or any admission rule other than the one quota. The gate-off run on 1.37.1 covered only the class, the kernel-facing numbers and the quota, not CPU or eviction.
+- **Other consumers of the class were not tested.** From the source, the kubelet also rejects new BestEffort pods while the node has the `MemoryPressure` condition. The static CPU manager gives exclusive CPUs only to Guaranteed pods. We did not measure either.
 
 ## Summary
 
-On Kubernetes 1.34, 1.35 and 1.36, `spec.resources: {}` makes a pod BestEffort no matter what its containers request. On a real node that means `oom_score_adj` 1000 instead of 935 or -997, a place in the BestEffort slice with `cpu.weight` 1, no pod-level memory or CPU limit, about 7 to 9 times less CPU next to a busy neighbour, and rejection by a quota that forbids BestEffort pods. It does not change the kubelet's eviction order, because eviction ranks by container requests: 12 of 12 repetitions evicted our pods in exactly the order the requests predict. Kubernetes 1.37 fixes the class behind a beta gate that is on by default, and GitLab Runner 19.5.0 stops sending the block. Run the `jq` query above on your clusters, and upgrade whichever side you can first.
+On Kubernetes 1.34, 1.35 and 1.36, `spec.resources: {}` makes a pod BestEffort no matter what its containers request. On our node that meant `oom_score_adj` 1000 instead of 935 or -997, and a place in the BestEffort slice with `cpu.weight` 1 and no pod-level memory or CPU limit. Next to a busy neighbour the pod got about 7 to 9 times less CPU, and a quota that forbids BestEffort pods rejected it. The empty block did not change the kubelet's eviction order. The ranking uses memory requests, and for an empty block those still come from the containers: 12 of 12 repetitions evicted our pods in exactly the order the requests predict. Kubernetes 1.37 fixes the class behind a beta gate that is on by default, and GitLab Runner 19.5.0 stops sending the block. Run the `jq` query above on your clusters, and upgrade whichever side you can first.
