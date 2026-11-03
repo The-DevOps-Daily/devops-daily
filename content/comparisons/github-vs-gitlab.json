@@ -2,7 +2,8 @@
   "id": "github-vs-gitlab",
   "slug": "github-vs-gitlab",
   "title": "GitHub vs GitLab",
-  "description": "A detailed comparison of GitHub and GitLab as source control and DevOps platforms. Covers CI/CD, code review, project management, security features, and pricing to help you choose the right platform for your team.",
+  "seoTitle": "GitHub vs GitLab: Key Differences and Which One to Choose",
+  "description": "GitHub leads on community, Copilot and integrations. GitLab leads on built-in CI/CD, security scanning and full self-hosting. See CI minutes and prices.",
   "category": "Source Control & DevOps Platforms",
   "tags": [
     "GitHub",
