@@ -6,7 +6,7 @@ category:
   slug: 'kubernetes'
 date: '2026-08-27'
 publishedAt: '2026-08-27T15:00:00Z'
-updatedAt: '2026-10-24T09:00:00Z'
+updatedAt: '2026-11-03T07:00:00Z'
 readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
@@ -92,7 +92,7 @@ behavior:
 
 ## What slipped: pod-level resources
 
-**Pod-level resources ([KEP-2837](https://github.com/kubernetes/enhancements/issues/2837), alpha 1.33, beta 1.34; stable planned for 1.37, now 1.38).** It was on the 1.37 stable list at feature freeze, but its code was not merge-ready at code freeze on 23 July, so it was removed from the 1.37 milestone and stays beta. The feature itself is unchanged: you can set CPU and memory requests and limits for the pod as a whole, not only per container. Sidecar-heavy pods get the practical win: instead of padding every container's request for its worst case, you give the pod a shared budget that containers draw from.
+**Pod-level resources ([KEP-2837](https://github.com/kubernetes/enhancements/issues/2837), alpha 1.32, beta 1.34; stable planned for 1.37, now 1.38).** It was on the 1.37 stable list at feature freeze, but its code was not merge-ready at code freeze on 23 July, so it was removed from the 1.37 milestone and stays beta. The feature itself is unchanged: you can set CPU and memory requests and limits for the pod as a whole, not only per container. Sidecar-heavy pods get the practical win: instead of padding every container's request for its worst case, you give the pod a shared budget that containers draw from.
 
 ```yaml
 apiVersion: v1
