@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
-import { sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
+import { sponsorGoKey, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
@@ -47,6 +47,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 href={sponsorHref(sponsor, 'sidebar')}
                 target="_blank"
                 rel={sponsorRel(sponsor)}
+                data-go={sponsorGoKey(sponsor, 'sidebar')}
                 title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
                 className={cn(
                   'group relative isolate flex h-16 min-w-0 items-center justify-center bg-card/90 px-3 transition-all',

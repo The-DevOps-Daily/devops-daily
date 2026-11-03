@@ -19,7 +19,7 @@ import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { SponsorLogo } from '@/components/sponsor-logo';
-import { sponsorHistory, sponsorHref, sponsorRel } from '@/lib/sponsors';
+import { sponsorGoKey, sponsorHistory, sponsorHref, sponsorRel } from '@/lib/sponsors';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -352,6 +352,7 @@ export default function SponsorshipPage() {
                   href={sponsorHref(brand, 'sponsorship')}
                   target="_blank"
                   rel={sponsorRel(brand)}
+                  data-go={sponsorGoKey(brand, 'sponsorship')}
                   aria-label={brand.name}
                   className="group flex h-full max-w-full items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
                 >
