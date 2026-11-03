@@ -178,7 +178,7 @@
         "rating": "good"
       },
       "toolB": {
-        "value": "Inboxes on your own domain: threads, labels, drafts, thread assignment, search and a built-in triage agent; 3 inboxes free, more at $1 per inbox a month on paid plans",
+        "value": "Inboxes on your own domain: threads, labels, drafts, notes, thread assignment, search, and an inbox agent that saves its replies as drafts for a person to review and send; 3 inboxes free, more at $1 per inbox a month on paid plans",
         "rating": "good"
       }
     },
@@ -315,7 +315,7 @@
     {
       "scenario": "AI agents sending email on your behalf",
       "recommendation": "either",
-      "explanation": "Both ship hosted MCP servers, which puts them ahead of nearly every other email provider, and both now cover most of their APIs. SMTPfast keeps API keys and team members out of the agent's reach. Both have inboxes where an agent can write drafts that a person approves before anything is sent, and Resend adds a built-in inbox agent that triages threads. Pick by how much you want the agent to do on its own."
+      "explanation": "Both ship hosted MCP servers, and both now cover most of their APIs. SMTPfast keeps API keys and team members out of the agent's reach. In both, an agent's reply can wait in an inbox as a draft until a person reviews and sends it, and Resend also has a built-in inbox agent that labels, assigns and drafts replies. Pick by how much you want the agent to do on its own."
     },
     {
       "scenario": "An enterprise security review stands between you and shipping",
@@ -371,7 +371,7 @@
       "recommendation": "either"
     },
     {
-      "criteria": "Threaded inboxes with human-approved agent drafts",
+      "criteria": "Threaded inboxes where agent drafts wait for a person to send them",
       "recommendation": "either"
     },
     {
