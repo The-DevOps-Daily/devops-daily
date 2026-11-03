@@ -49,6 +49,18 @@ export function sponsorRel(sponsor: Pick<Sponsor, 'ownProduct'>): string {
   return sponsor.ownProduct ? 'noopener' : 'noopener noreferrer sponsored';
 }
 
+/**
+ * The data-go value for a placement of one of our own products: the go link's
+ * placement and slug, as "placement:slug". Their links go direct, so the
+ * impression beacon reads this to count their impressions and clicks.
+ */
+export function sponsorGoKey(
+  sponsor: Pick<Sponsor, 'goSlug' | 'ownProduct'>,
+  placement: string
+): string | undefined {
+  return sponsor.ownProduct && sponsor.goSlug ? `${placement}:${sponsor.goSlug}` : undefined;
+}
+
 export const sponsors: Sponsor[] = [
   {
     name: 'Bitrise',

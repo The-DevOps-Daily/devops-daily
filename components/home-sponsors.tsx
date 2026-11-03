@@ -2,7 +2,14 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { SponsorLogo } from '@/components/sponsor-logo';
-import { getSponsors, sponsorHistory, sponsorHref, sponsorRel, type Sponsor } from '@/lib/sponsors';
+import {
+  getSponsors,
+  sponsorHistory,
+  sponsorGoKey,
+  sponsorHref,
+  sponsorRel,
+  type Sponsor,
+} from '@/lib/sponsors';
 import { cn } from '@/lib/utils';
 
 // The sidebar logos are sized for a narrow column; use the wordmarks from the
@@ -32,6 +39,7 @@ export function HomeSponsors({ className }: { className?: string }) {
               href={sponsorHref(sponsor, 'home')}
               target="_blank"
               rel={sponsorRel(sponsor)}
+              data-go={sponsorGoKey(sponsor, 'home')}
               title={sponsor.tagline ? `${sponsor.name}: ${sponsor.tagline}` : sponsor.name}
               aria-label={sponsor.name}
               className="flex h-20 items-center justify-center px-5 transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary"
