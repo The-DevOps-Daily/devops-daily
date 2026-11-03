@@ -117,6 +117,20 @@ describe('sponsor impression beacon', () => {
     expect(sendBeacon).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps a click the browser refused and sends it with the next beacon', () => {
+    sendBeacon.mockReturnValueOnce(false);
+    link('simulator:devdojo').dispatchEvent(
+      new MouseEvent('click', { bubbles: true, ctrlKey: true })
+    );
+    hide();
+    expect(beacons()).toEqual([
+      { page: '/games/x', seen: [], click: 'simulator:devdojo' },
+      { page: '/games/x', seen: [], click: 'simulator:devdojo' },
+    ]);
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(sendBeacon).toHaveBeenCalledTimes(2);
+  });
+
   it('counts middle clicks, but not right clicks or clicks on go links', () => {
     const own = link('simulator:quizapi');
     own.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 2 }));

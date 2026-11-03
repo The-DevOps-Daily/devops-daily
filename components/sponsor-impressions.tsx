@@ -62,6 +62,8 @@ export class ImpressionTracker {
   private page = '';
   private campaign: string | null = null;
   private viewSent = false;
+  // Kept until a beacon carrying it is accepted, so a refused one is retried.
+  private click: string | null = null;
   private seen = new Set<string>();
   private unsent = new Set<string>();
   private onScreen = new Set<Element>();
@@ -89,6 +91,7 @@ export class ImpressionTracker {
     this.page = path;
     this.campaign = null;
     this.viewSent = false;
+    this.click = null;
     this.seen.clear();
     this.unsent.clear();
     this.clearTimers();
@@ -173,13 +176,14 @@ export class ImpressionTracker {
     // A go link counts its own clicks when the worker redirects it.
     if (!(link instanceof HTMLAnchorElement) || link.href.startsWith(`${GO_LINKS_ORIGIN}/`)) return;
     const click = linkKey(link);
-    if (click) this.send(click);
+    if (!click) return;
+    this.click = click;
+    this.flush();
   };
 
-  private flush = () => this.send(null);
-
-  private send(click: string | null) {
+  private flush = () => {
     const campaign = this.viewSent ? null : this.campaign;
+    const click = this.click;
     if (!this.page || (this.unsent.size === 0 && !campaign && !click)) return;
     const seen = [...this.unsent].slice(0, MAX_SEEN);
     const body: { page: string; seen: string[]; campaign?: string; click?: string } = {
@@ -192,6 +196,7 @@ export class ImpressionTracker {
     if (navigator.sendBeacon(`${GO_LINKS_ORIGIN}/e`, JSON.stringify(body))) {
       for (const key of seen) this.unsent.delete(key);
       if (campaign) this.viewSent = true;
+      if (click) this.click = null;
     }
-  }
+  };
 }
