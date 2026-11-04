@@ -5,12 +5,20 @@
   "seoTitle": "Plakar vs restic (and Borg): Open-Source Backup Compared",
   "description": "Plakar and restic both make encrypted, deduplicated backups to disk, SFTP or S3. Compare a built-in web UI, restore straight into PostgreSQL, MySQL and MongoDB, single-file ptar archives, per-path checks and snapshot diffs, with Borg 1.4 in the FAQ.",
   "category": "Backup & Recovery",
-  "tags": ["Backup", "Plakar", "restic", "Borg", "Disaster Recovery", "PostgreSQL", "Open Source"],
+  "tags": [
+    "Backup",
+    "Plakar",
+    "restic",
+    "Borg",
+    "Disaster Recovery",
+    "PostgreSQL",
+    "Open Source"
+  ],
   "createdDate": "2026-10-28T09:00:00Z",
   "updatedDate": "2026-10-28T09:00:00Z",
   "estimatedReadTime": "16 min read",
   "sponsorCampaign": "plakar",
-  "introduction": "Plakar and restic are both Go command-line tools that make encrypted, deduplicated backups, and both can keep the backup repository on local disk, on an SFTP server or in S3-compatible object storage (Plakar through packages you install). restic has been developed since 2014 and has about 36,900 stars on GitHub. It does one job well: it backs up files, and anything you can pipe into it, and restores them. Plakar's 1.0 line started in May 2025. It runs on its own storage engine, Kloset, and adds more around the backup itself: a web UI, connectors for databases and services, and a single-file archive format.\n\nThe biggest difference shows up at restore time. With restic, a PostgreSQL backup is a pg_dump or pg_dumpall command that restic runs with --stdin-from-command, and a restore is restic dump piped into pg_restore or psql, in steps you write and test. Plakar's PostgreSQL connector runs pg_dumpall for roles and one pg_dump per database, and its restore runs psql and pg_restore for you, with an option that drops and recreates the database from the backup. MySQL, MariaDB and MongoDB have connectors that work the same way. To find and download one file, Plakar has a web UI in the same binary. With restic, you use the command line, a FUSE mount or a third-party tool such as Backrest.\n\nBorg is the other tool people ask about. Borg 1.4.5 is stable and well proven, but it keeps repositories only on local disk or on a server over SSH, and has no official UI. Its append-only mode keeps old data even when delete and prune run. Borg 2 is in beta (2.0.0b25), and its README says not to use it for production backups. The FAQ below covers where Borg fits.\n\nThis page compares the documented features of Plakar v1.1.8 (20 October 2026) and restic 0.19.1 (5 July 2026), taken from each project's docs, man pages, release notes and source code and checked on 28 October 2026. It covers features and design, not speed, memory use or deduplication ratios. Plakar sponsored this comparison.",
+  "introduction": "Plakar and restic are both Go command-line tools that make encrypted, deduplicated backups, and both can keep the backup repository on local disk, on an SFTP server or in S3-compatible object storage (Plakar through packages you install). restic has been developed since 2014 and has about 36,900 stars on GitHub. It does one job well: it backs up files, and anything you can pipe into it, and restores them. Plakar has been open source since March 2021; the company behind it was founded in 2024, and the 1.0 line shipped in May 2025. It runs on its own storage engine, Kloset, and adds more around the backup itself: a web UI, connectors for databases and services, and a single-file archive format.\n\nThe biggest difference shows up at restore time. With restic, a PostgreSQL backup is a pg_dump or pg_dumpall command that restic runs with --stdin-from-command, and a restore is restic dump piped into pg_restore or psql, in steps you write and test. Plakar's PostgreSQL connector runs pg_dumpall for roles and one pg_dump per database, and its restore runs psql and pg_restore for you, with an option that drops and recreates the database from the backup. MySQL, MariaDB and MongoDB have connectors that work the same way. To find and download one file, Plakar has a web UI in the same binary. With restic, you use the command line, a FUSE mount or a third-party tool such as Backrest.\n\nBorg is the other tool people ask about. Borg 1.4.5 is stable and well proven, but it keeps repositories only on local disk or on a server over SSH, and has no official UI. Its append-only mode keeps old data even when delete and prune run. Borg 2 is in beta (2.0.0b25), and its README says not to use it for production backups. The FAQ below covers where Borg fits.\n\nThis page compares the documented features of Plakar v1.1.8 (20 October 2026) and restic 0.19.1 (5 July 2026), taken from each project's docs, man pages, release notes and source code and checked on 28 October 2026. It covers features and design, not speed, memory use or deduplication ratios. Plakar sponsored this comparison.",
   "relatedLinks": [
     {
       "label": "Someone ran migrate:fresh on production: a timed database recovery",
@@ -46,7 +54,7 @@
       "ISC license, frequent releases, and an optional Control Plane with a free plan up to 500 GB of managed data"
     ],
     "cons": [
-      "A younger project: the 1.0 line started in May 2025, and it has about 2,100 GitHub stars against restic's 36,900",
+      "A younger project: open source since March 2021, 1.0 since May 2025, and about 2,100 GitHub stars against restic's 36,900",
       "Only local disk, HTTP and ptar stores are built in. S3, SFTP and the database connectors are packages that need a free plakar login to download, or a build from source",
       "Some connectors, such as Windows VSS and SQL Server, are closed source (free for registered users)",
       "The local cache can grow large: open issues report it filling the disk",
@@ -309,12 +317,24 @@
       "name": "Track record",
       "category": "Ecosystem",
       "toolA": {
-        "value": "1.0 line since May 2025; about 2,100 GitHub stars",
+        "value": "Open source since March 2021; the company behind it was founded in 2024; the 1.0 line shipped in May 2025. About 2,100 GitHub stars",
         "rating": "neutral"
       },
       "toolB": {
         "value": "Developed since 2014; about 36,900 GitHub stars and many third-party tools",
         "rating": "good"
+      }
+    },
+    {
+      "name": "Integration SDK",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Integration SDK (ISC): every integration is a standalone binary that talks to Plakar over gRPC, with official Go bindings, so you can write your own source, destination or storage connector",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "No plugin API: new backends are added to restic itself, and other storage is reached through rclone",
+        "rating": "neutral"
       }
     }
   ],
@@ -347,7 +367,7 @@
     {
       "scenario": "A team that values a long track record above new features",
       "recommendation": "toolB",
-      "explanation": "restic has been developed since 2014, has about 36,900 GitHub stars and a large set of third-party tools, guides and answers. Plakar's 1.0 line is from May 2025. If you want the most proven option for plain file backups, restic is it."
+      "explanation": "restic has been developed since 2014, has about 36,900 GitHub stars and a large set of third-party tools, guides and answers. Plakar has been open source since March 2021, and its 1.0 line is from May 2025. If you want the most proven option for plain file backups, restic is it."
     }
   ],
   "faqs": [
@@ -369,7 +389,7 @@
     },
     {
       "question": "Is Plakar free?",
-      "answer": "Yes. Plakar and its Kloset engine are open source under the ISC license. The company sells Plakar Control Plane, a self-hosted management layer with backup policies, scheduling, secrets and a dashboard. It has a free plan for up to 500 GB of managed data, a Community plan for qualifying organizations such as non-profits and startups under three years old and before Series A, and an Enterprise plan priced on request. A few connectors, such as Windows VSS and SQL Server, are closed source but free for registered users."
+      "answer": "Yes. Plakar and its Kloset engine are open source under the ISC license. The Kloset format and the CLI are ISC, so snapshots stay readable and restorable without the Control Plane or the company. The company sells Plakar Control Plane, a self-hosted management layer with backup policies, scheduling, secrets and a dashboard. It has a free plan for up to 500 GB of managed data, a Community plan for qualifying organizations such as non-profits and startups under three years old and before Series A, and an Enterprise plan priced on request. A few connectors, such as Windows VSS and SQL Server, are closed source but free for registered users."
     },
     {
       "question": "What about Kopia?",
@@ -432,5 +452,12 @@
     "toolBScore": 4.1,
     "recommendation": "Choose Plakar if you back up databases and services and want restores without scripts, a web UI for finding files, or offline single-file archives. Choose restic for file backups to S3 or SFTP with no extra packages or logins, and when a long track record matters most."
   },
-  "relatedTags": ["Backup", "Disaster Recovery", "PostgreSQL", "Storage", "Security", "DevOps"]
+  "relatedTags": [
+    "Backup",
+    "Disaster Recovery",
+    "PostgreSQL",
+    "Storage",
+    "Security",
+    "DevOps"
+  ]
 }
