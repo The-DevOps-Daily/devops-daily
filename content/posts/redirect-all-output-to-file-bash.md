@@ -23,7 +23,7 @@ You run a command that produces output and errors, and you want to save everythi
 
 ## TL;DR
 
-To redirect all output (both stdout and stderr) to a file, use `command &> file.txt` or `command > file.txt 2>&1`. The first syntax is simpler and works in Bash 4+. To append instead of overwrite, use `command &>> file.txt`. To send output to a file while still seeing it on screen, use `command 2>&1 | tee file.txt`.
+To redirect all output (both stdout and stderr) to a file, use `command &> file.txt` or `command > file.txt 2>&1`. The first syntax is simpler and works in Bash 4+. To append instead of overwrite, use `command &>> file.txt`, or `command >> file.txt 2>&1` in `sh` scripts and crontab lines. To send output to a file while still seeing it on screen, use `command 2>&1 | tee file.txt`.
 
 Understanding Bash redirection helps you capture output, suppress errors, or split different output streams as needed.
 
@@ -132,6 +132,34 @@ Or with traditional syntax:
 # Append both
 command >> output.txt 2>&1
 ```
+
+To append each stream to its own file, give each one its own `>>`:
+
+```bash
+command >> out.log 2>> err.log
+```
+
+Use `>> file 2>&1` in anything that might not run under Bash. `&>>` (Bash 4+) and `&>` are Bash syntax. In a POSIX shell such as dash, which is `/bin/sh` on Debian and Ubuntu, `cmd &>> file` means "run `cmd` in the background", followed by an empty command that only opens `file`. The output goes to the terminal and the log stays empty:
+
+```terminal
+{
+  "title": "&>> in bash and in sh (dash)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash -c 'ls /etc/hostname /nope &>> all.log'; cat all.log",
+      "output": "ls: cannot access '/nope': No such file or directory\n/etc/hostname"
+    },
+    {
+      "cmd": "sh -c 'ls /etc/hostname /nope &>> sh.log'; sleep 0.2; wc -c sh.log",
+      "output": "ls: cannot access '/nope': No such file or directory\n/etc/hostname\n0 sh.log"
+    }
+  ]
+}
+```
+
+That matters most in crontab lines, which cron runs with `/bin/sh`.
 
 ## Discarding Output
 
@@ -304,15 +332,15 @@ Cron jobs should redirect output to avoid email notifications:
 
 ```bash
 # In crontab
-0 2 * * * /home/user/backup.sh &>> /var/log/backup.log
+0 2 * * * /home/user/backup.sh >> /var/log/backup.log 2>&1
 ```
 
-This appends both stdout and stderr to the log file.
+This appends both stdout and stderr to the log file. Cron runs the line with `/bin/sh`, so do not use `&>>` or `&>` here: on Debian and Ubuntu they put the job in the background, and its output does not go to the file ([see above](#h2-appending-vs-overwriting)).
 
 Or discard output completely:
 
 ```bash
-0 2 * * * /home/user/cleanup.sh &> /dev/null
+0 2 * * * /home/user/cleanup.sh > /dev/null 2>&1
 ```
 
 ## Redirecting in Complex Commands

@@ -681,7 +681,7 @@ Next: [Shell Scripting Basics](/guides/introduction-to-linux/09-shell-scripting)
 ## Keep Learning
 
 - [Networking Fundamentals guide](/guides/networking-fundamentals)
-- [Command line for looking at a specific port](/posts/command-line-for-looking-at-specific-port)
+- [Command line for looking at a specific port](/posts/how-to-free-up-tcp-port#h3-find-whats-using-the-port)
 - [Increase the maximum number of TCP/IP connections](/posts/increasing-the-maximum-number-of-tcp-ip-connections-in-linux)
 - Interview questions: [DNS basics](/interview-questions/junior/networking-basics-dns)
 - Simulators: [DNS resolution](/games/dns-simulator), [TCP vs UDP](/games/tcp-vs-udp), [a packet's journey](/games/packet-journey)

@@ -59,7 +59,6 @@
 /images/posts/aws-use1-az4-thermal-event-single-az-lessons.svg /images/posts/aws-use1-az4-thermal-event-single-az-lessons.jpg 301
 /images/posts/bash-iterate-number-range-variables.svg /images/posts/bash-iterate-number-range-variables.jpg 301
 /images/posts/bash-loop-through-file-content.svg /images/posts/bash-loop-through-file-content.jpg 301
-/images/posts/bash-redirect-append-stdout-stderr.svg /images/posts/bash-redirect-append-stdout-stderr.jpg 301
 /images/posts/best-claude-code-plugins-devops-2026.svg /images/posts/best-claude-code-plugins-devops-2026.jpg 301
 /images/posts/best-practices-when-using-terraform.svg /images/posts/best-practices-when-using-terraform.jpg 301
 /images/posts/can-two-sockets-share-tcp-port.svg /images/posts/can-two-sockets-share-tcp-port.jpg 301
@@ -81,10 +80,8 @@
 /images/posts/close-specific-port-linux.svg /images/posts/close-specific-port-linux.jpg 301
 /images/posts/close-vs-shutdown-socket.svg /images/posts/close-vs-shutdown-socket.jpg 301
 /images/posts/cloud-cost-allocation-tags-aws-gcp-azure.svg /images/posts/cloud-cost-allocation-tags-aws-gcp-azure.jpg 301
-/images/posts/command-line-for-looking-at-specific-port.svg /images/posts/command-line-for-looking-at-specific-port.jpg 301
 /images/posts/comment-in-dockerfile.svg /images/posts/comment-in-dockerfile.jpg 301
 /images/posts/communication-multiple-docker-compose.svg /images/posts/communication-multiple-docker-compose.jpg 301
-/images/posts/concatenate-string-variables-bash.svg /images/posts/concatenate-string-variables-bash.jpg 301
 /images/posts/connect-to-host-localhost-from-docker.svg /images/posts/connect-to-host-localhost-from-docker.jpg 301
 /images/posts/connecting-to-postgresql-in-a-docker-container-from-outside.svg /images/posts/connecting-to-postgresql-in-a-docker-container-from-outside.jpg 301
 /images/posts/coolify-self-hosted-paas-digitalocean.svg /images/posts/coolify-self-hosted-paas-digitalocean.jpg 301
@@ -157,12 +154,10 @@
 /images/posts/exploring-docker-container-file-system.svg /images/posts/exploring-docker-container-file-system.jpg 301
 /images/posts/expose-multiple-ports-docker.svg /images/posts/expose-multiple-ports-docker.jpg 301
 /images/posts/expose-port-on-live-docker-container.svg /images/posts/expose-port-on-live-docker-container.jpg 301
-/images/posts/extract-filename-extension-bash.svg /images/posts/extract-filename-extension-bash.jpg 301
 /images/posts/find-files-containing-specific-text-linux.svg /images/posts/find-files-containing-specific-text-linux.jpg 301
 /images/posts/find-files-with-wildcards-linux.svg /images/posts/find-files-with-wildcards-linux.jpg 301
 /images/posts/find-process-listening-on-port-windows.svg /images/posts/find-process-listening-on-port-windows.jpg 301
 /images/posts/find-ssh-client-ip-address.svg /images/posts/find-ssh-client-ip-address.jpg 301
-/images/posts/finding-local-ip-addresses-using-pythons-stdlib.svg /images/posts/finding-local-ip-addresses-using-pythons-stdlib.jpg 301
 /images/posts/fix-docker-permission-denied-error.svg /images/posts/fix-docker-permission-denied-error.jpg 301
 /images/posts/fix-echo-newline-bash-literal-n.svg /images/posts/fix-echo-newline-bash-literal-n.jpg 301
 /images/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception.svg /images/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception.jpg 301
@@ -245,8 +240,6 @@
 /images/posts/is-valkey-ready-to-replace-redis-2026.svg /images/posts/is-valkey-ready-to-replace-redis-2026.jpg 301
 /images/posts/istio-traffic-management-routing-retries-circuit-breaking.svg /images/posts/istio-traffic-management-routing-retries-circuit-breaking.jpg 301
 /images/posts/karpenter-spot-storm-fallback-gap.svg /images/posts/karpenter-spot-storm-fallback-gap.jpg 301
-/images/posts/kill-process-running-on-port-linux.svg /images/posts/kill-process-running-on-port-linux.jpg 301
-/images/posts/kill-processes-by-partial-name.svg /images/posts/kill-processes-by-partial-name.jpg 301
 /images/posts/kubectl-apply-vs-create-differences.svg /images/posts/kubectl-apply-vs-create-differences.jpg 301
 /images/posts/kubectl-get-events-only-for-pod.svg /images/posts/kubectl-get-events-only-for-pod.jpg 301
 /images/posts/kubectl-logs-continuously.svg /images/posts/kubectl-logs-continuously.jpg 301
@@ -303,14 +296,12 @@
 /images/posts/see-differences-between-branches-git.svg /images/posts/see-differences-between-branches-git.jpg 301
 /images/posts/service-located-in-another-namespace.svg /images/posts/service-located-in-another-namespace.jpg 301
 /images/posts/set-image-name-dockerfile.svg /images/posts/set-image-name-dockerfile.jpg 301
-/images/posts/set-variable-command-output-bash.svg /images/posts/set-variable-command-output-bash.jpg 301
 /images/posts/shai-hulud-hades-pypi-wave-june-2026.svg /images/posts/shai-hulud-hades-pypi-wave-june-2026.jpg 301
 /images/posts/should-terraform-lock-be-in-your-gitignore.svg /images/posts/should-terraform-lock-be-in-your-gitignore.jpg 301
 /images/posts/slos-slis-error-budgets-practical-guide.svg /images/posts/slos-slis-error-budgets-practical-guide.jpg 301
 /images/posts/so-reuseaddr-vs-so-reuseport.svg /images/posts/so-reuseaddr-vs-so-reuseport.jpg 301
 /images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.svg /images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.jpg 301
 /images/posts/specify-private-ssh-key-for-git-commands.svg /images/posts/specify-private-ssh-key-for-git-commands.jpg 301
-/images/posts/split-string-delimiter-bash.svg /images/posts/split-string-delimiter-bash.jpg 301
 /images/posts/ssh-could-not-resolve-hostname-error.svg /images/posts/ssh-could-not-resolve-hostname-error.jpg 301
 /images/posts/start-stopped-docker-container-different-command.svg /images/posts/start-stopped-docker-container-different-command.jpg 301
 /images/posts/stash-single-file-git.svg /images/posts/stash-single-file-git.jpg 301
@@ -647,6 +638,16 @@
 /posts/modify-specific-commit-git /guides/introduction-to-git/08-history 301
 /posts/how-to-discard-unstaged-changes-in-git /guides/introduction-to-git/03-tracking-changes 301
 /posts/how-to-remove-local-untracked-files-git /guides/introduction-to-git/03-tracking-changes 301
+/posts/bash-redirect-append-stdout-stderr /posts/redirect-all-output-to-file-bash 301
+/posts/format-date-yyyy-mm-dd-in-shell-script /posts/get-current-date-time-and-custom-commands 301
+/posts/set-variable-command-output-bash /guides/introduction-to-bash/09-bash-tools 301
+/posts/concatenate-string-variables-bash /guides/introduction-to-bash/04-bash-variables 301
+/posts/split-string-delimiter-bash /guides/introduction-to-bash/04-bash-variables 301
+/posts/extract-filename-extension-bash /guides/introduction-to-bash/04-bash-variables 301
+/posts/kill-process-running-on-port-linux /posts/how-to-free-up-tcp-port 301
+/posts/command-line-for-looking-at-specific-port /posts/how-to-free-up-tcp-port 301
+/posts/kill-processes-by-partial-name /guides/introduction-to-linux/07-process-management 301
+/posts/finding-local-ip-addresses-using-pythons-stdlib /posts/how-to-get-local-ip-address 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -955,7 +956,6 @@
 /images/posts/infrastructure-as-code-fundamentals.png /images/posts/infrastructure-as-code-fundamentals.jpg 301
 /images/posts/inspect-filesystem-of-failed-docker-build.png /images/posts/inspect-filesystem-of-failed-docker-build.jpg 301
 /images/posts/introduction-to-argocd.png /images/posts/introduction-to-argocd.jpg 301
-/images/posts/kill-processes-by-partial-name.png /images/posts/kill-processes-by-partial-name.jpg 301
 /images/posts/kubernetes-service-external-ip-pending.png /images/posts/kubernetes-service-external-ip-pending.jpg 301
 /images/posts/make-git-branch-track-remote.png /images/posts/make-git-branch-track-remote.jpg 301
 /images/posts/measure-actual-memory-usage-of-process.png /images/posts/measure-actual-memory-usage-of-process.jpg 301
@@ -992,7 +992,6 @@
 /images/posts/cicd-pipeline-hardening-guide.png /images/posts/cicd-pipeline-hardening-guide.jpg 301
 /images/posts/close-specific-port-linux.png /images/posts/close-specific-port-linux.jpg 301
 /images/posts/close-vs-shutdown-socket.png /images/posts/close-vs-shutdown-socket.jpg 301
-/images/posts/command-line-for-looking-at-specific-port.png /images/posts/command-line-for-looking-at-specific-port.jpg 301
 /images/posts/communication-multiple-docker-compose.png /images/posts/communication-multiple-docker-compose.jpg 301
 /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.png /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.jpg 301
 /images/posts/count-lines-in-file-linux-terminal.png /images/posts/count-lines-in-file-linux-terminal.jpg 301
@@ -1037,7 +1036,6 @@
 /images/posts/how-to-undo-recent-local-commits-in-git.png /images/posts/how-to-undo-recent-local-commits-in-git.jpg 301
 /images/posts/ignore-change-of-attribute.png /images/posts/ignore-change-of-attribute.jpg 301
 /images/posts/ingress-vs-load-balancer-kubernetes.png /images/posts/ingress-vs-load-balancer-kubernetes.jpg 301
-/images/posts/kill-process-running-on-port-linux.png /images/posts/kill-process-running-on-port-linux.jpg 301
 /images/posts/list-files-in-commit-git.png /images/posts/list-files-in-commit-git.jpg 301
 /images/posts/loop-through-array-strings-bash.png /images/posts/loop-through-array-strings-bash.jpg 301
 /images/posts/move-most-recent-commits-to-new-branch-git.png /images/posts/move-most-recent-commits-to-new-branch-git.jpg 301
@@ -1086,7 +1084,6 @@
 /images/posts/check-string-contains-substring-bash.png /images/posts/check-string-contains-substring-bash.jpg 301
 /images/posts/clean-up-replicasets-when-updating-deployments.png /images/posts/clean-up-replicasets-when-updating-deployments.jpg 301
 /images/posts/commit-part-of-file-git.png /images/posts/commit-part-of-file-git.jpg 301
-/images/posts/concatenate-string-variables-bash.png /images/posts/concatenate-string-variables-bash.jpg 301
 /images/posts/convert-string-to-lowercase-in-bash.png /images/posts/convert-string-to-lowercase-in-bash.jpg 301
 /images/posts/copy-command-output-to-clipboard.png /images/posts/copy-command-output-to-clipboard.jpg 301
 /images/posts/defining-variables-with-without-export-linux.png /images/posts/defining-variables-with-without-export-linux.jpg 301
@@ -1107,7 +1104,6 @@
 /images/posts/execute-terraform-actions-without-prompt.png /images/posts/execute-terraform-actions-without-prompt.jpg 301
 /images/posts/expose-multiple-ports-docker.png /images/posts/expose-multiple-ports-docker.jpg 301
 /images/posts/find-files-with-wildcards-linux.png /images/posts/find-files-with-wildcards-linux.jpg 301
-/images/posts/finding-local-ip-addresses-using-pythons-stdlib.png /images/posts/finding-local-ip-addresses-using-pythons-stdlib.jpg 301
 /images/posts/fix-docker-permission-denied-error.png /images/posts/fix-docker-permission-denied-error.jpg 301
 /images/posts/fix-echo-newline-bash-literal-n.png /images/posts/fix-echo-newline-bash-literal-n.jpg 301
 /images/posts/force-docker-clean-build.png /images/posts/force-docker-clean-build.jpg 301
@@ -1149,7 +1145,6 @@
 /images/posts/remove-git-submodule.png /images/posts/remove-git-submodule.jpg 301
 /images/posts/remove-old-docker-containers.png /images/posts/remove-old-docker-containers.jpg 301
 /images/posts/retrieve-secret-terraform-aws-secret-manager.png /images/posts/retrieve-secret-terraform-aws-secret-manager.jpg 301
-/images/posts/set-variable-command-output-bash.png /images/posts/set-variable-command-output-bash.jpg 301
 /images/posts/simulating-slow-internet-connection.png /images/posts/simulating-slow-internet-connection.jpg 301
 /images/posts/specify-private-ssh-key-for-git-commands.png /images/posts/specify-private-ssh-key-for-git-commands.jpg 301
 /images/posts/stash-single-file-git.png /images/posts/stash-single-file-git.jpg 301
@@ -1197,7 +1192,6 @@
 /images/posts/at-least-one-invalid-signature-was-encountered.png /images/posts/at-least-one-invalid-signature-was-encountered.jpg 301
 /images/posts/bash-iterate-number-range-variables.png /images/posts/bash-iterate-number-range-variables.jpg 301
 /images/posts/bash-loop-through-file-content.png /images/posts/bash-loop-through-file-content.jpg 301
-/images/posts/bash-redirect-append-stdout-stderr.png /images/posts/bash-redirect-append-stdout-stderr.jpg 301
 /images/posts/check-directory-exists-bash-script.png /images/posts/check-directory-exists-bash-script.jpg 301
 /images/posts/check-if-program-exists-bash-script.png /images/posts/check-if-program-exists-bash-script.jpg 301
 /images/posts/checking-kubernetes-pod-cpu-and-memory-utilization.png /images/posts/checking-kubernetes-pod-cpu-and-memory-utilization.jpg 301
@@ -1220,9 +1214,7 @@
 /images/posts/docker-runtime-performance-cost.png /images/posts/docker-runtime-performance-cost.jpg 301
 /images/posts/docker-see-image-contents.png /images/posts/docker-see-image-contents.jpg 301
 /images/posts/echo-to-stderr-in-bash.png /images/posts/echo-to-stderr-in-bash.jpg 301
-/images/posts/extract-filename-extension-bash.png /images/posts/extract-filename-extension-bash.jpg 301
 /images/posts/find-process-listening-on-port-windows.png /images/posts/find-process-listening-on-port-windows.jpg 301
-/images/posts/format-date-yyyy-mm-dd-in-shell-script.png /images/posts/format-date-yyyy-mm-dd-in-shell-script.jpg 301
 /images/posts/get-directory-bash-script-location.png /images/posts/get-directory-bash-script-location.jpg 301
 /images/posts/get-yaml-for-deployed-kubernetes-services.png /images/posts/get-yaml-for-deployed-kubernetes-services.jpg 301
 /images/posts/how-are-data-sources-used-in-terraform.png /images/posts/how-are-data-sources-used-in-terraform.jpg 301
@@ -1250,7 +1242,6 @@
 /images/posts/remove-old-unused-docker-images.png /images/posts/remove-old-unused-docker-images.jpg 301
 /images/posts/restart-pods-when-configmap-updates-in-kubernetes.png /images/posts/restart-pods-when-configmap-updates-in-kubernetes.jpg 301
 /images/posts/service-located-in-another-namespace.png /images/posts/service-located-in-another-namespace.jpg 301
-/images/posts/split-string-delimiter-bash.png /images/posts/split-string-delimiter-bash.jpg 301
 /images/posts/terraform-best-practices.png /images/posts/terraform-best-practices.jpg 301
 /images/posts/terraform-on-premises-servers.png /images/posts/terraform-on-premises-servers.jpg 301
 /images/posts/terraform-statefile-locked.png /images/posts/terraform-statefile-locked.jpg 301

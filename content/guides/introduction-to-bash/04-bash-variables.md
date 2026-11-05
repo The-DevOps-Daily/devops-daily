@@ -205,6 +205,28 @@ Parameter expansion does most string work inside Bash, without starting `sed`, `
 
 The memory aid: `#` is to the left of `$` on a US keyboard and removes from the left, `%` is to the right and removes from the right. A space is needed in `${path: -5}`; `${path:-5}` would be the default-value expansion.
 
+`${f##*.}` and `${f%.*}` assume the name has an extension. When it does not, the "extension" is the whole name, and for a dotfile the base name is empty. Check for a dot after the first character before you split:
+
+```terminal
+{
+  "title": "names without an extension",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "for f in backup.tar.gz Makefile .bashrc; do echo \"$f: ext=[${f##*.}] base=[${f%.*}]\"; done",
+      "output": "backup.tar.gz: ext=[gz] base=[backup.tar]\nMakefile: ext=[Makefile] base=[Makefile]\n.bashrc: ext=[bashrc] base=[]"
+    },
+    {
+      "cmd": "f=Makefile; [[ $f == ?*.* ]] && echo \"ext ${f##*.}\" || echo \"no extension\"",
+      "output": "no extension"
+    }
+  ]
+}
+```
+
+Apply the check to the file name, not to a full path: in `./Makefile`, the dot of `./` would count. Take the name with `${path##*/}` first.
+
 Replacement and case conversion:
 
 ```terminal
@@ -238,7 +260,41 @@ Replacement and case conversion:
 }
 ```
 
-`${var@Q}` quotes a value so it can be read back by Bash, which is useful for log messages that must show hidden characters. See [convert a string to lowercase](/posts/convert-string-to-lowercase-in-bash), [check if a string contains a substring](/posts/check-string-contains-substring-bash) and [concatenate strings](/posts/concatenate-string-variables-bash) for more.
+`${var@Q}` quotes a value so it can be read back by Bash, which is useful for log messages that must show hidden characters. See [convert a string to lowercase](/posts/convert-string-to-lowercase-in-bash) and [check if a string contains a substring](/posts/check-string-contains-substring-bash) for more.
+
+### Join and Append Strings
+
+Bash has no concatenation operator: write the values next to each other, and append with `+=`. Use braces when a letter, digit or underscore follows the name, or Bash reads a longer variable name:
+
+```terminal
+{
+  "title": "concatenate strings",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "name=notes; echo \"[$name_backup] [${name}_backup]\"",
+      "output": "[] [notes_backup]"
+    },
+    {
+      "cmd": "msg=\"deploy\"; msg+=\" started\"; msg+=\" on web-1\"; echo \"$msg\"",
+      "output": "deploy started on web-1"
+    },
+    {
+      "comment": "with the integer attribute, += adds",
+      "cmd": "declare -i count=5; count+=10; echo \"$count\"; s=5; s+=10; echo \"$s\"",
+      "output": "15\n510"
+    },
+    {
+      "comment": "join array elements with a separator, in a subshell so IFS stays unchanged",
+      "cmd": "parts=(web 1 prod); (IFS=-; echo \"${parts[*]}\")",
+      "output": "web-1-prod"
+    }
+  ]
+}
+```
+
+`$name_backup` is an unset variable, so it expands to nothing; with `set -u` ([Part 10](/guides/introduction-to-bash/10-bash-best-practices#h2-strict-mode-what-set-euo-pipefail-does)) the script stops there instead. `"${parts[*]}"` joins with the first character of `IFS`, and `printf -v line '%s-%s' web 1` builds a string from a format without a subshell.
 
 ### The & Change in Bash 5.2
 
@@ -462,7 +518,7 @@ Write `count=$(( count + 1 ))` instead. `(( ++count ))` happens to work when cou
 }
 ```
 
-`printf '%(...)T'` formats a time with `strftime` codes inside Bash, so you do not need to call `date` in a loop. See [get the current time in seconds since the epoch](/posts/get-current-time-seconds-since-epoch-bash) and [format a date as YYYY-MM-DD](/posts/format-date-yyyy-mm-dd-in-shell-script).
+`printf '%(...)T'` formats a time with `strftime` codes inside Bash, so you do not need to call `date` in a loop. See [get the current time in seconds since the epoch](/posts/get-current-time-seconds-since-epoch-bash) and [format a date as YYYY-MM-DD](/posts/get-current-date-time-and-custom-commands#h2-format-the-date-as-yyyy-mm-dd-in-a-script).
 
 ## Indexed Arrays
 
@@ -637,7 +693,31 @@ To split a string on a delimiter, use `read -a` with `IFS` set for that one comm
 }
 ```
 
-`<<<` is a **here string**: it feeds the text, plus a newline, to the command's standard input. [Split a string by a delimiter](/posts/split-string-delimiter-bash) shows more variations.
+`<<<` is a **here string**: it feeds the text, plus a newline, to the command's standard input.
+
+Two details of `IFS` splitting: an empty field in the middle is kept but a trailing one is dropped, and every character of `IFS` is its own delimiter, so `IFS=::` does not split on `::`. For a multi-character delimiter, turn it into newlines first:
+
+```terminal
+{
+  "title": "empty fields and multi-character delimiters",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "IFS=, read -r -a p <<< \"a,,b,\"; declare -p p",
+      "output": "declare -a p=([0]=\"a\" [1]=\"\" [2]=\"b\")"
+    },
+    {
+      "cmd": "s=\"web-1::db-1::cache\"; IFS=:: read -r -a p <<< \"$s\"; declare -p p",
+      "output": "declare -a p=([0]=\"web-1\" [1]=\"\" [2]=\"db-1\" [3]=\"\" [4]=\"cache\")"
+    },
+    {
+      "cmd": "mapfile -t p <<< \"${s//::/$'\\n'}\"; declare -p p",
+      "output": "declare -a p=([0]=\"web-1\" [1]=\"db-1\" [2]=\"cache\")"
+    }
+  ]
+}
+```
 
 ## Read Input With read
 
@@ -700,7 +780,6 @@ Next: [Control Structures](/guides/introduction-to-bash/05-control-structures), 
 
 ## Keep Learning
 
-- [Set a variable to the output of a command](/posts/set-variable-command-output-bash)
+- [Set a variable to the output of a command](/guides/introduction-to-bash/09-bash-tools#h2-command-substitution)
 - [Iterate over a range of numbers](/posts/bash-iterate-number-range-variables)
-- [Extract a file name's extension](/posts/extract-filename-extension-bash)
 - Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics)

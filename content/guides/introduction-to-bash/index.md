@@ -6,7 +6,7 @@ category:
   name: 'Bash'
   slug: 'bash'
 publishedAt: '2024-07-03T10:00:00Z'
-updatedAt: '2026-10-24T09:00:00Z'
+updatedAt: '2026-11-05T09:00:00Z'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'

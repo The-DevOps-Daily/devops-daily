@@ -6,8 +6,8 @@ category:
   slug: 'linux'
 date: '2025-03-28'
 publishedAt: '2025-03-28T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -113,6 +113,73 @@ For backup file names (no colons or spaces):
 date +"%Y%m%d_%H%M%S"
 # Output: 20250328_142345
 ```
+
+## Format the Date as YYYY-MM-DD in a Script
+
+`date +%F` is short for `date +%Y-%m-%d`, and `date -I` prints the same. In Bash, the `printf` builtin formats the time without starting a `date` process, which adds up in a loop:
+
+```terminal
+{
+  "title": "three ways to get YYYY-MM-DD",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "date +%F",
+      "output": "2026-11-05"
+    },
+    {
+      "cmd": "date -Iseconds",
+      "output": "2026-11-05T16:25:52+00:00"
+    },
+    {
+      "cmd": "printf -v today '%(%F)T' -1; echo \"$today\"",
+      "output": "2026-11-05"
+    },
+    {
+      "cmd": "sh -c 'printf \"%(%F)T\\n\" -1'",
+      "output": "sh: 1: printf: %(: invalid directive"
+    }
+  ]
+}
+```
+
+`-1` means "now". `%(...)T` needs Bash 4.2 or later, so it fails in `sh` (dash here). `date -I` and `date -d` are GNU options; on macOS, use `date +%F` and `date -v-1d +%F` for yesterday.
+
+GNU `date -d` also does date arithmetic. Watch the month steps: "one month after 31 January" is 31 February, which `date` rolls over into March. For the last day of a month, start from the first:
+
+```terminal
+{
+  "title": "relative dates with GNU date",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "date -d \"yesterday\" +%F",
+      "output": "2026-11-04"
+    },
+    {
+      "cmd": "date -d \"2026-11-05 -7 days\" +%F",
+      "output": "2026-10-29"
+    },
+    {
+      "cmd": "date -d \"2026-01-31 +1 month\" +%F",
+      "output": "2026-03-03"
+    },
+    {
+      "comment": "last day of this month",
+      "cmd": "date -d \"$(date +%Y-%m-01) +1 month -1 day\" +%F",
+      "output": "2026-11-30"
+    },
+    {
+      "cmd": "date -d \"2026-13-01\" +%F",
+      "output": "date: invalid date ‘2026-13-01’"
+    }
+  ]
+}
+```
+
+The last command fails with exit code 1, so `date -d "$input" +%F >/dev/null` is a quick way to check that a string is a valid date.
 
 ## Creating a Custom Command with an Alias
 

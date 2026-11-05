@@ -372,5 +372,5 @@ Next: [Modules and Packages](/guides/introduction-to-python/06-modules-and-packa
 
 ## Keep Learning
 
-- [Finding local IP addresses using Python's standard library](/posts/finding-local-ip-addresses-using-pythons-stdlib), more standard library in a small, practical script.
-- [Kill all processes with a given partial name](/posts/kill-processes-by-partial-name), the shell tools that produce the kind of lists you process here.
+- [Finding local IP addresses with Python's standard library](/posts/how-to-get-local-ip-address#h4-without-extra-packages), more standard library in a small, practical script.
+- [Kill processes by part of their name](/guides/introduction-to-linux/07-process-management#h3-kill-processes-by-part-of-their-name), the shell tools that produce the kind of lists you process here.
