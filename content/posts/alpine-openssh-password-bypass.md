@@ -53,7 +53,7 @@ The [Alpine advisory](https://alpinelinux.org/posts/2026-11-05-openssh-password-
 3. **An account has `*` in its password field.** On Alpine base images root is `root:*`, but the default `PermitRootLogin prohibit-password` blocks password logins for root. Key-only users, the `alpine` user on tiny-cloud images, and directory users through `musl-nscd` (they have no shadow entry) also count.
 4. **At least one local account has a `$5$` or `$6$` hash.** One user with a password is enough.
 
-You are not affected if `PasswordAuthentication` is `no`, if you use `openssh-server-pam` with `UsePAM yes`, if no account has a `$`-style hash, or if your containers do not run sshd. Locked accounts (`!` in the password field) are not affected. Cloud images that cloud-init configures get `PasswordAuthentication no`.
+You are not affected if `PasswordAuthentication` is `no`, if you use `openssh-server-pam` with `UsePAM yes`, if no account has a `$`-style hash, or if your containers do not run sshd. Locked accounts (`!` in the password field) are not affected. Instances where cloud-init sets `PasswordAuthentication no` are not affected.
 
 These are the fixed `openssh` versions from the advisory:
 
