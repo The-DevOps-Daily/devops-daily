@@ -85,6 +85,8 @@ RUN --mount=type=ssh git clone git@github.com:yourorg/private-repo.git
 - The key is never copied into the image.
 - Works for multi-stage builds and CI pipelines.
 
+To choose which key Git uses on the host or in CI, see [how to specify a private SSH key for Git commands](/posts/specify-private-ssh-key-for-git-commands).
+
 ## Using SSH Keys for Remote Access
 
 If you need to SSH from inside a running container:

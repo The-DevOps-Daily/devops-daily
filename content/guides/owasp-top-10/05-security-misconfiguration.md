@@ -228,7 +228,7 @@ The `__Host-` prefix makes the browser reject the cookie unless it is `Secure`, 
 
 ## Scan the Running App With ZAP
 
-A [ZAP](https://www.zaproxy.org/) baseline scan crawls the app for a minute and runs passive checks only: it reads responses and does not send attacks, so it is safe to run against any environment you own. This is the scan of the vulnerable app in CI (`-I` reports warnings without failing, and `-s` hides the 60-odd passed checks):
+A [ZAP](https://www.zaproxy.org/) baseline scan crawls the app for a minute and runs passive checks only: it reads responses and does not send attacks, so it is safe to run against any environment you own. Full and API scans do send attacks; [integrating DAST into CI/CD](/posts/dast-integration-guide) shows where each one belongs. This is the scan of the vulnerable app in CI (`-I` reports warnings without failing, and `-s` hides the 60-odd passed checks):
 
 ```terminal
 {

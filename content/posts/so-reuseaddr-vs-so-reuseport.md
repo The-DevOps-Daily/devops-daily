@@ -83,7 +83,7 @@ This is useful when you have multiple network interfaces and want to run differe
 
 ## SO_REUSEPORT: Multiple Processes Sharing a Port
 
-`SO_REUSEPORT` (Linux 3.9+) solves a different problem: allowing multiple processes to bind to the exact same address and port.
+`SO_REUSEPORT` (Linux 3.9+) solves a different problem: allowing multiple processes to bind to the exact same address and port. Many connections on one listening port need no option at all ([can two sockets share a TCP port?](/posts/can-two-sockets-share-tcp-port)).
 
 Without `SO_REUSEPORT`:
 

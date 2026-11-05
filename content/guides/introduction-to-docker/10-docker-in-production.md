@@ -264,7 +264,7 @@ docker compose up -d --wait
 
 Compose recreates only `api`, because only its image changed. To roll back, set the previous tag and run `up -d --wait` again: the old image is still on the server (unless you pruned it) and in the registry.
 
-Be honest about the gap: Compose stops the old container before it starts the new one, so requests fail for a few seconds while gunicorn starts and the health check passes. For many internal apps that is fine. If it is not, you need several replicas behind the proxy and a rolling update, which is what Swarm and Kubernetes do for you.
+Be honest about the gap: Compose stops the old container before it starts the new one, so requests fail for a few seconds while gunicorn starts and the health check passes. For many internal apps that is fine. If it is not, you need several replicas behind the proxy and a [rolling update](/posts/deployment-strategies-guide), which is what Swarm and Kubernetes do for you.
 
 Record what you deploy. `docker compose images` and `docker image inspect --format '{{index .RepoDigests 0}}' ghcr.io/my-org/hello-api:1.0.4` show the digest that is running, which you can match to the CI run that built it.
 
@@ -331,7 +331,7 @@ The containers are disposable; the `hello-api_db-data` volume and the secrets ar
 30 2 * * * cd /srv/hello-api && docker compose exec -T db pg_dump -U hello -d hello --format=custom > /var/backups/hello-$(date +\%F).dump
 ```
 
-`-T` disables the pseudo-terminal, which binary output and cron need. Test a restore into a fresh volume regularly ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)). For serious production databases, consider a managed Postgres service and run only the stateless API in containers.
+`-T` disables the pseudo-terminal, which binary output and cron need. Without it, the cron job fails with ["the input device is not a TTY"](/posts/docker-tty-error-fix). Test a restore into a fresh volume regularly ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)). For serious production databases, consider a managed Postgres service and run only the stateless API in containers.
 
 ## When One Server Is Not Enough
 

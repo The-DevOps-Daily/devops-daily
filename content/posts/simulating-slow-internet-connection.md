@@ -375,7 +375,7 @@ tc qdisc add dev eth0 root netem delay 200ms
 # Or use Docker Compose with network configuration
 ```
 
-Docker Compose doesn't natively support throttling, but you can use `tc` in the container or use a network plugin.
+Docker Compose doesn't natively support throttling, but you can use `tc` in the container or use a network plugin. Toxiproxy is another option: it sits between two services and adds latency or drops data per connection ([a Compose example](/posts/network-tools-that-simulate-slow-network-connection)).
 
 ## Testing Your Throttling
 

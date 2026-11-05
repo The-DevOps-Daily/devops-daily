@@ -235,7 +235,7 @@ System-wide jobs live in files under `/etc/cron.d/`, with an extra field for the
 
 - `*` means every value, `*/15` every 15th, `1-5` a range (Monday to Friday), and `1,15` a list.
 - cron runs commands with a minimal `PATH` (`/usr/bin:/bin`), no login files, and your crontab's time zone is the system's. Use absolute paths, and test the command with `env -i /bin/sh -c '...'` to see what cron sees.
-- cron does not log a job's output; it tries to mail it to the user. Redirect it to the journal yourself: `... 2>&1 | logger -t backup-site`. cron's own messages go to `journalctl -u cron` (`crond` on Fedora and RHEL).
+- cron does not log a job's output; it tries to mail it to the user. Redirect it to the journal yourself: `... 2>&1 | logger -t backup-site` ([what `2>&1` does](/posts/what-does-2-and-1-mean-linux-bash)). cron's own messages go to `journalctl -u cron` (`crond` on Fedora and RHEL).
 - Executable scripts dropped into `/etc/cron.daily/` (and `cron.hourly`, `cron.weekly`, `cron.monthly`) run on that schedule as root.
 
 Use timers for new jobs on systemd machines: you get logs in the journal, `Persistent=`, randomized delays, resource limits and dependencies. Use cron when a crontab line is all you need or when the job must also run on systems without systemd. Try expressions in the [cron expression simulator](/games/cron-expression-simulator).
@@ -507,7 +507,7 @@ AllowGroups sudo ssh-users
 }
 ```
 
-On the server, run `sudo sshd -t` after every change and reload only if it prints nothing: `sudo systemctl reload ssh` on Debian and Ubuntu, `sudo systemctl reload sshd` on Fedora and RHEL.
+On the server, run `sudo sshd -t` after every change and reload only if it prints nothing: `sudo systemctl reload ssh` on Debian and Ubuntu, `sudo systemctl reload sshd` on Fedora and RHEL. To see who is logged in over SSH and from which address, run `who` ([find the IP address of an SSH client](/posts/find-ssh-client-ip-address)).
 
 :::warning
 Ubuntu 24.04 starts SSH through **socket activation**: systemd, not sshd, listens on port 22. If you change `Port` or `ListenAddress` in `sshd_config`, run `sudo systemctl daemon-reload` and `sudo systemctl restart ssh.socket`, open the new port in the firewall first, and test from a second terminal before you close the first one.

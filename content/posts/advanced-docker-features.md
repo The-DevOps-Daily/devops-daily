@@ -533,6 +533,8 @@ docker build \\
   -t myapp:latest .
 ```
 
+For SSH keys, BuildKit's `--mount=type=ssh` forwards your SSH agent instead of copying the key file ([using SSH keys inside a Docker container](/posts/using-ssh-keys-in-docker-container)).
+
 ### CI/CD Integration
 
 **GitHub Actions example:**

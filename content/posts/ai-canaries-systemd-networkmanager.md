@@ -170,7 +170,7 @@ systemd's canary survives only if the author commits everything they changed. Th
 
 Committing by path is not a bypass anyone had to invent. It is what you do when you have unrelated local changes, and plenty of people work that way by habit. The canary is intact, sitting in the working tree where nobody but its author will ever see it, and the pull request is clean.
 
-The same is true of `git add -p`, of committing from an editor's staged-hunks view, and of any workflow where the author picks files rather than taking everything.
+The same is true of [`git add -p`](/posts/commit-part-of-file-git), of committing from an editor's staged-hunks view, and of any workflow where the author picks files rather than taking everything.
 
 The deeper limit is the one both designs share. These traps are instructions, and they only bind an agent that reads the file and chooses to obey it. An agent told to ignore repository instructions ignores them. An agent that never reads `AGENTS.md` never sees them. A model that is worse at instruction-following misses the rule the way it misses other rules.
 

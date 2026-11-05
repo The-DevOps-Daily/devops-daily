@@ -514,7 +514,7 @@ terraform plan
 terraform apply
 ```
 
-**Pro tip:** Save plan output for review:
+**Pro tip:** Save plan output for review ([more ways to save plan and apply output](/posts/terraform-save-plan-apply-output-to-file)):
 ```bash
 terraform plan -out=tfplan
 # Review the plan

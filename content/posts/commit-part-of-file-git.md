@@ -271,7 +271,7 @@ git checkout -p app.js
 git restore -p app.js
 ```
 
-**Warning:** This permanently discards the selected changes.
+**Warning:** This permanently discards the selected changes. To keep them for later instead, [stash only that file](/posts/stash-single-file-git).
 
 ## Creating Multiple Commits from One File
 

@@ -202,7 +202,7 @@ The footer change is still in the working tree, unstaged. `git commit -a` stages
 
 ### Write a message that helps the next reader
 
-`-m` is fine for a one-line message. For anything that needs an explanation, run `git commit` without `-m`: Git opens your editor, and you write a short subject line, a blank line, and a body that says why the change was made. You can also pass several `-m` options; each one becomes a paragraph:
+`-m` is fine for a one-line message. For anything that needs an explanation, run `git commit` without `-m`: Git opens your editor ([choose which one](/posts/set-git-editor-commit-messages)), and you write a short subject line, a blank line, and a body that says why the change was made. You can also pass several `-m` options; each one becomes a paragraph:
 
 ```bash
 git commit -m "Check that service URLs use HTTPS" \
@@ -282,7 +282,7 @@ When the output is longer than your screen, Git shows it in a pager (`less`): sc
 }
 ```
 
-Git does not store renames. It stores the new snapshot, and when it shows history it notices that a deleted file and an added file have the same (or very similar) content, and reports a rename. `git mv old new` is the same as `mv old new` followed by `git add` of both paths. To see a renamed file's history across the rename, use `git log --follow -- template.html`.
+Git does not store renames. It stores the new snapshot, and when it shows history it notices that a deleted file and an added file have the same (or very similar) content, and reports a rename. `git mv old new` is the same as `mv old new` followed by `git add` of both paths. To see a renamed file's history across the rename, use `git log --follow -- template.html` ([more ways to view a file's history](/posts/view-file-change-history-git)).
 
 To delete a file, use `git rm`: it deletes the file and stages the deletion. To **stop tracking** a file but keep it on disk, use `git rm --cached`. Suppose you kept personal notes in the project folder and a `git add .` committed them:
 
@@ -316,7 +316,7 @@ The file is still on disk, no longer tracked, and ignored through `.git/info/exc
 
 ## Undo Things
 
-Most mistakes before a push are easy to undo. Pick the row that matches what you want:
+Most mistakes before a push are easy to undo. Pick the row that matches what you want (to drop an older commit, see [delete a commit from a branch](/posts/delete-commit-from-branch)):
 
 | You want to                                   | Run                                                                                                                  |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |

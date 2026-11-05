@@ -71,7 +71,7 @@ Actually, that removes colors from both. To keep colors in the terminal:
 terraform plan 2>&1 | tee plan-output.txt
 ```
 
-The `2>&1` redirects stderr to stdout so all output is captured.
+The [`2>&1`](/posts/what-does-2-and-1-mean-linux-bash) redirects stderr to stdout so all output is captured.
 
 ## Creating a Binary Plan File
 

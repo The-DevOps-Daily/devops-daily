@@ -264,7 +264,7 @@ The flags:
 - `-i`: Keep STDIN open (interactive)
 - `-t`: Allocate a pseudo-TTY
 
-Together `-it` gives you an interactive shell session.
+Together `-it` gives you an interactive shell session. Pass `-t` where no terminal is attached, as in cron or CI, and Docker stops with ["the input device is not a TTY"](/posts/docker-tty-error-fix).
 
 Without `-t`, you can't run interactive programs:
 

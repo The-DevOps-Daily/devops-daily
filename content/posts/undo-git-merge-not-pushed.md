@@ -91,7 +91,7 @@ If you started a merge but have not completed it yet (perhaps you're in the midd
 git merge --abort
 ```
 
-This is the safest option when you're in the middle of a merge and realize you want to back out. It returns your repository to the state before you ran `git merge`.
+This is the safest option when you're in the middle of a merge and realize you want to back out. It returns your repository to the state before you ran `git merge` ([more on aborting a merge](/posts/abort-merge-conflict-git)).
 
 ## Using ORIG_HEAD for Merge Recovery
 

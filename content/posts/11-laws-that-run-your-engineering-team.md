@@ -140,7 +140,7 @@ This is the single most useful principle for working in a codebase you did not w
 ```
 
 :::warning
-Chesterton's Fence is not an argument against ever removing code. It is an argument against removing it *blindly*. The correct sequence is: understand why it exists, confirm that reason no longer applies (with a test, a git blame, an ask in the channel), and then remove it. "I don't know why this is here" is a reason to investigate, not a reason to delete.
+Chesterton's Fence is not an argument against ever removing code. It is an argument against removing it *blindly*. The correct sequence is: understand why it exists, confirm that reason no longer applies (with a test, a [git blame](/posts/view-file-change-history-git), an ask in the channel), and then remove it. "I don't know why this is here" is a reason to investigate, not a reason to delete.
 :::
 
 ## 11. Brooks's Law: adding people to a late project makes it later

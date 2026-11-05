@@ -61,7 +61,7 @@ Progressive Delivery:
 Progressive delivery builds on three key concepts:
 
 - **Feature flags**: Runtime toggles that control feature visibility without redeployment
-- **Canary releases**: Routing a small percentage of traffic to the new version
+- **Canary releases**: Routing a small percentage of traffic to the new version ([how canary compares with blue-green and rolling](/posts/deployment-strategies-guide))
 - **Gradual rollouts**: Incrementally increasing the percentage of users who see the change
 
 ## Setting Up Feature Flags

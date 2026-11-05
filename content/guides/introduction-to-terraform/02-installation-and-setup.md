@@ -509,7 +509,7 @@ terraform.rc
 *.secret.tfvars.json
 ```
 
-Keep per-environment settings such as `env/prod.tfvars` in Git, because reviewers need to see them and CI needs them ([Part 8](/guides/introduction-to-terraform/08-working-with-multiple-environments)). Keep secrets out of those files: pass them as `TF_VAR_` environment variables from a secret store or your CI's secrets, or in a `*.secret.tfvars` file that the pattern above keeps out of Git.
+Keep per-environment settings such as `env/prod.tfvars` in Git, because reviewers need to see them and CI needs them ([Part 8](/guides/introduction-to-terraform/08-working-with-multiple-environments)). Keep secrets out of those files: pass them as `TF_VAR_` environment variables from a secret store or your CI's secrets (locally, [from a `.env` file](/posts/terraform-read-environment-variables-from-env-file)), or in a `*.secret.tfvars` file that the pattern above keeps out of Git.
 
 Commit `.terraform.lock.hcl`. Older guides told you to ignore it; that is wrong for any project you share, because the lock file is what makes provider installs repeatable.
 

@@ -163,7 +163,7 @@ A program inside a container that listens on `127.0.0.1` cannot be reached from 
 }
 ```
 
-The packet reached `ctr2` and found nothing on `172.18.0.3:80`, so the kernel answered with a reset. The fix is in the application, not the network: listen on `0.0.0.0` (all addresses) inside containers. Frameworks that default to `localhost` in development (Flask, Vite, Rails and others) need `--host 0.0.0.0` in a container.
+The packet reached `ctr2` and found nothing on `172.18.0.3:80`, so the kernel answered with a reset. The fix is in the application, not the network: listen on `0.0.0.0` (all addresses) inside containers. Frameworks that default to `localhost` in development (Flask, Vite, Rails and others) need `--host 0.0.0.0` in a container. The reverse case, a container that needs a service on the host's `localhost`, has [its own fix](/posts/connect-to-host-localhost-from-docker).
 
 ## Docker Networks
 
@@ -187,7 +187,7 @@ Docker creates three networks on install:
 }
 ```
 
-- `bridge` is the default `docker0` network. Containers on it get addresses from `172.17.0.0/16` but **no DNS names** for each other.
+- `bridge` is the default `docker0` network. Containers on it get addresses from `172.17.0.0/16` but **no DNS names** for each other. They reach the host itself at the bridge's gateway, `172.17.0.1` by default ([how to find the host IP from a container](/posts/how-to-get-docker-host-ip-from-container)).
 - `host` puts the container in the host's network namespace: no isolation, no NAT, no port publishing needed. Useful for network tools and some high-throughput services.
 - `none` gives the container only a loopback interface.
 

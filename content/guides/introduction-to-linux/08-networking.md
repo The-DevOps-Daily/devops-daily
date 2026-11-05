@@ -135,7 +135,7 @@ Now create the second namespace, connect the two with a veth pair, give each end
 
 ## Inspect Interfaces, Addresses and Routes
 
-`ip` has subcommands for each layer: `ip link` for interfaces, `ip addr` (or `ip a`) for addresses, `ip route` (`ip r`) for routes and `ip neigh` for the neighbours it found on the local network. `-br` gives the short form; leave it out for details.
+`ip` has subcommands for each layer: `ip link` for interfaces, `ip addr` (or `ip a`) for addresses, `ip route` (`ip r`) for routes and `ip neigh` for the neighbours it found on the local network (to scan for every host, see [how to list the IP addresses in use on a local network](/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network)). `-br` gives the short form; leave it out for details.
 
 ```terminal
 {
@@ -212,7 +212,7 @@ There is no route to anything outside `192.0.2.0/24` yet:
 }
 ```
 
-`ip route get` is the fastest way to answer "which interface and gateway would this machine use to reach that address?". Compare the two failures. The first `ping` never left the machine: there was no route, so the kernel refused at once (`connect: Network is unreachable`). The last one left through the gateway, and the gateway sent back `Destination Net Unreachable` because it has no route onward. A third kind of failure is silence: packets leave and nothing comes back, which usually means a firewall drops them or the reply cannot find its way back. On a real machine, `ip route` shows a default route such as `default via 192.168.1.1 dev enp1s0 proto dhcp`.
+`ip route get` is the fastest way to answer "which interface and gateway would this machine use to reach that address?". Compare the two failures. The first `ping` never left the machine: there was no route, so the kernel refused at once (`connect: Network is unreachable`). The last one left through the gateway, and the gateway sent back `Destination Net Unreachable` because it has no route onward. A third kind of failure is silence: packets leave and nothing comes back, which usually means a firewall drops them or the reply cannot find its way back. [Ping: Request Timed Out vs Destination Host Unreachable](/posts/ping-timeout-vs-destination-unreachable) lists the usual causes of each message. On a real machine, `ip route` shows a default route such as `default via 192.168.1.1 dev enp1s0 proto dhcp`.
 
 ## Is the Service Listening? ss, curl and nc
 
@@ -350,7 +350,7 @@ When the tools above disagree, look at the packets. `tcpdump` prints every packe
 }
 ```
 
-Each line shows the time, source and destination, and what the packet is: here an ICMP echo request and the echo reply, twice. `-n` skips name lookups, `-c 4` stops after four packets, and `-w file.pcap` saves the capture for Wireshark. On a real interface, add a filter such as `port 443` and `not port 22`, so your own SSH session does not flood the output.
+Each line shows the time, source and destination, and what the packet is: here an ICMP echo request and the echo reply, twice. `-n` skips name lookups, `-c 4` stops after four packets, and `-w file.pcap` saves the capture for Wireshark. On a real interface, add a filter such as `port 443` and `not port 22`, so your own SSH session does not flood the output. Wireshark can also [capture a phone's traffic](/posts/capturing-mobile-phone-traffic-on-wireshark) through a hotspot or a proxy.
 
 ## Firewalls: nftables, ufw and firewalld
 
@@ -578,6 +578,8 @@ Now `ssh web` is enough, and `ssh db` hops through `web` to reach a database ser
   ]
 }
 ```
+
+If `hostname` shows a name that does not exist, ssh stops with ["Could not resolve hostname"](/posts/ssh-could-not-resolve-hostname-error).
 
 | Task                                       | Command                                                                                                            |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |

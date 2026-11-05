@@ -58,6 +58,8 @@ resource "aws_acm_certificate" "cdn" {
 }
 ```
 
+Inside a module, leave out provider blocks and let the caller pass configurations like this one in ([share providers and variables across modules](/posts/terraform-provider-variable-sharing-modules)).
+
 The provider's documentation on the [Terraform Registry](https://registry.terraform.io/providers/hashicorp/aws/latest/docs) lists every resource type, its arguments (what you set) and its attributes (what you can read after creation). Keep it open while you write code.
 
 ## A Web Server on AWS

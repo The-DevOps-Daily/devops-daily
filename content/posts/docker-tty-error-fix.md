@@ -26,7 +26,7 @@ Understanding this error requires knowing how terminals work and when Docker nee
 
 ## Understanding TTY in Docker Context
 
-TTY (TeleTYpewriter) is a terminal interface that allows interactive communication between users and programs. When you run commands that expect user input or need to display real-time output, they typically require a TTY.
+TTY (TeleTYpewriter) is a terminal interface that allows interactive communication between users and programs. When you run commands that expect user input or need to display real-time output, they typically require a TTY. [What do PTY and TTY mean?](/posts/what-do-pty-and-tty-mean) explains the terms.
 
 ```
 Normal Terminal Session:

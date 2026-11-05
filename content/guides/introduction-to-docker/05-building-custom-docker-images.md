@@ -249,7 +249,7 @@ Never pass secrets through `ARG` or `ENV`: their values end up in the image hist
 
 ## Build and Run
 
-Build the image and give it a name and tag with `-t`:
+Build the image and give it a name and tag with `-t` (a Dockerfile cannot [set the image name](/posts/set-image-name-dockerfile) itself):
 
 ```bash
 docker build -t hello-api:1.0 .
@@ -405,10 +405,10 @@ For this app the gain from two stages is modest, because `psycopg[binary]` ships
       pip install --no-cache-dir --index-url "https://__token__:${PIP_INDEX_TOKEN}@pypi.example.com/simple" -r requirements.txt
   ```
 
-  Build it with `docker build --secret id=pip_token,env=PIP_INDEX_TOKEN .`. The `env=` option of the mount needs Dockerfile syntax 1.10 or newer, which `docker/dockerfile:1` gives you.
+  Build it with `docker build --secret id=pip_token,env=PIP_INDEX_TOKEN .`. The `env=` option of the mount needs Dockerfile syntax 1.10 or newer, which `docker/dockerfile:1` gives you. For an SSH key, such as one for a private Git dependency, use `--mount=type=ssh` to forward your agent ([SSH keys in Docker builds and containers](/posts/using-ssh-keys-in-docker-container)).
 
 - **`COPY --link`** copies files into an independent layer that does not depend on the layers below it. When the base image changes, BuildKit can reuse that layer instead of copying again. It is safe when you do not rely on symlinks in the destination path.
-- **`COPY --exclude=*.md`** and **`COPY --parents`** filter what you copy and keep directory structure.
+- **`COPY --exclude=*.md`** and **`COPY --parents`** filter what you copy and keep directory structure ([more ways to exclude files from `COPY`](/posts/copy-with-docker-exclusion)).
 - **Build checks**: `docker build --check .` runs BuildKit's own Dockerfile rules (such as `JSONArgsRecommended` for the shell-form `CMD` above) without building. It needs a BuildKit builder, so it does not work without a running daemon; hadolint does.
 - **Multi-platform builds**: `docker buildx build --platform linux/amd64,linux/arm64 -t ghcr.io/my-org/hello-api:1.0 --push .` builds one image for both architectures and pushes the image index ([Part 10](/guides/introduction-to-docker/10-docker-in-production)).
 

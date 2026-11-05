@@ -201,7 +201,7 @@ Good alerts have:
 
 - **an owner and a runbook**: who responds, and what they check first;
 - **thresholds from data**: start from your normal rate of failures, not a guess, and tune them so that alerts stay rare enough to be read; OWASP lists alert floods that hide real attacks as a failure in this category;
-- **a test**: run the attack you want to detect against staging, for example a scripted series of failed logins, and confirm the alert fires. OWASP calls out penetration tests and DAST scans that trigger no alert as a failure; a passive scan such as the [ZAP baseline](/guides/owasp-top-10/05-security-misconfiguration#h2-scan-the-running-app-with-zap) sends no attacks, so check your active scans instead;
+- **a test**: run the attack you want to detect against staging, for example a scripted series of failed logins, and confirm the alert fires. OWASP calls out penetration tests and [DAST scans](/posts/dast-integration-guide) that trigger no alert as a failure; a passive scan such as the [ZAP baseline](/guides/owasp-top-10/05-security-misconfiguration#h2-scan-the-running-app-with-zap) sends no attacks, so check your active scans instead;
 - **honeytokens**: fake credentials or records that no legitimate process uses, such as an API key in the database that is never issued. Any use of one is an attack, with almost no false positives.
 
 ## Protect the Logs

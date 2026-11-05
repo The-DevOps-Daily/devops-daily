@@ -300,7 +300,7 @@ In detached HEAD you can look around, build and run old versions, and even commi
 }
 ```
 
-`git branch -v` adds each branch's last commit; `-vv` also shows the remote branch it tracks ([Part 6](/guides/introduction-to-git/06-remote-repositories#h2-tracking-branches)). `--merged` and `--no-merged` answer "is this branch's work in `main` yet?", and `--sort=-committerdate` puts the most recently used branches first. [Get the current branch name](/posts/get-current-branch-name-git) covers more ways to read it in scripts.
+`git branch -v` adds each branch's last commit; `-vv` also shows the remote branch it tracks ([Part 6](/guides/introduction-to-git/06-remote-repositories#h2-tracking-branches); to set one for an existing branch, see [make a branch track a remote branch](/posts/make-git-branch-track-remote)). `--merged` and `--no-merged` answer "is this branch's work in `main` yet?", and `--sort=-committerdate` puts the most recently used branches first. [Get the current branch name](/posts/get-current-branch-name-git) covers more ways to read it in scripts.
 
 To try an idea quickly, start a branch, commit, and see how deleting works:
 

@@ -76,7 +76,7 @@ terraform show -json tfplan.binary | jq '.'
 ```
 
 - What this does: saves a binary plan to `tfplan.binary` and prints it in JSON for inspection.
-- Why it matters: you can review every change and share the plan artifact with automation pipelines.
+- Why it matters: you can review every change and share the plan artifact with automation pipelines ([more ways to save plan and apply output](/posts/terraform-save-plan-apply-output-to-file)).
 
 ## 4. Use `terraform console` to evaluate expressions
 

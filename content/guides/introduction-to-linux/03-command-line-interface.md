@@ -270,7 +270,7 @@ Press **Tab** while you type a path or command name. The shell completes it, or 
 The `rmdir` error is expected: `drafts/2026` still contains a directory, and `rmdir` refuses to delete anything that is not empty. `rm -r` deletes a directory with everything inside it.
 
 :::warning
-`rm` does not use a trash can. Deleted files are gone, and `rm -rf` deletes without asking. Before you run `rm -rf` with a variable or a wildcard, run `ls` with the same argument first and read what it matches. Use `rm -i` to confirm each file, or `rm -I` to confirm once before deleting more than three files.
+`rm` does not use a trash can. Deleted files are gone, and `rm -rf` deletes without asking. In a Git repository, a file that was committed [can come back](/posts/find-restore-deleted-file-git). Before you run `rm -rf` with a variable or a wildcard, run `ls` with the same argument first and read what it matches. Use `rm -i` to confirm each file, or `rm -I` to confirm once before deleting more than three files.
 :::
 
 `cp` and `mv` overwrite the destination without asking. Add `-i` to be asked first, or `-n` to never overwrite. Brace expansion creates several names at once: `mkdir -p app/{src,tests,docs}` makes three directories.

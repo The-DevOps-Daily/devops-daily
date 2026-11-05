@@ -99,7 +99,7 @@ git fetch origin
 git checkout develop
 ```
 
-This gives you the initial speed benefit of single-branch cloning while maintaining flexibility for future work.
+This gives you the initial speed benefit of single-branch cloning while maintaining flexibility for future work. To check out one of those branches, see [fetch a remote branch and check it out](/posts/git-fetch-remote-branch).
 
 ## Cloning vs. Checking Out After Clone
 

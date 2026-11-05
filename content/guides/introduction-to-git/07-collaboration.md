@@ -447,7 +447,7 @@ GitLab has the same ideas under other names: protected branches, approval rules,
 
 - **Small pull requests.** A few hundred changed lines at most. Split big changes into a stack.
 - **Describe the why** in the pull request, link the issue, and say how you tested it.
-- **Test the branch locally** when the diff is not enough. `gh pr checkout 123` does it in one step; with plain Git on GitHub, `git fetch origin pull/123/head:pr-123` fetches the pull request into a branch called `pr-123`.
+- **Test the branch locally** when the diff is not enough. `gh pr checkout 123` does it in one step; with plain Git on GitHub, `git fetch origin pull/123/head:pr-123` fetches the pull request into a branch called `pr-123`. A colleague's pushed branch is simpler: [fetch it and check it out](/posts/git-fetch-remote-branch).
 - **After a force push, review with range-diff** (or the "compare" link) instead of reading everything again.
 - **Do not let pull requests sit.** A branch that waits for a week needs a rebase and a second review.
 

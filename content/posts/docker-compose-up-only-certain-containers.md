@@ -89,6 +89,7 @@ This stops or removes just those containers, leaving others running.
 - If you run `docker-compose up` with no arguments, all services are started.
 - Use `-d` to run in detached mode: `docker-compose up -d web db`
 - To see logs for just certain services: `docker-compose logs web db`
+- To restart one service from a fresh container, add `--force-recreate`: `docker-compose up -d --force-recreate web` ([always recreate containers](/posts/docker-compose-always-recreate-containers))
 
 ## Conclusion
 

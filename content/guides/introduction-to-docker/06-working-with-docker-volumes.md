@@ -75,7 +75,7 @@ local     hello-db-data
 /var/lib/docker/volumes/hello-db-data/_data
 ```
 
-On Linux the data sits in that directory, owned by root. On Docker Desktop and in rootless mode the path is inside the VM or under your home directory. Treat the location as Docker's business: read and write the data through containers, not by editing files there.
+On Linux the data sits in that directory, owned by root. On Docker Desktop and in rootless mode the path is inside the VM or under your home directory. Treat the location as Docker's business: read and write the data through containers, not by editing files there. To see which volumes a container uses, read the `Mounts` section of `docker inspect` ([list the volumes of a container](/posts/how-to-list-docker-volumes-in-containers)).
 
 ## Run Postgres 18 on a Volume
 
@@ -191,7 +191,7 @@ Do not copy a running database's files: the copy can be inconsistent and fail to
 
 ## Bind Mounts for Development
 
-A bind mount puts a host directory into the container. Change a file on the host and the container sees it immediately, which makes it the standard way to work on code or static files without rebuilding the image. Serve a local directory with nginx:
+A bind mount puts a host directory into the container. Change a file on the host and the container sees it immediately, which makes it the standard way to work on code or static files without rebuilding the image. It beats [editing files inside the container](/posts/docker-edit-file-in-container), where the changes disappear with the container. Serve a local directory with nginx:
 
 ```bash
 mkdir -p site && echo '<h1>Served from my laptop</h1>' > site/index.html
