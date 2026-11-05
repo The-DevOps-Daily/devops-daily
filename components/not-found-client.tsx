@@ -1,15 +1,47 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { MAX_SUGGESTIONS, cutOffPrefix, matchCutOffPath } from '@/lib/cut-off-links';
+import type { SearchItem } from '@/lib/search-types';
+
+const noSubscription = () => () => {};
 
 export function NotFoundClient() {
-  const [path, setPath] = useState('/');
+  // The static 404 page is rendered once for every path, so the real one is
+  // only known in the browser.
+  const path = useSyncExternalStore(
+    noSubscription,
+    () => window.location.pathname || '/',
+    () => '/'
+  );
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setPath(window.location.pathname || '/');
-    }
+    const current = window.location.pathname || '/';
+    if (current.endsWith('.md') || !cutOffPrefix(current)) return;
+
+    // The status is still 404 for crawlers; this only helps a reader who
+    // followed a cut-off link.
+    let cancelled = false;
+    fetch('/search-index.json')
+      .then((res) => (res.ok ? (res.json() as Promise<SearchItem[]>) : []))
+      .then((items) => {
+        if (cancelled || !Array.isArray(items)) return;
+        const matches = matchCutOffPath(
+          current,
+          items.map((item) => item.url).filter((url) => typeof url === 'string')
+        );
+        if (matches.length === 1) {
+          window.location.replace(matches[0] + window.location.search + window.location.hash);
+        } else {
+          setSuggestions(matches.slice(0, MAX_SUGGESTIONS));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const isMdRequest = path.endsWith('.md');
@@ -51,6 +83,23 @@ export function NotFoundClient() {
                     {strippedPath}
                   </Link>
                 </p>
+              </>
+            )}
+            {suggestions.length > 0 && (
+              <>
+                <div>
+                  <span className="text-green-500">$</span>{' '}
+                  <span className="text-muted-foreground"># did you mean</span>
+                </div>
+                <ul className="pl-4 space-y-0.5">
+                  {suggestions.map((href) => (
+                    <li key={href}>
+                      <Link href={href} className="text-primary hover:underline break-all">
+                        {href}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               </>
             )}
             <div>
