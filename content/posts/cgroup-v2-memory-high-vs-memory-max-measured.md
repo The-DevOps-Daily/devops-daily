@@ -1,6 +1,6 @@
 ---
 title: 'cgroup v2 memory.high Throttles, memory.max Kills: Measured on a Host Without Swap'
-excerpt: 'We ran one allocating workload under memory.max, memory.high and both on a Linux 6.8 host with no swap. memory.max killed it in under half a second. memory.high did not kill it: each new page waited, and a neighbour on the same CPU made that wait up to 64 times longer. Here are the numbers, the kernel formula behind them, and what systemd, Docker and Kubernetes write.'
+excerpt: 'We ran one allocating workload under memory.max, memory.high and both on a Linux 6.8 host with no swap. memory.max killed it in under half a second. memory.high did not kill it: new allocations waited, once per 64-page batch at best and once per page next to a busy neighbour on the same CPU. Here are the numbers, the kernel formula behind them, and what systemd, Docker and Kubernetes write.'
 category:
   name: 'Linux'
   slug: 'linux'
@@ -23,7 +23,7 @@ tags:
   - OOM
 ---
 
-We ran one Python workload that allocates memory in 256 KiB steps, on a Linux 6.8 host with no swap, under cgroup v2 `memory.max`, `memory.high`, both and neither. When it asked for 320 MiB with only `memory.max` at 256 MiB, it ran at full speed and the kernel killed it 0.28 to 0.39 seconds after it started. With only `memory.high` at 230.4 MiB, the kernel did not kill it. It made every new page wait instead, and after 150 seconds the workload held 11 to 12 MiB more than `memory.high`.
+We ran one Python workload that allocates memory in 256 KiB steps, on a Linux 6.8 host with no swap, under cgroup v2 `memory.max`, `memory.high`, both and neither. When it asked for 320 MiB with only `memory.max` at 256 MiB, it ran at full speed and the kernel killed it 0.28 to 0.39 seconds after it started. With only `memory.high` at 230.4 MiB, the kernel did not kill it. It made new allocations wait instead, and after 150 seconds the workload held 11 to 12 MiB more than `memory.high`.
 
 The case to worry about is the smaller one. A version of the workload that needs 239 MiB fits under `memory.max` and runs at full speed there. With `memory.high` at 90% of that limit, which is what Kubernetes MemoryQoS writes for a 256Mi limit and a zero memory request with the 1.36 default factor, its median allocation took 191.8 ms on a CPU of its own and 6.2 seconds on a CPU it shared with another busy cgroup, against 0.26 ms with no limit. It reported no error.
 
@@ -34,12 +34,12 @@ This post has the numbers, the kernel formula, the method problems we found on t
 ## TL;DR
 
 - **`memory.max` alone killed at full speed.** The 320 MiB workload ran at normal latency (p99 of the last 10% of operations 0.29 to 0.41 ms) and the kernel OOM-killed it 0.28 to 0.39 seconds after it started, in 3 of 3 runs.
-- **`memory.high` alone did not kill within the 150 second cap. It made every new page wait.** Each sleep was 1.08 to 1.10 times the kernel's formula at the median, `64000 x o^2` ms with `o` the share over `memory.high`. The 2 s cap measured 2,047.9 ms per sleep, because the timer wheel rounds a 2,000 ms timeout up to its 64 ms step.
+- **`memory.high` alone did not kill within the 150 second cap. It made new allocations wait.** Each sleep was 1.06 to 1.10 times the kernel's formula at the median, `64000 x o^2` ms with `o` the share over `memory.high`. At the 2 s cap the median sleep was 2,047.9 ms, which fits the timer wheel's 64 ms step for a 2,000 ms timeout.
 - **The number of sleeps decides the cost, and a neighbour on the same CPU decides the number.** The kernel's comment says one sleep per 64-page batch. With our sampler on the same CPU, the task slept once per 4 KiB page in 95% of the operations whose sleep was 50 ms or more. Without that neighbour (the workload on another CPU, or the sampler once a second), it switched between about 1 and 64 sleeps per batch in phases of tens of seconds, and spent 46% to 72% of that time in the slow phases.
 - **A program that fits under `memory.max` but not under `memory.high` ran much slower and reported nothing.** With `memory.high` at 90% of a 256 MiB limit (the kubelet's value for a zero memory request and factor 0.9), the median allocation took 191.8 ms on its own CPU and 6,216 ms next to the busy sampler (15 to 17 of 200 operations in 150 s), against 0.257 ms with no limit.
 - **Both limits only delayed the kill.** With `memory.high` at 90% of `memory.max`, a leak was OOM-killed after 29.1 minutes next to the busy sampler. With `memory.max` alone the kill took 0.3 seconds. On a CPU of its own, it was not killed within the 120 second cap in 3 of 3 runs.
 - **Code pages in the cgroup turn both limits into thrashing.** When the program's own binary was charged to its cgroup, the kernel reclaimed it and read it back from disk, 2.4 to 2.6 GB in 25 seconds at our 100 MiB/s disk cap. `memory.max` did not kill it within 20 seconds in 3 of 3 runs, and memory PSI showed only 8% while io PSI showed 85%.
-- **Page cache is not throttled or killed.** Neither limit slowed or killed the file-reading runs. They capped the cache.
+- **Page cache is not throttled or killed.** Neither limit killed the file-reading runs or put them to sleep. They capped the cache, so later reads went to disk more often (p99 1.0 to 2.6 ms against 0.13 ms with no limit).
 - **The tools:** systemd writes `MemoryHigh=` and `MemoryMax=` to `memory.high` and `memory.max` as given. Docker has no flag for `memory.high`, and on cgroup v2 `--memory-reservation` becomes `memory.low`. Kubernetes MemoryQoS writes `memory.high`; it is alpha and off in 1.36, and beta and on in 1.37 but with no throttling factor set, so no `memory.high` unless you set one.
 
 ## Prerequisites
@@ -206,16 +206,18 @@ The `anon-fit` runs matter more, because nothing in them is wrong. The program n
 
 To compare with the kernel, we count sleeps. In the warm runs reclaim never freed anything, so each sleep raised the `high` counter by 17, and an operation's sleep count is its rise divided by 17. We skip operations whose rise is not a multiple of 17 (11 to 13 per run, all at the edge of the limit, where the formula gives 10 ms or less and the kernel does not sleep). Then the measured latency divided by (sleeps x formula) should be 1.
 
-It was 1.08 to 1.10 at the median in every single-process matrix run, and 97% to 100% of the throttled operations were within 30% of the formula (`results/predict.md`, section 1). The formula is right about how long each sleep is. The section on the 2 second cap shows where part of the extra 8% to 10% comes from.
+It was 1.06 to 1.10 at the median in every single-process matrix run, and 97% to 100% of the throttled operations were within 30% of the formula (`results/predict.md`, section 1). The formula is right about how long each sleep is. The section on the 2 second cap shows where part of the extra 6% to 10% comes from.
 
 The number of sleeps was the surprise. The kernel charges memory in batches of 64 pages and keeps the rest of a batch as a per-CPU precharge (`consume_stock()`), so the code comment on the cap says "per allocation batch". A 64-page operation should sleep about once. In the matrix, once the sleeps were 50 ms or longer, almost every operation slept 64 times, once per page:
 
 | Formula sleep length | Operations | Median sleeps per 64 pages | Operations with 64 or more |
 | -------------------- | ---------- | -------------------------- | -------------------------- |
-| 11 to 25 ms          | 76         | 2                          | 26%                        |
-| 25 to 50 ms          | 88         | 9                          | 25%                        |
-| 50 to 100 ms         | 217        | 64                         | 93%                        |
-| 100 to 200 ms        | 58         | 64                         | 100%                       |
+| 11 to 25 ms          | 83         | 2                          | 24%                        |
+| 25 to 50 ms          | 95         | 7                          | 23%                        |
+| 50 to 100 ms         | 228        | 64                         | 92%                        |
+| 100 to 200 ms        | 73         | 64                         | 100%                       |
+| 200 to 400 ms        | 22         | 64                         | 100%                       |
+| 400 to 2000 ms       | 29         | 64                         | 100%                       |
 
 A new charge, and so a new sleep, only happens when the precharge is empty. `__refill_stock()` empties a CPU's precharge when a different cgroup charges memory on that CPU. In review we found a cgroup that did exactly that in every run: our own driver. It pinned itself to CPU 0 before it started the workload, so every workload in the matrix inherited CPU 0 (the `cpu` field of every operation says 0). The driver woke up every 100 ms to sample and parsed the files into Python objects, which charges memory to the driver's own cgroup on that CPU. We did not trace each drain, but the runs below show the effect.
 
@@ -228,9 +230,9 @@ So we ran the 320 MiB `memory.high` workload again, 3 times each, with the workl
 | 2, alone            | every 100 ms | 1                                                  | 53%                                              | 250.0 to 252.0 MiB          |
 | 2, alone            | every 1 s    | 1                                                  | 72%                                              | 243.5 to 252.4 MiB          |
 
-With the sampler on the same CPU every 100 ms, the task slept once per page for the whole run, as in the matrix: a median of 64 sleeps per operation, and 100% of the throttled time in operations with 32 or more sleeps. In the other three settings the median operation slept once or twice. But within each run the count switched between phases of about 1 sleep per operation and phases of 64, each lasting tens of seconds, and the slow phases still took 46% to 72% of the throttled time (`results/predict.md`, section 1c). Something else on the host emptied the precharge in those phases. The demo session further down ran with no driver and no pinning at all, and it also paid 5.5 to 6.5 seconds per 256 KiB operation for 25 seconds before it sped up.
+With the sampler on the same CPU every 100 ms, the task slept once per page for the whole run, as in the matrix: a median of 64 sleeps per operation, and 100% of the throttled time in operations with 32 or more sleeps. In the other three settings the median operation slept once or twice. But within each run the count switched between phases of about 1 sleep per operation and phases of 64, each lasting tens of seconds, and the slow phases still took 46% to 72% of the throttled time (`results/predict.md`, section 1c). That is consistent with other memory activity on the host emptying the precharge in those phases, but we did not trace it. The demo session further down ran with no driver and no pinning at all, and it also paid 5.5 to 6.5 seconds per 256 KiB operation for 25 seconds before it sped up.
 
-So our sampler did not create the per-page cost. It made it constant. Read the matrix numbers as a task whose CPU also runs another cgroup that allocates memory every 100 ms. On its own CPU, the same `anon-fit` workload with `memory.high` took a median of 191.8 ms per churn operation in all 3 runs (`diag-fit-high-cpu2-1s`), and finished all 200 churn operations in 2 of the 3 runs within 120 seconds. That is about 750 times the no-limit median, instead of about 24,000 times.
+So our sampler was not the only cause of the per-page cost. With it on the same CPU, the cost was constant. Read the matrix numbers as a task whose CPU also runs another cgroup that allocates memory every 100 ms. On its own CPU, the same `anon-fit` workload with `memory.high` took a median of 191.8 ms per churn operation in all 3 runs (`diag-fit-high-cpu2-1s`), and finished all 200 churn operations in 2 of the 3 runs within 120 seconds. That is about 750 times the no-limit median, instead of about 24,000 times.
 
 `MAP_POPULATE` is a second control. It faults in the whole chunk inside the `mmap()` call, so the task returns to user space once per chunk. On CPU 0 with the 100 ms sampler, it slept 2 times in 592 of 600 churn operations and 3 times in the other 8, a median churn operation took 191.8 ms, and all 200 churn operations were done in about 41 seconds (`anon-fit-high-populate`). How a program touches its memory changed the cost of the same `memory.high` by a factor of 32 here, with the same neighbour on the CPU.
 
@@ -244,7 +246,7 @@ None of the runs above got far enough over `memory.high` to reach the cap, becau
 | `anon-clamp-high-r2` | 33.3%              | 7,108 ms                | 1, 2                 | 2,047.9 ms             | 2,021.8 ms | 2,048.0 ms |
 | `anon-clamp-high-r3` | 33.3%              | 7,107 ms                | 1, 2                 | 2,047.9 ms             | 2,011.7 ms | 2,047.9 ms |
 
-The median sleep took 2,047.9 ms in all three runs, not 2,000 ms, and no sleep was shorter than 2,011 ms. The cap is 2000 jiffies, and at `HZ=1000` the kernel's timer wheel keeps timeouts from 512 ms to 4,095 ms in 64 ms steps (`kernel/time/timer.c`), so a 2,000 ms timeout fires at the next step, 2,048 ms. The same rounding, at 8 ms steps from 64 to 511 ms, explains part of the 8% to 10% we saw on the shorter sleeps: with half a step added, the median ratio for sleeps of 64 ms or more drops to 1.030 to 1.055. Under 64 ms, where the step is 1 ms, it stays at 1.054 to 1.091, and we did not find the rest (`results/predict.md`, section 1).
+The median sleep took 2,047.9 ms in all three runs, not 2,000 ms. The cap is 2000 jiffies, and at `HZ=1000` the kernel's timer wheel keeps timeouts from 512 ms to 4,095 ms in 64 ms steps (`kernel/time/timer.c`), so a 2,000 ms timeout fires at one of those steps. The median of 2,047.9 ms fits that. Single sleeps ranged from 2,011.7 to 2,064.9 ms, depending on where in a step the timer started. The same rounding, at 8 ms steps from 64 to 511 ms, explains part of the 8% to 10% we saw on the shorter sleeps: with half a step added, the median ratio for sleeps of 64 ms or more drops to 1.030 to 1.055. Under 64 ms, where the step is 1 ms, it stays at 1.054 to 1.091, and we did not find the rest (`results/predict.md`, section 1).
 
 So the cap holds, but it is per sleep, not per allocation. In these runs each 4 KiB operation slept twice after the first one, so it took 4,096 ms. A 256 KiB allocation that sleeps once per page at the cap would take more than two minutes.
 
@@ -294,11 +296,11 @@ To see when the kill comes, we ran the same workload once more with a 45 minute 
 
 In those 29 minutes the process used 1.19 seconds of CPU, its memory pressure `some` covered 1,742 seconds, and its slowest 256 KiB allocation took 53.2 seconds. From the point where the sleep starts (233.4 MiB, 0.3 seconds in), the formula with one sleep per page predicts 1,720 seconds to reach `memory.max`, 1.6% less than we measured. With one sleep per 64 pages it would have been 27 seconds (`results/predict.md`, section 3). Then the OOM kill came with 35 `max` events, as in the `memory.max` runs. `memory.high` did not save the program. It delayed the same OOM kill by half an hour.
 
-On a CPU of its own (`diag-over-both-cpu2-1s`, 3 runs, 120 second cap), the same workload was not killed either. It reached 240.8 to 254.4 MiB, depending on how much of the run fell into the one-sleep-per-page phases. If every sleep had covered 64 pages, the formula says it would have reached `memory.max` 27 seconds after the throttle started. So the time from crossing `memory.high` to the kill can be anywhere from the formula's 27 seconds to the half hour we measured. In our runs on a CPU of its own it was more than 2 minutes, and the other work on the same CPU decides where in that range it lands.
+On a CPU of its own (`diag-over-both-cpu2-1s`, 3 runs, 120 second cap), the same workload was not killed either. It reached 240.8 to 254.4 MiB, depending on how much of the run fell into the one-sleep-per-page phases. If every sleep had covered 64 pages, the formula says it would have reached `memory.max` 27 seconds after the throttle started. We have two reference points, not a proven range: the formula's 27 seconds if every sleep covers 64 pages, and the 29.1 minutes we measured once next to the sampler. On a CPU of its own, none of the three runs was killed within 2 minutes.
 
 ## The throttle is per process
 
-`memory.high` puts each allocating task to sleep on its own. In the matrix, the four processes of `anon-over-4p-high` all ran on CPU 0 next to the sampler, so each slept once per page, and together they grew about four times as fast as one process at the same overage. In `anon-over-4p-high` the four processes reached 249.1 to 250.8 MiB in 150 seconds, against 241.5 to 242.2 MiB for one process. Over the last 60 seconds they grew 34.0 to 42.3 KiB/s, where the one-sleep-per-page model predicts 31.9 to 38.0 KiB/s for four processes at that usage. A program with many allocating threads or workers gets to `memory.max` sooner than a single-threaded one.
+`memory.high` puts each allocating task to sleep on its own. In the matrix, the four processes of `anon-over-4p-high` all ran on CPU 0 next to the sampler. We cannot split `memory.events` per process, but their combined growth matches the model of one sleep per page for each process: about four times as fast as one process at the same overage. In `anon-over-4p-high` the four processes reached 249.1 to 250.8 MiB in 150 seconds, against 241.5 to 242.2 MiB for one process. Over the last 60 seconds they grew 34.0 to 42.3 KiB/s, where the one-sleep-per-page model predicts 31.9 to 38.0 KiB/s for four processes at that usage. A program with many allocating threads or workers gets to `memory.max` sooner than a single-threaded one.
 
 The four throttled processes also changed a number most dashboards show. While they slept, the host's load average was 5.33 on 4 vCPUs, and `vmstat` showed the CPUs 96% and 99% idle in the two one-second samples:
 
@@ -318,7 +320,7 @@ The four throttled processes also changed a number most dashboards show. While t
 }
 ```
 
-The kernel puts the task to sleep with `schedule_timeout_killable()`. That is an uninterruptible sleep that only a fatal signal can end, so the task shows as state `D`, and Linux counts tasks in state `D` in the load average. A high load average with idle CPUs can mean throttled memory, not only slow disks.
+The kernel puts the task to sleep with `schedule_timeout_killable()`. That is a killable sleep: only a fatal signal ends it early. `ps` shows it as state `D`, and Linux counts it in the load average like other tasks in state `D`. A high load average with idle CPUs can mean throttled memory, not only slow disks.
 
 ## When the cgroup holds its own code, both limits thrash
 
@@ -354,7 +356,7 @@ Both limits did what the docs say: `memory.current` stopped at the limit and the
 
 ## What PSI and the counters show
 
-PSI was a reliable witness for the warm throttle. In every warm `memory.high` run, the cgroup's `memory.pressure` `some` total matched the time the operations spent over their normal latency, at a ratio of 1.003 to 1.068 (`results/predict.md`, section 4). With one task in the cgroup, `full` was the same as `some`, and `avg10` reached 97% to 99%. The host saw it too. During the long run, the host-wide `/proc/pressure/memory` read `some avg10=96.53` and `full avg10=95.09` (`results/observed/host-psi-during-long.txt`). Our test cgroup was the one we know was stalled, and the host-wide number was almost as high, so an alert on host memory pressure would fire.
+PSI was a reliable witness for the warm throttle. In every warm single-process matrix run with `memory.high`, the cgroup's `memory.pressure` `some` total matched the time the operations spent over their normal latency, at a ratio of 0.998 to 1.068 (`results/predict.md`, section 4). In the diagnostic runs it was 0.997 to 1.286. PSI also counts the last operation, which was still asleep when the driver stopped the run, and our operation log does not, so the ratio goes above 1 in runs that ended in the middle of a long operation. With one task in the cgroup, `full` was the same as `some`, and `avg10` reached 97% to 99%. The host saw it too. During the long run, the host-wide `/proc/pressure/memory` read `some avg10=96.53` and `full avg10=95.09` (`results/observed/host-psi-during-long.txt`). Our test cgroup was the one we know was stalled, and the host-wide number was almost as high, so an alert on host memory pressure would fire.
 
 The counters to watch, from these runs:
 
@@ -411,7 +413,7 @@ With the gate on and a factor set, the kubelet computes, for each container whos
 memory.high = floor((requests.memory + factor * (limits.memory - requests.memory)) / pageSize) * pageSize
 ```
 
-With no limit, it uses node allocatable memory instead of `limits.memory`. It puts the value in the CRI container config's `unified` map under the key `memory.high` (`kuberuntime_container_linux.go`), and the runtime writes it to the container's cgroup. runc passes a unified `memory.high` on as the systemd `MemoryHigh` property when it uses the systemd driver. Containers with request equal to limit get no `memory.high`.
+With no limit, it uses node allocatable memory instead of `limits.memory`. It puts the value in the CRI container config's `unified` map under the key `memory.high` (`kuberuntime_container_linux.go`), and the runtime writes it to the container's cgroup. runc passes a unified `memory.high` on as the systemd `MemoryHigh` property when it uses the systemd driver. In 1.36, a container whose memory request equals its limit gets no `memory.high`. 1.37 makes one exception: a container with no request and no limit can still get one when a factor is set.
 
 Our `memory.high` value is this formula for `limits.memory: 256Mi`, `requests.memory: 0` and factor 0.9: 241590272 bytes. Two details matter here. If a pod sets a limit and leaves the request out, the API server sets the request equal to the limit (`SetDefaults_Pod` in `pkg/apis/core/v1/defaults.go`), and the kubelet then writes no `memory.high` at all. And with a request R between 0 and the limit, `memory.high` is R + 0.9 x (256Mi - R), so it sits between 230.4 MiB and 256 MiB. Our runs are the strictest case: a Burstable container with an explicit zero memory request on a 1.36 node with the MemoryQoS gate turned on. The `anon-fit` rows are the ones to read for that.
 
@@ -423,7 +425,7 @@ The two Kubernetes posts this week cover the other side of the same cgroups: [an
 
 - **One host, one kernel, no swap.** Everything here is Ubuntu 6.8.0-147 on a 4 vCPU machine with no swap. With swap or zswap, reclaim can move anonymous pages out, so `memory.high` can hold a cgroup near the limit instead of only slowing it, and `memory.max` reaches the OOM killer later. We did not test that. Newer kernels have changed the memcg charge code, and we did not test them either.
 - **What empties the precharge.** We measured how many sleeps a task paid, and we read in the source what makes a new charge necessary. We did not trace which event emptied the per-CPU precharge each time. Our sampler on the same CPU made it happen on almost every long sleep. Without it, the phases came and went with the host's other work, which we did not control. An idle machine, or one with more CPUs, could pay fewer sleeps.
-- **The rest of the extra per sleep.** The timer wheel's rounding explains about half of the 8% to 10%. We did not split the rest into reclaim time, wake-up delay and our own probes.
+- **The rest of the extra per sleep.** The timer wheel's rounding explains about half of the 6% to 10%. We did not split the rest into reclaim time, wake-up delay and our own probes.
 - **When the own-code thrash ends.** Under `memory.max` it was not killed in 20 seconds in the matrix (one smoke run was killed at 21.8 seconds, another was still running at 70). We stopped these runs early because they read about 100 MB/s from a shared disk, so we cannot say how long a real container would thrash before the kill. The result also depends on disk speed, which we changed with `io.max`.
 - **Run order and a shared host.** Every repetition ran the configurations in the same order, on a machine with other services. Background load can move a single run either way. The three repetitions agree closely, but we did not randomize the order.
 - **Real programs.** Our workload is a Python loop that touches memory in a fixed pattern. A JVM, a Go program or a database touches memory differently, and the `MAP_POPULATE` run shows that the touch pattern alone changed the cost 32 times.
@@ -432,8 +434,8 @@ The two Kubernetes posts this week cover the other side of the same cgroups: [an
 
 ## What to do with this
 
-- **Without swap, do not use `memory.high` as the only limit.** It does not stop growth. It slows each new page, and a program that keeps allocating stays slow as long as it stays over the limit. The kernel never kills it for `memory.high`, so add `memory.max` or a pressure-based killer.
-- **If you set both, leave room.** With `memory.high` at 90% of `memory.max`, a program that fits between the two ran about 750 times slower per allocation on a quiet CPU and about 24,000 times slower next to a busy neighbour, and nothing ended it within the time cap. Measure your program's peak first. Put `memory.high` above the normal working set, not at a fixed fraction of the limit.
+- **Without swap, do not use `memory.high` as the only limit.** It does not stop growth. It slows new allocations, and a program that keeps allocating stays slow as long as it stays over the limit. The kernel never kills it for `memory.high`, so add `memory.max` or a pressure-based killer.
+- **If you set both, leave room.** With `memory.high` at 90% of `memory.max`, a program that fits between the two ran about 750 times slower per allocation on a CPU apart from our sampler, and about 24,000 times slower next to it. Apart from the sampler it finished in 2 of 3 runs within 120 seconds; next to it, none finished within 150 seconds. Measure your program's peak first. Put `memory.high` above the normal working set, not at a fixed fraction of the limit.
 - **Do not plan with the formula alone.** It gives the length of one sleep. How many sleeps a task pays depends on what else allocates memory on the same CPU, by up to 64 times, so test on a host that is as busy as production.
 - **Read `memory.events` and `memory.pressure`, not only `memory.current`.** A throttled cgroup looks healthy by memory use: it sits a few MiB over its limit and uses no CPU. The `high` counter and memory `some` near 100% show it at once.
 - **Watch `io.pressure` and `pgsteal` on cgroups at their limit.** Thrashing on a program's own code showed up there, not in memory pressure.
