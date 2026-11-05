@@ -327,6 +327,6 @@ In [Part 5](/guides/introduction-to-cicd/05-environment-variables-and-secrets) y
 
 ## Keep Learning
 
-- [Why Your CI/CD Pipeline Is Slower Than It Should Be (and How to Fix It)](/posts/why-your-ci-pipeline-is-slower)
+- [When CI is slow, this is usually why](/posts/what-does-one-merge-cost-in-ci#h2-when-ci-actually-is-slow-this-is-usually-why)
 - [Artifactory vs GitHub Packages](/comparisons/artifactory-vs-github-packages)
 - [CI/CD Pipelines Quiz](/quizzes/cicd-pipelines-quiz)

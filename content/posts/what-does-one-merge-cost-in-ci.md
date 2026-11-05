@@ -6,7 +6,7 @@ category:
   slug: 'ci-cd'
 date: '2026-08-06'
 publishedAt: '2026-08-06T09:00:00Z'
-updatedAt: '2026-08-06T09:00:00Z'
+updatedAt: '2026-11-05T09:00:00Z'
 readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
@@ -162,6 +162,10 @@ Our numbers are small, so this section is from experience rather than from the d
 **Everything is serial.** A job graph that could fan out but does not. This is the one case where the fix genuinely improves wall clock, and it is also the one where you should watch your machine minutes afterwards.
 
 **You install the same toolchain every run.** Container images with the toolchain baked in turn two minutes of `apt-get` into a pull.
+
+**Every job builds the app again.** When lint, test and deploy each run `npm ci` and `npm run build`, you pay for the same build three times. Build once, upload the output with `actions/upload-artifact` (or `artifacts:` in GitLab CI), and download it in the jobs that need it. Key dependency caches on the lockfile, for example `hashFiles('**/package-lock.json')`, so a cache is reused until the dependencies really change.
+
+**Every test runs on every push.** A pull request that changes one service runs the suites of all of them. Run the tests the change can affect on pull requests, for example with `npx jest --changedSince=origin/main` or a path check in a first job, and the full suite on the main branch or in a merge queue. Keep that full run: selection by changed files misses tests that break through shared config or a dependency bump.
 
 ## Where the vendors change the tradeoff
 

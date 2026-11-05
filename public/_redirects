@@ -90,6 +90,8 @@
 /posts/kubernetes-service-types-clusterip-nodeport-loadbalancer /guides/introduction-to-kubernetes/05-services-and-networking 301
 /posts/difference-between-targetport-and-port-in-kubernetes-service-definition /guides/introduction-to-kubernetes/05-services-and-networking 301
 /posts/kubernetes-pods-crashloopbackoff-no-logs /guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes 301
+/posts/why-your-ci-pipeline-is-slower /posts/what-does-one-merge-cost-in-ci 301
+/posts/devops-mistakes-2025 /posts/what-is-devops 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -355,7 +357,6 @@
 /images/posts/delete-commit-from-branch.png /images/posts/delete-commit-from-branch.jpg 301
 /images/posts/deployment-strategies-guide.png /images/posts/deployment-strategies-guide.jpg 301
 /images/posts/designing-automation-with-failure-in-mind.png /images/posts/designing-automation-with-failure-in-mind.jpg 301
-/images/posts/devops-mistakes-2025.png /images/posts/devops-mistakes-2025.jpg 301
 /images/posts/devops-vs-sysadmin-vs-sre.png /images/posts/devops-vs-sysadmin-vs-sre.jpg 301
 /images/posts/difference-between-cmd-and-entrypoint-in-dockerfiles.png /images/posts/difference-between-cmd-and-entrypoint-in-dockerfiles.jpg 301
 /images/posts/docker-alpine-use-bash.png /images/posts/docker-alpine-use-bash.jpg 301
@@ -428,7 +429,6 @@
 /images/posts/what-is-the-difference-between-active-and-passive-ftp.png /images/posts/what-is-the-difference-between-active-and-passive-ftp.jpg 301
 /images/posts/why-c-preprocessor-interprets-linux-as-one.png /images/posts/why-c-preprocessor-interprets-linux-as-one.jpg 301
 /images/posts/why-sctp-is-not-widely-used.png /images/posts/why-sctp-is-not-widely-used.jpg 301
-/images/posts/why-your-ci-pipeline-is-slower.png /images/posts/why-your-ci-pipeline-is-slower.jpg 301
 /images/posts/write-simple-kubernetes-operator.png /images/posts/write-simple-kubernetes-operator.jpg 301
 /images/posts/api-gateway-endpoint-variable.png /images/posts/api-gateway-endpoint-variable.jpg 301
 /images/posts/cannot-connect-to-docker-daemon.png /images/posts/cannot-connect-to-docker-daemon.jpg 301

@@ -281,6 +281,6 @@ In [Part 9](/guides/introduction-to-cicd/09-security-best-practices-and-producti
 
 ## Keep Learning
 
-- [Why Your CI/CD Pipeline Is Slower Than It Should Be (and How to Fix It)](/posts/why-your-ci-pipeline-is-slower)
+- [When CI is slow, this is usually why](/posts/what-does-one-merge-cost-in-ci#h2-when-ci-actually-is-slow-this-is-usually-why)
 - [GitHub Actions Removed Node 20. Find Every node20 Action You Still Run](/posts/github-actions-node20-removed)
 - [GitHub Started Enforcing Self-Hosted Runner Versions. We Tested What Happens](/posts/github-self-hosted-runner-version-window)
