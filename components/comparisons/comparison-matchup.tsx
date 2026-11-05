@@ -1,5 +1,6 @@
 import { Award, ExternalLink } from 'lucide-react';
 import type { Comparison, ToolInfo } from '@/lib/comparison-types';
+import { GO_LINKS_ORIGIN } from '@/lib/sponsors';
 import { ToolIcon, toolText, toolVars } from './tool-style';
 
 /** The score as a ring, drawn in the tool's color. */
@@ -69,7 +70,11 @@ function Side({
       <a
         href={tool.website}
         target="_blank"
-        rel="noopener noreferrer"
+        rel={
+          tool.website.startsWith(`${GO_LINKS_ORIGIN}/`)
+            ? 'noopener noreferrer sponsored'
+            : 'noopener noreferrer'
+        }
         className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
       >
         Visit website
