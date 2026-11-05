@@ -437,5 +437,5 @@ Next: [Tracking Changes](/guides/introduction-to-git/03-tracking-changes), where
 ## Keep Learning
 
 - [Clone a repository into a specific folder](/posts/clone-git-repo-specific-folder)
-- [Clone all remote branches](/posts/clone-all-remote-branches-git)
+- [Create a local branch for every remote branch](/guides/introduction-to-git/06-remote-repositories#h3-a-local-branch-for-every-remote-branch)
 - [Remove a file from Git without deleting it locally](/posts/remove-file-from-git-keep-local)

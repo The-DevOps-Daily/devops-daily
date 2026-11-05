@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2024-12-02'
 publishedAt: '2024-12-02T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -143,6 +143,35 @@ git cherry-pick --abort
 
 # This undoes any changes made by the cherry-pick attempt
 ```
+
+## Cherry-Pick Ranges, Single Files and Undo
+
+**A range leaves out its first commit.** `A..B` means "the commits reachable from B but not from A", so A itself is not picked. Add `^` to include it. With four commits on `feature`, Add A to Add D:
+
+```bash
+git cherry-pick bd36727..52dac3e    # picks Add B, Add C, Add D
+git cherry-pick bd36727^..52dac3e   # picks Add A, Add B, Add C, Add D
+```
+
+Git applies a range from the oldest commit to the newest. If one of them turns out empty because the change is already on your branch, Git stops and asks; `git cherry-pick --skip` drops that commit and goes on with the rest.
+
+**Take one file, not the whole commit.** Cherry-pick always applies a whole commit. To copy one file as it is on another branch or commit, restore it and commit it yourself:
+
+```bash
+git restore --source=feature --staged --worktree -- src/auth.js
+git commit -m "Take the auth fix from feature"
+```
+
+**See what is already picked.** `git cherry -v main feature` lists the commits on `feature`. A `-` marks a commit whose change is already on `main`, for example through a cherry-pick, and a `+` marks one that is not:
+
+```text
++ 1ffa6895d63c7a0ef73e634482241b9413bddcc5 Add A
++ 383a0b6f7475f360e505a30f33a27a38bdb375ab Add B
+- 94637059a61f5bc812e0c72af5935063791747b7 Add C
++ 4941b0dfe8f2ff78daaec76115da81c00cd6378d Add D
+```
+
+**Undo a cherry-pick.** Each picked commit is a normal commit. If you have not pushed, remove the last N with `git reset --hard HEAD~N` (`git reflog` shows where the branch was before). If you have pushed, `git revert` the picked commits instead, so nobody else's history changes.
 
 ## Cherry-Pick Strategies for Different Scenarios
 

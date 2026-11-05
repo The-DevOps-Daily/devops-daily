@@ -75,6 +75,10 @@
 /posts/docker-no-space-left-cleanup /posts/docker-image-storage-locations 301
 /posts/push-docker-image-private-repo /guides/introduction-to-docker/03-working-with-docker-images 301
 /posts/how-to-mount-a-single-file-in-a-volume /guides/introduction-to-docker/06-working-with-docker-volumes 301
+/posts/git-add-a-vs-git-add-dot /guides/introduction-to-git/03-tracking-changes 301
+/posts/clone-all-remote-branches-git /guides/introduction-to-git/06-remote-repositories 301
+/posts/move-uncommitted-work-to-new-branch /posts/move-most-recent-commits-to-new-branch-git 301
+/posts/git-cherry-pick-commit /posts/how-to-cherry-pick-commits-in-git 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -359,7 +363,6 @@
 /images/posts/forward-host-port-to-docker-container.png /images/posts/forward-host-port-to-docker-container.jpg 301
 /images/posts/get-current-branch-name-git.png /images/posts/get-current-branch-name-git.jpg 301
 /images/posts/get-current-date-time-and-custom-commands.png /images/posts/get-current-date-time-and-custom-commands.jpg 301
-/images/posts/git-add-a-vs-git-add-dot.png /images/posts/git-add-a-vs-git-add-dot.jpg 301
 /images/posts/gitops-deploy-docker-containers-github-actions-argocd.png /images/posts/gitops-deploy-docker-containers-github-actions-argocd.jpg 301
 /images/posts/healthz-convention-origin.png /images/posts/healthz-convention-origin.jpg 301
 /images/posts/heroku-alternatives-2026.png /images/posts/heroku-alternatives-2026.jpg 301
@@ -423,7 +426,6 @@
 /images/posts/change-echo-output-colors-linux.png /images/posts/change-echo-output-colors-linux.jpg 301
 /images/posts/change-permissions-folder-subfolders-files-linux.png /images/posts/change-permissions-folder-subfolders-files-linux.jpg 301
 /images/posts/cicd-pipeline-hardening-guide.png /images/posts/cicd-pipeline-hardening-guide.jpg 301
-/images/posts/clone-all-remote-branches-git.png /images/posts/clone-all-remote-branches-git.jpg 301
 /images/posts/close-specific-port-linux.png /images/posts/close-specific-port-linux.jpg 301
 /images/posts/close-vs-shutdown-socket.png /images/posts/close-vs-shutdown-socket.jpg 301
 /images/posts/command-line-for-looking-at-specific-port.png /images/posts/command-line-for-looking-at-specific-port.jpg 301
@@ -555,7 +557,6 @@
 /images/posts/force-docker-clean-build.png /images/posts/force-docker-clean-build.jpg 301
 /images/posts/get-current-time-seconds-since-epoch-bash.png /images/posts/get-current-time-seconds-since-epoch-bash.jpg 301
 /images/posts/get-current-working-directory-terraform.png /images/posts/get-current-working-directory-terraform.jpg 301
-/images/posts/git-cherry-pick-commit.png /images/posts/git-cherry-pick-commit.jpg 301
 /images/posts/git-fetch-remote-branch.png /images/posts/git-fetch-remote-branch.jpg 301
 /images/posts/git-ignore-file-mode-changes.png /images/posts/git-ignore-file-mode-changes.jpg 301
 /images/posts/github-actions-fast.png /images/posts/github-actions-fast.jpg 301
@@ -582,7 +583,6 @@
 /images/posts/kubernetes-list-all-pods-and-nodes.png /images/posts/kubernetes-list-all-pods-and-nodes.jpg 301
 /images/posts/lightweight-alternatives-to-python-twisted.png /images/posts/lightweight-alternatives-to-python-twisted.jpg 301
 /images/posts/minimum-aws-permissions-for-terraform.png /images/posts/minimum-aws-permissions-for-terraform.jpg 301
-/images/posts/move-uncommitted-work-to-new-branch.png /images/posts/move-uncommitted-work-to-new-branch.jpg 301
 /images/posts/nuke-all-aws-resources.png /images/posts/nuke-all-aws-resources.jpg 301
 /images/posts/parse-command-line-arguments-bash.png /images/posts/parse-command-line-arguments-bash.jpg 301
 /images/posts/pass-environment-variables-docker-containers.png /images/posts/pass-environment-variables-docker-containers.jpg 301

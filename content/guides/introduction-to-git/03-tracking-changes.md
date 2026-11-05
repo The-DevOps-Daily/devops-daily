@@ -131,7 +131,33 @@ The `services.txt` change and the `index.html` changes are unrelated, so they sh
 | `git add -u`     | Changes and deletions of tracked files only, no new files        |
 | `git add -p`     | Chosen parts of files, interactively                             |
 
-The difference between `.` and `-A` only shows when you run them from a subdirectory ([the details](/posts/git-add-a-vs-git-add-dot)).
+### git add . or git add -A?
+
+From the top of the repository they stage the same thing. The difference shows in a subdirectory: `.` means "this directory and below", while `-A` covers the whole repository. `--dry-run` (`-n`) prints what a command would stage without staging anything. Here the runbook in `docs/` changed, `docs/notes.md` is new, `services.txt` changed and `index.html` was deleted:
+
+```terminal
+{
+  "title": "git add from a subdirectory",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git status --short",
+      "output": " M docs/runbook.md\n D index.html\n M services.txt\n?? docs/notes.md"
+    },
+    {
+      "cmd": "cd docs && git add --dry-run .",
+      "output": "add 'docs/runbook.md'\nadd 'docs/notes.md'"
+    },
+    {
+      "cmd": "git add --dry-run -A",
+      "output": "add 'docs/runbook.md'\nremove 'index.html'\nadd 'services.txt'\nadd 'docs/notes.md'"
+    }
+  ]
+}
+```
+
+`git add :/` is the same as `git add -A`: the pathspec `:/` means the top of the repository, wherever you are. `git add -u` also works on the whole repository, but skips new files. In Git 1.x, `git add .` did not stage deletions; every Git since 2.0 does.
 
 ### Stage part of a file with git add -p
 

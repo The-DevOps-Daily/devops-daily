@@ -473,5 +473,4 @@ Next: [Git History](/guides/introduction-to-git/08-history), where you search th
 
 - [Git Workflow and Collaboration exercise](/exercises/git-workflow-collaboration)
 - Interview questions: [Git workflow strategies](/interview-questions/junior/git-workflow-strategies) and [Git branching strategies](/interview-questions/junior/git-branching-strategies)
-- [What cherry-picking a commit means](/posts/git-cherry-pick-commit)
 - [Create a remote Git branch](/posts/create-remote-git-branch)
