@@ -73,7 +73,7 @@ We wrote a small POSIX `sh` script that reads these facts and changes nothing:
 https://github.com/The-DevOps-Daily/alpine-sshd-check
 ```
 
-It reads the branch from `/etc/alpine-release`, the installed package version from `apk`, the effective settings from `sshd -T`, and the start time of the running sshd. From `/etc/shadow` it reads only the type of each password field: it counts `*` fields and `$5$`/`$6$` fields. It never prints a hash or a user name, and it does not connect to sshd. Because it runs as root, it executes only the packaged sshd binaries in `/usr/sbin`, and only if root owns them and no one else can write to them. Exit codes are `0` not affected, `1` affected, `2` fixed but restart needed, `3` cannot tell. Add `--json` for machine-readable output.
+It reads the branch from `/etc/alpine-release`, the installed package version from `apk`, the effective settings from `sshd -T`, and whether the running sshd is still the sshd binary on disk. From `/etc/shadow` it reads only the type of each password field: it counts `*` fields and `$5$`/`$6$` fields. It never prints a hash or a user name, and it does not connect to sshd. Because it runs as root, it executes only the packaged sshd binaries in `/usr/sbin`, and only if root owns them and no one else can write to them. Exit codes are `0` not affected, `1` affected, `2` fixed but restart needed, `3` cannot tell. Add `--json` for machine-readable output.
 
 ```bash
 sudo sh check.sh
@@ -104,7 +104,7 @@ Two things we found while we ran it:
 
 ## Check containers
 
-Most containers do not run sshd, and those are not affected. To find the ones that do, `scan-containers.sh` lists the running containers, skips those that are not Alpine or have no sshd process, and pipes `check.sh` into the rest with `docker exec -i ... sh -s`. Nothing is copied into the container. Because it runs each container's own `sh` as root inside that container, scan only containers whose images you trust.
+Containers that do not run sshd are not affected. To find the ones that do, `scan-containers.sh` lists the running containers, skips those that are not Alpine or have no sshd process, and pipes `check.sh` into the rest with `docker exec -i ... sh -s`. Nothing is copied into the container. Because it runs each container's own `sh` as root inside that container, scan only containers whose images you trust.
 
 ```terminal
 {
