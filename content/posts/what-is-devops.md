@@ -6,8 +6,8 @@ category:
   slug: 'devops'
 date: '2026-01-25'
 publishedAt: '2025-01-25T09:00:00Z'
-updatedAt: '2026-02-07T09:00:00Z'
-readingTime: '15 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -254,6 +254,21 @@ Tools help implement DevOps, but buying expensive tools won't make you "DevOps."
 ### "DevOps is only for large companies"
 
 DevOps principles work at any scale. In fact, smaller teams often find it easier to adopt DevOps because there's less organizational inertia.
+
+---
+
+## Common DevOps Mistakes and How to Avoid Them
+
+Teams that start with DevOps tend to make the same few mistakes. Each one has a simple first fix:
+
+- **Infrastructure as code that runs once.** Someone writes Terraform, applies it, and it sits in a folder while the real servers drift away from it. Keep it in Git, run `terraform plan` in pull requests, and change infrastructure only through the code. [Infrastructure as Code fundamentals](/posts/infrastructure-as-code-fundamentals) covers the basics.
+- **Pipeline settings that live only in the CI tool's web interface.** Then nobody can review a change or see who broke the build. Keep pipeline files (`.github/workflows/`, `.gitlab-ci.yml`) in the repository and review them like code.
+- **Secrets in code or in plain `.env` files.** They end up in Git history, in logs and in screenshots. Use a secrets manager or encrypted files, and rotate any secret that leaked. See the [secrets management guide](/posts/secrets-management-guide).
+- **No way back.** A deploy breaks production and nobody knows how to return to the last good version. Keep the previous release ready, practice the rollback, and consider blue-green or canary [deployment strategies](/posts/deployment-strategies-guide).
+- **Monitoring after the first outage.** Add metrics, logs and alerts on what users feel (errors, latency) when you launch, not after the first incident. The [monitoring and observability checklist](/checklists/monitoring-observability) is a starting point.
+- **Pipelines with more power than they need.** A CI job that can deploy anything is a target. Give each pipeline only the permissions it uses, and scan dependencies and images in it. The [CI/CD pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) goes step by step.
+- **Knowledge in one person's head.** "Ask Alex" stops working when Alex is on holiday. Write short runbooks as you build things, and after an incident, write down what happened and what changes.
+- **Too many tools.** Twenty tools that do not talk to each other create more alerts and more work than they save. Add a tool when it solves a problem you have, and remove the ones nobody uses.
 
 ---
 

@@ -6,8 +6,8 @@ category:
   slug: 'linux'
 date: '2025-02-20'
 publishedAt: '2025-02-20T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -117,6 +117,43 @@ For directories, combine `-r` (recursive) with `-f`:
 ```
 
 This copies the entire directory tree, overwriting files without prompts.
+
+## How Do You Copy a Whole Directory?
+
+Use `cp -a`. It copies recursively and keeps permissions, timestamps and symbolic links, which `cp -r` alone does not promise:
+
+```bash
+cp -a site backup
+```
+
+Whether `backup` exists already changes the result. If it does not exist, `cp` creates it as a copy of `site`. If it exists, `cp` puts the copy **inside** it, as `backup/site`. Running the same command twice therefore gives you a nested copy the second time:
+
+```text
+$ cp -a site backup        # backup did not exist
+$ find backup | sort
+backup
+backup/css
+backup/css/main.css
+backup/.env
+backup/home.html
+backup/index.html
+
+$ cp -a site backup        # backup exists now
+$ ls -A backup
+css .env home.html index.html site
+```
+
+To copy what is **in** a directory into a directory that already exists, copy `site/.`, not `site/*`. The glob skips hidden files such as `.env`; the `.` entry includes them:
+
+```text
+$ cp -r site/* backup/ && ls -A backup     # backup is empty before each command
+css home.html index.html
+
+$ cp -a site/. backup/ && ls -A backup
+css .env home.html index.html
+```
+
+GNU `cp` also has `-T` (`--no-target-directory`): `cp -aT site backup` always copies the contents of `site` into `backup`, whether `backup` exists or not. macOS and BSD `cp` do not have `-T`, so use `site/.` in scripts that must run on both. `rsync -a site/ backup/` follows the same idea: with the trailing slash on the source it copies the contents, without it, the directory itself. To check afterwards that the copy matches, see [how to compare two directory trees](/guides/introduction-to-linux/10-system-administration#h3-compare-two-directory-trees).
 
 ## Removing the Alias Permanently
 

@@ -413,7 +413,7 @@ Good luck with your Kubernetes networking setup!
 
 ## Related Resources
 
-- [Kubernetes Service Types: ClusterIP, NodePort, LoadBalancer](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
-- [Difference Between TargetPort and Port](/posts/difference-between-targetport-and-port-in-kubernetes-service-definition)
+- [Kubernetes Service types: ClusterIP, NodePort, LoadBalancer](/guides/introduction-to-kubernetes/05-services-and-networking#h2-service-types)
+- [port, targetPort and nodePort](/guides/introduction-to-kubernetes/05-services-and-networking#h3-which-port-is-which)
 - [Introduction to Kubernetes: Services and Networking](/guides/introduction-to-kubernetes)
 - [Kubernetes Quiz](/quizzes/kubernetes-quiz)

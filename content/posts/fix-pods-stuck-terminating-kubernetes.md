@@ -6,8 +6,8 @@ category:
   slug: 'kubernetes'
 date: '2024-12-19'
 publishedAt: '2024-12-19T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -197,6 +197,49 @@ chmod +x fix-terminating-pods.sh
 ./fix-terminating-pods.sh my-namespace
 ```
 
+## A Namespace Stuck in Terminating
+
+A namespace stays in `Terminating` until every object in it is gone. If one object has a finalizer that nothing removes, the namespace waits forever. The namespace's own conditions name the blocker. We reproduced it on Kubernetes 1.37 with a ConfigMap that carries a made-up finalizer, `example.com/cleanup`:
+
+```terminal
+{
+  "title": "why is the namespace stuck?",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "kubectl get namespace demo",
+      "output": "NAME   STATUS        AGE\ndemo   Terminating   10s"
+    },
+    {
+      "cmd": "kubectl get namespace demo -o jsonpath='{range .status.conditions[*]}{.type}={.status}: {.message}{\"\\n\"}{end}'",
+      "output": "NamespaceDeletionDiscoveryFailure=False: All resources successfully discovered\nNamespaceDeletionGroupVersionParsingFailure=False: All legacy kube types successfully parsed\nNamespaceDeletionContentFailure=False: All content successfully deleted, may be waiting on finalization\nNamespaceContentRemaining=True: Some resources are remaining: configmaps. has 1 resource instances\nNamespaceFinalizersRemaining=True: Some content in the namespace has finalizers remaining: example.com/cleanup in 1 resource instances"
+    },
+    {
+      "comment": "list everything that is left, across all namespaced types",
+      "cmd": "kubectl api-resources --verbs=list --namespaced -o name | xargs -n 1 kubectl get --show-kind --ignore-not-found -n demo",
+      "output": "NAME                   DATA   AGE\nconfigmap/app-config   1      11s\nWarning: v1 Endpoints is deprecated in v1.33+; use discovery.k8s.io/v1 EndpointSlice"
+    }
+  ]
+}
+```
+
+Fix the cause, then the namespace finishes on its own:
+
+1. **A finalizer that nothing removes.** A finalizer belongs to a controller, which removes it after its cleanup. If the controller (an operator, a CSI driver) is gone or broken, fix or reinstall it first, so the cleanup really happens. If you know the cleanup is not needed, remove the finalizer yourself: `kubectl -n demo patch configmap app-config --type=json -p '[{"op":"remove","path":"/metadata/finalizers"}]'`. In our test the namespace was gone right after that.
+2. **An API that does not answer.** If `NamespaceDeletionDiscoveryFailure` is `True`, the namespace controller cannot list every type, often because an aggregated API such as metrics-server is down. `kubectl get apiservices` shows those with `False` in the `AVAILABLE` column; fix the service behind it or delete the unused `APIService`.
+
+`kubectl delete namespace demo --force --grace-period=0` does not help. It prints `namespace "demo" force deleted`, the namespace stays `Terminating`, and without `--wait=false` the command waits forever; in our first test run it hung until the CI job timed out.
+
+The last resort is to clear the namespace's own finalizer through the `finalize` subresource:
+
+```bash
+kubectl get namespace demo -o json | jq '.spec.finalizers = []' \
+  | kubectl replace --raw /api/v1/namespaces/demo/finalize -f -
+```
+
+The namespace disappears, but the objects that blocked it do not. They stay in etcd. When we created a namespace with the same name again, the old ConfigMap was back in it, finalizer included. Use this only when you have removed the leftovers some other way, or will never reuse the name.
+
 ## Prevention Strategies
 
 **Set appropriate grace periods** in your deployment manifests:
@@ -370,7 +413,7 @@ Now that you can resolve stuck terminating pods, consider learning about:
 
 ## Related Resources
 
-- [Pods CrashLoopBackOff: No Logs](/posts/kubernetes-pods-crashloopbackoff-no-logs)
+- [Debug CrashLoopBackOff and other pod problems](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes#h2-a-troubleshooting-playbook)
 - [Why Does a Pod Get Recreated When Deleted?](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
 - [How to Delete All Kubernetes Resources](/posts/how-to-delete-all-resources-from-kubernetes-one-time)
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)

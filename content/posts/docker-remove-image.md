@@ -93,6 +93,6 @@ Good luck with your project!
 ## Related Resources
 
 - [Delete All Local Docker Images](/posts/delete-all-local-docker-images): bulk cleanup
-- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup): reclaim disk space
+- [Fix "No Space Left on Device" in Docker](/posts/docker-image-storage-locations#h2-fixing-no-space-left-on-device): reclaim disk space
 - [Remove Old Docker Containers](/posts/remove-old-docker-containers): container cleanup
 - [Docker Image vs Container](/posts/docker-image-vs-container): understand the difference

@@ -6,7 +6,7 @@ category:
   name: Kubernetes
   slug: kubernetes
 publishedAt: '2025-05-17'
-updatedAt: '2026-10-24'
+updatedAt: '2026-11-05'
 author:
   name: DevOps Daily Team
   slug: devops-daily-team

@@ -657,7 +657,7 @@ Both tools have their place in the container ecosystem, and understanding when t
 
 ## Related Resources
 
-- [Docker Compose vs Dockerfile](/posts/docker-compose-vs-dockerfile): understand Docker build vs orchestration
+- [Dockerfile vs Compose file](/posts/docker-image-vs-container#h2-dockerfile-vs-compose-file-which-does-what): understand Docker build vs orchestration
 - [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker fundamentals
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes): learn Kubernetes from scratch
 - [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge

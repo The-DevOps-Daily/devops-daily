@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2024-10-22'
 publishedAt: '2024-10-22T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -141,6 +141,54 @@ docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Ports}}\t{{.Status}}"
 ```
 
 Now you have four containers (including the production one) all running from the same image but operating independently. Each container can have different data, different environment variables, and different runtime state.
+
+## Dockerfile vs Compose File: Which Does What?
+
+The same split explains the two files you see in most projects. A **Dockerfile** describes how to build one image. A **Compose file** (`compose.yaml`) describes how to run containers: which images, which ports, volumes, environment variables and networks, and in what order they start. Compose can also build images, by pointing a service at a directory with a Dockerfile:
+
+```yaml
+# compose.yaml
+services:
+  migrate:
+    image: alpine:3.22
+    command: sh -c "echo applying migrations && sleep 2 && echo migrations done"
+  app:
+    build: ./app # build the image from ./app/Dockerfile
+    image: batch1-app:1.0 # and tag it with this name
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - '127.0.0.1:8000:8000'
+```
+
+`docker compose build` builds the image from the Dockerfile, and `docker compose up -d` runs both containers (we named the project `batch1` with `-p`). The `migrate` container runs once and exits, and `app` starts only after it exits with code 0:
+
+```terminal
+{
+  "title": "one Compose file, two containers (last lines of up)",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "docker compose -p batch1 up -d",
+      "output": " Container batch1-migrate-1  Started\n Container batch1-migrate-1  Exited\n Container batch1-app-1  Starting\n Container batch1-app-1  Started"
+    },
+    {
+      "cmd": "docker compose -p batch1 ps -a --format 'table {{.Service}}\\t{{.Status}}'",
+      "output": "SERVICE   STATUS\napp       Up Less than a second\nmigrate   Exited (0) Less than a second ago"
+    }
+  ]
+}
+```
+
+| Question               | Dockerfile                  | Compose file                                |
+| ---------------------- | --------------------------- | ------------------------------------------- |
+| What does it describe? | One image                   | Containers, networks and volumes for an app |
+| When does it act?      | At build time               | At run time (and build time with `build:`)  |
+| Command                | `docker build`              | `docker compose up`                         |
+| Where does it run?     | Anywhere that builds images | One Docker host                             |
+
+You do not need a Compose file for a single container, and you do not need a Dockerfile if every service uses a ready-made image. Leave out the top-level `version:` key that older Compose files start with. Compose ignores it and prints a warning that the attribute `version` is obsolete.
 
 ## Practical Differences in Daily Development
 

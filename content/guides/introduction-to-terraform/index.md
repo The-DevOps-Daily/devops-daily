@@ -6,7 +6,7 @@ category:
   name: Terraform
   slug: terraform
 publishedAt: '2025-04-28'
-updatedAt: '2026-10-24'
+updatedAt: '2026-11-05'
 author:
   name: DevOps Daily Team
   slug: devops-daily-team

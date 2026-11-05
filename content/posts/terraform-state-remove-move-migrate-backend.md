@@ -6,8 +6,8 @@ category:
   slug: 'terraform'
 date: '2026-09-26'
 publishedAt: '2026-09-26T09:00:00Z'
-updatedAt: '2026-09-26T09:00:00Z'
-readingTime: '12 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -309,7 +309,44 @@ Then run `terraform init -migrate-state`. Terraform notices the backend changed,
 
 For Spaces, the credentials are a Spaces access key and secret, passed as `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in the environment, not written in the backend block. DigitalOcean documents the full setup in [Configure DigitalOcean Spaces as a Terraform Remote State Backend](https://docs.digitalocean.com/products/spaces/reference/terraform-backend/), including state locking with `use_lockfile` on Terraform 1.11 or later. If your state also holds secrets (it usually does), keep the bucket private and limit who has keys to it; that is the whole point of the next two sections.
 
-For the errors people usually hit on this step, from the wrong region to missing permissions, see [common S3 backend configuration errors](/posts/terraform-s3-backend-configuration-errors), and if a lock gets stuck, [how to unlock a locked state file](/posts/terraform-statefile-locked).
+### Common S3 backend errors
+
+Most errors on this step come from four causes.
+
+**`AccessDenied` (403) on init, plan or apply.** The identity that runs Terraform is missing a permission. The S3 backend needs `s3:ListBucket` on the bucket, and `s3:GetObject` and `s3:PutObject` on the state key. With `use_lockfile = true`, it also needs `s3:GetObject`, `s3:PutObject` and `s3:DeleteObject` on the lock file, which is the state key plus `.tflock`. It does not need `s3:DeleteObject` on the state itself. A minimal policy for the backend above:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::acme-terraform-state"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "arn:aws:s3:::acme-terraform-state/prod/network.tfstate"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::acme-terraform-state/prod/network.tfstate.tflock"
+    }
+  ]
+}
+```
+
+If the bucket uses SSE-KMS with your own key (`kms_key_id`), the same identity also needs `kms:Encrypt`, `kms:Decrypt` and `kms:GenerateDataKey` on that key. Workspaces other than `default` store their state under the `env:/` prefix (`workspace_key_prefix`), so widen the object ARNs to cover those keys too.
+
+**`NoSuchBucket` or a redirect error.** The bucket name is wrong, the bucket does not exist yet (run the bootstrap step first), or `region` in the backend block is not the bucket's region. `region` is required and can also come from `AWS_REGION` or `AWS_DEFAULT_REGION`.
+
+**`No valid credential sources found`.** The backend found no credentials. It reads the same sources as the AWS CLI: `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, `AWS_PROFILE`, or a role on the machine. Check with `aws sts get-caller-identity` using the same environment, and set `profile` or `assume_role` in the backend block if Terraform should use a different identity than your shell.
+
+**`Backend configuration changed`.** You edited the `backend` block after `init`. Run `terraform init -migrate-state` to copy the state to the new location, or `terraform init -reconfigure` to use the new settings without copying anything, for example when only credentials changed. Choosing `-reconfigure` when the key changed leaves you with an empty state at the new key and the real one at the old key.
+
+If a crashed run leaves the state locked, see [how to release a stuck state lock](/posts/terraform-statefile-locked).
 
 ## The DynamoDB lock table is on its way out
 

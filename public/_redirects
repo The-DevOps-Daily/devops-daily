@@ -20,7 +20,7 @@
 /posts/docker-cannot-connect-daemon /posts/cannot-connect-to-docker-daemon 301
 /posts/how-to-resolve-git-merge-conflicts /posts/how-do-i-resolve-merge-conflicts-in-a-git-repository 301
 /posts/prompt-yes-no-cancel-input-linux-shell-script /posts/prompt-for-yes-no-cancel-input-in-linux-shell-script 301
-/posts/redirect-output-to-file-and-stdout-bash /posts/redirect-output-to-file-and-stdout 301
+/posts/redirect-output-to-file-and-stdout-bash /posts/redirect-all-output-to-file-bash 301
 # Thin Terraform expression posts consolidated into one guide (Aug 2026)
 /posts/concatenate-string-with-variable-in-terraform /posts/terraform-strings-and-conditionals 301
 /posts/how-do-you-do-simple-string-concatenation-in-terraform /posts/terraform-strings-and-conditionals 301
@@ -66,6 +66,32 @@
 /posts/restart-single-container-docker-compose /posts/rebuild-docker-container-compose 301
 /posts/upgrade-docker-container-image-changed /posts/rebuild-docker-container-compose 301
 /posts/interactive-shell-docker-compose /posts/rebuild-docker-container-compose 301
+# Dead short posts merged into stronger pages (Nov 2026, batch 1)
+/posts/expose-vs-publish-docker /posts/docker-compose-ports-vs-expose 301
+/posts/vagrant-vs-docker-for-isolated-environments /posts/how-docker-differs-from-a-virtual-machine 301
+/posts/docker-compose-vs-dockerfile /posts/docker-image-vs-container 301
+/posts/docker-compose-multiple-commands /posts/difference-run-cmd-dockerfile 301
+/posts/how-to-clear-docker-container-logs-properly /posts/docker-desktop-local-log-driver 301
+/posts/docker-no-space-left-cleanup /posts/docker-image-storage-locations 301
+/posts/push-docker-image-private-repo /guides/introduction-to-docker/03-working-with-docker-images 301
+/posts/how-to-mount-a-single-file-in-a-volume /guides/introduction-to-docker/06-working-with-docker-volumes 301
+/posts/git-add-a-vs-git-add-dot /guides/introduction-to-git/03-tracking-changes 301
+/posts/clone-all-remote-branches-git /guides/introduction-to-git/06-remote-repositories 301
+/posts/move-uncommitted-work-to-new-branch /posts/move-most-recent-commits-to-new-branch-git 301
+/posts/git-cherry-pick-commit /posts/how-to-cherry-pick-commits-in-git 301
+/posts/create-copy-directory-unix-linux /posts/force-cp-overwrite-without-confirmation 301
+/posts/looping-through-file-content-bash /guides/introduction-to-linux/09-shell-scripting 301
+/posts/compare-two-directory-trees-by-content /guides/introduction-to-linux/10-system-administration 301
+/posts/redirect-output-to-file-and-stdout /posts/redirect-all-output-to-file-bash 301
+/posts/difference-between-port-and-socket /posts/can-two-sockets-share-tcp-port 301
+/posts/terraform-api-gateway-stage-not-deploying /guides/introduction-to-terraform/04-resources-and-data-sources 301
+/posts/terraform-s3-backend-configuration-errors /posts/terraform-state-remove-move-migrate-backend 301
+/posts/remove-stuck-terminating-namespace /posts/fix-pods-stuck-terminating-kubernetes 301
+/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer /guides/introduction-to-kubernetes/05-services-and-networking 301
+/posts/difference-between-targetport-and-port-in-kubernetes-service-definition /guides/introduction-to-kubernetes/05-services-and-networking 301
+/posts/kubernetes-pods-crashloopbackoff-no-logs /guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes 301
+/posts/why-your-ci-pipeline-is-slower /posts/what-does-one-merge-cost-in-ci 301
+/posts/devops-mistakes-2025 /posts/what-is-devops 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -89,7 +115,6 @@
 /images/posts/check-file-not-exist-bash.png /images/posts/check-file-not-exist-bash.jpg 301
 /images/posts/datadog-alternatives-2026-real-prices.png /images/posts/datadog-alternatives-2026-real-prices.jpg 301
 /images/posts/digitalocean-inference-prompt-caching-measured.png /images/posts/digitalocean-inference-prompt-caching-measured.jpg 301
-/images/posts/docker-compose-vs-dockerfile.png /images/posts/docker-compose-vs-dockerfile.jpg 301
 /images/posts/github-actions-node20-removed.png /images/posts/github-actions-node20-removed.jpg 301
 /images/posts/go-runs-the-cloud-native-control-plane.png /images/posts/go-runs-the-cloud-native-control-plane.jpg 301
 /images/posts/how-youtube-slack-github-shard-mysql-vitess.png /images/posts/how-youtube-slack-github-shard-mysql-vitess.jpg 301
@@ -332,7 +357,6 @@
 /images/posts/delete-commit-from-branch.png /images/posts/delete-commit-from-branch.jpg 301
 /images/posts/deployment-strategies-guide.png /images/posts/deployment-strategies-guide.jpg 301
 /images/posts/designing-automation-with-failure-in-mind.png /images/posts/designing-automation-with-failure-in-mind.jpg 301
-/images/posts/devops-mistakes-2025.png /images/posts/devops-mistakes-2025.jpg 301
 /images/posts/devops-vs-sysadmin-vs-sre.png /images/posts/devops-vs-sysadmin-vs-sre.jpg 301
 /images/posts/difference-between-cmd-and-entrypoint-in-dockerfiles.png /images/posts/difference-between-cmd-and-entrypoint-in-dockerfiles.jpg 301
 /images/posts/docker-alpine-use-bash.png /images/posts/docker-alpine-use-bash.jpg 301
@@ -351,7 +375,6 @@
 /images/posts/forward-host-port-to-docker-container.png /images/posts/forward-host-port-to-docker-container.jpg 301
 /images/posts/get-current-branch-name-git.png /images/posts/get-current-branch-name-git.jpg 301
 /images/posts/get-current-date-time-and-custom-commands.png /images/posts/get-current-date-time-and-custom-commands.jpg 301
-/images/posts/git-add-a-vs-git-add-dot.png /images/posts/git-add-a-vs-git-add-dot.jpg 301
 /images/posts/gitops-deploy-docker-containers-github-actions-argocd.png /images/posts/gitops-deploy-docker-containers-github-actions-argocd.jpg 301
 /images/posts/healthz-convention-origin.png /images/posts/healthz-convention-origin.jpg 301
 /images/posts/heroku-alternatives-2026.png /images/posts/heroku-alternatives-2026.jpg 301
@@ -370,7 +393,6 @@
 /images/posts/how-to-free-up-tcp-port.png /images/posts/how-to-free-up-tcp-port.jpg 301
 /images/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network.png /images/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network.jpg 301
 /images/posts/how-to-get-docker-host-ip-from-container.png /images/posts/how-to-get-docker-host-ip-from-container.jpg 301
-/images/posts/how-to-mount-a-single-file-in-a-volume.png /images/posts/how-to-mount-a-single-file-in-a-volume.jpg 301
 /images/posts/how-to-publish-helm-chart.png /images/posts/how-to-publish-helm-chart.jpg 301
 /images/posts/how-to-run-cron-job-in-docker.png /images/posts/how-to-run-cron-job-in-docker.jpg 301
 /images/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams.png /images/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams.jpg 301
@@ -387,7 +409,6 @@
 /images/posts/network-usage-top-htop-on-linux.png /images/posts/network-usage-top-htop-on-linux.jpg 301
 /images/posts/organize-terraform-modules-multiple-environments.png /images/posts/organize-terraform-modules-multiple-environments.jpg 301
 /images/posts/ping-timeout-vs-destination-unreachable.png /images/posts/ping-timeout-vs-destination-unreachable.jpg 301
-/images/posts/remove-stuck-terminating-namespace.png /images/posts/remove-stuck-terminating-namespace.jpg 301
 /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.png /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.jpg 301
 /images/posts/set-git-editor-commit-messages.png /images/posts/set-git-editor-commit-messages.jpg 301
 /images/posts/set-image-name-dockerfile.png /images/posts/set-image-name-dockerfile.jpg 301
@@ -408,7 +429,6 @@
 /images/posts/what-is-the-difference-between-active-and-passive-ftp.png /images/posts/what-is-the-difference-between-active-and-passive-ftp.jpg 301
 /images/posts/why-c-preprocessor-interprets-linux-as-one.png /images/posts/why-c-preprocessor-interprets-linux-as-one.jpg 301
 /images/posts/why-sctp-is-not-widely-used.png /images/posts/why-sctp-is-not-widely-used.jpg 301
-/images/posts/why-your-ci-pipeline-is-slower.png /images/posts/why-your-ci-pipeline-is-slower.jpg 301
 /images/posts/write-simple-kubernetes-operator.png /images/posts/write-simple-kubernetes-operator.jpg 301
 /images/posts/api-gateway-endpoint-variable.png /images/posts/api-gateway-endpoint-variable.jpg 301
 /images/posts/cannot-connect-to-docker-daemon.png /images/posts/cannot-connect-to-docker-daemon.jpg 301
@@ -416,21 +436,18 @@
 /images/posts/change-echo-output-colors-linux.png /images/posts/change-echo-output-colors-linux.jpg 301
 /images/posts/change-permissions-folder-subfolders-files-linux.png /images/posts/change-permissions-folder-subfolders-files-linux.jpg 301
 /images/posts/cicd-pipeline-hardening-guide.png /images/posts/cicd-pipeline-hardening-guide.jpg 301
-/images/posts/clone-all-remote-branches-git.png /images/posts/clone-all-remote-branches-git.jpg 301
 /images/posts/close-specific-port-linux.png /images/posts/close-specific-port-linux.jpg 301
 /images/posts/close-vs-shutdown-socket.png /images/posts/close-vs-shutdown-socket.jpg 301
 /images/posts/command-line-for-looking-at-specific-port.png /images/posts/command-line-for-looking-at-specific-port.jpg 301
 /images/posts/communication-multiple-docker-compose.png /images/posts/communication-multiple-docker-compose.jpg 301
 /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.png /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.jpg 301
 /images/posts/count-lines-in-file-linux-terminal.png /images/posts/count-lines-in-file-linux-terminal.jpg 301
-/images/posts/create-copy-directory-unix-linux.png /images/posts/create-copy-directory-unix-linux.jpg 301
 /images/posts/dast-integration-guide.png /images/posts/dast-integration-guide.jpg 301
 /images/posts/delete-all-local-docker-images.png /images/posts/delete-all-local-docker-images.jpg 301
 /images/posts/dependency-scanning-guide.png /images/posts/dependency-scanning-guide.jpg 301
 /images/posts/difference-between-git-pull-and-git-fetch.png /images/posts/difference-between-git-pull-and-git-fetch.jpg 301
 /images/posts/different-environments-in-terraform.png /images/posts/different-environments-in-terraform.jpg 301
 /images/posts/docker-build-with-multiple-build-args.png /images/posts/docker-build-with-multiple-build-args.jpg 301
-/images/posts/docker-compose-multiple-commands.png /images/posts/docker-compose-multiple-commands.jpg 301
 /images/posts/docker-compose-ports-vs-expose.png /images/posts/docker-compose-ports-vs-expose.jpg 301
 /images/posts/docker-compose-vs-kubernetes-differences.png /images/posts/docker-compose-vs-kubernetes-differences.jpg 301
 /images/posts/docker-compose-wait-container.png /images/posts/docker-compose-wait-container.jpg 301
@@ -454,7 +471,6 @@
 /images/posts/how-to-add-a-volume-to-an-existing-docker-container.png /images/posts/how-to-add-a-volume-to-an-existing-docker-container.jpg 301
 /images/posts/how-to-change-uri-url-for-remote-git-repository.png /images/posts/how-to-change-uri-url-for-remote-git-repository.jpg 301
 /images/posts/how-to-cherry-pick-commits-in-git.png /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
-/images/posts/how-to-clear-docker-container-logs-properly.png /images/posts/how-to-clear-docker-container-logs-properly.jpg 301
 /images/posts/how-to-delete-git-branch-locally-and-remotely.png /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
 /images/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from.png /images/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from.jpg 301
 /images/posts/how-to-discard-unstaged-changes-in-git.png /images/posts/how-to-discard-unstaged-changes-in-git.jpg 301
@@ -470,10 +486,8 @@
 /images/posts/ignore-change-of-attribute.png /images/posts/ignore-change-of-attribute.jpg 301
 /images/posts/ingress-vs-load-balancer-kubernetes.png /images/posts/ingress-vs-load-balancer-kubernetes.jpg 301
 /images/posts/kill-process-running-on-port-linux.png /images/posts/kill-process-running-on-port-linux.jpg 301
-/images/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer.png /images/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer.jpg 301
 /images/posts/list-files-in-commit-git.png /images/posts/list-files-in-commit-git.jpg 301
 /images/posts/loop-through-array-strings-bash.png /images/posts/loop-through-array-strings-bash.jpg 301
-/images/posts/looping-through-file-content-bash.png /images/posts/looping-through-file-content-bash.jpg 301
 /images/posts/modify-specific-commit-git.png /images/posts/modify-specific-commit-git.jpg 301
 /images/posts/move-most-recent-commits-to-new-branch-git.png /images/posts/move-most-recent-commits-to-new-branch-git.jpg 301
 /images/posts/organizing-terraform-repository-with-subfolders.png /images/posts/organizing-terraform-repository-with-subfolders.jpg 301
@@ -494,7 +508,6 @@
 /images/posts/ssh-could-not-resolve-hostname-error.png /images/posts/ssh-could-not-resolve-hostname-error.jpg 301
 /images/posts/sync-forked-repository-github.png /images/posts/sync-forked-repository-github.jpg 301
 /images/posts/terraform-add-ssh-key-gcp-instance.png /images/posts/terraform-add-ssh-key-gcp-instance.jpg 301
-/images/posts/terraform-api-gateway-stage-not-deploying.png /images/posts/terraform-api-gateway-stage-not-deploying.jpg 301
 /images/posts/terraform-apply-sql-scripts-rds.png /images/posts/terraform-apply-sql-scripts-rds.jpg 301
 /images/posts/terraform-cloudwatch-log-subscription-lambda.png /images/posts/terraform-cloudwatch-log-subscription-lambda.jpg 301
 /images/posts/terraform-failed-install-provider-checksums-mismatch.png /images/posts/terraform-failed-install-provider-checksums-mismatch.jpg 301
@@ -522,7 +535,6 @@
 /images/posts/check-string-contains-substring-bash.png /images/posts/check-string-contains-substring-bash.jpg 301
 /images/posts/clean-up-replicasets-when-updating-deployments.png /images/posts/clean-up-replicasets-when-updating-deployments.jpg 301
 /images/posts/commit-part-of-file-git.png /images/posts/commit-part-of-file-git.jpg 301
-/images/posts/compare-two-directory-trees-by-content.png /images/posts/compare-two-directory-trees-by-content.jpg 301
 /images/posts/concatenate-string-variables-bash.png /images/posts/concatenate-string-variables-bash.jpg 301
 /images/posts/convert-string-to-lowercase-in-bash.png /images/posts/convert-string-to-lowercase-in-bash.jpg 301
 /images/posts/copy-command-output-to-clipboard.png /images/posts/copy-command-output-to-clipboard.jpg 301
@@ -537,14 +549,12 @@
 /images/posts/docker-image-storage-locations.png /images/posts/docker-image-storage-locations.jpg 301
 /images/posts/docker-image-vs-container.png /images/posts/docker-image-vs-container.jpg 301
 /images/posts/docker-name-already-in-use.png /images/posts/docker-name-already-in-use.jpg 301
-/images/posts/docker-no-space-left-cleanup.png /images/posts/docker-no-space-left-cleanup.jpg 301
 /images/posts/docker-security-best-practices.png /images/posts/docker-security-best-practices.jpg 301
 /images/posts/docker-ubuntu-ping-not-found.png /images/posts/docker-ubuntu-ping-not-found.jpg 301
 /images/posts/dockerfile-update-path.png /images/posts/dockerfile-update-path.jpg 301
 /images/posts/enter-docker-container-new-tty.png /images/posts/enter-docker-container-new-tty.jpg 301
 /images/posts/execute-terraform-actions-without-prompt.png /images/posts/execute-terraform-actions-without-prompt.jpg 301
 /images/posts/expose-multiple-ports-docker.png /images/posts/expose-multiple-ports-docker.jpg 301
-/images/posts/expose-vs-publish-docker.png /images/posts/expose-vs-publish-docker.jpg 301
 /images/posts/find-files-with-wildcards-linux.png /images/posts/find-files-with-wildcards-linux.jpg 301
 /images/posts/finding-local-ip-addresses-using-pythons-stdlib.png /images/posts/finding-local-ip-addresses-using-pythons-stdlib.jpg 301
 /images/posts/fix-docker-permission-denied-error.png /images/posts/fix-docker-permission-denied-error.jpg 301
@@ -552,7 +562,6 @@
 /images/posts/force-docker-clean-build.png /images/posts/force-docker-clean-build.jpg 301
 /images/posts/get-current-time-seconds-since-epoch-bash.png /images/posts/get-current-time-seconds-since-epoch-bash.jpg 301
 /images/posts/get-current-working-directory-terraform.png /images/posts/get-current-working-directory-terraform.jpg 301
-/images/posts/git-cherry-pick-commit.png /images/posts/git-cherry-pick-commit.jpg 301
 /images/posts/git-fetch-remote-branch.png /images/posts/git-fetch-remote-branch.jpg 301
 /images/posts/git-ignore-file-mode-changes.png /images/posts/git-ignore-file-mode-changes.jpg 301
 /images/posts/github-actions-fast.png /images/posts/github-actions-fast.jpg 301
@@ -579,7 +588,6 @@
 /images/posts/kubernetes-list-all-pods-and-nodes.png /images/posts/kubernetes-list-all-pods-and-nodes.jpg 301
 /images/posts/lightweight-alternatives-to-python-twisted.png /images/posts/lightweight-alternatives-to-python-twisted.jpg 301
 /images/posts/minimum-aws-permissions-for-terraform.png /images/posts/minimum-aws-permissions-for-terraform.jpg 301
-/images/posts/move-uncommitted-work-to-new-branch.png /images/posts/move-uncommitted-work-to-new-branch.jpg 301
 /images/posts/nuke-all-aws-resources.png /images/posts/nuke-all-aws-resources.jpg 301
 /images/posts/parse-command-line-arguments-bash.png /images/posts/parse-command-line-arguments-bash.jpg 301
 /images/posts/pass-environment-variables-docker-containers.png /images/posts/pass-environment-variables-docker-containers.jpg 301
@@ -587,10 +595,8 @@
 /images/posts/postgres-k8s.png /images/posts/postgres-k8s.jpg 301
 /images/posts/profile-cpp-code-performance-linux.png /images/posts/profile-cpp-code-performance-linux.jpg 301
 /images/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script.png /images/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script.jpg 301
-/images/posts/push-docker-image-private-repo.png /images/posts/push-docker-image-private-repo.jpg 301
 /images/posts/push-git-tag-to-remote.png /images/posts/push-git-tag-to-remote.jpg 301
 /images/posts/recursively-grep-directories-subdirectories.png /images/posts/recursively-grep-directories-subdirectories.jpg 301
-/images/posts/redirect-output-to-file-and-stdout.png /images/posts/redirect-output-to-file-and-stdout.jpg 301
 /images/posts/remove-file-from-git-keep-local.png /images/posts/remove-file-from-git-keep-local.jpg 301
 /images/posts/remove-git-submodule.png /images/posts/remove-git-submodule.jpg 301
 /images/posts/remove-old-docker-containers.png /images/posts/remove-old-docker-containers.jpg 301
@@ -605,9 +611,7 @@
 /images/posts/terraform-import-index-value-required-error.png /images/posts/terraform-import-index-value-required-error.jpg 301
 /images/posts/terraform-read-environment-variables-from-env-file.png /images/posts/terraform-read-environment-variables-from-env-file.jpg 301
 /images/posts/terraform-referencing-for-each-resources.png /images/posts/terraform-referencing-for-each-resources.jpg 301
-/images/posts/terraform-s3-backend-configuration-errors.png /images/posts/terraform-s3-backend-configuration-errors.jpg 301
 /images/posts/undo-git-rebase.png /images/posts/undo-git-rebase.jpg 301
-/images/posts/vagrant-vs-docker-for-isolated-environments.png /images/posts/vagrant-vs-docker-for-isolated-environments.jpg 301
 /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.png /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.jpg 301
 /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.png /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.jpg 301
 /images/exercises/ansible-web-server-automation.png /images/exercises/ansible-web-server-automation.jpg 301
@@ -655,8 +659,6 @@
 /images/posts/create-bash-alias-that-takes-parameters.png /images/posts/create-bash-alias-that-takes-parameters.jpg 301
 /images/posts/create-folder-in-s3-bucket.png /images/posts/create-folder-in-s3-bucket.jpg 301
 /images/posts/delete-all-resources-except-one.png /images/posts/delete-all-resources-except-one.jpg 301
-/images/posts/difference-between-port-and-socket.png /images/posts/difference-between-port-and-socket.jpg 301
-/images/posts/difference-between-targetport-and-port-in-kubernetes-service-definition.png /images/posts/difference-between-targetport-and-port-in-kubernetes-service-definition.jpg 301
 /images/posts/docker-assign-port-mapping.png /images/posts/docker-assign-port-mapping.jpg 301
 /images/posts/docker-cant-connect-to-docker-daemon.png /images/posts/docker-cant-connect-to-docker-daemon.jpg 301
 /images/posts/docker-edit-file-in-container.png /images/posts/docker-edit-file-in-container.jpg 301
@@ -692,7 +694,6 @@
 /images/posts/kubectl-get-events-only-for-pod.png /images/posts/kubectl-get-events-only-for-pod.jpg 301
 /images/posts/kubernetes-api-get-pods-on-specific-nodes.png /images/posts/kubernetes-api-get-pods-on-specific-nodes.jpg 301
 /images/posts/kubernetes-deployments-vs-statefulsets.png /images/posts/kubernetes-deployments-vs-statefulsets.jpg 301
-/images/posts/kubernetes-pods-crashloopbackoff-no-logs.png /images/posts/kubernetes-pods-crashloopbackoff-no-logs.jpg 301
 /images/posts/listing-all-resources-in-a-namespace.png /images/posts/listing-all-resources-in-a-namespace.jpg 301
 /images/posts/preferred-bash-shebang.png /images/posts/preferred-bash-shebang.jpg 301
 /images/posts/ps-command-not-working-docker.png /images/posts/ps-command-not-working-docker.jpg 301

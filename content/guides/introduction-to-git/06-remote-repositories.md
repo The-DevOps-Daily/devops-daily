@@ -367,6 +367,35 @@ Sam fetches and starts working on the same branch. `git switch` with the name of
 
 `git branch -vv` shows each branch's upstream in brackets, plus `ahead N` and `behind N` counts when they differ (as of the last fetch). [Fetch a remote branch and check it out](/posts/git-fetch-remote-branch), [check out a remote branch](/posts/how-to-checkout-remote-git-branch) and [make an existing branch track a remote branch](/posts/make-git-branch-track-remote) cover the variations, such as `git branch -u origin/main` to set an upstream later.
 
+### A Local Branch for Every Remote Branch
+
+A clone already has every branch of the remote, as a remote-tracking branch (`origin/docs/runbook`); only the default branch is checked out. You rarely need local copies of all of them, because `git switch <name>` creates one the moment you need it. If you do want them all, for example before you move a repository to a new server, loop over the remote-tracking refs:
+
+```bash
+git fetch --prune origin
+for branch in $(git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin/); do
+  [ "$branch" = HEAD ] && continue                               # origin/HEAD is an alias, not a branch
+  git show-ref --verify --quiet "refs/heads/$branch" && continue # already have it
+  git branch --track "$branch" "origin/$branch"
+done
+```
+
+```terminal
+{
+  "title": "after the loop, in a clone with three feature branches",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git branch -vv",
+      "output": "  docs/runbook 3a4fd66 [origin/docs/runbook] docs/runbook\n  fix/footer   fec04dc [origin/fix/footer] fix/footer\n* main         d1c6acd [origin/main] init\n  release/1.0  9ead1c8 [origin/release/1.0] release/1.0"
+    }
+  ]
+}
+```
+
+`%(refname:strip=3)` removes `refs/remotes/origin/` and keeps names with slashes whole, which parsing `git branch -r` with `sed` gets wrong. Running the loop again skips the branches you already have. To copy a repository with every branch and tag for a backup or a migration, `git clone --mirror` is simpler: it makes a bare copy with all refs, which `git push --mirror` can send to the new server.
+
 ## Force Push Safely
 
 You, on your copy of `docs/runbook`, add a line about who is on call below the title, and push:

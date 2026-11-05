@@ -110,7 +110,7 @@ Two consequences bite constantly:
 }
 ```
 
-If the ClusterIP/NodePort/LoadBalancer distinction itself is still fuzzy, start with [the Service types explainer](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer) and come back.
+If the ClusterIP/NodePort/LoadBalancer distinction itself is still fuzzy, start with [the Service types section of our Kubernetes guide](/guides/introduction-to-kubernetes/05-services-and-networking#h2-service-types) and come back.
 
 ## 4. Rolling deploys drop requests unless you do two things
 
@@ -138,7 +138,7 @@ The junior instinct is that probes are good, so more probes are better, so copy 
 
 The two probes have opposite failure semantics. Readiness failing means "stop sending me traffic," which is reversible and safe. Liveness failing means "kill and restart me," which is destructive. Now run the tape on a common incident: the database gets slow, your health endpoint (which pings the database) starts timing out, and the kubelet begins restarting *every replica at once*, throwing away warm caches and in-flight work, while the restarts themselves stampede the recovering database. The cluster did exactly what you configured: it turned a slow dependency into a restart loop. Restarting also does nothing to fix a slow database, which is the other tell: liveness restarts only help for states a restart can cure, like a deadlocked process.
 
-The mid-level defaults: every serving container gets a readiness probe; liveness probes only where a restart genuinely un-sticks the process, never checking dependencies, with generous `failureThreshold`; slow-booting apps get a startup probe so liveness does not kill them mid-initialization. If a pod is restart-looping and the logs are empty, [the CrashLoopBackOff playbook](/posts/kubernetes-pods-crashloopbackoff-no-logs) walks the diagnosis.
+The mid-level defaults: every serving container gets a readiness probe; liveness probes only where a restart genuinely un-sticks the process, never checking dependencies, with generous `failureThreshold`; slow-booting apps get a startup probe so liveness does not kill them mid-initialization. If a pod is restart-looping and the logs are empty, [the troubleshooting playbook in our Kubernetes guide](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes#h2-a-troubleshooting-playbook) walks the diagnosis.
 
 ## 6. The scheduler places pods once, then never thinks about them again
 

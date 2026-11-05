@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2025-05-18'
 publishedAt: '2025-05-18T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -148,6 +148,32 @@ There's also a middle ground: many teams run containers **inside** virtual machi
 
 ---
 
+## Vagrant or Docker for an Isolated Dev Environment?
+
+**Vagrant** is the usual way to script VMs on a laptop. A `Vagrantfile` names a base box and the steps that set it up, and `vagrant up` creates the VM with a provider such as VirtualBox, libvirt, VMware or Hyper-V:
+
+```ruby
+# Vagrantfile
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get install -y nginx
+  SHELL
+end
+```
+
+The choice follows the rule above:
+
+- **Pick Docker** when the environment is your app and its services: a runtime, a database, a cache. Containers start in seconds, a Compose file describes the whole stack, and CI runs the same images.
+- **Pick Vagrant** when you need a whole machine: a different kernel or OS (a Windows or BSD guest), systemd services and kernel modules, or a server you configure with Ansible the same way as production.
+- **Use both** when you want a Linux VM that runs Docker inside, for example to test a provisioning script that installs Docker on a fresh server.
+
+Vagrant is a HashiCorp tool under the Business Source License since 2023. For local use that changes nothing, but check it if you build a product on top of it.
+
+---
+
 ## Final Thoughts
 
 Docker and virtual machines both help you isolate and manage software, but they solve different problems.
@@ -163,6 +189,5 @@ Happy coding!
 
 - [Docker Image vs Container](/posts/docker-image-vs-container): understand Docker internals
 - [Docker Runtime Performance Cost](/posts/docker-runtime-performance-cost): performance comparison
-- [Vagrant vs Docker](/posts/vagrant-vs-docker-for-isolated-environments): another comparison
 - [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch
 - [DevOps Survival Guide](/books/devops-survival-guide): broader DevOps context

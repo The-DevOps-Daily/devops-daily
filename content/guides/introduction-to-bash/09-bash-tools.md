@@ -583,6 +583,6 @@ Next: [Bash Best Practices](/guides/introduction-to-bash/10-bash-best-practices)
 
 - [How cat <<EOF works in Bash](/posts/how-cat-eof-works-in-bash)
 - [Set a variable to the output of a command](/posts/set-variable-command-output-bash)
-- [Send output to a file and to the screen](/posts/redirect-output-to-file-and-stdout)
+- [Send output to a file and to the screen](/posts/redirect-all-output-to-file-bash#h2-seeing-output-and-saving-it)
 - [Sleep for milliseconds](/posts/sleep-for-milliseconds)
 - Interview questions: [grep and text search](/interview-questions/junior/linux-grep-text-search)

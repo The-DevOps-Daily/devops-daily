@@ -451,5 +451,5 @@ Managing Docker image storage effectively requires a combination of understandin
 
 - [Delete All Local Docker Images](/posts/delete-all-local-docker-images): nuclear cleanup option
 - [Remove Old Docker Containers](/posts/remove-old-docker-containers): container cleanup
-- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup): reclaim disk space
+- [Fix "No Space Left on Device" in Docker](/posts/docker-image-storage-locations#h2-fixing-no-space-left-on-device): reclaim disk space
 - [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller images

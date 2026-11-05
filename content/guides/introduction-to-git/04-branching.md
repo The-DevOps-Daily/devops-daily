@@ -164,7 +164,7 @@ Then someone reports a typo in the README on `main`. Try to switch:
 }
 ```
 
-`style.css` is different on `main` and on this branch, so switching would overwrite your edit. Git refuses rather than losing it. When the files you changed are the same on both branches, Git switches and brings the changes along (you see an `M` line); that is also how you move work you started on the wrong branch: `git switch -c new-branch` keeps your uncommitted changes ([more on that](/posts/move-uncommitted-work-to-new-branch)).
+`style.css` is different on `main` and on this branch, so switching would overwrite your edit. Git refuses rather than losing it. When the files you changed are the same on both branches, Git switches and brings the changes along (you see an `M` line); that is also how you move work you started on the wrong branch: `git switch -c new-branch` keeps your uncommitted changes ([more on that](/posts/move-most-recent-commits-to-new-branch-git#h2-not-committed-yet-switch-to-a-new-branch)).
 
 Here you have three choices: commit the half-done work, throw it away with `git restore`, or put it aside with **git stash**.
 

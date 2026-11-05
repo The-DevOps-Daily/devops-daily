@@ -6,8 +6,8 @@ category:
   slug: 'networking'
 date: '2025-06-12'
 publishedAt: '2025-06-12T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -23,6 +23,23 @@ tags:
 **TLDR:** Yes, multiple sockets can share a port in specific scenarios. Different connections (unique combinations of local IP, local port, remote IP, remote port) can coexist on the same local port - this is how web servers handle multiple clients. Multiple processes can bind to the same port using `SO_REUSEPORT` (Linux 3.9+) for load balancing. `SO_REUSEADDR` lets you rebind a port in TIME_WAIT state but doesn't allow true sharing of listening ports.
 
 The question "can two sockets share a port?" has different answers depending on what you mean by "share." Let's break down the scenarios.
+
+## Port vs Socket: What Is the Difference?
+
+A **port** is a number from 0 to 65535 in the TCP or UDP header. It tells the receiving machine which program a packet is for: 22 for SSH, 443 for HTTPS. On Linux, ports below 1024 need root or the `CAP_NET_BIND_SERVICE` capability to bind.
+
+A **socket** is the object a program gets from the operating system to send and receive data. A server has one **listening socket**, bound to a local address and port. Every connection it accepts is a new **connected socket**, identified by the protocol plus both ends: local IP and port, remote IP and port. So one port can have many sockets at once. Here a server on port 8080 has accepted three connections from the same machine:
+
+```text
+$ ss -tn -a 'sport = :8080'
+State  Recv-Q Send-Q Local Address:Port Peer Address:Port Process
+LISTEN 0      128        127.0.0.1:8080      0.0.0.0:*
+ESTAB  0      0          127.0.0.1:8080    127.0.0.1:46804
+ESTAB  0      0          127.0.0.1:8080    127.0.0.1:46820
+ESTAB  0      0          127.0.0.1:8080    127.0.0.1:46808
+```
+
+Four sockets share local port 8080: the listening one and three connections, each with a different remote port. The client side works the same way: the operating system gives each outgoing connection its own temporary local port. What you cannot normally have is two **listening** sockets on the same address and port; the second `bind()` fails with `EADDRINUSE` ("address already in use"). The scenarios below show when that rule bends.
 
 ## How TCP Connections Are Identified
 

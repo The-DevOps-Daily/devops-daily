@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2026-10-09'
 publishedAt: '2026-10-09T09:00:00Z'
-updatedAt: '2026-10-09T09:00:00Z'
-readingTime: '9 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -218,11 +218,26 @@ services:
         max-file: '3'
 ```
 
-To clear logs that already fill a disk, see [How to Clear Docker Container Logs Properly](/posts/how-to-clear-docker-container-logs-properly).
-
 ```github
 https://github.com/The-DevOps-Daily/docker-log-driver-check
 ```
+
+### Clear a log that already fills the disk
+
+A limit only applies to containers created after you set it. A container that already has a huge `json-file` log keeps it until you clear it. Find the file and truncate it in place:
+
+```bash
+LOG=$(docker inspect -f '{{.LogPath}}' my-app)
+sudo du -h "$LOG"
+sudo truncate -s 0 "$LOG"
+```
+
+Truncate, do not delete. We tested both on Docker Engine 28.0.4 with a container that writes 100 lines a second:
+
+- **After `truncate`**, Docker kept writing at the start of the empty file, and plain `docker logs` and `docker logs --since 2s` showed the new lines. `docker logs --tail 2` printed nothing until we restarted the container.
+- **After `rm`**, `docker logs` failed with `Error grabbing logs: open ...-json.log: no such file or directory`, and the daemon still held the deleted file open, so its disk space stays in use while the container runs.
+
+A `truncate` throws away every line in the file, so ship or copy what you need first. The lasting fix is a recreate with a limit: with `--log-opt max-size=1m --log-opt max-file=2`, our test container kept one full 1 MB file (`-json.log.1`) and the current one, and `docker logs --tail` kept working. The `local` driver's files are not plain text, so do not truncate them; recreate the container instead. On Docker Desktop, the log files are inside its Linux VM, and recreating the container is the simple way to start from an empty log.
 
 ## Summary
 

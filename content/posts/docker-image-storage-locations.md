@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2024-11-20'
 publishedAt: '2024-11-20T14:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -161,7 +161,7 @@ docker system df -v
 # Remove unused images, containers, networks, and build cache
 docker system prune
 
-# Remove everything including unused volumes (be careful!)
+# Also remove unused images and anonymous volumes (named volumes stay)
 docker system prune -a --volumes
 ```
 
@@ -193,6 +193,35 @@ docker images --format "table {{.Repository}}\t{{.Tag}}\t{{.Size}}" | sort -k3 -
 # Find large containers (including stopped ones)
 docker ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Size}}"
 ```
+
+## Fixing "No Space Left on Device"
+
+When a build or a container fails with `no space left on device`, the disk that holds Docker's data directory is full. Check that disk first, then see which kind of Docker object uses the space:
+
+```bash
+# Where Docker keeps its data, and how full that disk is
+docker info -f '{{.DockerRootDir}}'
+df -h "$(docker info -f '{{.DockerRootDir}}')"
+
+# Images, containers, volumes and build cache, with what can be reclaimed
+docker system df
+```
+
+Then free space from the safest step to the most aggressive:
+
+1. `docker container prune` removes stopped containers.
+2. `docker image prune` removes dangling images, the untagged leftovers of rebuilds. `docker image prune -a` removes every image that no container uses; they download again when needed.
+3. `docker builder prune` removes the build cache, which grows fast on CI machines and build servers.
+4. `docker system prune` does steps 1 to 3 (dangling images only) plus unused networks.
+
+**Volumes are safer than the `--volumes` flag suggests.** Since Docker Engine 23, `docker system prune --volumes` and `docker volume prune` remove only anonymous volumes. In our test on Engine 28, a prune removed the anonymous volume of a deleted container and kept a named volume called `named-data`. Named volumes go only with `docker volume rm` or `docker volume prune --all`, so check `docker volume ls` before you use either one.
+
+If `docker system df` shows little to reclaim but the disk is still full, look at two more places:
+
+- **Container logs.** The default `json-file` driver never rotates, and `docker system df` does not count logs. `sudo du -sh /var/lib/docker/containers/*/*-json.log | sort -h | tail` finds the big ones. [Clear a log that already fills the disk](/posts/docker-desktop-local-log-driver#h3-clear-a-log-that-already-fills-the-disk) shows how to clear one and set a limit.
+- **Inodes.** `df -i` shows whether the file system ran out of inodes rather than bytes, which happens with many small layer files. Pruning helps here too.
+
+If Docker simply needs more room, move its data directory to a bigger disk, as below.
 
 ## Changing Docker's Storage Location
 
@@ -278,7 +307,6 @@ Now you have a thorough understanding of where Docker stores its data and how to
 
 ## Related Resources
 
-- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup): reclaim disk space
 - [Delete All Local Docker Images](/posts/delete-all-local-docker-images): bulk cleanup
 - [Docker Image vs Container](/posts/docker-image-vs-container): understand the fundamentals
 - [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch

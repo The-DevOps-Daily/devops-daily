@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2024-12-06'
 publishedAt: '2024-12-06T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -36,6 +36,44 @@ When you move commits to a new branch, you're essentially:
 3. The new branch retains the commits you want to move
 
 This operation is safe for local commits but should be avoided for pushed commits.
+
+## Not Committed Yet? Switch to a New Branch
+
+If the work is not committed yet, you do not need to move anything. Uncommitted changes belong to no branch, so create the new branch and Git takes the staged changes, the unstaged changes and the untracked files with you:
+
+```bash
+git status --short
+# M  app.js       <- staged
+#  M style.css    <- not staged
+# ?? widget.js    <- untracked
+
+git switch -c feature-new-ui   # same as git checkout -b feature-new-ui
+git status --short
+# M  app.js
+#  M style.css
+# ?? widget.js
+```
+
+Commit on the new branch, and the branch you started on stays as it was.
+
+Switching to an **existing** branch is different. If that branch has other content in a file you changed, Git refuses rather than overwrite your work:
+
+```text
+error: Your local changes to the following files would be overwritten by checkout:
+	style.css
+Please commit your changes or stash them before you switch branches.
+Aborting
+```
+
+Stash the work, switch, and apply it there. `-u` includes untracked files, which a plain `git stash` leaves behind:
+
+```bash
+git stash push -u -m "wip: dashboard styles"
+git switch feature-dashboard
+git stash pop
+```
+
+If `git stash pop` reports a conflict, fix the files and `git add` them as in a merge. Git keeps the stash entry when the pop does not apply cleanly ("The stash entry is kept in case you need it again"), so run `git stash drop` once you are done. To take only some files along, stash just those paths with `git stash push -- style.css`.
 
 ## Method 1: Create Branch and Reset (Recommended)
 

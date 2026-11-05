@@ -231,6 +231,60 @@ Rules for bind mounts:
 
 [Part 8](/guides/introduction-to-docker/08-docker-compose) uses Compose Watch instead, which rebuilds or updates the container when files change and avoids most of these problems.
 
+### Mount a Single File
+
+A bind mount can also be one file, for example one config file or a CA certificate, while the rest of the directory keeps what the image has:
+
+```bash
+docker run -d --name cfg -v "$(pwd)/app.conf":/etc/app.conf:ro alpine:3.22 sleep 300
+```
+
+In Compose, the long syntax says it clearly:
+
+```yaml
+volumes:
+  - type: bind
+    source: ./app.conf
+    target: /etc/app.conf
+    read_only: true
+```
+
+Two things behave differently from a directory mount.
+
+**An edit can stop reaching the container.** Docker mounts the file's inode, not its name. Appending to the file keeps the inode, so the container sees the change. `sed -i` and many editors save by writing a new file and renaming it over the old one, which gives the name a new inode, and the container keeps the old content:
+
+```terminal
+{
+  "title": "a single-file mount after sed -i",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "echo 'debug=false' >> app.conf && docker exec cfg cat /etc/app.conf",
+      "output": "mode=v1\ndebug=false"
+    },
+    {
+      "cmd": "ls -i app.conf && sed -i 's/v1/v2/' app.conf && ls -i app.conf",
+      "output": "9184505 app.conf\n9185704 app.conf"
+    },
+    {
+      "cmd": "docker exec cfg cat /etc/app.conf",
+      "output": "mode=v1\ndebug=false"
+    },
+    {
+      "cmd": "docker restart cfg && docker exec cfg cat /etc/app.conf",
+      "output": "cfg\nmode=v2\ndebug=false"
+    }
+  ]
+}
+```
+
+Restart the container after such an edit, or mount the directory that holds the file when the app should see changes while it runs.
+
+**A missing file becomes a directory.** If the source does not exist, `-v` creates an empty directory with that name, owned by root, on the host and in the container, and the app then fails to read its config. `--mount` stops with `bind source path does not exist` instead.
+
+Kubernetes has the same pattern: mount one key of a ConfigMap or Secret as a file with `subPath`. A `subPath` mount does not receive updates when the ConfigMap changes, so roll out the pods after a change.
+
 ## The -v and --mount Flags
 
 Both flags create the same mounts. `--mount` is longer but explicit, and it is the only way to pass some options:

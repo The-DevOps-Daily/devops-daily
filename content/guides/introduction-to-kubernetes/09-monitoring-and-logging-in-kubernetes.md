@@ -254,7 +254,32 @@ Check the tag for typos, check that the registry is reachable from the nodes, an
 }
 ```
 
-The first two lines of the log are enough: two options contradict each other. If a crashing container prints nothing at all, check its last state: `Reason: OOMKilled` means the kernel's out-of-memory killer ended it, usually at its memory limit, sometimes because the node ran out ([Part 8](/guides/introduction-to-kubernetes/08-resource-management-and-scaling)); exit code 137 without that reason means something else sent SIGKILL. Exit codes 127 and 126 mean the command in the pod spec does not exist or is not executable. [CrashLoopBackOff with no logs](/posts/kubernetes-pods-crashloopbackoff-no-logs) covers more cases.
+The first two lines of the log are enough: two options contradict each other. If a crashing container prints nothing at all, check its last state: `Reason: OOMKilled` means the kernel's out-of-memory killer ended it, usually at its memory limit, sometimes because the node ran out ([Part 8](/guides/introduction-to-kubernetes/08-resource-management-and-scaling)); exit code 137 without that reason means something else sent SIGKILL. Exit codes 127 and 126 mean the command in the pod spec does not exist or is not executable.
+
+Two more cases look like "no logs". If the status starts with `Init:` (`Init:Error`, `Init:CrashLoopBackOff`), an **init container** fails and the app container never starts, so `kubectl logs` without `-c` asks for the wrong container:
+
+```terminal
+{
+  "title": "logs of a failing init container",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl get pod init-fails",
+      "output": "NAME         READY   STATUS       RESTARTS      AGE\ninit-fails   0/1     Init:Error   2 (38s ago)   40s"
+    },
+    {
+      "cmd": "kubectl logs init-fails",
+      "output": "Defaulted container \"app\" out of: app, wait-for-db (init)\nError from server (BadRequest): container \"app\" in pod \"init-fails\" is waiting to start: PodInitializing"
+    },
+    {
+      "cmd": "kubectl logs init-fails -c wait-for-db",
+      "output": "db:5432 not reachable"
+    }
+  ]
+}
+```
+
+And if the app exits before it writes anything, start a copy of the pod with a shell instead of its command (`kubectl debug --copy-to`, shown [below](#h2-kubectl-debug)) and run the entrypoint by hand to see the error.
 
 **Pending.** No node fits. The scheduler's event lists, per node, why not:
 
