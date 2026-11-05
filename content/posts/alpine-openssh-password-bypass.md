@@ -48,7 +48,7 @@ This post tells you how to find out if a host or a container is affected, how to
 
 The [Alpine advisory](https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/) says you are affected only if all of these are true:
 
-1. **sshd is built without PAM.** The `openssh-server` package is. The `openssh-server-pam` package is affected too if `UsePAM no` is set, and `UsePAM no` is its default.
+1. **sshd is built without PAM.** The `openssh-server` package is. The `openssh-server-pam` package is affected too if `UsePAM` is `no`, which is the OpenSSH default when the config does not set it.
 2. **`PasswordAuthentication yes`**, which is the OpenSSH default.
 3. **An account has `*` in its password field.** On Alpine base images root is `root:*`, but the default `PermitRootLogin prohibit-password` blocks password logins for root. Key-only users, the `alpine` user on tiny-cloud images, and directory users through `musl-nscd` (they have no shadow entry) also count.
 4. **At least one local account has a `$5$` or `$6$` hash.** One user with a password is enough.
@@ -91,7 +91,7 @@ We ran it in throwaway containers on Alpine 3.21, 3.22, 3.23, 3.24 and edge afte
     },
     {
       "cmd": "docker exec -i asc-users sh -s < check.sh",
-      "output": "alpine-sshd-check: CVE-2026-123158\nAlpine release:     3.24.4 (branch 3.24)\nsshd binary:        /usr/sbin/sshd (package openssh-server)\nInstalled openssh:  10.3_p1-r2\nFixed in:           10.3_p1-r2 (installed is fixed: yes)\n[1] non-PAM sshd:                  yes\n[2] PasswordAuthentication yes:    yes\n[3] account with '*' that can use a password login: yes (2 '*' accounts, 1 usable; root is '*': yes, PermitRootLogin prohibit-password)\n[4] local $5$/$6$ hash:            yes (1 found)\nsshd running:       yes, started 2026-11-05T21:22:20Z, binary installed 2026-11-05T21:22:06Z, restart needed: no\nnote: root is '*' but PermitRootLogin is 'prohibit-password'; root counts only with PermitRootLogin yes (an account that can doas to root still matters)\nResult:             NOT AFFECTED: fixed openssh installed (exit 0)"
+      "output": "alpine-sshd-check: CVE-2026-123158\nAlpine release:     3.24.4 (branch 3.24)\nsshd binary:        /usr/sbin/sshd (package openssh-server)\nInstalled openssh:  10.3_p1-r2\nFixed in:           10.3_p1-r2 (installed is fixed: yes)\n[1] non-PAM sshd:                  yes\n[2] PasswordAuthentication yes:    yes\n[3] account with '*' that can use a password login: yes (2 '*' accounts, 1 usable; root is '*': yes, PermitRootLogin prohibit-password)\n[4] local $5$/$6$ hash:            yes (1 found)\nsshd running:       yes, started 2026-11-05T21:40:49Z, binary on disk changed 2026-11-05T21:40:34Z, restart needed: no\nnote: root is '*' but PermitRootLogin is 'prohibit-password'; root counts only with PermitRootLogin yes (an account that can doas to root still matters)\nResult:             NOT AFFECTED: fixed openssh installed (exit 0)"
     }
   ]
 }
@@ -104,7 +104,7 @@ Two things we found while we ran it:
 
 ## Check containers
 
-Most containers do not run sshd, and those are not affected. To find the ones that do, `scan-containers.sh` lists the running containers, skips those that are not Alpine or have no sshd process, and pipes `check.sh` into the rest with `docker exec -i ... sh -s`. Nothing is copied into the container.
+Most containers do not run sshd, and those are not affected. To find the ones that do, `scan-containers.sh` lists the running containers, skips those that are not Alpine or have no sshd process, and pipes `check.sh` into the rest with `docker exec -i ... sh -s`. Nothing is copied into the container. Because it runs each container's own `sh` as root inside that container, scan only containers whose images you trust.
 
 ```terminal
 {
@@ -128,7 +128,7 @@ apk upgrade -U -a
 rc-service sshd restart
 ```
 
-The restart is not optional. The package upgrade replaces the files on disk, but it does not restart the sshd that is already running, and the advisory says to restart it after the upgrade. `check.sh` compares the start time of the running sshd with the time the sshd binary was installed, and exits `2` if the daemon is older. Run it again after the restart.
+The restart is not optional. The package upgrade replaces the files on disk, but it does not restart the sshd that is already running, and the advisory says to restart it after the upgrade. `check.sh` checks whether the running sshd is still the same file as the sshd binary on disk. An upgrade writes a new file, so a daemon that was not restarted is a different file, and the script exits `2`. Run it again after the restart.
 
 On edge, the fix comes with OpenSSH 10.6p2. If you jump from an older 10.x, read our post on [what OpenSSH 10.6 changed](/posts/openssh-10-6-domain-usernames-and-compression) first: it refuses some usernames and changes `ssh -C`.
 
@@ -137,7 +137,7 @@ On edge, the fix comes with OpenSSH 10.6p2. If you jump from an older 10.x, read
 If you cannot upgrade now, turn off password authentication. Either step closes the hole.
 
 :::warning
-Make sure that key login works first. Keep your current session open, and test a new login in a second session before you close it.
+Make sure that key login works first. Keep your current session open, and test a new key login in a second session before you close it.
 :::
 
 ```bash
@@ -172,8 +172,7 @@ Any `Accepted password for alpine`, for `root`, or for a key-only user is a bad 
 
 ## What we could not check
 
-- **A vulnerable package.** Alpine replaced the packages on every branch the same day, so each fresh install got the fixed version. Exit code `1` was tested only with a copy of the script whose fixed-version table we raised by one release.
-- **A real "upgraded but not restarted" daemon,** for the same reason. The restart check is in the script, but we did not see it on a real upgrade. We tested that code path only by changing the sshd binary's ctime in a container.
+- **A vulnerable package or a real upgrade.** Alpine replaced the packages on every branch the same day, so each fresh install got the fixed version. Exit codes `1` and `2` are simulations in the repo's `test-exit-codes.sh`: a copy of the script with a raised fixed version, and the same sshd binary renamed over `/usr/sbin/sshd` while sshd runs. Both gave the expected code.
 - **`openssh-server-pam`, `musl-nscd` users, tiny-cloud images and branches 3.16 to 3.20.** We did not measure them.
 - **Other musl systems.** The [CVE record](https://www.cve.org/CVERecord?id=CVE-2026-123158) covers sshd before 10.6p2 on Linux with musl and without PAM, and names Alpine as the example. We did not check other musl-based distributions or firmware builds.
 
