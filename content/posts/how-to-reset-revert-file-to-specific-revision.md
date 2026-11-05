@@ -138,7 +138,7 @@ This approach gives you more control and allows you to:
 
 ## Finding the Right Commit
 
-Before restoring a file, you need to identify which commit contains the version you want.
+Before restoring a file, you need to identify which commit contains the version you want ([more ways to view a file's history](/posts/view-file-change-history-git)).
 
 ### View File History
 
@@ -193,7 +193,7 @@ git add config/database.yml
 
 ### Example 2: Restore Deleted File
 
-If a file was accidentally deleted and you want to restore it:
+If a file was accidentally deleted and you want to restore it ([finding and restoring deleted files](/posts/find-restore-deleted-file-git) goes further):
 
 ```bash
 # Find the last commit that contained the file

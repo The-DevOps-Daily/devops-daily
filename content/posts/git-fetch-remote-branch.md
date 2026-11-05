@@ -104,7 +104,7 @@ git checkout feature-auth
 # Git automatically creates local branch from origin/feature-auth
 ```
 
-Modern Git automatically sets up tracking when you check out a remote branch.
+Modern Git automatically sets up tracking when you check out a remote branch. For a branch that already exists locally, [set the upstream yourself](/posts/make-git-branch-track-remote).
 
 ## Explicit Branch Creation
 

@@ -237,7 +237,7 @@ git show HEAD~3:src/app.js
 git show feature-branch:src/app.js
 ```
 
-This displays the entire file content as it existed at that point, not the changes made to it.
+This displays the entire file content as it existed at that point, not the changes made to it. To put that version back in your working tree, see [reset or revert a file to a specific revision](/posts/how-to-reset-revert-file-to-specific-revision).
 
 ## Viewing History with Graph Visualization
 

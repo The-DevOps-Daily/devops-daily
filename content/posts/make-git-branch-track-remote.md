@@ -39,7 +39,7 @@ Local Branch          Remote Branch
 feature-auth   <-->   origin/feature-auth
 ```
 
-With this relationship established, you can use simplified commands:
+The remote branch must exist in your clone first ([fetch it](/posts/git-fetch-remote-branch) if it does not). With this relationship established, you can use simplified commands:
 
 ```bash
 # Without tracking:

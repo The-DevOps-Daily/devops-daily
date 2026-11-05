@@ -535,7 +535,7 @@ ss -s
 
 ## Best Practices
 
-**Test realistic scenarios**: Don't just test with 100% packet loss. Use realistic values like 1-5% packet loss, 100-500ms latency.
+**Test realistic scenarios**: Don't just test with 100% packet loss. Use realistic values like 1-5% packet loss, 100-500ms latency ([profiles for 3G, 4G, satellite and Wi-Fi](/posts/simulating-slow-internet-connection)).
 
 **Test recovery**: After simulating network problems, remove them and verify your application recovers gracefully.
 

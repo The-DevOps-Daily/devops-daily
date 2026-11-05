@@ -37,7 +37,7 @@ If you want to change the repository name or "rename" an image, you actually cre
 docker tag node-app:latest registry.example.com/prod/node-app:1.2.0
 ```
 
-This command creates a new tag for the `node-app:latest` image, now referenced as `registry.example.com/prod/node-app:1.2.0`. This is especially helpful when preparing to push to a remote registry.
+This command creates a new tag for the `node-app:latest` image, now referenced as `registry.example.com/prod/node-app:1.2.0`. This is especially helpful when preparing to push to a remote registry. To pick the right name at build time instead, see [how to set the image name](/posts/set-image-name-dockerfile).
 
 ## Removing the Old Image Tag
 

@@ -136,6 +136,8 @@ These checksums ensure that:
 2. You're getting the authentic provider from HashiCorp
 3. Network issues don't result in corrupted downloads
 
+When a download does not match the recorded checksums, `terraform init` stops. [Fixing a provider checksum mismatch](/posts/terraform-failed-install-provider-checksums-mismatch) covers the usual causes.
+
 ### Enables Reproducible Infrastructure
 
 Infrastructure as Code means your infrastructure should be reproducible. The lock file is essential for this:

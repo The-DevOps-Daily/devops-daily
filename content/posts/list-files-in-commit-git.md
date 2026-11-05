@@ -210,7 +210,7 @@ The `-p` flag shows the actual line-by-line changes (patches).
 
 ## Comparing Files Between Commits
 
-To see which files changed between two commits:
+To see which files changed between two commits (or [between two branches](/posts/see-differences-between-branches-git)):
 
 ```bash
 # Files that changed between commits

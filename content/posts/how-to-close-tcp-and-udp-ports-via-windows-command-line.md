@@ -33,7 +33,7 @@ You need administrative privileges (Run as Administrator) for most port-closing 
 
 ## Finding What's Using a Port
 
-Before closing a port, identify which process is using it.
+Before closing a port, identify which process is using it ([more ways to find the process listening on a port](/posts/find-process-listening-on-port-windows)).
 
 ### Using netstat
 

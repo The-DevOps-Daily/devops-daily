@@ -110,7 +110,7 @@ pbcopy < file.txt
 
 ## Creating Universal Clipboard Functions
 
-Create cross-platform functions that work on different systems:
+Create cross-platform functions that work on different systems (for one-off use at the prompt, see [copy command output to the clipboard](/posts/copy-command-output-to-clipboard)):
 
 ```bash
 #!/bin/bash

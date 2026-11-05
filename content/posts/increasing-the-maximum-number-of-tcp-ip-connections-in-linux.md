@@ -37,7 +37,7 @@ Several different limits affect how many TCP connections your system can handle:
 
 **File descriptors**: Each TCP connection uses a file descriptor. Default limits are often 1024 per process.
 
-**Ephemeral ports**: Outbound connections need local ports. Default range provides about 28,000 ports.
+**Ephemeral ports**: Outbound connections need local ports. Default range provides about 28,000 ports. Incoming connections do not use them, because [many sockets share one server port](/posts/can-two-sockets-share-tcp-port).
 
 **TCP backlog**: Limits queued incoming connections waiting to be accepted.
 

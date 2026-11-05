@@ -266,7 +266,7 @@ To accumulate multiple items, combine them first:
 
 ## Clipboard in Scripts
 
-Use clipboard in automation scripts:
+Use clipboard in automation scripts ([piping to and from the clipboard in Bash scripts](/posts/pipe-clipboard-bash-script) has more examples):
 
 ```bash
 #!/bin/bash

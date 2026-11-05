@@ -86,6 +86,8 @@ Consider aborting when:
 - You want to try rebasing instead
 - You realize you made changes on the wrong branch
 
+If the merge already finished, `--abort` no longer applies; [undo a merge that is not pushed](/posts/undo-git-merge-not-pushed) instead.
+
 ## Aborting vs Resolving
 
 You have two options when conflicts occur:

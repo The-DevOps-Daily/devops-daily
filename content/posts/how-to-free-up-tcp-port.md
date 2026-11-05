@@ -168,7 +168,7 @@ sudo launchctl unload /Library/LaunchDaemons/com.example.service.plist
 
 ## Windows: Find and Free Ports
 
-Windows uses different tools but the concept is the same.
+Windows uses different tools but the concept is the same. [Close a port on Windows from the command line](/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line) also covers firewall rules.
 
 ### Find What's Using the Port
 

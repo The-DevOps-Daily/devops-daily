@@ -153,6 +153,8 @@ git rebase --continue
 git rebase --abort
 ```
 
+If the rebase already finished and dropped the wrong commit, you can still [undo the rebase](/posts/undo-git-rebase) with `ORIG_HEAD` or the reflog.
+
 ## Finding the Right Commit to Delete
 
 To identify which commit to delete, use Git's log commands:
