@@ -217,7 +217,7 @@ Groups give several users the same access, for example to a shared directory or 
 `usermod -G developers alice` without `-a` **replaces** all of Alice's supplementary groups with `developers`. Run it on your own account without `-a` and you can drop yourself out of the `sudo` group. Always use `-aG`.
 :::
 
-Group changes apply to **new** logins. A user who is already logged in must log out and back in (or start a new SSH session) before `id` shows the new group. `newgrp developers` starts a shell with the new group in the meantime.
+Group changes apply to **new** logins. A user who is already logged in must log out and back in (or start a new SSH session) before `id` shows the new group. `newgrp developers` starts a shell with the new group in the meantime. This is why `docker` can still say "permission denied" right after `usermod -aG docker` ([the fix](/posts/fix-docker-permission-denied-error)).
 
 Other group commands: `sudo groupmod -n new-name old-name` renames a group, `sudo groupdel developers` deletes it, and `sudo gpasswd -a alice developers` is another way to add a member.
 
@@ -439,7 +439,7 @@ When you log in, the shell reads several files in order. Knowing which one runs 
 
 Two rules cover most cases: put environment variables in `~/.profile`, and aliases and prompt settings in `~/.bashrc`. Services started by systemd read none of these files; set their environment in the unit file with `Environment=` or `EnvironmentFile=`.
 
-Per-user resource limits for login sessions (open files, processes) live in `/etc/security/limits.conf` and `/etc/security/limits.d/`, and `ulimit -a` shows the current values. For services, set limits in the unit file instead (`LimitNOFILE=65536`), because systemd does not apply `limits.conf` to services.
+Per-user resource limits for login sessions (open files, processes) live in `/etc/security/limits.conf` and `/etc/security/limits.d/`, and `ulimit -a` shows the current values. A server that holds many network connections usually needs a higher open files limit ([raising the TCP connection limits](/posts/increasing-the-maximum-number-of-tcp-ip-connections-in-linux)). For services, set limits in the unit file instead (`LimitNOFILE=65536`), because systemd does not apply `limits.conf` to services.
 
 Password policies come from **PAM**, the Pluggable Authentication Modules configured in `/etc/pam.d/`. To require longer passwords, install `libpam-pwquality` on Debian and Ubuntu (RHEL and Fedora ship it) and set, for example, `minlen = 14` in `/etc/security/pwquality.conf`.
 

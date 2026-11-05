@@ -69,7 +69,7 @@ The top-level block types are:
 
 ## A Playground With terraform console
 
-`terraform console` evaluates expressions against your configuration. Create a directory with this `main.tf`. It declares one provider, two variables and some local values, and creates nothing:
+`terraform console` evaluates expressions against your configuration ([other ways to try Terraform locally](/posts/experimenting-locally-with-terraform)). Create a directory with this `main.tf`. It declares one provider, two variables and some local values, and creates nothing:
 
 ```hcl
 terraform {

@@ -387,7 +387,7 @@ The rules for scripts that run unattended:
 
 - **Use absolute paths** for the script and its files, or set `PATH` at the top of the script.
 - **Do not depend on `~/.bashrc`, aliases or the current directory.** `cd` to where the script needs to be, and check that it worked.
-- **Send output somewhere.** cron mails it or drops it; a line like `0 2 * * * /home/dev/.local/bin/nightly-report >> /var/tmp/nightly-report.log 2>&1` keeps it.
+- **Send output somewhere.** cron mails it or drops it; a line like `0 2 * * * /home/dev/.local/bin/nightly-report >> /var/tmp/nightly-report.log 2>&1` keeps it ([what `2>&1` means](/posts/what-does-2-and-1-mean-linux-bash)).
 - **Prevent overlapping runs** with `flock -n "$HOME/.nightly-report.lock" /home/dev/.local/bin/nightly-report`, which skips a run while the previous one still holds the lock.
 
 systemd services and timers are the modern alternative to cron, with logging to the journal, dependencies and retries built in. The [Linux system administration part](/guides/introduction-to-linux/10-system-administration) shows a script running every night as a systemd timer.

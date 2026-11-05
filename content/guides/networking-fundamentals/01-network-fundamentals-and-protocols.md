@@ -318,7 +318,7 @@ DNS is the classic UDP protocol. A query is one datagram and the answer is anoth
 
 Two packets: the question and the answer. If the answer is lost, the client simply asks again after a timeout. DNS switches to TCP when an answer is too large for one datagram.
 
-"UDP is faster" is true in one specific way: it skips the handshake. On a fast local network you cannot see the difference, so the lab can add delay. `tc` with the `netem` queueing discipline makes the router hold every packet to `client` for 50 ms, which turns the link into a 50 ms round trip, like a server on another continent:
+"UDP is faster" is true in one specific way: it skips the handshake. On a fast local network you cannot see the difference, so the lab can add delay. [`tc` with the `netem` queueing discipline](/posts/simulating-slow-internet-connection) makes the router hold every packet to `client` for 50 ms, which turns the link into a 50 ms round trip, like a server on another continent:
 
 ```terminal
 {
@@ -448,7 +448,7 @@ Every layer fails with its own message. These are the ones you will see most, pr
 }
 ```
 
-- **Could not resolve host**: DNS. Check the name and the resolver (Part 3).
+- **Could not resolve host**: DNS. Check the name and the resolver (Part 3). SSH reports it as ["Could not resolve hostname"](/posts/ssh-could-not-resolve-hostname-error), where a typo in `~/.ssh/config` is another common cause.
 - **Network is unreachable** or **No route to host**: routing. Here the router had no path to `198.51.100.0/24` and sent an ICMP error back (Part 2 and Part 8).
 - **Connection refused**: the machine answered, but nothing listens on that port, or a firewall rejects actively. The host is reachable, so look at the service.
 - **Connection timed out**: no answer at all. Usually a firewall drops the packets silently, sometimes the machine is down. Part 4 shows both behaviours side by side.

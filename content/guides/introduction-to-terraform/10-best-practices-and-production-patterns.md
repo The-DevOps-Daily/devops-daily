@@ -68,7 +68,7 @@ terraform {
 
 The lock file records the exact version and checksums `init` chose. Commit it, and let CI install with `terraform init -lockfile=readonly` so nothing changes unless a pull request changes the lock file.
 
-The lock file holds two kinds of checksums. `zh:` entries are the SHA-256 sums of the release zip files for every platform, copied from the registry's signed checksum list. `h1:` entries are hashes of the unpacked package, and `init` only records them for the platform it ran on. Some installs record or check only `h1:` hashes, for example installs from a provider mirror or from the plugin cache, and then a lock file made on a Mac can fail on a Linux CI runner. `terraform providers lock` adds `h1:` hashes for every platform your team and CI use. Here it runs in a small local project with this `versions.tf`, after a `terraform init` on a Linux arm64 machine:
+The lock file holds two kinds of checksums. `zh:` entries are the SHA-256 sums of the release zip files for every platform, copied from the registry's signed checksum list. `h1:` entries are hashes of the unpacked package, and `init` only records them for the platform it ran on. Some installs record or check only `h1:` hashes, for example installs from a provider mirror or from the plugin cache, and then a lock file made on a Mac can fail on a Linux CI runner ([the checksum mismatch error and its fixes](/posts/terraform-failed-install-provider-checksums-mismatch)). `terraform providers lock` adds `h1:` hashes for every platform your team and CI use. Here it runs in a small local project with this `versions.tf`, after a `terraform init` on a Linux arm64 machine:
 
 ```hcl
 terraform {

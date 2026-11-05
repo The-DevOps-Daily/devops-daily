@@ -169,7 +169,7 @@ The `ns1` test waited 3 seconds and gave up. That is **drop**: the packet disapp
 | `reject with tcp reset`              | `Connection refused` at once                                                                         | Internal networks: clients fail fast instead of hanging                                                                         |
 | `reject with icmpx admin-prohibited` | `No route to host`                                                                                   | Same, but confusing: firewalld rejects this way by default, so "No route to host" on a host you can ping often means a firewall |
 
-A timeout is the most expensive failure in production, because every caller waits for its full timeout before it can retry or fail over. Inside your own network, rejecting is often kinder than dropping.
+A timeout is the most expensive failure in production, because every caller waits for its full timeout before it can retry or fail over. Inside your own network, rejecting is often kinder than dropping. `ping` shows the same split between silence and an error reply ([Request Timed Out vs Destination Host Unreachable](/posts/ping-timeout-vs-destination-unreachable)).
 
 ## Segment the Network on the Router
 

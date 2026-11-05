@@ -432,7 +432,7 @@ The numbers worth alerting on: the rate of 5xx responses from the load balancer 
 - **Default timeouts.** 60-second connect timeouts turn one hung server into minutes of waiting. Set connect, read and client timeouts on purpose.
 - **Retrying requests that are not safe to repeat.** Once nginx has sent a POST or another non-idempotent request to a server, it does not retry it on another server unless you add `non_idempotent` (a request that failed while connecting was never sent, so it is retried). Keep it that way unless the app de-duplicates requests.
 - **Trusting `X-Forwarded-For` blindly**, or losing the client address entirely behind a layer 4 balancer.
-- **Forgetting that the load balancer needs capacity too**: file descriptors, `worker_connections`, and source ports to the backends (one machine can open at most about 28,000 connections to one backend address and port with the default ephemeral range).
+- **Forgetting that the load balancer needs capacity too**: file descriptors, `worker_connections`, and source ports to the backends (one machine can open at most about 28,000 connections to one backend address and port with the default ephemeral range). [Raising these limits on Linux](/posts/increasing-the-maximum-number-of-tcp-ip-connections-in-linux) covers file descriptors and the port range.
 
 ## Summary
 

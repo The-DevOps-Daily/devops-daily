@@ -143,7 +143,7 @@ A published port forwards traffic from a host address to a container port. `-p 1
 | `-p 192.168.1.20:8000:8000` | Only that host address                                                                                                     |
 | no `-p`                     | Containers on the same Docker network, and with rootful Docker on Linux the host itself through the container's IP address |
 
-Publish the minimum. A database almost never needs a published port in production: the app reaches it over the Docker network, and you can use `docker exec hello-db psql ...` for admin work.
+Publish the minimum. Ports are fixed when the container is created, so adding one later means [recreating the container](/posts/docker-assign-port-mapping). A database almost never needs a published port in production: the app reaches it over the Docker network, and you can use `docker exec hello-db psql ...` for admin work.
 
 :::warning
 **Published ports bypass `ufw` and `firewalld`.** Docker writes iptables rules that send traffic for published ports to containers before the host firewall's rules see it. `ufw deny 8000` does not block `-p 8000:8000`. Publish on `127.0.0.1` when only the host needs the port, put a reverse proxy in front of the services that must be public, or, with Docker's default iptables backend, add your own rules to the `DOCKER-USER` chain, which Docker evaluates first. With that backend Docker supports `iptables-nft` and `iptables-legacy`, and rules you write with `nft` directly are not supported. The experimental nftables backend in Engine 29 has no `DOCKER-USER` chain; there you put your rules in your own nftables tables.
@@ -156,7 +156,7 @@ Docker Engine 28 tightened the defaults: other hosts can no longer reach a conta
 `localhost` inside a container is the container itself. To reach a service on the host, such as a database you run outside Docker:
 
 - **Docker Desktop**: use the name `host.docker.internal`, which always points to the host.
-- **Linux**: add it yourself with `--add-host=host.docker.internal:host-gateway`, and make sure the host service listens on an address the container can reach (the bridge gateway, or `0.0.0.0` with a firewall), not only on `127.0.0.1`.
+- **Linux**: add it yourself with `--add-host=host.docker.internal:host-gateway`, and make sure the host service listens on an address the container can reach (the bridge gateway, or `0.0.0.0` with a firewall), not only on `127.0.0.1` ([access a host port from a container](/posts/docker-access-host-port)).
 
 ## Host and None Networks
 
@@ -215,7 +215,7 @@ The `hello-db-data` volume survives the cleanup. Part 8 starts a separate databa
 
 - **`localhost` in a connection string.** Inside a container it means the container. Use the service or container name.
 - **Relying on the default bridge network.** No DNS by name. Create a network.
-- **Publishing database ports to the world.** `-p 5432:5432` on a server with a public IP is reachable from the internet, regardless of `ufw`.
+- **Publishing database ports to the world.** `-p 5432:5432` on a server with a public IP is reachable from the internet, regardless of `ufw`. Publish on `127.0.0.1` when only the host needs it ([connect to Postgres in a container from the host](/posts/connecting-to-postgresql-in-a-docker-container-from-outside)).
 - **Assuming `EXPOSE` publishes anything.** It documents the port; `-p` publishes it.
 - **Using `--link`.** Legacy, and it no longer injects environment variables since Engine 29. Use user-defined networks.
 

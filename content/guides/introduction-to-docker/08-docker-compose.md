@@ -298,6 +298,8 @@ Both containers report `healthy`: `db` from the `pg_isready` check in `compose.y
 | `docker compose down`                   | Stop and remove containers and networks; volumes stay                      |
 | `docker compose down -v`                | Also remove the named volumes declared in the file: **deletes the data**   |
 
+Most commands also take service names: `docker compose up -d db` starts only `db` and the services it depends on ([start only certain services](/posts/docker-compose-up-only-certain-containers)).
+
 `docker compose logs` prefixes each line with the container (example output):
 
 ```text
@@ -374,7 +376,7 @@ Inside the project, the name `api` then resolves to all three containers, and th
 - **`localhost` between services.** Use the service name (`db`).
 - **Secrets in `environment:` or in a committed `.env`.** Use `secrets:` and keep secret files out of Git.
 - **`docker compose down -v` by habit.** It deletes your data volumes.
-- **Expecting `docker compose up` to pull newer images.** With a version tag and the default pull policy, it uses the local image if one exists (only `latest` tags are always checked). Run `docker compose pull` (or `up --pull always`) first.
+- **Expecting `docker compose up` to pull newer images.** With a version tag and the default pull policy, it uses the local image if one exists (only `latest` tags are always checked). Run `docker compose pull` (or `up --pull always`) first ([always recreate containers from fresh images](/posts/docker-compose-always-recreate-containers)).
 - **Editing files and expecting running containers to change.** After a change to `compose.yaml`, run `docker compose up -d`; it recreates only the services whose configuration changed. After a change to the code or the Dockerfile, run `docker compose up -d --build`, or use watch.
 
 ## Summary

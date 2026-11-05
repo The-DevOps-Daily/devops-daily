@@ -141,7 +141,7 @@ hello-api's image already switches to UID 10001 with `USER 10001`. Check what an
 docker image inspect --format '{{.Config.User}}' hello-api:1.0
 ```
 
-An empty value means root. Many official images start as root on purpose, because their entrypoint must prepare files and then drops privileges (the postgres image switches to the `postgres` user). For your own images, there is rarely a reason to run as root. If a process must bind a port below 1024, let it listen on a high port inside the container and publish it as 80 or 443, or let the reverse proxy do it.
+An empty value means root. Many official images start as root on purpose, because their entrypoint must prepare files and then drops privileges (the postgres image switches to the `postgres` user). For your own images, there is rarely a reason to run as root. Images rarely include `sudo`; for a one-off admin task in a non-root container, run the command with `-u root` instead ([why sudo is missing in containers](/posts/how-to-use-sudo-in-docker-container)). If a process must bind a port below 1024, let it listen on a high port inside the container and publish it as 80 or 443, or let the reverse proxy do it.
 
 ## Drop Privileges at Run Time
 

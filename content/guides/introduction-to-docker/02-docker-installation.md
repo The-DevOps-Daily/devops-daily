@@ -83,7 +83,7 @@ Ubuntu and Debian also ship Docker in their own repositories, as `docker.io`. Th
 | Debian 13 trixie (`docker.io`)       | 26.1.5        | packaged separately          | 23 October 2026 |
 | Debian 12 bookworm (`docker.io`)     | 20.10.24      | packaged separately          | 23 October 2026 |
 
-Use one source, not both: the packages conflict, which is why step 1 removes the distribution's packages. Pick Docker's repository unless your company only allows packages from the distribution, and check what version you actually got with `docker version`.
+Use one source, not both: the packages conflict, which is why step 1 removes the distribution's packages. Pick Docker's repository unless your company only allows packages from the distribution, and check what version you actually got with `docker version`. Compose v2 runs as `docker compose`, and the old `docker-compose` command is [a different program](/posts/docker-compose-vs-docker-compose).
 
 ### The Convenience Script
 

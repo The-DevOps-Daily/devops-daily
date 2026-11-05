@@ -340,7 +340,7 @@ All three files above were sent to a Kubernetes API server with `--dry-run=serve
 
 ## HTTP/3 and QUIC
 
-**HTTP/3** runs over **QUIC**, a transport on top of UDP that combines the TCP and TLS handshakes into one round trip (Part 1 measured what the separate handshakes cost), keeps one lost packet from stalling every stream on the connection, and survives a client changing networks, such as a phone moving from Wi-Fi to mobile data. Browsers learn that a site supports it from the `Alt-Svc` header (or the HTTPS DNS record from Part 3) and switch on the next request.
+**HTTP/3** runs over **QUIC**, a transport on top of UDP ([how UDP and TCP compare on speed](/posts/udp-vs-tcp-performance-comparison)) that combines the TCP and TLS handshakes into one round trip (Part 1 measured what the separate handshakes cost), keeps one lost packet from stalling every stream on the connection, and survives a client changing networks, such as a phone moving from Wi-Fi to mobile data. Browsers learn that a site supports it from the `Alt-Svc` header (or the HTTPS DNS record from Part 3) and switch on the next request.
 
 nginx supports it since 1.25 (Ubuntu 26.04 ships 1.28; Ubuntu 24.04's 1.24 cannot do this). Add a UDP listener and the header to the `server` block in `/etc/netlab/lb-nginx.conf`, next to the existing `listen 443 ssl;` and certificate lines:
 

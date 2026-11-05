@@ -455,7 +455,7 @@ The bad commit is on `main` and pushed, so you must not rewrite it. `git revert`
 
 ### The reflog: Git's undo history
 
-Every time a branch or `HEAD` moves (commit, reset, rebase, merge, switch), Git writes an entry in the **reflog**. Commits that no branch points to any more are still reachable through it, by default for 30 days:
+Every time a branch or `HEAD` moves (commit, reset, rebase, merge, switch), Git writes an entry in the **reflog**. That is also how you [undo a rebase](/posts/undo-git-rebase) that went wrong. Commits that no branch points to any more are still reachable through it, by default for 30 days:
 
 ```terminal
 {

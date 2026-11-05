@@ -375,7 +375,7 @@ The demo below starts a listener with `nc`, which the `netcat-openbsd` package p
 }
 ```
 
-`/dev/tcp/HOST/PORT` is not a real file: Bash itself opens a TCP connection when you redirect to such a path (it can be disabled at compile time, and BusyBox `ash` and dash do not have it). The script validates its arguments before using them in arithmetic, and runs each attempt under `timeout 1`, because a connection to a host that silently drops packets can hang for minutes. The host and port reach the inner `bash -c` as arguments, not pasted into the command string. Container entrypoints often use this pattern to wait for a database before starting an application; where they exist, dedicated checks such as `pg_isready` or `curl --fail` give clearer errors.
+`/dev/tcp/HOST/PORT` is not a real file: Bash itself opens a TCP connection when you redirect to such a path (it can be disabled at compile time, and BusyBox `ash` and dash do not have it). The script validates its arguments before using them in arithmetic, and runs each attempt under `timeout 1`, because a connection to a host that silently drops packets can hang for minutes. `sleep 0.5` between attempts relies on GNU `sleep` accepting fractions, which POSIX does not require ([sleep for milliseconds](/posts/sleep-for-milliseconds)). The host and port reach the inner `bash -c` as arguments, not pasted into the command string. Container entrypoints often use this pattern to wait for a database before starting an application; where they exist, dedicated checks such as `pg_isready` or `curl --fail` give clearer errors.
 
 `while true; do ... done` (or `while :`) loops until a `break`. `break 2` and `continue 2` act on the second enclosing loop when loops are nested.
 

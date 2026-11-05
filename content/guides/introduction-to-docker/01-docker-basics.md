@@ -100,7 +100,7 @@ Docker is a set of programs that talk to each other. When you type `docker run`,
 }
 ```
 
-1. **The Docker CLI** (`docker`) is the client. It sends REST API calls to the daemon, by default over the Unix socket `/var/run/docker.sock`. Docker Compose (`docker compose`) and Buildx (`docker buildx`) are plugins of the CLI.
+1. **The Docker CLI** (`docker`) is the client. It sends REST API calls to the daemon, by default over the Unix socket `/var/run/docker.sock` (when the daemon is not running, you see ["Cannot connect to the Docker daemon"](/posts/cannot-connect-to-docker-daemon)). Docker Compose (`docker compose`) and Buildx (`docker buildx`) are plugins of the CLI.
 2. **The Docker daemon** (`dockerd`) is Docker Engine. It owns your images, containers, networks and volumes, and it runs **BuildKit**, the engine that builds images.
 3. **containerd** pulls images, unpacks their layers and supervises running containers. It is a separate project that Kubernetes also uses directly.
 4. **runc** is a small tool that creates the namespaces and cgroups and starts your process. It follows the **OCI runtime specification**.
@@ -113,7 +113,7 @@ When you run `docker run nginx:1.30`, the CLI asks dockerd to create a container
 
 An **image** is a read-only template for containers. It has three parts:
 
-- **Layers**: compressed archives of files. Each layer adds, changes or deletes files compared to the layers below it. A container sees all layers merged into one filesystem, plus a thin writable layer on top that disappears when you remove the container.
+- **Layers**: compressed archives of files. Each layer adds, changes or deletes files compared to the layers below it. A container sees all layers merged into one filesystem, plus a thin writable layer on top that disappears when you remove the container ([how to look inside it](/posts/exploring-docker-container-file-system)).
 - **A config**: the default command, environment variables, working directory, user and exposed ports.
 - **A manifest**: the list of layers and the config, each identified by its SHA-256 **digest**.
 
@@ -173,7 +173,7 @@ A **registry** stores and serves images. **Docker Hub** is the default: when you
 
 ## Common Misconceptions
 
-- **"A container is a lightweight VM."** It is a process. There is no guest kernel and no boot. If the main process exits, the container stops.
+- **"A container is a lightweight VM."** It is a process. There is no guest kernel and no boot. If the main process exits, the container stops ([why a container exits right away](/posts/why-docker-container-exits-immediately)).
 - **"Data in a container is safe."** Files written to the container's writable layer are deleted with the container. Use volumes for anything you want to keep ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
 - **"`latest` means newest."** `latest` is only a tag name that the publisher chooses to move. It can be old, and it changes without warning. Use explicit versions ([Part 3](/guides/introduction-to-docker/03-working-with-docker-images)).
 - **"Containers are secure by default."** They are isolated, but a container that runs as root with extra privileges can harm the host. Isolation is something you configure ([Part 9](/guides/introduction-to-docker/09-docker-best-practices)).

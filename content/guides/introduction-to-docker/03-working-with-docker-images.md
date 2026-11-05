@@ -164,7 +164,7 @@ Most official images come in variants. For the Python image:
 
 - `python:3.14`: Debian with compilers and many libraries. Good for building, too big to ship.
 - `python:3.14-slim`: Debian with only what Python needs. The usual choice for applications.
-- `python:3.14-alpine`: Alpine Linux with musl instead of glibc. Smaller, but some Python packages with C extensions have no musl wheels and must compile.
+- `python:3.14-alpine`: Alpine Linux with musl instead of glibc. Smaller, but some Python packages with C extensions have no musl wheels and must compile. It also ships `sh`, not `bash` ([how to use bash on Alpine](/posts/docker-alpine-use-bash)).
 - `gcr.io/distroless/python3-debian13`: Google's distroless image: Python and its libraries, no shell and no package manager. Its Python version is whatever Debian 13 ships (3.13), not one you choose.
 
 The size difference is large. These numbers come from the registry manifests, with every layer unpacked to count its files:
@@ -194,7 +194,7 @@ The full image is nine times the size of `slim`. A smaller image downloads faste
 
 ## Tag an Image
 
-`docker tag` adds a second name to an existing image. It copies nothing:
+`docker tag` adds a second name to an existing image. It copies nothing, which is also how you [rename an image](/posts/docker-rename-image-repository):
 
 ```bash
 docker tag nginx:1.30 my-nginx:1.0
@@ -273,7 +273,7 @@ Google's old Container Registry (`gcr.io/my-project/...`) has been replaced by A
 ## Common Mistakes
 
 - **Deploying `latest`.** Two servers that pull `latest` a day apart can run different versions. Use a version tag, and a digest when it matters.
-- **Assuming `docker pull` updates running containers.** A pull only updates the image. Containers keep running the old image until you recreate them.
+- **Assuming `docker pull` updates running containers.** A pull only updates the image. Containers keep running the old image until you recreate them (with Compose: [always recreate containers from fresh images](/posts/docker-compose-always-recreate-containers)).
 - **Pulling an `amd64`-only image on ARM.** The container fails with `exec format error`. Check the platforms with `docker buildx imagetools inspect` first.
 - **Never cleaning up.** Build servers fill their disks with old images and build cache. Schedule `docker image prune -a --filter "until=168h"` and `docker builder prune` on them.
 

@@ -257,7 +257,7 @@ Most slow pipelines have the same few causes. In order of how much they usually 
 ```
 
 5. **Set `timeout-minutes` on every job.** The default is 360 minutes (6 hours), lower only where the runner has its own limit, such as 15 minutes on `ubuntu-slim`. In a private repository, one hung job can cost 360 billed minutes.
-6. **Fetch less.** `actions/checkout` fetches one commit by default (`fetch-depth: 1`); only ask for `fetch-depth: 0` when a tool needs the history.
+6. **Fetch less.** `actions/checkout` fetches one commit by default (`fetch-depth: 1`); only ask for `fetch-depth: 0` when a tool needs the history. Outside Actions, `git clone --depth 1 --branch <name>` fetches the same minimum ([clone a specific branch](/posts/clone-specific-git-branch)).
 7. **Look for slow steps.** The step timings in the run page, or `gh api repos/{owner}/{repo}/actions/jobs/<id> --jq '.steps[]'`, show where the time goes. In Part 7, they showed that Windows spent its extra time in checkout and `npm ci`, not in the tests.
 
 When the hosted runners are not enough, larger runners (more cores, GPUs, static IP addresses) are billed even in public repositories, and self-hosted runners run on your own machines. Self-hosted runners must stay up to date: since 29 September 2026, runners older than v2.329.0 cannot register, and runners below a newer minimum version stop getting jobs.

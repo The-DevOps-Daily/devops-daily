@@ -449,7 +449,7 @@ Adding a third zone is one more line in `zones`; the subnets, route table associ
 }
 ```
 
-The plan ran in CI with mock credentials, Terraform's `skip_*` provider settings and a local backend, all in an `_override.tf` file, which is enough to plan new resources without an AWS account; nothing was created. Read a plan before every apply, especially the lines that say `must be replaced` or `will be destroyed`: changing a subnet's range or a VPC's CIDR replaces it, together with everything inside.
+The plan ran in CI with mock credentials, Terraform's `skip_*` provider settings and a local backend, all in an `_override.tf` file, which is enough to plan new resources without an AWS account; nothing was created ([more ways to experiment with Terraform locally](/posts/experimenting-locally-with-terraform)). Read a plan before every apply, especially the lines that say `must be replaced` or `will be destroyed`: changing a subnet's range or a VPC's CIDR replaces it, together with everything inside.
 
 Two rules keep Terraform-managed networks healthy:
 

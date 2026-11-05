@@ -605,6 +605,8 @@ UUID=7d8e9f10-1a2b-4c3d-8e9f-0a1b2c3d4e5f  /mnt/data      ext4    defaults,nofai
 A wrong line in `/etc/fstab` can stop the machine from booting. After every edit, run `sudo findmnt --verify` and `sudo mount -a` and fix any error before you reboot. The `nofail` option lets the system boot even if that disk is missing, which matters on cloud servers where volumes can be detached.
 :::
 
+Network shares mount the same way. [Mount an SMB share with a username and password](/posts/connect-network-share-with-credentials) shows the `cifs` options, a credentials file and the `/etc/fstab` line.
+
 ## Common Mistakes
 
 - **`chmod -R 777` to "fix" a permission error.** It lets every user and every compromised service change the files. Find out which user needs access, then fix the owner or group and use `755`/`644` or `775`/`664`.

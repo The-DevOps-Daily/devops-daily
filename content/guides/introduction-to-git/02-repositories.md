@@ -420,7 +420,7 @@ To find out where an existing clone came from, run `git remote get-url origin` (
 ## Common Mistakes
 
 - **Running `git init` in your home directory.** Every file under it is now "untracked", and other repositories below it look nested. If it happened by mistake, delete only the new `~/.git` directory (check with `ls -A ~` first).
-- **Creating a repository inside another one.** `git add` then warns about an "embedded git repository" and records only a pointer. Use a submodule on purpose ([Part 10](/guides/introduction-to-git/10-advanced-techniques#h2-submodules-and-subtrees)) or keep the projects apart.
+- **Creating a repository inside another one.** `git add` then warns about an "embedded git repository" and records only a pointer ([remove it cleanly](/posts/remove-git-submodule) if that was a mistake). Use a submodule on purpose ([Part 10](/guides/introduction-to-git/10-advanced-techniques#h2-submodules-and-subtrees)) or keep the projects apart.
 - **Adding `.gitignore` after committing the files.** The rules do not apply to tracked files. Run `git rm --cached` on them.
 - **Committing secrets "for now".** Anything committed stays in the history, also after you delete the file. Ignore `.env` files from the first commit, and see [Part 8](/guides/introduction-to-git/08-history#h2-remove-a-secret-from-history) if it already happened.
 - **Expecting `--depth` to work with a local path.** Use `file://`, as above.

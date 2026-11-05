@@ -55,7 +55,7 @@ docker run -d --name web -p 8080:80 nginx:1.30
 
 - `-d` (detached) runs the container in the background and prints its full ID.
 - `--name web` gives it a name you can use instead of the ID. Without it, Docker invents one like `eager_hopper`.
-- `-p 8080:80` publishes container port 80 on host port 8080. The order is always **host:container**.
+- `-p 8080:80` publishes container port 80 on host port 8080. The order is always **host:container** ([more on forwarding host ports](/posts/forward-host-port-to-docker-container)).
 
 Open `http://localhost:8080` in a browser, or use curl (example output; the HTML is the real welcome page from the image):
 
@@ -179,7 +179,7 @@ echo '<h1>Hello from docker cp</h1>' > index.html
 docker cp ./index.html web:/usr/share/nginx/html/index.html
 ```
 
-Changes you make inside a container are lost when you remove it. Use `exec` and `cp` to investigate, and put permanent changes into the image ([Part 5](/guides/introduction-to-docker/05-building-custom-docker-images)) or a volume ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
+Changes you make inside a container are lost when you remove it. Use `exec` and `cp` to investigate ([more ways to explore a container's file system](/posts/exploring-docker-container-file-system)), and put permanent changes into the image ([Part 5](/guides/introduction-to-docker/05-building-custom-docker-images)) or a volume ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
 
 ## Stop, Start and Remove
 
@@ -264,7 +264,7 @@ CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O        
 - `--cpus 0.5`: at most half of one CPU core, measured over time.
 - `--pids-limit 200`: at most 200 processes, which stops a fork bomb.
 
-`docker update --memory 512m web` changes limits on a running container.
+`docker update --memory 512m web` changes limits on a running container. It cannot add or change port mappings ([what to do instead](/posts/docker-assign-port-mapping)).
 
 ## Health Checks
 
@@ -304,7 +304,7 @@ docker top web
 ## Common Mistakes
 
 - **The container exits right away.** A container lives as long as its main process. `docker run ubuntu` starts `bash`, finds no terminal and exits. Pass `-it` for an interactive shell, or run a long-running command. Check `docker logs` and the exit code in `docker ps -a`.
-- **"port is already allocated".** Another container or program uses the host port. Find it with `docker ps` (or `sudo ss -ltnp`) and pick another host port, such as `-p 8081:80`.
+- **"port is already allocated".** Another container or program uses the host port. Find it with `docker ps` (or `sudo ss -ltnp`; on Windows, [`netstat -ano`](/posts/find-process-listening-on-port-windows)) and pick another host port, such as `-p 8081:80`.
 - **"The container name "/web" is already in use".** A stopped container still has that name. Remove it with `docker rm web`, or use `--rm` for throwaway containers.
 - **Expecting changes to survive `docker rm`.** Files written inside a container live in its writable layer and are deleted with it. Use volumes ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
 - **Using `--link`.** It is a legacy feature, and since Engine 29 it no longer sets the environment variables older tutorials rely on. Put containers on a user-defined network instead ([Part 7](/guides/introduction-to-docker/07-networking-in-docker)).

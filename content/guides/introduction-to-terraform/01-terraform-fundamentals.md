@@ -163,7 +163,7 @@ The plan is the difference between what you want and what exists. State is also 
 2. **`terraform init`** prepares the working directory: it downloads providers and modules and configures the backend. Run it once per directory, and again after you add a provider or module.
 3. **`terraform plan`** shows what would change. Nothing is changed yet.
 4. **Review** the plan. This is the step that prevents outages.
-5. **`terraform apply`** computes the plan again, asks for confirmation and makes the changes. In automation you save the plan with `plan -out=tfplan` and apply exactly that file.
+5. **`terraform apply`** computes the plan again, asks for confirmation and makes the changes. In automation you save the plan with `plan -out=tfplan` and apply exactly that file ([how to save plan and apply output to a file](/posts/terraform-save-plan-apply-output-to-file)).
 
 `terraform destroy` deletes everything the configuration manages. It is a shortcut for `terraform apply -destroy`.
 
