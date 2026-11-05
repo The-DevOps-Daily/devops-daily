@@ -224,7 +224,75 @@ scp nginx-1.30.tar server:
 ssh server docker load -i nginx-1.30.tar
 ```
 
-Both commands accept `--platform` to save or load only one platform of a multi-platform image (Engine 28), and Engine 29 accepts several platforms at once. For anything you do more than once, push to a registry instead.
+Both commands accept `--platform` to save or load only one platform of a multi-platform image (Engine 28), and Engine 29 accepts several platforms at once.
+
+You do not need the file on disk. Pipe the archive over SSH, compressed, and `docker load` reads gzip, bzip2, xz and zstd archives without a separate unpack step:
+
+```bash
+docker save nginx:1.30 | gzip | ssh server docker load
+```
+
+```terminal
+{
+  "title": "save, compress, load",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker save nginx:1.30 | wc -c",
+      "output": "166211584"
+    },
+    {
+      "cmd": "docker save nginx:1.30 | gzip > nginx.tar.gz && ls -l nginx.tar.gz",
+      "output": "-rw-r--r-- 1 runner runner 62939825 Nov  5 16:38 nginx.tar.gz"
+    },
+    {
+      "cmd": "docker image inspect -f '{{.Id}} {{json .RepoDigests}}' nginx:1.30",
+      "output": "sha256:53d8f012a1a7659f355c0930b4c8c8768a17a9f44a1d38d4fd7276a5096fcccd [\"nginx@sha256:f12e4e280502f79dae4488c9f677ab3ebe8a7079818bbfbf3242f236bac64d34\"]"
+    },
+    {
+      "cmd": "docker rmi nginx:1.30",
+      "output": "Untagged: nginx:1.30\nUntagged: nginx@sha256:f12e4e280502f79dae4488c9f677ab3ebe8a7079818bbfbf3242f236bac64d34"
+    },
+    {
+      "cmd": "docker load -i nginx.tar.gz",
+      "output": "Loaded image: nginx:1.30"
+    },
+    {
+      "cmd": "docker image inspect -f '{{.Id}} {{json .RepoDigests}}' nginx:1.30",
+      "output": "sha256:53d8f012a1a7659f355c0930b4c8c8768a17a9f44a1d38d4fd7276a5096fcccd []"
+    }
+  ]
+}
+```
+
+gzip cut the 166 MB archive to 63 MB. The image ID is the same after the load, but the repository digest is gone: it belongs to the registry, so anything that pins `nginx@sha256:...` will not find the loaded image (Engine 28.0.4 with the classic image store).
+
+Do not use `docker export` and `docker import` for this. They copy a container's file system, not the image: the result is one flat layer without `CMD`, `ENTRYPOINT`, `EXPOSE` or history, and it does not start:
+
+```terminal
+{
+  "title": "export and import lose the image config",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker create --name exp nginx:1.30 && docker export exp | docker import - nginx-flat:1.30; docker rm exp",
+      "output": "ab1c7a8597f18328b63d5347cb85e62ef17e76a9ba017e545feab5e75abb8164\nsha256:2f237a0fbaadcbb93376d8c805c48fe4c974dfffd4d7e3535c8aa7f39e6163c0\nexp"
+    },
+    {
+      "cmd": "docker image inspect -f 'Cmd={{json .Config.Cmd}} Entrypoint={{json .Config.Entrypoint}} ExposedPorts={{json .Config.ExposedPorts}}' nginx-flat:1.30",
+      "output": "Cmd=null Entrypoint=null ExposedPorts=null"
+    },
+    {
+      "cmd": "docker run --rm nginx-flat:1.30",
+      "output": "docker: Error response from daemon: no command specified\n\nRun 'docker run --help' for more information"
+    }
+  ]
+}
+```
+
+For anything you do more than once, push to a registry instead.
 
 ## Free Disk Space
 

@@ -95,7 +95,6 @@
 /images/posts/create-bash-alias-that-takes-parameters.svg /images/posts/create-bash-alias-that-takes-parameters.jpg 301
 /images/posts/create-folder-in-s3-bucket.svg /images/posts/create-folder-in-s3-bucket.jpg 301
 /images/posts/defining-variables-with-without-export-linux.svg /images/posts/defining-variables-with-without-export-linux.jpg 301
-/images/posts/delete-all-local-docker-images.svg /images/posts/delete-all-local-docker-images.jpg 301
 /images/posts/delete-all-pods-in-all-namespaces.svg /images/posts/delete-all-pods-in-all-namespaces.jpg 301
 /images/posts/delete-all-resources-except-one.svg /images/posts/delete-all-resources-except-one.jpg 301
 /images/posts/delete-exported-environment-variables-linux.svg /images/posts/delete-exported-environment-variables-linux.jpg 301
@@ -141,18 +140,15 @@
 /images/posts/docker-run-vs-docker-start.svg /images/posts/docker-run-vs-docker-start.jpg 301
 /images/posts/docker-runtime-performance-cost.svg /images/posts/docker-runtime-performance-cost.jpg 301
 /images/posts/docker-security-best-practices.svg /images/posts/docker-security-best-practices.jpg 301
-/images/posts/docker-see-image-contents.svg /images/posts/docker-see-image-contents.jpg 301
 /images/posts/docker-tty-error-fix.svg /images/posts/docker-tty-error-fix.jpg 301
 /images/posts/docker-ubuntu-ping-not-found.svg /images/posts/docker-ubuntu-ping-not-found.jpg 301
 /images/posts/dockerfile-copy-vs-add-commands.svg /images/posts/dockerfile-copy-vs-add-commands.jpg 301
 /images/posts/dockerfile-update-path.svg /images/posts/dockerfile-update-path.jpg 301
-/images/posts/enter-docker-container-new-tty.svg /images/posts/enter-docker-container-new-tty.jpg 301
 /images/posts/error-creating-iam-role-malformed-policy.svg /images/posts/error-creating-iam-role-malformed-policy.jpg 301
 /images/posts/exclude-directories-when-using-find-linux.svg /images/posts/exclude-directories-when-using-find-linux.jpg 301
 /images/posts/execute-terraform-actions-without-prompt.svg /images/posts/execute-terraform-actions-without-prompt.jpg 301
 /images/posts/experimenting-locally-with-terraform.svg /images/posts/experimenting-locally-with-terraform.jpg 301
 /images/posts/exploring-docker-container-file-system.svg /images/posts/exploring-docker-container-file-system.jpg 301
-/images/posts/expose-multiple-ports-docker.svg /images/posts/expose-multiple-ports-docker.jpg 301
 /images/posts/expose-port-on-live-docker-container.svg /images/posts/expose-port-on-live-docker-container.jpg 301
 /images/posts/find-files-containing-specific-text-linux.svg /images/posts/find-files-containing-specific-text-linux.jpg 301
 /images/posts/find-files-with-wildcards-linux.svg /images/posts/find-files-with-wildcards-linux.jpg 301
@@ -194,7 +190,6 @@
 /images/posts/how-to-access-docker-container-shell.svg /images/posts/how-to-access-docker-container-shell.jpg 301
 /images/posts/how-to-add-a-volume-to-an-existing-docker-container.svg /images/posts/how-to-add-a-volume-to-an-existing-docker-container.jpg 301
 /images/posts/how-to-artificially-create-connection-timeout-error.svg /images/posts/how-to-artificially-create-connection-timeout-error.jpg 301
-/images/posts/how-to-attach-detach-docker-process.svg /images/posts/how-to-attach-detach-docker-process.jpg 301
 /images/posts/how-to-change-uri-url-for-remote-git-repository.svg /images/posts/how-to-change-uri-url-for-remote-git-repository.jpg 301
 /images/posts/how-to-checkout-remote-git-branch.svg /images/posts/how-to-checkout-remote-git-branch.jpg 301
 /images/posts/how-to-cherry-pick-commits-in-git.svg /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
@@ -645,6 +640,12 @@
 /posts/command-line-for-looking-at-specific-port /posts/how-to-free-up-tcp-port 301
 /posts/kill-processes-by-partial-name /guides/introduction-to-linux/07-process-management 301
 /posts/finding-local-ip-addresses-using-pythons-stdlib /posts/how-to-get-local-ip-address 301
+/posts/docker-see-image-contents /posts/exploring-docker-container-file-system 301
+/posts/delete-all-local-docker-images /posts/remove-old-unused-docker-images 301
+/posts/enter-docker-container-new-tty /posts/how-do-i-run-a-command-on-an-already-existing-docker-container 301
+/posts/how-to-attach-detach-docker-process /posts/how-do-i-run-a-command-on-an-already-existing-docker-container 301
+/posts/copy-docker-images-between-hosts-withouta-repository /guides/introduction-to-docker/03-working-with-docker-images 301
+/posts/expose-multiple-ports-docker /posts/forward-host-port-to-docker-container 301
 /posts/how-to-decode-a-kubernetes-secret /guides/introduction-to-kubernetes/06-configmaps-and-secrets 301
 /posts/terraform-concatenate-lists-concat-function /posts/terraform-variables-loops-and-outputs 301
 /posts/how-to-create-an-ssh-key-in-terraform /guides/introduction-to-terraform/10-best-practices-and-production-patterns 301
@@ -905,7 +906,6 @@
 /images/posts/connect-network-share-with-credentials.png /images/posts/connect-network-share-with-credentials.jpg 301
 /images/posts/connect-to-host-localhost-from-docker.png /images/posts/connect-to-host-localhost-from-docker.jpg 301
 /images/posts/connecting-to-postgresql-in-a-docker-container-from-outside.png /images/posts/connecting-to-postgresql-in-a-docker-container-from-outside.jpg 301
-/images/posts/copy-docker-images-between-hosts-withouta-repository.png /images/posts/copy-docker-images-between-hosts-withouta-repository.jpg 301
 /images/posts/copy-files-from-docker-container-to-host.png /images/posts/copy-files-from-docker-container-to-host.jpg 301
 /images/posts/copy-with-docker-exclusion.png /images/posts/copy-with-docker-exclusion.jpg 301
 /images/posts/create-remote-git-branch.png /images/posts/create-remote-git-branch.jpg 301
@@ -942,7 +942,6 @@
 /images/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository.png /images/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository.jpg 301
 /images/posts/how-docker-differs-from-a-virtual-machine.png /images/posts/how-docker-differs-from-a-virtual-machine.jpg 301
 /images/posts/how-to-access-docker-container-shell.png /images/posts/how-to-access-docker-container-shell.jpg 301
-/images/posts/how-to-attach-detach-docker-process.png /images/posts/how-to-attach-detach-docker-process.jpg 301
 /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.png /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.jpg 301
 /images/posts/how-to-find-available-port.png /images/posts/how-to-find-available-port.jpg 301
 /images/posts/how-to-free-up-tcp-port.png /images/posts/how-to-free-up-tcp-port.jpg 301
@@ -996,7 +995,6 @@
 /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.png /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.jpg 301
 /images/posts/count-lines-in-file-linux-terminal.png /images/posts/count-lines-in-file-linux-terminal.jpg 301
 /images/posts/dast-integration-guide.png /images/posts/dast-integration-guide.jpg 301
-/images/posts/delete-all-local-docker-images.png /images/posts/delete-all-local-docker-images.jpg 301
 /images/posts/dependency-scanning-guide.png /images/posts/dependency-scanning-guide.jpg 301
 /images/posts/difference-between-git-pull-and-git-fetch.png /images/posts/difference-between-git-pull-and-git-fetch.jpg 301
 /images/posts/different-environments-in-terraform.png /images/posts/different-environments-in-terraform.jpg 301
@@ -1099,9 +1097,7 @@
 /images/posts/docker-security-best-practices.png /images/posts/docker-security-best-practices.jpg 301
 /images/posts/docker-ubuntu-ping-not-found.png /images/posts/docker-ubuntu-ping-not-found.jpg 301
 /images/posts/dockerfile-update-path.png /images/posts/dockerfile-update-path.jpg 301
-/images/posts/enter-docker-container-new-tty.png /images/posts/enter-docker-container-new-tty.jpg 301
 /images/posts/execute-terraform-actions-without-prompt.png /images/posts/execute-terraform-actions-without-prompt.jpg 301
-/images/posts/expose-multiple-ports-docker.png /images/posts/expose-multiple-ports-docker.jpg 301
 /images/posts/find-files-with-wildcards-linux.png /images/posts/find-files-with-wildcards-linux.jpg 301
 /images/posts/fix-docker-permission-denied-error.png /images/posts/fix-docker-permission-denied-error.jpg 301
 /images/posts/fix-echo-newline-bash-literal-n.png /images/posts/fix-echo-newline-bash-literal-n.jpg 301
@@ -1210,7 +1206,6 @@
 /images/posts/docker-rename-image-repository.png /images/posts/docker-rename-image-repository.jpg 301
 /images/posts/docker-run-image-as-container.png /images/posts/docker-run-image-as-container.jpg 301
 /images/posts/docker-runtime-performance-cost.png /images/posts/docker-runtime-performance-cost.jpg 301
-/images/posts/docker-see-image-contents.png /images/posts/docker-see-image-contents.jpg 301
 /images/posts/echo-to-stderr-in-bash.png /images/posts/echo-to-stderr-in-bash.jpg 301
 /images/posts/find-process-listening-on-port-windows.png /images/posts/find-process-listening-on-port-windows.jpg 301
 /images/posts/get-directory-bash-script-location.png /images/posts/get-directory-bash-script-location.jpg 301

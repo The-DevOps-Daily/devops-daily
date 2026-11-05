@@ -84,6 +84,6 @@ You can't expose a new port on a live Docker container, but you have workarounds
 ## Related Resources
 
 - [Docker Assign Port Mapping to Existing Container](/posts/docker-assign-port-mapping): more workarounds
-- [Expose Multiple Ports in Docker](/posts/expose-multiple-ports-docker): multi-port setup
+- [Expose Multiple Ports in Docker](/posts/forward-host-port-to-docker-container#h3-multiple-port-mappings): multi-port setup
 - [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): Compose networking
 - [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

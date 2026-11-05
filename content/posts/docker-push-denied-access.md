@@ -82,5 +82,5 @@ Good luck with your project!
 
 - [Push an image to a private registry](/guides/introduction-to-docker/03-working-with-docker-images#h3-push-to-a-private-registry): private registry workflow
 - [Docker Rename Image Repository](/posts/docker-rename-image-repository): fix image naming
-- [Copy Docker Images Between Hosts](/posts/copy-docker-images-between-hosts-withouta-repository): transfer without a registry
+- [Copy Docker Images Between Hosts](/guides/introduction-to-docker/03-working-with-docker-images#h2-move-images-without-a-registry): transfer without a registry
 - [Introduction to Docker: Working with Images](/guides/introduction-to-docker): image management guide

@@ -6,7 +6,7 @@ category:
   slug: 'docker'
 date: '2025-04-18'
 publishedAt: '2025-04-18T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
+updatedAt: '2026-11-05T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -195,6 +195,36 @@ docker run --rm -it image_name sh
 # After exploring, exit - the container is automatically removed (--rm)
 ```
 
+Images built `FROM scratch` or on distroless bases have no shell, so this fails. You do not need to run the image at all: `docker create` makes a container without starting it, and from there `docker export` lists or extracts every file and `docker cp` copies single files. When the image has the tool you want but a different entrypoint, override the entrypoint for one command:
+
+```terminal
+{
+  "title": "look inside an image without a shell",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker run --rm hello-world sh",
+      "output": "docker: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: exec: \"sh\": executable file not found in $PATH\n\nRun 'docker run --help' for more information"
+    },
+    {
+      "cmd": "cid=$(docker create hello-world) && docker export $cid | tar -t; docker rm $cid",
+      "output": ".dockerenv\ndev/\ndev/console\ndev/pts/\ndev/shm/\netc/\netc/hostname\netc/hosts\netc/mtab\netc/resolv.conf\nhello\nproc/\nsys/\n5bdf86f18c81dfc4ebfec7ed6c8e6f441d6b3ee12d351c0d4146d7c44270b72a"
+    },
+    {
+      "cmd": "cid=$(docker create nginx:1.30) && docker cp $cid:/etc/nginx/conf.d/default.conf . && head -4 default.conf; docker rm $cid",
+      "output": "server {\n    listen       80;\n    server_name  localhost;\n\ne79a60887702ef8f9419874e524b09ab4e9b86c73ccd35214431275399d15e50"
+    },
+    {
+      "cmd": "docker run --rm --entrypoint ls nginx:1.30 -la /etc/nginx",
+      "output": "total 36\ndrwxr-xr-x 3 root root 4096 Nov  5 07:18 .\ndrwxr-xr-x 1 root root 4096 Nov  5 16:37 ..\ndrwxr-xr-x 2 root root 4096 Nov  5 07:18 conf.d\n-rw-r--r-- 1 root root 1007 Oct  2 14:33 fastcgi_params\n-rw-r--r-- 1 root root 5349 Oct  2 14:33 mime.types\nlrwxrwxrwx 1 root root   22 Oct  2 16:57 modules -> /usr/lib/nginx/modules\n-rw-r--r-- 1 root root  644 Oct  2 16:57 nginx.conf\n-rw-r--r-- 1 root root  636 Oct  2 14:33 scgi_params\n-rw-r--r-- 1 root root  664 Oct  2 14:33 uwsgi_params"
+    }
+  ]
+}
+```
+
+The `hello-world` image holds one file, `hello`; the rest of the list is what Docker adds to every container (`/etc/hosts`, `/etc/resolv.conf`, mount points for `/proc`, `/sys` and `/dev`). The long hex strings are the container IDs that `docker rm` prints. To see the command an image runs before you start it, read its config with `docker image inspect -f '{{json .Config.Cmd}}'` and `.Config.Entrypoint`. For `nginx:1.30` they are `["nginx","-g","daemon off;"]` and `["/docker-entrypoint.sh"]`.
+
 ## Finding Files and Directories in a Container
 
 Use `find` to locate files:
@@ -320,6 +350,5 @@ Exploring Docker container file systems is a fundamental debugging skill. Whethe
 
 - [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host): extract files
 - [Docker Edit File in Container](/posts/docker-edit-file-in-container): modify files in-place
-- [How to See Docker Image Contents](/posts/docker-see-image-contents): inspect images before running
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): interactive debugging
+- [Enter Docker Container with New TTY](/posts/how-do-i-run-a-command-on-an-already-existing-docker-container#h2-opening-an-interactive-shell): interactive debugging
 - [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

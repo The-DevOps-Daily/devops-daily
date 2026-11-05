@@ -76,5 +76,5 @@ Good luck with your project!
 
 - [Push an image to a private registry](/guides/introduction-to-docker/03-working-with-docker-images#h3-push-to-a-private-registry): push renamed images
 - [Docker Push: Denied Access](/posts/docker-push-denied-access): fix push errors
-- [Copy Docker Images Between Hosts](/posts/copy-docker-images-between-hosts-withouta-repository): transfer images
+- [Copy Docker Images Between Hosts](/guides/introduction-to-docker/03-working-with-docker-images#h2-move-images-without-a-registry): transfer images
 - [Introduction to Docker: Working with Images](/guides/introduction-to-docker): image management
