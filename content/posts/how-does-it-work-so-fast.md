@@ -175,7 +175,7 @@ DNS resolution involves multiple lookups (root servers, TLD servers, authoritati
 
 4. **ISP resolver cache**: Your ISP's DNS resolver (or Google's 8.8.8.8, or Cloudflare's 1.1.1.1) caches results for their TTL. Since millions of users share the same resolver, popular domains are almost always cached.
 
-For a popular domain like google.com, the full resolution chain has not been needed for hours or days. Your ISP's resolver already has the answer. The lookup is a single UDP packet to a server within a few milliseconds of you.
+For a popular domain like google.com, the full resolution chain has not been needed for hours or days. Your ISP's resolver already has the answer. The lookup is a single UDP packet to a server within a few milliseconds of you, with no handshake first ([where UDP's speed advantage is real](/posts/udp-vs-tcp-performance-comparison)).
 
 For domains that are not in any cache, the full resolution takes 50-200ms. But this only happens once per TTL period (typically 5 minutes to 24 hours).
 

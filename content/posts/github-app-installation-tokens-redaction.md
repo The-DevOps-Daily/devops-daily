@@ -163,7 +163,7 @@ detect-secrets findings: 2
   GitHub Token
 ```
 
-- **gitleaks 8.30.1 found nothing.** Its `github-app-token` rule is `(?:ghu|ghs)_[0-9a-zA-Z]{36}`, the first "never matches" case above. Someone reported the format change in [issue #2192](https://github.com/gitleaks/gitleaks/issues/2192) on July 15, and [PR #2193](https://github.com/gitleaks/gitleaks/pull/2193) with a fix has been open since July 16. The latest release is from March 21. If gitleaks 8.30.1 with its default rules guards your pre-commit hook or CI, its rule cannot match this token shape, and it did not flag our test file.
+- **gitleaks 8.30.1 found nothing.** Its `github-app-token` rule is `(?:ghu|ghs)_[0-9a-zA-Z]{36}`, the first "never matches" case above. Someone reported the format change in [issue #2192](https://github.com/gitleaks/gitleaks/issues/2192) on July 15, and [PR #2193](https://github.com/gitleaks/gitleaks/pull/2193) with a fix has been open since July 16. The latest release is from March 21. If gitleaks 8.30.1 with its default rules guards your [pre-commit hook](/posts/pre-commit-hooks-security-guide) or CI, its rule cannot match this token shape, and it did not flag our test file.
 - **trufflehog 3.97.9 found a fragment.** Its detector matched the 46-character prefix and reported that fragment as an unverified finding. Most examples in trufflehog's README run with `--results=verified`, and that filter drops this finding. [PR #5156](https://github.com/trufflesecurity/trufflehog/pull/5156), open since July 27, adds a pattern for the new format.
 - **detect-secrets 1.5.0 flagged the line twice,** once as a JSON Web Token and once as a GitHub Token. Its GitHub pattern also matches only a prefix, but a scanner only needs to flag the line, and it did.
 

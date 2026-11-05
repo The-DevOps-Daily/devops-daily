@@ -85,6 +85,8 @@ export TF_VAR_db_password="$SECRET_FROM_VAULT"
 terraform apply    # picked up as var.db_password, never on the command line
 ```
 
+On a laptop, the same variables can live in a `.env` file that you export before running Terraform ([how to load it](/posts/terraform-read-environment-variables-from-env-file)).
+
 For file inputs, `file()` reads raw UTF-8 text (an SSH public key, a policy document), and pairing it with a decoder turns structured files into usable values:
 
 ```hcl

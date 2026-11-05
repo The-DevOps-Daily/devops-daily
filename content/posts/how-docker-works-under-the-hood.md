@@ -66,7 +66,7 @@ Four programs, not one. That split looks like over-engineering until you see wha
 
 ## Step 1: the CLI is just a REST client
 
-The `docker` binary does not create containers. It turns your command into an HTTP request and sends it to the Docker daemon over a local Unix socket at `/var/run/docker.sock`. You can make the exact same call by hand:
+The `docker` binary does not create containers. It turns your command into an HTTP request and sends it to the Docker daemon over a local Unix socket at `/var/run/docker.sock`. If nothing listens on that socket, the CLI prints ["Cannot connect to the Docker daemon"](/posts/cannot-connect-to-docker-daemon). You can make the exact same call by hand:
 
 ```bash
 # What `docker` does under the hood: talk to the daemon over its socket
@@ -77,7 +77,7 @@ That is the whole job of the CLI: serialize your intent and POST it. Everything 
 
 ## Step 2: dockerd prepares the work and pulls the image
 
-`dockerd` is the long-running engine. It receives the request, parses your flags (the `-p 8080:80` port map, env vars, mounts), and checks whether the `nginx` image is already on disk:
+`dockerd` is the long-running engine. It receives the request, parses your flags (the [`-p 8080:80` port map](/posts/forward-host-port-to-docker-container), env vars, mounts), and checks whether the `nginx` image is already on disk:
 
 ```bash
 docker image inspect nginx >/dev/null 2>&1 && echo "local" || echo "need to pull"
