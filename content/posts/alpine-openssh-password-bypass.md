@@ -34,7 +34,7 @@ This post tells you how to find out if a host or a container is affected, how to
 
 ## TLDR
 
-- You are affected only if four conditions are all true. Most fresh containers fail at least one of them.
+- You are affected only if four conditions are all true. In our tests, a fresh Alpine container with `openssh-server` failed two of them.
 - The fix is `apk upgrade -U -a`, then a restart of sshd. The upgrade alone does not replace the running daemon.
 - If you cannot upgrade, set `PasswordAuthentication no` and restart sshd.
 - Our read-only script checks the four conditions, the package version and the restart for a host or for every running container.
@@ -79,7 +79,7 @@ It reads the branch from `/etc/alpine-release`, the installed package version fr
 sudo sh check.sh
 ```
 
-We ran it in throwaway containers on Alpine 3.21, 3.22, 3.23, 3.24 and edge after `apk add openssh-server`. sshd ran with `--network none`, so no port was open to anyone. Every branch installed the fixed version, and every run exited `0`. This run is the strictest one: Alpine 3.24 with a key-only user set to `*` and one user with a random password, so all four conditions are true. The version is the only thing that keeps it safe:
+We ran it in throwaway containers on Alpine 3.21, 3.22, 3.23, 3.24 and edge after `apk add openssh-server`. sshd ran with `--network none`, so no port was open to anyone. Every branch installed the fixed version, and every run exited `0`. The run below is the closest one to an affected host: Alpine 3.24 with a key-only user set to `*` and one user with a random password, so all four conditions are true. The version is the only thing that keeps it safe:
 
 ```terminal
 {
@@ -128,7 +128,7 @@ apk upgrade -U -a
 rc-service sshd restart
 ```
 
-The restart is not optional. The package upgrade replaces the files on disk, but the sshd that is already running keeps its old code until it restarts. `check.sh` compares the start time of the running sshd with the time the sshd binary was installed, and exits `2` if the daemon is older. Run it again after the restart.
+The restart is not optional. The package upgrade replaces the files on disk, but it does not restart the sshd that is already running, and the advisory says to restart it after the upgrade. `check.sh` compares the start time of the running sshd with the time the sshd binary was installed, and exits `2` if the daemon is older. Run it again after the restart.
 
 On edge, the fix comes with OpenSSH 10.6p2. If you jump from an older 10.x, read our post on [what OpenSSH 10.6 changed](/posts/openssh-10-6-domain-usernames-and-compression) first: it refuses some usernames and changes `ssh -C`.
 
