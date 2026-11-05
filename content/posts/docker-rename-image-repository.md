@@ -74,7 +74,7 @@ Good luck with your project!
 
 ## Related Resources
 
-- [Push Docker Image to Private Repo](/posts/push-docker-image-private-repo): push renamed images
+- [Push an image to a private registry](/guides/introduction-to-docker/03-working-with-docker-images#h3-push-to-a-private-registry): push renamed images
 - [Docker Push: Denied Access](/posts/docker-push-denied-access): fix push errors
 - [Copy Docker Images Between Hosts](/posts/copy-docker-images-between-hosts-withouta-repository): transfer images
 - [Introduction to Docker: Working with Images](/guides/introduction-to-docker): image management

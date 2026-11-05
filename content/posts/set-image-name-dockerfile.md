@@ -94,6 +94,6 @@ By following these steps, you can effectively set and manage image names in Dock
 ## Related Resources
 
 - [Docker Rename Image Repository](/posts/docker-rename-image-repository): rename existing images
-- [Push Docker Image to Private Repo](/posts/push-docker-image-private-repo): push named images
+- [Push an image to a private registry](/guides/introduction-to-docker/03-working-with-docker-images#h3-push-to-a-private-registry): push named images
 - [Difference Between RUN and CMD](/posts/difference-run-cmd-dockerfile): Dockerfile instructions
 - [Introduction to Docker: Building Images](/guides/introduction-to-docker): Dockerfile guide

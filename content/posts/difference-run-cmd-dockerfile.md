@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2024-11-25'
 publishedAt: '2024-11-25T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -109,6 +109,44 @@ In this example:
 
 - The `RUN` instruction installs Flask during the build process.
 - The `CMD` instruction specifies that the container should run `python app.py` when it starts.
+
+## How Do You Run More Than One Command When a Container Starts?
+
+`CMD` starts one process. To run a setup step first, wrap the commands in a shell, and start the long-running process with `exec`:
+
+```dockerfile
+FROM nginx:1.30
+# exec replaces the shell, so nginx becomes PID 1 and gets the stop signal
+CMD ["sh", "-c", "echo setup done && exec nginx -g 'daemon off;'"]
+```
+
+Without `exec`, the shell stays PID 1 and nginx runs as its child. `docker stop` sends SIGTERM to PID 1, the shell does not pass it on, and after 10 seconds Docker kills everything with SIGKILL. We built the image twice, as `sh-exec` with `exec` and `sh-plain` without it, and looked at PID 1 in each container:
+
+```terminal
+{
+  "title": "the same CMD, with and without exec",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "docker exec sh-plain cat /proc/1/cmdline | tr '\\0' ' '",
+      "output": "sh -c echo setup done && nginx -g 'daemon off;'"
+    },
+    {
+      "cmd": "docker exec sh-exec cat /proc/1/cmdline | tr '\\0' ' '",
+      "output": "nginx: master process nginx -g daemon off;"
+    }
+  ]
+}
+```
+
+Then we timed `docker stop` on each one. `sh-plain` took 10 seconds and exited with code 137, which means it was killed and nginx never shut down cleanly. `sh-exec` stopped at once with exit code 0. In Compose, `command:` replaces the image's `CMD` and follows the same rule: `command: sh -c "echo warming cache && exec python -m http.server 8000"`.
+
+Two cases need more than a shell line:
+
+- **One-off steps, such as database migrations.** Put them in a separate service that runs and exits, and make the app wait for it with `depends_on: { migrate: { condition: service_completed_successfully } }`. The app then starts only if the migration exited with code 0. [Dockerfile vs Compose file](/posts/docker-image-vs-container#h2-dockerfile-vs-compose-file-which-does-what) shows the full file.
+- **Two long-running processes**, such as a web server and a queue worker. Run them as two containers from the same image with different commands. A process manager such as supervisord inside one container works, but then Docker sees one process and cannot restart or scale the two parts on their own.
+
+For longer setup logic, copy a script into the image and use it as the `ENTRYPOINT`, ending with `exec "$@"` so the `CMD` still runs as PID 1. [CMD and ENTRYPOINT](/posts/difference-between-cmd-and-entrypoint-in-dockerfiles) explains how the two instructions combine.
 
 ## Best Practices
 

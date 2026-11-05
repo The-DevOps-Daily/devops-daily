@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2024-12-15'
 publishedAt: '2024-12-15T11:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -331,6 +331,43 @@ services:
 
 This binds the port only to localhost, preventing access from other machines on your network.
 
+## What Is the Difference Between EXPOSE and --publish?
+
+The same split exists outside Compose. `EXPOSE` in a Dockerfile, like `expose:` in a Compose file, only records which ports the app listens on. `docker run --publish` (`-p`), like `ports:`, is what opens a port on the host:
+
+```bash
+# Host port 8080 to container port 80
+docker run -d -p 8080:80 nginx:1.30
+
+# Only on the host's loopback address, not on every interface
+docker run -d -p 127.0.0.1:8080:80 nginx:1.30
+```
+
+`EXPOSE` changes one thing at run time: `docker run -P` (`--publish-all`) publishes every exposed port to a random free host port. The nginx image exposes port 80:
+
+```terminal
+{
+  "title": "EXPOSE plus -P",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "docker image inspect -f '{{json .Config.ExposedPorts}}' nginx:1.30",
+      "output": "{\"80/tcp\":{}}"
+    },
+    {
+      "cmd": "docker run -d --name web -P nginx:1.30",
+      "output": "2c8353cf76fed2dbbf4aedec77bbec2de2476c3d3b187c08ffc0c462816bb93b"
+    },
+    {
+      "cmd": "docker port web",
+      "output": "80/tcp -> 0.0.0.0:32768\n80/tcp -> [::]:32768"
+    }
+  ]
+}
+```
+
+Leaving `EXPOSE` out does not block anything. We started `python -m http.server 9000` from the `python:3.13-alpine` image, which exposes no ports (`ExposedPorts` is `null`), and another container on the same network still got `200` from `http://api:9000/`. Publish only the ports that people outside the host need. On Linux, Docker writes its own firewall rules for published ports, so a port published on `0.0.0.0` can be reachable even when `ufw` blocks it; bind it to `127.0.0.1` when only the host should reach it.
+
 ## Troubleshooting Network Issues
 
 When containers can't communicate, the problem is usually related to port configuration or network connectivity. Here are common issues and solutions:
@@ -365,7 +402,7 @@ Consider using reverse proxies like nginx or Traefik to further control access t
 ## Related Resources
 
 - [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): configure containers without hardcoding values
-- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands): chain commands in your Compose services
+- [Run more than one command when a container starts](/posts/difference-run-cmd-dockerfile#h2-how-do-you-run-more-than-one-command-when-a-container-starts): `sh -c`, `exec` and one-off services
 - [Introduction to Docker: Networking](/guides/introduction-to-docker): deep dive into Docker networking fundamentals
 - [Docker Security Best Practices](/posts/docker-security-best-practices): harden containers for production
 - [Docker Security Checklist](/checklists/docker-security): verify your Docker setup

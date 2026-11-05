@@ -6,7 +6,7 @@ category:
   name: Docker
   slug: docker
 publishedAt: '2025-05-17'
-updatedAt: '2026-10-23'
+updatedAt: '2026-11-05'
 author:
   name: DevOps Daily Team
   slug: devops-daily-team

@@ -270,6 +270,47 @@ docker system prune              # stopped containers, unused networks, dangling
 
 Google's old Container Registry (`gcr.io/my-project/...`) has been replaced by Artifact Registry; public images that Google itself publishes, such as distroless, are still served from `gcr.io`. Log in to a registry with `docker login <registry>`, or with the cloud CLI's credential helper (`aws ecr get-login-password`, `gcloud auth configure-docker`, `az acr login`).
 
+### Push to a Private Registry
+
+The registry host is part of the image name, so pushing is three steps: log in, tag the image with the registry's name for it, push. To try it without an account, run a registry with a password on your own machine (the `registry:3` image, with an `htpasswd` file for one user, `ci-bot`, on port 5001) and push the `my-nginx:1.0` image from above to it:
+
+```terminal
+{
+  "title": "push to a registry that needs a login",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker tag my-nginx:1.0 localhost:5001/team/my-nginx:1.0"
+    },
+    {
+      "cmd": "docker push localhost:5001/team/my-nginx:1.0",
+      "output": "The push refers to repository [localhost:5001/team/my-nginx]\nno basic auth credentials"
+    },
+    {
+      "cmd": "echo \"$REGISTRY_PASSWORD\" | docker login localhost:5001 -u ci-bot --password-stdin",
+      "output": "WARNING! Your credentials are stored unencrypted in '/home/runner/.docker/config.json'.\nConfigure a credential helper to remove this warning. See\nhttps://docs.docker.com/go/credential-store/\n\nLogin Succeeded"
+    },
+    {
+      "cmd": "docker push -q localhost:5001/team/my-nginx:1.0",
+      "output": "localhost:5001/team/my-nginx:1.0"
+    },
+    {
+      "cmd": "curl -s -u ci-bot:\"$REGISTRY_PASSWORD\" http://localhost:5001/v2/team/my-nginx/tags/list",
+      "output": "{\"name\":\"team/my-nginx\",\"tags\":[\"1.0\"]}"
+    }
+  ]
+}
+```
+
+Three things to know:
+
+- **`--password-stdin` keeps the secret out of your shell history** and the process list, which `-p` does not. In CI, pipe a token from the CI secret store.
+- **The warning is literal.** Without a credential helper, `~/.docker/config.json` holds `user:password` in base64, which anyone who can read the file can decode. On a laptop, Docker Desktop configures the OS keychain; on servers, install a helper such as `docker-credential-pass`, or log in for one job and run `docker logout` at the end.
+- **A name without a registry host goes to Docker Hub.** `docker push team/hello-api:1.0` pushes to `docker.io/team/hello-api`, and Docker Hub refuses it unless you can write to the `team` namespace there. The usual message is `denied: requested access to the resource is denied`; with a token that lacks the scope, it is `unauthorized: access token has insufficient scopes`. Check the full name with `docker image ls` before you push.
+
+Docker trusts `localhost` registries over plain HTTP. For any other host, the registry needs TLS, or an `insecure-registries` entry in `/etc/docker/daemon.json`, which you should keep for test setups.
+
 ## Common Mistakes
 
 - **Deploying `latest`.** Two servers that pull `latest` a day apart can run different versions. Use a version tag, and a digest when it matters.
@@ -291,7 +332,7 @@ Next, run containers from these images in [Run Your First Docker Container](/gui
 
 - [Where Docker Images Are Stored on Your Host Machine](/posts/docker-image-storage-locations)
 - [How to Remove Old and Unused Docker Images](/posts/remove-old-unused-docker-images)
-- [Docker Complains About "No Space Left on Device": How to Clean Up?](/posts/docker-no-space-left-cleanup)
+- [Fix "No Space Left on Device" in Docker](/posts/docker-image-storage-locations#h2-fixing-no-space-left-on-device)
 - [Why Your Base Image Has 1,684 CVEs](/posts/why-your-base-image-has-1684-cves)
 - [Harbor vs Docker Hub](/comparisons/harbor-vs-docker-hub)
 - Interview question: [Docker image layers and caching](/interview-questions/mid/docker-layers-caching)

@@ -82,7 +82,7 @@ If you see a warning about Compose V1 being deprecated, it's time to switch.
 
 ## Related Resources
 
-- [Docker Compose vs Dockerfile](/posts/docker-compose-vs-dockerfile): understand when to use each
+- [Dockerfile vs Compose file](/posts/docker-image-vs-container#h2-dockerfile-vs-compose-file-which-does-what): understand when to use each
 - [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences): choosing the right orchestration tool
 - [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): configure Compose services
 - [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch

@@ -470,5 +470,4 @@ Port forwarding is fundamental to using Docker effectively. Whether you're runni
 
 - [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): Compose port mapping
 - [Docker Access Host Port](/posts/docker-access-host-port): reverse direction networking
-- [Expose vs Publish in Docker](/posts/expose-vs-publish-docker): understand the terminology
 - [Introduction to Docker: Networking](/guides/introduction-to-docker): networking fundamentals

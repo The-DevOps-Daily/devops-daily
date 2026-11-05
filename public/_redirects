@@ -66,6 +66,15 @@
 /posts/restart-single-container-docker-compose /posts/rebuild-docker-container-compose 301
 /posts/upgrade-docker-container-image-changed /posts/rebuild-docker-container-compose 301
 /posts/interactive-shell-docker-compose /posts/rebuild-docker-container-compose 301
+# Dead short posts merged into stronger pages (Nov 2026, batch 1)
+/posts/expose-vs-publish-docker /posts/docker-compose-ports-vs-expose 301
+/posts/vagrant-vs-docker-for-isolated-environments /posts/how-docker-differs-from-a-virtual-machine 301
+/posts/docker-compose-vs-dockerfile /posts/docker-image-vs-container 301
+/posts/docker-compose-multiple-commands /posts/difference-run-cmd-dockerfile 301
+/posts/how-to-clear-docker-container-logs-properly /posts/docker-desktop-local-log-driver 301
+/posts/docker-no-space-left-cleanup /posts/docker-image-storage-locations 301
+/posts/push-docker-image-private-repo /guides/introduction-to-docker/03-working-with-docker-images 301
+/posts/how-to-mount-a-single-file-in-a-volume /guides/introduction-to-docker/06-working-with-docker-volumes 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -89,7 +98,6 @@
 /images/posts/check-file-not-exist-bash.png /images/posts/check-file-not-exist-bash.jpg 301
 /images/posts/datadog-alternatives-2026-real-prices.png /images/posts/datadog-alternatives-2026-real-prices.jpg 301
 /images/posts/digitalocean-inference-prompt-caching-measured.png /images/posts/digitalocean-inference-prompt-caching-measured.jpg 301
-/images/posts/docker-compose-vs-dockerfile.png /images/posts/docker-compose-vs-dockerfile.jpg 301
 /images/posts/github-actions-node20-removed.png /images/posts/github-actions-node20-removed.jpg 301
 /images/posts/go-runs-the-cloud-native-control-plane.png /images/posts/go-runs-the-cloud-native-control-plane.jpg 301
 /images/posts/how-youtube-slack-github-shard-mysql-vitess.png /images/posts/how-youtube-slack-github-shard-mysql-vitess.jpg 301
@@ -370,7 +378,6 @@
 /images/posts/how-to-free-up-tcp-port.png /images/posts/how-to-free-up-tcp-port.jpg 301
 /images/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network.png /images/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network.jpg 301
 /images/posts/how-to-get-docker-host-ip-from-container.png /images/posts/how-to-get-docker-host-ip-from-container.jpg 301
-/images/posts/how-to-mount-a-single-file-in-a-volume.png /images/posts/how-to-mount-a-single-file-in-a-volume.jpg 301
 /images/posts/how-to-publish-helm-chart.png /images/posts/how-to-publish-helm-chart.jpg 301
 /images/posts/how-to-run-cron-job-in-docker.png /images/posts/how-to-run-cron-job-in-docker.jpg 301
 /images/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams.png /images/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams.jpg 301
@@ -430,7 +437,6 @@
 /images/posts/difference-between-git-pull-and-git-fetch.png /images/posts/difference-between-git-pull-and-git-fetch.jpg 301
 /images/posts/different-environments-in-terraform.png /images/posts/different-environments-in-terraform.jpg 301
 /images/posts/docker-build-with-multiple-build-args.png /images/posts/docker-build-with-multiple-build-args.jpg 301
-/images/posts/docker-compose-multiple-commands.png /images/posts/docker-compose-multiple-commands.jpg 301
 /images/posts/docker-compose-ports-vs-expose.png /images/posts/docker-compose-ports-vs-expose.jpg 301
 /images/posts/docker-compose-vs-kubernetes-differences.png /images/posts/docker-compose-vs-kubernetes-differences.jpg 301
 /images/posts/docker-compose-wait-container.png /images/posts/docker-compose-wait-container.jpg 301
@@ -454,7 +460,6 @@
 /images/posts/how-to-add-a-volume-to-an-existing-docker-container.png /images/posts/how-to-add-a-volume-to-an-existing-docker-container.jpg 301
 /images/posts/how-to-change-uri-url-for-remote-git-repository.png /images/posts/how-to-change-uri-url-for-remote-git-repository.jpg 301
 /images/posts/how-to-cherry-pick-commits-in-git.png /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
-/images/posts/how-to-clear-docker-container-logs-properly.png /images/posts/how-to-clear-docker-container-logs-properly.jpg 301
 /images/posts/how-to-delete-git-branch-locally-and-remotely.png /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
 /images/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from.png /images/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from.jpg 301
 /images/posts/how-to-discard-unstaged-changes-in-git.png /images/posts/how-to-discard-unstaged-changes-in-git.jpg 301
@@ -537,14 +542,12 @@
 /images/posts/docker-image-storage-locations.png /images/posts/docker-image-storage-locations.jpg 301
 /images/posts/docker-image-vs-container.png /images/posts/docker-image-vs-container.jpg 301
 /images/posts/docker-name-already-in-use.png /images/posts/docker-name-already-in-use.jpg 301
-/images/posts/docker-no-space-left-cleanup.png /images/posts/docker-no-space-left-cleanup.jpg 301
 /images/posts/docker-security-best-practices.png /images/posts/docker-security-best-practices.jpg 301
 /images/posts/docker-ubuntu-ping-not-found.png /images/posts/docker-ubuntu-ping-not-found.jpg 301
 /images/posts/dockerfile-update-path.png /images/posts/dockerfile-update-path.jpg 301
 /images/posts/enter-docker-container-new-tty.png /images/posts/enter-docker-container-new-tty.jpg 301
 /images/posts/execute-terraform-actions-without-prompt.png /images/posts/execute-terraform-actions-without-prompt.jpg 301
 /images/posts/expose-multiple-ports-docker.png /images/posts/expose-multiple-ports-docker.jpg 301
-/images/posts/expose-vs-publish-docker.png /images/posts/expose-vs-publish-docker.jpg 301
 /images/posts/find-files-with-wildcards-linux.png /images/posts/find-files-with-wildcards-linux.jpg 301
 /images/posts/finding-local-ip-addresses-using-pythons-stdlib.png /images/posts/finding-local-ip-addresses-using-pythons-stdlib.jpg 301
 /images/posts/fix-docker-permission-denied-error.png /images/posts/fix-docker-permission-denied-error.jpg 301
@@ -587,7 +590,6 @@
 /images/posts/postgres-k8s.png /images/posts/postgres-k8s.jpg 301
 /images/posts/profile-cpp-code-performance-linux.png /images/posts/profile-cpp-code-performance-linux.jpg 301
 /images/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script.png /images/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script.jpg 301
-/images/posts/push-docker-image-private-repo.png /images/posts/push-docker-image-private-repo.jpg 301
 /images/posts/push-git-tag-to-remote.png /images/posts/push-git-tag-to-remote.jpg 301
 /images/posts/recursively-grep-directories-subdirectories.png /images/posts/recursively-grep-directories-subdirectories.jpg 301
 /images/posts/redirect-output-to-file-and-stdout.png /images/posts/redirect-output-to-file-and-stdout.jpg 301
@@ -607,7 +609,6 @@
 /images/posts/terraform-referencing-for-each-resources.png /images/posts/terraform-referencing-for-each-resources.jpg 301
 /images/posts/terraform-s3-backend-configuration-errors.png /images/posts/terraform-s3-backend-configuration-errors.jpg 301
 /images/posts/undo-git-rebase.png /images/posts/undo-git-rebase.jpg 301
-/images/posts/vagrant-vs-docker-for-isolated-environments.png /images/posts/vagrant-vs-docker-for-isolated-environments.jpg 301
 /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.png /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.jpg 301
 /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.png /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.jpg 301
 /images/exercises/ansible-web-server-automation.png /images/exercises/ansible-web-server-automation.jpg 301

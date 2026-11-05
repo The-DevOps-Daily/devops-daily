@@ -107,7 +107,7 @@ Running cron jobs in Docker is straightforward with the right setup. Keep cron i
 
 ## Related Resources
 
-- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands): multi-command patterns
-- [How to Clear Docker Container Logs](/posts/how-to-clear-docker-container-logs-properly): log management
+- [Run more than one command when a container starts](/posts/difference-run-cmd-dockerfile#h2-how-do-you-run-more-than-one-command-when-a-container-starts): multi-command patterns
+- [Clear and cap Docker container logs](/posts/docker-desktop-local-log-driver#h3-clear-a-log-that-already-fills-the-disk): log management
 - [Docker Security Best Practices](/posts/docker-security-best-practices): secure containers
 - [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

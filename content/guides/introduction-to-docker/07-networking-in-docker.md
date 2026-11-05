@@ -231,7 +231,7 @@ Next, replace all of these commands with one file in [Docker Compose](/guides/in
 ## Keep Learning
 
 - [Docker: Connect to the Host's localhost from a Container](/posts/connect-to-host-localhost-from-docker)
-- [What is the Difference Between "Expose" and "Publish" in Docker?](/posts/expose-vs-publish-docker)
+- [What is the difference between EXPOSE and --publish?](/posts/docker-compose-ports-vs-expose#h2-what-is-the-difference-between-expose-and-publish)
 - [How to Get a Docker Container's IP Address from the Host](/posts/how-to-get-docker-container-ip-from-host)
 - [Docker - Ubuntu - bash: ping: command not found](/posts/docker-ubuntu-ping-not-found)
 - Guide: [Networking Fundamentals](/guides/networking-fundamentals)
