@@ -593,7 +593,7 @@ In [Part 10](/guides/introduction-to-terraform/10-best-practices-and-production-
 
 ## Keep Learning
 
-- [How to Fix Common Terraform S3 Backend Configuration Errors](/posts/terraform-s3-backend-configuration-errors)
+- [Fix common Terraform S3 backend errors](/posts/terraform-state-remove-move-migrate-backend#h3-common-s3-backend-errors)
 - [How to Store Terraform Azure State File in a Different Subscription](/posts/terraform-azure-state-file-different-subscription)
 - [Terraform State: Remove, Move and Migrate Resources, and Set Up a Remote Backend](/posts/terraform-state-remove-move-migrate-backend)
 - [Gate Your Terraform Plans: Rules Decide, the Model Explains](/posts/terraform-plan-gate-digitalocean-inference)

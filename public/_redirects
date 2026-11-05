@@ -84,6 +84,8 @@
 /posts/compare-two-directory-trees-by-content /guides/introduction-to-linux/10-system-administration 301
 /posts/redirect-output-to-file-and-stdout /posts/redirect-all-output-to-file-bash 301
 /posts/difference-between-port-and-socket /posts/can-two-sockets-share-tcp-port 301
+/posts/terraform-api-gateway-stage-not-deploying /guides/introduction-to-terraform/04-resources-and-data-sources 301
+/posts/terraform-s3-backend-configuration-errors /posts/terraform-state-remove-move-migrate-backend 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -504,7 +506,6 @@
 /images/posts/ssh-could-not-resolve-hostname-error.png /images/posts/ssh-could-not-resolve-hostname-error.jpg 301
 /images/posts/sync-forked-repository-github.png /images/posts/sync-forked-repository-github.jpg 301
 /images/posts/terraform-add-ssh-key-gcp-instance.png /images/posts/terraform-add-ssh-key-gcp-instance.jpg 301
-/images/posts/terraform-api-gateway-stage-not-deploying.png /images/posts/terraform-api-gateway-stage-not-deploying.jpg 301
 /images/posts/terraform-apply-sql-scripts-rds.png /images/posts/terraform-apply-sql-scripts-rds.jpg 301
 /images/posts/terraform-cloudwatch-log-subscription-lambda.png /images/posts/terraform-cloudwatch-log-subscription-lambda.jpg 301
 /images/posts/terraform-failed-install-provider-checksums-mismatch.png /images/posts/terraform-failed-install-provider-checksums-mismatch.jpg 301
@@ -608,7 +609,6 @@
 /images/posts/terraform-import-index-value-required-error.png /images/posts/terraform-import-index-value-required-error.jpg 301
 /images/posts/terraform-read-environment-variables-from-env-file.png /images/posts/terraform-read-environment-variables-from-env-file.jpg 301
 /images/posts/terraform-referencing-for-each-resources.png /images/posts/terraform-referencing-for-each-resources.jpg 301
-/images/posts/terraform-s3-backend-configuration-errors.png /images/posts/terraform-s3-backend-configuration-errors.jpg 301
 /images/posts/undo-git-rebase.png /images/posts/undo-git-rebase.jpg 301
 /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.png /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.jpg 301
 /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.png /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.jpg 301

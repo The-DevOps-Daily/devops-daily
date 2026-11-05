@@ -572,6 +572,36 @@ resource "aws_launch_template" "web" {
 
 **`replace_triggered_by`** replaces the resource when another resource or attribute changes, as `terraform_data.deploy` showed above.
 
+**Snapshot resources need a trigger.** Some resources copy the state of other resources when they are created and never change after that. The best-known case is an AWS API Gateway stage that does not pick up your changes: `aws_api_gateway_deployment` is a snapshot of the REST API, so when you edit a method or an integration, Terraform updates that resource, and the stage keeps serving the old snapshot. Give the deployment a `triggers` map, so that Terraform replaces it when the API changes, and `create_before_destroy`, so that the stage moves to the new deployment before the old one is deleted:
+
+```hcl
+resource "aws_api_gateway_deployment" "api" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+
+  triggers = {
+    # Hash the whole objects, not only their ids: an id stays the same
+    # when you change an integration in place.
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.health,
+      aws_api_gateway_method.get_health,
+      aws_api_gateway_integration.get_health,
+    ]))
+  }
+
+  lifecycle {
+    create_before_destroy = true # move the stage before the old deployment goes
+  }
+}
+
+resource "aws_api_gateway_stage" "prod" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  deployment_id = aws_api_gateway_deployment.api.id
+  stage_name    = "prod"
+}
+```
+
+The AWS provider's own example hashes only the `.id` values. Its documentation notes that this gets the order right but misses later changes, and that hashing whole resources shows one extra difference after you switch, then changes only when the resources do. Add every resource that shapes the API to the list; for an API defined in OpenAPI, hash the `body` of `aws_api_gateway_rest_api` instead. Without `create_before_destroy`, the replacement fails with `BadRequestException: Active stages pointing to this deployment must be moved or deleted`. To redeploy once without a change, run `terraform apply -replace=aws_api_gateway_deployment.api`. `depends_on` alone is not enough: it orders the first deployment but never causes a new one.
+
 **`destroy = false`** (Terraform 1.16 and later) makes Terraform forget the object instead of deleting it when the resource is replaced, when you run `terraform destroy`, or when an instance drops out of `count` or `for_each`. The setting lives in the resource block, so deleting the whole block deletes the protection too; to stop managing a resource you remove from the code, use a `removed` block, shown in [Part 5](/guides/introduction-to-terraform/05-state-management#h3-stop-managing-an-object-without-deleting-it).
 
 ### Actions
