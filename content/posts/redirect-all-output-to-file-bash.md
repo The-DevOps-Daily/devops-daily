@@ -6,8 +6,8 @@ category:
   slug: 'bash'
 date: '2025-01-15'
 publishedAt: '2025-01-15T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -187,6 +187,52 @@ To append instead of overwrite:
 ```bash
 command 2>&1 | tee -a output.txt
 ```
+
+Bash 4 has a shorthand for `2>&1 |`: `command |& tee output.txt`. `tee` also takes several files at once: `make build 2>&1 | tee build.log ~/builds/latest.log`.
+
+### Keep the Exit Code When You Pipe to tee
+
+A pipeline returns the exit code of its last command, and that is `tee`, which almost always succeeds. A failed command looks like a success:
+
+```bash
+ls /nope 2>&1 | tee out.log; echo "exit: $?"
+# ls: cannot access '/nope': No such file or directory
+# exit: 0
+```
+
+That breaks `if cmd | tee log`, `set -e` and CI steps. Turn on `pipefail`, so the pipeline fails when any command in it fails, or read the code of one command from `PIPESTATUS`:
+
+```bash
+set -o pipefail
+ls /nope 2>&1 | tee out.log; echo "exit: $?"
+# exit: 2
+
+ls /nope 2>&1 | tee out.log; echo "ls exit: ${PIPESTATUS[0]}, tee exit: ${PIPESTATUS[1]}"
+# ls exit: 2, tee exit: 0
+```
+
+### Write to a Protected File With sudo tee
+
+`sudo echo "x" > /etc/app.conf` fails with `Permission denied`, because your own shell opens `/etc/app.conf` before `sudo` runs. Let `tee` open the file as root instead, and send its copy of the output to `/dev/null`:
+
+```bash
+echo "max_connections = 200" | sudo tee /etc/app.conf > /dev/null
+echo "log_level = info" | sudo tee -a /etc/app.conf > /dev/null   # append
+```
+
+### Send a Whole Script Through tee
+
+To log everything a script prints, from the first line to the last, redirect the script's own output once at the top instead of adding `| tee` to every command:
+
+```bash
+#!/usr/bin/env bash
+exec > >(tee -a run.log) 2>&1   # from here on, stdout and stderr go to the screen and run.log
+echo "starting"
+ls /nope
+echo "done"
+```
+
+All three lines, including the error from `ls`, appear on the screen and in `run.log`. `tee` runs as a separate process, so the last lines can reach the file a moment after the script exits.
 
 ## Redirecting Output from Scripts
 

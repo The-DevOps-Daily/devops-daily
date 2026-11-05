@@ -419,6 +419,47 @@ The backup script from Part 9 makes full archives. `rsync` with `--link-dest` ma
 
 A path given to `--link-dest` is relative to the destination directory. Add `--delete` to mirror deletions, and `-e ssh` with a `host:path` destination to send the snapshot to another machine. For encrypted, deduplicated backups to object storage or another server, use **restic** or **BorgBackup**; both are packaged on every major distribution.
 
+### Compare Two Directory Trees
+
+`diff -r` above answers "identical or not". When two trees differ, three tools tell you how. In this example, a restored copy of a site has an edited `index.html`, a `css/main.css` with different content but the same size and timestamp, a missing `old.html` and an extra `news.html`:
+
+```terminal
+{
+  "title": "three ways to compare two trees",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "content, file by file; exit code 1 when anything differs",
+      "cmd": "diff -rq site restore",
+      "output": "Files site/css/main.css and restore/css/main.css differ\nFiles site/index.html and restore/index.html differ\nOnly in restore: news.html\nOnly in site: old.html"
+    },
+    {
+      "comment": "what rsync would change; it compares size and time only",
+      "cmd": "rsync -rn --delete --itemize-changes site/ restore/",
+      "output": "*deleting   news.html\n>f.sT...... index.html\n>f+++++++++ old.html"
+    },
+    {
+      "comment": "-c compares checksums and finds main.css too",
+      "cmd": "rsync -rcn --delete --itemize-changes site/ restore/",
+      "output": "*deleting   news.html\n>fcsT...... index.html\n>f+++++++++ old.html\n>fc.T...... css/main.css"
+    }
+  ]
+}
+```
+
+`-n` makes rsync a dry run, so nothing is copied. Without `-c`, rsync skips files whose size and modification time match, which is fast but missed `css/main.css` here. For trees on two machines, write a checksum list on one and check it on the other:
+
+```bash
+# on the source machine
+(cd site && find . -type f -print0 | sort -z | xargs -0 sha256sum) > site.sha256
+
+# on the other machine, inside the copy; prints only problems, exit code 1 if any
+sha256sum --quiet -c site.sha256
+```
+
+The check reports changed files as `FAILED` and missing ones as `FAILED open or read`. It does not see files that exist only in the copy; `diff -rq` or `rsync --delete -n` do.
+
 Whatever tool you use, put a restore on the calendar: pick a random file or a database dump, restore it to a scratch location, and check it.
 
 ## Harden the Server

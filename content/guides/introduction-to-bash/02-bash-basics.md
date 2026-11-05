@@ -419,7 +419,7 @@ exec >> /var/tmp/nightly.log 2>&1   # every later command writes here
 echo "started at $(date -u +%FT%TZ)"
 ```
 
-[Redirect all output to a file](/posts/redirect-all-output-to-file-bash), [send output to a file and the screen with tee](/posts/redirect-output-to-file-and-stdout) and [what 2>&1 means](/posts/what-does-2-and-1-mean-linux-bash) go further. Here documents (`<<EOF`) and here strings (`<<<`), which feed text to standard input, are in [Part 9](/guides/introduction-to-bash/09-bash-tools).
+[Redirect all output to a file](/posts/redirect-all-output-to-file-bash), [send output to a file and the screen with tee](/posts/redirect-all-output-to-file-bash#h2-seeing-output-and-saving-it) and [what 2>&1 means](/posts/what-does-2-and-1-mean-linux-bash) go further. Here documents (`<<EOF`) and here strings (`<<<`), which feed text to standard input, are in [Part 9](/guides/introduction-to-bash/09-bash-tools).
 
 ## History Expansion and Line Editing
 

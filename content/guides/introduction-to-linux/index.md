@@ -6,7 +6,7 @@ category:
   name: 'Linux'
   slug: 'linux'
 publishedAt: '2025-05-14'
-updatedAt: '2026-10-24'
+updatedAt: '2026-11-05'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'

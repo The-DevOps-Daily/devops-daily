@@ -20,7 +20,7 @@
 /posts/docker-cannot-connect-daemon /posts/cannot-connect-to-docker-daemon 301
 /posts/how-to-resolve-git-merge-conflicts /posts/how-do-i-resolve-merge-conflicts-in-a-git-repository 301
 /posts/prompt-yes-no-cancel-input-linux-shell-script /posts/prompt-for-yes-no-cancel-input-in-linux-shell-script 301
-/posts/redirect-output-to-file-and-stdout-bash /posts/redirect-output-to-file-and-stdout 301
+/posts/redirect-output-to-file-and-stdout-bash /posts/redirect-all-output-to-file-bash 301
 # Thin Terraform expression posts consolidated into one guide (Aug 2026)
 /posts/concatenate-string-with-variable-in-terraform /posts/terraform-strings-and-conditionals 301
 /posts/how-do-you-do-simple-string-concatenation-in-terraform /posts/terraform-strings-and-conditionals 301
@@ -79,6 +79,11 @@
 /posts/clone-all-remote-branches-git /guides/introduction-to-git/06-remote-repositories 301
 /posts/move-uncommitted-work-to-new-branch /posts/move-most-recent-commits-to-new-branch-git 301
 /posts/git-cherry-pick-commit /posts/how-to-cherry-pick-commits-in-git 301
+/posts/create-copy-directory-unix-linux /posts/force-cp-overwrite-without-confirmation 301
+/posts/looping-through-file-content-bash /guides/introduction-to-linux/09-shell-scripting 301
+/posts/compare-two-directory-trees-by-content /guides/introduction-to-linux/10-system-administration 301
+/posts/redirect-output-to-file-and-stdout /posts/redirect-all-output-to-file-bash 301
+/posts/difference-between-port-and-socket /posts/can-two-sockets-share-tcp-port 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -432,7 +437,6 @@
 /images/posts/communication-multiple-docker-compose.png /images/posts/communication-multiple-docker-compose.jpg 301
 /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.png /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.jpg 301
 /images/posts/count-lines-in-file-linux-terminal.png /images/posts/count-lines-in-file-linux-terminal.jpg 301
-/images/posts/create-copy-directory-unix-linux.png /images/posts/create-copy-directory-unix-linux.jpg 301
 /images/posts/dast-integration-guide.png /images/posts/dast-integration-guide.jpg 301
 /images/posts/delete-all-local-docker-images.png /images/posts/delete-all-local-docker-images.jpg 301
 /images/posts/dependency-scanning-guide.png /images/posts/dependency-scanning-guide.jpg 301
@@ -480,7 +484,6 @@
 /images/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer.png /images/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer.jpg 301
 /images/posts/list-files-in-commit-git.png /images/posts/list-files-in-commit-git.jpg 301
 /images/posts/loop-through-array-strings-bash.png /images/posts/loop-through-array-strings-bash.jpg 301
-/images/posts/looping-through-file-content-bash.png /images/posts/looping-through-file-content-bash.jpg 301
 /images/posts/modify-specific-commit-git.png /images/posts/modify-specific-commit-git.jpg 301
 /images/posts/move-most-recent-commits-to-new-branch-git.png /images/posts/move-most-recent-commits-to-new-branch-git.jpg 301
 /images/posts/organizing-terraform-repository-with-subfolders.png /images/posts/organizing-terraform-repository-with-subfolders.jpg 301
@@ -529,7 +532,6 @@
 /images/posts/check-string-contains-substring-bash.png /images/posts/check-string-contains-substring-bash.jpg 301
 /images/posts/clean-up-replicasets-when-updating-deployments.png /images/posts/clean-up-replicasets-when-updating-deployments.jpg 301
 /images/posts/commit-part-of-file-git.png /images/posts/commit-part-of-file-git.jpg 301
-/images/posts/compare-two-directory-trees-by-content.png /images/posts/compare-two-directory-trees-by-content.jpg 301
 /images/posts/concatenate-string-variables-bash.png /images/posts/concatenate-string-variables-bash.jpg 301
 /images/posts/convert-string-to-lowercase-in-bash.png /images/posts/convert-string-to-lowercase-in-bash.jpg 301
 /images/posts/copy-command-output-to-clipboard.png /images/posts/copy-command-output-to-clipboard.jpg 301
@@ -592,7 +594,6 @@
 /images/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script.png /images/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script.jpg 301
 /images/posts/push-git-tag-to-remote.png /images/posts/push-git-tag-to-remote.jpg 301
 /images/posts/recursively-grep-directories-subdirectories.png /images/posts/recursively-grep-directories-subdirectories.jpg 301
-/images/posts/redirect-output-to-file-and-stdout.png /images/posts/redirect-output-to-file-and-stdout.jpg 301
 /images/posts/remove-file-from-git-keep-local.png /images/posts/remove-file-from-git-keep-local.jpg 301
 /images/posts/remove-git-submodule.png /images/posts/remove-git-submodule.jpg 301
 /images/posts/remove-old-docker-containers.png /images/posts/remove-old-docker-containers.jpg 301
@@ -656,7 +657,6 @@
 /images/posts/create-bash-alias-that-takes-parameters.png /images/posts/create-bash-alias-that-takes-parameters.jpg 301
 /images/posts/create-folder-in-s3-bucket.png /images/posts/create-folder-in-s3-bucket.jpg 301
 /images/posts/delete-all-resources-except-one.png /images/posts/delete-all-resources-except-one.jpg 301
-/images/posts/difference-between-port-and-socket.png /images/posts/difference-between-port-and-socket.jpg 301
 /images/posts/difference-between-targetport-and-port-in-kubernetes-service-definition.png /images/posts/difference-between-targetport-and-port-in-kubernetes-service-definition.jpg 301
 /images/posts/docker-assign-port-mapping.png /images/posts/docker-assign-port-mapping.jpg 301
 /images/posts/docker-cant-connect-to-docker-daemon.png /images/posts/docker-cant-connect-to-docker-daemon.jpg 301

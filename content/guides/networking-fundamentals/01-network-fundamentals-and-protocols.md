@@ -265,7 +265,7 @@ All three connections use local port 80; only the client's port differs. The cli
 }
 ```
 
-That range is also the limit you hit when one machine opens tens of thousands of connections to the same destination: every connection needs its own 4-tuple. The posts [Can two sockets share a TCP port?](/posts/can-two-sockets-share-tcp-port) and [port vs socket](/posts/difference-between-port-and-socket) go deeper.
+That range is also the limit you hit when one machine opens tens of thousands of connections to the same destination: every connection needs its own 4-tuple. The post [Can two sockets share a TCP port?](/posts/can-two-sockets-share-tcp-port) goes deeper, starting with [the difference between a port and a socket](/posts/can-two-sockets-share-tcp-port#h2-port-vs-socket-what-is-the-difference).
 
 Ports you will meet constantly:
 

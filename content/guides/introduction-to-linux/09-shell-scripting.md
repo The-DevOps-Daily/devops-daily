@@ -384,6 +384,56 @@ Two habits prevent most loop bugs:
 
 `break` leaves a loop and `continue` jumps to the next round. If a glob matches nothing, Bash passes the pattern itself (`*.log`) to the loop; add `shopt -s nullglob` at the top of the script to get no iterations instead.
 
+### Read a File Line by Line
+
+`while IFS= read -r line; do ...; done < file` is the pattern. Three traps catch most people:
+
+```bash
+#!/usr/bin/env bash
+printf 'web-1\nweb-2\nweb-3' > hosts.txt          # no newline after web-3
+
+# 1. read fails on a last line without a newline, so web-3 is skipped.
+#    "|| [[ -n $host ]]" processes it anyway.
+while IFS= read -r host || [[ -n $host ]]; do
+    echo "host: $host"
+done < hosts.txt
+
+# 2. Set IFS to split each line into fields.
+printf 'alice,ops,admin\nbob,dev,read\n' > users.csv
+while IFS=, read -r name team role; do
+    echo "$name is in $team ($role)"
+done < users.csv
+
+# 3. A pipe runs the loop in a subshell, so the count is lost.
+#    Feed the loop with process substitution to keep it.
+count=0
+cat hosts.txt | while IFS= read -r host; do count=$((count + 1)); done
+echo "after a pipe: $count"
+count=0
+while IFS= read -r host || [[ -n $host ]]; do count=$((count + 1)); done < <(cat hosts.txt)
+echo "after < <(...): $count"
+
+# To keep every line in memory instead, read the file into an array.
+mapfile -t hosts < hosts.txt
+echo "${#hosts[@]} hosts, last: ${hosts[-1]}"
+```
+
+```terminal
+{
+  "title": "three traps when reading lines",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash read-lines.sh",
+      "output": "host: web-1\nhost: web-2\nhost: web-3\nalice is in ops (admin)\nbob is in dev (read)\nafter a pipe: 0\nafter < <(...): 3\n3 hosts, last: web-3"
+    }
+  ]
+}
+```
+
+Without `|| [[ -n $host ]]`, the first loop prints only `web-1` and `web-2`. Files written by editors usually end with a newline, but files made with `printf`, by Windows tools or by an API often do not. A command inside the loop that reads standard input, such as `ssh`, swallows the rest of the file; the [Bash guide](/guides/introduction-to-bash/05-control-structures) shows that case and the `read -u 3` fix.
+
 ## Functions
 
 A function groups commands under a name. It takes arguments like a script (`$1`, `"$@"`) and returns an exit code; to return data, print it and capture the output with `$(...)`.
