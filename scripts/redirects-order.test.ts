@@ -21,6 +21,32 @@ describe('public/_redirects', () => {
     expect(lines.filter(isDynamicRedirect).length).toBeLessThanOrEqual(100);
     expect(lines.filter((line) => !isDynamicRedirect(line)).length).toBeLessThanOrEqual(2000);
   });
+
+  it('never redirects to a path that another rule redirects again', () => {
+    const sources = lines.map((line) => {
+      const source = line.trim().split(/\s+/)[0];
+      const pattern = source
+        .split(/(\*|:[A-Za-z]\w*)/)
+        .map((part) =>
+          part === '*'
+            ? '.*'
+            : part.startsWith(':')
+              ? '[^/]+'
+              : part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+        )
+        .join('');
+      return { source, regex: new RegExp(`^${pattern}$`) };
+    });
+    const chains = lines.flatMap((line) => {
+      const target = line.trim().split(/\s+/)[1];
+      if (!target.startsWith('/') || target.includes(':')) return [];
+      const path = target.split(/[?#]/)[0];
+      return sources
+        .filter(({ regex }) => regex.test(path))
+        .map(({ source }) => `${line.trim()} -> ${source}`);
+    });
+    expect(chains).toEqual([]);
+  });
 });
 
 describe('insertStaticRedirects', () => {
