@@ -74,6 +74,6 @@ Copying files from Kubernetes Pods to your local system is straightforward with 
 ## Related Resources
 
 - [How to List All Containers in a Pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
-- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [How to Decode a Kubernetes Secret](/guides/introduction-to-kubernetes/06-configmaps-and-secrets#h3-decode-every-key-of-a-secret)
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
 - [Kubernetes Flashcards](/flashcards/kubernetes-basics)

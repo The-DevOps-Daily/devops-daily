@@ -200,8 +200,6 @@
 /images/posts/how-to-cherry-pick-commits-in-git.svg /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
 /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.svg /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.jpg 301
 /images/posts/how-to-copy-files-from-kubernetes-pods-to-local-system.svg /images/posts/how-to-copy-files-from-kubernetes-pods-to-local-system.jpg 301
-/images/posts/how-to-create-an-ssh-key-in-terraform.svg /images/posts/how-to-create-an-ssh-key-in-terraform.jpg 301
-/images/posts/how-to-decode-a-kubernetes-secret.svg /images/posts/how-to-decode-a-kubernetes-secret.jpg 301
 /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.svg /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.jpg 301
 /images/posts/how-to-delete-git-branch-locally-and-remotely.svg /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
 /images/posts/how-to-find-available-port.svg /images/posts/how-to-find-available-port.jpg 301
@@ -309,7 +307,6 @@
 /images/posts/sync-forked-repository-github.svg /images/posts/sync-forked-repository-github.jpg 301
 /images/posts/tanstack-npm-worm-dead-mans-switch.svg /images/posts/tanstack-npm-worm-dead-mans-switch.jpg 301
 /images/posts/terraform-best-practices.svg /images/posts/terraform-best-practices.jpg 301
-/images/posts/terraform-concatenate-lists-concat-function.svg /images/posts/terraform-concatenate-lists-concat-function.jpg 301
 /images/posts/terraform-on-premises-servers.svg /images/posts/terraform-on-premises-servers.jpg 301
 /images/posts/terraform-provider-checksum-mismatch.svg /images/posts/terraform-provider-checksum-mismatch.jpg 301
 /images/posts/terraform-provider-variable-sharing-modules.svg /images/posts/terraform-provider-variable-sharing-modules.jpg 301
@@ -648,6 +645,10 @@
 /posts/command-line-for-looking-at-specific-port /posts/how-to-free-up-tcp-port 301
 /posts/kill-processes-by-partial-name /guides/introduction-to-linux/07-process-management 301
 /posts/finding-local-ip-addresses-using-pythons-stdlib /posts/how-to-get-local-ip-address 301
+/posts/how-to-decode-a-kubernetes-secret /guides/introduction-to-kubernetes/06-configmaps-and-secrets 301
+/posts/terraform-concatenate-lists-concat-function /posts/terraform-variables-loops-and-outputs 301
+/posts/how-to-create-an-ssh-key-in-terraform /guides/introduction-to-terraform/10-best-practices-and-production-patterns 301
+/posts/terraform-add-ssh-key-gcp-instance /guides/introduction-to-terraform/10-best-practices-and-production-patterns 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -943,7 +944,6 @@
 /images/posts/how-to-access-docker-container-shell.png /images/posts/how-to-access-docker-container-shell.jpg 301
 /images/posts/how-to-attach-detach-docker-process.png /images/posts/how-to-attach-detach-docker-process.jpg 301
 /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.png /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.jpg 301
-/images/posts/how-to-create-an-ssh-key-in-terraform.png /images/posts/how-to-create-an-ssh-key-in-terraform.jpg 301
 /images/posts/how-to-find-available-port.png /images/posts/how-to-find-available-port.jpg 301
 /images/posts/how-to-free-up-tcp-port.png /images/posts/how-to-free-up-tcp-port.jpg 301
 /images/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network.png /images/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network.jpg 301
@@ -1056,7 +1056,6 @@
 /images/posts/software-supply-chain-security.png /images/posts/software-supply-chain-security.jpg 301
 /images/posts/ssh-could-not-resolve-hostname-error.png /images/posts/ssh-could-not-resolve-hostname-error.jpg 301
 /images/posts/sync-forked-repository-github.png /images/posts/sync-forked-repository-github.jpg 301
-/images/posts/terraform-add-ssh-key-gcp-instance.png /images/posts/terraform-add-ssh-key-gcp-instance.jpg 301
 /images/posts/terraform-apply-sql-scripts-rds.png /images/posts/terraform-apply-sql-scripts-rds.jpg 301
 /images/posts/terraform-cloudwatch-log-subscription-lambda.png /images/posts/terraform-cloudwatch-log-subscription-lambda.jpg 301
 /images/posts/terraform-failed-install-provider-checksums-mismatch.png /images/posts/terraform-failed-install-provider-checksums-mismatch.jpg 301
@@ -1149,7 +1148,6 @@
 /images/posts/specify-private-ssh-key-for-git-commands.png /images/posts/specify-private-ssh-key-for-git-commands.jpg 301
 /images/posts/stash-single-file-git.png /images/posts/stash-single-file-git.jpg 301
 /images/posts/sudo-redirect-output-to-privileged-location.png /images/posts/sudo-redirect-output-to-privileged-location.jpg 301
-/images/posts/terraform-concatenate-lists-concat-function.png /images/posts/terraform-concatenate-lists-concat-function.jpg 301
 /images/posts/terraform-get-list-index-for-each.png /images/posts/terraform-get-list-index-for-each.jpg 301
 /images/posts/terraform-import-index-value-required-error.png /images/posts/terraform-import-index-value-required-error.jpg 301
 /images/posts/terraform-read-environment-variables-from-env-file.png /images/posts/terraform-read-environment-variables-from-env-file.jpg 301
@@ -1223,7 +1221,6 @@
 /images/posts/how-does-kubectl-port-forward-create-a-connection.png /images/posts/how-does-kubectl-port-forward-create-a-connection.jpg 301
 /images/posts/how-to-artificially-create-connection-timeout-error.png /images/posts/how-to-artificially-create-connection-timeout-error.jpg 301
 /images/posts/how-to-copy-files-from-kubernetes-pods-to-local-system.png /images/posts/how-to-copy-files-from-kubernetes-pods-to-local-system.jpg 301
-/images/posts/how-to-decode-a-kubernetes-secret.png /images/posts/how-to-decode-a-kubernetes-secret.jpg 301
 /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.png /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.jpg 301
 /images/posts/how-to-list-all-containers-in-kubernetes-pod.png /images/posts/how-to-list-all-containers-in-kubernetes-pod.jpg 301
 /images/posts/how-to-manage-multiple-environments-in-kubernetes.png /images/posts/how-to-manage-multiple-environments-in-kubernetes.jpg 301

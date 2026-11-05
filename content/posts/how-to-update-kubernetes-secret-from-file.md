@@ -80,7 +80,7 @@ Explore tools like Sealed Secrets or external secret managers for more advanced 
 
 ## Related Resources
 
-- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [How to Decode a Kubernetes Secret](/guides/introduction-to-kubernetes/06-configmaps-and-secrets#h3-decode-every-key-of-a-secret)
 - [Restart Pods When ConfigMap Updates](/posts/restart-pods-when-configmap-updates-in-kubernetes)
 - [Introduction to Kubernetes: ConfigMaps and Secrets](/guides/introduction-to-kubernetes)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)

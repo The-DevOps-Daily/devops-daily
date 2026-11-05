@@ -6,7 +6,7 @@ category:
   slug: 'terraform'
 date: '2026-08-25'
 publishedAt: '2026-08-25T09:00:00Z'
-updatedAt: '2026-08-25T09:00:00Z'
+updatedAt: '2026-11-05T09:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
@@ -171,6 +171,55 @@ locals {
   with_icmp  = concat(local.base_rules, var.allow_icmp ? ["allow-icmp"] : [])
 }
 ```
+
+`concat()` keeps duplicates and order. Three related functions cover the other cases, shown here in `terraform console` with `dev_users = ["alice", "bob"]`, `prod_users = ["carol", "alice"]` and `nested = [["web-a", "web-b"], ["db-a", ["db-b"]]]`:
+
+```terminal
+{
+  "title": "concat, distinct, setunion and flatten",
+  "prompt": ">",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "concat(local.dev_users, local.prod_users)",
+      "output": "[\n  \"alice\",\n  \"bob\",\n  \"carol\",\n  \"alice\",\n]"
+    },
+    {
+      "cmd": "distinct(concat(local.dev_users, local.prod_users))",
+      "output": "tolist([\n  \"alice\",\n  \"bob\",\n  \"carol\",\n])"
+    },
+    {
+      "cmd": "setunion(local.prod_users, local.dev_users)",
+      "output": "toset([\n  \"alice\",\n  \"bob\",\n  \"carol\",\n])"
+    },
+    {
+      "cmd": "concat(local.nested...)",
+      "output": "[\n  \"web-a\",\n  \"web-b\",\n  \"db-a\",\n  [\n    \"db-b\",\n  ],\n]"
+    },
+    {
+      "cmd": "flatten(local.nested)",
+      "output": "[\n  \"web-a\",\n  \"web-b\",\n  \"db-a\",\n  \"db-b\",\n]"
+    }
+  ]
+}
+```
+
+`distinct()` keeps the first occurrence of each value, in order. `setunion()` returns a set, which has no order of its own: Terraform shows strings sorted, and you cannot index a set with `[0]`. `concat(list...)` expands a list of lists into arguments and removes one level of nesting; `flatten()` removes all of them.
+
+`concat()` fails on `null`, and a `list(string)` variable is `null` when a caller passes `null` explicitly, even if it has a default:
+
+```text
+$ echo 'concat(["allow-ssh"], var.extra_rules)' | terraform console -var 'extra_rules=null' -no-color
+
+Error: Invalid function argument
+
+  on <console-input> line 1:
+  (source code not available)
+
+Invalid value for "seqs" parameter: argument must not be null.
+```
+
+Declare the variable with `default = []` and `nullable = false`, and Terraform uses the default instead of `null`; or wrap the value in `coalesce(var.extra_rules, [])`.
 
 **Picking one object out of a list** has two idioms. When you know the position, index it. When you know an attribute, filter with a `for` expression:
 

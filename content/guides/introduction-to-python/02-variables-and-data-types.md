@@ -322,4 +322,4 @@ Next: [Control Flow](/guides/introduction-to-python/03-control-flow), where you 
 ## Keep Learning
 
 - [Why Python open() does not create a file if it does not exist](/posts/python-open-does-not-create-file), a first look at file modes before Part 7.
-- [How to decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret): the same base64 step from the command line.
+- [Decode a Kubernetes Secret](/guides/introduction-to-kubernetes/06-configmaps-and-secrets#h3-decode-every-key-of-a-secret): the same base64 step from the command line.
