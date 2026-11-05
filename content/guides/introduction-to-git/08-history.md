@@ -619,7 +619,31 @@ The branch is ready. Merge it and push:
 }
 ```
 
-To change the author of commits, see [change the author of a single commit](/posts/change-commit-author-single) and [of multiple commits](/posts/change-author-multiple-commits-git).
+To change the author of commits, see [change the author of the last commit](/posts/change-author-multiple-commits-git#h2-change-the-author-of-only-the-last-commit) and [of multiple commits](/posts/change-author-multiple-commits-git).
+
+### Which commits can you still rewrite?
+
+The safe ones are the commits that are not on the remote yet. Say you made three commits on `main` and pushed none of them. `@{u}` (short for `@{upstream}`) is the remote branch your branch tracks, so `@{u}..` means "on my branch, not on the remote":
+
+```terminal
+{
+  "title": "list the commits you have not pushed",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git status -sb",
+      "output": "## main...origin/main [ahead 3]"
+    },
+    {
+      "cmd": "git log --oneline @{u}..",
+      "output": "d747214 Fix the contact address\n51704bc Use pipefail in build.sh\nc375435 Add a contact link to the foter"
+    }
+  ]
+}
+```
+
+To fix the newest one, amend it ([Part 3](/guides/introduction-to-git/03-tracking-changes#h2-undo-things)). For any of the others, `git rebase -i @{u}` opens a todo list with exactly these three commits, so you cannot rewrite a pushed commit by accident: mark the commit `reword` to change its message, or `edit` to change its files, then `git add`, `git commit --amend` and `git rebase --continue`. Run `git fetch` first, so `@{u}` is up to date. A branch without an upstream gives `fatal: no upstream configured`; use the base branch instead, as in `git rebase -i main`.
 
 ## Remove a Secret from History
 
@@ -756,5 +780,4 @@ Next: [Git Best Practices](/guides/introduction-to-git/09-best-practices), with 
 
 - [Revert a repository to a previous commit safely](/posts/how-to-safely-revert-repository-to-previous-commit)
 - [How to view Git commit history](/posts/how-to-view-git-commit-history)
-- [Modify a specific commit](/posts/modify-specific-commit-git)
 - [You cannot rotate a secret you cannot find](/posts/you-cannot-rotate-a-secret-you-cannot-find)

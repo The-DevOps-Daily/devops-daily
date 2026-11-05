@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2024-10-12'
 publishedAt: '2024-10-12T09:30:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '5 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -38,6 +38,90 @@ Working Directory (modified) → Stash (saved) → Working Directory (clean)
 ```
 
 By default, `git stash` saves all changes. To stash selectively, use `git stash push` with specific file paths.
+
+## Stash All Changes and Get Them Back
+
+To put everything aside, including new files, and restore it later:
+
+```bash
+git stash push -u -m "WIP: port change"   # -u also takes untracked files
+git stash list                             # see what you saved
+git stash pop                              # restore the newest stash and drop it
+```
+
+`git stash apply` restores a stash but keeps it in the list, so you can apply it again somewhere else. Here `app.yml` is staged, `style.css` is modified and `notes.md` is new:
+
+```terminal
+{
+  "title": "stash everything, then pop it",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git status --short",
+      "output": "M  app.yml\n M style.css\n?? notes.md"
+    },
+    {
+      "cmd": "git stash push -u -m \"WIP: port change\"",
+      "output": "Saved working directory and index state On main: WIP: port change"
+    },
+    {
+      "cmd": "git stash show --include-untracked stash@{0}",
+      "output": " app.yml   | 2 +-\n notes.md  | 1 +\n style.css | 2 +-\n 3 files changed, 3 insertions(+), 2 deletions(-)"
+    },
+    {
+      "cmd": "git stash pop -q && git status --short",
+      "output": " M app.yml\n M style.css\n?? notes.md"
+    }
+  ]
+}
+```
+
+Look at the first column of the last output: `app.yml` was staged before, and after the pop it is not. `pop` and `apply` bring back the changes but not the staging, unless you ask with `--index`:
+
+```terminal
+{
+  "title": "pop --index keeps what was staged",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git add app.yml && git stash push -q -u -m again"
+    },
+    {
+      "cmd": "git stash pop -q --index && git status --short",
+      "output": "M  app.yml\n M style.css\n?? notes.md"
+    }
+  ]
+}
+```
+
+Two more options cover common cases:
+
+- `git stash push --staged` (Git 2.35+) stashes only what is staged and leaves the rest in your working tree. It is the opposite of `--keep-index`.
+- `git stash branch <name>` creates a branch from the commit you stashed on, applies the stash there with its staging, and drops it if that worked. Use it when `pop` conflicts because the branch has moved on.
+
+```terminal
+{
+  "title": "--staged and stash branch",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git stash push --staged -m \"only the port\" && git status --short",
+      "output": "Saved working directory and index state On main: only the port\n M style.css\n?? notes.md"
+    },
+    {
+      "cmd": "git stash branch try-port | head -1",
+      "output": "Switched to a new branch 'try-port'\nM\tstyle.css"
+    },
+    {
+      "cmd": "git status --short && git stash list",
+      "output": "M  app.yml\n M style.css\n?? notes.md"
+    }
+  ]
+}
+```
 
 ## Stashing a Single File
 

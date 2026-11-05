@@ -323,7 +323,7 @@ Three more places hold ignore rules:
 - `.git/info/exclude` works like `.gitignore` but is never committed: use it for files only you have.
 - A global file for every repository on your computer, for editor and OS files, so each project does not need to list them. Git reads `~/.config/git/ignore` by default; `core.excludesFile` points it elsewhere.
 
-`.gitignore` only affects untracked files. If a file is already committed, adding it to `.gitignore` changes nothing; you have to remove it from the index first with `git rm --cached` ([Part 3](/guides/introduction-to-git/03-tracking-changes#h2-remove-and-rename-files), and [this post](/posts/how-to-make-git-forget-tracked-file-in-gitignore) for the details). Git also does not track empty directories; the usual workaround is a `.gitkeep` file ([why, and the alternatives](/posts/how-do-i-add-an-empty-directory-to-a-git-repository)).
+`.gitignore` only affects untracked files. If a file is already committed, adding it to `.gitignore` changes nothing; you have to remove it from the index first with `git rm --cached` ([Part 3](/guides/introduction-to-git/03-tracking-changes#h2-remove-and-rename-files), and [this post](/posts/remove-file-from-git-keep-local#h2-make-git-forget-a-file-that-is-now-in-gitignore) for the details). Git also does not track empty directories; the usual workaround is a `.gitkeep` file ([why, and the alternatives](/posts/how-do-i-add-an-empty-directory-to-a-git-repository)).
 
 [GitHub's gitignore repository](https://github.com/github/gitignore) has starting templates for most languages and frameworks.
 

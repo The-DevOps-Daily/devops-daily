@@ -393,6 +393,74 @@ Most mistakes before a push are easy to undo. Pick the row that matches what you
 `git restore <file>` (like the older `git checkout -- <file>`) overwrites your unstaged changes to that file. Changes you never staged or committed were never stored by Git, so Git cannot bring them back. Your editor's local history is the only rescue.
 :::
 
+### Throw away all local changes
+
+To get back to the last commit, reset the tracked files, then delete the untracked ones. Preview the delete first:
+
+```bash
+git restore :/     # every tracked file, from anywhere in the repository
+git clean -nd      # list untracked files and folders that would go
+git clean -fd      # delete them
+```
+
+The two commands cover different files: `git restore` never touches untracked files, and `git clean` touches nothing else. Here `style.css` and `services.txt` are modified, and `draft.html` and the `drafts/` folder are new:
+
+```terminal
+{
+  "title": "restore, then clean",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git status --short",
+      "output": " M services.txt\n M style.css\n?? draft.html\n?? drafts/"
+    },
+    {
+      "cmd": "git restore :/ && git status --short",
+      "output": "?? draft.html\n?? drafts/"
+    },
+    {
+      "cmd": "git clean",
+      "output": "fatal: clean.requireForce defaults to true and neither -i, -n, nor -f given; refusing to clean"
+    },
+    {
+      "cmd": "git clean -n",
+      "output": "Would remove draft.html"
+    },
+    {
+      "cmd": "git clean -nd",
+      "output": "Would remove draft.html\nWould remove drafts/"
+    },
+    {
+      "cmd": "git clean -fd",
+      "output": "Removing draft.html\nRemoving drafts/"
+    }
+  ]
+}
+```
+
+`git clean` refuses to run without `-f`, `-n` or `-i` (interactive), and it skips untracked folders unless you add `-d`. It also skips ignored files, which is what you want: with `-x` it deletes them too, and in this project that means your `.env` with the token and your excluded `notes.txt`. `-X` deletes only ignored files, for a build from scratch:
+
+```terminal
+{
+  "title": "what -x and -X would delete",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git clean -ndx",
+      "output": "Would remove .env\nWould remove build/\nWould remove draft.html\nWould remove drafts/\nWould remove notes.txt"
+    },
+    {
+      "cmd": "git clean -ndX",
+      "output": "Would remove .env\nWould remove build/\nWould remove notes.txt"
+    }
+  ]
+}
+```
+
+`git restore .` works only on the current folder and below, so from `scripts/` it leaves `style.css` alone; `:/` means the top of the repository. If you might want the changes back, stash them instead of deleting them: `git stash push -u` saves the modified and the untracked files and leaves the same clean tree ([more on stash](/posts/stash-single-file-git#h2-stash-all-changes-and-get-them-back)).
+
 You will see older equivalents in many answers online. They still work:
 
 | Newer command (Git 2.23+)     | Older equivalent         |
@@ -460,7 +528,6 @@ Next: [Branching](/guides/introduction-to-git/04-branching), where you work on a
 ## Keep Learning
 
 - [Undo git add before a commit](/posts/how-to-undo-git-add-before-commit)
-- [Discard unstaged changes](/posts/how-to-discard-unstaged-changes-in-git)
-- [Change an unpushed commit message](/posts/how-to-modify-existing-unpushed-commit-messages)
+- [Change an unpushed commit message](/guides/introduction-to-git/08-history#h3-which-commits-can-you-still-rewrite)
 - [List all files in a commit](/posts/list-files-in-commit-git)
 - [Git Command Quiz](/quizzes/git-quiz)

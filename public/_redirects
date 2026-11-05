@@ -64,7 +64,6 @@
 /images/posts/best-practices-when-using-terraform.svg /images/posts/best-practices-when-using-terraform.jpg 301
 /images/posts/can-two-sockets-share-tcp-port.svg /images/posts/can-two-sockets-share-tcp-port.jpg 301
 /images/posts/capturing-mobile-phone-traffic-on-wireshark.svg /images/posts/capturing-mobile-phone-traffic-on-wireshark.jpg 301
-/images/posts/change-commit-author-single.svg /images/posts/change-commit-author-single.jpg 301
 /images/posts/change-echo-output-color-linux.svg /images/posts/change-echo-output-color-linux.jpg 301
 /images/posts/change-echo-output-colors-linux.svg /images/posts/change-echo-output-colors-linux.jpg 301
 /images/posts/change-permissions-folder-subfolders-files-linux.svg /images/posts/change-permissions-folder-subfolders-files-linux.jpg 301
@@ -210,7 +209,6 @@
 /images/posts/how-to-decode-a-kubernetes-secret.svg /images/posts/how-to-decode-a-kubernetes-secret.jpg 301
 /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.svg /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.jpg 301
 /images/posts/how-to-delete-git-branch-locally-and-remotely.svg /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
-/images/posts/how-to-discard-unstaged-changes-in-git.svg /images/posts/how-to-discard-unstaged-changes-in-git.jpg 301
 /images/posts/how-to-find-available-port.svg /images/posts/how-to-find-available-port.jpg 301
 /images/posts/how-to-force-git-pull-overwrite-local-files.svg /images/posts/how-to-force-git-pull-overwrite-local-files.jpg 301
 /images/posts/how-to-free-up-tcp-port.svg /images/posts/how-to-free-up-tcp-port.jpg 301
@@ -219,11 +217,8 @@
 /images/posts/how-to-get-local-ip-address.svg /images/posts/how-to-get-local-ip-address.jpg 301
 /images/posts/how-to-implement-progressive-delivery-with-feature-flags.svg /images/posts/how-to-implement-progressive-delivery-with-feature-flags.jpg 301
 /images/posts/how-to-list-all-containers-in-kubernetes-pod.svg /images/posts/how-to-list-all-containers-in-kubernetes-pod.jpg 301
-/images/posts/how-to-make-git-forget-tracked-file-in-gitignore.svg /images/posts/how-to-make-git-forget-tracked-file-in-gitignore.jpg 301
 /images/posts/how-to-manage-multiple-environments-in-kubernetes.svg /images/posts/how-to-manage-multiple-environments-in-kubernetes.jpg 301
-/images/posts/how-to-modify-existing-unpushed-commit-messages.svg /images/posts/how-to-modify-existing-unpushed-commit-messages.jpg 301
 /images/posts/how-to-push-new-local-branch-to-remote-and-track.svg /images/posts/how-to-push-new-local-branch-to-remote-and-track.jpg 301
-/images/posts/how-to-remove-local-untracked-files-git.svg /images/posts/how-to-remove-local-untracked-files-git.jpg 301
 /images/posts/how-to-rename-local-git-branch.svg /images/posts/how-to-rename-local-git-branch.jpg 301
 /images/posts/how-to-reset-git-to-previous-commit.svg /images/posts/how-to-reset-git-to-previous-commit.jpg 301
 /images/posts/how-to-reset-local-branch-to-match-remote-head.svg /images/posts/how-to-reset-local-branch-to-match-remote-head.jpg 301
@@ -234,7 +229,6 @@
 /images/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes.svg /images/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes.jpg 301
 /images/posts/how-to-sign-in-kubernetes-dashboard.svg /images/posts/how-to-sign-in-kubernetes-dashboard.jpg 301
 /images/posts/how-to-split-terraform-file.svg /images/posts/how-to-split-terraform-file.jpg 301
-/images/posts/how-to-stash-changes-in-git.svg /images/posts/how-to-stash-changes-in-git.jpg 301
 /images/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube.svg /images/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube.jpg 301
 /images/posts/how-to-symlink-files-linux.svg /images/posts/how-to-symlink-files-linux.jpg 301
 /images/posts/how-to-undo-git-add-before-commit.svg /images/posts/how-to-undo-git-add-before-commit.jpg 301
@@ -645,6 +639,14 @@
 /posts/kubernetes-pods-crashloopbackoff-no-logs /guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes 301
 /posts/why-your-ci-pipeline-is-slower /posts/what-does-one-merge-cost-in-ci 301
 /posts/devops-mistakes-2025 /posts/what-is-devops 301
+# Dead short posts merged into stronger pages (Nov 2026, consolidation batch 2)
+/posts/change-commit-author-single /posts/change-author-multiple-commits-git 301
+/posts/how-to-make-git-forget-tracked-file-in-gitignore /posts/remove-file-from-git-keep-local 301
+/posts/how-to-stash-changes-in-git /posts/stash-single-file-git 301
+/posts/how-to-modify-existing-unpushed-commit-messages /guides/introduction-to-git/08-history 301
+/posts/modify-specific-commit-git /guides/introduction-to-git/08-history 301
+/posts/how-to-discard-unstaged-changes-in-git /guides/introduction-to-git/03-tracking-changes 301
+/posts/how-to-remove-local-untracked-files-git /guides/introduction-to-git/03-tracking-changes 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -896,7 +898,6 @@
 /images/posts/can-terraform-watch-directory-for-changes.png /images/posts/can-terraform-watch-directory-for-changes.jpg 301
 /images/posts/can-two-sockets-share-tcp-port.png /images/posts/can-two-sockets-share-tcp-port.jpg 301
 /images/posts/change-author-multiple-commits-git.png /images/posts/change-author-multiple-commits-git.jpg 301
-/images/posts/change-commit-author-single.png /images/posts/change-commit-author-single.jpg 301
 /images/posts/clone-git-repo-specific-folder.png /images/posts/clone-git-repo-specific-folder.jpg 301
 /images/posts/clone-specific-git-branch.png /images/posts/clone-specific-git-branch.jpg 301
 /images/posts/connect-network-share-with-credentials.png /images/posts/connect-network-share-with-credentials.jpg 301
@@ -1026,9 +1027,7 @@
 /images/posts/how-to-cherry-pick-commits-in-git.png /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
 /images/posts/how-to-delete-git-branch-locally-and-remotely.png /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
 /images/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from.png /images/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from.jpg 301
-/images/posts/how-to-discard-unstaged-changes-in-git.png /images/posts/how-to-discard-unstaged-changes-in-git.jpg 301
 /images/posts/how-to-list-docker-volumes-in-containers.png /images/posts/how-to-list-docker-volumes-in-containers.jpg 301
-/images/posts/how-to-modify-existing-unpushed-commit-messages.png /images/posts/how-to-modify-existing-unpushed-commit-messages.jpg 301
 /images/posts/how-to-push-new-local-branch-to-remote-and-track.png /images/posts/how-to-push-new-local-branch-to-remote-and-track.jpg 301
 /images/posts/how-to-rename-local-git-branch.png /images/posts/how-to-rename-local-git-branch.jpg 301
 /images/posts/how-to-reset-local-branch-to-match-remote-head.png /images/posts/how-to-reset-local-branch-to-match-remote-head.jpg 301
@@ -1041,7 +1040,6 @@
 /images/posts/kill-process-running-on-port-linux.png /images/posts/kill-process-running-on-port-linux.jpg 301
 /images/posts/list-files-in-commit-git.png /images/posts/list-files-in-commit-git.jpg 301
 /images/posts/loop-through-array-strings-bash.png /images/posts/loop-through-array-strings-bash.jpg 301
-/images/posts/modify-specific-commit-git.png /images/posts/modify-specific-commit-git.jpg 301
 /images/posts/move-most-recent-commits-to-new-branch-git.png /images/posts/move-most-recent-commits-to-new-branch-git.jpg 301
 /images/posts/organizing-terraform-repository-with-subfolders.png /images/posts/organizing-terraform-repository-with-subfolders.jpg 301
 /images/posts/pipe-clipboard-bash-script.png /images/posts/pipe-clipboard-bash-script.jpg 301
@@ -1126,12 +1124,9 @@
 /images/posts/how-to-force-git-pull-overwrite-local-files.png /images/posts/how-to-force-git-pull-overwrite-local-files.jpg 301
 /images/posts/how-to-get-docker-container-ip-from-host.png /images/posts/how-to-get-docker-container-ip-from-host.jpg 301
 /images/posts/how-to-get-local-ip-address.png /images/posts/how-to-get-local-ip-address.jpg 301
-/images/posts/how-to-make-git-forget-tracked-file-in-gitignore.png /images/posts/how-to-make-git-forget-tracked-file-in-gitignore.jpg 301
-/images/posts/how-to-remove-local-untracked-files-git.png /images/posts/how-to-remove-local-untracked-files-git.jpg 301
 /images/posts/how-to-reset-git-to-previous-commit.png /images/posts/how-to-reset-git-to-previous-commit.jpg 301
 /images/posts/how-to-sign-in-kubernetes-dashboard.png /images/posts/how-to-sign-in-kubernetes-dashboard.jpg 301
 /images/posts/how-to-split-terraform-file.png /images/posts/how-to-split-terraform-file.jpg 301
-/images/posts/how-to-stash-changes-in-git.png /images/posts/how-to-stash-changes-in-git.jpg 301
 /images/posts/how-to-undo-git-add-before-commit.png /images/posts/how-to-undo-git-add-before-commit.jpg 301
 /images/posts/how-to-update-kubernetes-secret-from-file.png /images/posts/how-to-update-kubernetes-secret-from-file.jpg 301
 /images/posts/how-to-view-git-commit-history.png /images/posts/how-to-view-git-commit-history.jpg 301

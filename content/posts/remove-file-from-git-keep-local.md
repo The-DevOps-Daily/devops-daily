@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2024-09-15'
 publishedAt: '2024-09-15T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '5 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -256,45 +256,79 @@ git filter-repo --path config.json --invert-paths
 git push origin --force --all
 ```
 
-## Handling Already Ignored Files
+## Make Git Forget a File That Is Now in .gitignore
 
-If you added a file to `.gitignore` but it is still being tracked:
+Adding a path to `.gitignore` does not untrack it: ignore rules only apply to files Git does not track yet. List the tracked files your rules now match, remove them from the index, and commit:
 
 ```bash
-# The file is in gitignore but still tracked
-cat .gitignore | grep config.json
-# config.json
-
-# Git still shows changes
-git status
-# modified: config.json
-
-# Remove from tracking
-git rm --cached config.json
-git commit -m "Stop tracking config.json"
+git ls-files -ci --exclude-standard                                # tracked files that .gitignore matches
+git ls-files -ci --exclude-standard -z | xargs -0 git rm --cached   # untrack them, keep the files
+git add .gitignore
+git commit -m "Stop tracking ignored files"
 ```
 
-Adding a file to `.gitignore` does not automatically untrack it. You must explicitly remove it with `git rm --cached`.
+Here the repository tracks `.env`, `config/database.yml` and `logs/app.log`, and a new `.gitignore` covers all three:
+
+```terminal
+{
+  "title": "untrack what .gitignore now covers",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git status --short",
+      "output": " M config/database.yml\n?? .gitignore"
+    },
+    {
+      "cmd": "git ls-files -ci --exclude-standard",
+      "output": ".env\nconfig/database.yml\nlogs/app.log"
+    },
+    {
+      "cmd": "git ls-files -ci --exclude-standard -z | xargs -0 git rm --cached",
+      "output": "rm '.env'\nrm 'config/database.yml'\nrm 'logs/app.log'"
+    },
+    {
+      "cmd": "git add .gitignore && git status --short",
+      "output": "D  .env\nA  .gitignore\nD  config/database.yml\nD  logs/app.log"
+    }
+  ]
+}
+```
+
+The files stay on disk. `-c` lists cached (tracked) files, `-i` keeps only the ignored ones, and `--exclude-standard` reads `.gitignore`, `.git/info/exclude` and your global excludes file.
+
+`git check-ignore` tells you which rule matches a path, but it skips tracked files. Before you untrack the file, it prints nothing and exits with 1, which looks like "not ignored". Add `--no-index` to see the rule:
+
+```terminal
+{
+  "title": "check-ignore on a tracked file",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git check-ignore -v config/database.yml; echo \"exit $?\"",
+      "output": "exit 1"
+    },
+    {
+      "cmd": "git check-ignore -v --no-index config/database.yml",
+      "output": ".gitignore:2:config/database.yml\tconfig/database.yml"
+    }
+  ]
+}
+```
 
 ## Bulk Removal of Ignored Files
 
-To remove all currently tracked files that are now in `.gitignore`:
+The older recipe untracks everything and adds it back:
 
 ```bash
-# Remove all tracked files temporarily
 git rm -r --cached .
-
-# Re-add everything (respecting gitignore)
 git add .
-
-# Review what was removed
 git status
-
-# Commit the cleanup
 git commit -m "Stop tracking files now in gitignore"
 ```
 
-This is useful after updating `.gitignore` to exclude patterns that were previously tracked.
+It works, but the commit can pick up unrelated changes. In a test, it staged an edit we had not meant to commit and a CRLF file that `* text=auto` in `.gitattributes` now converts to LF. The `git ls-files -ci` version above touches only the ignored files.
 
 ## Alternative: Using git update-index
 
@@ -319,6 +353,8 @@ git update-index --no-assume-unchanged config.json
 ```
 
 This is different from `git rm --cached` because the file remains in the repository. It is useful for files that need to exist in the repo but have local modifications you do not want to commit.
+
+Be careful with this flag and with its sibling `--skip-worktree`. The `git update-index` documentation says that neither one reliably ignores changes to tracked files, because Git still compares the file during some operations: a `git switch` to a branch that changes the file stops with "Your local changes would be overwritten", even though `git status` shows nothing. To find files you flagged and forgot, run `git ls-files -v | grep '^[hS]'` (`h` is assume-unchanged, `S` is skip-worktree). For local settings, a tracked example file plus an ignored real file is the better pattern.
 
 ## Best Practices
 
