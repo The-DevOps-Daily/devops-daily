@@ -88,7 +88,7 @@ Retrieving the YAML configuration for Kubernetes Services is a straightforward p
 
 ## Related Resources
 
-- [Kubernetes Service Types](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
+- [Kubernetes Service types](/guides/introduction-to-kubernetes/05-services-and-networking#h2-service-types)
 - [Kubernetes List All Pods and Nodes](/posts/kubernetes-list-all-pods-and-nodes)
 - [Set Multiple Commands in One YAML](/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes)
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)

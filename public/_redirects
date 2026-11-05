@@ -86,6 +86,10 @@
 /posts/difference-between-port-and-socket /posts/can-two-sockets-share-tcp-port 301
 /posts/terraform-api-gateway-stage-not-deploying /guides/introduction-to-terraform/04-resources-and-data-sources 301
 /posts/terraform-s3-backend-configuration-errors /posts/terraform-state-remove-move-migrate-backend 301
+/posts/remove-stuck-terminating-namespace /posts/fix-pods-stuck-terminating-kubernetes 301
+/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer /guides/introduction-to-kubernetes/05-services-and-networking 301
+/posts/difference-between-targetport-and-port-in-kubernetes-service-definition /guides/introduction-to-kubernetes/05-services-and-networking 301
+/posts/kubernetes-pods-crashloopbackoff-no-logs /guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 /images/advent/day-5.png /images/advent/day-5.jpg 301
 /images/checklists/api-rate-limiting-og.png /images/checklists/api-rate-limiting-og.jpg 301
@@ -404,7 +408,6 @@
 /images/posts/network-usage-top-htop-on-linux.png /images/posts/network-usage-top-htop-on-linux.jpg 301
 /images/posts/organize-terraform-modules-multiple-environments.png /images/posts/organize-terraform-modules-multiple-environments.jpg 301
 /images/posts/ping-timeout-vs-destination-unreachable.png /images/posts/ping-timeout-vs-destination-unreachable.jpg 301
-/images/posts/remove-stuck-terminating-namespace.png /images/posts/remove-stuck-terminating-namespace.jpg 301
 /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.png /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.jpg 301
 /images/posts/set-git-editor-commit-messages.png /images/posts/set-git-editor-commit-messages.jpg 301
 /images/posts/set-image-name-dockerfile.png /images/posts/set-image-name-dockerfile.jpg 301
@@ -483,7 +486,6 @@
 /images/posts/ignore-change-of-attribute.png /images/posts/ignore-change-of-attribute.jpg 301
 /images/posts/ingress-vs-load-balancer-kubernetes.png /images/posts/ingress-vs-load-balancer-kubernetes.jpg 301
 /images/posts/kill-process-running-on-port-linux.png /images/posts/kill-process-running-on-port-linux.jpg 301
-/images/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer.png /images/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer.jpg 301
 /images/posts/list-files-in-commit-git.png /images/posts/list-files-in-commit-git.jpg 301
 /images/posts/loop-through-array-strings-bash.png /images/posts/loop-through-array-strings-bash.jpg 301
 /images/posts/modify-specific-commit-git.png /images/posts/modify-specific-commit-git.jpg 301
@@ -657,7 +659,6 @@
 /images/posts/create-bash-alias-that-takes-parameters.png /images/posts/create-bash-alias-that-takes-parameters.jpg 301
 /images/posts/create-folder-in-s3-bucket.png /images/posts/create-folder-in-s3-bucket.jpg 301
 /images/posts/delete-all-resources-except-one.png /images/posts/delete-all-resources-except-one.jpg 301
-/images/posts/difference-between-targetport-and-port-in-kubernetes-service-definition.png /images/posts/difference-between-targetport-and-port-in-kubernetes-service-definition.jpg 301
 /images/posts/docker-assign-port-mapping.png /images/posts/docker-assign-port-mapping.jpg 301
 /images/posts/docker-cant-connect-to-docker-daemon.png /images/posts/docker-cant-connect-to-docker-daemon.jpg 301
 /images/posts/docker-edit-file-in-container.png /images/posts/docker-edit-file-in-container.jpg 301
@@ -693,7 +694,6 @@
 /images/posts/kubectl-get-events-only-for-pod.png /images/posts/kubectl-get-events-only-for-pod.jpg 301
 /images/posts/kubernetes-api-get-pods-on-specific-nodes.png /images/posts/kubernetes-api-get-pods-on-specific-nodes.jpg 301
 /images/posts/kubernetes-deployments-vs-statefulsets.png /images/posts/kubernetes-deployments-vs-statefulsets.jpg 301
-/images/posts/kubernetes-pods-crashloopbackoff-no-logs.png /images/posts/kubernetes-pods-crashloopbackoff-no-logs.jpg 301
 /images/posts/listing-all-resources-in-a-namespace.png /images/posts/listing-all-resources-in-a-namespace.jpg 301
 /images/posts/preferred-bash-shebang.png /images/posts/preferred-bash-shebang.jpg 301
 /images/posts/ps-command-not-working-docker.png /images/posts/ps-command-not-working-docker.jpg 301

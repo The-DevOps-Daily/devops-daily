@@ -187,6 +187,6 @@ By following these configurations and best practices, you can ensure your contai
 ## Related Resources
 
 - [Why Does a Pod Get Recreated When Deleted?](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
-- [Pods CrashLoopBackOff: No Logs](/posts/kubernetes-pods-crashloopbackoff-no-logs)
+- [Debug CrashLoopBackOff and other pod problems](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes#h2-a-troubleshooting-playbook)
 - [Introduction to Kubernetes: Pods](/guides/introduction-to-kubernetes)
 - [Kubernetes Quiz](/quizzes/kubernetes-quiz)

@@ -123,7 +123,7 @@ Resolving the issue of a Kubernetes service's external IP being stuck in the Pen
 
 ## Related Resources
 
-- [Kubernetes Service Types](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
+- [Kubernetes Service types](/guides/introduction-to-kubernetes/05-services-and-networking#h2-service-types)
 - [Ingress vs Load Balancer](/posts/ingress-vs-load-balancer-kubernetes)
 - [Introduction to Kubernetes: Services](/guides/introduction-to-kubernetes)
 - [Kubernetes Quiz](/quizzes/kubernetes-quiz)

@@ -56,7 +56,7 @@ spec:
       targetPort: http # the named container port (9898)
 ```
 
-`port` is what clients connect to, and `targetPort` is where the pods listen. Here `targetPort` names the container port `http` from the Deployment, so the Service keeps working if the port number in the pods changes. ([More on port and targetPort](/posts/difference-between-targetport-and-port-in-kubernetes-service-definition).)
+`port` is what clients connect to, and `targetPort` is where the pods listen. Here `targetPort` names the container port `http` from the Deployment, so the Service keeps working if the port number in the pods changes. ([Which port is which](#h3-which-port-is-which) lists all of them.)
 
 ```terminal
 {
@@ -273,6 +273,51 @@ spec:
 ```
 
 On Linux you can reach the `172.18.0.x` address directly, and from WSL 2 on Windows too. On macOS, Docker runs in a VM and that address is not reachable from your computer; cloud-provider-kind then maps each load balancer to a port on `localhost` (`docker ps` shows it on a container named `kindccm-...`). The simpler way on macOS is to run curl itself in a container on the kind network, as shown for the Gateway below.
+
+### Which Port Is Which
+
+A Service can carry up to three port numbers, and the pod spec a fourth:
+
+| Field           | Where                  | What it is                                                                       |
+| --------------- | ---------------------- | -------------------------------------------------------------------------------- |
+| `port`          | Service                | The port clients connect to on the Service's IP and DNS name                     |
+| `targetPort`    | Service                | The port on the pods that gets the traffic; a number or a named container port   |
+| `nodePort`      | Service                | The port on every node, for `NodePort` and `LoadBalancer` Services (30000-32767) |
+| `containerPort` | Pod or Deployment spec | Documents the port the container listens on, and gives it a name                 |
+
+If you leave out `targetPort`, it is the same as `port`. A Service with only `port: 80` for nginx pods works, and the API shows the default:
+
+```terminal
+{
+  "title": "targetPort defaults to port",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl get service web -o jsonpath='port={.spec.ports[0].port} targetPort={.spec.ports[0].targetPort}{\"\\n\"}'",
+      "output": "port=80 targetPort=80"
+    }
+  ]
+}
+```
+
+`containerPort` does not open or block anything; traffic reaches whatever port the process listens on. It matters when `targetPort` uses a name, as in `targetPort: http` above, because the name has to match a `containerPort` name in the pods.
+
+A `LoadBalancer` Service also gets a `nodePort`, because many cloud load balancers send traffic to the nodes. That is the `30638` in `80:30638/TCP` above. If your load balancer sends traffic straight to the pod IPs, set `allocateLoadBalancerNodePorts: false` and no node port is opened:
+
+```terminal
+{
+  "title": "with and without a node port",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl get services web-lb web-lb-no-nodeport",
+      "output": "NAME                 TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE\nweb-lb               LoadBalancer   10.96.16.220   <pending>     80:30636/TCP   0s\nweb-lb-no-nodeport   LoadBalancer   10.96.75.160   <pending>     80/TCP         0s"
+    }
+  ]
+}
+```
+
+To limit who can reach a cloud load balancer, list the allowed client ranges in `spec.loadBalancerSourceRanges`, for example your office or VPN CIDR. Support depends on the cloud controller, so check your provider's documentation.
 
 ## Gateway API
 
@@ -688,7 +733,6 @@ Remove the test Services, the canary and the client, and put the route back to 1
 
 ## Keep Learning
 
-- [Kubernetes Service types: ClusterIP, NodePort and LoadBalancer](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
 - [Ingress vs LoadBalancer in Kubernetes](/posts/ingress-vs-load-balancer-kubernetes)
 - [Kubernetes services and networking interview questions](/interview-questions/mid/kubernetes-services-networking)
 - [Kubernetes networking simulator](/games/kubernetes-networking-cni-simulator) and [DNS simulator](/games/dns-simulator)
