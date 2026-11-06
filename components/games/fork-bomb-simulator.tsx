@@ -23,6 +23,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { signalGameComplete } from '@/lib/games/game-complete';
 
 interface Process {
   id: number;
@@ -283,6 +284,11 @@ export default function ForkBombSimulator() {
   // otherwise the system runs out first.
   const contained = protection !== null && PROTECTION_LIMIT < pidLimit;
   const effectiveLimit = contained ? PROTECTION_LIMIT : pidLimit;
+
+  // The lesson is done once a protection has contained the bomb.
+  useEffect(() => {
+    if (state === 'protected') signalGameComplete();
+  }, [state]);
 
   const activeCount = useMemo(() => processes.filter((p) => !p.dead).length, [processes]);
   const memoryUsed = activeCount * MEMORY_PER_PROCESS;

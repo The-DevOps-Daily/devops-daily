@@ -3,7 +3,8 @@
 import { useSearchParams, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { EmbedBadge } from '@/components/embed';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { GAME_COMPLETE_EVENT, OPSVILLE_HELLO, isOpsvilleOrigin } from '@/lib/games/game-complete';
 
 interface EmbedClientProps {
   slug: string;
@@ -15,8 +16,13 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const searchParams = useSearchParams();
   const theme = searchParams.get('theme') || 'dark';
   const hideTitle = searchParams.get('hideTitle') === 'true';
+  const opsvilleRequested = searchParams.get('embed') === 'opsville';
   const pathname = usePathname();
   const { setTheme } = useTheme();
+  // Set only when the page framing us is Opsville (game.devops-daily.com or a
+  // Pages preview). Any other site that adds ?embed=opsville gets the normal embed.
+  const [opsvilleOrigin, setOpsvilleOrigin] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
   const gameUrl = `${siteUrl}/games/${slug}`;
@@ -34,6 +40,32 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
       setTheme('system');
     }
   }, [theme, setTheme]);
+
+  useEffect(() => {
+    if (!opsvilleRequested) return;
+    // Opsville says hello when the frame loads; the browser sets event.origin.
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== window.parent || !isOpsvilleOrigin(event.origin)) return;
+      if ((event.data as { type?: unknown } | null)?.type === OPSVILLE_HELLO) {
+        setOpsvilleOrigin(event.origin);
+      }
+    };
+    const onComplete = () => setFinished(true);
+    window.addEventListener('message', onMessage);
+    window.addEventListener(GAME_COMPLETE_EVENT, onComplete);
+    return () => {
+      window.removeEventListener('message', onMessage);
+      window.removeEventListener(GAME_COMPLETE_EVENT, onComplete);
+    };
+  }, [opsvilleRequested]);
+
+  // Tell Opsville the player finished the lessons, so it can open the quiz gate.
+  useEffect(() => {
+    if (!opsvilleOrigin || !finished) return;
+    window.parent.postMessage({ type: GAME_COMPLETE_EVENT, game: slug }, opsvilleOrigin);
+  }, [opsvilleOrigin, finished, slug]);
+
+  const inOpsville = opsvilleOrigin !== null;
 
   // Hide header/footer when in embed mode
   useEffect(() => {
@@ -78,7 +110,7 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
       data-theme={theme}
     >
       {/* Minimal header */}
-      {!hideTitle && (
+      {!hideTitle && !inOpsville && (
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
           <h1 className="text-sm font-semibold truncate">{title}</h1>
           <a
@@ -97,8 +129,8 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
         <GameComponent />
       </div>
 
-      {/* Attribution badge - always visible, cannot be removed */}
-      <EmbedBadge gameSlug={slug} gameTitle={title} />
+      {/* Attribution badge: always shown, except inside Opsville, our own game */}
+      {!inOpsville && <EmbedBadge gameSlug={slug} gameTitle={title} />}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { signalGameComplete } from '@/lib/games/game-complete';
 
 /**
  * How Docker Works Under the Hood.
@@ -221,6 +222,10 @@ export default function DockerUnderTheHoodSimulator() {
 
   const current = stages[active];
   const atEnd = active >= stages.length - 1;
+
+  useEffect(() => {
+    if (atEnd) signalGameComplete();
+  }, [atEnd]);
 
   const copyCmd = async () => {
     try {
