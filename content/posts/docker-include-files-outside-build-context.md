@@ -43,40 +43,44 @@ project-root/
   app/
   config/
 other-stuff/
-  secrets.env
+  app-config.json
 ```
 
-If you try to add `../other-stuff/secrets.env` in your Dockerfile, you'll get an error:
+If you try to add `../other-stuff/app-config.json` in your Dockerfile, you'll get an error:
 
 ```Dockerfile
-ADD ../other-stuff/secrets.env /app/
+ADD ../other-stuff/app-config.json /app/
 ```
 
-This fails because `../other-stuff/secrets.env` is outside the build context.
+This fails because `../other-stuff/app-config.json` is outside the build context.
 
 ### Solution 1: Copy Files Into the Build Context
 
 Before building, copy the needed file into your build context. For example:
 
 ```bash
-cp ../other-stuff/secrets.env ./config/
+cp ../other-stuff/app-config.json ./config/
 docker build -t my-app .
 ```
 
 Then in your Dockerfile:
 
 ```Dockerfile
-COPY config/secrets.env /app/
+COPY config/app-config.json /app/config.json
 ```
 
 This approach is simple and works well for CI/CD pipelines.
+
+Do not use this pattern for secrets. A copied secret becomes part of an image layer and can remain
+recoverable from the image history even after a later layer deletes it. Use a BuildKit secret mount
+when a credential is needed only during the build, or inject the secret at runtime instead.
 
 ### Solution 2: Use Symlinks (With Caution)
 
 You can create a symlink inside your build context pointing to the file outside. However, Docker will only include the file if it is within the build context at build time. If the symlink points outside, Docker will ignore it.
 
 ```bash
-ln -s ../../other-stuff/secrets.env ./config/secrets.env
+ln -s ../../other-stuff/app-config.json ./config/app-config.json
 ```
 
 But when you run `docker build`, Docker will not follow symlinks outside the context. So this is not a reliable workaround.
