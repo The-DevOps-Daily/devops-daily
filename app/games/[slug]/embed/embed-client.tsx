@@ -19,9 +19,10 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const opsvilleRequested = searchParams.get('embed') === 'opsville';
   const pathname = usePathname();
   const { setTheme } = useTheme();
-  // Set only when the page framing us is Opsville (game.devops-daily.com or a
-  // Pages preview). Any other site that adds ?embed=opsville gets the normal embed.
-  const [opsvilleOrigin, setOpsvilleOrigin] = useState<string | null>(null);
+  // Set only when the page that framed or opened us is Opsville
+  // (game.devops-daily.com or a Pages preview). Any other site that adds
+  // ?embed=opsville keeps the title bar and badge.
+  const [opsville, setOpsville] = useState<{ origin: string; target: Window } | null>(null);
   const [finished, setFinished] = useState(false);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
@@ -43,11 +44,19 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
 
   useEffect(() => {
     if (!opsvilleRequested) return;
-    // Opsville says hello when the frame loads; the browser sets event.origin.
+    // Opsville says hello when it frames this page, or, on phones, after it
+    // opens it in a new tab. The browser sets event.origin and event.source.
     const onMessage = (event: MessageEvent) => {
-      if (event.source !== window.parent || !isOpsvilleOrigin(event.origin)) return;
+      const fromParent = window.parent !== window && event.source === window.parent;
+      const fromOpener = window.opener !== null && event.source === window.opener;
+      if (!(fromParent || fromOpener) || !isOpsvilleOrigin(event.origin)) return;
       if ((event.data as { type?: unknown } | null)?.type === OPSVILLE_HELLO) {
-        setOpsvilleOrigin(event.origin);
+        const target = event.source as Window;
+        setOpsville((prev) =>
+          prev?.origin === event.origin && prev.target === target
+            ? prev
+            : { origin: event.origin, target }
+        );
       }
     };
     const onComplete = () => setFinished(true);
@@ -61,11 +70,11 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
 
   // Tell Opsville the player finished the lessons, so it can open the quiz gate.
   useEffect(() => {
-    if (!opsvilleOrigin || !finished) return;
-    window.parent.postMessage({ type: GAME_COMPLETE_EVENT, game: slug }, opsvilleOrigin);
-  }, [opsvilleOrigin, finished, slug]);
+    if (!opsville || !finished) return;
+    opsville.target.postMessage({ type: GAME_COMPLETE_EVENT, game: slug }, opsville.origin);
+  }, [opsville, finished, slug]);
 
-  const inOpsville = opsvilleOrigin !== null;
+  const inOpsville = opsville !== null;
 
   // Hide header/footer when in embed mode
   useEffect(() => {
@@ -106,7 +115,11 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
 
   return (
     <div
-      className="min-h-screen bg-background text-foreground"
+      className={
+        opsvilleRequested
+          ? 'h-dvh overflow-y-auto bg-background text-foreground [&_[data-game-intro]]:hidden'
+          : 'min-h-screen bg-background text-foreground'
+      }
       data-theme={theme}
     >
       {/* Minimal header */}
@@ -125,7 +138,7 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
       )}
 
       {/* Game content */}
-      <div className="p-4">
+      <div className={opsvilleRequested ? 'p-2 md:p-3' : 'p-4'}>
         <GameComponent />
       </div>
 

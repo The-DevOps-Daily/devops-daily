@@ -241,8 +241,12 @@ export default function DockerUnderTheHoodSimulator() {
     <div className="dhk">
       <style>{CSS}</style>
 
-      <p className="dhk-eyebrow">Container internals · the real path of a docker run</p>
-      <h2 className="dhk-h">What happens when you run a container</h2>
+      <p className="dhk-eyebrow" data-game-intro>
+        Container internals · the real path of a docker run
+      </p>
+      <h2 className="dhk-h" data-game-intro>
+        What happens when you run a container
+      </h2>
 
       <div className="dhk-cmdbar">
         <span className="dhk-dollar">$</span>

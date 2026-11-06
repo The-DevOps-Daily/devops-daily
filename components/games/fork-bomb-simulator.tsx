@@ -425,7 +425,7 @@ export default function ForkBombSimulator() {
   return (
     <div className="w-full max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       {/* Header */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-2" data-game-intro>
         <div className="flex items-center justify-center gap-2">
           <Zap className="w-6 h-6 text-red-500" />
           <h2 className="text-2xl md:text-3xl font-bold">Fork Bomb Simulator</h2>

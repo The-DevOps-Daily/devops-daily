@@ -1257,7 +1257,7 @@ Swap:       2097152           0     2097152`;
   return (
     <div className="w-full max-w-6xl mx-auto">
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-8" data-game-intro>
         <div className="flex items-center justify-center gap-3 mb-4">
           <Terminal className="h-10 w-10 text-green-500" />
           <h2 className="text-3xl md:text-4xl font-bold">Learn Linux</h2>
