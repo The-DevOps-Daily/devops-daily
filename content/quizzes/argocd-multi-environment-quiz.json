@@ -4,7 +4,7 @@
   "description": "Test your knowledge of structuring Git repositories for Argo CD deployments across dev, staging, and production environments. Covers repo layout patterns, ApplicationSets, Kustomize overlays, Helm value files, and sync policies.",
   "category": "GitOps",
   "icon": "GitBranch",
-  "totalPoints": 193,
+  "totalPoints": 208,
   "theme": {
     "primaryColor": "orange",
     "gradientFrom": "from-orange-500",
@@ -14,7 +14,7 @@
     "estimatedTime": "18-22 minutes",
     "difficultyLevels": {
       "beginner": 3,
-      "intermediate": 7,
+      "intermediate": 8,
       "advanced": 3
     },
     "createdDate": "2026-04-14"
@@ -253,6 +253,24 @@
       "difficulty": "advanced",
       "explanation": "In GitOps, Git is the source of truth. The correct way to roll back is to revert the bad commit in Git. Run git revert <merge-commit-hash> and push it to main (or open and immediately merge a revert PR). Argo CD detects the new commit and syncs back to the previous good state. This gives you a clean audit trail: the Git history shows exactly when the bad change went in and when it was reverted. Disabling auto-sync and using kubectl rollout undo is a temporary band-aid that will break again when sync is re-enabled. argocd app rollback exists but is only for emergencies and is not recommended as the standard approach because it puts the cluster in a state that doesn't match Git. Deleting the Application is destructive and may remove the running resources (depending on finalizer settings). For the immediate 3 AM emergency, disabling sync temporarily while you prepare the Git revert is a valid tactic, but the actual fix must go through Git.",
       "hint": "In GitOps, where is the source of truth? If the source of truth says 'deploy the bad version,' what do you need to change?"
+    },
+    {
+      "id": "multiple-sources-external-helm-chart",
+      "title": "Combining Upstream Helm Charts with Git Values",
+      "description": "You want to deploy an upstream Helm chart from a public repository while keeping environment-specific values files in your private Git config repo.",
+      "situation": "Your team is deploying kube-prometheus-stack across dev, staging, and prod. Previously, someone vendored the entire upstream Helm chart into your config repo just so Argo CD could read the custom values-prod.yaml file alongside it. Upgrading the chart now creates huge, noisy diffs in pull requests. You want Argo CD to pull the chart directly from the upstream Helm repository while reading values files from your Git config repository.",
+      "codeExample": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: kube-prometheus-stack-prod\n  namespace: argocd\nspec:\n  project: default\n  sources:\n    - repoURL: https://prometheus-community.github.io/helm-charts\n      chart: kube-prometheus-stack\n      targetRevision: 65.1.0\n      helm:\n        valueFiles:\n          - $values/monitoring/kube-prometheus-stack/values-common.yaml\n          - $values/monitoring/kube-prometheus-stack/values-prod.yaml\n    - repoURL: https://github.com/org/config-repo.git\n      targetRevision: main\n      ref: values\n  destination:\n    server: https://prod-cluster-api:6443\n    namespace: monitoring",
+      "options": [
+        "Use the plural sources field in the Application spec, assign a ref to the Git repository source, and reference its files with $values/... in valueFiles",
+        "Create a wrapper umbrella Helm chart in your Git repo for every environment since Argo CD Applications can only have a single source",
+        "Store the values in a Kubernetes ConfigMap and mount it into the argocd-repo-server pod",
+        "Use a PreSync Job to clone the Git repository and pass the values file to helm upgrade manually"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Argo CD supports multiple sources per Application via the spec.sources field. You can define one source pointing to the external Helm chart repository and a second source pointing to your Git config repository with ref: values. Inside the Helm source's valueFiles list, you reference files from the Git repository using the $values/ prefix. This avoids vendoring third-party charts or maintaining boilerplate wrapper charts just to pass environment-specific values.",
+      "hint": "Argo CD Applications support a plural sources array where one source can expose files to another via a named reference."
     }
   ]
 }
