@@ -6,9 +6,11 @@ import { EmbedBadge } from '@/components/embed';
 import { Suspense, useEffect, useState } from 'react';
 import {
   GAME_COMPLETE_EVENT,
-  OPSVILLE_HELLO,
-  isOpsvilleOrigin,
-  takeOpener,
+  OPSVILLE_CHANNEL,
+  OPSVILLE_READY,
+  cutOpener,
+  isOpsvilleHello,
+  isRunId,
 } from '@/lib/games/game-complete';
 
 interface EmbedClientProps {
@@ -22,12 +24,12 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const theme = searchParams.get('theme') || 'dark';
   const hideTitle = searchParams.get('hideTitle') === 'true';
   const opsvilleRequested = searchParams.get('embed') === 'opsville';
+  const run = searchParams.get('run');
   const pathname = usePathname();
   const { setTheme } = useTheme();
-  // Set only when the page that framed or opened us is Opsville
-  // (game.devops-daily.com or a Pages preview). Any other site that adds
-  // ?embed=opsville keeps the title bar and badge.
-  const [opsville, setOpsville] = useState<{ origin: string; target: Window } | null>(null);
+  // Set only when Opsville, on this same origin, answers our "ready" for this
+  // run. Any other site that adds ?embed=opsville keeps the title bar and badge.
+  const [opsville, setOpsville] = useState<{ send: (message: unknown) => void } | null>(null);
   const [finished, setFinished] = useState(false);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
@@ -49,39 +51,47 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
 
   useEffect(() => {
     if (!opsvilleRequested) return;
-    // On phones Opsville opens this page in a new tab. Keep that window only
-    // for the finish message and clear window.opener, so later pages in this
-    // tab cannot reach the Opsville tab.
-    const openerWin = takeOpener(window);
-    // Opsville says hello when it frames this page, or after it opened it.
-    // The browser sets event.origin and event.source.
-    const onMessage = (event: MessageEvent) => {
-      const fromParent = window.parent !== window && event.source === window.parent;
-      const fromOpener = openerWin !== null && event.source === openerWin;
-      if (!(fromParent || fromOpener) || !isOpsvilleOrigin(event.origin)) return;
-      if ((event.data as { type?: unknown } | null)?.type === OPSVILLE_HELLO) {
-        const target = event.source as Window;
-        setOpsville((prev) =>
-          prev?.origin === event.origin && prev.target === target
-            ? prev
-            : { origin: event.origin, target }
-        );
-      }
+    cutOpener(window);
+    if (!isRunId(run)) return;
+    const origin = window.location.origin;
+    const framed = window.parent !== window;
+    let channel: BroadcastChannel | null = null;
+    let send: (message: unknown) => void;
+    if (framed) {
+      // Opsville frames this page on desktop. The target origin keeps the
+      // message from reaching a parent page on any other site.
+      send = (message) => window.parent.postMessage(message, origin);
+    } else if (typeof BroadcastChannel === 'function') {
+      // On phones Opsville opens this page in a new tab, with noopener.
+      const ch = new BroadcastChannel(OPSVILLE_CHANNEL);
+      channel = ch;
+      send = (message) => ch.postMessage(message);
+    } else {
+      return;
+    }
+    const onHello = (data: unknown) => {
+      if (isOpsvilleHello(data, run)) setOpsville((prev) => prev ?? { send });
     };
+    const onMessage = (event: MessageEvent) => {
+      if (event.source === window.parent && event.origin === origin) onHello(event.data);
+    };
+    if (framed) window.addEventListener('message', onMessage);
+    if (channel) channel.onmessage = (event) => onHello(event.data);
     const onComplete = () => setFinished(true);
-    window.addEventListener('message', onMessage);
     window.addEventListener(GAME_COMPLETE_EVENT, onComplete);
+    send({ type: OPSVILLE_READY, run });
     return () => {
       window.removeEventListener('message', onMessage);
       window.removeEventListener(GAME_COMPLETE_EVENT, onComplete);
+      channel?.close();
     };
-  }, [opsvilleRequested]);
+  }, [opsvilleRequested, run]);
 
   // Tell Opsville the player finished the lessons, so it can open the quiz gate.
   useEffect(() => {
-    if (!opsville || !finished) return;
-    opsville.target.postMessage({ type: GAME_COMPLETE_EVENT, game: slug }, opsville.origin);
-  }, [opsville, finished, slug]);
+    if (!opsville || !finished || !isRunId(run)) return;
+    opsville.send({ type: GAME_COMPLETE_EVENT, game: slug, run });
+  }, [opsville, finished, slug, run]);
 
   const inOpsville = opsville !== null;
 
