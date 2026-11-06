@@ -412,7 +412,7 @@ done
 }
 ```
 
-Related posts: [check if a file does not exist](/posts/check-file-not-exist-bash) and [get a file name's extension](/posts/extract-filename-extension-bash).
+Related: [check if a file does not exist](/posts/check-file-not-exist-bash) and [get a file name's extension](/guides/introduction-to-bash/04-bash-variables#h2-parameter-expansion-for-strings).
 
 ## Read Files
 

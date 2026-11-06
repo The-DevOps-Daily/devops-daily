@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2025-04-12'
 publishedAt: '2025-04-12T10:30:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -21,7 +21,7 @@ tags:
 
 You committed many times with the wrong email or name - maybe you forgot to configure Git on a new machine. Now you need to fix the author information across multiple commits. Git provides several methods to batch update commit metadata.
 
-**TLDR:** To change author for multiple commits, use `git rebase -i` and mark commits as "edit", or use `git filter-branch` for extensive changes across all history. For modern Git, use `git filter-repo` with a mailmap file. These commands rewrite history, so coordinate with your team before force pushing.
+**TLDR:** For the last commit only, run `git commit --amend --no-edit --author="Name <email>"`. To change author for multiple commits, use `git rebase -i` and mark commits as "edit", or use `git filter-branch` for extensive changes across all history. For modern Git, use `git filter-repo` with a mailmap file. These commands rewrite history, so coordinate with your team before force pushing.
 
 In this guide, you'll learn how to safely change author information for many commits.
 
@@ -47,6 +47,44 @@ git log --format=fuller -1
 - **Committer**: Person who committed to the repository
 
 Usually you want to change both to match.
+
+## Change the Author of Only the Last Commit
+
+For one commit, you do not need a rebase. Amend it with the right identity:
+
+```bash
+git commit --amend --no-edit --author="Jane Developer <jane@example.com>"
+```
+
+If you have fixed `user.name` and `user.email` in your config already, `--reset-author` takes the identity from there. The two flags differ in one detail: `--author` keeps the original author date, while `--reset-author` sets it to now. Here a commit was made on a laptop whose Git config still had a placeholder identity:
+
+```terminal
+{
+  "title": "fix the author of the last commit",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git log --format=fuller -1",
+      "output": "commit fb1e539b7ddbdbde5be18cab0f249994b156dc05\nAuthor:     jane <jane@old-laptop.local>\nAuthorDate: Tue Nov 3 09:15:00 2026 +0000\nCommit:     jane <jane@old-laptop.local>\nCommitDate: Tue Nov 3 09:15:00 2026 +0000\n\n    Add the health check"
+    },
+    {
+      "cmd": "git commit --amend --no-edit --author=\"Jane Developer <jane@example.com>\"",
+      "output": "[main 49d7d2c] Add the health check\n Date: Tue Nov 3 09:15:00 2026 +0000\n 1 file changed, 1 insertion(+)\n create mode 100644 a.txt"
+    },
+    {
+      "cmd": "git log --format=fuller -1",
+      "output": "commit 49d7d2c877b1418ce444098926d13597f3bd1bf6\nAuthor:     Jane Developer <jane@example.com>\nAuthorDate: Tue Nov 3 09:15:00 2026 +0000\nCommit:     Jane Developer <jane@example.com>\nCommitDate: Thu Nov 5 18:19:47 2026 +0200\n\n    Add the health check"
+    },
+    {
+      "cmd": "git commit --amend --no-edit --reset-author && git log --format=fuller -1 | sed -n 2,5p",
+      "output": "[main 29844a4] Add the health check\n 1 file changed, 1 insertion(+)\n create mode 100644 a.txt\nAuthor:     Jane Developer <jane@example.com>\nAuthorDate: Thu Nov 5 18:19:47 2026 +0200\nCommit:     Jane Developer <jane@example.com>\nCommitDate: Thu Nov 5 18:19:47 2026 +0200"
+    }
+  ]
+}
+```
+
+You never set the committer: `--amend` always writes a new commit, and the committer of a new commit is whoever runs it, with the current time. That is why both fields are correct after the amend, as long as your config is.
 
 ## Using Interactive Rebase for Recent Commits
 
@@ -86,16 +124,41 @@ git rebase --continue
 
 ## Automated Rebase Script
 
-To avoid manual intervention at each commit:
+To avoid stopping at each commit, let the rebase run the amend after every commit. Without `-i`, Git does not open the todo list at all:
 
 ```bash
-#!/bin/bash
-# fix-author.sh
+# Every commit after HEAD~20 gets the identity from your current config
+git rebase --exec 'git commit --amend --no-edit --reset-author' HEAD~20
 
-git rebase -i HEAD~20 --exec 'git commit --amend --author="Jane Developer <jane@example.com>" --no-edit --allow-empty'
+# Or set the author explicitly
+git rebase --exec 'git commit --amend --no-edit --author="Jane Developer <jane@example.com>"' HEAD~20
 ```
 
-This automatically changes the author for all commits in the rebase.
+With two wrong commits on top of a correct one:
+
+```terminal
+{
+  "title": "rebase --exec over the last two commits",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "git log --format=\"%h %an <%ae>\" -3",
+      "output": "8f68c04 jane <jane@old-laptop.local>\n306aedf jane <jane@old-laptop.local>\n29844a4 Jane Developer <jane@example.com>"
+    },
+    {
+      "cmd": "git rebase --exec 'git commit --amend --no-edit --reset-author' HEAD~2",
+      "output": "Executing: git commit --amend --no-edit --reset-author\n[detached HEAD 5599f3c] Change 1\n 1 file changed, 1 insertion(+)\n create mode 100644 f1\nExecuting: git commit --amend --no-edit --reset-author\n[detached HEAD 2fab4ea] Change 2\n 1 file changed, 1 insertion(+)\n create mode 100644 f2\nSuccessfully rebased and updated refs/heads/main."
+    },
+    {
+      "cmd": "git log --format=\"%h %an <%ae>\" -3",
+      "output": "2fab4ea Jane Developer <jane@example.com>\n5599f3c Jane Developer <jane@example.com>\n29844a4 Jane Developer <jane@example.com>"
+    }
+  ]
+}
+```
+
+This changes every commit in the range, also the ones that were already right.
 
 ## Using Filter-Branch for Extensive Changes
 
@@ -448,5 +511,26 @@ Coordinate force pushes:
 # 3. Verify everyone is aware
 git push --force-with-lease origin --all
 ```
+
+Stop it from happening again. If you use one machine for work and personal projects, let the directory pick the identity with a conditional include in `~/.gitconfig`:
+
+```ini
+[user]
+    name = Jane Developer
+    email = jane@personal.example
+[includeIf "gitdir:~/work/"]
+    path = ~/.gitconfig-work
+```
+
+`~/.gitconfig-work` holds only `[user] email = jane@company.example`. The trailing slash in `gitdir:~/work/` matters: it matches every repository below `~/work`:
+
+```text
+$ cd ~/work/api && git config user.email
+jane@company.example
+$ cd ~/oss/tool && git config user.email
+jane@personal.example
+```
+
+`git config --show-origin user.email` also prints the file that set the value.
 
 Now you know how to change author information for multiple commits in Git. Use interactive rebase for recent commits, filter-branch or filter-repo for extensive changes, and always backup before rewriting history. Coordinate with your team when force pushing changes to shared repositories.

@@ -101,7 +101,7 @@ Explore the dashboard's features, or set up role-based access control (RBAC) for
 
 ## Related Resources
 
-- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [How to Decode a Kubernetes Secret](/guides/introduction-to-kubernetes/06-configmaps-and-secrets#h3-decode-every-key-of-a-secret)
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)
 - [DevOps Roadmap](/roadmap)

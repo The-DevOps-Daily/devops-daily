@@ -6,8 +6,8 @@ category:
   slug: 'networking'
 date: '2024-09-01'
 publishedAt: '2024-09-01T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -171,6 +171,86 @@ def get_all_ip_addresses():
 interfaces = get_all_ip_addresses()
 for interface, ip in interfaces:
     print(f"Interface {interface}: {ip}")
+```
+
+#### Without Extra Packages
+
+The standard library is enough on Linux. Three details matter.
+
+First, `socket.gethostbyname(socket.gethostname())` is the shortest answer you will find, but it only looks up your host name, usually in `/etc/hosts`. On Debian and Raspberry Pi OS, the installer maps the host name to `127.0.1.1`, so that is what you get. On a GitHub Actions runner, `/etc/hosts` maps it to the real address. The code is the same; the answer depends on that file.
+
+Second, the UDP `connect()` trick above sends no packet. `connect()` on a UDP socket only asks the kernel which route and source address it would use, so the target does not need to be reachable: an address from the documentation range `192.0.2.0/24` works as well as `8.8.8.8`, and nothing leaves the machine. You get the address of the interface that has the default route, the same one `ip route get` reports as `src`.
+
+Third, to list every interface, ask the kernel for each interface's IPv4 address with `ioctl` (Linux only):
+
+```python
+import fcntl
+import socket
+import struct
+
+SIOCGIFADDR = 0x8915  # Linux: get the IPv4 address of one interface
+
+def ipv4_addresses():
+    """Map interface name to IPv4 address, standard library only (Linux)."""
+    result = {}
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        for _, name in socket.if_nameindex():
+            try:
+                packed = fcntl.ioctl(s.fileno(), SIOCGIFADDR,
+                                     struct.pack("256s", name.encode()[:15]))
+            except OSError:  # interface is down or has no IPv4 address
+                continue
+            result[name] = socket.inet_ntoa(packed[20:24])
+    return result
+
+for name, ip in ipv4_addresses().items():
+    print(f"{name}: {ip}")
+```
+
+On a GitHub Actions runner with Docker installed (Python 3.12):
+
+```terminal
+{
+  "title": "the three methods on one machine",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python3 -c 'import socket; print(socket.gethostbyname(socket.gethostname()))'",
+      "output": "10.1.1.41"
+    },
+    {
+      "cmd": "python3 route.py",
+      "output": "10.1.1.41"
+    },
+    {
+      "cmd": "python3 ifaces.py",
+      "output": "lo: 127.0.0.1\neth0: 10.1.1.41\ndocker0: 172.17.0.1"
+    },
+    {
+      "cmd": "ip -4 -br addr",
+      "output": "lo               UNKNOWN        127.0.0.1/8\neth0             UP             10.1.1.41/20 metric 100\ndocker0          DOWN           172.17.0.1/16"
+    }
+  ]
+}
+```
+
+`route.py` is the UDP trick with `192.0.2.1`. `docker0` is listed although it is down: it still has an address. To decide which addresses are private, use the `ipaddress` module, and note that the `100.64.0.0/10` range (carrier-grade NAT, also used by Tailscale) is neither private nor global (output from Python 3.11):
+
+```python
+import ipaddress
+
+for a in ["192.168.1.101", "10.0.0.5", "100.101.102.103", "127.0.1.1", "8.8.8.8"]:
+    ip = ipaddress.ip_address(a)
+    print(f"{a:16} private={ip.is_private!s:5} global={ip.is_global}")
+```
+
+```text
+192.168.1.101    private=True  global=False
+10.0.0.5         private=True  global=False
+100.101.102.103  private=False global=False
+127.0.1.1        private=True  global=False
+8.8.8.8          private=False global=True
 ```
 
 ### Node.js

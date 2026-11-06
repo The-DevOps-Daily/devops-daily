@@ -153,7 +153,7 @@ File descriptors 0, 1 and 2 are standard input, output and error: input comes fr
 }
 ```
 
-`ss -ltnp` means: **l**istening sockets, **t**CP, **n**umeric addresses and ports, with the **p**rocess. You see processes of other users only with `sudo`. The usual "Address already in use" error when a service starts means another process already holds the port, and these commands tell you which one. See [how to kill a process running on a port](/posts/kill-process-running-on-port-linux).
+`ss -ltnp` means: **l**istening sockets, **t**CP, **n**umeric addresses and ports, with the **p**rocess. You see processes of other users only with `sudo`. The usual "Address already in use" error when a service starts means another process already holds the port, and these commands tell you which one. See [how to kill a process running on a port](/posts/how-to-free-up-tcp-port#h3-kill-the-process).
 
 ## Signals: Stopping and Reloading Processes
 
@@ -205,6 +205,53 @@ You control a running process by sending it a **signal**. The most important one
 Always try `SIGTERM` first and give the process a few seconds. Use `kill -9` only when it does not react. A process in state `D` ignores even `SIGKILL` until its I/O returns, and a zombie is already dead: to get rid of zombies, fix or restart the **parent**, which must collect them.
 
 `pkill pattern` matches against process names; `pkill -f pattern` matches the whole command line, which is powerful and easy to get wrong. Check what will match with `pgrep -a` (or `pgrep -af`) first. `killall name` (from `psmisc`) kills by exact name.
+
+### Kill Processes by Part of Their Name
+
+Preview with `pgrep`, then send the signal with `pkill` and the same pattern. `-e` makes `pkill` print what it killed:
+
+```bash
+pgrep -af report-worker      # what would match, with full command lines
+pkill -e -f report-worker    # stop them (SIGTERM), and list each one
+```
+
+Two traps decide which flag you need:
+
+- Without `-f`, the pattern matches the process name, which the kernel cuts to 15 characters. A longer pattern never matches. `pgrep` warns about it, `pkill` gives the same warning, and both exit with 1.
+- With `-f`, the pattern matches every command line that contains it, including the shell or script that runs `pkill`. `pkill` never kills itself, but it kills its parent if that has the pattern in its arguments. That ends a `bash -c` line before its next command runs, and it killed our test session's own shell the first time we tried. Anchor the pattern, or use `-x` to match the whole command line exactly.
+
+```terminal
+{
+  "title": "the 15-character limit and -f matching its own shell",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "pgrep -a report-worker-nightly",
+      "output": "pgrep: pattern that searches for process name longer than 15 characters will result in zero matches\nTry `pgrep -f' option to match against the complete command line."
+    },
+    {
+      "cmd": "pgrep -af report-worker-nightly",
+      "output": "1506227 ./report-worker-nightly 600"
+    },
+    {
+      "cmd": "pkill -e -f report-worker-nightly",
+      "output": "report-worker-n killed (pid 1506227)"
+    },
+    {
+      "comment": "the bash -c line contains the pattern, so pkill kills it",
+      "cmd": "bash -c 'sleep 601 & pkill -f \"sleep 601\"; echo still here'",
+      "output": "Terminated"
+    },
+    {
+      "cmd": "bash -c 'sleep 602 & pkill -x -f \"sleep 602\"; echo still here'",
+      "output": "still here"
+    }
+  ]
+}
+```
+
+`report-worker-n` in the `pkill` output is the 15-character process name. Other filters narrow a match: `-u deploy` (only that user's processes), `-n` or `-o` (only the newest or oldest match) and `-P 1234` (only children of process 1234).
 
 ## Foreground, Background and Jobs
 
@@ -495,7 +542,6 @@ Next: [Networking in Linux](/guides/introduction-to-linux/08-networking), where 
 
 ## Keep Learning
 
-- [Kill processes by partial name](/posts/kill-processes-by-partial-name)
 - [Measure the actual memory usage of a process](/posts/measure-actual-memory-usage-of-process)
 - Exercise: [Linux performance tuning and troubleshooting](/exercises/linux-performance-troubleshooting)
 - Interview questions: [Linux process debugging](/interview-questions/senior/linux-process-debugging)

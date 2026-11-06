@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2025-06-24'
 publishedAt: '2025-06-24T14:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -65,6 +65,68 @@ Or forward a range of ports:
 # Map ports 8080-8090 to 80-90
 docker run -p 8080-8090:80-90 myapp
 ```
+
+Both ranges must have the same length. A host range with a single container port works differently: Docker takes the first free host port in the range, so you can start several copies with the same command. Each mapping gets an IPv4 and an IPv6 entry:
+
+```terminal
+{
+  "title": "port ranges",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker run -d --name multi -p 8080-8082:80-82 nginx:1.30 && docker port multi",
+      "output": "fe1cd3a23ddf497824ed6979a532356c103d9c3b194630502a5f408eb6fdecfb\n80/tcp -> 0.0.0.0:8080\n80/tcp -> [::]:8080\n81/tcp -> 0.0.0.0:8081\n81/tcp -> [::]:8081\n82/tcp -> 0.0.0.0:8082\n82/tcp -> [::]:8082"
+    },
+    {
+      "cmd": "docker run -d --name bad -p 8090-8092:80-81 nginx:1.30",
+      "output": "docker: invalid ranges specified for container and host Ports: 80-81 and 8090-8092\n\nRun 'docker run --help' for more information"
+    },
+    {
+      "comment": "one container port, a host range: each copy gets the next free port",
+      "cmd": "docker run -d --name pick1 -p 9000-9005:80 nginx:1.30 && docker run -d --name pick2 -p 9000-9005:80 nginx:1.30 && docker port pick1 && docker port pick2",
+      "output": "b613895d866b821066f6b10e5e18d6b36c94cffc15ed91d9521eadd9dd83839d\n0d95da3d09065b1a66bc2df8f436582755431d92cfdfbc9a80a012a2994acb83\n80/tcp -> 0.0.0.0:9000\n80/tcp -> [::]:9000\n80/tcp -> 0.0.0.0:9001\n80/tcp -> [::]:9001"
+    },
+    {
+      "cmd": "docker run -d --name same -p 8080:80 nginx:1.30",
+      "output": "3b128230f7ecf06c84fbab1c35a295eeb1554e06eaead755daf6dc7754ee60ce\ndocker: Error response from daemon: failed to set up container networking: driver failed programming external connectivity on endpoint same (bd922ad55b18428d862300f3f651d706803d6fc2bfbc1f9095d9687c204edf79): Bind for 0.0.0.0:8080 failed: port is already allocated\n\nRun 'docker run --help' for more information"
+    }
+  ]
+}
+```
+
+The last command prints a container ID before the error: Docker created the container and then failed to start it, so `docker ps -a` still lists it. Remove it with `docker rm same` before you reuse the name.
+
+In a Dockerfile, one `EXPOSE` line can list several ports, with `/udp` where needed. `-P` then publishes every exposed port, the ones from the base image included:
+
+```dockerfile
+FROM nginx:1.30
+EXPOSE 8443 9229/tcp 5353/udp
+```
+
+```terminal
+{
+  "title": "EXPOSE several ports, publish them all with -P",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker build -q -t multi-expose .",
+      "output": "sha256:a5311be4152a33d8511dd673d1f0c683434e245c909d5c2e24310a5d2b855edb"
+    },
+    {
+      "cmd": "docker image inspect -f '{{json .Config.ExposedPorts}}' multi-expose",
+      "output": "{\"5353/udp\":{},\"80/tcp\":{},\"8443/tcp\":{},\"9229/tcp\":{}}"
+    },
+    {
+      "cmd": "docker run -d --name allports -P multi-expose && docker port allports",
+      "output": "23a76b5c5fa729b9816344e5c73fb73911c9dbc6e3e7c0af48bb520882bbc322\n80/tcp -> 0.0.0.0:32768\n80/tcp -> [::]:32768\n5353/udp -> 0.0.0.0:32768\n5353/udp -> [::]:32768\n8443/tcp -> 0.0.0.0:32769\n8443/tcp -> [::]:32769\n9229/tcp -> 0.0.0.0:32770\n9229/tcp -> [::]:32770"
+    }
+  ]
+}
+```
+
+`80/tcp` comes from the `nginx` base image. TCP and UDP have separate port spaces, so `80/tcp` and `5353/udp` can both get host port 32768. These outputs are from Docker Engine 28.0.4.
 
 ## Publishing All Exposed Ports
 

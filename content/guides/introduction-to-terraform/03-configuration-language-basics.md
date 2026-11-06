@@ -375,7 +375,7 @@ Some notes on these:
 - `merge` combines maps; later maps win on duplicate keys. It is how you add resource-specific tags to a set of common tags.
 - `try` returns the first argument that does not produce an error. Use it for optional attributes, not to hide real mistakes. Its sibling `can` returns `true` or `false` and is useful in [variable validation](/guides/introduction-to-terraform/06-variables-and-outputs#h2-validate-input).
 - `cidrsubnet(prefix, newbits, netnum)` carves subnets out of a network: 8 extra bits turn a `/16` into `/24`s, and `netnum` picks which one. `cidrsubnets` allocates several consecutive ranges of different sizes at once, here two `/24`s and then a `/20` that starts at the next free `/20` boundary.
-- `lookup(map, key, default)` still exists, but `var.map[key]` or `try(var.map[key], default)` reads better. The concatenation of lists is covered in more detail in [How to Concatenate Lists in Terraform](/posts/terraform-concatenate-lists-concat-function).
+- `lookup(map, key, default)` still exists, but `var.map[key]` or `try(var.map[key], default)` reads better. `concat()`, `distinct()`, `setunion()` and `flatten()` are compared in [lists and objects: append, pick, iterate](/posts/terraform-variables-loops-and-outputs#h2-lists-and-objects-append-pick-iterate).
 
 ### Rendering Template Files
 

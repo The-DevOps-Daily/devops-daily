@@ -307,6 +307,6 @@ Now you have a thorough understanding of where Docker stores its data and how to
 
 ## Related Resources
 
-- [Delete All Local Docker Images](/posts/delete-all-local-docker-images): bulk cleanup
+- [Delete All Local Docker Images](/posts/remove-old-unused-docker-images#h2-delete-all-local-docker-images): bulk cleanup
 - [Docker Image vs Container](/posts/docker-image-vs-container): understand the fundamentals
 - [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch

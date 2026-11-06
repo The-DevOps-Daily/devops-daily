@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2024-11-17'
 publishedAt: '2024-11-17T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -273,6 +273,39 @@ docker exec web-server ls       → Runs ls in running web-server
 
 When you `docker run`, you start fresh from the image. When you `docker exec`, you interact with a container's current state, seeing whatever changes happened since it started.
 
+## docker exec vs docker attach
+
+`docker exec` starts a **new** process next to the container's main process. `docker attach` connects your terminal to the **main** process itself, PID 1. Whatever you type or send after `attach` goes to that process, so leaving it can stop the container:
+
+```text
+$ docker run -dit --name shell alpine:3.22 sh
+0b204499206cdf33f7da0e6abbd374640a695ab578c73842ac7c48ff8cb75e5c
+$ docker exec shell sh -c 'exit 3'; echo "exec exit $?"; docker inspect -f '{{.State.Status}}' shell
+exec exit 3
+running
+
+$ docker attach shell        # then press Ctrl+P, Ctrl+Q
+/ # read escape sequence
+$ docker inspect -f '{{.State.Status}}' shell
+running
+
+$ docker attach shell        # then type exit and press Enter
+exit
+$ docker inspect -f '{{.State.Status}} exit={{.State.ExitCode}}' shell
+exited exit=0
+```
+
+The `exec` shell can exit with any code; the container does not notice. Typing `exit` after `attach` ends PID 1, and the container with it. `Ctrl+P Ctrl+Q` is the detach sequence (change it with `--detach-keys`, for example `--detach-keys=ctrl-x`), but it only works when the container was started with `-i` and `-t`. For a container started without them, such as a plain `docker run -d nginx`, we recorded this on Docker Engine 28.0.4:
+
+| What you do after `docker attach web`                   | Result                                                                                                 |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Press Ctrl+P Ctrl+Q                                     | Nothing: without a TTY there is no detach sequence                                                     |
+| Press Ctrl+C                                            | `docker attach` forwards SIGINT, nginx logs `signal 2 (SIGINT) received, exiting`, the container stops |
+| Kill the client with SIGTERM (as `timeout` does)        | The signal is forwarded too: nginx exits on SIGTERM, the container stops                               |
+| Attach with `--sig-proxy=false`, then Ctrl+C or SIGTERM | The container keeps running, but the client ignores both signals; only `kill -9` ends it               |
+
+To watch the output of a running container, use `docker logs -f web` instead: Ctrl+C stops only the `logs` command, and the container keeps running. For a shell, use `docker exec -it`. Keep `attach` for containers whose main process is an interactive program you started with `-it`. We recorded these results on a GitHub Actions runner, sending the keys through a pseudo-terminal.
+
 ## Security Considerations
 
 Running commands in containers can expose security risks. Keep these in mind:
@@ -342,11 +375,13 @@ Inspect the container's filesystem by copying it out:
 docker cp crashed-container:/app/logs ./investigation/
 ```
 
-Or attach to a running container's output (though this doesn't let you run commands):
+Or follow the container's output (Ctrl+C stops only the `logs` command):
 
 ```bash
-docker attach web-server
+docker logs -f web-server
 ```
+
+`docker attach web-server` shows the same output, but Ctrl+C there stops the container ([why](#h2-docker-exec-vs-docker-attach)).
 
 ## Alternatives for Specific Tasks
 
@@ -380,6 +415,5 @@ Once you're comfortable with `docker exec`, you'll find debugging containers muc
 ## Related Resources
 
 - [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): more shell methods
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): TTY sessions
 - [Docker Edit File in Container](/posts/docker-edit-file-in-container): modify files in-place
 - [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

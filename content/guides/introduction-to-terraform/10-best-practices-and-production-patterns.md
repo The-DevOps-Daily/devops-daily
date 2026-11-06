@@ -412,6 +412,112 @@ ephemeral "aws_secretsmanager_secret_version" "api" {
 
 In option 2, the application still needs the password, so you would also write it to a secret store, again with a write-only argument such as `secret_string_wo` on `aws_secretsmanager_secret_version`. For variables, `ephemeral = true` gives you the same guarantee ([Part 6](/guides/introduction-to-terraform/06-variables-and-outputs#h2-ephemeral-variables)). And never put secrets in `.tf` or committed `.tfvars` files, whatever else you do.
 
+### SSH Keys for Servers
+
+Create the key pair outside Terraform and give Terraform only the public key. A server needs nothing else, and the private key never comes near the state:
+
+```bash
+ssh-keygen -t ed25519 -C deploy -f ~/.ssh/deploy   # once, on your machine
+```
+
+```hcl
+variable "ssh_public_key_path" {
+  type    = string
+  default = "~/.ssh/deploy.pub"
+}
+
+# AWS: register the key, then set key_name = aws_key_pair.deploy.key_name on the instance
+resource "aws_key_pair" "deploy" {
+  key_name   = "deploy"
+  public_key = file(var.ssh_public_key_path)
+}
+
+# Google Cloud: the ssh-keys metadata entry is "user:key", one key per line
+resource "google_compute_instance" "web" {
+  name         = "web-1"
+  machine_type = "e2-small"
+  zone         = "europe-west1-b"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-12"
+    }
+  }
+
+  network_interface {
+    network = "default"
+  }
+
+  metadata = {
+    ssh-keys               = "deploy:${trimspace(file(var.ssh_public_key_path))}"
+    block-project-ssh-keys = "true" # ignore the keys in project metadata
+  }
+}
+```
+
+The plan (here with placeholder provider credentials, so nothing is created) shows exactly what each provider receives:
+
+```terminal
+{
+  "title": "plan an AWS key pair and a VM with one key",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "terraform plan -input=false -no-color -refresh=false | grep -E 'will be created|public_key|ssh-keys|block-project|Plan:'",
+      "output": "  # aws_key_pair.deploy will be created\n      + public_key      = \"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDRIbmIpy0LlSQrcXtgSB889ZMQuLZlMbud68Fu4rGD4 deploy\"\n  # google_compute_instance.web will be created\n          + \"block-project-ssh-keys\" = \"true\"\n          + \"ssh-keys\"               = \"deploy:ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDRIbmIpy0LlSQrcXtgSB889ZMQuLZlMbud68Fu4rGD4 deploy\"\nPlan: 2 to add, 0 to change, 0 to destroy."
+    }
+  ]
+}
+```
+
+`file()` returns the key with the newline that ends the `.pub` file; `trimspace()` removes it, so the metadata value stays one line per key. Many examples generate the key in Terraform with a `tls_private_key` resource instead. That works, but the private key then sits in the state in plain text, three times (OpenSSH, PEM and PKCS#8), and `sensitive` only hides it in the output:
+
+```terminal
+{
+  "title": "a tls_private_key resource keeps the private key in state",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "terraform apply -auto-approve -no-color | grep complete",
+      "output": "tls_private_key.deploy: Creation complete after 0s [id=83acf1e9831faa3159c5e2348c3650c16bc6c9f8]\nApply complete! Resources: 1 added, 0 changed, 0 destroyed."
+    },
+    {
+      "cmd": "terraform state show -no-color tls_private_key.deploy | grep private_key_openssh",
+      "output": "    private_key_openssh           = (sensitive value)"
+    },
+    {
+      "cmd": "grep -c 'PRIVATE KEY' terraform.tfstate",
+      "output": "3"
+    },
+    {
+      "cmd": "jq -r '.resources[0].instances[0].attributes.private_key_openssh' terraform.tfstate | head -1",
+      "output": "-----BEGIN OPENSSH PRIVATE KEY-----"
+    }
+  ]
+}
+```
+
+The ephemeral `tls_private_key` from the example above does not solve this case. Every attribute of an ephemeral resource is ephemeral, the public key too, and `aws_key_pair.public_key` and instance metadata are normal arguments that Terraform must store. `terraform validate` rejects it; here a `terraform_data` resource stands in for the key pair:
+
+```text
+Error: Invalid use of ephemeral value
+
+  with terraform_data.authorized_key,
+  on main.tf line 16, in resource "terraform_data" "authorized_key":
+  16:   input = ephemeral.tls_private_key.deploy.public_key_openssh
+
+Ephemeral values are not valid for "input", because it is not a write-only
+attribute and must be persisted to state.
+```
+
+Three details cause most "Permission denied (publickey)" errors:
+
+- **Project metadata belongs to one owner.** A `google_compute_project_metadata_item` with the key `ssh-keys` manages the whole project-wide list. Keys that `gcloud compute ssh` or the console added there show up as drift, and the next apply removes them.
+- **OS Login replaces metadata keys.** With `enable-oslogin = "TRUE"` on the project or the VM, the VM ignores `ssh-keys` and grants access through IAM roles (`roles/compute.osLogin`, or `roles/compute.osAdminLogin` for sudo). If your organization enforces the `compute.requireOsLogin` policy, `enable-oslogin = "FALSE"` on a VM does not turn it off; use OS Login.
+- **AWS reads the key once.** On Google Cloud, the guest agent picks up changed `ssh-keys` metadata on a running VM. On AWS, the key pair is copied into `authorized_keys` only at first boot, and changing `key_name` replaces the instance. Rotate keys on a running AWS server with your configuration management, not by editing `aws_key_pair`.
+
 ## Policy as Code
 
 Reviewers miss things, so encode the rules that must never break (no public buckets, encryption on every volume, only approved regions, tags on everything) and check every plan against them:

@@ -6,8 +6,8 @@ category:
   slug: 'networking'
 date: '2025-07-21'
 publishedAt: '2025-07-21T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -20,7 +20,7 @@ tags:
   - Troubleshooting
 ---
 
-**TLDR:** Find the process using the port with `lsof -i :PORT` (Linux/macOS) or `netstat -ano | findstr :PORT` (Windows), then kill it with `kill PID` or `taskkill /PID pid`. For persistent services, stop them properly with `systemctl stop service` or the Services manager. Always identify what's using the port before killing it to avoid disrupting important services.
+**TLDR:** Find the process listening on the port with `lsof -i :PORT -sTCP:LISTEN` (Linux/macOS) or `netstat -ano | findstr :PORT` (Windows), then kill it with `kill PID` or `taskkill /PID pid`. For persistent services, stop them properly with `systemctl stop service` or the Services manager. Always identify what's using the port before killing it to avoid disrupting important services.
 
 When you try to start a server or application and see "address already in use" or "port already in use," something else is bound to that port. Here's how to find what's using it and free it up.
 
@@ -55,6 +55,36 @@ sudo ss -tulpn | grep :8080
 # tcp   LISTEN  0  128  *:8080  *:*  users:(("node",pid=12345,fd=21))
 ```
 
+Two details make the `ss` output trustworthy. First, `grep :80` also matches `:8080`; an `ss` filter matches the port exactly. Second, `ss -p` shows the process only for sockets you own, so without `sudo` a port held by a system service looks like it has no owner:
+
+```terminal
+{
+  "title": "exact port filters, and why you need sudo",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "ss -ltn | grep :80",
+      "output": "LISTEN 0      5                                   127.0.0.1:8080       0.0.0.0:*"
+    },
+    {
+      "cmd": "ss -ltn 'sport = :80'",
+      "output": "State Recv-Q Send-Q Local Address:Port Peer Address:PortProcess"
+    },
+    {
+      "cmd": "ss -ltnp 'sport = :22'",
+      "output": "State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\nLISTEN 0      128          0.0.0.0:22        0.0.0.0:*\nLISTEN 0      128             [::]:22           [::]:*"
+    },
+    {
+      "cmd": "sudo ss -ltnp 'sport = :22'",
+      "output": "State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\nLISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:((\"sshd\",pid=788,fd=3))\nLISTEN 0      128             [::]:22           [::]:*    users:((\"sshd\",pid=788,fd=4))"
+    }
+  ]
+}
+```
+
+`-l` lists listening sockets, `-t` TCP (`-u` for UDP), `-n` keeps port numbers instead of service names, and `-p` adds the process. For the remote side of connections, filter on `dport` instead: `ss -tn 'dport = :443'`.
+
 Or use `netstat` (older but still available):
 
 ```bash
@@ -76,11 +106,46 @@ kill 12345
 # Force kill if it doesn't respond
 kill -9 12345
 
-# Or in one command if you're certain:
-sudo lsof -ti :8080 | xargs kill -9
+# Or in one command: only the process that listens on the port
+sudo lsof -ti tcp:8080 -sTCP:LISTEN | xargs -r kill
+
+# Or with fuser (psmisc)
+sudo fuser -k -TERM 8080/tcp
 ```
 
-The `-t` flag tells `lsof` to output only PIDs, making it easy to pipe to `kill`.
+The `-t` flag tells `lsof` to output only PIDs, making it easy to pipe to `kill`. Do not drop `-sTCP:LISTEN`. `lsof -i :8080` matches every socket with 8080 at either end, so it also lists programs that are only **connected** to the port: your browser, a `curl` loop, or the SSH tunnel you are working through. Here a server listens on 8080 and one client is connected to it:
+
+```terminal
+{
+  "title": "lsof -i :8080 lists the client too",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "sudo lsof -i :8080",
+      "output": "COMMAND     PID   USER   FD   TYPE   DEVICE SIZE/OFF NODE NAME\npython3 1506062 nobody    3u  IPv4 14289998      0t0  TCP localhost:http-alt (LISTEN)\npython3 1506062 nobody    4u  IPv4 14290018      0t0  TCP localhost:http-alt->localhost:42564 (ESTABLISHED)\npython3 1506065 nobody    3u  IPv4 14288983      0t0  TCP localhost:42564->localhost:http-alt (ESTABLISHED)"
+    },
+    {
+      "cmd": "sudo lsof -ti :8080",
+      "output": "1506062\n1506065"
+    },
+    {
+      "cmd": "sudo lsof -ti :8080 -sTCP:LISTEN",
+      "output": "1506062"
+    },
+    {
+      "cmd": "sudo fuser 8080/tcp",
+      "output": "8080/tcp:            1506062"
+    },
+    {
+      "cmd": "sudo fuser -k -TERM 8080/tcp && sleep 1 && ss -ltn 'sport = :8080'",
+      "output": "8080/tcp:            1506062\nState Recv-Q Send-Q Local Address:Port Peer Address:PortProcess"
+    }
+  ]
+}
+```
+
+PID 1506065 is the client. `kill -9 $(lsof -ti :8080)` would have killed it too. `fuser 8080/tcp` checks only the local port, so it finds just the server. Without a signal, `fuser -k` sends SIGKILL, which gives the program no chance to clean up; pass `-TERM` first. Add `-n` and `-P` to `lsof` (`lsof -nP -iTCP:8080 -sTCP:LISTEN`) to see `127.0.0.1:8080` instead of `localhost:http-alt`.
 
 ### Stop a System Service
 

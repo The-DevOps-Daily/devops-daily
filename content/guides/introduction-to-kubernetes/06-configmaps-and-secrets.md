@@ -179,7 +179,61 @@ The values in a Secret are base64-encoded so that binary data fits into JSON and
 }
 ```
 
-`LS0tLS1CRUdJTiBQUklWQVRF` is base64 for `-----BEGIN PRIVATE`. Inside the cluster, Secrets are also stored in etcd unencrypted unless someone turned on encryption at rest; [Part 10](/guides/introduction-to-kubernetes/10-best-practices-in-kubernetes) reads one straight out of etcd. Protect Secrets with RBAC, encryption at rest and an external secret store, below. See also [how to decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret).
+`LS0tLS1CRUdJTiBQUklWQVRF` is base64 for `-----BEGIN PRIVATE`. Inside the cluster, Secrets are also stored in etcd unencrypted unless someone turned on encryption at rest; [Part 10](/guides/introduction-to-kubernetes/10-best-practices-in-kubernetes) reads one straight out of etcd. Protect Secrets with RBAC, encryption at rest and an external secret store, below.
+
+### Decode Every Key of a Secret
+
+`jsonpath` plus `base64 -d` decodes one key. To print all keys at once, let kubectl decode them in a Go template, or use `jq`. Here with a small generic Secret:
+
+```terminal
+{
+  "title": "decode a Secret",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "kubectl create secret generic db-credentials --from-literal=username=app --from-literal=password='s3cr3t-Pa55'",
+      "output": "secret/db-credentials created"
+    },
+    {
+      "cmd": "kubectl get secret db-credentials -o jsonpath='{.data.password}' | base64 -d; echo",
+      "output": "s3cr3t-Pa55"
+    },
+    {
+      "cmd": "kubectl get secret db-credentials -o go-template='{{range $k, $v := .data}}{{$k}}={{$v | base64decode}}{{\"\\n\"}}{{end}}'",
+      "output": "password=s3cr3t-Pa55\nusername=app"
+    },
+    {
+      "cmd": "kubectl get secret db-credentials -o json | jq -r '.data | map_values(@base64d)'",
+      "output": "{\n  \"password\": \"s3cr3t-Pa55\",\n  \"username\": \"app\"\n}"
+    }
+  ]
+}
+```
+
+The `echo` after `base64 -d` only adds a line break for your prompt. The value itself must not end with one, and that is the most common Secret bug: `echo` writes a newline, so a file made with `echo` or an encoding made with `echo ... | base64` stores the password plus `\n`, and the application's login fails although the password looks right:
+
+```terminal
+{
+  "title": "the newline from echo ends up in the Secret",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "echo 's3cr3t-Pa55' > password.txt && kubectl create secret generic db-file --from-file=password=password.txt",
+      "output": "secret/db-file created"
+    },
+    {
+      "cmd": "kubectl get secret db-file -o jsonpath='{.data.password}' | base64 -d | od -c",
+      "output": "0000000   s   3   c   r   3   t   -   P   a   5   5  \\n\n0000014"
+    },
+    {
+      "cmd": "echo 's3cr3t-Pa55' | base64; printf '%s' 's3cr3t-Pa55' | base64",
+      "output": "czNjcjN0LVBhNTUK\nczNjcjN0LVBhNTU="
+    }
+  ]
+}
+```
+
+An encoded value that ends in `K`, `o=` or `Cg==` often hides a trailing newline: those are the three ways base64 can end with `\n`. Use `printf '%s'` or `--from-literal`, or write the value under `stringData` in the manifest, which takes plain text and stores it base64-encoded under `data` for you.
 
 ### Do Not Put Secrets in Environment Variables
 

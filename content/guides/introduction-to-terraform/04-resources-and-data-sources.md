@@ -721,6 +721,6 @@ In [Part 5](/guides/introduction-to-terraform/05-state-management) you look insi
 ## Keep Learning
 
 - [AWS VPC with Terraform](/exercises/terraform-aws-vpc) exercise
-- [How to create an SSH key in Terraform?](/posts/how-to-create-an-ssh-key-in-terraform)
+- [SSH keys for servers, without the private key in state](/guides/introduction-to-terraform/10-best-practices-and-production-patterns#h3-ssh-keys-for-servers)
 - [Can Terraform Be Used to Provision On-Premises Servers?](/posts/terraform-on-premises-servers)
 - [Build a Terraform Provider for Your API with the Plugin Framework](/posts/build-a-terraform-provider-plugin-framework)

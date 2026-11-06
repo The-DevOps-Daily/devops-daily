@@ -179,6 +179,28 @@ Three details of command substitution cause surprises:
 
 Null bytes cannot be stored in a variable at all; Bash drops them with a warning. Keep binary data in files.
 
+The last case also has a trap: inside a function, `local out=$(grep ...)` sets `$?` to the status of `local`, which is 0, and hides the grep failure. Declare the variable first, then assign it ([Part 6](/guides/introduction-to-bash/06-functions#h2-local-and-dynamic-scope) shows both forms).
+
+To store output as one array element per line, read it with `mapfile` and process substitution, not from a here-string. A here-string always ends with a newline, so a command that prints nothing still gives you one empty element:
+
+```terminal
+{
+  "title": "lines into an array",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "mapfile -t hits <<< \"$(grep \" 504 \" logs/access.log)\"; echo \"${#hits[@]} hits\"",
+      "output": "1 hits"
+    },
+    {
+      "cmd": "mapfile -t hits < <(grep \" 504 \" logs/access.log); echo \"${#hits[@]} hits\"",
+      "output": "0 hits"
+    }
+  ]
+}
+```
+
 ## Process Substitution
 
 `<(command)` runs a command and gives you a **file name** (a pipe under `/dev/fd`) that reads its output. Use it wherever a program wants a file but you have a command:
@@ -555,7 +577,7 @@ The `sed` only hides today's date. The equivalents on macOS:
 }
 ```
 
-Use UTC (`-u`, or `TZ=UTC`) for timestamps in logs and file names: they sort correctly and do not jump at daylight saving changes. See [format a date as YYYY-MM-DD](/posts/format-date-yyyy-mm-dd-in-shell-script) and [the current time in seconds since the epoch](/posts/get-current-time-seconds-since-epoch-bash).
+Use UTC (`-u`, or `TZ=UTC`) for timestamps in logs and file names: they sort correctly and do not jump at daylight saving changes. See [format a date as YYYY-MM-DD](/posts/get-current-date-time-and-custom-commands#h2-format-the-date-as-yyyy-mm-dd-in-a-script) and [the current time in seconds since the epoch](/posts/get-current-time-seconds-since-epoch-bash).
 
 ## Common Mistakes
 
@@ -582,7 +604,6 @@ Next: [Bash Best Practices](/guides/introduction-to-bash/10-bash-best-practices)
 ## Keep Learning
 
 - [How cat <<EOF works in Bash](/posts/how-cat-eof-works-in-bash)
-- [Set a variable to the output of a command](/posts/set-variable-command-output-bash)
 - [Send output to a file and to the screen](/posts/redirect-all-output-to-file-bash#h2-seeing-output-and-saving-it)
 - [Sleep for milliseconds](/posts/sleep-for-milliseconds)
 - Interview questions: [grep and text search](/interview-questions/junior/linux-grep-text-search)

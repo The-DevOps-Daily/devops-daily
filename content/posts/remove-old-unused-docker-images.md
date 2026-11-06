@@ -6,8 +6,8 @@ category:
   slug: 'docker'
 date: '2024-07-30'
 publishedAt: '2024-07-30T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '9 min read'
+updatedAt: '2026-11-05T09:00:00Z'
+readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -167,7 +167,7 @@ When you need to remove multiple images at once, these techniques help you do so
 The most common bulk removal operation is eliminating all images that no containers are currently using. This approach is more aggressive than removing just dangling images but still maintains safety by preserving images that containers reference.
 
 ```bash
-# See what will be removed before actually removing it
+# Remove unused images created more than 72 hours ago
 docker image prune -a --filter "until=72h"
 
 # Remove all unused images (images not referenced by containers)
@@ -216,6 +216,55 @@ docker rmi myapp:v1.0
 ```
 
 Be very careful with force removal (`-f` flag) as it can leave containers in an inconsistent state. It's usually better to remove or update the containers first, then remove the images.
+
+## Delete All Local Docker Images
+
+To start from zero, remove the containers first, then every image:
+
+```bash
+docker ps -aq | xargs -r docker rm -f   # every container, running or stopped
+docker image prune -a -f                 # every image that no container uses, which is now all of them
+```
+
+The one-liner you will find everywhere, `docker rmi $(docker images -q)`, fails in three ways at once. Here one container runs `nginx:1.30`, a stopped container still references `hello-world`, and `alpine:3.22` also has the tag `myapp:dev`:
+
+```terminal
+{
+  "title": "why docker rmi $(docker images -q) fails",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker image ls",
+      "output": "REPOSITORY    TAG       IMAGE ID       CREATED        SIZE\nnginx         1.30      53d8f012a1a7   9 hours ago    163MB\nalpine        3.22      24ab38714e94   2 weeks ago    8.3MB\nmyapp         dev       24ab38714e94   2 weeks ago    8.3MB\nhello-world   latest    e2ac70e7319a   7 months ago   10.1kB"
+    },
+    {
+      "cmd": "docker rmi $(docker images -q)",
+      "output": "Error response from daemon: conflict: unable to delete 53d8f012a1a7 (cannot be forced) - image is being used by running container 75c0a0426360\nError response from daemon: conflict: unable to delete 24ab38714e94 (must be forced) - image is referenced in multiple repositories\nError response from daemon: conflict: unable to delete 24ab38714e94 (must be forced) - image is referenced in multiple repositories\nError response from daemon: conflict: unable to delete e2ac70e7319a (must be forced) - image is being used by stopped container 3aff97197020"
+    },
+    {
+      "cmd": "docker image prune -a -f",
+      "output": "Deleted Images:\nuntagged: alpine:3.22\nuntagged: alpine@sha256:2e0b81d60597f449baa56dc25d355367869d2dca4cd57e866f1e2b52af3eb55f\nuntagged: myapp:dev\n\nTotal reclaimed space: 8.297MB"
+    },
+    {
+      "cmd": "docker ps -aq | xargs -r docker rm -f",
+      "output": "3aff97197020\n75c0a0426360"
+    },
+    {
+      "cmd": "docker image prune -a -f | tail -1",
+      "output": "Total reclaimed space: 162.6MB"
+    },
+    {
+      "cmd": "docker rmi $(docker images -q)",
+      "output": "docker: 'docker rmi' requires at least 1 argument\n\nUsage:  docker rmi [OPTIONS] IMAGE [IMAGE...]\n\nSee 'docker rmi --help' for more information"
+    }
+  ]
+}
+```
+
+`docker images -q` prints an ID once per tag, so an image with two tags is listed twice and refused twice. A running container blocks its image even with `-f`; a stopped one blocks it unless you force. `docker image prune -a` skips images that any container uses, stopped containers included, which is why `nginx` and `hello-world` survived the first prune. When nothing is left, `$(docker images -q)` is empty and `docker rmi` gets no argument; `xargs -r` runs nothing in that case. The output above is from Docker Engine 28.0.4.
+
+`docker system prune -a` removes stopped containers, unused networks, unused images and the build cache in one command, but it leaves running containers and their images alone. Add `--volumes` only if you mean to delete data as well.
 
 ## Automated Cleanup Strategies
 
@@ -449,7 +498,6 @@ Managing Docker image storage effectively requires a combination of understandin
 
 ## Related Resources
 
-- [Delete All Local Docker Images](/posts/delete-all-local-docker-images): nuclear cleanup option
 - [Remove Old Docker Containers](/posts/remove-old-docker-containers): container cleanup
 - [Fix "No Space Left on Device" in Docker](/posts/docker-image-storage-locations#h2-fixing-no-space-left-on-device): reclaim disk space
 - [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller images

@@ -192,7 +192,7 @@ Base64 is there so binary data such as keystores and TLS keys fits inside JSON a
 Anyone who can `get` or `list` Secrets in a namespace can read every value in it, and so can anyone who can create a pod there that mounts them. A Secret manifest committed to Git is the password in plain sight. What protects Secrets is RBAC, [encryption at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/) for etcd, and keeping the values out of Git with a tool such as Sealed Secrets, SOPS or an external secret store.
 :::
 
-For a longer walkthrough, see [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret) and the [ConfigMaps and Secrets part](/guides/introduction-to-kubernetes/06-configmaps-and-secrets) of our Kubernetes guide.
+For a longer walkthrough, see [how to decode every key of a Secret](/guides/introduction-to-kubernetes/06-configmaps-and-secrets#h3-decode-every-key-of-a-secret) in the ConfigMaps and Secrets part of our Kubernetes guide.
 
 ## Bug 1: the newline from echo
 

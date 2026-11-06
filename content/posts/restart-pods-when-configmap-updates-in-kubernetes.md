@@ -81,7 +81,7 @@ Restarting Pods when a ConfigMap is updated ensures your application uses the la
 
 ## Related Resources
 
-- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [How to Decode a Kubernetes Secret](/guides/introduction-to-kubernetes/06-configmaps-and-secrets#h3-decode-every-key-of-a-secret)
 - [How to Update Kubernetes Secret from File](/posts/how-to-update-kubernetes-secret-from-file)
 - [Introduction to Kubernetes: ConfigMaps and Secrets](/guides/introduction-to-kubernetes)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)
