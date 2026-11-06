@@ -20,6 +20,22 @@ export function isOpsvilleOrigin(origin: string): boolean {
   return OPSVILLE_ORIGINS.some((pattern) => pattern.test(origin));
 }
 
+/**
+ * Takes the window that opened this page and cuts the link back at once, so
+ * nothing loaded in this tab later (a site the player follows a link to) can
+ * reach or navigate the Opsville tab. Only the returned reference is kept, and
+ * it is used for nothing but posting to an Opsville origin.
+ */
+export function takeOpener(win: { opener: Window | null }): Window | null {
+  const opener = win.opener;
+  try {
+    win.opener = null;
+  } catch {
+    // Some browsers make opener read-only; there is nothing more to cut then.
+  }
+  return opener;
+}
+
 /** Safe to call more than once; the game keeps track of what it has seen. */
 export function signalGameComplete(): void {
   if (typeof window === 'undefined') return;

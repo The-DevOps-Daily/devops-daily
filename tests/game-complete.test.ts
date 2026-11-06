@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOpsvilleOrigin } from '@/lib/games/game-complete';
+import { isOpsvilleOrigin, takeOpener } from '@/lib/games/game-complete';
 
 describe('Opsville embed origin', () => {
   it('accepts the game domain and its Pages previews', () => {
@@ -14,5 +14,13 @@ describe('Opsville embed origin', () => {
     expect(isOpsvilleOrigin('https://evilopsville.pages.dev')).toBe(false);
     expect(isOpsvilleOrigin('https://opsville.pages.dev.evil.example')).toBe(false);
     expect(isOpsvilleOrigin('https://devops-daily.com')).toBe(false);
+  });
+
+  it('takes the opener and clears window.opener straight away', () => {
+    const opsvilleTab = {} as Window;
+    const win = { opener: opsvilleTab as Window | null };
+    expect(takeOpener(win)).toBe(opsvilleTab);
+    expect(win.opener).toBeNull();
+    expect(takeOpener(win)).toBeNull();
   });
 });

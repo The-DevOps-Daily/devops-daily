@@ -4,7 +4,12 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { EmbedBadge } from '@/components/embed';
 import { Suspense, useEffect, useState } from 'react';
-import { GAME_COMPLETE_EVENT, OPSVILLE_HELLO, isOpsvilleOrigin } from '@/lib/games/game-complete';
+import {
+  GAME_COMPLETE_EVENT,
+  OPSVILLE_HELLO,
+  isOpsvilleOrigin,
+  takeOpener,
+} from '@/lib/games/game-complete';
 
 interface EmbedClientProps {
   slug: string;
@@ -44,11 +49,15 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
 
   useEffect(() => {
     if (!opsvilleRequested) return;
-    // Opsville says hello when it frames this page, or, on phones, after it
-    // opens it in a new tab. The browser sets event.origin and event.source.
+    // On phones Opsville opens this page in a new tab. Keep that window only
+    // for the finish message and clear window.opener, so later pages in this
+    // tab cannot reach the Opsville tab.
+    const openerWin = takeOpener(window);
+    // Opsville says hello when it frames this page, or after it opened it.
+    // The browser sets event.origin and event.source.
     const onMessage = (event: MessageEvent) => {
       const fromParent = window.parent !== window && event.source === window.parent;
-      const fromOpener = window.opener !== null && event.source === window.opener;
+      const fromOpener = openerWin !== null && event.source === openerWin;
       if (!(fromParent || fromOpener) || !isOpsvilleOrigin(event.origin)) return;
       if ((event.data as { type?: unknown } | null)?.type === OPSVILLE_HELLO) {
         const target = event.source as Window;
