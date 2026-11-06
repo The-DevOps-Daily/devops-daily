@@ -110,7 +110,7 @@ In our test, Daylight reduced dinner to 20 minutes and moved the remaining activ
 
 ![Daylight showing a saved 20-minute dinner plan alongside the conversation explaining the tradeoffs](../../public/images/posts/build-personal-ai-assistant-digitalocean-inference/daylight-replanning.png)
 
-The screenshot records that test conversation. Your model's wording and task estimates will vary.
+The screenshot recreates the 20-minute dinner scenario above. Your model's wording and task estimates will vary.
 
 This is the contribution we want from the AI: help someone decide what is doable when time, energy, and priorities collide. The task list gives that reasoning somewhere to land.
 
