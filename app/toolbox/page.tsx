@@ -433,6 +433,17 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Kilobat CLI',
+    description: 'Open-source macOS CLI for network diagnostics, traffic monitoring, and JSON output.',
+    href: 'https://github.com/seifip/kilobat-cli',
+    category: 'monitoring',
+    icon: Terminal,
+    badges: [
+      { text: 'macOS', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
