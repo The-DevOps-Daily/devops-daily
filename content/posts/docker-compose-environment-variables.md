@@ -61,7 +61,7 @@ By default, docker-compose loads variables from a file named `.env` in the same 
 
 Example `.env` file:
 
-```
+```env
 POSTGRES_USER=devuser
 POSTGRES_PASSWORD=supersecret
 ```
@@ -88,6 +88,10 @@ services:
 ```
 
 If `TAG` is set in your `.env` file or your shell, it will be substituted at runtime.
+
+> **Tip:** You can set fallback defaults or enforce mandatory variables directly in Compose variable substitution using Bash-style parameter expansion:
+> - `${TAG:-latest}` uses `latest` if `TAG` is unset or empty.
+> - `${POSTGRES_PASSWORD:?Error: POSTGRES_PASSWORD must be set}` causes `docker compose` to fail immediately with an explicit error message if the variable is missing, preventing containers from starting in an insecure or misconfigured state.
 
 ## Passing Environment Variables from the Shell
 
