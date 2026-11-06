@@ -6,7 +6,7 @@
   "icon": "GitBranch",
   "difficulty": "intermediate",
   "estimatedTime": "20 minutes",
-  "cardCount": 18,
+  "cardCount": 20,
   "theme": {
     "primaryColor": "orange",
     "gradientFrom": "from-orange-500",
@@ -138,6 +138,20 @@
       "back": "ArgoCD supports: Plain YAML/JSON manifests, Helm charts, Kustomize applications, Jsonnet, and custom Config Management Plugins (CMP). Multiple sources can be combined using the multiple sources feature.",
       "category": "Core Concepts",
       "tags": ["sources", "helm", "kustomize"]
+    },
+    {
+      "id": "applicationset-controller",
+      "front": "What is an ArgoCD ApplicationSet?",
+      "back": "An ApplicationSet is a CRD that automatically generates multiple ArgoCD Applications from a single template using generators (List, Cluster, Git, Matrix, Pull Request). It eliminates repetitive Application YAML across environments and clusters.",
+      "category": "Patterns",
+      "tags": ["applicationset", "generators", "automation"]
+    },
+    {
+      "id": "sync-windows",
+      "front": "What are Sync Windows in ArgoCD?",
+      "back": "Sync Windows are configurable time ranges defined in an ArgoCD Project (allow or deny) that control when automated or manual syncs can occur. They are commonly used to block production deployments during peak traffic hours or change freezes.",
+      "category": "Operations",
+      "tags": ["sync-windows", "project", "production"]
     }
   ]
 }
