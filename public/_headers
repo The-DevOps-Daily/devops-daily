@@ -20,3 +20,7 @@
 /games/*/embed
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors *; object-src 'none'; base-uri 'self'; form-action 'self'
+
+# The site-wide object-src 'none' can stop a browser's built-in PDF viewer.
+/books/the-devops-survival-guide-sample.pdf
+  ! Content-Security-Policy
