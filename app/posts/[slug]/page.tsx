@@ -201,7 +201,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                           <a
                             key={tag}
                             href={`/tags/${tagSlug}`}
-                            className={`${base} transition-colors hover:bg-primary/40 hover:text-white`}
+                            className={`${base} transition-colors hover:bg-primary/40 hover:text-primary-foreground`}
                           >
                             {tag}
                           </a>

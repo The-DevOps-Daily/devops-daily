@@ -158,7 +158,7 @@ export function GameCard({ game, tagLimit = 4 }: { game: CardGame; tagLimit?: nu
             {game.featured && (
               <Badge
                 variant="default"
-                className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs flex items-center gap-1"
+                className="bg-gradient-to-r from-amber-500 to-orange-500 text-primary-foreground text-xs flex items-center gap-1"
               >
                 <Activity className="h-3 w-3" />
                 Featured
