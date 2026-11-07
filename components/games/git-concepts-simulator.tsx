@@ -3,25 +3,32 @@
 import type { ReactNode } from 'react';
 import { useCallback, useRef, useState } from 'react';
 import {
-  CheckCircle,
-  CircleDot,
+  BookOpen,
   Cloud,
-  Code2,
   FileText,
   GitBranch,
   GitCommit,
   GitFork,
   GitMerge,
-  Lightbulb,
-  Play,
-  RotateCcw,
   Send,
-  Trophy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  LAB_TERMINAL_HEIGHT,
+  SIM_CATEGORY,
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import {
   useTerminalSimulator,
@@ -73,7 +80,7 @@ interface Lesson {
   commands: LessonCommand[];
 }
 
-const LESSONS: Lesson[] = [
+export const LESSONS: Lesson[] = [
   {
     id: 'mental-model',
     title: 'Mental Model',
@@ -199,22 +206,19 @@ const LESSONS: Lesson[] = [
         instruction: 'Stage the modified file.',
         hint: 'Use "git add Alice.txt".',
         expectedCommand: ['git add Alice.txt', 'git add .'],
-        explanation:
-          'The index now contains the version of Alice.txt you want in the next commit.',
+        explanation: 'The index now contains the version of Alice.txt you want in the next commit.',
       },
       {
         instruction: 'Commit on the feature branch.',
         hint: 'Use "git commit -m \"Update Alice\"".',
         expectedCommand: 'git commit -m "Update Alice"',
-        explanation:
-          'Only change-alice moved forward. main still points at the previous commit.',
+        explanation: 'Only change-alice moved forward. main still points at the previous commit.',
       },
       {
         instruction: 'List local branches and confirm where HEAD points.',
         hint: 'Use "git branch".',
         expectedCommand: 'git branch',
-        explanation:
-          'The star marks the branch HEAD is attached to. Commits advance that branch.',
+        explanation: 'The star marks the branch HEAD is attached to. Commits advance that branch.',
       },
     ],
   },
@@ -355,7 +359,8 @@ function normalizeCommand(command: string) {
 
 function commandMatches(cmd: string, expected: string | string[]) {
   const normalized = normalizeCommand(cmd);
-  if (Array.isArray(expected)) return expected.some((item) => normalizeCommand(item) === normalized);
+  if (Array.isArray(expected))
+    return expected.some((item) => normalizeCommand(item) === normalized);
   return normalizeCommand(expected) === normalized;
 }
 
@@ -402,8 +407,10 @@ function isAncestor(state: RepoState, maybeAncestor: string, commitId: string): 
 function statusText(state: RepoState) {
   const upstream = state.upstreams[state.currentBranch];
   const upstreamHead = upstream ? state.remoteBranches[upstream] : undefined;
-  const ahead = upstreamHead && state.head !== upstreamHead && isAncestor(state, upstreamHead, state.head);
-  const behind = upstreamHead && state.head !== upstreamHead && isAncestor(state, state.head, upstreamHead);
+  const ahead =
+    upstreamHead && state.head !== upstreamHead && isAncestor(state, upstreamHead, state.head);
+  const behind =
+    upstreamHead && state.head !== upstreamHead && isAncestor(state, state.head, upstreamHead);
   const diverged = upstreamHead && state.head !== upstreamHead && !ahead && !behind;
 
   const lines = [`On branch ${state.currentBranch}`];
@@ -416,7 +423,8 @@ function statusText(state: RepoState) {
 
   if (state.staged.length > 0) {
     lines.push('', 'Changes to be committed:');
-    for (const change of state.staged) lines.push(`  ${change.kind === 'untracked' ? 'new file' : 'modified'}: ${change.file}`);
+    for (const change of state.staged)
+      lines.push(`  ${change.kind === 'untracked' ? 'new file' : 'modified'}: ${change.file}`);
   }
   if (state.working.length > 0) {
     lines.push('', 'Changes not staged for commit:');
@@ -432,7 +440,12 @@ function statusText(state: RepoState) {
 function formatFiles(state: RepoState, long = false) {
   const files = Object.keys(currentFiles(state)).sort();
   if (!long) return files.join('  ');
-  return files.map((file) => `-rw-r--r--  1 devops  devops  ${String(currentFiles(state)[file].length).padStart(3)} ${file}`).join('\n');
+  return files
+    .map(
+      (file) =>
+        `-rw-r--r--  1 devops  devops  ${String(currentFiles(state)[file].length).padStart(3)} ${file}`
+    )
+    .join('\n');
 }
 
 function diffForChange(change: Change) {
@@ -466,7 +479,9 @@ function branchText(state: RepoState, all = false) {
   const local = Object.keys(state.branches).map((branch) =>
     branch === state.currentBranch ? `* ${branch}` : `  ${branch}`
   );
-  const remote = all ? Object.keys(state.remoteBranches).map((branch) => `  remotes/${branch}`) : [];
+  const remote = all
+    ? Object.keys(state.remoteBranches).map((branch) => `  remotes/${branch}`)
+    : [];
   return [...local, ...remote].join('\n');
 }
 
@@ -492,7 +507,9 @@ export default function GitConceptsSimulator() {
   const addWorkingChange = useCallback((file: string, content: string) => {
     setRepo((prev) => {
       const files = currentFiles(prev);
-      const kind: ChangeKind = Object.prototype.hasOwnProperty.call(headCommit(prev).files, file) ? 'modified' : 'untracked';
+      const kind: ChangeKind = Object.prototype.hasOwnProperty.call(headCommit(prev).files, file)
+        ? 'modified'
+        : 'untracked';
       const nextContent = content.startsWith('append:')
         ? `${files[file] ?? ''}${files[file] ? '\n' : ''}${content.replace('append:', '')}`
         : content;
@@ -513,13 +530,20 @@ export default function GitConceptsSimulator() {
           return { output: statusText(repo), type: 'output' };
 
         case 'add': {
-          const targets = rest.includes('.') || rest.includes('-A') ? repo.working.map((change) => change.file) : rest;
+          const targets =
+            rest.includes('.') || rest.includes('-A')
+              ? repo.working.map((change) => change.file)
+              : rest;
           const selected = repo.working.filter((change) => targets.includes(change.file));
-          if (selected.length === 0) return { output: 'nothing specified, nothing added', type: 'output' };
+          if (selected.length === 0)
+            return { output: 'nothing specified, nothing added', type: 'output' };
           setRepo((prev) => ({
             ...prev,
             staged: selected.reduce((items, change) => upsertChange(items, change), prev.staged),
-            working: removeChanges(prev.working, selected.map((change) => change.file)),
+            working: removeChanges(
+              prev.working,
+              selected.map((change) => change.file)
+            ),
           }));
           return { output: '', type: 'output' };
         }
@@ -527,15 +551,24 @@ export default function GitConceptsSimulator() {
         case 'diff': {
           const staged = rest.includes('--staged') || rest.includes('--cached');
           const changes = staged ? repo.staged : repo.working;
-          return { output: changes.length ? changes.map(diffForChange).join('\n\n') : '', type: 'output' };
+          return {
+            output: changes.length ? changes.map(diffForChange).join('\n\n') : '',
+            type: 'output',
+          };
         }
 
         case 'commit': {
           const messageIndex = rest.findIndex((item) => item === '-m' || item === '--message');
-          const inlineMessage = rest.find((item) => item.startsWith('-m=') || item.startsWith('--message='));
-          const message = inlineMessage?.split('=').slice(1).join('=') || (messageIndex >= 0 ? rest[messageIndex + 1] : '');
-          if (repo.staged.length === 0) return { output: 'nothing to commit, working tree clean', type: 'output' };
-          if (!message) return { output: 'error: commit message required in this lab', type: 'error' };
+          const inlineMessage = rest.find(
+            (item) => item.startsWith('-m=') || item.startsWith('--message=')
+          );
+          const message =
+            inlineMessage?.split('=').slice(1).join('=') ||
+            (messageIndex >= 0 ? rest[messageIndex + 1] : '');
+          if (repo.staged.length === 0)
+            return { output: 'nothing to commit, working tree clean', type: 'output' };
+          if (!message)
+            return { output: 'error: commit message required in this lab', type: 'error' };
 
           const files = { ...headCommit(repo).files };
           for (const change of repo.staged) files[change.file] = change.content;
@@ -551,7 +584,10 @@ export default function GitConceptsSimulator() {
             nextCommitNumber: prev.nextCommitNumber + 1,
           }));
 
-          return { output: `[${repo.currentBranch} ${id}] ${message}\n ${repo.staged.length} file changed`, type: 'output' };
+          return {
+            output: `[${repo.currentBranch} ${id}] ${message}\n ${repo.staged.length} file changed`,
+            type: 'output',
+          };
         }
 
         case 'log': {
@@ -570,10 +606,18 @@ export default function GitConceptsSimulator() {
           const branch = create ? rest[1] : rest[0];
           if (!branch) return { output: `usage: git ${command} [-c] <branch>`, type: 'error' };
           if (repo.working.length || repo.staged.length) {
-            return { output: 'error: commit or stash your changes before switching branches', type: 'error' };
+            return {
+              output: 'error: commit or stash your changes before switching branches',
+              type: 'error',
+            };
           }
-          if (create && repo.branches[branch]) return { output: `fatal: a branch named '${branch}' already exists`, type: 'error' };
-          if (!create && !repo.branches[branch]) return { output: `error: pathspec '${branch}' did not match any branch`, type: 'error' };
+          if (create && repo.branches[branch])
+            return { output: `fatal: a branch named '${branch}' already exists`, type: 'error' };
+          if (!create && !repo.branches[branch])
+            return {
+              output: `error: pathspec '${branch}' did not match any branch`,
+              type: 'error',
+            };
 
           setRepo((prev) => ({
             ...prev,
@@ -581,12 +625,18 @@ export default function GitConceptsSimulator() {
             head: create ? prev.head : prev.branches[branch],
             branches: create ? { ...prev.branches, [branch]: prev.head } : prev.branches,
           }));
-          return { output: create ? `Switched to a new branch '${branch}'` : `Switched to branch '${branch}'`, type: 'output' };
+          return {
+            output: create
+              ? `Switched to a new branch '${branch}'`
+              : `Switched to branch '${branch}'`,
+            type: 'output',
+          };
         }
 
         case 'merge': {
           const branch = rest[0];
-          if (!branch || !repo.branches[branch]) return { output: `merge: ${branch || ''} - not something we can merge`, type: 'error' };
+          if (!branch || !repo.branches[branch])
+            return { output: `merge: ${branch || ''} - not something we can merge`, type: 'error' };
           const target = repo.branches[branch];
           if (target === repo.head) return { output: 'Already up to date.', type: 'output' };
           if (isAncestor(repo, repo.head, target)) {
@@ -597,7 +647,11 @@ export default function GitConceptsSimulator() {
             }));
             return { output: `Updating ${repo.head}..${target}\nFast-forward`, type: 'output' };
           }
-          return { output: 'Automatic merge would create a merge commit. This lab focuses on fast-forward merge here.', type: 'output' };
+          return {
+            output:
+              'Automatic merge would create a merge commit. This lab focuses on fast-forward merge here.',
+            type: 'output',
+          };
         }
 
         case 'push': {
@@ -607,7 +661,10 @@ export default function GitConceptsSimulator() {
             upstreams: { ...prev.upstreams, [prev.currentBranch]: upstream },
             remoteBranches: { ...prev.remoteBranches, [upstream]: prev.head },
           }));
-          return { output: `To github.com:example/git-concepts-lab.git\n   ${upstream} -> ${repo.currentBranch}`, type: 'output' };
+          return {
+            output: `To github.com:example/git-concepts-lab.git\n   ${upstream} -> ${repo.currentBranch}`,
+            type: 'output',
+          };
         }
 
         case 'fetch': {
@@ -619,7 +676,10 @@ export default function GitConceptsSimulator() {
             id,
             message: 'Teammate updates README',
             parents: [originMain],
-            files: { ...originCommit.files, 'README.md': `${originCommit.files['README.md']}\nFetched teammate note.` },
+            files: {
+              ...originCommit.files,
+              'README.md': `${originCommit.files['README.md']}\nFetched teammate note.`,
+            },
           };
           setRepo((prev) => ({
             ...prev,
@@ -628,17 +688,27 @@ export default function GitConceptsSimulator() {
             fetchedRemoteUpdate: true,
             nextCommitNumber: prev.nextCommitNumber + 1,
           }));
-          return { output: 'From github.com:example/git-concepts-lab\n   origin/main updated', type: 'output' };
+          return {
+            output: 'From github.com:example/git-concepts-lab\n   origin/main updated',
+            type: 'output',
+          };
         }
 
         case 'rebase': {
           const target = rest[0];
           const targetHead = repo.remoteBranches[target] || repo.branches[target];
-          if (!targetHead) return { output: `fatal: invalid upstream '${target || ''}'`, type: 'error' };
-          if (repo.currentBranch === 'main') return { output: 'Current branch main is already the integration branch in this lab.', type: 'output' };
-          if (isAncestor(repo, targetHead, repo.head)) return { output: 'Current branch is up to date.', type: 'output' };
+          if (!targetHead)
+            return { output: `fatal: invalid upstream '${target || ''}'`, type: 'error' };
+          if (repo.currentBranch === 'main')
+            return {
+              output: 'Current branch main is already the integration branch in this lab.',
+              type: 'output',
+            };
+          if (isAncestor(repo, targetHead, repo.head))
+            return { output: 'Current branch is up to date.', type: 'output' };
           const targetCommit = findCommit(repo, targetHead);
-          if (!targetCommit) return { output: `fatal: invalid upstream '${target}'`, type: 'error' };
+          if (!targetCommit)
+            return { output: `fatal: invalid upstream '${target}'`, type: 'error' };
           // Replay every commit on this branch that the target does not have,
           // oldest first, the way git does. Replaying only the tip would drop
           // earlier unpushed commits (such as "Update Alice") without a word.
@@ -671,11 +741,17 @@ export default function GitConceptsSimulator() {
             branches: { ...prev.branches, [prev.currentBranch]: base.id },
             nextCommitNumber: number,
           }));
-          return { output: `Successfully rebased and updated refs/heads/${repo.currentBranch}.`, type: 'output' };
+          return {
+            output: `Successfully rebased and updated refs/heads/${repo.currentBranch}.`,
+            type: 'output',
+          };
         }
 
         default:
-          return { output: `git: '${command || ''}' is not a git command in this lab`, type: 'error' };
+          return {
+            output: `git: '${command || ''}' is not a git command in this lab`,
+            type: 'error',
+          };
       }
     },
     [repo]
@@ -717,11 +793,13 @@ export default function GitConceptsSimulator() {
       }
 
       if (command === 'pwd') return { output: '/home/devops/git-concepts-lab', type: 'output' };
-      if (command === 'ls') return { output: formatFiles(repo, args.includes('-l')), type: 'output' };
+      if (command === 'ls')
+        return { output: formatFiles(repo, args.includes('-l')), type: 'output' };
       if (command === 'cat') {
         const file = args[1];
         const files = currentFiles(repo);
-        if (!file || !files[file]) return { output: `cat: ${file || ''}: No such file`, type: 'error' };
+        if (!file || !files[file])
+          return { output: `cat: ${file || ''}: No such file`, type: 'error' };
         return { output: files[file], type: 'output' };
       }
       if (command === 'git') return runGit(args.slice(1));
@@ -739,7 +817,10 @@ export default function GitConceptsSimulator() {
 
       const commands = input.split(/\s*(?:&&|;)\s*/).filter(Boolean);
       const results = commands.map(executeOne);
-      const output = results.map((result) => result.output).filter(Boolean).join('\n');
+      const output = results
+        .map((result) => result.output)
+        .filter(Boolean)
+        .join('\n');
       const type = results.some((result) => result.type === 'error') ? 'error' : 'output';
       lastRunHadError.current = type === 'error';
       return { output, type };
@@ -751,28 +832,7 @@ export default function GitConceptsSimulator() {
     setRepo(createInitialState());
   }, []);
 
-  const {
-    currentLessonIndex,
-    currentCommandIndex,
-    currentLesson,
-    currentCommand,
-    completedCommands,
-    completedCount,
-    totalCommands,
-    progressPercentage: progress,
-    terminalHistory,
-    inputValue,
-    setInputValue,
-    showHint,
-    setShowHint,
-    inputRef,
-    terminalRef,
-    submitCommand,
-    handleSubmit,
-    handleKeyDown,
-    resetProgress,
-    jumpToLesson,
-  } = useTerminalSimulator({
+  const lab = useTerminalSimulator({
     lessons: LESSONS,
     execute: executeCommand,
     matches: (cmd, command) =>
@@ -784,264 +844,122 @@ export default function GitConceptsSimulator() {
     promoteOutputType: true,
     guardRepeatCompletion: true,
     onReset,
+    // SimComplete signals Opsville, on the render that completes the last command.
+    signalOnComplete: false,
+    autoFocus: false,
   });
-
-  const resetLab = useCallback(() => {
-    resetProgress();
-    inputRef.current?.focus();
-  }, [inputRef, resetProgress]);
-
-  const runCurrentCommand = useCallback(() => {
-    if (!currentCommand) return;
-    const command = Array.isArray(currentCommand.expectedCommand)
+  const { currentCommand, terminalHistory, inputValue, setInputValue, inputRef, submitCommand } =
+    lab;
+  const ui = useSimLab(lab);
+  const expected = currentCommand
+    ? Array.isArray(currentCommand.expectedCommand)
       ? currentCommand.expectedCommand[0]
-      : currentCommand.expectedCommand;
-    submitCommand(command);
-  }, [currentCommand, submitCommand]);
+      : currentCommand.expectedCommand
+    : undefined;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-md border bg-muted/20 p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <GitBranch className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">// git mental model lab</p>
-              <h2 className="text-2xl font-bold md:text-3xl">Git Concepts Simulator</h2>
-            </div>
-          </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Practice Git by watching files move through the working directory, staging area, local
-            repository, branch pointers, and remote repository.
-          </p>
-        </div>
+    <SimFrame>
+      <SimLabBar
+        title="Git Concepts Simulator"
+        icon={GitBranch}
+        lessons={LESSONS}
+        lab={lab}
+        ui={ui}
+        task={currentCommand?.instruction}
+        hint={currentCommand?.hint}
+        showMe={expected}
+      />
 
-        <Card>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {completedCount}/{totalCommands}
-              </span>
-            </div>
-            <Progress value={progress} />
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="Branch" value={repo.currentBranch} />
-              <Metric label="Staged" value={String(repo.staged.length)} />
-              <Metric label="Working" value={String(repo.working.length)} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_330px]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Code2 className="h-5 w-5" />
-                Lessons
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {LESSONS.map((lesson, lessonIndex) => {
-                const lessonCompleted = lesson.commands.every((_, commandIndex) =>
-                  completedCommands.has(`${lessonIndex}-${commandIndex}`)
-                );
-                const active = lessonIndex === currentLessonIndex;
-
-                return (
-                  <button
-                    key={lesson.id}
-                    type="button"
-                    onClick={() => {
-                      jumpToLesson(lessonIndex);
-                      inputRef.current?.focus();
-                    }}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
-                        {lessonCompleted ? <CheckCircle className="h-5 w-5 text-emerald-500" /> : lesson.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">{lesson.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{lesson.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Reset lab
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-2.5 p-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                      Lesson {currentLessonIndex + 1} / {LESSONS.length}
-                    </Badge>
-                    <Badge>
-                      Step {currentCommandIndex + 1} / {currentLesson.commands.length}
-                    </Badge>
-                  </div>
-                  <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
-                  {showHint && currentCommand && (
-                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
-                      {currentCommand.hint}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
-                    <Lightbulb className="mr-1 h-4 w-4" />
-                    Hint
-                  </Button>
-                  <Button size="sm" onClick={runCurrentCommand}>
-                    <Play className="mr-1 h-4 w-4" />
-                    Run
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                  </div>
-                  <span className="ml-2 text-sm text-muted-foreground">git-concepts ~/repo</span>
-                </div>
-                <Badge variant="secondary" className="font-mono text-[11px]">
-                  HEAD {'->'} {repo.currentBranch}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                className="h-[580px] cursor-text overflow-y-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                onClick={() => inputRef.current?.focus()}
-              >
-                {terminalHistory.length === 0 && (
-                  <div className="mb-4 text-emerald-400">
-                    <p>Welcome to Git Concepts Lab.</p>
-                    <p className="mt-2 text-muted-foreground">
-                      Type "help", run "git status", or follow the current task above.
-                    </p>
-                  </div>
-                )}
-                {terminalHistory.map((line, index) => (
-                  <div
-                    key={`${line.timestamp.getTime()}-${index}`}
-                    className={cn(
-                      'mb-2 whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-slate-100',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'success' &&
-                        'rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
-                    )}
-                  >
-                    {line.type === 'input' && <span className="text-emerald-400">$ </span>}
-                    {line.content}
-                  </div>
-                ))}
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="text-emerald-400">$</span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(event) => setInputValue(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    placeholder="git status"
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <ConceptPipeline repo={repo} />
-          <CommitGraph repo={repo} />
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CircleDot className="h-5 w-5" />
-                Pointer Model
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0 text-sm text-muted-foreground">
-              <p>
-                <strong className="text-foreground">HEAD</strong> follows{' '}
-                <strong className="text-foreground">{repo.currentBranch}</strong>.
-              </p>
-              <p>
-                <strong className="text-foreground">{repo.currentBranch}</strong> points at{' '}
-                <strong className="font-mono text-foreground">{repo.head}</strong>.
-              </p>
-              <p>
-                Branches and remote refs are labels. Commits are immutable snapshots with parent
-                links.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {completedCount === totalCommands && (
-        <Card className="mt-4 border-emerald-500/40 bg-emerald-500/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="font-semibold">Lab complete</p>
-                <p className="text-sm text-muted-foreground">
-                  You practiced Git as a model of snapshots, areas, refs, remotes, and history.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={resetLab}>
-              Start over
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You practiced Git as a model of snapshots, areas, refs, remotes, and history."
+          stats={labStats(lab, LESSONS, ui, { showMe: true })}
+          actions={
+            <Button type="button" variant="outline" onClick={ui.keepExploring}>
+              Keep exploring
             </Button>
-          </CardContent>
-        </Card>
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <SimTerminal
+              label="~/repo"
+              status={`HEAD -> ${repo.currentBranch}`}
+              lines={labLines(terminalHistory, [
+                { type: 'success', content: 'Welcome to the Git Concepts Lab.' },
+                {
+                  type: 'muted',
+                  content: 'Type "help", run "git status", or follow the task above.',
+                },
+              ])}
+              prompt="$"
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={submitCommand}
+              onKeyDown={lab.handleKeyDown}
+              inputRef={inputRef}
+              placeholder="git status"
+              autoFocus
+              heightClassName={LAB_TERMINAL_HEIGHT}
+            />
+          }
+          aside={
+            <>
+              <SimLabPanel
+                title="Repository"
+                icon={Send}
+                summary={`${repo.currentBranch}, ${repo.staged.length} staged`}
+              >
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-1.5 text-center">
+                    <Metric label="Branch" value={repo.currentBranch} />
+                    <Metric label="Staged" value={String(repo.staged.length)} />
+                    <Metric label="Working" value={String(repo.working.length)} />
+                  </div>
+                  <ConceptPipeline repo={repo} />
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <StateHeading>Pointer model</StateHeading>
+                    <p>
+                      <strong className="text-foreground">HEAD</strong> follows{' '}
+                      <strong className="text-foreground">{repo.currentBranch}</strong>.
+                    </p>
+                    <p>
+                      <strong className="text-foreground">{repo.currentBranch}</strong> points at{' '}
+                      <strong className="font-mono text-foreground">{repo.head}</strong>.
+                    </p>
+                    <p>
+                      Branches and remote refs are labels. Commits are immutable snapshots with
+                      parent links.
+                    </p>
+                  </div>
+                </div>
+              </SimLabPanel>
+              <SimLabPanel
+                title="Commit graph"
+                icon={GitFork}
+                summary={`${repo.commits.length} commits`}
+              >
+                <CommitGraph repo={repo} />
+              </SimLabPanel>
+              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+            </>
+          }
+        />
       )}
-    </div>
+    </SimFrame>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <p className="truncate text-sm font-bold tabular-nums">{value}</p>
+    <div className="rounded-md bg-muted/50 px-2 py-1.5">
+      <p className="truncate font-mono text-lg font-semibold tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
@@ -1052,20 +970,36 @@ function ConceptPipeline({ repo }: { repo: RepoState }) {
   const remoteRefs = Object.entries(repo.remoteBranches);
 
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Send className="h-5 w-5" />
-          Git Areas
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 p-4 pt-0">
-        <AreaCard title="Working Directory" tone="amber" items={repo.working.map((change) => `${change.kind}: ${change.file}`)} empty="Clean" />
-        <AreaCard title="Staging Area" tone="sky" items={repo.staged.map((change) => `${change.kind}: ${change.file}`)} empty="Nothing staged" />
-        <AreaCard title="Local Repository" tone="emerald" items={[`${repo.currentBranch} -> ${repo.head}`, localClean ? 'working tree clean' : 'snapshot pending']} empty="" />
-        <AreaCard title="Remote Repository" tone="violet" items={remoteRefs.map(([name, id]) => `${name} -> ${id}`)} empty="No remotes" />
-      </CardContent>
-    </Card>
+    <div className="space-y-3">
+      <StateHeading>Git areas</StateHeading>
+      <AreaCard
+        title="Working Directory"
+        tone="amber"
+        items={repo.working.map((change) => `${change.kind}: ${change.file}`)}
+        empty="Clean"
+      />
+      <AreaCard
+        title="Staging Area"
+        tone="sky"
+        items={repo.staged.map((change) => `${change.kind}: ${change.file}`)}
+        empty="Nothing staged"
+      />
+      <AreaCard
+        title="Local Repository"
+        tone="emerald"
+        items={[
+          `${repo.currentBranch} -> ${repo.head}`,
+          localClean ? 'working tree clean' : 'snapshot pending',
+        ]}
+        empty=""
+      />
+      <AreaCard
+        title="Remote Repository"
+        tone="violet"
+        items={remoteRefs.map(([name, id]) => `${name} -> ${id}`)}
+        empty="No remotes"
+      />
+    </div>
   );
 }
 
@@ -1080,15 +1014,15 @@ function AreaCard({
   items: string[];
   empty: string;
 }) {
-  const tones = {
-    amber: 'border-amber-500/30 bg-amber-500/10',
-    sky: 'border-sky-500/30 bg-sky-500/10',
-    emerald: 'border-emerald-500/30 bg-emerald-500/10',
-    violet: 'border-violet-500/30 bg-violet-500/10',
+  const categories = {
+    amber: SIM_CATEGORY.primary,
+    sky: SIM_CATEGORY.sky,
+    emerald: SIM_CATEGORY.emerald,
+    violet: SIM_CATEGORY.violet,
   };
 
   return (
-    <div className={cn('rounded-md border p-3', tones[tone])}>
+    <div className={cn('rounded-md border p-3', categories[tone].fill, categories[tone].border)}>
       <p className="mb-2 text-sm font-medium">{title}</p>
       <div className="space-y-1">
         {(items.length ? items : [empty]).map((item) => (
@@ -1105,50 +1039,54 @@ function CommitGraph({ repo }: { repo: RepoState }) {
   const visibleCommits = [...repo.commits].reverse().slice(0, 7);
 
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <GitFork className="h-5 w-5" />
-          Commit Graph
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 p-4 pt-0">
-        {visibleCommits.map((commit) => {
-          const labels = [
-            ...Object.entries(repo.branches)
-              .filter(([, id]) => id === commit.id)
-              .map(([name]) => name),
-            ...Object.entries(repo.remoteBranches)
-              .filter(([, id]) => id === commit.id)
-              .map(([name]) => name),
-          ];
+    <div className="space-y-3">
+      {visibleCommits.map((commit) => {
+        const labels = [
+          ...Object.entries(repo.branches)
+            .filter(([, id]) => id === commit.id)
+            .map(([name]) => name),
+          ...Object.entries(repo.remoteBranches)
+            .filter(([, id]) => id === commit.id)
+            .map(([name]) => name),
+        ];
 
-          return (
-            <div key={commit.id} className="flex gap-3">
-              <div className="flex flex-col items-center">
-                <div className="h-4 w-4 rounded-full border-2 border-primary bg-background" />
-                <div className="h-full min-h-8 w-px bg-border" />
-              </div>
-              <div className="min-w-0 flex-1 pb-2">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-mono text-xs font-semibold">{commit.id}</span>
-                  {labels.map((label) => (
-                    <Badge key={label} variant={label === repo.currentBranch ? 'default' : 'secondary'} className="text-[10px]">
-                      {label === repo.currentBranch ? `HEAD -> ${label}` : label}
-                    </Badge>
-                  ))}
-                </div>
-                <p className="mt-1 truncate text-sm text-muted-foreground">{commit.message}</p>
-                {commit.rebasedFrom && (
-                  <p className="mt-1 font-mono text-[11px] text-muted-foreground">
-                    replayed from {commit.rebasedFrom}
-                  </p>
-                )}
-              </div>
+        return (
+          <div key={commit.id} className="flex gap-3">
+            <div className="flex flex-col items-center">
+              <div className="h-4 w-4 rounded-full border-2 border-primary bg-background" />
+              <div className="h-full min-h-8 w-px bg-border" />
             </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+            <div className="min-w-0 flex-1 pb-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-mono text-xs font-semibold">{commit.id}</span>
+                {labels.map((label) => (
+                  <Badge
+                    key={label}
+                    variant={label === repo.currentBranch ? 'default' : 'secondary'}
+                    className="text-xs"
+                  >
+                    {label === repo.currentBranch ? `HEAD -> ${label}` : label}
+                  </Badge>
+                ))}
+              </div>
+              <p className="mt-1 truncate text-sm text-muted-foreground">{commit.message}</p>
+              {commit.rebasedFrom && (
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  replayed from {commit.rebasedFrom}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function StateHeading({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h4>
   );
 }

@@ -1,35 +1,39 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
+  ArrowRight,
+  CircleCheck,
+  CircleX,
   GitBranch,
   GitCommit,
   Cloud,
   Server,
   RefreshCw,
-  CheckCircle2,
-  XCircle,
   AlertTriangle,
   Play,
-  RotateCcw,
-  Home,
-  Info,
   GitPullRequest,
-  FileCode,
   Activity,
   Clock,
   Zap,
-  Shield,
   Eye,
-  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimHowTo,
+  SimResetButton,
+  SimStage,
+  SIM_CATEGORY,
+  SIM_TONE,
+} from '@/components/games/sim';
 
 // Types
 type Phase = 'intro' | 'interactive' | 'challenges' | 'complete';
@@ -72,7 +76,7 @@ const challenges: Challenge[] = [
     ],
     correctAnswer: 1,
     explanation:
-      'GitOps principle: Git is the single source of truth. The operator should automatically reconcile the cluster state to match what\'s declared in Git. This ensures consistency and prevents configuration drift.',
+      "GitOps principle: Git is the single source of truth. The operator should automatically reconcile the cluster state to match what's declared in Git. This ensures consistency and prevents configuration drift.",
   },
   {
     id: 'rollback',
@@ -80,7 +84,7 @@ const challenges: Challenge[] = [
     description: 'A new deployment is causing errors in production',
     scenario:
       'Version v2.0.0 was deployed but is showing errors. The health status is degraded. You need to rollback quickly.',
-    question: 'What\'s the GitOps way to rollback?',
+    question: "What's the GitOps way to rollback?",
     options: [
       'Run kubectl rollout undo directly',
       'Delete the failing pods manually',
@@ -96,7 +100,7 @@ const challenges: Challenge[] = [
     title: 'Sync Policy Decision',
     description: 'Choosing between manual and automatic sync',
     scenario:
-      'You\'re setting up GitOps for a critical production environment. Should you enable automatic sync or require manual approval?',
+      "You're setting up GitOps for a critical production environment. Should you enable automatic sync or require manual approval?",
     question: 'Which sync policy is best for critical production workloads?',
     options: [
       'Automatic sync - always stay in sync',
@@ -163,14 +167,101 @@ const sampleCommits: GitCommit[] = [
 
 // Additional commit messages for dynamic generation
 const commitTemplates = [
-  { type: 'feat', messages: ['Add new microservice', 'Implement webhook handler', 'Add GraphQL API', 'Add monitoring dashboard', 'Implement rate limiting'] },
-  { type: 'fix', messages: ['Fix database connection pool', 'Resolve CORS issues', 'Fix memory leak', 'Patch security vulnerability', 'Fix broken health check'] },
-  { type: 'chore', messages: ['Update dependencies', 'Bump Go version to 1.21', 'Update Dockerfile', 'Refactor deployment configs', 'Update CI/CD pipeline'] },
-  { type: 'perf', messages: ['Optimize database queries', 'Add connection pooling', 'Enable compression', 'Add CDN caching', 'Optimize container images'] },
-  { type: 'docs', messages: ['Update API documentation', 'Add architecture diagrams', 'Update README', 'Document deployment process', 'Add troubleshooting guide'] },
+  {
+    type: 'feat',
+    messages: [
+      'Add new microservice',
+      'Implement webhook handler',
+      'Add GraphQL API',
+      'Add monitoring dashboard',
+      'Implement rate limiting',
+    ],
+  },
+  {
+    type: 'fix',
+    messages: [
+      'Fix database connection pool',
+      'Resolve CORS issues',
+      'Fix memory leak',
+      'Patch security vulnerability',
+      'Fix broken health check',
+    ],
+  },
+  {
+    type: 'chore',
+    messages: [
+      'Update dependencies',
+      'Bump Go version to 1.21',
+      'Update Dockerfile',
+      'Refactor deployment configs',
+      'Update CI/CD pipeline',
+    ],
+  },
+  {
+    type: 'perf',
+    messages: [
+      'Optimize database queries',
+      'Add connection pooling',
+      'Enable compression',
+      'Add CDN caching',
+      'Optimize container images',
+    ],
+  },
+  {
+    type: 'docs',
+    messages: [
+      'Update API documentation',
+      'Add architecture diagrams',
+      'Update README',
+      'Document deployment process',
+      'Add troubleshooting guide',
+    ],
+  },
 ];
 
 const authors = ['alice', 'bob', 'charlie', 'david', 'eve', 'frank', 'grace', 'henry'];
+
+const PRINCIPLES = [
+  {
+    icon: GitCommit,
+    title: 'Git as Source of Truth',
+    description: 'All desired state is stored in Git repositories',
+  },
+  {
+    icon: RefreshCw,
+    title: 'Automated Sync',
+    description: 'Operators continuously reconcile actual state with desired state',
+  },
+  {
+    icon: Eye,
+    title: 'Drift Detection',
+    description: 'Automatic detection and correction of configuration drift',
+  },
+];
+
+function StatusTile({ title, status }: { title: string; status: SyncStatus | HealthStatus }) {
+  const icon =
+    status === 'synced' || status === 'healthy' ? (
+      <CircleCheck className="h-3 w-3 text-correct-foreground" />
+    ) : status === 'syncing' || status === 'progressing' ? (
+      <RefreshCw className="h-3 w-3 text-info-foreground motion-safe:animate-spin" />
+    ) : status === 'out-of-sync' || status === 'degraded' ? (
+      <AlertTriangle className="h-3 w-3 text-partial-foreground" />
+    ) : status === 'failed' ? (
+      <CircleX className="h-3 w-3 text-wrong-foreground" />
+    ) : (
+      <CircleX className="h-3 w-3 text-muted-foreground" />
+    );
+  return (
+    <div className="rounded-md border bg-card p-2">
+      <div className="mb-1 flex items-center gap-1">
+        {icon}
+        <span className="text-xs font-semibold text-muted-foreground">{title}</span>
+      </div>
+      <div className="text-xs font-medium capitalize">{status}</div>
+    </div>
+  );
+}
 
 export default function GitOpsWorkflow() {
   const [phase, setPhase] = useState<Phase>('intro');
@@ -181,13 +272,17 @@ export default function GitOpsWorkflow() {
   const [pendingSync, setPendingSync] = useState(false);
   const [nextCommitId, setNextCommitId] = useState(7);
   const [hasDrift, setHasDrift] = useState(false);
-  const [animationPhase, setAnimationPhase] = useState<'idle' | 'git-to-argocd' | 'argocd-to-k8s' | 'complete'>('idle');
+  const [animationPhase, setAnimationPhase] = useState<
+    'idle' | 'git-to-argocd' | 'argocd-to-k8s' | 'complete'
+  >('idle');
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [insights, setInsights] = useState<string[]>([]);
-  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [tab, setTab] = useState('git');
+  const [announce, setAnnounce] = useState('');
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const addInsight = useCallback((message: string) => {
     setInsights((prev) => [...prev.slice(-4), message]);
@@ -199,7 +294,7 @@ export default function GitOpsWorkflow() {
       setSyncStatus('syncing');
       setHealthStatus('progressing');
       setPendingSync(false);
-      
+
       setTimeout(() => {
         setSyncStatus('synced');
         setHealthStatus('healthy');
@@ -218,7 +313,7 @@ export default function GitOpsWorkflow() {
     const message = template.messages[Math.floor(Math.random() * template.messages.length)];
     const author = authors[Math.floor(Math.random() * authors.length)];
     const sha = Math.random().toString(36).substring(2, 9);
-    
+
     const newCommit: GitCommit = {
       id: nextCommitId.toString(),
       sha,
@@ -227,7 +322,7 @@ export default function GitOpsWorkflow() {
       timestamp: 'Just now',
       deployed: false,
     };
-    
+
     setCommits((prev) => [newCommit, ...prev]);
     setNextCommitId((prev) => prev + 1);
     addInsight(`📝 New commit by ${author}: ${newCommit.message}`);
@@ -282,7 +377,7 @@ export default function GitOpsWorkflow() {
 
   const handleManualSync = useCallback(() => {
     if (!pendingSync) return;
-    
+
     addInsight('🔄 Manual sync triggered...');
     setSyncStatus('syncing');
     setHealthStatus('progressing');
@@ -367,156 +462,114 @@ export default function GitOpsWorkflow() {
     }
   }, [currentChallenge]);
 
-  // Intro Phase
-  if (phase === 'intro') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-       <div className="max-w-4xl mx-auto">
-         <div className="flex items-center justify-between mb-6">
-           <Badge variant="secondary" className="text-sm">
-             <GitBranch className="w-3 h-3 mr-1" />
-              GitOps Learning
-            </Badge>
-          </div>
+  const challenge = challenges[currentChallenge];
+  const isCorrect = selectedAnswer === challenge.correctAnswer;
+  const learned = [
+    'Git is the single source of truth for all infrastructure and application state',
+    'GitOps operators continuously reconcile desired state with actual state',
+    'Automatic sync with self-heal prevents configuration drift',
+    'Rollbacks are done by reverting Git commits, maintaining audit trail',
+  ];
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mb-4">
-              <GitBranch className="w-10 h-10 text-white" />
-            </div>
-            <h2 className="text-4xl font-bold mb-4">GitOps Workflow Simulator</h2>
-            <p className="text-xl text-muted-foreground mb-8">
-              Learn GitOps principles through interactive scenarios
-            </p>
-          </motion.div>
-
-          <div className="grid gap-6 mb-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Info className="w-5 h-5 mr-2 text-blue-500" />
-                  What is GitOps?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">
-                  GitOps is a modern approach to continuous deployment where Git serves as the single source of truth
-                  for declarative infrastructure and applications.
-                </p>
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg bg-blue-100/60 dark:bg-blue-950/20">
-                    <GitCommit className="w-6 h-6 text-blue-500 mb-2" />
-                    <h3 className="font-semibold mb-1">Git as Source of Truth</h3>
-                    <p className="text-sm text-muted-foreground">
-                      All desired state is stored in Git repositories
-                    </p>
+  return (
+    <MotionConfig reducedMotion="user">
+      <SimFrame>
+        <SimBar
+          title="GitOps Workflow Simulator"
+          icon={GitBranch}
+          lead={
+            <ol aria-label="Progress" className="flex gap-1.5">
+              {['Board', ...challenges.map((item) => item.title)].map((title, index) => {
+                const done =
+                  phase === 'complete' ||
+                  (index === 0 && phase === 'challenges') ||
+                  (index > 0 &&
+                    (index - 1 < currentChallenge ||
+                      (index - 1 === currentChallenge && showExplanation)));
+                const current =
+                  (index === 0 && phase === 'interactive') ||
+                  (index > 0 && phase === 'challenges' && index - 1 === currentChallenge);
+                return (
+                  <li
+                    key={title}
+                    className={cn(
+                      'h-1.5 w-6 rounded-full',
+                      done ? 'bg-correct' : current ? 'bg-primary' : 'bg-muted'
+                    )}
+                  >
+                    <span className="sr-only">
+                      {title}: {done ? 'done' : current ? 'current' : 'not started'}
+                    </span>
+                  </li>
+                );
+              })}
+            </ol>
+          }
+          tools={phase !== 'intro' ? <SimResetButton onReset={resetGame} /> : undefined}
+          progress={
+            phase === 'challenges'
+              ? { current: currentChallenge + 1, total: challenges.length }
+              : undefined
+          }
+          heading={
+            phase === 'intro'
+              ? 'How GitOps works'
+              : phase === 'interactive'
+                ? 'The GitOps board'
+                : phase === 'challenges'
+                  ? challenge.title
+                  : undefined
+          }
+          meta={
+            phase === 'challenges' ? (
+              <Badge variant="secondary" className="tabular-nums">
+                Score {score}/{challenges.length}
+              </Badge>
+            ) : undefined
+          }
+          actions={
+            phase === 'interactive' ? (
+              <Button size="sm" className="h-10 lg:h-8" onClick={() => setPhase('challenges')}>
+                Continue to Challenges <ArrowRight />
+              </Button>
+            ) : undefined
+          }
+          goal={
+            phase === 'intro'
+              ? 'See how Git, the GitOps operator and the cluster stay in sync, then try it on the board.'
+              : phase === 'interactive'
+                ? 'Deploy a commit, turn auto-sync off and sync by hand, then simulate drift. Continue to the challenges when you are ready.'
+                : phase === 'challenges'
+                  ? challenge.question
+                  : undefined
+          }
+        >
+          {phase === 'interactive' && (
+            <div className="space-y-1.5 border-t pt-1.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div
+                    className={cn(
+                      'hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:flex',
+                      SIM_CATEGORY.sky.fill,
+                      SIM_CATEGORY.sky.border
+                    )}
+                  >
+                    <GitBranch className="h-4 w-4 text-sky-700 dark:text-sky-300" />
                   </div>
-                  <div className="p-4 rounded-lg bg-purple-100/60 dark:bg-purple-950/20">
-                    <RefreshCw className="w-6 h-6 text-purple-500 mb-2" />
-                    <h3 className="font-semibold mb-1">Automated Sync</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Operators continuously reconcile actual state with desired state
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      Git<span className="hidden sm:inline"> Repository</span>
                     </p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-green-100/60 dark:bg-green-950/20">
-                    <Eye className="w-6 h-6 text-green-500 mb-2" />
-                    <h3 className="font-semibold mb-1">Drift Detection</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Automatic detection and correction of configuration drift
-                    </p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">Source of Truth</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>What You'll Learn</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  <li className="flex items-start">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>How GitOps operators synchronize Git state with Kubernetes clusters</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>Understanding sync status, health status, and configuration drift</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>When to use automatic sync vs manual approval</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle2 className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span>How to handle deployments, rollbacks, and drift correction</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="flex justify-center">
-            <Button size="lg" onClick={() => setPhase('interactive')} className="text-lg px-8">
-              Start Learning
-              <Play className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Interactive Workflow Phase
-  if (phase === 'interactive') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-       <div className="max-w-6xl mx-auto">
-         <div className="flex items-center justify-between mb-6">
-           <div className="flex gap-2">
-             <Button variant="outline" size="sm" onClick={resetGame}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={() => setPhase('challenges')}>
-                Continue to Challenges
-              </Button>
-            </div>
-          </div>
-
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-3xl font-bold mb-6 text-center"
-          >
-          GitOps Workflow Simulator
-        </motion.h1>
-
-          {/* Workflow Flow Visualization */}
-          <div className="mb-6">
-            <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
-              <div className="flex items-center justify-between gap-4">
-                {/* Git Step */}
-                <div className="flex-1 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-950 border-2 border-blue-500 flex items-center justify-center">
-                    <GitBranch className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">Git Repository</p>
-                    <p className="text-xs text-muted-foreground">Source of Truth</p>
-                  </div>
-                </div>
-
-                {/* Arrow with Animation */}
-                <div className="hidden md:flex items-center gap-2 flex-1 max-w-[200px]">
-                  <div className="flex-1 h-0.5 bg-slate-300 dark:bg-slate-700 relative">
+                <div className="hidden flex-1 items-center gap-2 md:flex">
+                  <div className="relative h-0.5 flex-1 bg-border">
                     <AnimatePresence>
                       {animationPhase === 'git-to-argocd' && (
                         <motion.div
-                          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-blue-500"
+                          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-sky-500"
                           initial={{ left: 0 }}
                           animate={{ left: '100%' }}
                           exit={{ opacity: 0 }}
@@ -525,41 +578,37 @@ export default function GitOpsWorkflow() {
                       )}
                     </AnimatePresence>
                   </div>
-                  <div className="text-slate-400">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 0L16 8L8 16V10H0V6H8V0Z" />
-                    </svg>
-                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-
-                {/* ArgoCD Step */}
-                <div className="flex-1 flex items-center gap-3">
-                  <div className={cn(
-                    "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors",
-                    animationPhase === 'argocd-to-k8s'
-                      ? "bg-green-100 dark:bg-green-950 border-green-500"
-                      : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                  )}>
-                    <RefreshCw className={cn(
-                      "w-6 h-6",
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div
+                    className={cn(
+                      'hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:flex',
                       animationPhase === 'argocd-to-k8s'
-                        ? "text-green-600 dark:text-green-400 animate-spin"
-                        : "text-slate-600 dark:text-slate-400"
-                    )} />
+                        ? 'border-primary bg-primary/15'
+                        : 'border-border bg-muted'
+                    )}
+                  >
+                    <RefreshCw
+                      className={cn(
+                        'h-4 w-4',
+                        animationPhase === 'argocd-to-k8s'
+                          ? 'text-primary motion-safe:animate-spin'
+                          : 'text-muted-foreground'
+                      )}
+                    />
                   </div>
-                  <div className="flex-1">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold">ArgoCD</p>
-                    <p className="text-xs text-muted-foreground">GitOps Operator</p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">GitOps Operator</p>
                   </div>
                 </div>
-
-                {/* Arrow with Animation */}
-                <div className="hidden md:flex items-center gap-2 flex-1 max-w-[200px]">
-                  <div className="flex-1 h-0.5 bg-slate-300 dark:bg-slate-700 relative">
+                <div className="hidden flex-1 items-center gap-2 md:flex">
+                  <div className="relative h-0.5 flex-1 bg-border">
                     <AnimatePresence>
                       {animationPhase === 'argocd-to-k8s' && (
                         <motion.div
-                          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-green-500"
+                          className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-correct"
                           initial={{ left: 0 }}
                           animate={{ left: '100%' }}
                           exit={{ opacity: 0 }}
@@ -568,37 +617,33 @@ export default function GitOpsWorkflow() {
                       )}
                     </AnimatePresence>
                   </div>
-                  <div className="text-slate-400">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M8 0L16 8L8 16V10H0V6H8V0Z" />
-                    </svg>
-                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-
-                {/* Kubernetes Step */}
-                <div className="flex-1 flex items-center gap-3">
-                  <div className={cn(
-                    "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors",
-                    healthStatus === 'healthy'
-                      ? "bg-green-100 dark:bg-green-950 border-green-500"
-                      : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700"
-                  )}>
-                    <Cloud className={cn(
-                      "w-6 h-6",
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div
+                    className={cn(
+                      'hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:flex',
                       healthStatus === 'healthy'
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-slate-600 dark:text-slate-400"
-                    )} />
+                        ? SIM_TONE.success.surface
+                        : 'border-border bg-muted'
+                    )}
+                  >
+                    <Cloud
+                      className={cn(
+                        'h-4 w-4',
+                        healthStatus === 'healthy'
+                          ? 'text-correct-foreground'
+                          : 'text-muted-foreground'
+                      )}
+                    />
                   </div>
-                  <div className="flex-1">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold">Kubernetes</p>
-                    <p className="text-xs text-muted-foreground">Live Cluster</p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">Live Cluster</p>
                   </div>
                 </div>
               </div>
-
-              {/* Status Badge */}
-              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <div>
                 <AnimatePresence mode="wait">
                   {animationPhase === 'git-to-argocd' && (
                     <motion.div
@@ -606,10 +651,10 @@ export default function GitOpsWorkflow() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="flex items-center gap-2 text-sm"
+                      className="flex items-center gap-2 text-sm text-info-foreground"
                     >
-                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <span className="text-blue-600 dark:text-blue-400 font-medium">Commit pushed to Git repository...</span>
+                      <span className="h-2 w-2 rounded-full bg-info motion-safe:animate-pulse" />
+                      Commit pushed to Git repository...
                     </motion.div>
                   )}
                   {animationPhase === 'argocd-to-k8s' && (
@@ -618,10 +663,10 @@ export default function GitOpsWorkflow() {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="flex items-center gap-2 text-sm"
+                      className="flex items-center gap-2 text-sm text-correct-foreground"
                     >
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                      <span className="text-green-600 dark:text-green-400 font-medium">ArgoCD syncing to Kubernetes cluster...</span>
+                      <span className="h-2 w-2 rounded-full bg-correct motion-safe:animate-pulse" />
+                      ArgoCD syncing to Kubernetes cluster...
                     </motion.div>
                   )}
                   {animationPhase === 'idle' && syncStatus === 'synced' && (
@@ -629,10 +674,10 @@ export default function GitOpsWorkflow() {
                       key="idle"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                      className="flex items-center gap-2 text-sm text-correct-foreground"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      <span>System in sync - waiting for changes...</span>
+                      <CircleCheck className="h-4 w-4" />
+                      System in sync - waiting for changes...
                     </motion.div>
                   )}
                   {animationPhase === 'idle' && pendingSync && (
@@ -640,481 +685,415 @@ export default function GitOpsWorkflow() {
                       key="pending"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center gap-2 text-sm"
+                      exit={{ opacity: 0, y: 10 }}
+                      className="flex items-center gap-2 text-sm text-partial-foreground"
                     >
-                      <Clock className="w-4 h-4 text-orange-500" />
-                      <span className="text-orange-600 dark:text-orange-400 font-medium">Manual sync required (auto-sync disabled)</span>
+                      <Clock className="h-4 w-4" />
+                      Manual sync required (auto-sync disabled)
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-            </div>
-         </div>
-
-          {/* Three Column Layout */}
-          <div className="grid md:grid-cols-3 gap-4">
-           {/* Column 1: Git Repository */}
-           <Card className="flex flex-col">
-             <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                 <GitBranch className="w-5 h-5 mr-2" />
-                  Git Repository
-               </CardTitle>
-                <CardDescription className="text-xs">
-                 Push new commits and deploy to Kubernetes cluster
-               </CardDescription>
-             </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-               <div className="mb-4">
-                <Button onClick={generateRandomCommit} variant="outline" className="w-full">
-                  <GitCommit className="w-4 h-4 mr-2" />
-                  Create New Commit
-                </Button>
-              </div>
-
-               <div className="space-y-2 flex-1 overflow-y-auto pr-2">
-                {commits.map((commit) => (
-                   <motion.div
-                     key={commit.id}
-                     initial={{ opacity: 0, x: -20 }}
-                     animate={{ opacity: 1, x: 0 }}
-                     className={cn(
-                        'p-2 rounded-lg border text-xs',
-                       commit.deployed
-                          ? 'bg-green-100 border-green-300 dark:bg-green-950/20 dark:border-green-900'
-                          : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700'
-                      )}
-                    >
-                     <div className="flex items-start justify-between">
-                       <div className="flex-1">
-                          <div className="flex items-center gap-1 mb-1">
-                            <code className="text-[10px] font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">
-                             {commit.sha}
-                           </code>
-                            <span className="text-[10px] text-muted-foreground">{commit.timestamp}</span>
-                         </div>
-                          <p className="text-xs font-medium">{commit.message}</p>
-                       </div>
-                       {commit.deployed ? (
-                          <Badge variant="secondary" className="ml-2 text-[10px] h-5">
-                            <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-                            Done
-                         </Badge>
-                       ) : (
-                          <Button size="sm" onClick={() => handleDeploy(commit.id)} className="ml-2 h-6 text-[10px] px-2">
-                            <GitPullRequest className="w-3 h-3" />
-                           Deploy
-                         </Button>
-                       )}
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-            </CardContent>
-          </Card>
-
-          {/* Column 2: Activity Feed & ArgoCD Status */}
-          <Card className="flex flex-col">
-            <CardHeader>
-              <CardTitle className="flex items-center text-base">
-                <RefreshCw className="w-5 h-5 mr-2" />
-                ArgoCD Operator
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Monitors Git and syncs to Kubernetes
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col space-y-3">
-              {/* ArgoCD Status */}
-              <div className="p-3 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-semibold">Sync Status</h3>
-                  <RefreshCw
-                    className={cn(
-                      'w-4 h-4 text-blue-500',
-                      syncStatus === 'syncing' && 'animate-spin'
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-muted-foreground">Mode:</span>
-                    <Badge variant="outline" className="text-[10px] h-4 px-1">
-                      Auto-sync: {autoSync ? 'On' : 'Off'}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-[10px]">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="font-medium capitalize">{syncStatus}</span>
-                  </div>
-              </div>
-            </div>
-
-            {/* Compact Status Indicators */}
-            <div className="grid grid-cols-2 gap-2">
-              {/* Sync Status Indicator */}
-              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                <div className="flex items-center gap-1 mb-1">
-                  {syncStatus === 'synced' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                  {syncStatus === 'syncing' && <RefreshCw className="w-3 h-3 text-blue-500 animate-spin" />}
-                  {syncStatus === 'out-of-sync' && <AlertTriangle className="w-3 h-3 text-orange-500" />}
-                  {syncStatus === 'failed' && <XCircle className="w-3 h-3 text-red-500" />}
-                  <span className="text-[10px] font-semibold text-muted-foreground">Sync</span>
-                </div>
-                <div className="text-[10px] font-medium capitalize">{syncStatus}</div>
-              </div>
-
-              {/* Health Status Indicator */}
-              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                <div className="flex items-center gap-1 mb-1">
-                  {healthStatus === 'healthy' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
-                  {healthStatus === 'progressing' && <Clock className="w-3 h-3 text-blue-500" />}
-                  {healthStatus === 'degraded' && <AlertTriangle className="w-3 h-3 text-orange-500" />}
-                  {healthStatus === 'unknown' && <XCircle className="w-3 h-3 text-gray-500" />}
-                  <span className="text-[10px] font-semibold text-muted-foreground">Health</span>
-                </div>
-                <div className="text-[10px] font-medium capitalize">{healthStatus}</div>
-              </div>
-
-              {/* Auto Sync Toggle */}
-              <div className={cn(
-                "p-2 rounded border transition-all duration-300",
-                autoSync
-                  ? "border-green-400 bg-green-50 dark:bg-green-950/20 dark:border-green-700"
-                  : "border-orange-400 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-700"
-              )}>
-                <div className="flex items-center gap-1 mb-1">
-                  <Zap className={cn(
-                    'w-3 h-3 transition-colors',
-                    autoSync ? 'text-green-600 dark:text-green-500' : 'text-orange-600 dark:text-orange-500'
-                  )} />
-                  <span className="text-[10px] font-semibold text-muted-foreground">Auto-Sync</span>
-                </div>
-                <Button
-                  onClick={() => {
-                    setAutoSync(!autoSync);
-                    if (!autoSync) {
-                      setPendingSync(false);
-                    }
-                  }}
-                  size="sm"
-                  className={cn(
-                    "h-5 px-2 text-[10px] w-full font-semibold transition-all duration-300",
-                    autoSync
-                      ? "bg-green-600 hover:bg-green-700 text-white border-green-700 dark:bg-green-600 dark:hover:bg-green-700"
-                      : "bg-orange-500 hover:bg-orange-600 text-white border-orange-600 dark:bg-orange-500 dark:hover:bg-orange-600"
-                  )}
-                >
-                  {autoSync ? '✅ Enabled' : '⚠️ Disabled'}
-                </Button>
-              </div>
-
-              {/* Deployed Count */}
-              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                <div className="flex items-center gap-1 mb-1">
-                  <GitCommit className="w-3 h-3 text-blue-500" />
-                  <span className="text-[10px] font-semibold text-muted-foreground">Deployed</span>
-                </div>
-                <div className="text-[10px] font-medium">
-                  {commits.filter((c) => c.deployed).length} / {commits.length}
-                </div>
-              </div>
-            </div>
-
-            {/* Activity Feed */}
-        {insights.length > 0 && (
-          <div className="flex-1 flex flex-col">
-              <h3 className="text-xs font-semibold mb-2 flex items-center">
-                <Activity className="w-3.5 h-3.5 mr-1.5" />
-                Activity Log
-              </h3>
-              <div className="flex-1 overflow-y-auto pr-2 space-y-1.5">
-                 <AnimatePresence mode="popLayout">
-                   {insights.map((insight, index) => (
-                     <motion.div
-                       key={`${insight}-${index}`}
-                       initial={{ opacity: 0, y: -10 }}
-                       animate={{ opacity: 1, y: 0 }}
-                       exit={{ opacity: 0 }}
-                        className="p-2 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-[10px] leading-tight"
-                     >
-                       {insight}
-                     </motion.div>
-                   ))}
-                 </AnimatePresence>
-               </div>
             </div>
           )}
-            </CardContent>
-          </Card>
-
-           {/* Column 3: Kubernetes Cluster */}
-           <Card className="flex flex-col">
-             <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                 <Cloud className="w-5 h-5 mr-2" />
-                  Kubernetes Cluster
-               </CardTitle>
-                <CardDescription className="text-xs">Live production state</CardDescription>
-             </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-               <div className="space-y-4">
-                  <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xs font-semibold flex items-center">
-                       <Server className="w-4 h-4 mr-2" />
-                        Deployment
-                     </h3>
-                     {healthStatus === 'healthy' && (
-                        <Badge variant="secondary" className="bg-green-600 text-white dark:bg-green-950 dark:text-green-400 text-[10px] h-4 px-1.5">
-                          <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
-                         Healthy
-                       </Badge>
-                     )}
-                     {healthStatus === 'degraded' && (
-                        <Badge variant="secondary" className="bg-yellow-600 text-white dark:bg-yellow-950 dark:text-yellow-400 text-[10px] h-4 px-1.5">
-                          <AlertTriangle className="w-2.5 h-2.5 mr-1" />
-                         Degraded
-                       </Badge>
-                     )}
-                     {healthStatus === 'progressing' && (
-                        <Badge variant="secondary" className="bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-400 text-[10px] h-4 px-1.5">
-                          <Activity className="w-2.5 h-2.5 mr-1" />
-                         Progressing
-                       </Badge>
-                     )}
-                   </div>
-                    <div className="space-y-1.5 text-[10px]">
-                     <div className="flex justify-between">
-                       <span className="text-muted-foreground">Replicas:</span>
-                       <span className="font-mono">3/3</span>
-                     </div>
-                     <div className="flex justify-between">
-                       <span className="text-muted-foreground">Version:</span>
-                        <code className="text-[10px] bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                         {commits.find((c) => c.deployed)?.sha || 'none'}
-                       </code>
-                     </div>
-                     <div className="flex justify-between">
-                       <span className="text-muted-foreground">Last Sync:</span>
-                        <span className="font-mono text-[10px]">Just now</span>
-                     </div>
-                   </div>
-                 </div>
-
-                  <Button variant="outline" onClick={handleDriftScenario} className="w-full text-xs h-8">
-                   <Zap className="w-4 h-4 mr-2" />
-                   Simulate Configuration Drift
-                 </Button>
-
-                 {pendingSync && (
-                    <Alert className="border-orange-500 p-2.5">
-                      <AlertTriangle className="w-3.5 h-3.5" />
-                     <AlertDescription>
-                        <strong className="text-xs">Manual Sync Required</strong>
-                        <p className="text-[10px] mt-1">
-                         Auto-sync is disabled. Click below to manually sync the cluster.
-                       </p>
-                        <Button onClick={handleManualSync} className="mt-2 w-full text-xs h-7" size="sm">
-                         <RefreshCw className="w-3 h-3 mr-2" />
-                         Sync Now
-                       </Button>
-                      </AlertDescription>
-                    </Alert>
-                  )}
+        </SimBar>
+        {phase === 'intro' && (
+          <section className="space-y-3 rounded-lg border bg-card p-4">
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              GitOps is a modern approach to continuous deployment where Git serves as the single
+              source of truth for declarative infrastructure and applications.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {PRINCIPLES.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="rounded-md bg-muted/50 p-3">
+                  <Icon className="mb-2 h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-semibold">{title}</h3>
+                  <p className="text-sm text-muted-foreground">{description}</p>
                 </div>
-              </CardContent>
-           </Card>
-       </div>
-     </div>
-   </div>
-   );
-  }
-
-  // Challenges Phase
-  if (phase === 'challenges') {
-    const challenge = challenges[currentChallenge];
-    const isCorrect = selectedAnswer === challenge.correctAnswer;
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-        <div className="max-w-4xl mx-auto">
-         <div className="flex items-center justify-between mb-6">
-           <div className="flex gap-2">
-             <Badge variant="secondary">
-               Challenge {currentChallenge + 1}/{challenges.length}
-              </Badge>
-              <Badge variant="secondary">
-                Score: {score}/{challenges.length}
-              </Badge>
+              ))}
             </div>
-          </div>
-
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <Card className="mb-6">
-              <CardHeader>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-950">
-                    <Shield className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div>
-                    <CardTitle>{challenge.title}</CardTitle>
-                    <CardDescription>{challenge.description}</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Alert className="mb-6">
-                  <Info className="w-4 h-4" />
-                  <AlertDescription>
-                    <strong>Scenario:</strong> {challenge.scenario}
-                  </AlertDescription>
-                </Alert>
-
-                <h3 className="font-semibold mb-4">{challenge.question}</h3>
-
-                <div className="space-y-3 mb-6">
-                  {challenge.options.map((option, index) => (
-                    <motion.button
-                      key={index}
-                      whileHover={{ scale: selectedAnswer === null ? 1.02 : 1 }}
-                      whileTap={{ scale: selectedAnswer === null ? 0.98 : 1 }}
-                      onClick={() => selectedAnswer === null && handleAnswerSelect(index)}
+            <SimHowTo summary="What you'll learn">
+              <ul className="space-y-2">
+                {[
+                  'How GitOps operators synchronize Git state with Kubernetes clusters',
+                  'Understanding sync status, health status, and configuration drift',
+                  'When to use automatic sync vs manual approval',
+                  'How to handle deployments, rollbacks, and drift correction',
+                ].map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </SimHowTo>
+            <Button className="h-10" onClick={() => setPhase('interactive')}>
+              Start Learning <Play />
+            </Button>
+          </section>
+        )}
+        {phase === 'interactive' && (
+          <>
+            <SimStage
+              columns="lg:grid-cols-3"
+              tabsLabel="Board panels"
+              tab={tab}
+              onTabChange={setTab}
+              minHeight="min-h-[20rem]"
+              panels={[
+                {
+                  id: 'git',
+                  label: 'Git',
+                  content: (
+                    <section className="space-y-2 rounded-lg border bg-card p-3">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">
+                          <GitBranch className="h-4 w-4" />
+                          Git Repository
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Push new commits and deploy to Kubernetes cluster
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="h-10 w-full lg:h-8"
+                        onClick={generateRandomCommit}
+                      >
+                        <GitCommit />
+                        Create New Commit
+                      </Button>
+                      <div className="space-y-2">
+                        {commits.map((commit) => (
+                          <motion.div
+                            key={commit.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className={cn(
+                              'rounded-md border p-2 text-sm',
+                              commit.deployed && SIM_TONE.success.surface
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="mb-1 flex items-center gap-1">
+                                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+                                    {commit.sha}
+                                  </code>
+                                  <span className="text-xs text-muted-foreground">
+                                    {commit.timestamp}
+                                  </span>
+                                </div>
+                                <p className="text-sm font-medium">{commit.message}</p>
+                              </div>
+                              {commit.deployed ? (
+                                <Badge variant="secondary">
+                                  <CircleCheck />
+                                  Done
+                                </Badge>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-10 lg:h-8"
+                                  onClick={() => handleDeploy(commit.id)}
+                                >
+                                  <GitPullRequest />
+                                  Deploy
+                                </Button>
+                              )}
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </section>
+                  ),
+                },
+                {
+                  id: 'argocd',
+                  label: 'ArgoCD',
+                  content: (
+                    <section className="space-y-2 rounded-lg border bg-card p-3">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">
+                          <RefreshCw className="h-4 w-4" />
+                          ArgoCD Operator
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                          Monitors Git and syncs to Kubernetes
+                        </p>
+                      </div>
+                      <div className="rounded-md bg-muted/50 p-2.5">
+                        <div className="mb-2 flex items-center justify-between">
+                          <h4 className="text-xs font-semibold">Sync Status</h4>
+                          <RefreshCw
+                            className={cn(
+                              'h-4 w-4 text-info-foreground',
+                              syncStatus === 'syncing' && 'motion-safe:animate-spin'
+                            )}
+                          />
+                        </div>
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Mode:</span>
+                            <Badge variant="outline">Auto-sync: {autoSync ? 'On' : 'Off'}</Badge>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status:</span>
+                            <span className="font-medium capitalize">{syncStatus}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <StatusTile title="Sync" status={syncStatus} />
+                        <StatusTile title="Health" status={healthStatus} />
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <div className="mb-1 flex items-center gap-1">
+                            <Zap className="h-3 w-3 text-primary" />
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              Auto-Sync
+                            </span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={autoSync ? 'default' : 'outline'}
+                            aria-pressed={autoSync}
+                            className="h-10 w-full lg:h-8"
+                            onClick={() => {
+                              setAutoSync(!autoSync);
+                              if (!autoSync) setPendingSync(false);
+                            }}
+                          >
+                            <Zap />
+                            {autoSync ? 'Auto-sync on' : 'Auto-sync off'}
+                          </Button>
+                        </div>
+                        <div className="rounded-md border bg-card p-2">
+                          <div className="mb-1 flex items-center gap-1">
+                            <GitCommit className="h-3 w-3 text-info-foreground" />
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              Deployed
+                            </span>
+                          </div>
+                          <div className="text-xs font-medium">
+                            {commits.filter((c) => c.deployed).length} / {commits.length}
+                          </div>
+                        </div>
+                      </div>
+                      {insights.length > 0 && (
+                        <div>
+                          <h4 className="mb-2 flex items-center gap-1 text-xs font-semibold">
+                            <Activity className="h-3.5 w-3.5" />
+                            Activity Log
+                          </h4>
+                          <div className="space-y-1.5">
+                            <AnimatePresence mode="popLayout">
+                              {insights.map((insight, index) => (
+                                <motion.div
+                                  key={`${insight}-${index}`}
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0 }}
+                                  className="rounded-md bg-muted/50 px-2 py-1 text-xs leading-snug"
+                                >
+                                  {insight.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, '')}
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  ),
+                },
+                {
+                  id: 'cluster',
+                  label: 'Cluster',
+                  content: (
+                    <section className="space-y-2 rounded-lg border bg-card p-3">
+                      <div>
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">
+                          <Cloud className="h-4 w-4" />
+                          Kubernetes Cluster
+                        </h3>
+                        <p className="text-xs text-muted-foreground">Live production state</p>
+                      </div>
+                      <div className="rounded-md bg-muted/50 p-2.5">
+                        <div className="mb-2 flex items-center justify-between">
+                          <h4 className="flex items-center gap-2 text-xs font-semibold">
+                            <Server className="h-4 w-4" />
+                            Deployment
+                          </h4>
+                          {healthStatus !== 'unknown' && (
+                            <Badge
+                              variant="secondary"
+                              className={cn(
+                                healthStatus === 'healthy'
+                                  ? `${SIM_TONE.success.surface} ${SIM_TONE.success.text}`
+                                  : healthStatus === 'degraded'
+                                    ? `${SIM_TONE.warning.surface} ${SIM_TONE.warning.text}`
+                                    : `${SIM_TONE.info.surface} ${SIM_TONE.info.text}`
+                              )}
+                            >
+                              {healthStatus}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="space-y-1.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Replicas:</span>
+                            <span className="font-mono">3/3</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Version:</span>
+                            <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                              {commits.find((c) => c.deployed)?.sha || 'none'}
+                            </code>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Last Sync:</span>
+                            <span className="font-mono">Just now</span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="h-10 w-full lg:h-8"
+                        onClick={handleDriftScenario}
+                      >
+                        <Zap />
+                        Simulate Configuration Drift
+                      </Button>
+                      {pendingSync && (
+                        <SimFeedback tone="warning" label="Manual sync required">
+                          <p>Auto-sync is disabled. Click below to manually sync the cluster.</p>
+                          <Button
+                            size="sm"
+                            className="h-10 w-full lg:h-8"
+                            onClick={handleManualSync}
+                          >
+                            <RefreshCw />
+                            Sync Now
+                          </Button>
+                        </SimFeedback>
+                      )}
+                    </section>
+                  ),
+                },
+              ]}
+            />
+            <SimAnnouncer message={insights[insights.length - 1] ?? ''} />
+          </>
+        )}
+        {phase === 'challenges' && (
+          <section className="space-y-3 rounded-lg border bg-card p-3">
+            <p className="text-sm text-muted-foreground">{challenge.description}</p>
+            <SimFeedback tone="info" label="Scenario">
+              <p>{challenge.scenario}</p>
+            </SimFeedback>
+            <ol className="space-y-2">
+              {challenge.options.map((option, index) => {
+                const correct = index === challenge.correctAnswer;
+                const selected = selectedAnswer === index;
+                return (
+                  <li key={option}>
+                    <button
+                      type="button"
                       disabled={selectedAnswer !== null}
+                      onClick={() => {
+                        if (selectedAnswer === null) {
+                          handleAnswerSelect(index);
+                          setAnnounce(
+                            `${correct ? 'Correct' : 'Not quite'}. ${challenge.explanation.split('. ')[0]}.`
+                          );
+                          requestAnimationFrame(() =>
+                            resultRef.current?.focus({ preventScroll: true })
+                          );
+                        }
+                      }}
                       className={cn(
-                        'w-full p-4 rounded-lg border-2 text-left transition-all',
-                        'hover:border-blue-300 dark:hover:border-blue-700',
-                        selectedAnswer === null &&
-                          'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700',
-                        selectedAnswer === index &&
-                          index === challenge.correctAnswer &&
-                          'bg-green-100/60 dark:bg-green-950/20 border-green-500',
-                        selectedAnswer === index &&
-                          index !== challenge.correctAnswer &&
-                          'bg-red-50 dark:bg-red-950/20 border-red-500',
-                        selectedAnswer !== null &&
-                          selectedAnswer !== index &&
-                          index === challenge.correctAnswer &&
-                          'bg-green-100/60 dark:bg-green-950/20 border-green-500',
-                        selectedAnswer !== null &&
-                          selectedAnswer !== index &&
-                          index !== challenge.correctAnswer &&
-                          'opacity-50'
+                        'flex w-full items-start gap-2 rounded-md border p-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        selectedAnswer === null && 'hover:bg-muted/60',
+                        selectedAnswer !== null && correct && SIM_TONE.success.surface,
+                        selected && !correct && SIM_TONE.danger.surface,
+                        selectedAnswer !== null && !selected && !correct && 'opacity-60'
                       )}
                     >
-                      <div className="flex items-center justify-between">
-                        <span>{option}</span>
-                        {selectedAnswer === index && index === challenge.correctAnswer && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        )}
-                        {selectedAnswer === index && index !== challenge.correctAnswer && (
-                          <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                        )}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-
-                <AnimatePresence>
-                  {showExplanation && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      <Alert className={cn(isCorrect ? 'border-green-500' : 'border-orange-500')}>
-                        <Info className="w-4 h-4" />
-                        <AlertDescription>
-                          <strong>{isCorrect ? '✅ Correct!' : '📚 Learning Moment:'}</strong>
-                          <p className="mt-2">{challenge.explanation}</p>
-                        </AlertDescription>
-                      </Alert>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </CardContent>
-            </Card>
-
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {String.fromCharCode(65 + index)}
+                      </span>
+                      <span className="flex-1">{option}</span>
+                      {selectedAnswer !== null && correct && (
+                        <span
+                          className={cn(
+                            'inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                            SIM_TONE.success.surface,
+                            SIM_TONE.success.text
+                          )}
+                        >
+                          <CircleCheck className="h-3 w-3" />
+                          Correct answer
+                        </span>
+                      )}
+                      {selected && !correct && (
+                        <span
+                          className={cn(
+                            'inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                            SIM_TONE.danger.surface,
+                            SIM_TONE.danger.text
+                          )}
+                        >
+                          <CircleX className="h-3 w-3" />
+                          Your answer
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
             {showExplanation && (
-              <div className="flex justify-center">
-                <Button size="lg" onClick={handleNextChallenge}>
+              <>
+                <SimFeedback
+                  ref={resultRef}
+                  tabIndex={-1}
+                  tone={isCorrect ? 'success' : 'danger'}
+                  label={isCorrect ? 'Correct' : 'Not quite'}
+                >
+                  <p>{challenge.explanation}</p>
+                </SimFeedback>
+                <Button className="h-10" onClick={handleNextChallenge}>
                   {currentChallenge < challenges.length - 1 ? 'Next Challenge' : 'View Results'}
                 </Button>
-              </div>
+              </>
             )}
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // Complete Phase
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <div className="max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center mb-8"
-        >
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mb-6">
-            <CheckCircle2 className="w-12 h-12 text-white" />
-          </div>
-          <h2 className="text-4xl font-bold mb-4">Great Work!</h2>
-          <p className="text-xl text-muted-foreground">
-            You\'ve completed the GitOps Workflow Simulator
-          </p>
-        </motion.div>
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Your Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center mb-6">
-              <div className="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                {score}/{challenges.length}
-              </div>
-              <p className="text-muted-foreground">Challenges Completed</p>
-            </div>
-
-            <div className="grid gap-4">
-              <div className="p-4 rounded-lg bg-blue-100/60 dark:bg-blue-950/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <GitBranch className="w-5 h-5 text-blue-500" />
-                  <h3 className="font-semibold">Key Takeaways</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>✓ Git is the single source of truth for all infrastructure and application state</li>
-                  <li>✓ GitOps operators continuously reconcile desired state with actual state</li>
-                  <li>✓ Automatic sync with self-heal prevents configuration drift</li>
-                  <li>✓ Rollbacks are done by reverting Git commits, maintaining audit trail</li>
-                </ul>
-              </div>
-
-              <div className="p-4 rounded-lg bg-purple-100/60 dark:bg-purple-950/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <FileCode className="w-5 h-5 text-purple-500" />
-                  <h3 className="font-semibold">Next Steps</h3>
-                </div>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Explore ArgoCD, Flux, or other GitOps tools</li>
-                  <li>• Set up a GitOps pipeline for your own projects</li>
-                  <li>• Learn about GitOps security best practices</li>
-                  <li>• Experiment with multi-cluster GitOps deployments</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex gap-4 justify-center">
-          <Button variant="outline" size="lg" onClick={resetGame}>
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Try Again
-         </Button>
-       </div>
-     </div>
-   </div>
+            <SimAnnouncer message={announce} />
+          </section>
+        )}
+        {phase === 'complete' && (
+          <SimComplete
+            title="Challenges complete"
+            summary={`You answered ${score} of ${challenges.length} challenges correctly.`}
+            stats={[
+              { label: 'Correct answers', value: `${score}/${challenges.length}` },
+              { label: 'Commits on the board', value: String(commits.length) },
+            ]}
+            learned={learned}
+            onPlayAgain={resetGame}
+            playAgainLabel="Try again"
+          >
+            <section className="rounded-lg border bg-card p-3">
+              <h3 className="text-sm font-semibold">Next steps</h3>
+              <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                <li>Explore ArgoCD, Flux, or other GitOps tools</li>
+                <li>Set up a GitOps pipeline for your own projects</li>
+                <li>Learn about GitOps security best practices</li>
+                <li>Experiment with multi-cluster GitOps deployments</li>
+              </ul>
+            </section>
+          </SimComplete>
+        )}
+      </SimFrame>
+    </MotionConfig>
   );
 }

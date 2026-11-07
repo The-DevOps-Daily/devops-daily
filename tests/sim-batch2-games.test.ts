@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DockerTerminalSimulator, {
   LESSONS as DOCKER_LESSONS,
 } from '@/components/games/docker-terminal-simulator';
-import GitConceptsSimulator from '@/components/games/git-concepts-simulator';
 import KubernetesTerminalSimulator, {
   LESSONS as K8S_LESSONS,
 } from '@/components/games/kubernetes-terminal-simulator';
@@ -289,17 +288,6 @@ async function runUntilSignal(delayMs: number, max = 80) {
 }
 
 describe('the hook for labs not on the kit yet', () => {
-  it('Git concepts still signals once, on the last command', async () => {
-    await render(GitConceptsSimulator);
-    const { atOnce } = await runUntilSignal(500);
-    expect(atOnce).toBe(true);
-    for (let i = 0; i < 3; i++) {
-      await click('Run', true);
-      await wait(550);
-    }
-    expect(completions).toBe(1);
-  }, 60_000);
-
   it('MongoDB still signals once, on the last command', async () => {
     await render(MongoDbTerminalSimulator);
     const { atOnce } = await runUntilSignal(700);

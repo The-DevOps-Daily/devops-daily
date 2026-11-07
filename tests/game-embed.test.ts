@@ -44,10 +44,11 @@ function embed(Game: ComponentType = ShownTheme) {
   );
 }
 
-async function press(key: string) {
-  await act(async () => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { key }));
-  });
+/** Clicks the first button that matches; fails the test when there is none. */
+async function clickButton(match: (button: HTMLButtonElement) => boolean, what: string) {
+  const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(match);
+  if (!button) throw new Error(`no button: ${what}`);
+  await act(async () => button.click());
 }
 
 beforeEach(() => {
@@ -138,14 +139,16 @@ describe('git-quiz embed', () => {
     window.addEventListener(GAME_COMPLETE_EVENT, done);
 
     await render(`/games/git-quiz/embed${OPSVILLE_QUERY}`, embed(GitQuiz));
-    await press('Enter');
-    expect(container.textContent).toContain(`Question 1 of ${gitQuizJson.questions.length}`);
+    await clickButton((b) => !!b.textContent?.includes('Start Quiz'), 'Start Quiz');
+    expect(container.textContent).toContain(`1/${gitQuizJson.questions.length}`);
 
     for (let i = 0; i < gitQuizJson.questions.length; i++) {
       expect(done).not.toHaveBeenCalled();
-      await press('1');
-      await press('Enter');
-      await press('n');
+      // The first option: its key label reads "1".
+      await clickButton((b) => b.querySelector('span')?.textContent?.trim() === '1', 'option 1');
+      await clickButton((b) => !!b.textContent?.includes('Submit Answer'), 'Submit Answer');
+      const next = i === gitQuizJson.questions.length - 1 ? 'See Results' : 'Next Question';
+      await clickButton((b) => !!b.textContent?.includes(next), next);
     }
 
     expect(done).toHaveBeenCalledOnce();
