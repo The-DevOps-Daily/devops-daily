@@ -21,7 +21,7 @@ tags:
   - Cloudflare
 ---
 
-Opsville is a small pixel-art town where every district is broken, and you are the one on call. It is free, it runs in your browser, and it is live today at [devops-daily.com/opsville](https://devops-daily.com/opsville/). Most quests open one of the simulators from our [games page](/games), then ask you three questions from our quiz bank. Fix all eight districts and the town gets its Launch Day.
+Opsville is a small pixel-art town where every district is broken, and you are the one on call. It is free, it runs in your browser, and it is live today at [devops-daily.com/opsville](https://devops-daily.com/opsville/). Most quests open one of the simulators from our [simulators page](/simulators), then ask you three questions from our quiz bank. Fix all eight districts and the town gets its Launch Day.
 
 This post covers the game first, then how we built it.
 
