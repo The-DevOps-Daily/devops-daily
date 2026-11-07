@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { signalGameComplete } from '@/lib/games/game-complete';
 
 /**
  * Container Security Challenge.
@@ -217,6 +218,10 @@ export default function DockerEscape() {
   }, []);
 
   const done = index >= SCENARIOS.length - 1 && phase === 'revealed';
+
+  useEffect(() => {
+    if (done) signalGameComplete();
+  }, [done]);
   const totals = scores.reduce(
     (a, s) => ({ found: a.found + s.found, missed: a.missed + s.missed, wrong: a.wrong + s.wrong }),
     { found: 0, missed: 0, wrong: 0 }

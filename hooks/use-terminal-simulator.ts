@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { signalGameComplete } from '@/lib/games/game-complete';
 
 /**
  * Shared lesson/terminal engine for the terminal-style simulators (Docker,
@@ -114,6 +115,10 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   const totalCommands = lessons.reduce((sum, lesson) => sum + lesson.commands.length, 0);
   const completedCount = completedCommands.size;
   const progressPercentage = totalCommands > 0 ? (completedCount / totalCommands) * 100 : 0;
+
+  useEffect(() => {
+    if (totalCommands > 0 && completedCount >= totalCommands) signalGameComplete();
+  }, [completedCount, totalCommands]);
 
   useEffect(() => {
     if (terminalRef.current) {

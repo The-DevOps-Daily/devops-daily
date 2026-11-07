@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { signalGameComplete } from '@/lib/games/game-complete';
 import {
   parseCron,
   nextFireTimes,
@@ -93,6 +94,8 @@ function ValueGrid({ spec, from, to }: { spec: FieldSpec; from: number; to: numb
   return <div className="cs-grid">{cells}</div>;
 }
 
+const EXAMPLES_TO_FINISH = 4;
+
 export default function CronExpressionSimulator() {
   const [expr, setExpr] = useState(EXAMPLES[0].expr);
   const [tz, setTz] = useState('UTC');
@@ -102,6 +105,12 @@ export default function CronExpressionSimulator() {
   /** null means "from now", which is what people want unless they say otherwise. */
   const [startAt, setStartAt] = useState<number | null>(null);
   const [now, setNow] = useState<number | null>(null);
+  /** Examples opened so far. Looking at four of them counts as finishing the lesson. */
+  const [opened, setOpened] = useState<Set<string>>(() => new Set([EXAMPLES[0].id]));
+
+  useEffect(() => {
+    if (opened.size >= EXAMPLES_TO_FINISH) signalGameComplete();
+  }, [opened]);
 
   // Date.now() only after mount: a static export would otherwise render a
   // build-time clock into the HTML and hydrate to a different one.
@@ -131,6 +140,7 @@ export default function CronExpressionSimulator() {
     const ex = EXAMPLES.find((e) => e.id === id);
     if (!ex) return;
     setActive(id);
+    setOpened((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
     setExpr(ex.expr);
     setTz(ex.tz ?? 'UTC');
     setStartAt(ex.from ? Date.parse(ex.from) : null);

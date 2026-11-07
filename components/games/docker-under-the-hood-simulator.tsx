@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { signalGameComplete } from '@/lib/games/game-complete';
 
 /**
  * How Docker Works Under the Hood.
@@ -222,6 +223,10 @@ export default function DockerUnderTheHoodSimulator() {
   const current = stages[active];
   const atEnd = active >= stages.length - 1;
 
+  useEffect(() => {
+    if (atEnd) signalGameComplete();
+  }, [atEnd]);
+
   const copyCmd = async () => {
     try {
       await navigator.clipboard.writeText(current.cmd);
@@ -236,8 +241,12 @@ export default function DockerUnderTheHoodSimulator() {
     <div className="dhk">
       <style>{CSS}</style>
 
-      <p className="dhk-eyebrow">Container internals · the real path of a docker run</p>
-      <h2 className="dhk-h">What happens when you run a container</h2>
+      <p className="dhk-eyebrow" data-game-intro>
+        Container internals · the real path of a docker run
+      </p>
+      <h2 className="dhk-h" data-game-intro>
+        What happens when you run a container
+      </h2>
 
       <div className="dhk-cmdbar">
         <span className="dhk-dollar">$</span>
