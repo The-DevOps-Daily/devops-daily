@@ -1,11 +1,12 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { useId, type ComponentType, type ReactNode } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Database } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { SIM_TONE } from '@/components/games/sim/tones';
 import { cn } from '@/lib/utils';
 
 type MetricTone = 'default' | 'good' | 'warn' | 'bad';
@@ -32,9 +33,9 @@ export function SimulatorMetricCard({
 }) {
   const tones = {
     default: 'border-border bg-card',
-    good: 'border-emerald-500/30 bg-emerald-500/5',
-    warn: 'border-amber-500/30 bg-amber-500/5',
-    bad: 'border-red-500/30 bg-red-500/5',
+    good: SIM_TONE.success.surface,
+    warn: SIM_TONE.warning.surface,
+    bad: SIM_TONE.danger.surface,
   };
 
   return (
@@ -65,11 +66,11 @@ export function SimulatorNodeCard({
   icon?: ComponentType<{ className?: string }>;
 }) {
   const statusStyles = {
-    healthy: 'border-emerald-500/40 bg-emerald-500/10',
-    lagging: 'border-amber-500/40 bg-amber-500/10',
-    down: 'border-red-500/40 bg-red-500/10 opacity-70',
+    healthy: SIM_TONE.success.surface,
+    lagging: SIM_TONE.warning.surface,
+    down: cn(SIM_TONE.danger.surface, 'opacity-70'),
     routing: 'border-primary/40 bg-primary/10',
-    hot: 'border-yellow-500/50 bg-yellow-500/10',
+    hot: SIM_TONE.warning.surface,
   };
 
   return (
@@ -88,10 +89,10 @@ export function SimulatorNodeCard({
           className={cn(
             'mt-1 h-2.5 w-2.5 shrink-0 rounded-full',
             status === 'down'
-              ? 'bg-red-500'
+              ? 'bg-wrong'
               : status === 'lagging' || status === 'hot'
-                ? 'bg-amber-500'
-                : 'bg-emerald-500'
+                ? 'bg-partial'
+                : 'bg-correct'
           )}
         />
       </div>
@@ -99,7 +100,7 @@ export function SimulatorNodeCard({
         <div
           className={cn(
             'h-full rounded-full',
-            load > 85 ? 'bg-red-500' : load > 65 ? 'bg-amber-500' : 'bg-emerald-500'
+            load > 85 ? 'bg-wrong' : load > 65 ? 'bg-partial' : 'bg-correct'
           )}
           style={{ width: `${clamp(load, 2, 100)}%` }}
         />
@@ -108,16 +109,31 @@ export function SimulatorNodeCard({
   );
 }
 
-export function SimulatorFlowLine({ tone = 'primary', delay = 0 }: { tone?: FlowTone; delay?: number }) {
-  const color = tone === 'success' ? 'bg-emerald-400' : tone === 'warn' ? 'bg-yellow-400' : 'bg-primary';
+/** A moving dash for traffic. It stops when `paused` or when the visitor prefers reduced motion. */
+export function SimulatorFlowLine({
+  tone = 'primary',
+  delay = 0,
+  paused = false,
+}: {
+  tone?: FlowTone;
+  delay?: number;
+  paused?: boolean;
+}) {
+  const reduceMotion = useReducedMotion();
+  const color = tone === 'success' ? 'bg-correct' : tone === 'warn' ? 'bg-partial' : 'bg-primary';
+  const still = paused || reduceMotion;
 
   return (
     <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-border">
-      <motion.div
-        className={cn('absolute top-0 h-1 w-16 rounded-full', color)}
-        animate={{ x: ['-30%', '620%'] }}
-        transition={{ repeat: Infinity, duration: 1.4, delay, ease: 'linear' }}
-      />
+      {still ? (
+        <div className={cn('absolute left-1/3 top-0 h-1 w-16 rounded-full', color)} />
+      ) : (
+        <motion.div
+          className={cn('absolute top-0 h-1 w-16 rounded-full', color)}
+          animate={{ x: ['-30%', '620%'] }}
+          transition={{ repeat: Infinity, duration: 1.4, delay, ease: 'linear' }}
+        />
+      )}
     </div>
   );
 }
@@ -138,8 +154,9 @@ export function SimulatorModeButton<T extends string>({
       type="button"
       size="sm"
       variant={value === current ? 'default' : 'outline'}
+      aria-pressed={value === current}
       onClick={() => onClick(value)}
-      className="h-8"
+      className="h-10 lg:h-8"
     >
       {children}
     </Button>
@@ -163,16 +180,26 @@ export function SimulatorControlSlider({
   suffix?: string;
   onChange: (value: number) => void;
 }) {
+  const labelId = useId();
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-        <span className="font-medium">{label}</span>
+        <span id={labelId} className="font-medium">
+          {label}
+        </span>
         <Badge variant="secondary" className="shrink-0">
           {value}
           {suffix}
         </Badge>
       </div>
-      <Slider value={[value]} min={min} max={max} step={step} onValueChange={([next]) => onChange(next ?? value)} />
+      <Slider
+        value={[value]}
+        min={min}
+        max={max}
+        step={step}
+        thumbLabelledBy={labelId}
+        onValueChange={([next]) => onChange(next ?? value)}
+      />
     </div>
   );
 }
@@ -190,8 +217,8 @@ export function SimulatorAdvisorCard({
 }) {
   const tones = {
     primary: 'border-primary/25 bg-primary/5',
-    warn: 'border-yellow-500/30 bg-yellow-500/5',
-    bad: 'border-red-500/30 bg-red-500/5',
+    warn: SIM_TONE.warning.surface,
+    bad: SIM_TONE.danger.surface,
   };
 
   return (
