@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Opsville: a free DevOps town game by DevOps Daily</title>
+    <meta name="description" content="Walk a pixel-art town, help the locals fix real DevOps problems, play DevOps Daily simulators and earn badges. Free, no sign-up." />
+    <meta name="theme-color" content="#2b2230" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Opsville by DevOps Daily" />
+    <meta property="og:description" content="A tiny DevOps town. Help the locals, play real DevOps games and earn badges." />
+    <meta property="og:url" content="https://devops-daily.com/opsville/" />
+    <link rel="canonical" href="https://devops-daily.com/opsville/" />
+    <meta property="og:image" content="https://devops-daily.com/opsville/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="module" crossorigin src="/opsville/assets/index-SajU9s2K.js"></script>
+    <link rel="stylesheet" crossorigin href="/opsville/assets/index-CVpdSdeO.css">
+  </head>
+  <body class="title-open">
+    <div id="game" aria-hidden="true"></div>
+    <div id="vignette" aria-hidden="true"></div>
+
+    <header id="hud" class="hud">
+      <p class="hud-stats">
+        <span id="hud-xp" class="hud-xp">0 XP</span>
+        <span id="hud-rank" class="hud-rank"></span>
+        <span id="hud-next" class="hud-next"></span>
+        <span id="hud-run" class="hud-run" hidden></span>
+        <span id="hud-page" class="hud-page" hidden></span>
+      </p>
+      <nav class="hud-buttons" aria-label="Game menu">
+        <button id="btn-quests" type="button">Quests <kbd>Q</kbd></button>
+        <button id="btn-profile" type="button">Profile <kbd>P</kbd></button>
+        <button id="btn-help" type="button">Help <kbd>H</kbd></button>
+        <button id="btn-map" type="button" aria-pressed="false">Map <kbd>M</kbd></button>
+      </nav>
+    </header>
+
+    <div id="ui"></div>
+
+    <div id="touch" class="touch-controls">
+      <div id="stick" class="stick" aria-hidden="true"><div id="knob" class="knob"></div></div>
+      <button id="btn-talk" class="talk" type="button" disabled aria-label="Talk (nothing nearby)">Talk</button>
+      <button id="btn-bike" class="small-touch bike-btn" type="button">Bike</button>
+      <button id="btn-emote" class="small-touch emote-btn" type="button">Emote</button>
+      <button id="btn-photo" class="small-touch photo-btn" type="button">Photo</button>
+      <div id="emote-menu" class="emote-menu" hidden></div>
+    </div>
+
+    <section id="title" class="title" aria-labelledby="title-heading">
+      <canvas id="title-sky" class="title-sky" aria-hidden="true"></canvas>
+      <div class="title-card">
+        <h1 id="title-heading"><img src="assets/art/opsville-logo.png" alt="Opsville" class="title-logo" width="480" height="150" /></h1>
+        <p class="title-tag">A tiny DevOps town. Help the locals, play real DevOps games and earn badges.</p>
+        <button id="btn-start" class="btn btn-primary btn-big is-pending" type="button">Start</button>
+        <p id="title-keys" class="title-keys">Move with the arrow keys or WASD. Walk up to someone and press E to talk.</p>
+        <p id="title-note" class="title-note" role="status" hidden></p>
+        <p class="title-small">Free, no sign-up. Progress saves in this browser. Made by <a href="https://devops-daily.com" target="_blank" rel="noopener">DevOps Daily</a>.</p>
+        <p id="title-cloud" class="title-small" role="status" hidden></p>
+        <p id="title-analytics" class="title-small"></p>
+      </div>
+    </section>
+    <noscript><p class="noscript">Opsville needs JavaScript to run.</p></noscript>
+  </body>
+</html>

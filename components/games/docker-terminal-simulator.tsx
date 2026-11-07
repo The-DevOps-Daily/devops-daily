@@ -1322,7 +1322,7 @@ Network docker-sim_default  Removed`;
 
   return (
     <div className="w-full max-w-7xl mx-auto">
-      <div className="mb-5 text-center">
+      <div className="mb-5 text-center" data-game-intro>
         <div className="mb-3 flex items-center justify-center gap-2.5">
           <Container className="h-8 w-8 text-primary" strokeWidth={1.5} />
           <h2 className="text-2xl font-bold md:text-3xl">Docker Terminal Lab</h2>

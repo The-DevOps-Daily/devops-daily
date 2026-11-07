@@ -3,7 +3,15 @@
 import { useSearchParams, usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { EmbedBadge } from '@/components/embed';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import {
+  GAME_COMPLETE_EVENT,
+  OPSVILLE_CHANNEL,
+  OPSVILLE_READY,
+  cutOpener,
+  isOpsvilleHello,
+  isRunId,
+} from '@/lib/games/game-complete';
 
 interface EmbedClientProps {
   slug: string;
@@ -15,8 +23,14 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const searchParams = useSearchParams();
   const theme = searchParams.get('theme') || 'dark';
   const hideTitle = searchParams.get('hideTitle') === 'true';
+  const opsvilleRequested = searchParams.get('embed') === 'opsville';
+  const run = searchParams.get('run');
   const pathname = usePathname();
   const { setTheme } = useTheme();
+  // Set only when Opsville, on this same origin, answers our "ready" for this
+  // run. Any other site that adds ?embed=opsville keeps the title bar and badge.
+  const [opsville, setOpsville] = useState<{ send: (message: unknown) => void } | null>(null);
+  const [finished, setFinished] = useState(false);
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
   const gameUrl = `${siteUrl}/games/${slug}`;
@@ -34,6 +48,52 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
       setTheme('system');
     }
   }, [theme, setTheme]);
+
+  useEffect(() => {
+    if (!opsvilleRequested) return;
+    cutOpener(window);
+    if (!isRunId(run)) return;
+    const origin = window.location.origin;
+    const framed = window.parent !== window;
+    let channel: BroadcastChannel | null = null;
+    let send: (message: unknown) => void;
+    if (framed) {
+      // Opsville frames this page on desktop. The target origin keeps the
+      // message from reaching a parent page on any other site.
+      send = (message) => window.parent.postMessage(message, origin);
+    } else if (typeof BroadcastChannel === 'function') {
+      // On phones Opsville opens this page in a new tab, with noopener.
+      const ch = new BroadcastChannel(OPSVILLE_CHANNEL);
+      channel = ch;
+      send = (message) => ch.postMessage(message);
+    } else {
+      return;
+    }
+    const onHello = (data: unknown) => {
+      if (isOpsvilleHello(data, run)) setOpsville((prev) => prev ?? { send });
+    };
+    const onMessage = (event: MessageEvent) => {
+      if (event.source === window.parent && event.origin === origin) onHello(event.data);
+    };
+    if (framed) window.addEventListener('message', onMessage);
+    if (channel) channel.onmessage = (event) => onHello(event.data);
+    const onComplete = () => setFinished(true);
+    window.addEventListener(GAME_COMPLETE_EVENT, onComplete);
+    send({ type: OPSVILLE_READY, run });
+    return () => {
+      window.removeEventListener('message', onMessage);
+      window.removeEventListener(GAME_COMPLETE_EVENT, onComplete);
+      channel?.close();
+    };
+  }, [opsvilleRequested, run]);
+
+  // Tell Opsville the player finished the lessons, so it can open the quiz gate.
+  useEffect(() => {
+    if (!opsville || !finished || !isRunId(run)) return;
+    opsville.send({ type: GAME_COMPLETE_EVENT, game: slug, run });
+  }, [opsville, finished, slug, run]);
+
+  const inOpsville = opsville !== null;
 
   // Hide header/footer when in embed mode
   useEffect(() => {
@@ -74,11 +134,15 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
 
   return (
     <div
-      className="min-h-screen bg-background text-foreground"
+      className={
+        opsvilleRequested
+          ? 'h-dvh overflow-y-auto bg-background text-foreground [&_[data-game-intro]]:hidden'
+          : 'min-h-screen bg-background text-foreground'
+      }
       data-theme={theme}
     >
       {/* Minimal header */}
-      {!hideTitle && (
+      {!hideTitle && !inOpsville && (
         <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/30">
           <h1 className="text-sm font-semibold truncate">{title}</h1>
           <a
@@ -93,12 +157,12 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
       )}
 
       {/* Game content */}
-      <div className="p-4">
+      <div className={opsvilleRequested ? 'p-2 md:p-3' : 'p-4'}>
         <GameComponent />
       </div>
 
-      {/* Attribution badge - always visible, cannot be removed */}
-      <EmbedBadge gameSlug={slug} gameTitle={title} />
+      {/* Attribution badge: always shown, except inside Opsville, our own game */}
+      {!inOpsville && <EmbedBadge gameSlug={slug} gameTitle={title} />}
     </div>
   );
 }
