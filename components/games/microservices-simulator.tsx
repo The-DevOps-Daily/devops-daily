@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme } from 'next-themes';
+import { useResolvedTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,7 +83,7 @@ const HEALTH_MULTIPLIER_DOWN = 0.2; // Success rate multiplier for down services
 const HEALTH_MULTIPLIER_DEGRADED = 0.8; // Success rate multiplier for degraded services
 
 export default function MicroservicesSimulator() {
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useResolvedTheme();
   const [mounted, setMounted] = useState(false);
   const isDark = resolvedTheme === 'dark';
 

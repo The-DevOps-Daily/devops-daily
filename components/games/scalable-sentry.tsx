@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
+import { useResolvedTheme } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import {
   Server,
@@ -134,7 +134,7 @@ const COLORS = {
 };
 
 export default function ScalableSentry() {
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useResolvedTheme();
   const [mounted, setMounted] = useState(false);
   const isDark = resolvedTheme === 'dark';
 

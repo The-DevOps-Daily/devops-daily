@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { QuizConfig, QuizQuestion } from '@/lib/quiz-types';
+import { signalGameComplete } from '@/lib/games/game-complete';
 
 // Icon mapping for dynamic icon rendering
 const iconMap = {
@@ -162,6 +163,13 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
+
+  const finished = currentQuestion >= quizConfig.questions.length;
+
+  // Opsville, which embeds the Git quiz, listens for this; elsewhere it does nothing.
+  useEffect(() => {
+    if (finished) signalGameComplete();
+  }, [finished]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

@@ -4,7 +4,8 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
-import { ThemeProvider } from '@/components/theme-provider';
+import { SiteThemeProvider } from '@/components/theme-provider';
+import { HideInGameEmbed } from '@/components/hide-in-game-embed';
 import { OrganizationSchema, WebsiteSchema } from '@/components/schema-markup';
 import { CookieBanner } from '@/components/cookie-banner';
 import { SkipToContent } from '@/components/skip-to-content';
@@ -133,24 +134,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <SiteThemeProvider>
           <SkipToContent />
           <Header />
           <main id="main-content" className="flex-1">
             {children}
           </main>
           <Footer />
-          <CookieBanner />
           <SiteAnalytics />
-          <DeferredSiteExtras />
+          <HideInGameEmbed>
+            <CookieBanner />
+            <DeferredSiteExtras />
+          </HideInGameEmbed>
           <GoLinkPageTag />
           <SponsorImpressions />
-        </ThemeProvider>
+        </SiteThemeProvider>
       </body>
     </html>
   );
