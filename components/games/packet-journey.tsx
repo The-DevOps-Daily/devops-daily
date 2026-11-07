@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
+import { useResolvedTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -246,7 +246,7 @@ const allStages: Record<string, Omit<JourneyStage, 'x' | 'y'>> = {
 };
 
 export default function PacketJourney() {
-  const { resolvedTheme } = useTheme();
+  const resolvedTheme = useResolvedTheme();
   const [mounted, setMounted] = useState(false);
   const isDark = resolvedTheme === 'dark';
 

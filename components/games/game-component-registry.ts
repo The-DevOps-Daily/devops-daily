@@ -26,7 +26,7 @@ import DevOpsScorecard from '@/components/games/devops-scorecard';
 import DnsSimulator from '@/components/games/dns-simulator';
 import DockerTerminalSimulator from '@/components/games/docker-terminal-simulator';
 import ForkBombSimulator from '@/components/games/fork-bomb-simulator';
-import GitQuiz from '@/components/games/git-command-quiz';
+import GitQuiz from '@/components/games/git-quiz';
 import GitConceptsSimulator from '@/components/games/git-concepts-simulator';
 import GitMergeConflictSimulator from '@/components/games/git-merge-conflict-simulator';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';

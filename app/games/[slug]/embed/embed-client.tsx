@@ -1,7 +1,6 @@
 'use client';
 
 import { useSearchParams, usePathname } from 'next/navigation';
-import { useTheme } from 'next-themes';
 import { EmbedBadge } from '@/components/embed';
 import { Suspense, useEffect, useState } from 'react';
 import {
@@ -26,7 +25,6 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const opsvilleRequested = searchParams.get('embed') === 'opsville';
   const run = searchParams.get('run');
   const pathname = usePathname();
-  const { setTheme } = useTheme();
   // Set only when Opsville, on this same origin, answers our "ready" for this
   // run. Any other site that adds ?embed=opsville keeps the title bar and badge.
   const [opsville, setOpsville] = useState<{ send: (message: unknown) => void } | null>(null);
@@ -35,19 +33,9 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
   const gameUrl = `${siteUrl}/games/${slug}`;
 
-  // Apply the embed's theme via next-themes so the host site's iframe
-  // renders in light/dark regardless of the visitor's system preference.
-  // theme=auto falls back to whatever the user has - same as the regular
-  // site behaviour. The previous `data-theme={theme}` attribute had no
-  // effect because the app uses Tailwind's class-strategy theming, which
-  // requires `class="dark"` on <html>, not a data attribute.
-  useEffect(() => {
-    if (theme === 'light' || theme === 'dark') {
-      setTheme(theme);
-    } else {
-      setTheme('system');
-    }
-  }, [theme, setTheme]);
+  // SiteThemeProvider forces ?theme= on this route without saving it. Calling
+  // setTheme here would write the visitor's theme for the whole site, since
+  // Opsville frames this page on the same origin.
 
   useEffect(() => {
     if (!opsvilleRequested) return;
@@ -102,13 +90,11 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
       const header = document.querySelector('header');
       const footer = document.querySelector('footer');
       const skipToContent = document.getElementById('skip-to-content');
-      const cookieBanner = document.querySelector('[data-cookie-banner]');
       const mainElement = document.getElementById('main-content');
 
       if (header) (header as HTMLElement).style.display = 'none';
       if (footer) (footer as HTMLElement).style.display = 'none';
       if (skipToContent) (skipToContent as HTMLElement).style.display = 'none';
-      if (cookieBanner) (cookieBanner as HTMLElement).style.display = 'none';
 
       // Set body styles for embed
       document.body.style.minHeight = 'auto';
@@ -124,7 +110,6 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
         if (header) (header as HTMLElement).style.display = '';
         if (footer) (footer as HTMLElement).style.display = '';
         if (skipToContent) (skipToContent as HTMLElement).style.display = '';
-        if (cookieBanner) (cookieBanner as HTMLElement).style.display = '';
         document.body.style.minHeight = '';
         document.body.classList.add('flex', 'flex-col');
         if (mainElement) mainElement.classList.add('flex-1');
