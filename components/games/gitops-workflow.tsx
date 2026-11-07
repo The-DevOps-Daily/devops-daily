@@ -543,55 +543,19 @@ export default function GitOpsWorkflow() {
                   ? challenge.question
                   : undefined
           }
-        />
-        {phase === 'intro' && (
-          <section className="space-y-3 rounded-lg border bg-card p-4">
-            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-              GitOps is a modern approach to continuous deployment where Git serves as the single
-              source of truth for declarative infrastructure and applications.
-            </p>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {PRINCIPLES.map(({ icon: Icon, title, description }) => (
-                <div key={title} className="rounded-md bg-muted/50 p-3">
-                  <Icon className="mb-2 h-5 w-5 text-primary" />
-                  <h3 className="text-sm font-semibold">{title}</h3>
-                  <p className="text-sm text-muted-foreground">{description}</p>
-                </div>
-              ))}
-            </div>
-            <SimHowTo summary="What you'll learn">
-              <ul className="space-y-2">
-                {[
-                  'How GitOps operators synchronize Git state with Kubernetes clusters',
-                  'Understanding sync status, health status, and configuration drift',
-                  'When to use automatic sync vs manual approval',
-                  'How to handle deployments, rollbacks, and drift correction',
-                ].map((item) => (
-                  <li key={item} className="flex gap-2">
-                    <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </SimHowTo>
-            <Button className="h-10" onClick={() => setPhase('interactive')}>
-              Start Learning <Play />
-            </Button>
-          </section>
-        )}
-        {phase === 'interactive' && (
-          <>
-            <section className="rounded-lg border bg-card p-3">
+        >
+          {phase === 'interactive' && (
+            <div className="space-y-1.5 border-t pt-1.5">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex flex-1 items-center gap-2">
                   <div
                     className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-full border',
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
                       SIM_CATEGORY.sky.fill,
                       SIM_CATEGORY.sky.border
                     )}
                   >
-                    <GitBranch className="h-5 w-5 text-sky-700 dark:text-sky-300" />
+                    <GitBranch className="h-4 w-4 text-sky-700 dark:text-sky-300" />
                   </div>
                   <div>
                     <p className="text-sm font-semibold">Git Repository</p>
@@ -617,7 +581,7 @@ export default function GitOpsWorkflow() {
                 <div className="flex flex-1 items-center gap-2">
                   <div
                     className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-full border',
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
                       animationPhase === 'argocd-to-k8s'
                         ? 'border-primary bg-primary/15'
                         : 'border-border bg-muted'
@@ -625,7 +589,7 @@ export default function GitOpsWorkflow() {
                   >
                     <RefreshCw
                       className={cn(
-                        'h-5 w-5',
+                        'h-4 w-4',
                         animationPhase === 'argocd-to-k8s'
                           ? 'text-primary motion-safe:animate-spin'
                           : 'text-muted-foreground'
@@ -656,7 +620,7 @@ export default function GitOpsWorkflow() {
                 <div className="flex flex-1 items-center gap-2">
                   <div
                     className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-full border',
+                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
                       healthStatus === 'healthy'
                         ? SIM_TONE.success.surface
                         : 'border-border bg-muted'
@@ -664,7 +628,7 @@ export default function GitOpsWorkflow() {
                   >
                     <Cloud
                       className={cn(
-                        'h-5 w-5',
+                        'h-4 w-4',
                         healthStatus === 'healthy'
                           ? 'text-correct-foreground'
                           : 'text-muted-foreground'
@@ -677,7 +641,7 @@ export default function GitOpsWorkflow() {
                   </div>
                 </div>
               </div>
-              <div className="mt-3 border-t pt-3">
+              <div>
                 <AnimatePresence mode="wait">
                   {animationPhase === 'git-to-argocd' && (
                     <motion.div
@@ -728,7 +692,46 @@ export default function GitOpsWorkflow() {
                   )}
                 </AnimatePresence>
               </div>
-            </section>
+            </div>
+          )}
+        </SimBar>
+        {phase === 'intro' && (
+          <section className="space-y-3 rounded-lg border bg-card p-4">
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              GitOps is a modern approach to continuous deployment where Git serves as the single
+              source of truth for declarative infrastructure and applications.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {PRINCIPLES.map(({ icon: Icon, title, description }) => (
+                <div key={title} className="rounded-md bg-muted/50 p-3">
+                  <Icon className="mb-2 h-5 w-5 text-primary" />
+                  <h3 className="text-sm font-semibold">{title}</h3>
+                  <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+              ))}
+            </div>
+            <SimHowTo summary="What you'll learn">
+              <ul className="space-y-2">
+                {[
+                  'How GitOps operators synchronize Git state with Kubernetes clusters',
+                  'Understanding sync status, health status, and configuration drift',
+                  'When to use automatic sync vs manual approval',
+                  'How to handle deployments, rollbacks, and drift correction',
+                ].map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </SimHowTo>
+            <Button className="h-10" onClick={() => setPhase('interactive')}>
+              Start Learning <Play />
+            </Button>
+          </section>
+        )}
+        {phase === 'interactive' && (
+          <>
             <SimStage
               columns="lg:grid-cols-3"
               tabsLabel="Board panels"
@@ -789,6 +792,7 @@ export default function GitOpsWorkflow() {
                               ) : (
                                 <Button
                                   size="sm"
+                                  variant="outline"
                                   className="h-10 lg:h-8"
                                   onClick={() => handleDeploy(commit.id)}
                                 >
