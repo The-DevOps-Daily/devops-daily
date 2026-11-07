@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { toJsonLd } from '@/lib/json-ld';
+import { roadmapStages } from '@/lib/roadmap-data';
 
 export const metadata: Metadata = {
   title: { absolute: 'DevOps Roadmap - Your Path to DevOps Mastery' },
@@ -66,21 +67,11 @@ const stagesJsonLd = {
   name: 'DevOps Learning Roadmap',
   description:
     'Staged learning path for DevOps engineers, from fundamentals to advanced platform skills.',
-  itemListElement: [
-    'Fundamentals',
-    'Infrastructure as Code',
-    'Containerization & Orchestration',
-    'CI/CD Pipelines',
-    'Cloud Platforms',
-    'Monitoring & Observability',
-    'Security & Compliance',
-    'Database Management',
-    'Continuous Learning',
-  ].map((name, i) => ({
+  itemListElement: roadmapStages.map((stage, i) => ({
     '@type': 'ListItem',
     position: i + 1,
-    name,
-    url: 'https://devops-daily.com/roadmap',
+    name: stage.title,
+    url: `https://devops-daily.com/roadmap#stage-${stage.id}`,
   })),
 };
 

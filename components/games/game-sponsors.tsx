@@ -7,13 +7,15 @@ import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface GameSponsorsProps {
   className?: string;
+  /** Go-link placement. Must be one the sponsor-links worker counts. */
+  placement?: string;
 }
 
 /**
  * Slim, inline sponsor bar for game/simulator pages.
  * Placed above the game component, full width, minimal design.
  */
-export function GameSponsors({ className }: GameSponsorsProps) {
+export function GameSponsors({ className, placement = 'simulator' }: GameSponsorsProps) {
   return (
     <div className={cn('w-full mb-6', className)}>
       <div className="mx-auto max-w-6xl overflow-hidden rounded-lg border border-border/50 bg-muted/20">
@@ -31,10 +33,10 @@ export function GameSponsors({ className }: GameSponsorsProps) {
           {sponsors.map((sponsor) => (
             <Link
               key={sponsor.name}
-              href={sponsorHref(sponsor, 'simulator')}
+              href={sponsorHref(sponsor, placement)}
               target="_blank"
               rel={sponsorRel(sponsor)}
-              data-go={sponsorGoKey(sponsor, 'simulator')}
+              data-go={sponsorGoKey(sponsor, placement)}
               title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
               className="group flex h-14 min-w-0 items-center justify-center bg-background/60 px-3 transition-colors hover:bg-muted/60"
             >

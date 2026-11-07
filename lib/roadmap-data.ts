@@ -1,338 +1,28 @@
-// Data for the /roadmap page: the skill resources database and the
-// stage-by-stage roadmap. Rendering lives in app/roadmap/page.tsx; edits to
-// skills, resources, or stages happen here without touching component code.
+// The /roadmap map: stages -> topics -> subtopics -> resources. Internal
+// resources name a content slug; lib/roadmap-resources.ts resolves the title,
+// link and size from the content loaders, and tests/roadmap-links.test.ts
+// fails on a slug that does not exist. Topic ids are stored in saved
+// progress, so never change one; add a new topic instead.
 
-import {
-  Activity,
-  Archive,
-  Award,
-  BookMarked,
-  CheckCircle2,
-  Cloud,
-  Code,
-  Container,
-  Database,
-  FileText,
-  GitBranch,
-  Globe,
-  Heart,
-  InfinityIcon,
-  Lock,
-  Monitor,
-  Server,
-  Settings,
-  Shield,
-  Sparkles,
-  Terminal,
-  TrendingUp,
-  Users,
-  Workflow,
-  type LucideIcon,
-} from 'lucide-react';
+export type TopicKind = 'core' | 'optional';
+export type TopicLevel = 'basic' | 'intermediate' | 'advanced';
 
-export interface RoadmapSkill {
+export type InternalResourceType =
+  'guide' | 'post' | 'simulator' | 'lab' | 'challenge' | 'quiz' | 'flashcards' | 'checklist';
+
+export type ResourceRef =
+  { type: InternalResourceType; slug: string } | { type: 'external'; href: string; title: string };
+
+export interface RoadmapTopic {
+  /** "<stage>/<topic>", stable. Saved progress uses it. */
+  id: string;
   name: string;
-  link?: string;
-  description?: string;
-  level?: 'basic' | 'intermediate' | 'advanced';
-  type?: 'tool' | 'concept' | 'practice' | 'certification';
-  icon?: LucideIcon;
-  external?: boolean;
+  kind: TopicKind;
+  level: TopicLevel;
+  summary: string;
+  subtopics: string[];
+  resources: ResourceRef[];
 }
-
-export interface SkillResource {
-  title: string;
-  url: string;
-  type: 'tutorial' | 'documentation' | 'course' | 'video' | 'book' | 'tool' | 'practice';
-  external?: boolean;
-  description?: string;
-}
-
-export interface SkillWithResources extends RoadmapSkill {
-  resources?: SkillResource[];
-}
-
-// Comprehensive skill resources database
-export const skillResourcesDatabase: Record<string, SkillResource[]> = {
-  'Linux/Unix Basics': [
-    {
-      title: 'Linux Fundamentals Guide',
-      url: '/guides/introduction-to-linux',
-      type: 'tutorial',
-      description: 'Complete guide to Linux basics and essential commands',
-    },
-    {
-      title: 'Learn Linux - Interactive Tutorial',
-      url: '/games/linux-terminal',
-      type: 'practice',
-      description: 'Practice Linux commands in a simulated terminal',
-    },
-    {
-      title: 'Introduction to Linux',
-      url: 'https://leanpub.com/introduction-to-linux',
-      type: 'book',
-      external: true,
-      description: 'Comprehensive Linux fundamentals ebook on Leanpub',
-    },
-  ],
-  'Shell Scripting (Bash)': [
-    {
-      title: 'Bash Scripting Guide',
-      url: 'guides/introduction-to-bash',
-      type: 'tutorial',
-      description: 'Learn bash scripting from basics to advanced',
-    },
-    {
-      title: 'Introduction to Bash Scripting',
-      url: 'https://github.com/bobbyiliev/introduction-to-bash-scripting',
-      type: 'tutorial',
-      external: true,
-      description: 'Open-source bash scripting ebook on GitHub',
-    },
-    {
-      title: 'ShellCheck Tool',
-      url: 'https://www.shellcheck.net/',
-      type: 'tool',
-      external: true,
-      description: 'Validate and improve your shell scripts',
-    },
-  ],
-  'Basic Programming (Python/Go)': [
-    {
-      title: 'Python for DevOps',
-      url: 'https://docs.python.org/3/tutorial/',
-      type: 'documentation',
-      external: true,
-      description: 'Official Python tutorial',
-    },
-    {
-      title: 'Go by Example',
-      url: 'https://gobyexample.com/',
-      type: 'tutorial',
-      external: true,
-      description: 'Learn Go with practical examples',
-    },
-  ],
-  'Git Version Control': [
-    {
-      title: 'Git Fundamentals eBook',
-      url: 'https://github.com/bobbyiliev/introduction-to-git-and-github-ebook',
-      type: 'book',
-      external: true,
-      description: 'Learn Git version control',
-    },
-    {
-      title: 'Git Interactive Tutorial',
-      url: 'https://learngitbranching.js.org/',
-      type: 'practice',
-      external: true,
-      description: 'Visual Git learning tool',
-    },
-    {
-      title: 'Git Command Quiz',
-      url: '/quizzes/git-quiz',
-      type: 'practice',
-      description: 'Test your Git knowledge with interactive scenarios',
-    },
-    {
-      title: 'Git Concepts Simulator',
-      url: '/games/git-concepts-simulator',
-      type: 'practice',
-      description: 'Visualize commits, branches, and merges in an interactive simulator',
-    },
-  ],
-  'Docker Fundamentals': [
-    {
-      title: 'Docker Getting Started',
-      url: 'https://docs.docker.com/get-started/',
-      type: 'documentation',
-      external: true,
-      description: 'Official Docker tutorial',
-    },
-    {
-      title: 'Docker Deep Dive Course',
-      url: '/guides/introduction-to-docker',
-      type: 'course',
-      description: 'Complete Docker containerization guide',
-    },
-    {
-      title: 'Docker eBook',
-      url: 'https://github.com/bobbyiliev/introduction-to-docker-ebook',
-      type: 'book',
-      external: true,
-      description: 'Learn Docker from basics to advanced',
-    },
-    {
-      title: 'Docker Quiz',
-      url: '/quizzes/docker-quiz',
-      type: 'practice',
-      description: 'Test your Docker knowledge with interactive scenarios',
-    },
-    {
-      title: 'Play with Docker',
-      url: 'https://labs.play-with-docker.com/',
-      type: 'practice',
-      external: true,
-      description: 'Free Docker playground',
-    },
-    {
-      title: 'Docker Terminal Simulator',
-      url: '/games/docker-terminal-simulator',
-      type: 'practice',
-      description: 'Practice Docker commands in a simulated terminal',
-    },
-  ],
-  'Kubernetes Basics': [
-    {
-      title: 'Kubernetes Basics',
-      url: '/guides/introduction-to-kubernetes',
-      type: 'course',
-      description: 'Learn Kubernetes from scratch',
-    },
-    {
-      title: 'Kubernetes Documentation',
-      url: 'https://kubernetes.io/docs/',
-      type: 'documentation',
-      external: true,
-      description: 'Official Kubernetes docs',
-    },
-    {
-      title: 'Kubernetes Playground',
-      url: 'https://labs.play-with-k8s.com/',
-      type: 'practice',
-      external: true,
-      description: 'Free Kubernetes cluster for learning',
-    },
-    {
-      title: 'Kubernetes Terminal Simulator',
-      url: '/games/kubernetes-terminal-simulator',
-      type: 'practice',
-      description: 'Practice kubectl commands in a simulated cluster',
-    },
-  ],
-  Terraform: [
-    {
-      title: 'Terraform Tutorials',
-      url: '/categories/terraform',
-      type: 'tutorial',
-      description: 'Infrastructure as Code with Terraform',
-    },
-    {
-      title: 'Terraform eBook',
-      url: 'https://leanpub.com/introduction-to-terraform',
-      type: 'book',
-      external: true,
-      description: 'Learn Terraform from basics to advanced',
-    },
-    {
-      title: 'Terraform Documentation',
-      url: 'https://developer.hashicorp.com/terraform/docs',
-      type: 'documentation',
-      external: true,
-      description: 'Official Terraform documentation',
-    },
-    {
-      title: 'Terraform Playground',
-      url: 'https://developer.hashicorp.com/terraform/tutorials',
-      type: 'practice',
-      external: true,
-      description: 'Hands-on Terraform tutorials',
-    },
-    {
-      title: 'Terraform Quiz',
-      url: '/quizzes/terraform-quiz',
-      type: 'practice',
-      description: 'Test your Terraform knowledge with interactive scenarios',
-    },
-  ],
-  'GitHub Actions': [
-    {
-      title: 'CI/CD Introduction',
-      url: '/guides/introduction-to-cicd',
-      type: 'tutorial',
-      description: 'Learn CI/CD pipeline fundamentals',
-    },
-    {
-      title: 'GitHub Actions Guide',
-      url: 'https://docs.github.com/en/actions',
-      type: 'documentation',
-      external: true,
-      description: 'GitHub Actions documentation',
-    },
-    {
-      title: 'CI/CD Stack Generator',
-      url: '/games/cicd-stack-generator',
-      type: 'tool',
-      description: 'Generate your perfect CI/CD stack',
-    },
-  ],
-  'AWS Fundamentals': [
-    {
-      title: 'AWS Getting Started',
-      url: '/guides/introduction-to-aws',
-      type: 'course',
-      description: 'Learn AWS for DevOps',
-    },
-    {
-      title: 'AWS Documentation',
-      url: 'https://docs.aws.amazon.com/',
-      type: 'documentation',
-      external: true,
-      description: 'Official AWS documentation',
-    },
-    {
-      title: 'AWS Free Tier',
-      url: 'https://aws.amazon.com/free/',
-      type: 'practice',
-      external: true,
-      description: 'Practice with AWS free tier',
-    },
-    {
-      title: 'AWS VPC Simulator',
-      url: '/games/aws-vpc-simulator',
-      type: 'practice',
-      description: 'Build and explore a VPC network layout interactively',
-    },
-  ],
-  'Prometheus & Grafana': [
-    {
-      title: 'Prometheus Tutorial',
-      url: 'https://prometheus.io/docs/prometheus/latest/getting_started/',
-      type: 'tutorial',
-      external: true,
-      description: 'Getting started with Prometheus',
-    },
-    {
-      title: 'Grafana Documentation',
-      url: 'https://grafana.com/docs/',
-      type: 'documentation',
-      external: true,
-      description: 'Grafana visualization platform docs',
-    },
-  ],
-  'Networking Fundamentals': [
-    {
-      title: 'DNS Resolution Simulator',
-      url: '/games/dns-simulator',
-      type: 'practice',
-      description: 'Walk through how a DNS query resolves, step by step',
-    },
-  ],
-  'Container Networking': [
-    {
-      title: 'Kubernetes Network Policies Simulator',
-      url: '/games/kubernetes-networking-cni-simulator',
-      type: 'practice',
-      description: 'See how CNI network policies allow and block pod traffic',
-    },
-    {
-      title: 'Load Balancer Simulator',
-      url: '/games/load-balancer-simulator',
-      type: 'practice',
-      description: 'Explore load balancing algorithms and traffic distribution',
-    },
-  ],
-};
 
 export interface RoadmapProject {
   name: string;
@@ -340,731 +30,943 @@ export interface RoadmapProject {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   estimatedTime: string;
   technologies: string[];
-  githubUrl?: string;
-  liveDemo?: string;
-}
-
-export interface CareerProgression {
-  jobTitles: string[];
-  salaryRange: string;
-  demandLevel: 'low' | 'medium' | 'high' | 'very-high';
-  nextSteps: string[];
-  industryAdoption: string;
+  /** A lab, challenge or simulator that covers part of the project. */
+  practice?: ResourceRef;
 }
 
 export interface RoadmapStage {
   id: string;
   title: string;
+  shortTitle: string;
   description: string;
-  icon: LucideIcon;
-  skills: RoadmapSkill[];
-  timeEstimate: string;
-  color?: string;
-  prerequisites?: string[];
-  outcomes?: string[];
-  badge?: string;
-  projects?: RoadmapProject[];
-  careerProgression?: CareerProgression;
-  marketContext?: string;
-  industryStats?: string;
+  /** Weeks, min and max. Omitted for ongoing stages. */
+  weeks?: [number, number];
+  /** Ongoing habits: no progress tracking. */
+  ongoing?: boolean;
+  prerequisites: string[];
+  outcomes: string[];
+  roles: string[];
+  projects: RoadmapProject[];
+  topics: RoadmapTopic[];
 }
+
+const post = (slug: string): ResourceRef => ({ type: 'post', slug });
+const guide = (slug: string): ResourceRef => ({ type: 'guide', slug });
+const sim = (slug: string): ResourceRef => ({ type: 'simulator', slug });
+const lab = (slug: string): ResourceRef => ({ type: 'lab', slug });
+const challenge = (slug: string): ResourceRef => ({ type: 'challenge', slug });
+const quiz = (slug: string): ResourceRef => ({ type: 'quiz', slug });
+const cards = (slug: string): ResourceRef => ({ type: 'flashcards', slug });
+const checklist = (slug: string): ResourceRef => ({ type: 'checklist', slug });
+const ext = (title: string, href: string): ResourceRef => ({ type: 'external', title, href });
 
 export const roadmapStages: RoadmapStage[] = [
   {
     id: 'fundamentals',
     title: 'Fundamentals',
+    shortTitle: 'Fundamentals',
     description:
-      'Build a solid foundation with essential programming and system administration skills',
-    icon: Terminal,
-    timeEstimate: '2-3 weeks',
-    color: 'from-amber-500 via-orange-500 to-red-500',
-    badge: 'Foundation',
+      'Build a solid foundation with essential programming and system administration skills.',
+    weeks: [2, 3],
     prerequisites: ['Basic computer literacy', 'Willingness to learn'],
     outcomes: ['Command line proficiency', 'Basic programming skills', 'System understanding'],
-    marketContext:
-      'Essential foundation skills required by 95% of DevOps job postings. Companies increasingly value engineers who understand both development and operations fundamentals.',
-    industryStats: '🔥 Linux skills mentioned in 89% of DevOps job postings',
-    careerProgression: {
-      jobTitles: ['Junior DevOps Engineer', 'System Administrator', 'Platform Engineer Intern'],
-      salaryRange: '$45,000 - $70,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Specialize in cloud platforms',
-        'Learn containerization',
-        'Focus on automation tools',
-      ],
-      industryAdoption: 'Universal - Required by all major tech companies',
-    },
+    roles: ['Junior DevOps Engineer', 'System Administrator', 'Platform Engineer Intern'],
     projects: [
       {
         name: 'Personal Development Environment',
         description:
-          'Set up a complete development environment with Linux, Git, and basic automation scripts',
+          'Set up a complete development environment with Linux, Git, and basic automation scripts.',
         difficulty: 'beginner',
         estimatedTime: '1-2 days',
         technologies: ['Linux', 'Git', 'Bash', 'VS Code'],
+        practice: lab('cloud-server-setup'),
       },
       {
         name: 'System Monitoring Dashboard',
-        description: 'Create Bash scripts to monitor system resources and generate reports',
+        description: 'Write Bash scripts that monitor system resources and generate reports.',
         difficulty: 'intermediate',
         estimatedTime: '3-5 days',
         technologies: ['Bash', 'Cron', 'Python', 'HTML/CSS'],
+        practice: lab('server-monitoring-maintenance'),
       },
       {
         name: 'Automated Backup Solution',
-        description: 'Build an automated backup system using shell scripts and cron jobs',
+        description: 'Build an automated backup system with shell scripts and cron jobs.',
         difficulty: 'intermediate',
         estimatedTime: '2-3 days',
         technologies: ['Bash', 'Cron', 'Rsync', 'Git'],
       },
     ],
-    skills: [
+    topics: [
       {
-        name: 'Linux/Unix Basics',
-        description: 'Learn essential Linux commands and file system navigation',
+        id: 'fundamentals/linux',
+        name: 'Linux basics',
+        kind: 'core',
         level: 'basic',
-        type: 'concept',
-        icon: Terminal,
-        link: '/guides/introduction-to-linux',
+        summary:
+          'Linux runs most servers, containers and cloud machines. Learn to move around the file system, read and change permissions, manage processes and services, and find the logs. Every later stage assumes you are at home in a Linux shell.',
+        subtopics: ['Files and permissions', 'Processes and services', 'Package managers', 'Logs'],
+        resources: [
+          guide('introduction-to-linux'),
+          post('linux-git-docker-learning-order'),
+          post('change-permissions-folder-subfolders-files-linux'),
+          post('find-files-containing-specific-text-linux'),
+          sim('linux-terminal'),
+          lab('cloud-server-setup'),
+          lab('linux-performance-troubleshooting'),
+          quiz('linux-quiz'),
+          cards('linux-fundamentals'),
+        ],
       },
       {
-        name: 'Shell Scripting (Bash)',
-        description: 'Automate tasks with powerful shell scripts',
+        id: 'fundamentals/bash',
+        name: 'Shell scripting (Bash)',
+        kind: 'core',
         level: 'basic',
-        type: 'tool',
-        icon: Code,
-        link: '/guides/introduction-to-bash',
+        summary:
+          'Bash glues tools together. Write scripts with variables, loops and functions, chain commands with pipes, and schedule jobs with cron. Small scripts like these remove most repetitive work.',
+        subtopics: ['Variables and loops', 'Pipes and redirection', 'Exit codes', 'Cron jobs'],
+        resources: [
+          guide('introduction-to-bash'),
+          post('parse-command-line-arguments-bash'),
+          post('bash-loop-through-file-content'),
+          post('redirect-all-output-to-file-bash'),
+          ext(
+            'Introduction to Bash Scripting (free ebook)',
+            'https://github.com/bobbyiliev/introduction-to-bash-scripting'
+          ),
+          sim('cron-expression-simulator'),
+          challenge('script-it'),
+          ext('ShellCheck', 'https://www.shellcheck.net/'),
+        ],
       },
       {
-        name: 'Basic Programming (Python/Go)',
-        description: 'Learn programming fundamentals with Python or Go',
+        id: 'fundamentals/programming',
+        name: 'Programming with Python or Go',
+        kind: 'core',
         level: 'basic',
-        type: 'concept',
-        icon: FileText,
-        link: '/guides/introduction-to-python',
+        summary:
+          'You do not need to be a software engineer, but you need to read and write code. Pick Python or Go and learn enough to write small tools: parse JSON, call an HTTP API, handle errors and add a few tests.',
+        subtopics: ['Scripts and CLIs', 'JSON and HTTP APIs', 'Error handling', 'Tests'],
+        resources: [
+          guide('introduction-to-python'),
+          post('what-is-the-quickest-way-to-http-get-in-python'),
+          post('go-runs-the-cloud-native-control-plane'),
+          ext('The Python Tutorial', 'https://docs.python.org/3/tutorial/'),
+          ext('Go by Example', 'https://gobyexample.com/'),
+          quiz('python-quiz'),
+        ],
       },
       {
-        name: 'Networking Fundamentals',
-        description: 'Understand TCP/IP, DNS, HTTP, and network protocols',
+        id: 'fundamentals/networking',
+        name: 'Networking basics',
+        kind: 'core',
         level: 'basic',
-        type: 'concept',
-        icon: Globe,
-        link: '/guides/networking-fundamentals',
+        summary:
+          'Many outages look like network problems at first. Learn how packets move with TCP/IP, how names resolve with DNS, and what happens in an HTTP request and a TLS handshake. Then you can tell a firewall rule from a stale DNS record.',
+        subtopics: ['TCP/IP and ports', 'DNS', 'HTTP and TLS', 'SSH'],
+        resources: [
+          guide('networking-fundamentals'),
+          post('when-is-it-appropriate-to-use-udp-instead-of-tcp'),
+          post('ping-timeout-vs-destination-unreachable'),
+          sim('dns-simulator'),
+          sim('tcp-vs-udp'),
+          sim('packet-journey'),
+          sim('ssl-tls-handshake'),
+          quiz('network-security-quiz'),
+        ],
       },
       {
-        name: 'Git Version Control',
-        description: 'Learn version control with Git and GitHub',
+        id: 'fundamentals/git',
+        name: 'Git',
+        kind: 'core',
         level: 'basic',
-        type: 'tool',
-        icon: GitBranch,
-        link: '/guides/introduction-to-git',
+        summary:
+          'Git tracks every change to code and infrastructure. Learn commits, branches and merges, fix a merge conflict, and work through pull requests. CI/CD and GitOps build on the same workflow.',
+        subtopics: ['Commits and branches', 'Merges and conflicts', 'Pull requests', 'Rebase'],
+        resources: [
+          guide('introduction-to-git'),
+          post('how-do-i-resolve-merge-conflicts-in-a-git-repository'),
+          post('difference-between-git-pull-and-git-fetch'),
+          post('delete-commit-from-branch'),
+          sim('git-concepts-simulator'),
+          sim('git-merge-conflict-simulator'),
+          lab('git-workflow-collaboration'),
+          quiz('git-quiz'),
+          cards('git-fundamentals'),
+        ],
       },
     ],
   },
   {
     id: 'infrastructure',
     title: 'Infrastructure as Code',
-    description: 'Learn to provision and manage infrastructure through code',
-    icon: Server,
-    timeEstimate: '2-3 weeks',
-    color: 'from-emerald-400 via-teal-500 to-cyan-600',
-    badge: 'IaC Specialist',
+    shortTitle: 'IaC',
+    description: 'Learn to provision and manage infrastructure through code.',
+    weeks: [2, 3],
     prerequisites: ['Linux basics', 'Basic programming'],
     outcomes: ['Infrastructure automation', 'Configuration management', 'Reproducible deployments'],
-    marketContext:
-      'Infrastructure as Code is a $8.4B market growing at 25% annually. Companies save 40-60% on infrastructure costs through automation.',
-    industryStats: '📈 IaC skills increase salary potential by 25-40%',
-    careerProgression: {
-      jobTitles: [
-        'Infrastructure Engineer',
-        'Platform Engineer',
-        'Cloud Engineer',
-        'DevOps Engineer',
-      ],
-      salaryRange: '$75,000 - $120,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Specialize in cloud platforms',
-        'Learn advanced automation',
-        'Focus on security',
-      ],
-      industryAdoption: 'Adopted by 78% of enterprises for cloud infrastructure',
-    },
+    roles: ['Infrastructure Engineer', 'Platform Engineer', 'Cloud Engineer', 'DevOps Engineer'],
     projects: [
       {
         name: 'Multi-Environment Infrastructure',
-        description: 'Create development, staging, and production environments using Terraform',
+        description: 'Create development, staging, and production environments with Terraform.',
         difficulty: 'intermediate',
         estimatedTime: '1-2 weeks',
         technologies: ['Terraform', 'AWS/Azure', 'Ansible', 'Git'],
+        practice: lab('terraform-aws-vpc'),
       },
       {
         name: 'Automated Web Application Stack',
         description:
-          'Deploy a complete web application stack with load balancers, databases, and monitoring',
+          'Deploy a web application stack with load balancers, databases, and monitoring.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['Terraform', 'Ansible', 'Nginx', 'PostgreSQL', 'Prometheus'],
+        practice: lab('ansible-web-server-automation'),
       },
       {
         name: 'Infrastructure Testing Pipeline',
-        description: 'Build a CI/CD pipeline that tests infrastructure changes before deployment',
+        description: 'Build a CI/CD pipeline that tests infrastructure changes before deployment.',
         difficulty: 'advanced',
         estimatedTime: '1-2 weeks',
         technologies: ['Terraform', 'Terratest', 'GitHub Actions', 'Checkov'],
       },
     ],
-    skills: [
+    topics: [
       {
+        id: 'infrastructure/terraform',
         name: 'Terraform',
-        description: 'Provision cloud infrastructure with HashiCorp Terraform',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: Settings,
-        link: '/categories/terraform',
+        summary:
+          'Terraform describes servers, networks and DNS records as code, then plans and applies the changes. Learn providers and resources, how state tracks what exists, and how modules keep code reusable.',
+        subtopics: ['Providers and resources', 'Plan and apply', 'State', 'Modules'],
+        resources: [
+          guide('introduction-to-terraform'),
+          post('terraform-best-practices'),
+          post('terraform-state-remove-move-migrate-backend'),
+          post('terraform-module-outputs-inputs-and-sources'),
+          sim('terraform-terminal-simulator'),
+          sim('terraform-puzzle'),
+          lab('terraform-digitalocean-droplet'),
+          lab('terraform-aws-vpc'),
+          challenge('fix-the-network-module'),
+          quiz('terraform-quiz'),
+          cards('terraform-basics'),
+        ],
       },
       {
+        id: 'infrastructure/ansible',
         name: 'Ansible',
-        description: 'Automate configuration management and application deployment',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: Settings,
-        link: '/guides/introduction-to-ansible',
+        summary:
+          'Ansible configures servers over SSH with YAML playbooks. Learn inventories, playbooks and roles, and why every task should be safe to run twice.',
+        subtopics: ['Inventories', 'Playbooks', 'Roles', 'Idempotence'],
+        resources: [
+          guide('introduction-to-ansible'),
+          lab('ansible-web-server-automation'),
+          quiz('ansible-quiz'),
+          cards('ansible-basics'),
+        ],
       },
       {
+        id: 'infrastructure/cloudformation',
         name: 'CloudFormation',
-        description: 'AWS native infrastructure as code service',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'tool',
-        icon: Cloud,
-        link: 'https://docs.aws.amazon.com/cloudformation/',
-        external: true,
+        summary:
+          'CloudFormation is the AWS infrastructure as code service. Learn it if your team runs only on AWS or inherits CloudFormation stacks. The ideas map closely to Terraform.',
+        subtopics: ['Templates', 'Stacks', 'Change sets'],
+        resources: [ext('AWS CloudFormation docs', 'https://docs.aws.amazon.com/cloudformation/')],
       },
       {
-        name: 'Configuration Management',
-        description: 'Understand configuration management principles and tools',
+        id: 'infrastructure/config-management',
+        name: 'Configuration management',
+        kind: 'core',
         level: 'basic',
-        type: 'concept',
-        icon: Settings,
+        summary:
+          'Configuration management keeps servers and apps in a known, desired state. Describe that state in files, keep the files in Git so every change is reviewed, and learn to spot drift when reality no longer matches.',
+        subtopics: ['Desired state', 'Drift', 'YAML', 'Repository layout'],
+        resources: [
+          post('infrastructure-as-code-fundamentals'),
+          post('terraform-refresh-explained'),
+          guide('introduction-to-packer'),
+          sim('yaml-parsing-simulator'),
+          checklist('terraform-repo-structure'),
+        ],
       },
       {
-        name: 'Infrastructure Testing',
-        description: 'Test and validate infrastructure code',
+        id: 'infrastructure/testing',
+        name: 'Infrastructure testing',
+        kind: 'optional',
         level: 'advanced',
-        type: 'practice',
-        icon: CheckCircle2,
+        summary:
+          'Infrastructure code breaks like any other code. Check it before it reaches production: validate and lint, review the plan in CI, enforce rules with policy as code, and run real tests with tools like Terratest.',
+        subtopics: ['Validate and lint', 'Plan checks in CI', 'Policy as code', 'Terratest'],
+        resources: [
+          post('terraform-plan-gate-digitalocean-inference'),
+          ext('Terratest', 'https://terratest.gruntwork.io/'),
+          ext('Checkov', 'https://www.checkov.io/'),
+        ],
       },
     ],
   },
   {
     id: 'containers',
     title: 'Containerization & Orchestration',
-    description: 'Learn container technologies and orchestration platforms',
-    icon: Container,
-    timeEstimate: '3-4 weeks',
-    color: 'from-indigo-500 via-purple-600 to-pink-600',
-    badge: 'Container Expert',
+    shortTitle: 'Containers',
+    description: 'Learn container technologies and orchestration platforms.',
+    weeks: [3, 4],
     prerequisites: ['Linux fundamentals', 'Basic networking'],
     outcomes: ['Container expertise', 'Kubernetes proficiency', 'Microservices understanding'],
-    marketContext:
-      'Container adoption grew 300% in the last 3 years. Kubernetes is used by 83% of container users, making it essential for modern DevOps.',
-    industryStats: '🚀 Kubernetes expertise commands 30% salary premium',
-    careerProgression: {
-      jobTitles: [
-        'Container Platform Engineer',
-        'Kubernetes Administrator',
-        'Site Reliability Engineer',
-        'Platform Architect',
-      ],
-      salaryRange: '$85,000 - $140,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Learn service mesh technologies',
-        'Learn advanced Kubernetes patterns',
-        'Focus on container security',
-      ],
-      industryAdoption: 'Used by 96% of organizations either in production or pilot',
-    },
+    roles: [
+      'Container Platform Engineer',
+      'Kubernetes Administrator',
+      'Site Reliability Engineer',
+      'Platform Architect',
+    ],
     projects: [
       {
         name: 'Microservices E-commerce Platform',
-        description:
-          'Build and deploy a complete microservices application using Docker and Kubernetes',
+        description: 'Build and deploy a microservices application with Docker and Kubernetes.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['Docker', 'Kubernetes', 'Helm', 'Istio', 'PostgreSQL', 'Redis'],
       },
       {
         name: 'Container CI/CD Pipeline',
-        description: 'Create a pipeline that builds, tests, and deploys containerized applications',
+        description:
+          'Create a pipeline that builds, tests, and deploys containerized applications.',
         difficulty: 'intermediate',
         estimatedTime: '1-2 weeks',
         technologies: ['Docker', 'GitHub Actions', 'Kubernetes', 'Harbor Registry'],
+        practice: lab('docker-multi-stage-build'),
       },
       {
         name: 'Kubernetes Cluster Setup',
-        description: 'Set up a production-ready Kubernetes cluster with monitoring and logging',
+        description: 'Set up a production-ready Kubernetes cluster with monitoring and logging.',
         difficulty: 'advanced',
         estimatedTime: '1-2 weeks',
         technologies: ['Kubernetes', 'Prometheus', 'Grafana', 'ELK Stack', 'Ingress'],
       },
     ],
-    skills: [
+    topics: [
       {
-        name: 'Docker Fundamentals',
-        description: 'Learn containerization with Docker',
+        id: 'containers/docker',
+        name: 'Docker',
+        kind: 'core',
         level: 'basic',
-        type: 'tool',
-        icon: Container,
-        link: '/guides/introduction-to-docker',
+        summary:
+          'A container packages an app with everything it needs to run. Learn to write a Dockerfile, build and run images, keep data in volumes and run several services together with Compose.',
+        subtopics: ['Images and Dockerfiles', 'Volumes', 'Compose', 'Multi-stage builds'],
+        resources: [
+          guide('introduction-to-docker'),
+          post('docker-image-vs-container'),
+          post('dockerfile-copy-vs-add-commands'),
+          post('docker-mount-host-directory'),
+          sim('docker-terminal-simulator'),
+          sim('docker-under-the-hood-simulator'),
+          lab('docker-server-deployment'),
+          lab('docker-multi-stage-build'),
+          challenge('shrink-the-image'),
+          quiz('docker-quiz'),
+          cards('docker-essentials'),
+        ],
       },
       {
-        name: 'Container Networking',
-        description: 'Understand how containers communicate',
+        id: 'containers/networking',
+        name: 'Container networking',
+        kind: 'core',
         level: 'intermediate',
-        type: 'concept',
-        icon: Globe,
-        link: 'https://devdojo.com/post/bobbyiliev/docker-networking-a-quick-guide-to-get-you-started',
-        external: true,
+        summary:
+          'Containers talk to each other over virtual networks. Learn bridge networks and published ports in Docker, then how Kubernetes gives every pod an IP address, routes Services and limits traffic with network policies.',
+        subtopics: [
+          'Bridge networks and ports',
+          'Service discovery',
+          'CNI plugins',
+          'Network policies',
+        ],
+        resources: [
+          post('docker-compose-ports-vs-expose'),
+          post('communication-multiple-docker-compose'),
+          post('connect-to-host-localhost-from-docker'),
+          sim('kubernetes-networking-cni-simulator'),
+          sim('load-balancer-simulator'),
+          sim('service-mesh-simulator'),
+          lab('nginx-load-balancing-reverse-proxy'),
+        ],
       },
       {
-        name: 'Kubernetes Basics',
-        description: 'Deploy and manage applications on Kubernetes',
+        id: 'containers/kubernetes',
+        name: 'Kubernetes',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: Settings,
-        link: '/guides/introduction-to-kubernetes',
+        summary:
+          'Kubernetes runs containers across many machines and keeps them running. Learn pods, Deployments and Services, how the scheduler places work, and how the Horizontal Pod Autoscaler adds pods under load.',
+        subtopics: ['Pods and Deployments', 'Services and Ingress', 'Scheduling', 'Autoscaling'],
+        resources: [
+          guide('introduction-to-kubernetes'),
+          post('difference-between-pod-and-deployment'),
+          post('kubernetes-deployments-vs-statefulsets'),
+          post('kubernetes-concepts-junior-to-mid-level'),
+          sim('kubernetes-terminal-simulator'),
+          sim('k8s-scheduler'),
+          lab('kubernetes-hpa-lab'),
+          challenge('fix-the-deployment'),
+          quiz('kubernetes-quiz'),
+          cards('kubernetes-basics'),
+        ],
       },
       {
-        name: 'Helm Charts',
-        description: 'Package and deploy Kubernetes applications',
+        id: 'containers/helm',
+        name: 'Helm',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: BookMarked,
-        link: 'https://helm.sh/docs/',
-        external: true,
+        summary:
+          'Helm packages Kubernetes manifests into charts with values you can change per environment. Learn to install, upgrade and roll back releases, and write a small chart of your own.',
+        subtopics: ['Charts', 'Values', 'Releases and rollbacks'],
+        resources: [
+          post('how-to-publish-helm-chart'),
+          ext('Helm docs', 'https://helm.sh/docs/'),
+          lab('helm-kubernetes-packaging'),
+          quiz('helm-charts-quiz'),
+          cards('helm-fundamentals'),
+        ],
       },
       {
-        name: 'Container Security',
-        description: 'Secure containerized applications and runtime',
-        level: 'advanced',
-        type: 'practice',
-        icon: Shield,
-        link: 'https://devdojo.com/post/bobbyiliev/5-docker-best-practices-i-wish-i-knew-when-i-started',
-        external: true,
+        id: 'containers/security-basics',
+        name: 'Container security basics',
+        kind: 'core',
+        level: 'intermediate',
+        summary:
+          'A container is only as safe as its image. Use small base images, run as a non-root user, scan images for known CVEs and keep secrets out of image layers.',
+        subtopics: [
+          'Small base images',
+          'Non-root users',
+          'Image scanning',
+          'No secrets in layers',
+        ],
+        resources: [
+          post('docker-security-best-practices'),
+          post('docker-image-optimization-best-practices'),
+          post('why-your-base-image-has-1684-cves'),
+          sim('docker-escape'),
+          checklist('docker-security'),
+        ],
       },
     ],
   },
   {
     id: 'cicd',
     title: 'CI/CD Pipelines',
-    description: 'Build automated deployment pipelines for continuous delivery',
-    icon: Workflow,
-    timeEstimate: '2-3 weeks',
-    color: 'from-lime-400 via-green-500 to-emerald-600',
-    badge: 'Pipeline Expert',
+    shortTitle: 'CI/CD',
+    description: 'Build automated deployment pipelines for continuous delivery.',
+    weeks: [2, 3],
     prerequisites: ['Git version control', 'Basic containerization'],
     outcomes: ['Automated deployments', 'Testing integration', 'Release management'],
-    marketContext:
-      'Organizations with mature CI/CD practices deploy 46x more frequently with 96% faster recovery times. GitOps adoption increased 75% year-over-year.',
-    industryStats: '⚡ Teams with CI/CD deploy 2,555x more frequently',
-    careerProgression: {
-      jobTitles: ['Release Engineer', 'DevOps Engineer', 'Platform Engineer', 'CI/CD Specialist'],
-      salaryRange: '$80,000 - $130,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Learn GitOps patterns',
-        'Learn advanced testing strategies',
-        'Focus on security integration',
-      ],
-      industryAdoption: 'Used by 87% of software organizations for faster delivery',
-    },
+    roles: ['Release Engineer', 'DevOps Engineer', 'Platform Engineer', 'CI/CD Specialist'],
     projects: [
       {
         name: 'Multi-Stage CI/CD Pipeline',
-        description: 'Build a complete pipeline with testing, security scanning, and deployment',
+        description: 'Build a pipeline with testing, security scanning, and deployment.',
         difficulty: 'intermediate',
         estimatedTime: '1-2 weeks',
         technologies: ['GitHub Actions', 'Docker', 'SonarQube', 'Kubernetes', 'ArgoCD'],
+        practice: lab('ci-cd-github-actions'),
       },
       {
         name: 'GitOps Deployment System',
-        description: 'Implement GitOps workflow for automated deployments with ArgoCD',
+        description: 'Set up a GitOps workflow for automated deployments with ArgoCD.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['ArgoCD', 'Helm', 'Kubernetes', 'Git', 'Prometheus'],
+        practice: lab('gitops-argocd-deployment'),
       },
       {
         name: 'Blue-Green Deployment Pipeline',
-        description: 'Create a zero-downtime deployment strategy with automated rollback',
+        description: 'Create a zero-downtime deployment with automated rollback.',
         difficulty: 'advanced',
         estimatedTime: '1-2 weeks',
         technologies: ['Jenkins', 'Kubernetes', 'Helm', 'Monitoring', 'Load Balancer'],
+        practice: sim('deployment-strategies'),
       },
     ],
-    skills: [
+    topics: [
       {
+        id: 'cicd/github-actions',
         name: 'GitHub Actions',
-        description: 'Automate workflows with GitHub Actions',
+        kind: 'core',
         level: 'basic',
-        type: 'tool',
-        icon: GitBranch,
-        link: '/guides/introduction-to-cicd',
+        summary:
+          'GitHub Actions runs your build, tests and deploys on every push. Learn workflows, jobs and steps, how runners work, and how to use secrets and caches safely.',
+        subtopics: ['Workflows and jobs', 'Runners', 'Secrets', 'Caching'],
+        resources: [
+          guide('introduction-to-cicd'),
+          post('github-actions-fast'),
+          post('github-actions-bill-keeps-growing'),
+          lab('ci-cd-github-actions'),
+          quiz('github-actions-quiz'),
+          quiz('cicd-fundamentals-quiz'),
+          cards('cicd-concepts'),
+          checklist('cicd-pipeline-setup'),
+        ],
       },
       {
+        id: 'cicd/jenkins',
         name: 'Jenkins',
-        description: 'Build CI/CD pipelines with Jenkins',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'tool',
-        icon: Workflow,
-        link: 'https://www.jenkins.io/doc/pipeline/tour/getting-started/',
-        external: true,
+        summary:
+          'Jenkins is a self-hosted CI server that many companies still run. Learn it if your team uses it: pipelines in a Jenkinsfile, build agents and plugins.',
+        subtopics: ['Jenkinsfile pipelines', 'Agents', 'Plugins'],
+        resources: [
+          ext('Jenkins pipeline tour', 'https://www.jenkins.io/doc/pipeline/tour/getting-started/'),
+          quiz('jenkins-quiz'),
+        ],
       },
       {
+        id: 'cicd/gitlab-ci',
         name: 'GitLab CI',
-        description: 'Continuous integration with GitLab',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'tool',
-        icon: GitBranch,
-        link: 'https://docs.gitlab.com/ee/ci/',
-        external: true,
+        summary:
+          'GitLab CI is built into GitLab. Pipelines live in .gitlab-ci.yml as stages and jobs and run on GitLab runners. Most ideas carry over from GitHub Actions.',
+        subtopics: ['.gitlab-ci.yml', 'Stages and jobs', 'Runners'],
+        resources: [ext('GitLab CI/CD docs', 'https://docs.gitlab.com/ci/')],
       },
       {
-        name: 'ArgoCD',
-        description: 'GitOps continuous delivery for Kubernetes',
+        id: 'cicd/argocd',
+        name: 'Argo CD and GitOps',
+        kind: 'core',
         level: 'advanced',
-        type: 'tool',
-        icon: Workflow,
-        link: 'https://argo-cd.readthedocs.io/en/stable/',
-        external: true,
+        summary:
+          'With GitOps, Git holds the desired state of your clusters and a controller makes each cluster match it. Argo CD is the most common controller. Learn sync and drift, and how to lay out a repo for several environments.',
+        subtopics: ['GitOps principles', 'Sync and drift', 'Multi-environment repos'],
+        resources: [
+          post('introduction-to-argocd'),
+          post('gitops-argocd-repository-structure-multi-environment'),
+          post('gitops-deploy-docker-containers-github-actions-argocd'),
+          sim('gitops-workflow'),
+          lab('gitops-argocd-deployment'),
+          quiz('argocd-multi-environment-quiz'),
+          cards('argocd-fundamentals'),
+          checklist('gitops-implementation'),
+        ],
       },
       {
-        name: 'Testing Automation',
-        description: 'Integrate automated testing in pipelines',
+        id: 'cicd/testing',
+        name: 'Test automation and releases',
+        kind: 'core',
         level: 'intermediate',
-        type: 'practice',
-        icon: CheckCircle2,
+        summary:
+          'A pipeline is only useful if it stops bad changes. Run tests on every change, give reviewers a preview environment, and ship with blue-green or canary releases that you can roll back.',
+        subtopics: [
+          'Tests in CI',
+          'Preview environments',
+          'Blue-green and canary',
+          'Feature flags',
+        ],
+        resources: [
+          post('deployment-strategies-guide'),
+          post('api-testing-types-where-each-belongs-in-your-pipeline'),
+          post('how-to-implement-progressive-delivery-with-feature-flags'),
+          sim('deployment-strategies'),
+          sim('preview-environment-simulator'),
+          quiz('cicd-pipelines-quiz'),
+          checklist('production-deployment'),
+        ],
       },
     ],
   },
   {
     id: 'cloud',
     title: 'Cloud Platforms',
-    description: 'Learn major cloud service providers and their services',
-    icon: Cloud,
-    timeEstimate: '4-6 weeks',
-    color: 'from-sky-400 via-blue-500 to-indigo-600',
-    badge: 'Cloud Architect',
+    shortTitle: 'Cloud',
+    description: 'Learn major cloud service providers and their services.',
+    weeks: [4, 6],
     prerequisites: ['Infrastructure as Code', 'Networking fundamentals'],
     outcomes: ['Multi-cloud expertise', 'Cost optimization', 'Architecture design'],
-    marketContext:
-      'Cloud market reached $545B in 2024. 92% of enterprises have multi-cloud strategy. AWS holds 33% market share, followed by Azure (22%) and GCP (11%).',
-    industryStats: '☁️ Cloud-certified professionals earn 25% more on average',
-    careerProgression: {
-      jobTitles: [
-        'Cloud Engineer',
-        'Solutions Architect',
-        'Cloud Security Engineer',
-        'Principal Engineer',
-      ],
-      salaryRange: '$95,000 - $180,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Pursue cloud certifications',
-        'Specialize in cloud security',
-        'Learn multi-cloud management',
-      ],
-      industryAdoption: 'Adopted by 94% of enterprises globally',
-    },
+    roles: [
+      'Cloud Engineer',
+      'Solutions Architect',
+      'Cloud Security Engineer',
+      'Principal Engineer',
+    ],
     projects: [
       {
         name: 'Multi-Cloud Architecture',
-        description: 'Design and implement an application that runs across AWS, Azure, and GCP',
+        description: 'Design and build an application that runs across AWS, Azure, and GCP.',
         difficulty: 'advanced',
         estimatedTime: '3-4 weeks',
         technologies: ['AWS', 'Azure', 'GCP', 'Terraform', 'Kubernetes', 'Load Balancers'],
       },
       {
         name: 'Serverless Application Suite',
-        description:
-          'Build a complete serverless application with API Gateway, Lambda, and DynamoDB',
+        description: 'Build a serverless application with API Gateway, Lambda, and DynamoDB.',
         difficulty: 'intermediate',
         estimatedTime: '2-3 weeks',
         technologies: ['AWS Lambda', 'API Gateway', 'DynamoDB', 'CloudFormation', 'S3'],
       },
       {
         name: 'Cost Optimization Dashboard',
-        description: 'Create automated cost monitoring and optimization recommendations',
+        description: 'Create automated cost monitoring and optimization recommendations.',
         difficulty: 'advanced',
         estimatedTime: '1-2 weeks',
         technologies: ['CloudWatch', 'AWS Cost Explorer', 'Python', 'Grafana', 'Lambda'],
       },
     ],
-    skills: [
+    topics: [
       {
+        id: 'cloud/digitalocean',
         name: 'DigitalOcean',
-        description: 'Cloud infrastructure and services for developers',
+        kind: 'optional',
         level: 'basic',
-        type: 'tool',
-        icon: Cloud,
-        link: 'https://www.digitalocean.com/docs/',
+        summary:
+          'DigitalOcean is a smaller cloud with simple pricing, which makes it a good first place to run real servers. Create a Droplet, add a managed database and describe it all in Terraform.',
+        subtopics: ['Droplets', 'Managed databases', 'Spaces object storage'],
+        resources: [
+          ext('DigitalOcean docs', 'https://docs.digitalocean.com/'),
+          post('migrating-from-heroku-to-digitalocean'),
+          lab('terraform-digitalocean-droplet'),
+        ],
       },
       {
-        name: 'AWS Fundamentals',
-        description: 'Learn core AWS services and concepts',
+        id: 'cloud/aws',
+        name: 'AWS fundamentals',
+        kind: 'core',
         level: 'basic',
-        type: 'tool',
-        icon: Cloud,
-        link: '/guides/introduction-to-aws',
+        summary:
+          'AWS is the largest cloud, so most job posts mention it. Start with IAM, EC2, S3 and VPC networking, then Lambda. Learn how the pieces connect before you learn every service.',
+        subtopics: ['IAM', 'EC2 and S3', 'VPC networking', 'Lambda'],
+        resources: [
+          guide('introduction-to-aws'),
+          post('assumerole-service-ec2'),
+          sim('aws-vpc-simulator'),
+          lab('terraform-aws-vpc'),
+          quiz('aws-quiz'),
+          cards('aws-essentials'),
+        ],
       },
       {
-        name: 'Azure Services',
-        description: 'Microsoft Azure cloud platform essentials',
+        id: 'cloud/azure',
+        name: 'Azure',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'tool',
-        icon: Cloud,
-        link: 'https://docs.microsoft.com/en-us/azure/',
-        external: true,
+        summary:
+          'Azure is common in companies that already use Microsoft tools. Learn resource groups, virtual machines, networking and AKS, its managed Kubernetes. The core ideas match AWS under different names.',
+        subtopics: ['Resource groups', 'Virtual machines', 'AKS'],
+        resources: [ext('Azure documentation', 'https://learn.microsoft.com/en-us/azure/')],
       },
       {
-        name: 'Google Cloud Platform',
-        description: 'GCP services and cloud architecture',
+        id: 'cloud/gcp',
+        name: 'Google Cloud',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'tool',
-        icon: Cloud,
-        link: 'https://cloud.google.com/docs',
-        external: true,
+        summary:
+          'Google Cloud is strong in Kubernetes and data tools. Learn projects and IAM, Compute Engine, GKE and Cloud Run.',
+        subtopics: ['Projects and IAM', 'Compute Engine', 'GKE and Cloud Run'],
+        resources: [ext('Google Cloud docs', 'https://docs.cloud.google.com/docs')],
       },
       {
-        name: 'Cost Optimization',
-        description: 'Optimize cloud costs and resource usage',
+        id: 'cloud/cost',
+        name: 'Cloud cost optimization',
+        kind: 'core',
         level: 'intermediate',
-        type: 'practice',
-        icon: TrendingUp,
-        link: '/guides/finops-for-devops-engineers',
+        summary:
+          'Cloud bills grow quietly. Tag resources so every cost has an owner, right-size machines, use reserved and spot capacity where it fits, and watch data transfer fees.',
+        subtopics: ['Cost allocation tags', 'Right-sizing', 'Reserved and spot', 'Data transfer'],
+        resources: [
+          guide('finops-for-devops-engineers'),
+          post('what-is-finops-a-beginners-guide-to-cloud-cost-management'),
+          post('how-to-set-up-aws-cost-explorer-and-budgets-for-teams'),
+          quiz('cloud-cost-optimization-quiz'),
+          cards('cloud-cost-allocation-tags'),
+          checklist('cloud-cost-allocation-tags'),
+        ],
       },
       {
-        name: 'AWS Certified Solutions Architect',
-        description: 'Professional certification for AWS',
+        id: 'cloud/aws-certification',
+        name: 'AWS Solutions Architect certification',
+        kind: 'optional',
         level: 'advanced',
-        type: 'certification',
-        icon: Award,
-        link: 'https://aws.amazon.com/certification/certified-solutions-architect-associate/',
-        external: true,
+        summary:
+          'The AWS Certified Solutions Architect Associate exam checks that you can design systems on AWS. It is optional, but some employers filter on it. Build real things first, then study the Well-Architected pillars.',
+        subtopics: ['Well-Architected pillars', 'High availability', 'Exam practice'],
+        resources: [
+          ext(
+            'AWS Certified Solutions Architect Associate',
+            'https://aws.amazon.com/certification/certified-solutions-architect-associate/'
+          ),
+          post('multi-region-active-active-aws'),
+          checklist('aws-well-architected'),
+          checklist('high-availability'),
+        ],
       },
     ],
   },
   {
     id: 'monitoring',
     title: 'Monitoring & Observability',
-    description: 'Implement comprehensive monitoring and observability solutions',
-    icon: Activity,
-    timeEstimate: '2-3 weeks',
-    color: 'from-yellow-400 via-amber-500 to-orange-600',
-    badge: 'SRE Specialist',
+    shortTitle: 'Monitoring',
+    description: 'Set up monitoring and observability for your systems.',
+    weeks: [2, 3],
     prerequisites: ['Container basics', 'Cloud fundamentals'],
     outcomes: ['System visibility', 'Incident response', 'Performance optimization'],
-    marketContext:
-      'Observability market growing at 8.2% CAGR, reaching $1.6B by 2025. Companies with mature observability practices have 69% faster MTTR.',
-    industryStats: '📊 SRE roles grew 34% year-over-year',
-    careerProgression: {
-      jobTitles: [
-        'Site Reliability Engineer',
-        'Observability Engineer',
-        'Platform Reliability Engineer',
-        'Principal SRE',
-      ],
-      salaryRange: '$105,000 - $200,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Manage chaos engineering',
-        'Learn advanced SLO/SLI design',
-        'Specialize in distributed systems',
-      ],
-      industryAdoption: 'Critical for 89% of cloud-native organizations',
-    },
+    roles: [
+      'Site Reliability Engineer',
+      'Observability Engineer',
+      'Platform Reliability Engineer',
+      'Principal SRE',
+    ],
     projects: [
       {
         name: 'Complete Observability Stack',
-        description: 'Build end-to-end monitoring for a microservices application',
+        description: 'Build end-to-end monitoring for a microservices application.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['Prometheus', 'Grafana', 'Jaeger', 'ELK Stack', 'AlertManager'],
+        practice: lab('microservices-observability-opentelemetry'),
       },
       {
         name: 'SLO Monitoring Dashboard',
-        description: 'Create SLI/SLO tracking with automated alerting and error budgets',
+        description: 'Track SLIs and SLOs with automated alerts and error budgets.',
         difficulty: 'advanced',
         estimatedTime: '1-2 weeks',
         technologies: ['Prometheus', 'Grafana', 'SLO Library', 'PagerDuty', 'Kubernetes'],
+        practice: lab('prometheus-grafana-monitoring'),
       },
       {
         name: 'Performance Analysis Tool',
-        description: 'Build automated performance regression detection system',
+        description: 'Build automated detection of performance regressions.',
         difficulty: 'intermediate',
         estimatedTime: '1-2 weeks',
         technologies: ['Prometheus', 'Python', 'Grafana', 'Statistical Analysis', 'Alerts'],
       },
     ],
-    skills: [
+    topics: [
       {
-        name: 'Prometheus & Grafana',
-        description: 'Metrics collection and visualization',
+        id: 'monitoring/prometheus-grafana',
+        name: 'Prometheus and Grafana',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: Activity,
-        link: 'https://www.digitalocean.com/community/developer-center/setting-up-monitoring-for-digitalocean-managed-databases-with-prometheus-and-grafana',
-        external: true,
+        summary:
+          'Prometheus scrapes metrics from your services and stores them as time series. Grafana turns them into dashboards. Learn PromQL, build a dashboard and write alerts that fire only for real problems.',
+        subtopics: ['Metrics and exporters', 'PromQL', 'Dashboards', 'Alerting'],
+        resources: [
+          ext(
+            'Prometheus: getting started',
+            'https://prometheus.io/docs/prometheus/latest/getting_started/'
+          ),
+          sim('promql-playground'),
+          lab('prometheus-grafana-monitoring'),
+          challenge('write-the-alerts'),
+          quiz('monitoring-basics-quiz'),
+          quiz('monitoring-observability-quiz'),
+          cards('monitoring-observability'),
+          checklist('monitoring-observability'),
+        ],
       },
       {
-        name: 'ELK Stack',
-        description: 'Elasticsearch, Logstash, and Kibana for logs',
+        id: 'monitoring/logging',
+        name: 'Logging and the ELK stack',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: FileText,
-        link: 'https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-elastic-stack-on-ubuntu-20-04',
-        external: true,
+        summary:
+          'Logs tell you what happened and why. Write structured logs, ship them from many machines to one place, and search them with Elasticsearch and Kibana or with Grafana Loki. Keep an eye on what they cost.',
+        subtopics: ['Structured logs', 'Log shipping', 'Search and retention'],
+        resources: [
+          post('your-logs-cost-more-than-the-service'),
+          ext(
+            'Install the Elastic Stack on Ubuntu',
+            'https://www.digitalocean.com/community/tutorials/how-to-install-elasticsearch-logstash-and-kibana-elastic-stack-on-ubuntu-20-04'
+          ),
+          sim('log-aggregation-pipeline-simulator'),
+        ],
       },
       {
-        name: 'APM Tools',
-        description: 'Application Performance Monitoring',
+        id: 'monitoring/slos',
+        name: 'SLOs, latency and incidents',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: Monitor,
+        summary:
+          'Users feel latency and errors, not CPU graphs. Measure request latency at p95 and p99, set SLOs with error budgets, and use them to decide when to page someone. Then practice running an incident.',
+        subtopics: [
+          'Latency percentiles',
+          'SLOs and error budgets',
+          'On-call',
+          'Incident response',
+        ],
+        resources: [
+          post('slos-slis-error-budgets-practical-guide'),
+          post('what-is-p99-latency'),
+          post('on-call-rotation-escalation-policy-guide'),
+          sim('latency-percentiles-simulator'),
+          sim('incident-commander-simulator'),
+          quiz('slos-slis-error-budgets-quiz'),
+          quiz('sre-quiz'),
+          cards('slos-slis-error-budgets'),
+          checklist('on-call-rotation-escalation-policy'),
+        ],
       },
       {
-        name: 'Distributed Tracing',
-        description: 'Track requests across microservices',
+        id: 'monitoring/tracing',
+        name: 'Distributed tracing',
+        kind: 'optional',
         level: 'advanced',
-        type: 'concept',
-        icon: GitBranch,
+        summary:
+          'In a system of many services, one slow request can cross ten of them. Tracing follows the request with spans so you can see where the time went. OpenTelemetry is the standard way to add it.',
+        subtopics: ['Spans and traces', 'Context propagation', 'OpenTelemetry'],
+        resources: [
+          post('distributed-tracing-opentelemetry-instrumentation-visualization'),
+          post('trace-context-environment-variables'),
+          sim('microservices-simulator'),
+          lab('microservices-observability-opentelemetry'),
+          quiz('opentelemetry-distributed-tracing-quiz'),
+          cards('opentelemetry-distributed-tracing'),
+          checklist('distributed-tracing-opentelemetry'),
+        ],
       },
     ],
   },
   {
     id: 'security',
     title: 'Security & Compliance',
-    description: 'Implement DevSecOps practices and security automation',
-    icon: Shield,
-    timeEstimate: '3-4 weeks',
-    color: 'from-rose-500 via-red-600 to-pink-700',
-    badge: 'Security Champion',
+    shortTitle: 'Security',
+    description: 'Build security checks into your pipelines and platforms.',
+    weeks: [3, 4],
     prerequisites: ['CI/CD pipelines', 'Container security basics'],
     outcomes: ['Security automation', 'Compliance management', 'Threat mitigation'],
-    marketContext:
-      'DevSecOps market expected to reach $23.2B by 2027. 85% of organizations plan to increase security automation investment in 2024.',
-    industryStats: '🔒 DevSecOps roles increased 164% in the last 2 years',
-    careerProgression: {
-      jobTitles: [
-        'DevSecOps Engineer',
-        'Security Engineer',
-        'Compliance Engineer',
-        'Security Architect',
-      ],
-      salaryRange: '$110,000 - $190,000',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Pursue security certifications',
-        'Learn threat modeling',
-        'Learn zero-trust architecture',
-      ],
-      industryAdoption: 'Critical priority for 76% of organizations',
-    },
+    roles: ['DevSecOps Engineer', 'Security Engineer', 'Compliance Engineer', 'Security Architect'],
     projects: [
       {
         name: 'Secure CI/CD Pipeline',
-        description: 'Build a pipeline with integrated security scanning and compliance checks',
+        description: 'Build a pipeline with security scanning and compliance checks.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['SAST/DAST', 'Container Scanning', 'Secret Detection', 'Policy as Code'],
+        practice: lab('ci-cd-github-actions'),
       },
       {
         name: 'Zero Trust Network',
-        description: 'Implement zero-trust principles with service mesh and mTLS',
+        description: 'Apply zero-trust principles with a service mesh and mTLS.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['Istio', 'Cert-Manager', 'OPA Gatekeeper', 'Falco', 'Network Policies'],
       },
       {
         name: 'Compliance Automation',
-        description: 'Automate compliance reporting and remediation for SOC2/GDPR',
+        description: 'Automate compliance reports and fixes for SOC 2 or GDPR.',
         difficulty: 'intermediate',
         estimatedTime: '1-2 weeks',
         technologies: ['Open Policy Agent', 'Falco', 'Cloud Security Tools', 'Automation Scripts'],
       },
     ],
-    skills: [
+    topics: [
       {
-        name: 'Security Scanning',
-        description: 'Automated vulnerability scanning in pipelines',
+        id: 'security/scanning',
+        name: 'Security scanning',
+        kind: 'core',
         level: 'intermediate',
-        type: 'tool',
-        icon: Shield,
+        summary:
+          'Find problems before attackers do. Add static analysis, dependency checks and image scans to your pipeline, and decide which findings block a merge.',
+        subtopics: ['SAST', 'Dependency scanning', 'Supply chain', 'Security gates'],
+        resources: [
+          guide('sast-tools'),
+          guide('security-gates'),
+          guide('owasp-top-10'),
+          post('dependency-scanning-guide'),
+          post('dast-integration-guide'),
+          post('software-supply-chain-security'),
+        ],
       },
       {
-        name: 'Secrets Management',
-        description: 'Secure handling of secrets and credentials',
+        id: 'security/secrets',
+        name: 'Secrets management',
+        kind: 'core',
         level: 'intermediate',
-        type: 'practice',
-        icon: Lock,
+        summary:
+          'Passwords and API keys do not belong in Git or in images. Keep them in a secrets manager like Vault, encrypt config files with SOPS, give each app only the secrets it needs and rotate them.',
+        subtopics: ['Vault', 'SOPS', 'Rotation', 'Leaked secrets'],
+        resources: [
+          post('secrets-management-guide'),
+          post('pre-commit-hooks-security-guide'),
+          post('you-cannot-rotate-a-secret-you-cannot-find'),
+          lab('infrastructure-security-vault-sops'),
+          quiz('vault-secrets-management-quiz'),
+          cards('vault-secrets-management'),
+          checklist('hashicorp-vault-secrets-management'),
+        ],
       },
       {
-        name: 'RBAC & IAM',
-        description: 'Role-based access control and identity management',
+        id: 'security/iam',
+        name: 'RBAC and IAM',
+        kind: 'core',
         level: 'intermediate',
-        type: 'concept',
-        icon: Users,
+        summary:
+          'Every person and service should have only the access it needs. Learn cloud IAM policies, Kubernetes RBAC, OAuth and OIDC for logins, and how to lock down SSH.',
+        subtopics: ['Least privilege', 'Cloud IAM', 'Kubernetes RBAC', 'OAuth and OIDC'],
+        resources: [
+          guide('security-principles'),
+          post('minimum-aws-permissions-for-terraform'),
+          sim('k8s-rbac-simulator'),
+          sim('oauth-oidc-flow-simulator'),
+          lab('linux-server-security'),
+          checklist('ssh-hardening'),
+          checklist('aws-security'),
+        ],
       },
       {
-        name: 'Compliance Automation',
-        description: 'Automate compliance checks and reporting',
+        id: 'security/compliance',
+        name: 'Compliance automation',
+        kind: 'optional',
         level: 'advanced',
-        type: 'practice',
-        icon: CheckCircle2,
+        summary:
+          'Audits like SOC 2 ask you to prove that your controls work. Write the rules as code, check them in CI and collect the evidence automatically. Threat modeling helps you pick which controls matter.',
+        subtopics: ['Policy as code', 'Audit evidence', 'Threat modeling'],
+        resources: [
+          guide('threat-modeling'),
+          post('soc2-evidence-from-github-and-terraform'),
+          ext('Open Policy Agent docs', 'https://www.openpolicyagent.org/docs'),
+        ],
       },
       {
-        name: 'Container Security',
-        description: 'Advanced container and runtime security',
+        id: 'security/runtime',
+        name: 'Container runtime security',
+        kind: 'optional',
         level: 'advanced',
-        type: 'practice',
-        icon: Container,
+        summary:
+          'Some attacks start after deploy. Apply Pod Security Standards, drop Linux capabilities, add seccomp profiles and watch for odd behaviour at runtime. Patch the kernel and the runtime when CVEs land.',
+        subtopics: ['Pod Security Standards', 'Capabilities and seccomp', 'Runtime detection'],
+        resources: [
+          post('security-profiles-operator-seccomp-boundary'),
+          sim('docker-escape'),
+          quiz('security-incident-response-quiz'),
+          cards('pod-security-standards-kubernetes'),
+          checklist('kubernetes-security'),
+        ],
       },
     ],
   },
   {
     id: 'databases',
     title: 'Database Management',
-    description: 'Handle data persistence, scaling, and database operations',
-    icon: Database,
-    timeEstimate: '2-3 weeks',
-    color: 'from-violet-400 via-fuchsia-500 to-purple-700',
-    badge: 'Data Engineer',
+    shortTitle: 'Databases',
+    description: 'Handle data persistence, scaling, and database operations.',
+    weeks: [2, 3],
     prerequisites: ['Basic programming', 'Cloud fundamentals'],
     outcomes: ['Database expertise', 'Data reliability', 'Performance optimization'],
-    marketContext:
-      'Database market growing at 14% CAGR. 73% of organizations use multiple database types. Cloud databases account for 68% of new deployments.',
-    industryStats: '💾 Database specialization adds $15-20k to base salary',
-    careerProgression: {
-      jobTitles: [
-        'Database Engineer',
-        'Data Platform Engineer',
-        'Database Administrator',
-        'Data Architect',
-      ],
-      salaryRange: '$85,000 - $150,000',
-      demandLevel: 'high',
-      nextSteps: [
-        'Learn data streaming platforms',
-        'Learn database security',
-        'Focus on data governance',
-      ],
-      industryAdoption: 'Essential for 100% of data-driven organizations',
-    },
+    roles: [
+      'Database Engineer',
+      'Data Platform Engineer',
+      'Database Administrator',
+      'Data Architect',
+    ],
     projects: [
       {
         name: 'Database Migration Pipeline',
-        description: 'Automate migration from legacy systems to cloud databases',
+        description: 'Automate a migration from a legacy system to a cloud database.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: [
@@ -1073,175 +975,336 @@ export const roadmapStages: RoadmapStage[] = [
           'Monitoring',
           'Rollback Strategies',
         ],
+        practice: checklist('zero-downtime-postgres-migrations'),
       },
       {
         name: 'Multi-Database Architecture',
-        description: 'Design polyglot persistence with different database types',
+        description: 'Design polyglot persistence with different database types.',
         difficulty: 'advanced',
         estimatedTime: '2-3 weeks',
         technologies: ['PostgreSQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Data Sync'],
       },
       {
         name: 'Database Monitoring System',
-        description: 'Build comprehensive database performance monitoring',
+        description: 'Build performance monitoring for your databases.',
         difficulty: 'intermediate',
         estimatedTime: '1-2 weeks',
         technologies: ['Prometheus', 'Grafana', 'Database Exporters', 'Alert Rules'],
       },
     ],
-    skills: [
+    topics: [
       {
-        name: 'SQL & NoSQL Databases',
-        description: 'Work with relational and non-relational databases',
+        id: 'databases/sql-nosql',
+        name: 'SQL and NoSQL',
+        kind: 'core',
         level: 'basic',
-        type: 'concept',
-        icon: Database,
-        link: 'https://github.com/bobbyiliev/introduction-to-sql',
-        external: true,
+        summary:
+          'Most apps keep their data in PostgreSQL or MySQL, with Redis or MongoDB for some jobs. Learn SQL, how tables and indexes work, and when a document or key-value store is a better fit.',
+        subtopics: ['SQL queries', 'PostgreSQL', 'Redis and MongoDB', 'Choosing a database'],
+        resources: [
+          guide('introduction-to-postgres'),
+          ext(
+            'Introduction to SQL (free ebook)',
+            'https://github.com/bobbyiliev/introduction-to-sql'
+          ),
+          sim('sql-terminal-simulator'),
+          sim('postgres-terminal-simulator'),
+          sim('mongodb-terminal-simulator'),
+          sim('dbms-simulator'),
+          quiz('sql-quiz'),
+        ],
       },
       {
-        name: 'Database Automation',
-        description: 'Automate database deployments and migrations',
+        id: 'databases/automation',
+        name: 'Database automation',
+        kind: 'core',
         level: 'intermediate',
-        type: 'practice',
-        icon: Settings,
+        summary:
+          'Schema changes should go through the same review and pipeline as code. Use a migration tool, run migrations in CI against real data, and change a busy table without locking it.',
+        subtopics: ['Migrations as code', 'Schema changes in CI', 'Zero-downtime changes'],
+        resources: [
+          post('zero-downtime-postgresql-migrations-production'),
+          post('rehearse-migrations-on-a-neon-branch'),
+          quiz('zero-downtime-postgres-migrations-quiz'),
+          cards('postgresql-zero-downtime-migrations'),
+          checklist('zero-downtime-postgres-migrations'),
+        ],
       },
       {
-        name: 'Backup Strategies',
-        description: 'Implement robust backup and recovery procedures',
+        id: 'databases/backups',
+        name: 'Backups and recovery',
+        kind: 'core',
         level: 'intermediate',
-        type: 'practice',
-        icon: Archive,
+        summary:
+          'A backup you have never restored is a guess. Learn full and incremental backups, point-in-time recovery and restore drills, and agree on how much data and time the business can afford to lose.',
+        subtopics: ['Backup types', 'Point-in-time recovery', 'Restore drills', 'RPO and RTO'],
+        resources: [
+          sim('bcdr-simulator'),
+          ext(
+            'PostgreSQL docs: backup and restore',
+            'https://www.postgresql.org/docs/current/backup.html'
+          ),
+        ],
       },
       {
-        name: 'Performance Tuning',
-        description: 'Optimize database performance and queries',
+        id: 'databases/performance',
+        name: 'Performance tuning',
+        kind: 'optional',
         level: 'advanced',
-        type: 'practice',
-        icon: TrendingUp,
+        summary:
+          'Slow queries are a common cause of slow apps. Read query plans with EXPLAIN, add the right indexes, pool connections and cache hot reads.',
+        subtopics: ['EXPLAIN and query plans', 'Indexes', 'Connection pooling', 'Caching'],
+        resources: [
+          post('serverless-killed-your-connection-pool'),
+          post('stop-paginating-with-offset'),
+          sim('db-indexing-simulator'),
+          sim('caching-simulator'),
+          lab('redis-caching-strategies'),
+          challenge('speed-up-the-queries'),
+        ],
       },
       {
-        name: 'Data Migration',
-        description: 'Plan and execute database migrations',
+        id: 'databases/migration',
+        name: 'Data migration',
+        kind: 'optional',
         level: 'advanced',
-        type: 'practice',
-        icon: Workflow,
+        summary:
+          'Moving data between servers, versions or vendors needs a plan. Copy it with replication, check that both sides match, and cut over with a short, tested way back.',
+        subtopics: ['Replication', 'Verification', 'Cutover and rollback'],
+        resources: [
+          post('postgres-cdc-without-dual-writing'),
+          sim('database-replication-sharding-scaling'),
+        ],
       },
     ],
   },
   {
     id: 'lifetime',
     title: 'Continuous Learning',
-    description: 'Embrace lifelong learning and community contribution',
-    icon: InfinityIcon,
-    timeEstimate: 'Forever',
-    color:
-      'from-pink-400 via-rose-500 via-orange-500 via-yellow-500 via-green-500 via-blue-500 via-indigo-500 to-purple-600',
-    badge: 'Lifelong Learner',
+    shortTitle: 'Keep learning',
+    description: 'Keep learning and share what you know.',
+    ongoing: true,
     prerequisites: ['Curiosity', 'Growth mindset'],
     outcomes: ['Continuous growth', 'Community impact', 'Knowledge sharing'],
-    marketContext:
-      'Technology changes rapidly - 50% of skills become obsolete every 2-5 years. Continuous learners are 40% more likely to receive promotions.',
-    industryStats: '🚀 Lifelong learners earn 47% more over their careers',
-    careerProgression: {
-      jobTitles: [
-        'Senior Engineer',
-        'Staff Engineer',
-        'Principal Engineer',
-        'Distinguished Engineer',
-        'CTO',
-      ],
-      salaryRange: '$150,000 - $500,000+',
-      demandLevel: 'very-high',
-      nextSteps: [
-        'Become a thought leader',
-        'Mentor others',
-        'Contribute to open source',
-        'Speak at conferences',
-      ],
-      industryAdoption: 'Essential for long-term career success',
-    },
+    roles: ['Senior Engineer', 'Staff Engineer', 'Principal Engineer', 'Distinguished Engineer'],
     projects: [
       {
         name: 'Open Source Contribution',
-        description: 'Contribute to major DevOps tools or create your own project',
+        description: 'Contribute to a DevOps tool you use, or start your own project.',
         difficulty: 'advanced',
         estimatedTime: 'Ongoing',
         technologies: ['GitHub', 'Community Building', 'Documentation', 'Code Review'],
       },
       {
         name: 'Technical Blog Series',
-        description: 'Share your DevOps journey and learnings through regular blog posts',
+        description: 'Share your DevOps work and what you learn in regular blog posts.',
         difficulty: 'intermediate',
         estimatedTime: 'Ongoing',
-        technologies: ['Writing', 'SEO', 'Community Engagement', 'Personal Branding'],
+        technologies: ['Writing', 'SEO', 'Community Engagement'],
       },
       {
         name: 'Mentorship Program',
-        description: 'Guide junior engineers and contribute to community growth',
+        description: 'Guide junior engineers and help the community grow.',
         difficulty: 'intermediate',
         estimatedTime: 'Ongoing',
         technologies: ['Leadership', 'Communication', 'Knowledge Transfer', 'Career Coaching'],
       },
     ],
-    skills: [
+    topics: [
       {
-        name: 'Stay Curious & Experiment',
-        description: 'Always explore new technologies and approaches',
+        id: 'lifetime/curiosity',
+        name: 'Stay curious and experiment',
+        kind: 'core',
         level: 'basic',
-        type: 'practice',
-        icon: Sparkles,
+        summary:
+          'Tools change every year, but the habit of trying them carries over. Read changelogs, keep a small lab to break things in, and when something fails, find out why.',
+        subtopics: ['Read changelogs', 'Break things on purpose', 'A daily incident'],
+        resources: [
+          post('top-github-devops-learning-repos-2026'),
+          sim('on-call'),
+          checklist('litmus-chaos-engineering-experiment'),
+        ],
       },
       {
-        name: 'Open Source Contribution',
-        description: 'Contribute to open source projects',
+        id: 'lifetime/open-source',
+        name: 'Open source',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'practice',
-        icon: GitBranch,
-        link: 'https://github.com/',
-        external: true,
+        summary:
+          'Contributing to open source teaches you to read large codebases and to work with strangers through pull requests. Start with docs and small fixes in tools you already use.',
+        subtopics: ['First contributions', 'Reading other code', 'Good pull requests'],
+        resources: [
+          ext('How to contribute to open source', 'https://opensource.guide/how-to-contribute/'),
+        ],
       },
       {
-        name: 'Technical Writing & Blogging',
-        description: 'Share knowledge through writing',
+        id: 'lifetime/writing',
+        name: 'Technical writing',
+        kind: 'optional',
         level: 'intermediate',
-        type: 'practice',
-        icon: FileText,
-        // link: '/posts/technical-writing-guide',
+        summary:
+          'Clear writing spreads what you know. Write runbooks, design docs and blameless postmortems, and turn what you learn into a blog post.',
+        subtopics: ['Runbooks', 'Postmortems', 'Blog posts'],
+        resources: [post('the-postmortem-nobody-reads')],
       },
       {
-        name: 'Mentoring Others',
-        description: 'Help others on their DevOps journey',
+        id: 'lifetime/mentoring',
+        name: 'Mentoring',
+        kind: 'optional',
         level: 'advanced',
-        type: 'practice',
-        icon: Users,
-        // link: '/posts/mentoring-in-tech',
+        summary:
+          'Teaching others shows you the gaps in what you know. Pair with junior engineers, give kind and specific code reviews, and share your notes.',
+        subtopics: ['Pairing', 'Code review', 'Sharing notes'],
+        resources: [],
       },
       {
-        name: 'Build Side Projects',
-        description: 'Create projects to learn and showcase skills',
+        id: 'lifetime/side-projects',
+        name: 'Side projects',
+        kind: 'core',
         level: 'basic',
-        type: 'practice',
-        icon: Code,
-        // link: '/posts/devops-project-ideas',
+        summary:
+          'A small project you run yourself teaches more than a course. Deploy something real, give it monitoring and backups, and write down what broke.',
+        subtopics: ['Ship something small', 'Run it yourself', 'Write it up'],
+        resources: [lab('nginx-web-deployment'), lab('docker-server-deployment')],
       },
       {
-        name: 'Attend Conferences & Workshops',
-        description: 'Learn from industry experts and network',
+        id: 'lifetime/conferences',
+        name: 'Conferences and workshops',
+        kind: 'optional',
         level: 'basic',
-        type: 'practice',
-        icon: Users,
-        // link: '/posts/devops-conferences-2024',
+        summary:
+          'Talks and workshops show how other teams solve the same problems. Many conferences post their talks online for free, so you can learn without travelling.',
+        subtopics: ['Recorded talks', 'Workshops', 'Local meetups'],
+        resources: [ext('CNCF talks on YouTube', 'https://www.youtube.com/@cncf')],
       },
       {
-        name: 'Join DevOps Communities',
-        description: 'Connect with other DevOps professionals',
+        id: 'lifetime/communities',
+        name: 'Communities',
+        kind: 'core',
         level: 'basic',
-        type: 'practice',
-        icon: Heart,
-        // link: '/posts/devops-communities-to-join',
+        summary:
+          'You learn faster with people around you. Join a forum, a chat group or a local meetup, ask questions, and answer a few.',
+        subtopics: ['Forums and chat', 'Meetups', 'Newsletters'],
+        resources: [],
       },
     ],
   },
 ];
 
+export interface CareerNote {
+  /** Occupation name as the BLS writes it. */
+  occupation: string;
+  href: string;
+  roles: string;
+  stages: string[];
+  low: number;
+  median: number;
+  high: number;
+  /** Projected change in jobs over the projection period, in percent. */
+  growth: number;
+  growthNote?: string;
+}
+
+// Checked against each BLS page on 2026-11-07. The BLS has no DevOps job
+// title, so every row is the closest occupation it tracks. Update the numbers
+// and the dates together when the BLS publishes new data.
+export const careerSource = {
+  name: 'US Bureau of Labor Statistics, Occupational Outlook Handbook',
+  payPeriod: 'May 2025',
+  projection: '2025 to 2035',
+  updated: '2026-08-27',
+  checked: '2026-11-07',
+};
+
+const BLS = 'https://www.bls.gov/ooh/computer-and-information-technology';
+
+export const careerNotes: CareerNote[] = [
+  {
+    occupation: 'Network and computer systems administrators',
+    href: `${BLS}/network-and-computer-systems-administrators.htm`,
+    roles: 'System administrator, junior DevOps engineer',
+    stages: ['fundamentals', 'infrastructure'],
+    low: 62640,
+    median: 99130,
+    high: 155050,
+    growth: -4,
+  },
+  {
+    occupation: 'Software developers',
+    href: `${BLS}/software-developers.htm`,
+    roles: 'DevOps, platform and release engineer, SRE',
+    stages: ['containers', 'cicd', 'monitoring'],
+    low: 82460,
+    median: 135980,
+    high: 214670,
+    growth: 10,
+    growthNote: 'Growth covers software developers, QA analysts and testers together.',
+  },
+  {
+    occupation: 'Computer network architects',
+    href: `${BLS}/computer-network-architects.htm`,
+    roles: 'Cloud and network architect',
+    stages: ['cloud'],
+    low: 79900,
+    median: 134050,
+    high: 202680,
+    growth: 8,
+  },
+  {
+    occupation: 'Information security analysts',
+    href: `${BLS}/information-security-analysts.htm`,
+    roles: 'DevSecOps and security engineer',
+    stages: ['security'],
+    low: 75090,
+    median: 129180,
+    high: 199850,
+    growth: 21,
+  },
+  {
+    occupation: 'Database administrators',
+    href: `${BLS}/database-administrators.htm`,
+    roles: 'Database administrator',
+    stages: ['databases'],
+    low: 60230,
+    median: 104620,
+    high: 163320,
+    growth: 0,
+  },
+  {
+    occupation: 'Database architects',
+    href: `${BLS}/database-administrators.htm`,
+    roles: 'Database and data platform engineer',
+    stages: ['databases'],
+    low: 86240,
+    median: 139500,
+    high: 204000,
+    growth: 9,
+  },
+];
+
+/** Our own reading for the career notes section. */
+export const careerReading: ResourceRef[] = [
+  post('devops-engineer-career-paths-next-five-years'),
+  post('devops-interviews-situational-questions'),
+  quiz('junior-devops-interview-quiz'),
+  quiz('devops-interview-quiz'),
+];
+
+export function getRoadmapTotals(stages: RoadmapStage[] = roadmapStages) {
+  const topics = stages.flatMap((s) => s.topics);
+  const tracked = stages.filter((s) => !s.ongoing).flatMap((s) => s.topics);
+  const timed = stages.filter((s) => s.weeks);
+  return {
+    stages: stages.length,
+    topics: topics.length,
+    core: topics.filter((t) => t.kind === 'core').length,
+    tracked: tracked.length,
+    projects: stages.reduce((n, s) => n + s.projects.length, 0),
+    minWeeks: timed.reduce((n, s) => n + s.weeks![0], 0),
+    maxWeeks: timed.reduce((n, s) => n + s.weeks![1], 0),
+  };
+}
+
+export function stageTimeLabel(stage: RoadmapStage): string {
+  return stage.weeks ? `${stage.weeks[0]}-${stage.weeks[1]} weeks` : 'Ongoing';
+}
