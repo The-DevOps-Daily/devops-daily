@@ -33,7 +33,7 @@
 # saves with learning.devops-daily.com.
 /opsville/*
   ! Content-Security-Policy
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://go.devops-daily.com https://learning.devops-daily.com wss://live.devops-daily.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://go.devops-daily.com https://learning.devops-daily.com wss://live.devops-daily.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://cloudflareinsights.com; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'none'
 
 /opsville/assets/index-*
   Cache-Control: public, max-age=31536000, immutable
