@@ -392,13 +392,13 @@ export default function DockerEscape() {
 
   const scorecard = (
     <section aria-label="Scorecard" className="rounded-lg border bg-card p-2.5 text-sm">
-      <div className="mb-2 flex items-center justify-between gap-2">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">Scorecard</h3>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {scores.length}/{SCENARIOS.length}
         </span>
       </div>
-      <ol className="space-y-1.5">
+      <ol className="space-y-0.5">
         {SCENARIOS.map((s, i) => {
           const sc = scores[i];
           const dangers = s.tokens.filter((t) => t.danger).length;
@@ -408,18 +408,18 @@ export default function DockerEscape() {
               key={s.id}
               aria-current={i === index ? 'step' : undefined}
               className={cn(
-                'flex items-start gap-2 rounded-md px-2 py-1.5',
-                i === index && 'border border-primary/40 bg-primary/5'
+                'flex items-baseline gap-2 rounded-md border px-2 py-1',
+                i === index ? 'border-primary/40 bg-primary/5' : 'border-transparent'
               )}
             >
-              <span className="mt-0.5 w-4 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+              <span className="w-4 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                 {i + 1}
               </span>
-              <div className="min-w-0">
+              <div className="flex min-w-0 flex-1 flex-wrap items-baseline justify-between gap-x-2">
                 <p className="font-medium">{s.title}</p>
                 <p
                   className={cn(
-                    'text-xs',
+                    'shrink-0 text-xs',
                     r
                       ? r.tone === 'success'
                         ? 'text-correct-foreground'
@@ -444,7 +444,7 @@ export default function DockerEscape() {
           );
         })}
       </ol>
-      <p className="mt-3 text-xs text-muted-foreground">
+      <p className="mt-2 text-xs text-muted-foreground">
         Escape routes found so far: {totals.found}. Some commands have more than one, and one has
         none.
       </p>
@@ -528,7 +528,7 @@ export default function DockerEscape() {
       ) : (
         <SimStage
           columns="lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]"
-          minHeight="min-h-[22rem]"
+          minHeight="min-h-[16rem]"
           tab={tab}
           onTabChange={(t) => setTab(t as Tab)}
           anchorRef={tabsRef}

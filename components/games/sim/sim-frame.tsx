@@ -422,7 +422,10 @@ export function SimStage({
 /** The primary actions on phones, fixed to the bottom. Pair with <SimFrame phoneBar>. */
 export function SimPhoneBar({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden">
+    <div
+      data-sim-phone-bar=""
+      className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:hidden"
+    >
       <div className="mx-auto flex max-w-xl items-center gap-2">{children}</div>
     </div>
   );
