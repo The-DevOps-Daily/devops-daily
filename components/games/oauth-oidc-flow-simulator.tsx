@@ -523,7 +523,6 @@ export default function OAuthOidcFlowSimulator() {
       className={size === 'bar' ? 'h-8' : 'h-10 flex-1'}
       data-sim-action=""
       onClick={() => runAction()}
-      disabled={completedCount === totalActions}
     >
       <Play className="h-4 w-4" aria-hidden="true" />
       {currentAction.label}
@@ -663,17 +662,24 @@ function FlowCanvas({
             <div
               key={id}
               className={cn(
-                'rounded-md border p-2.5 transition-colors',
+                'rounded-md border p-2 transition-colors xl:p-2.5',
                 active ? 'border-primary/60 bg-primary/10' : 'bg-muted/30'
               )}
             >
-              <div
-                className={cn('mb-2 inline-flex rounded-md border p-1.5', active && 'text-primary')}
-              >
-                {actor.icon}
+              <div className="flex items-start gap-2 xl:block">
+                <div
+                  className={cn(
+                    'inline-flex shrink-0 rounded-md border p-1 xl:mb-2 xl:p-1.5 [&_svg]:h-4 [&_svg]:w-4 xl:[&_svg]:h-5 xl:[&_svg]:w-5',
+                    active && 'text-primary'
+                  )}
+                >
+                  {actor.icon}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-snug">{actor.label}</p>
+                  <p className="text-xs text-muted-foreground">{actor.caption}</p>
+                </div>
               </div>
-              <p className="text-sm font-semibold">{actor.label}</p>
-              <p className="text-xs text-muted-foreground">{actor.caption}</p>
               {id === 'authorization-server' && failures.badRedirect && (
                 <span
                   className={cn(
