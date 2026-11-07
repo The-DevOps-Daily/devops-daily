@@ -225,14 +225,14 @@ export default function DevOpsSurvivalGuidePage() {
           />
 
           <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[17rem_1fr] lg:grid-cols-[20rem_1fr] lg:gap-14">
-            <div className="mx-auto w-48 sm:w-56 md:w-full">
+            <div className="mx-auto w-40 sm:w-52 md:w-full">
               <Image
                 src={`${IMG}/cover.webp`}
-                alt="Cover of The DevOps Survival Guide: an open, well-worn travel case packed with a map, a pager, a mug, a wrench, a network cable, a lantern and a server"
+                alt="Cover of The DevOps Survival Guide: an open, well-worn travel case packed with a map, a pager, a mug, a first-aid kit, a wrench, a network cable, a lantern and a server"
                 width={640}
                 height={960}
                 preload
-                sizes="(min-width: 1024px) 20rem, (min-width: 768px) 17rem, 14rem"
+                sizes="(min-width: 1024px) 20rem, (min-width: 768px) 17rem, 13rem"
                 className="h-auto w-full rounded-md border border-border shadow-xl"
               />
             </div>
@@ -296,7 +296,7 @@ export default function DevOpsSurvivalGuidePage() {
           <SectionHeader
             label="contents"
             title="What's in the book"
-            description='Every chapter opens with a scenario and ends with "Your Next Steps".'
+            description='Chapters 1 to 14 each open with a short scenario and end with "Your Next Steps".'
           />
           <ol className="grid gap-3 sm:grid-cols-2">
             {chapters.map((chapter) => (
