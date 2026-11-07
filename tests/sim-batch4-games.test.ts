@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeploymentStrategiesSimulator from '@/components/games/deployment-strategies-simulator';
+import K8sScheduler from '@/components/games/k8s-scheduler';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -173,5 +174,108 @@ describe('Deployment Strategies on the kit', () => {
       )
     );
     expect(text()).toContain('1/5');
+  });
+});
+
+async function renderScheduler() {
+  await act(async () => root.render(createElement(K8sScheduler)));
+}
+
+async function placePod(podName: string, nodeName: string) {
+  const pod = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+    (button) =>
+      button.getAttribute('aria-pressed') !== null &&
+      (button.textContent ?? '').trim().startsWith(podName)
+  );
+  if (!pod) throw new Error(`no pod chip "${podName}"`);
+  await act(async () => pod.click());
+
+  const placement = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+    (button) => name(button) === `Place "${podName}" on ${nodeName}`
+  );
+  if (!placement) throw new Error(`no placement for "${podName}" on ${nodeName}`);
+  await act(async () => placement.click());
+}
+
+async function clearLevel(placements: Array<[string, string]>) {
+  for (const [pod, node] of placements) await placePod(pod, node);
+}
+
+describe('Kubernetes Scheduler on the kit', () => {
+  const levelPlacements: Array<Array<[string, string]>> = [
+    [
+      ['db', 'node-a'],
+      ['api', 'node-a'],
+      ['web-1', 'node-b'],
+      ['web-2', 'node-b'],
+      ['cache', 'node-b'],
+    ],
+    [
+      ['trainer', 'node-b (gpu)'],
+      ['db', 'node-c (db)'],
+      ['web-1', 'node-a'],
+      ['web-2', 'node-d'],
+      ['api', 'node-a'],
+    ],
+    [
+      ['etl', 'node-a'],
+      ['search', 'node-a'],
+      ['api', 'node-b'],
+      ['worker', 'node-b'],
+    ],
+    [
+      ['api-1', 'node-a'],
+      ['api-2', 'node-b'],
+      ['api-3', 'node-c'],
+      ['api-4', 'node-a'],
+    ],
+  ];
+
+  it('no hero, no confetti, a goal', async () => {
+    await renderScheduler();
+    expect(container.querySelector('[class*="bg-linear"], [class*="fixed"]')).toBeNull();
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('1/4');
+  });
+
+  it('a wrong node explains why, next to the board', async () => {
+    await renderScheduler();
+    await placePod('db', 'node-a');
+    await placePod('api', 'node-a');
+    await placePod('web-1', 'node-a');
+    expect(text()).toContain("Can't place it here");
+    expect(text()).toContain('Exceeds CPU capacity');
+    expect(completions).toBe(0);
+  });
+
+  it('one signal, after the fourth level', async () => {
+    await renderScheduler();
+    for (let level = 0; level < 3; level++) {
+      await clearLevel(levelPlacements[level]);
+      expect(completions).toBe(0);
+      expect(text()).toContain('Level cleared');
+      await click('Next level', true);
+    }
+
+    await clearLevel(levelPlacements[3]);
+    expect(completions).toBe(1);
+    expect(text()).toContain('All four levels cleared');
+    await click('Keep exploring', true);
+    expect(text()).toContain('Level cleared');
+    expect(completions).toBe(1);
+    await click('Reset level', true);
+    await click('Click again to reset level', true);
+    await clearLevel(levelPlacements[3]);
+    expect(completions).toBe(1);
+  }, 60_000);
+
+  it('the level pills jump between levels', async () => {
+    await renderScheduler();
+    const levelThree = [...container.querySelectorAll<HTMLButtonElement>('button')].find((button) =>
+      (button.getAttribute('aria-label') ?? '').startsWith('Level 3:')
+    );
+    if (!levelThree) throw new Error('no Level 3 pill');
+    await act(async () => levelThree.click());
+    expect(text()).toContain('3/4');
   });
 });
