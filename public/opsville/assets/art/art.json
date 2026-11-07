@@ -1,0 +1,13 @@
+{
+  "palette": 52,
+  "billboard": {
+    "width": 64,
+    "height": 40,
+    "panel": {
+      "x": 5,
+      "y": 6,
+      "width": 54,
+      "height": 23
+    }
+  }
+}

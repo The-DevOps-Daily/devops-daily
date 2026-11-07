@@ -20,3 +20,29 @@
 /games/*/embed
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors *; object-src 'none'; base-uri 'self'; form-action 'self'
+
+# opsville:start
+# Opsville, the game at /opsville/. Built in The-DevOps-Daily/opsville and
+# copied here by its `npm run release:site`; edit site/headers.txt there.
+# The game needs its own CSP: it frames /games/*/embed ('self'), loads GA,
+# sends sponsor beacons to go.devops-daily.com and syncs signed-in players'
+# saves with learning.devops-daily.com.
+/opsville/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://go.devops-daily.com https://learning.devops-daily.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'none'
+
+/opsville/assets/index-*
+  Cache-Control: public, max-age=31536000, immutable
+
+/opsville/assets/art/*
+  Cache-Control: public, max-age=3600
+
+/opsville/assets/sponsors/*
+  Cache-Control: public, max-age=3600
+
+/opsville/maps/*
+  Cache-Control: public, max-age=3600
+
+/opsville/sponsors.json
+  Cache-Control: no-cache
+# opsville:end

@@ -1,0 +1,19 @@
+{
+  "note": "Two hub billboards. Links must go through go.devops-daily.com with p=game so the sponsor report counts them.",
+  "slots": [
+    {
+      "id": "slot-1",
+      "name": "Bitrise",
+      "tagline": "Managed runners for GitHub Actions",
+      "logo": "assets/sponsors/bitrise-brand.svg",
+      "link": "https://go.devops-daily.com/bitrise?p=game"
+    },
+    {
+      "id": "slot-2",
+      "name": "Atomsized",
+      "tagline": "AWS platform engineering and GitOps",
+      "logo": "assets/sponsors/atomsized.svg",
+      "link": "https://go.devops-daily.com/atomsized?p=game"
+    }
+  ]
+}
