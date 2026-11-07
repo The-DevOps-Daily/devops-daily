@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GitConceptsSimulator, { LESSONS } from '@/components/games/git-concepts-simulator';
 import GitMergeConflictSimulator from '@/components/games/git-merge-conflict-simulator';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
+import GitQuiz from '@/components/games/git-quiz';
+import gitQuizJson from '@/content/quizzes/git-quiz.json';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 import { LESSONS as CONFLICT_LESSONS, TOTAL_STEPS } from '@/lib/games/git-conflict-engine';
 
@@ -234,7 +236,9 @@ describe('Git Merge Conflict on the kit', () => {
   it('Show me types the command but does not run it', async () => {
     await render(GitMergeConflictSimulator);
     await click('Show me');
-    expect(input().value).toBe(CONFLICT_LESSONS[0].steps[0].command);
+    const first = CONFLICT_LESSONS[0].steps[0];
+    if (first.kind !== 'command') throw new Error('the first step should be a command');
+    expect(input().value).toBe(first.command);
     expect(text()).toContain(`0/${TOTAL_STEPS} steps`);
   });
 
@@ -303,5 +307,98 @@ describe('GitOps Workflow on the kit', () => {
     await click('View Results', true);
     expect(completions).toBe(1);
     expect(text()).toContain('You answered 2 of 3 challenges correctly.');
+  });
+});
+
+describe('Git quiz (GenericQuiz) on the kit', () => {
+  beforeEach(() => {
+    window.requestAnimationFrame = (callback) => {
+      callback(0);
+      return 0;
+    };
+  });
+
+  function clickQuiz(label: string, exact = false) {
+    const button = [...container.querySelectorAll('button')].find(
+      (candidate) =>
+        !candidate.disabled && (exact ? name(candidate) === label : name(candidate).includes(label))
+    );
+    if (!button) throw new Error(`no enabled quiz button "${label}"`);
+    act(() => button.click());
+  }
+
+  function clickQuizOption(option: string) {
+    const button = [...container.querySelectorAll('button')].find(
+      (candidate) =>
+        !candidate.disabled &&
+        [...candidate.querySelectorAll('span')].some((span) => span.textContent?.trim() === option)
+    );
+    if (!button) throw new Error(`no enabled quiz option "${option}"`);
+    act(() => button.click());
+  }
+
+  it('one signal, on See Results, whatever the score', async () => {
+    await render(GitQuiz);
+    clickQuiz('Start Quiz', true);
+
+    for (let index = 0; index < gitQuizJson.questions.length; index++) {
+      clickQuizOption(
+        gitQuizJson.questions[index].options[gitQuizJson.questions[index].correctAnswer]
+      );
+      clickQuiz('Submit Answer', true);
+      expect(text()).toContain('Correct');
+      expect(completions).toBe(0);
+      if (index < gitQuizJson.questions.length - 1) clickQuiz('Next Question', true);
+    }
+
+    expect(completions).toBe(0);
+    clickQuiz('See Results', true);
+    expect(completions).toBe(1);
+    expect(text()).toContain('Quiz complete');
+    expect(text()).toContain(`${gitQuizJson.totalPoints}/${gitQuizJson.totalPoints}`);
+
+    clickQuiz('Play again', true);
+    expect(text()).toContain('Start Quiz');
+    expect(completions).toBe(1);
+
+    clickQuiz('Start Quiz', true);
+    for (let index = 0; index < gitQuizJson.questions.length; index++) {
+      const question = gitQuizJson.questions[index];
+      const wrongAnswer = question.options[question.correctAnswer === 0 ? 1 : 0];
+      clickQuizOption(wrongAnswer);
+      clickQuiz('Submit Answer', true);
+      if (index < gitQuizJson.questions.length - 1) clickQuiz('Next Question', true);
+    }
+    clickQuiz('See Results', true);
+    expect(completions).toBe(2);
+  }, 60_000);
+
+  it('keys only work inside the quiz', async () => {
+    await render(GitQuiz);
+    clickQuiz('Start Quiz', true);
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+    });
+    expect(container.querySelector('[aria-pressed="true"]')).toBeNull();
+
+    const optionTwo = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+      (button) => button.querySelector('span')?.textContent?.trim() === '2'
+    );
+    if (!optionTwo) throw new Error('option 2 was not found');
+    await act(async () => {
+      optionTwo.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true }));
+    });
+    expect(optionTwo.getAttribute('aria-pressed')).toBe('true');
+
+    await act(async () => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    });
+    expect(text()).toContain('Submit Answer');
+  });
+
+  it('has no gradients or motion blobs', async () => {
+    await render(GitQuiz);
+    expect(container.querySelector('[class*="bg-linear-to"], [class*="blur-xl"]')).toBeNull();
   });
 });
