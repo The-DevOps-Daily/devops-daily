@@ -465,6 +465,10 @@
   @apply rounded-lg border border-border;
 }
 
+.prose video {
+  @apply h-auto w-full rounded-lg border border-border bg-black;
+}
+
 .prose blockquote {
   @apply border-l-4 border-border pl-4 italic;
 }

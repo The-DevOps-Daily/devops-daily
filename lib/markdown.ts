@@ -365,6 +365,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     'em', 'strong', 'del', 's', 'b', 'i', 'u', 'mark', 'small', 'sub', 'sup', 'kbd', 'abbr', 'br', 'hr',
     'span', 'div', 'img', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
     'dl', 'dt', 'dd', 'details', 'summary', 'figure', 'figcaption', 'input', 'button', 'svg', 'path', 'circle',
+    'video', 'source',
   ],
   allowedAttributes: {
     '*': ['class', 'id', 'title', 'aria-hidden', 'aria-label', 'role'],
@@ -380,11 +381,15 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     path: ['d', 'fill', 'stroke', 'stroke-linecap', 'stroke-linejoin', 'stroke-width'],
     circle: ['cx', 'cy', 'r', 'fill', 'stroke'],
     details: ['open'],
+    video: ['src', 'poster', 'controls', 'preload', 'playsinline', 'muted', 'loop', 'width', 'height'],
+    source: ['src', 'type'],
   },
   // Keep attribute case: the SVG viewBox on heading and callout icons must survive.
   parser: { lowerCaseAttributeNames: false },
   allowedSchemes: ['http', 'https', 'mailto'],
-  allowedSchemesByTag: { img: ['http', 'https'] },
+  allowedSchemesByTag: { img: ['http', 'https'], video: ['https'], source: ['https'] },
+  allowedSchemesAppliedToAttributes: ['href', 'src', 'cite', 'poster'],
+  selfClosing: [...sanitizeHtml.defaults.selfClosing, 'source'],
   allowProtocolRelative: false,
   // GFM task lists render disabled checkboxes; nothing else may be an input.
   exclusiveFilter: (frame) => frame.tag === 'input' && frame.attribs.type !== 'checkbox',
