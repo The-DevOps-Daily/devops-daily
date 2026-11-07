@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GitConceptsSimulator, { LESSONS } from '@/components/games/git-concepts-simulator';
 import GitMergeConflictSimulator from '@/components/games/git-merge-conflict-simulator';
+import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 import { LESSONS as CONFLICT_LESSONS, TOTAL_STEPS } from '@/lib/games/git-conflict-engine';
 
@@ -77,6 +78,16 @@ async function click(label: string, exact = false) {
   await act(async () => button.click());
 }
 
+async function clickOption(option: string) {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) =>
+      !candidate.disabled &&
+      [...candidate.querySelectorAll('span')].some((span) => span.textContent?.trim() === option)
+  );
+  if (!button) throw new Error(`no enabled option "${option}"`);
+  await act(async () => button.click());
+}
+
 async function render(Game: ComponentType) {
   await act(async () => root.render(createElement(Game)));
 }
@@ -118,6 +129,7 @@ beforeEach(() => {
   Element.prototype.scrollIntoView = () => {};
   window.scrollBy = () => {};
   window.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0) as unknown as number;
+  window.cancelAnimationFrame = (id) => clearTimeout(id);
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -235,5 +247,61 @@ describe('Git Merge Conflict on the kit', () => {
     await click('Restart lesson');
     expect(text()).toContain(`1/${TOTAL_STEPS} steps`);
     expect(text()).toContain(CONFLICT_LESSONS[0].intro[0].content);
+  });
+});
+
+describe('GitOps Workflow on the kit', () => {
+  it('no hero, no gradient page, the board has a goal', async () => {
+    await render(GitOpsWorkflow);
+    expect(container.querySelector('[class*="min-h-screen"], [class*="bg-gradient"]')).toBeNull();
+    expect(text()).not.toContain('GitOps Learning');
+    expect(text()).toContain('Goal: ');
+    await click('Start Learning');
+    expect(text()).toContain('Deploy a commit');
+    await click('Create New Commit');
+    expect(completions).toBe(0);
+    await wait(3000);
+    expect(completions).toBe(0);
+  });
+
+  it('one signal, on View Results', async () => {
+    await render(GitOpsWorkflow);
+    await click('Start Learning');
+    await click('Continue to Challenges');
+
+    for (const [option, last] of [
+      ['Automatically reconcile to match Git (3 replicas)', false],
+      ['Revert the Git commit and let GitOps sync', false],
+      ['Automatic sync with self-heal and prune', true],
+    ] as const) {
+      await clickOption(option);
+      expect(text()).toContain('Correct');
+      expect(completions).toBe(0);
+      await click(last ? 'View Results' : 'Next Challenge', true);
+    }
+
+    expect(completions).toBe(1);
+    expect(text()).toContain('Challenges complete');
+    expect(text()).toContain('3/3');
+    await click('Try again', true);
+    expect(text()).toContain('Start Learning');
+    expect(completions).toBe(1);
+  });
+
+  it('a wrong answer says Not quite and still counts toward the end', async () => {
+    await render(GitOpsWorkflow);
+    await click('Start Learning');
+    await click('Continue to Challenges');
+    await clickOption('Leave it as is - manual changes are fine');
+    expect(text()).toContain('Not quite');
+    expect(text()).toContain('Your answer');
+    await click('Next Challenge', true);
+    await clickOption('Revert the Git commit and let GitOps sync');
+    await click('Next Challenge', true);
+    await clickOption('Automatic sync with self-heal and prune');
+    expect(completions).toBe(0);
+    await click('View Results', true);
+    expect(completions).toBe(1);
+    expect(text()).toContain('You answered 2 of 3 challenges correctly.');
   });
 });
