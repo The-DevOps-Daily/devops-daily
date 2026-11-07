@@ -547,19 +547,21 @@ export default function GitOpsWorkflow() {
           {phase === 'interactive' && (
             <div className="space-y-1.5 border-t pt-1.5">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex flex-1 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   <div
                     className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
+                      'hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:flex',
                       SIM_CATEGORY.sky.fill,
                       SIM_CATEGORY.sky.border
                     )}
                   >
                     <GitBranch className="h-4 w-4 text-sky-700 dark:text-sky-300" />
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold">Git Repository</p>
-                    <p className="text-xs text-muted-foreground">Source of Truth</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      Git<span className="hidden sm:inline"> Repository</span>
+                    </p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">Source of Truth</p>
                   </div>
                 </div>
                 <div className="hidden flex-1 items-center gap-2 md:flex">
@@ -578,10 +580,10 @@ export default function GitOpsWorkflow() {
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <div className="flex flex-1 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   <div
                     className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
+                      'hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:flex',
                       animationPhase === 'argocd-to-k8s'
                         ? 'border-primary bg-primary/15'
                         : 'border-border bg-muted'
@@ -596,9 +598,9 @@ export default function GitOpsWorkflow() {
                       )}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold">ArgoCD</p>
-                    <p className="text-xs text-muted-foreground">GitOps Operator</p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">GitOps Operator</p>
                   </div>
                 </div>
                 <div className="hidden flex-1 items-center gap-2 md:flex">
@@ -617,10 +619,10 @@ export default function GitOpsWorkflow() {
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-                <div className="flex flex-1 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   <div
                     className={cn(
-                      'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border',
+                      'hidden h-8 w-8 shrink-0 items-center justify-center rounded-full border sm:flex',
                       healthStatus === 'healthy'
                         ? SIM_TONE.success.surface
                         : 'border-border bg-muted'
@@ -635,9 +637,9 @@ export default function GitOpsWorkflow() {
                       )}
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold">Kubernetes</p>
-                    <p className="text-xs text-muted-foreground">Live Cluster</p>
+                    <p className="hidden text-xs text-muted-foreground sm:block">Live Cluster</p>
                   </div>
                 </div>
               </div>
