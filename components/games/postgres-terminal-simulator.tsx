@@ -4,26 +4,34 @@ import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import {
   BookOpen,
-  CheckCircle,
   Database,
   Gauge,
   History,
   KeyRound,
-  Lightbulb,
   ListTree,
-  Play,
   PlusCircle,
-  RotateCcw,
   Search,
   Table2,
   Terminal,
   Timer,
-  Trophy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  LAB_TERMINAL_HEIGHT,
+  SIM_TONE,
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import { useTerminalSimulator, type ExecuteResult } from '@/hooks/use-terminal-simulator';
 
@@ -410,7 +418,7 @@ function commandMatches(cmd: string, expected: string | string[]): boolean {
 
 // --- Lessons ------------------------------------------------------------------
 
-const LESSONS: Lesson[] = [
+export const LESSONS: Lesson[] = [
   {
     id: 'explore',
     title: 'Explore the database',
@@ -716,28 +724,7 @@ export default function PostgresTerminalSimulator() {
     setPgState(createInitialState());
   }, []);
 
-  const {
-    currentLessonIndex,
-    currentCommandIndex,
-    currentLesson,
-    currentCommand,
-    completedCommands,
-    completedCount,
-    totalCommands,
-    progressPercentage,
-    terminalHistory,
-    inputValue,
-    setInputValue,
-    showHint,
-    setShowHint,
-    inputRef,
-    terminalRef,
-    submitCommand,
-    handleSubmit,
-    handleKeyDown,
-    resetProgress,
-    jumpToLesson,
-  } = useTerminalSimulator<LessonCommand>({
+  const lab = useTerminalSimulator<LessonCommand>({
     lessons: LESSONS,
     execute,
     matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
@@ -748,22 +735,20 @@ export default function PostgresTerminalSimulator() {
     promoteOutputType: true,
     guardRepeatCompletion: true,
     onReset,
+    // SimComplete signals Opsville, on the render that completes the last command.
+    signalOnComplete: false,
+    autoFocus: false,
   });
+  const { currentCommand, terminalHistory, inputValue, setInputValue, inputRef, submitCommand } =
+    lab;
+  const ui = useSimLab(lab);
+  const expected = currentCommand
+    ? Array.isArray(currentCommand.expectedCommand)
+      ? currentCommand.expectedCommand[0]
+      : currentCommand.expectedCommand
+    : undefined;
 
   const prompt = pgState.inTransaction ? 'shop=*#' : 'shop=#';
-
-  const resetLab = useCallback(() => {
-    resetProgress();
-    inputRef.current?.focus();
-  }, [inputRef, resetProgress]);
-
-  const runCurrentCommand = useCallback(() => {
-    if (!currentCommand) return;
-    const command = Array.isArray(currentCommand.expectedCommand)
-      ? currentCommand.expectedCommand[0]
-      : currentCommand.expectedCommand;
-    submitCommand(command);
-  }, [currentCommand, submitCommand]);
 
   const indexNames = [
     'big_events_pkey',
@@ -775,331 +760,174 @@ export default function PostgresTerminalSimulator() {
   ].sort((a, b) => a.localeCompare(b));
 
   return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-md border bg-muted/20 p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <Database className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">// psql lab</p>
-              <h2 className="text-2xl font-bold md:text-3xl">PostgreSQL Terminal Simulator</h2>
-            </div>
-          </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Practice the psql tool and Postgres engine in a safe browser lab. Explore with
-            meta-commands, read real EXPLAIN plans, add an index and watch a sequential scan become
-            a bitmap index scan, then wrap changes in a transaction and roll them back.
-          </p>
-        </div>
+    <SimFrame>
+      <SimLabBar
+        title="PostgreSQL Terminal Simulator"
+        icon={Database}
+        lessons={LESSONS}
+        lab={lab}
+        ui={ui}
+        task={currentCommand?.instruction}
+        hint={currentCommand?.hint}
+        showMe={expected}
+      />
 
-        <Card>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {completedCount}/{totalCommands}
-              </span>
-            </div>
-            <Progress value={progressPercentage} />
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="Tables" value={TABLES.length} />
-              <Metric label="Indexes" value={indexNames.length} />
-              <Metric label="Orders" value={pgState.ordersCount} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_310px]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BookOpen className="h-5 w-5" />
-                Lessons
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {LESSONS.map((lesson, lessonIndex) => {
-                const lessonCompleted = lesson.commands.every((_, commandIndex) =>
-                  completedCommands.has(`${lessonIndex}-${commandIndex}`)
-                );
-                const active = lessonIndex === currentLessonIndex;
-
-                return (
-                  <button
-                    key={lesson.id}
-                    type="button"
-                    onClick={() => {
-                      jumpToLesson(lessonIndex);
-                      inputRef.current?.focus();
-                    }}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={cn(
-                          'rounded-md border p-1.5',
-                          active ? 'text-primary' : 'text-muted-foreground'
-                        )}
-                      >
-                        {lesson.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium">{lesson.title}</p>
-                          {lessonCompleted && <CheckCircle className="h-4 w-4 text-emerald-500" />}
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{lesson.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Reset lab
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-2.5 p-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                      Lesson {currentLessonIndex + 1} / {LESSONS.length}
-                    </Badge>
-                    <Badge>
-                      Step {currentCommandIndex + 1} / {currentLesson.commands.length}
-                    </Badge>
-                  </div>
-                  <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
-                  {showHint && currentCommand && (
-                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
-                      {currentCommand.hint}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowHint((value) => !value)}
-                  >
-                    <Lightbulb className="mr-1 h-4 w-4" />
-                    Hint
-                  </Button>
-                  <Button size="sm" onClick={runCurrentCommand}>
-                    <Play className="mr-1 h-4 w-4" />
-                    Run
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
-                  </div>
-                  <span className="ml-2 text-sm text-muted-foreground">psql</span>
-                </div>
-                <Badge
-                  variant={pgState.inTransaction ? 'default' : 'secondary'}
-                  className="font-mono text-[11px]"
-                >
-                  {pgState.inTransaction
-                    ? 'IN TRANSACTION'
-                    : `${CONNECTION.database}/${CONNECTION.user}`}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                className="h-[580px] cursor-text overflow-y-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                onClick={() => inputRef.current?.focus()}
-              >
-                {terminalHistory.length === 0 && (
-                  <div className="mb-4 whitespace-pre-wrap text-emerald-400">
-                    <p>Connected to database &quot;shop&quot; as user &quot;neondb_owner&quot;.</p>
-                    <p className="mt-2 text-muted-foreground">
-                      Type &quot;\?&quot; for meta-command help, or follow the current task above.
-                    </p>
-                  </div>
-                )}
-                {terminalHistory.map((line, index) => (
-                  <div
-                    key={`${line.timestamp.getTime()}-${index}`}
-                    className={cn(
-                      'mb-2 whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-slate-100',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'success' &&
-                        'rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
-                    )}
-                  >
-                    {line.type === 'input' && <span className="text-sky-400">shop=# </span>}
-                    {line.content}
-                  </div>
-                ))}
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="text-sky-400">{prompt}</span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(event) => setInputValue(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-sky-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    placeholder="\dt"
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Database className="h-5 w-5" />
-                Connection
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">database</span>
-                <span className="font-mono">{CONNECTION.database}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">user</span>
-                <span className="font-mono">{CONNECTION.user}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">transaction</span>
-                <Badge
-                  variant={pgState.inTransaction ? 'default' : 'secondary'}
-                  className="font-mono text-[11px]"
-                >
-                  {pgState.inTransaction ? 'IN TRANSACTION' : 'idle'}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Table2 className="h-5 w-5" />
-                Tables
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {TABLES.map((table) => {
-                const rowCount = table.name === 'orders' ? pgState.ordersCount : table.rows;
-                return (
-                  <div
-                    key={table.name}
-                    className="flex items-center justify-between rounded-md border p-2.5"
-                  >
-                    <span className="font-mono text-sm">{table.name}</span>
-                    <span className="text-xs tabular-nums text-muted-foreground">
-                      {rowCount.toLocaleString('en-US')} rows
-                    </span>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ListTree className="h-5 w-5" />
-                Indexes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {indexNames.map((name) => {
-                const isNew = name === 'idx_big_events_user';
-                return (
-                  <div
-                    key={name}
-                    className={cn(
-                      'flex items-center gap-2 rounded-md border p-2.5',
-                      isNew && 'border-emerald-500/30 bg-emerald-500/10'
-                    )}
-                  >
-                    <KeyRound
-                      className={cn(
-                        'h-4 w-4 shrink-0',
-                        isNew ? 'text-emerald-500' : 'text-muted-foreground'
-                      )}
-                    />
-                    <span className="truncate font-mono text-xs">{name}</span>
-                    {isNew && (
-                      <Badge variant="secondary" className="ml-auto text-[10px]">
-                        new
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {completedCount === totalCommands && (
-        <Card className="mt-4 border-emerald-500/40 bg-emerald-500/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="font-semibold">Lab complete</p>
-                <p className="text-sm text-muted-foreground">
-                  You explored with psql meta-commands, read real EXPLAIN plans, added an index, and
-                  used a transaction you could roll back.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={resetLab}>
-              Start over
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You explored with psql meta-commands, read real EXPLAIN plans, added an index, and used a transaction you could roll back."
+          stats={labStats(lab, LESSONS, ui, { showMe: true })}
+          actions={
+            <Button type="button" variant="outline" onClick={ui.keepExploring}>
+              Keep exploring
             </Button>
-          </CardContent>
-        </Card>
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <SimTerminal
+              label="psql"
+              status={
+                pgState.inTransaction
+                  ? 'IN TRANSACTION'
+                  : `${CONNECTION.database}/${CONNECTION.user}`
+              }
+              prompt={prompt}
+              linePrompt="shop=#"
+              lines={labLines(terminalHistory, [
+                {
+                  type: 'success',
+                  content: 'Connected to database "shop" as user "neondb_owner".',
+                },
+                {
+                  type: 'muted',
+                  content: 'Type "\\?" for meta-command help, or follow the task above.',
+                },
+              ])}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={submitCommand}
+              onKeyDown={lab.handleKeyDown}
+              inputRef={inputRef}
+              placeholder={'\\dt'}
+              autoFocus
+              heightClassName={LAB_TERMINAL_HEIGHT}
+            />
+          }
+          aside={
+            <>
+              <SimLabPanel
+                title="Database"
+                icon={Database}
+                summary={
+                  pgState.inTransaction ? 'in a transaction' : `${indexNames.length} indexes`
+                }
+              >
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-1.5 text-center">
+                    <Metric label="Tables" value={TABLES.length} />
+                    <Metric label="Indexes" value={indexNames.length} />
+                    <Metric label="Orders" value={pgState.ordersCount} />
+                  </div>
+
+                  <dl className="space-y-1.5 text-sm">
+                    <div className="flex items-center justify-between">
+                      <dt className="text-muted-foreground">database</dt>
+                      <dd className="font-mono">{CONNECTION.database}</dd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-muted-foreground">user</dt>
+                      <dd className="font-mono">{CONNECTION.user}</dd>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <dt className="text-muted-foreground">transaction</dt>
+                      <dd>
+                        <Badge
+                          variant={pgState.inTransaction ? 'default' : 'secondary'}
+                          className="font-mono text-xs"
+                        >
+                          {pgState.inTransaction ? 'IN TRANSACTION' : 'idle'}
+                        </Badge>
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <StateHeading icon={Table2}>Tables</StateHeading>
+                  <ul className="space-y-1.5">
+                    {TABLES.map((table) => {
+                      const rowCount = table.name === 'orders' ? pgState.ordersCount : table.rows;
+                      return (
+                        <li
+                          key={table.name}
+                          className="flex items-center justify-between rounded-md border px-2 py-1.5"
+                        >
+                          <span className="font-mono text-sm">{table.name}</span>
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {rowCount.toLocaleString('en-US')} rows
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  <StateHeading icon={ListTree}>Indexes</StateHeading>
+                  <ul className="space-y-1.5">
+                    {indexNames.map((name) => {
+                      const isNew = name === 'idx_big_events_user';
+                      return (
+                        <li
+                          key={name}
+                          className={cn(
+                            'flex items-center gap-2 rounded-md border px-2 py-1.5',
+                            isNew && SIM_TONE.success.surface
+                          )}
+                        >
+                          <KeyRound
+                            className={cn(
+                              'h-4 w-4 shrink-0',
+                              isNew ? SIM_TONE.success.iconClass : 'text-muted-foreground'
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span className="truncate font-mono text-xs">{name}</span>
+                          {isNew && (
+                            <Badge variant="secondary" className="ml-auto text-xs">
+                              new
+                            </Badge>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </SimLabPanel>
+              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+            </>
+          }
+        />
       )}
-    </div>
+    </SimFrame>
+  );
+}
+
+function StateHeading({ icon: Icon, children }: { icon: typeof Table2; children: ReactNode }) {
+  return (
+    <h4 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {children}
+    </h4>
   );
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <p className="text-lg font-bold tabular-nums">{value}</p>
+    <div className="rounded-md bg-muted/50 px-2 py-1.5">
+      <p className="font-mono text-lg font-semibold tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );

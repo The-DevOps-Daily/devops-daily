@@ -1,33 +1,33 @@
 'use client';
 
 import React, { useCallback, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import {
   Terminal,
   BookOpen,
-  CheckCircle,
-  ArrowRight,
-  RotateCcw,
-  Lightbulb,
-  Trophy,
   FolderOpen,
   FileText,
-  HardDrive,
-  User,
   Lock,
   Network,
   Cpu,
-  ChevronRight,
+  ListChecks,
 } from 'lucide-react';
-import { grepText, parseLineCount, takeLines, unquote, wcCounts } from '@/lib/games/shell-text';
 import {
-  useTerminalSimulator,
-  type ExecuteResult,
-  type TerminalLine,
-} from '@/hooks/use-terminal-simulator';
+  LAB_TERMINAL_HEIGHT,
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+} from '@/components/games/sim';
+import { grepText, parseLineCount, takeLines, unquote, wcCounts } from '@/lib/games/shell-text';
+import { useTerminalSimulator, type ExecuteResult } from '@/hooks/use-terminal-simulator';
 
 // Types
 interface FileSystemNode {
@@ -226,7 +226,7 @@ const createInitialFileSystem = (): FileSystemNode => ({
 });
 
 // Lessons data
-const LESSONS: Lesson[] = [
+export const LESSONS: Lesson[] = [
   {
     id: 'navigation',
     title: 'Navigation Basics',
@@ -545,6 +545,15 @@ function commandMatches(cmd: string, expected: string | string[]): boolean {
 
   return trimmed === expected || trimmed.replace(/\s+/g, ' ') === expected.replace(/\s+/g, ' ');
 }
+
+const QUICK_REFERENCE = [
+  ['pwd', 'Print directory'],
+  ['ls', 'List files'],
+  ['cd [dir]', 'Change directory'],
+  ['cat [file]', 'View file'],
+  ['grep [text] [file]', 'Search text'],
+  ['help', 'All commands'],
+];
 
 export default function LinuxTerminal() {
   const [currentPath, setCurrentPath] = useState('/home/user');
@@ -1207,43 +1216,34 @@ Swap:       2097152           0     2097152`;
     setFileSystem(createInitialFileSystem());
   }, []);
 
-  const {
-    currentLessonIndex,
-    currentCommandIndex,
-    currentLesson,
-    currentCommand,
-    completedCommands,
-    completedCount,
-    totalCommands,
-    progressPercentage,
-    terminalHistory,
-    setTerminalHistory,
-    inputValue,
-    setInputValue,
-    showHint,
-    setShowHint,
-    inputRef,
-    terminalRef,
-    handleSubmit,
-    handleKeyDown: baseHandleKeyDown,
-    resetProgress,
-    jumpToLesson,
-  } = useTerminalSimulator({
+  const lab = useTerminalSimulator({
     lessons: LESSONS,
     execute,
     matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
     successMessage: (command) => `✓ ${command.explanation}`,
     ctrlCInputPrefix: '$ ',
     onReset,
+    // SimComplete signals Opsville, on the render that completes the last command.
+    signalOnComplete: false,
+    autoFocus: false,
   });
+  const {
+    currentCommand,
+    terminalHistory,
+    setTerminalHistory,
+    inputValue,
+    setInputValue,
+    inputRef,
+    submitCommand,
+    handleKeyDown: baseHandleKeyDown,
+  } = lab;
+  const ui = useSimLab(lab);
 
   // Filesystem-aware Tab completion; every other key delegates to the hook
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      // Tab - autocomplete
+      // Tab - autocomplete. With nothing to complete, Tab moves focus on (no keyboard trap).
       if (e.key === 'Tab') {
-        e.preventDefault();
-
         const parts = inputValue.trimStart().split(/\s+/);
         const isTypingCommand = parts.length === 1;
         const partialInput = parts[parts.length - 1] || '';
@@ -1281,6 +1281,8 @@ Swap:       2097152           0     2097152`;
           const matches = AVAILABLE_COMMANDS.filter((cmd) =>
             cmd.startsWith(partialInput.toLowerCase())
           );
+          if (matches.length === 0) return;
+          e.preventDefault();
 
           if (matches.length === 1) {
             setInputValue(matches[0] + ' ');
@@ -1332,6 +1334,8 @@ Swap:       2097152           0     2097152`;
                 const child = node.children![name];
                 return child.type === 'directory' ? name + '/' : name;
               });
+            if (matches.length === 0) return;
+            e.preventDefault();
 
             if (matches.length === 1) {
               // Reconstruct the path
@@ -1378,236 +1382,70 @@ Swap:       2097152           0     2097152`;
   );
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="text-center mb-8" data-game-intro>
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <Terminal className="h-10 w-10 text-green-500" />
-          <h2 className="text-3xl md:text-4xl font-bold">Learn Linux</h2>
-        </div>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Master essential Linux commands through interactive lessons. Type commands in the terminal
-          and watch them execute in real-time.
-        </p>
-      </div>
+    <SimFrame>
+      <SimLabBar
+        title="Learn Linux"
+        icon={Terminal}
+        lessons={LESSONS}
+        lab={lab}
+        ui={ui}
+        task={currentCommand?.instruction}
+        hint={currentCommand?.hint}
+      />
 
-      {/* Progress Bar */}
-      <Card className="mb-6">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <span className="font-medium">Progress</span>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {completedCount}/{totalCommands} commands completed
-            </span>
-          </div>
-          <Progress value={progressPercentage} className="h-3" />
-          {progressPercentage === 100 && (
-            <p className="mt-2 text-center text-green-600 font-medium">
-              🎉 Congratulations! You've completed all lessons!
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Lessons Sidebar */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Lessons
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {LESSONS.map((lesson, index) => {
-              const lessonCompletedCount = lesson.commands.filter((_, cmdIndex) =>
-                completedCommands.has(`${lesson.id}-${cmdIndex}`)
-              ).length;
-              const isComplete = lessonCompletedCount === lesson.commands.length;
-              const isCurrent = index === currentLessonIndex;
-
-              return (
-                <button
-                  key={lesson.id}
-                  onClick={() => jumpToLesson(index)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    isCurrent
-                      ? 'bg-primary/10 border-2 border-primary'
-                      : 'hover:bg-muted border-2 border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {isComplete ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        lesson.icon
-                      )}
-                      <span className="font-medium">{lesson.title}</span>
-                    </div>
-                    <Badge variant={isComplete ? 'default' : 'secondary'}>
-                      {lessonCompletedCount}/{lesson.commands.length}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1 pl-7">{lesson.description}</p>
-                </button>
-              );
-            })}
-
-            <Button variant="outline" onClick={resetProgress} className="w-full mt-4">
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Reset All Progress
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You moved around the file system, made and read files, searched them, set permissions, checked the system and joined commands with pipes and redirects."
+          stats={labStats(lab, LESSONS, ui)}
+          actions={
+            <Button type="button" variant="outline" onClick={ui.keepExploring}>
+              Keep exploring
             </Button>
-          </CardContent>
-        </Card>
-
-        {/* Terminal and Current Task */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Current Task Card */}
-          {currentCommand && (
-            <Card className="border-primary/50">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ChevronRight className="h-5 w-5 text-primary" />
-                    Current Task
-                  </CardTitle>
-                  <Badge>
-                    Step {currentCommandIndex + 1}/{currentLesson.commands.length}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-lg mb-4">{currentCommand.instruction}</p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowHint(!showHint)}
-                    className="text-muted-foreground"
-                  >
-                    <Lightbulb className="h-4 w-4 mr-1" />
-                    {showHint ? 'Hide Hint' : 'Show Hint'}
-                  </Button>
-                </div>
-                {showHint && (
-                  <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      💡 {currentCommand.hint}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Terminal */}
-          <Card className="bg-gray-900 border-gray-700">
-            <CardHeader className="pb-2 border-b border-gray-700">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                </div>
-                <span className="text-sm text-gray-400 ml-2">
-                  user@linux-tutorial: {currentPath}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                onClick={() => inputRef.current?.focus()}
-                className="h-80 overflow-y-auto p-4 font-mono text-sm cursor-text"
-              >
-                {/* Welcome message */}
-                {terminalHistory.length === 0 && (
-                  <div className="text-green-400 mb-4">
-                    <p>Welcome to the Linux Terminal Tutorial!</p>
-                    <p className="text-gray-500 mt-2">
-                      Type "help" for available commands. Follow the instructions on the left.
-                    </p>
-                  </div>
-                )}
-
-                {/* Terminal history */}
-                {terminalHistory.map((line, index) => (
-                  <div
-                    key={index}
-                    className={`mb-1 ${
-                      line.type === 'input'
-                        ? 'text-white'
-                        : line.type === 'error'
-                          ? 'text-red-400'
-                          : line.type === 'success'
-                            ? 'text-green-400 bg-green-900/30 p-2 rounded my-2'
-                            : 'text-gray-300'
-                    }`}
-                  >
-                    {line.type === 'input' && <span className="text-green-400">$ </span>}
-                    <span className="whitespace-pre-wrap">{line.content}</span>
-                  </div>
-                ))}
-
-                {/* Input line */}
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="text-green-400">$ </span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="flex-1 bg-transparent text-white outline-none ml-1 caret-green-400"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Reference */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Reference</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="p-2 rounded bg-muted">
-                  <code className="text-primary">pwd</code>
-                  <p className="text-muted-foreground text-xs mt-1">Print directory</p>
-                </div>
-                <div className="p-2 rounded bg-muted">
-                  <code className="text-primary">ls</code>
-                  <p className="text-muted-foreground text-xs mt-1">List files</p>
-                </div>
-                <div className="p-2 rounded bg-muted">
-                  <code className="text-primary">cd [dir]</code>
-                  <p className="text-muted-foreground text-xs mt-1">Change directory</p>
-                </div>
-                <div className="p-2 rounded bg-muted">
-                  <code className="text-primary">cat [file]</code>
-                  <p className="text-muted-foreground text-xs mt-1">View file</p>
-                </div>
-                <div className="p-2 rounded bg-muted">
-                  <code className="text-primary">grep [text] [file]</code>
-                  <p className="text-muted-foreground text-xs mt-1">Search text</p>
-                </div>
-                <div className="p-2 rounded bg-muted">
-                  <code className="text-primary">help</code>
-                  <p className="text-muted-foreground text-xs mt-1">All commands</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <SimTerminal
+              label={`user@linux-tutorial:${currentPath}`}
+              lines={labLines(terminalHistory, [
+                { type: 'success', content: 'Welcome to the Linux Terminal Tutorial!' },
+                {
+                  type: 'muted',
+                  content: 'Type "help" for available commands, or follow the task above.',
+                },
+              ])}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={submitCommand}
+              onKeyDown={handleKeyDown}
+              inputRef={inputRef}
+              autoFocus
+              heightClassName={LAB_TERMINAL_HEIGHT}
+            />
+          }
+          aside={
+            <>
+              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+              <SimLabPanel title="Quick reference" icon={ListChecks}>
+                <dl className="grid grid-cols-2 gap-1.5 text-sm">
+                  {QUICK_REFERENCE.map(([command, label]) => (
+                    <div key={command} className="rounded-md bg-muted/50 px-2 py-1.5">
+                      <dt className="font-mono text-xs font-semibold">{command}</dt>
+                      <dd className="text-xs text-muted-foreground">{label}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </SimLabPanel>
+            </>
+          }
+        />
+      )}
+    </SimFrame>
   );
 }

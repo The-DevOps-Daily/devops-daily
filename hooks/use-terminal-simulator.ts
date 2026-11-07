@@ -69,6 +69,14 @@ export interface UseTerminalSimulatorOptions<C extends SimulatorLessonCommand> {
   ctrlCInputPrefix?: string;
   /** Reset domain state (containers, filesystem, cluster...) alongside progress. */
   onReset?: () => void;
+  /**
+   * Signal Opsville (signalGameComplete) when the last command is done. Games
+   * on the simulator kit pass false: their SimComplete card sends it instead,
+   * shown on the same render (isComplete).
+   */
+  signalOnComplete?: boolean;
+  /** Focus the input on mount. Kit games pass false and let SimTerminal do it. */
+  autoFocus?: boolean;
 }
 
 export function useTerminalSimulator<C extends SimulatorLessonCommand>({
@@ -84,6 +92,8 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   availableCommands,
   ctrlCInputPrefix = '',
   onReset,
+  signalOnComplete = true,
+  autoFocus = true,
 }: UseTerminalSimulatorOptions<C>) {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
@@ -115,10 +125,13 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   const totalCommands = lessons.reduce((sum, lesson) => sum + lesson.commands.length, 0);
   const completedCount = completedCommands.size;
   const progressPercentage = totalCommands > 0 ? (completedCount / totalCommands) * 100 : 0;
+  const isComplete = totalCommands > 0 && completedCount >= totalCommands;
 
   useEffect(() => {
-    if (totalCommands > 0 && completedCount >= totalCommands) signalGameComplete();
-  }, [completedCount, totalCommands]);
+    if (signalOnComplete && totalCommands > 0 && completedCount >= totalCommands) {
+      signalGameComplete();
+    }
+  }, [completedCount, totalCommands, signalOnComplete]);
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -127,7 +140,9 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   }, [terminalHistory]);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    if (autoFocus) inputRef.current?.focus();
+    // Only on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const completionKey = useCallback(
@@ -136,6 +151,12 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
         ? `${lessons[lessonIndex].id}-${commandIndex}`
         : `${lessonIndex}-${commandIndex}`,
     [completionKeyStyle, lessons]
+  );
+
+  const isCommandDone = useCallback(
+    (lessonIndex: number, commandIndex: number) =>
+      completedCommands.has(completionKey(lessonIndex, commandIndex)),
+    [completedCommands, completionKey]
   );
 
   const advance = useCallback(() => {
@@ -260,8 +281,10 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
       }
 
       if (availableCommands && event.key === 'Tab') {
-        event.preventDefault();
         const matchesList = availableCommands.filter((command) => command.startsWith(inputValue));
+        // Nothing to complete: Tab moves focus on, so it never traps a keyboard user.
+        if (matchesList.length === 0) return;
+        event.preventDefault();
         if (matchesList.length === 1) {
           setInputValue(`${matchesList[0]} `);
         } else if (matchesList.length > 1) {
@@ -346,6 +369,8 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
     completedCount,
     totalCommands,
     progressPercentage,
+    isComplete,
+    isCommandDone,
     // terminal
     terminalHistory,
     setTerminalHistory,
