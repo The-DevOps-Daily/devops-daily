@@ -521,7 +521,7 @@ export default function KubernetesNetworkingCniSimulator() {
   };
 
   const nextStep = () => {
-    setStepIndex((current) => (current < scenarioLength - 1 ? current + 1 : current));
+    setStepIndex((current) => (current < scenarioLength - 1 ? current + 1 : 0));
   };
 
   const previousStep = () => {
