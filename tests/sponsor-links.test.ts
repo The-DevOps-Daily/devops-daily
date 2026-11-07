@@ -41,6 +41,7 @@ describe('sponsor links', () => {
     ['inline', InlineSponsors, { variant: 'compact' }, sponsors],
     ['inline', InlineSponsors, { variant: 'banner' }, sponsors],
     ['simulator', GameSponsors, {}, sponsors],
+    ['inline', GameSponsors, { placement: 'inline' }, sponsors],
     ['home', HomeSponsors, {}, sponsors],
     ['sponsorship', SponsorshipPage, {}, sponsorHistory as typeof sponsors],
   ];
