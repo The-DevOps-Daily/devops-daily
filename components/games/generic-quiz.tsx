@@ -27,6 +27,7 @@ import {
   SimFrame,
   SimHintButton,
   SimResetButton,
+  useSimGame,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import type { QuizConfig } from '@/lib/quiz-types';
@@ -58,6 +59,8 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
   const [showHint, setShowHint] = useState(false);
   const [announce, setAnnounce] = useState('');
   const resultRef = useRef<HTMLDivElement>(null);
+  // The game page and the embed name the quiz already; /quizzes pages have no title above it.
+  const quizHeading = useSimGame() ? undefined : quizConfig.title;
 
   const question = quizConfig.questions[currentQuestion];
   const totalPoints = quizConfig.totalPoints;
@@ -161,7 +164,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
             <SimBar
               title={quizConfig.title}
               icon={IconComponent}
-              heading={quizConfig.title}
+              heading={quizHeading}
               goal={`Answer ${quizConfig.questions.length} questions. Each right answer adds its points.`}
             />
             <section className="space-y-3 rounded-lg border bg-card p-4">
@@ -223,10 +226,15 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
               title={quizConfig.title}
               icon={IconComponent}
               tools={<SimResetButton onReset={handleRestart} />}
+              progress={{
+                current: quizConfig.questions.length,
+                total: quizConfig.questions.length,
+              }}
+              heading={quizHeading ?? 'Results'}
             />
             <SimComplete
               title="Quiz complete"
-              summary={`${getScoreRating().rating}: ${score} of ${totalPoints} points.`}
+              summary={`${score} of ${totalPoints} points: ${getScoreRating().rating.replace(/!$/, '')}.`}
               stats={[
                 { label: 'Score', value: `${score}/${totalPoints}` },
                 {
@@ -286,11 +294,11 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 </SimFeedback>
               )}
             </SimBar>
-            <section className="space-y-3 rounded-lg border bg-card p-3">
+            <section className="space-y-2 rounded-lg border bg-card p-3">
               <p className="text-sm text-muted-foreground">{question.description}</p>
 
               {question.situation && (
-                <div className="space-y-2 rounded-md bg-muted/50 p-3">
+                <div className="space-y-1.5 rounded-md bg-muted/50 p-2.5">
                   <h3 className="flex items-center gap-2 text-sm font-semibold">
                     <Target className="h-4 w-4 text-primary" aria-hidden="true" />
                     Scenario
@@ -335,9 +343,9 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <h3 className="text-sm font-semibold">Select the correct answer:</h3>
-                <ol className="space-y-2">
+                <ol className="space-y-1.5">
                   {question.options.map((option, index) => {
                     const correct = showResult && index === question.correctAnswer;
                     const wrong =
@@ -347,7 +355,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                         <button
                           type="button"
                           className={cn(
-                            'flex w-full items-start gap-2 rounded-md border p-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
+                            'flex w-full items-start gap-2 rounded-md border px-2.5 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
                             selectedAnswer === index && !showResult
                               ? 'border-primary bg-primary/5'
                               : !showResult && 'hover:bg-muted/60',
