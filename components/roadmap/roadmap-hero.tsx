@@ -30,7 +30,7 @@ export function RoadmapContinueButton() {
   );
 }
 
-function bar(percent: number, width = 16) {
+function bar(percent: number, width = 12) {
   const filled = Math.round((percent / 100) * width);
   return `${'#'.repeat(filled)}${'.'.repeat(width - filled)}`;
 }
@@ -70,15 +70,15 @@ export function RoadmapStatusCard() {
         <p>
           <span className="text-terminal-prompt">$</span> roadmap status
         </p>
-        <dl className="grid grid-cols-[7.5rem_1fr] gap-x-2">
+        <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-2">
           <dt className="text-terminal-muted">done</dt>
           <dd className="tabular-nums">
             <span className="sr-only">
               {s.done} of {s.counted} topics, {s.percent} percent
             </span>
             <span aria-hidden="true">
-              {String(s.done).padStart(2, ' ')}/{s.counted}{' '}
-              <span className="text-terminal-success">[{bar(s.percent)}]</span> {s.percent}%
+              {s.done}/{s.counted} <span className="text-terminal-success">[{bar(s.percent)}]</span>{' '}
+              {s.percent}%
             </span>
           </dd>
           <dt className="text-terminal-muted">in progress</dt>
@@ -152,7 +152,7 @@ export function RoadmapStageNav() {
             : 0;
           const finished = !stage.ongoing && done === stage.topics.length;
           return (
-            <li key={stage.id} className="bg-background">
+            <li key={stage.id} className="bg-background last:col-span-2 sm:last:col-span-1">
               <a
                 href={`#stage-${stage.id}`}
                 className="flex h-full flex-col gap-1 px-3 py-2.5 transition-colors hover:bg-muted/60"

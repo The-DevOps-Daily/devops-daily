@@ -44,7 +44,7 @@ export function RoadmapPanel({
             'fixed z-50 flex flex-col border-border bg-background text-foreground shadow-xl outline-none',
             'inset-x-0 bottom-0 max-h-[88dvh] rounded-t-lg border-t',
             'md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[28rem] md:rounded-none md:border-l md:border-t-0',
-            'motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:slide-in-from-bottom md:motion-safe:data-[state=open]:slide-in-from-right'
+            'motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:slide-in-from-bottom md:motion-safe:data-[state=open]:slide-in-from-right md:motion-safe:data-[state=open]:slide-in-from-bottom-0'
           )}
         >
           {stage && (
