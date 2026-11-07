@@ -59,9 +59,9 @@ const LAB_LESSONS: SimLabLesson[] = LESSONS.map((l) => ({
   commands: l.steps,
 }));
 
-const EDITOR_HEIGHT = 'h-44 lg:h-[clamp(9rem,calc(50dvh-12.5rem),16rem)]';
+const EDITOR_HEIGHT = 'h-44 lg:h-[clamp(9rem,calc(50dvh-13rem),16rem)]';
 const TERMINAL_HEIGHT =
-  'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-[clamp(12rem,calc(50dvh-7rem),24rem)]';
+  'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-[clamp(12rem,calc(50dvh-8rem),24rem)]';
 
 const STATUS_STYLE: Record<FileStatus, { label: string; className: string }> = {
   unmerged: {
