@@ -90,6 +90,35 @@
     --input: 240 5.9% 90%;
     --ring: 32 95% 44%;
     --radius: 0.375rem;
+
+    /* Simulator feedback (components/games/sim/tones.ts). The base colour is
+       for borders, tints and fills; -foreground is status text, 800 shades
+       here and 300 shades in dark mode, so it passes AA on its own tint.
+       Warnings are yellow, so they never look like the amber primary. */
+    --correct: 160 84% 39%;
+    --correct-foreground: 163 88% 20%;
+    --partial: 45 93% 47%;
+    --partial-foreground: 32 81% 29%;
+    --wrong: 0 84% 60%;
+    --wrong-foreground: 0 70% 35%;
+    --info: 199 89% 48%;
+    --info-foreground: 201 90% 27%;
+    --hint: var(--primary);
+    --hint-foreground: var(--foreground);
+
+    /* Terminals, logs and editors stay dark in both themes, with the same
+       values in .dark. Inside them use these, not bg-background or
+       text-muted-foreground, which turn light in light mode. */
+    --terminal: 0 0% 9%;
+    --terminal-bar: 0 0% 15%;
+    --terminal-border: 0 0% 20%;
+    --terminal-foreground: 240 5% 84%;
+    --terminal-muted: 240 5% 65%;
+    --terminal-input: 240 5% 96%;
+    --terminal-prompt: 158 64% 52%;
+    --terminal-success: 158 64% 52%;
+    --terminal-error: 0 91% 71%;
+    --terminal-warning: 53 98% 63%;
   }
 
   .dark {
@@ -113,6 +142,11 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 38 92% 55%;
+
+    --correct-foreground: 156 72% 67%;
+    --partial-foreground: 53 98% 63%;
+    --wrong-foreground: 0 94% 82%;
+    --info-foreground: 199 95% 74%;
   }
 }
 

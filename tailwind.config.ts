@@ -53,6 +53,38 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        correct: {
+          DEFAULT: 'hsl(var(--correct))',
+          foreground: 'hsl(var(--correct-foreground))',
+        },
+        partial: {
+          DEFAULT: 'hsl(var(--partial))',
+          foreground: 'hsl(var(--partial-foreground))',
+        },
+        wrong: {
+          DEFAULT: 'hsl(var(--wrong))',
+          foreground: 'hsl(var(--wrong-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+        },
+        hint: {
+          DEFAULT: 'hsl(var(--hint))',
+          foreground: 'hsl(var(--hint-foreground))',
+        },
+        terminal: {
+          DEFAULT: 'hsl(var(--terminal))',
+          bar: 'hsl(var(--terminal-bar))',
+          border: 'hsl(var(--terminal-border))',
+          foreground: 'hsl(var(--terminal-foreground))',
+          muted: 'hsl(var(--terminal-muted))',
+          input: 'hsl(var(--terminal-input))',
+          prompt: 'hsl(var(--terminal-prompt))',
+          success: 'hsl(var(--terminal-success))',
+          error: 'hsl(var(--terminal-error))',
+          warning: 'hsl(var(--terminal-warning))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

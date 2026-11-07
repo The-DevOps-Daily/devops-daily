@@ -40,6 +40,21 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimHintButton,
+  SimHowTo,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  SimTabBadge,
+  revealTop,
+} from '@/components/games/sim';
+import { useEmbed } from '@/lib/games/embed-context';
 import { cn } from '@/lib/utils';
 import {
   SUSTAIN_MINUTES,
@@ -81,9 +96,9 @@ const GROUPS: { id: ActionGroup; label: string; icon: typeof Search }[] = [
 ];
 
 const RISK_STYLES: Record<string, string> = {
-  low: 'border-emerald-500/40 text-emerald-700 dark:text-emerald-400',
-  medium: 'border-amber-500/40 text-amber-700 dark:text-amber-400',
-  high: 'border-red-500/50 text-red-700 dark:text-red-400',
+  low: 'border-correct/40 text-correct-foreground',
+  medium: 'border-partial/40 text-partial-foreground',
+  high: 'border-wrong/50 text-wrong-foreground',
 };
 
 const FEED_ICONS: Record<FeedItem['kind'], typeof Siren> = {
@@ -118,8 +133,8 @@ function Sparkline({
   const x = (i: number) => (values.length < 2 ? 0 : (i / (values.length - 1)) * w);
   const y = (v: number) => h - (v / hi) * h;
   const pts = values.map((v, i) => `${x(i).toFixed(2)},${y(v).toFixed(2)}`).join(' ');
-  const stroke = bad ? 'stroke-red-500' : 'stroke-emerald-500';
-  const fill = bad ? 'fill-red-500/10' : 'fill-emerald-500/10';
+  const stroke = bad ? 'stroke-wrong' : 'stroke-correct';
+  const fill = bad ? 'fill-wrong/10' : 'fill-correct/10';
   return (
     <svg
       viewBox={`0 0 ${w} ${h}`}
@@ -170,10 +185,8 @@ function SignalCard({
   const pill = (
     <span
       className={cn(
-        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:text-[11px]',
-        good
-          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-          : 'bg-red-500/10 text-red-700 dark:text-red-400'
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-semibold sm:px-2',
+        good ? 'bg-correct/10 text-correct-foreground' : 'bg-wrong/10 text-wrong-foreground'
       )}
     >
       {good ? 'Normal' : 'Not normal'}
@@ -184,11 +197,11 @@ function SignalCard({
       <div
         className={cn(
           'rounded-lg border bg-card p-2.5',
-          good ? 'border-emerald-500/30' : 'border-red-500/40'
+          good ? 'border-correct/30' : 'border-wrong/40'
         )}
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] font-medium uppercase leading-tight tracking-wide text-muted-foreground">
+          <span className="text-xs font-medium uppercase leading-tight tracking-wide text-muted-foreground">
             {label}
           </span>
           {pill}
@@ -199,12 +212,15 @@ function SignalCard({
               <span className="font-mono text-xl font-semibold tabular-nums">{value}</span>
               {TrendIcon && (
                 <TrendIcon
-                  className={cn('h-4 w-4', delta.better ? 'text-emerald-600' : 'text-red-600')}
+                  className={cn(
+                    'h-4 w-4',
+                    delta.better ? 'text-correct-foreground' : 'text-wrong-foreground'
+                  )}
                   aria-label={delta.better ? 'improving' : 'getting worse'}
                 />
               )}
             </div>
-            <div className="text-[11px] leading-snug text-muted-foreground">{baseline}</div>
+            <div className="text-xs leading-snug text-muted-foreground">{baseline}</div>
           </div>
           <div className="ml-auto w-20 shrink-0 xl:w-24">{children}</div>
         </div>
@@ -215,11 +231,11 @@ function SignalCard({
     <div
       className={cn(
         'min-w-0 rounded-lg border bg-card p-2 sm:p-3',
-        good ? 'border-emerald-500/30' : 'border-red-500/40'
+        good ? 'border-correct/30' : 'border-wrong/40'
       )}
     >
       <div className="flex flex-col-reverse items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-        <span className="text-[10px] font-medium uppercase leading-tight tracking-wide text-muted-foreground sm:text-xs">
+        <span className="text-xs font-medium uppercase leading-tight tracking-wide text-muted-foreground">
           {label}
         </span>
         {pill}
@@ -230,7 +246,7 @@ function SignalCard({
           <span
             className={cn(
               'hidden items-center gap-0.5 text-xs sm:inline-flex',
-              delta.better ? 'text-emerald-600' : 'text-red-600'
+              delta.better ? 'text-correct-foreground' : 'text-wrong-foreground'
             )}
           >
             <TrendIcon className="h-3.5 w-3.5" aria-hidden="true" />
@@ -299,9 +315,9 @@ function FeedEntry({ item, isNew }: { item: FeedItem; isNew: boolean }) {
   const Icon = FEED_ICONS[item.kind];
   const tone =
     item.kind === 'alert'
-      ? 'text-red-600 dark:text-red-400'
+      ? 'text-wrong-foreground'
       : item.kind === 'hint'
-        ? 'text-amber-600 dark:text-amber-400'
+        ? 'text-hint'
         : item.kind === 'change'
           ? 'text-primary'
           : 'text-muted-foreground';
@@ -313,7 +329,7 @@ function FeedEntry({ item, isNew }: { item: FeedItem; isNew: boolean }) {
           <span className="font-mono tabular-nums">T+{pad(item.t)}</span>
           {item.who && <span className="font-medium text-foreground">{item.who}</span>}
           {isNew && (
-            <span className="rounded bg-primary/10 px-1.5 text-[10px] font-semibold uppercase text-primary">
+            <span className="rounded bg-primary/15 px-1.5 text-xs font-semibold uppercase text-foreground">
               new
             </span>
           )}
@@ -324,7 +340,7 @@ function FeedEntry({ item, isNew }: { item: FeedItem; isNew: boolean }) {
             <summary className="cursor-pointer select-none px-3 py-1.5 text-xs font-medium text-muted-foreground">
               Evidence: {item.evidence.title}
             </summary>
-            <pre className="overflow-x-auto px-3 pb-2 font-mono text-[12px] leading-relaxed text-foreground">
+            <pre className="overflow-x-auto px-3 pb-2 font-mono text-xs leading-relaxed text-foreground">
               {item.evidence.lines.join('\n')}
             </pre>
           </details>
@@ -407,7 +423,7 @@ function Situation({ s, game, seen }: { s: Scenario; game: GameState; seen: numb
                   <Icon
                     className={cn(
                       'mt-0.5 h-4 w-4 shrink-0',
-                      done ? 'text-emerald-600' : 'text-muted-foreground'
+                      done ? 'text-correct-foreground' : 'text-muted-foreground'
                     )}
                     aria-hidden="true"
                   />
@@ -427,7 +443,11 @@ function Situation({ s, game, seen }: { s: Scenario; game: GameState; seen: numb
                 <li key={f.id} className="rounded-md border bg-muted/30 p-2">
                   <span className="text-xs text-muted-foreground">
                     T+{pad(f.t)} {f.who}{' '}
-                    {f.id > seen && <span className="font-semibold text-primary">new</span>}
+                    {f.id > seen && (
+                      <span className="rounded bg-primary/15 px-1 font-semibold text-foreground">
+                        new
+                      </span>
+                    )}
                   </span>
                   <p>{f.interpretation}</p>
                 </li>
@@ -511,7 +531,7 @@ function ActiveWork({ s, game }: { s: Scenario; game: GameState }) {
                 <span className="text-xs text-muted-foreground">{ownerName(s, t.owner)}</span>
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary transition-all"
+                    className="h-full rounded-full bg-primary transition-all motion-reduce:transition-none"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -525,11 +545,11 @@ function ActiveWork({ s, game }: { s: Scenario; game: GameState }) {
               key={p.id}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs',
-                p.busy ? 'border-amber-500/40' : 'border-emerald-500/40'
+                p.busy ? 'border-partial/40' : 'border-correct/40'
               )}
             >
               <span
-                className={cn('h-2 w-2 rounded-full', p.busy ? 'bg-amber-500' : 'bg-emerald-500')}
+                className={cn('h-2 w-2 rounded-full', p.busy ? 'bg-partial' : 'bg-correct')}
                 aria-hidden="true"
               />
               {p.name}, {p.role}: {p.busy ? 'busy' : 'free'}
@@ -600,6 +620,7 @@ function Actions({
                     return (
                       <li key={a.id}>
                         <button
+                          type="button"
                           id={`ic-action-${a.id}`}
                           onClick={() => setSelected(active ? null : a.id)}
                           aria-expanded={active}
@@ -617,14 +638,12 @@ function Actions({
                             {a.risk && (
                               <Badge
                                 variant="outline"
-                                className={cn('px-1.5 py-0 text-[10px]', RISK_STYLES[a.risk])}
+                                className={cn('px-1.5 py-0 text-xs', RISK_STYLES[a.risk])}
                               >
                                 {a.risk} risk
                               </Badge>
                             )}
-                            {reason && (
-                              <span className="text-amber-700 dark:text-amber-400">{reason}</span>
-                            )}
+                            {reason && <span className="text-partial-foreground">{reason}</span>}
                           </span>
                         </button>
                         {active && (
@@ -711,9 +730,9 @@ function ClockControls({
           className={cn(
             'flex items-center gap-2 rounded-md px-3 py-2 text-sm',
             due < 0
-              ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+              ? 'bg-wrong/10 text-wrong-foreground'
               : due <= 3
-                ? 'bg-amber-500/10'
+                ? 'bg-partial/10 text-partial-foreground'
                 : 'bg-muted/50'
           )}
         >
@@ -846,57 +865,78 @@ function DebriefView({
 }) {
   const d = useMemo(() => buildDebrief(s, game), [s, game]);
   const [copied, setCopied] = useState(false);
+  const { embedded } = useEmbed();
   const other = SCENARIOS.find((x) => x.id !== s.id);
   const decisions = game.tasks.filter((t) => getAction(s, t.actionId).group !== 'communicate');
+  const resolved = d.endReason === 'resolved';
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={d.endReason === 'resolved' ? 'default' : 'destructive'}>
-            {d.endReason === 'resolved' ? `Resolved at T+${pad(game.t)}` : 'Not resolved in time'}
+    <SimComplete
+      title="Incident review"
+      // Running out of time is a losing end: it shows the review but does not tell Opsville.
+      tone={resolved ? 'success' : 'danger'}
+      signal={resolved}
+      badge={
+        <>
+          <Badge
+            variant="outline"
+            className={
+              resolved
+                ? 'border-correct/50 bg-correct/10 text-correct-foreground'
+                : 'border-wrong/50 bg-wrong/10 text-wrong-foreground'
+            }
+          >
+            {resolved ? `Resolved at T+${pad(game.t)}` : 'Not resolved in time'}
           </Badge>
           <span className="text-sm text-muted-foreground">{s.title}</span>
-        </div>
-        <h2 className="mt-2 text-xl font-semibold">Incident review</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-md bg-muted/50 p-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              Sustained mitigation
-            </div>
-            <div className="font-mono text-2xl font-semibold tabular-nums">
-              {d.mitigatedAt !== null ? `T+${pad(d.mitigatedAt)}` : 'never'}
-            </div>
-          </div>
-          <div className="rounded-md bg-muted/50 p-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              Failed checkout requests
-            </div>
-            <div className="font-mono text-2xl font-semibold tabular-nums">
-              {fmtCount(d.failedRequests)}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              Requests, not people: some customers retried.
-            </div>
-          </div>
-          <div className="rounded-md bg-muted/50 p-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground">
-              Status updates on time
-            </div>
-            <div className="font-mono text-2xl font-semibold tabular-nums">
-              {d.updatesOnTime}/{d.updatesDue}
-            </div>
-          </div>
-        </div>
-      </div>
-
+        </>
+      }
+      stats={[
+        {
+          label: 'Sustained mitigation',
+          value: d.mitigatedAt !== null ? `T+${pad(d.mitigatedAt)}` : 'never',
+        },
+        {
+          label: 'Failed checkout requests',
+          value: fmtCount(d.failedRequests),
+          note: 'Requests, not people: some customers retried.',
+        },
+        { label: 'Status updates on time', value: `${d.updatesOnTime}/${d.updatesDue}` },
+      ]}
+      learned={s.debrief.lessons}
+      next={null}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            onClick={() =>
+              copyText(buildRecap(s, game, d)).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              })
+            }
+          >
+            {copied ? (
+              <Check className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Copy className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            )}
+            {copied ? 'Copied' : 'Copy recap'}
+          </Button>
+          <Button variant="outline" onClick={onAgain}>
+            <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" /> Play this one again
+          </Button>
+          {other && (
+            <Button onClick={onPicker}>
+              <Siren className="mr-1.5 h-4 w-4" aria-hidden="true" /> Try {other.title}
+            </Button>
+          )}
+        </>
+      }
+    >
       {d.revisit && (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
-          <h3 className="flex items-center gap-2 text-sm font-semibold">
-            <TriangleAlert className="h-4 w-4 text-amber-600" aria-hidden="true" /> One decision to
-            revisit
-          </h3>
-          <p className="mt-1 text-sm">{d.revisit}</p>
-        </div>
+        <SimFeedback tone="warning" icon={TriangleAlert} label="One decision to revisit">
+          <p>{d.revisit}</p>
+        </SimFeedback>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -994,22 +1034,17 @@ function DebriefView({
             </div>
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Take away
-              </h4>
-              <ul className="mt-1 list-disc space-y-1 pl-5">
-                {s.debrief.lessons.map((x) => (
-                  <li key={x}>{x}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Go deeper
               </h4>
               <ul className="mt-1 space-y-1">
                 {s.debrief.goDeeper.map((g) => (
                   <li key={g.href}>
-                    <Link href={g.href} className="text-primary underline-offset-4 hover:underline">
+                    <Link
+                      href={g.href}
+                      // In an embed a link opens the full page in a new tab, not in the frame.
+                      {...(embedded ? { target: '_blank', rel: 'noopener' } : {})}
+                      className="font-medium underline decoration-primary/60 underline-offset-4 hover:decoration-primary"
+                    >
                       {g.title}
                     </Link>
                   </li>
@@ -1019,43 +1054,16 @@ function DebriefView({
           </CardContent>
         </Card>
       </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          onClick={() =>
-            copyText(buildRecap(s, game, d)).then(() => {
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            })
-          }
-        >
-          {copied ? (
-            <Check className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          ) : (
-            <Copy className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          )}
-          {copied ? 'Copied' : 'Copy recap'}
-        </Button>
-        <Button variant="outline" onClick={onAgain}>
-          <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" /> Play this one again
-        </Button>
-        {other && (
-          <Button onClick={onPicker}>
-            <Siren className="mr-1.5 h-4 w-4" aria-hidden="true" /> Try {other.title}
-          </Button>
-        )}
-      </div>
-    </div>
+    </SimComplete>
   );
 }
 
 function updateChipClass(due: number): string {
   return due < 0
-    ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+    ? 'bg-wrong/10 text-wrong-foreground'
     : due <= 3
-      ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
-      : 'bg-muted/60 text-muted-foreground';
+      ? 'bg-partial/10 text-partial-foreground'
+      : 'bg-muted/60 text-foreground';
 }
 
 export default function IncidentCommanderSimulator() {
@@ -1071,9 +1079,7 @@ export default function IncidentCommanderSimulator() {
   const [announce, setAnnounce] = useState('');
   const [notice, setNotice] = useState<FeedItem | null>(null);
   const [viewedId, setViewedId] = useState(0);
-  const [barHeight, setBarHeight] = useState(112);
   const rootRef = useRef<HTMLDivElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
   const feedRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const scrollPending = useRef(false);
@@ -1082,19 +1088,8 @@ export default function IncidentCommanderSimulator() {
   useEffect(() => {
     if (!scrollPending.current) return;
     scrollPending.current = false;
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    rootRef.current?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+    revealTop(rootRef.current, { offset: 16, smooth: true });
   });
-
-  // The desktop workspace fills the screen under the sticky command bar.
-  const hasBar = !!game && !reviewing;
-  useEffect(() => {
-    const el = barRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setBarHeight(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [hasBar]);
 
   // Newest events are at the top of the feed; show them after the clock moves.
   useEffect(() => {
@@ -1120,7 +1115,7 @@ export default function IncidentCommanderSimulator() {
 
   if (!s || !game) {
     return (
-      <div ref={rootRef} className="scroll-mt-4">
+      <div ref={rootRef}>
         <ScenarioPicker onStart={start} />
       </div>
     );
@@ -1128,7 +1123,7 @@ export default function IncidentCommanderSimulator() {
 
   if (reviewing) {
     return (
-      <div ref={rootRef} className="scroll-mt-4">
+      <div ref={rootRef}>
         <DebriefView
           s={s}
           game={game}
@@ -1147,7 +1142,9 @@ export default function IncidentCommanderSimulator() {
     setGame(dispatch(s, game, id));
     setSelected(null);
     // Keep keyboard focus on the action that was just sent.
-    requestAnimationFrame(() => document.getElementById(`ic-action-${id}`)?.focus());
+    requestAnimationFrame(() =>
+      document.getElementById(`ic-action-${id}`)?.focus({ preventScroll: true })
+    );
     setAnnounce(
       a.owner === 'you' ? `Posting: ${a.title}` : `Sent to ${ownerName(s, a.owner)}: ${a.title}`
     );
@@ -1181,11 +1178,7 @@ export default function IncidentCommanderSimulator() {
     setMobileTab(v as MobileTab);
     if (v === 'timeline') setViewedId(game.nextId - 1);
     // Start the new panel at its top instead of where the old one was scrolled to.
-    const top = tabsRef.current?.getBoundingClientRect().top ?? 0;
-    if (top < 0) {
-      const header = document.querySelector('header')?.offsetHeight ?? 0;
-      window.scrollBy({ top: top - header });
-    }
+    revealTop(tabsRef.current, { onlyIfAbove: true });
   };
   const severities: Severity[] = ['SEV1', 'SEV2', 'SEV3'];
   const confirmAction = confirming ? getAction(s, confirming) : null;
@@ -1217,120 +1210,125 @@ export default function IncidentCommanderSimulator() {
   const onResolve = () => act((g) => resolveIncident(s, g));
 
   return (
-    <div ref={rootRef} className="scroll-mt-4 space-y-3 pb-24 lg:pb-0">
-      <div
-        ref={barRef}
-        className="z-20 space-y-2 rounded-lg border bg-card p-2.5 shadow-sm lg:sticky lg:top-[var(--site-header-h,0px)] lg:transition-[top] lg:duration-200 motion-reduce:transition-none"
-      >
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <button
-            onClick={() => {
-              setScenarioId(null);
-              setGame(null);
-            }}
-            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            aria-label="Back to scenarios"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">Scenarios</span>
-          </button>
-          <div className="flex min-w-0 items-center gap-2">
-            <Siren
-              className={cn(
-                'h-4 w-4 shrink-0',
-                game.ended ? 'text-muted-foreground' : 'text-red-600'
-              )}
-              aria-hidden="true"
-            />
-            <span className="truncate font-semibold">{s.title}</span>
-          </div>
-          <Badge
-            variant={game.phase === 'monitoring' ? 'default' : 'outline'}
-            className="capitalize"
-          >
-            {game.phase}
-          </Badge>
-          <div className="flex items-center gap-1" role="group" aria-label="Severity">
-            {severities.map((sev) => (
-              <button
-                key={sev}
-                onClick={() => setGame(setSeverity(game, sev))}
-                aria-pressed={game.severity === sev}
-                className={cn(
-                  'rounded-md border px-2 py-0.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  game.severity === sev
-                    ? sev === 'SEV1'
-                      ? 'border-red-500 bg-red-500 text-white'
-                      : sev === 'SEV2'
-                        ? 'border-amber-500 bg-amber-500 text-white'
-                        : 'border-primary bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {sev}
-              </button>
-            ))}
-            {!game.severity && (
-              <span className="ml-1 text-xs text-amber-700 dark:text-amber-400">
-                set a severity
-              </span>
-            )}
-          </div>
-          <div className="ml-auto flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8"
-              onClick={() => act((g) => takeHint(s, g))}
-              disabled={game.hintLevel >= 3 || game.ended}
-            >
-              <Lightbulb className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              <span className="hidden xl:inline">Ask an experienced IC ({3 - game.hintLevel})</span>
-              <span className="xl:hidden">Hint ({3 - game.hintLevel})</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8"
-              onClick={() => start(s.id)}
-              aria-label="Restart this scenario"
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-2">
-          <div className="font-mono text-lg font-semibold tabular-nums" aria-live="polite">
-            T+{pad(game.t)}{' '}
-            <span className="text-sm font-normal text-muted-foreground">{clockAt(s, game.t)}</span>
-          </div>
-          {game.ended ? (
+    <div ref={rootRef}>
+      <SimFrame phoneBar>
+        <SimBar
+          lead={
             <>
-              <p className="text-sm">
-                {game.endReason === 'resolved'
-                  ? 'The incident is resolved. See how it went and what to try next time.'
-                  : 'Time is up: the incident review starts now, resolved or not.'}
-              </p>
-              <Button size="sm" className="ml-auto" onClick={openReview}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-10 px-2 text-xs text-muted-foreground lg:h-8"
+                onClick={() => {
+                  setScenarioId(null);
+                  setGame(null);
+                }}
+                aria-label="Back to scenarios"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="hidden sm:inline">Scenarios</span>
+              </Button>
+              <div className="flex min-w-0 items-center gap-2">
+                <Siren
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    game.ended ? 'text-muted-foreground' : 'text-wrong'
+                  )}
+                  aria-hidden="true"
+                />
+                <span className="truncate font-semibold">{s.title}</span>
+              </div>
+              <Badge
+                variant={game.phase === 'monitoring' ? 'secondary' : 'outline'}
+                className="capitalize"
+              >
+                {game.phase}
+              </Badge>
+              <div className="flex items-center gap-1" role="group" aria-label="Severity">
+                {severities.map((sev) => (
+                  <button
+                    key={sev}
+                    type="button"
+                    onClick={() => setGame(setSeverity(game, sev))}
+                    aria-pressed={game.severity === sev}
+                    className={cn(
+                      'h-10 rounded-md border px-2.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-8 lg:px-2',
+                      game.severity === sev
+                        ? sev === 'SEV1'
+                          ? 'border-wrong bg-wrong/15 text-wrong-foreground'
+                          : sev === 'SEV2'
+                            ? 'border-partial bg-partial/15 text-partial-foreground'
+                            : 'border-primary bg-primary/15 text-foreground'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {sev}
+                  </button>
+                ))}
+                {!game.severity && (
+                  <span className="ml-1 text-xs text-partial-foreground">set a severity</span>
+                )}
+              </div>
+            </>
+          }
+          tools={
+            <>
+              <SimHintButton
+                onClick={() => act((g) => takeHint(s, g))}
+                disabled={game.hintLevel >= 3 || game.ended}
+              >
+                <span className="hidden xl:inline">
+                  Ask an experienced IC ({3 - game.hintLevel})
+                </span>
+                <span className="xl:hidden">Hint ({3 - game.hintLevel})</span>
+              </SimHintButton>
+              <SimResetButton
+                onReset={() => start(s.id)}
+                label="Restart this scenario"
+                confirmLabel="Restart?"
+              />
+            </>
+          }
+          meta={
+            <>
+              <div className="font-mono text-lg font-semibold tabular-nums">
+                T+{pad(game.t)}{' '}
+                <span className="text-sm font-normal text-muted-foreground">
+                  {clockAt(s, game.t)}
+                </span>
+              </div>
+              {game.ended ? (
+                <p className="text-sm">
+                  {game.endReason === 'resolved'
+                    ? 'The incident is resolved. See how it went and what to try next time.'
+                    : 'Time is up: the incident review starts now, resolved or not.'}
+                </p>
+              ) : (
+                <>
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
+                      updateChipClass(due)
+                    )}
+                  >
+                    <Megaphone className="h-3.5 w-3.5" aria-hidden="true" />
+                    {due >= 0 ? `Update due in ${due} min` : `Update overdue by ${-due} min`}
+                  </span>
+                  <span className="hidden text-xs text-muted-foreground xl:inline">
+                    {statusSentence(s, game, false)}
+                  </span>
+                </>
+              )}
+            </>
+          }
+          actions={
+            game.ended ? (
+              <Button size="sm" onClick={openReview}>
                 See the incident review
               </Button>
-            </>
-          ) : (
-            <>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
-                  updateChipClass(due)
-                )}
-              >
-                <Megaphone className="h-3.5 w-3.5" aria-hidden="true" />
-                {due >= 0 ? `Update due in ${due} min` : `Update overdue by ${-due} min`}
-              </span>
-              <span className="hidden text-xs text-muted-foreground xl:inline">
-                {statusSentence(s, game, false)}
-              </span>
-              <div className="ml-auto hidden items-center gap-2 lg:flex">
+            ) : (
+              <div className="hidden items-center gap-2 lg:flex">
                 {game.phase === 'monitoring' && (
                   <span className="text-xs tabular-nums text-muted-foreground">
                     Recovery held {streak}/{SUSTAIN_MINUTES} min
@@ -1356,114 +1354,91 @@ export default function IncidentCommanderSimulator() {
                   </Button>
                 )}
               </div>
-            </>
+            )
+          }
+        >
+          <SimHowTo summary="Briefing" autoOpen={!advanced && !game.ended}>
+            {s.briefing} Reading never advances time: send work to your team, then advance the clock
+            to see results.
+          </SimHowTo>
+
+          {notice && (
+            // On phones the notice floats above the bottom bar, so it needs a solid card under its tint.
+            <div className="fixed inset-x-3 bottom-20 z-30 rounded-lg bg-card shadow-lg lg:static lg:bg-transparent lg:shadow-none">
+              <SimFeedback
+                tone={notice.kind === 'hint' ? 'hint' : 'info'}
+                role="status"
+                label={notice.who ?? (notice.kind === 'hint' ? 'Hint' : 'Update')}
+                onDismiss={() => setNotice(null)}
+              >
+                <p>{notice.text}</p>
+              </SimFeedback>
+            </div>
+          )}
+        </SimBar>
+
+        <SimAnnouncer message={announce} />
+
+        <div className="lg:hidden">
+          <HealthStrip s={s} game={game} />
+          {!game.ended && (
+            <p className="mt-2 text-xs text-muted-foreground">{statusSentence(s, game, false)}</p>
           )}
         </div>
 
-        {!advanced && !game.ended && (
-          <p className="rounded-md bg-muted/50 px-3 py-2 text-sm font-medium">
-            {s.briefing} Reading never advances time: send work to your team, then advance the clock
-            to see results.
-          </p>
-        )}
+        <SimStage
+          columns="lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]"
+          minHeight="min-h-[24rem]"
+          tab={mobileTab}
+          onTabChange={changeTab}
+          anchorRef={tabsRef}
+          tabOrder={['situation', 'actions', 'timeline']}
+          panels={[
+            {
+              id: 'situation',
+              label: 'Situation',
+              className: 'space-y-3',
+              content: (
+                <>
+                  <HealthStrip s={s} game={game} stacked />
+                  {situation}
+                </>
+              ),
+              mobile: situation,
+            },
+            {
+              id: 'timeline',
+              label: 'Timeline',
+              badge: unseen > 0 && mobileTab !== 'timeline' && (
+                <SimTabBadge>{unseen} new</SimTabBadge>
+              ),
+              content: timeline,
+              scrollRef: feedRef,
+            },
+            {
+              id: 'actions',
+              label: 'Decide',
+              className: 'space-y-3',
+              content: work,
+              mobile: (
+                <>
+                  {work}
+                  <ClockControls
+                    s={s}
+                    game={game}
+                    onAdvance={onAdvance}
+                    onNext={onNext}
+                    onMonitor={onMonitor}
+                    onResolve={onResolve}
+                  />
+                </>
+              ),
+            },
+          ]}
+        />
 
-        {notice && (
-          <div
-            className={cn(
-              'fixed inset-x-3 bottom-20 z-30 flex items-start gap-3 rounded-lg border p-3 text-sm shadow-lg lg:static lg:shadow-none',
-              notice.kind === 'hint'
-                ? 'border-amber-500/40 bg-amber-50 dark:bg-amber-950'
-                : 'border-primary/30 bg-card'
-            )}
-            role="status"
-          >
-            {notice.kind === 'hint' ? (
-              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-            ) : (
-              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            )}
-            <p className="flex-1">
-              {notice.who && <strong>{notice.who}: </strong>}
-              {notice.text}
-            </p>
-            <button
-              onClick={() => setNotice(null)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-      </div>
-
-      <p className="sr-only" aria-live="polite">
-        {announce}
-      </p>
-
-      <div className="lg:hidden">
-        <HealthStrip s={s} game={game} />
         {!game.ended && (
-          <p className="mt-2 text-xs text-muted-foreground">{statusSentence(s, game, false)}</p>
-        )}
-      </div>
-
-      <div
-        className="hidden min-h-[24rem] gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]"
-        style={{ height: `calc(100dvh - ${barHeight + 24}px)` }}
-      >
-        <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
-          <HealthStrip s={s} game={game} stacked />
-          {situation}
-        </div>
-        <div
-          ref={feedRef}
-          className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
-        >
-          {timeline}
-        </div>
-        <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
-          {work}
-        </div>
-      </div>
-
-      <div ref={tabsRef} aria-hidden="true" className="lg:hidden" />
-      <Tabs value={mobileTab} onValueChange={changeTab} className="lg:hidden">
-        <div className="sticky top-[var(--site-header-h,0px)] z-20 -mx-1 scroll-mt-0 bg-background px-1 py-2 transition-[top] duration-200 motion-reduce:transition-none">
-          <TabsList className="grid w-full grid-cols-3" aria-label="Panels">
-            <TabsTrigger value="situation">Situation</TabsTrigger>
-            <TabsTrigger value="actions">Decide</TabsTrigger>
-            <TabsTrigger value="timeline" className="gap-1.5">
-              Timeline
-              {unseen > 0 && mobileTab !== 'timeline' && (
-                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">
-                  {unseen} new
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="situation" className="mt-1">
-          {situation}
-        </TabsContent>
-        <TabsContent value="actions" className="mt-1 space-y-3">
-          {work}
-          <ClockControls
-            s={s}
-            game={game}
-            onAdvance={onAdvance}
-            onNext={onNext}
-            onMonitor={onMonitor}
-            onResolve={onResolve}
-          />
-        </TabsContent>
-        <TabsContent value="timeline" className="mt-1">
-          {timeline}
-        </TabsContent>
-      </Tabs>
-
-      {!game.ended && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 backdrop-blur lg:hidden">
-          <div className="mx-auto flex max-w-xl items-center gap-2">
+          <SimPhoneBar>
             <span className="mr-auto text-xs text-muted-foreground">
               T+{pad(game.t)} · {running} task{running === 1 ? '' : 's'} running
             </span>
@@ -1473,29 +1448,29 @@ export default function IncidentCommanderSimulator() {
             <Button size="sm" onClick={onNext}>
               <FastForward className="mr-1 h-4 w-4" aria-hidden="true" /> Next event
             </Button>
-          </div>
-        </div>
-      )}
+          </SimPhoneBar>
+        )}
 
-      <AlertDialog open={!!confirming} onOpenChange={(open) => !open && setConfirming(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirmAction?.title}</AlertDialogTitle>
-            <AlertDialogDescription>{confirmAction?.confirm}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (confirming) run(confirming);
-                setConfirming(null);
-              }}
-            >
-              Do it
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog open={!!confirming} onOpenChange={(open) => !open && setConfirming(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{confirmAction?.title}</AlertDialogTitle>
+              <AlertDialogDescription>{confirmAction?.confirm}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (confirming) run(confirming);
+                  setConfirming(null);
+                }}
+              >
+                Do it
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </SimFrame>
     </div>
   );
 }
