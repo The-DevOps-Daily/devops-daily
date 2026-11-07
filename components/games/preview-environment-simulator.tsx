@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import { MotionConfig } from 'framer-motion';
 import {
   ArrowDown,
   ArrowLeft,
@@ -26,13 +27,13 @@ import {
   Play,
   Plus,
   RefreshCw,
-  RotateCcw,
   Search,
   ServerCog,
   ShieldCheck,
   Sparkles,
   Tag,
   Trash2,
+  TriangleAlert,
   Webhook,
   Workflow,
   XCircle,
@@ -40,7 +41,17 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Github } from '@/components/icons/social-icons';
+import { Label as FormLabel } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimHowTo,
+  SimResetButton,
+} from '@/components/games/sim';
 import {
   PREVIEW_FAILURES,
   advancePreviewEnvironment,
@@ -469,7 +480,8 @@ function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario
         <div className="overflow-hidden rounded-md border border-[#30363d]">
           <div className="flex items-center gap-5 border-b border-[#30363d] bg-[#161b22] px-4 py-3 text-xs">
             <span className="flex items-center gap-2 font-semibold">
-              <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />{PULL_REQUESTS.length} Open
+              <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />
+              {PULL_REQUESTS.length} Open
             </span>
             <UnavailableControl className="text-[#8b949e]">
               <span>18 Closed</span>
@@ -1832,7 +1844,6 @@ function EnvironmentScene({
   onRemediate,
   onReview,
   onClose,
-  onAgain,
 }: {
   pullRequest: PullRequestScenario;
   state: PreviewEnvironmentState;
@@ -2139,26 +2150,6 @@ function EnvironmentScene({
             </span>
           </div>
         )}
-        {removed && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4 sm:flex-row sm:items-center">
-            <div className="flex-1">
-              <strong className="block text-sm text-emerald-300">
-                Cleanup complete. Cost is back to $0.00/hr.
-              </strong>
-              <span className="text-xs text-muted-foreground">
-                The pipeline succeeded earlier; Argo CD is no longer active.
-              </span>
-            </div>
-            <Button
-              size="sm"
-              className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-              onClick={onAgain}
-            >
-              <RotateCcw className="size-4" aria-hidden="true" />
-              Add preview label again
-            </Button>
-          </div>
-        )}
       </div>
     </GitHubChrome>
   );
@@ -2325,153 +2316,211 @@ export function PreviewEnvironmentSimulator() {
   };
 
   const currentSceneIndex = SCENES.findIndex((item) => item.id === scene);
+  const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
+  const currentScene = SCENES[currentSceneIndex];
+  const switchId = useId();
+  const startOver = () => {
+    startAgain();
+    setDeveloperView('list');
+  };
+  const goal =
+    state.status === 'blocked'
+      ? 'Fix the failure: pick the repair that matches the error.'
+      : scene === 'developer'
+        ? developerView === 'list'
+          ? 'Open a pull request, then add the preview label to it.'
+          : 'Add the preview label to this pull request.'
+        : scene === 'webhook'
+          ? 'Deliver the webhook and follow the label event to the ApplicationSet controller.'
+          : scene === 'ci'
+            ? "Run the workflow that builds and pushes this commit's image."
+            : scene === 'gitops'
+              ? 'Watch Argo CD create and sync the preview environment.'
+              : state.status === 'reviewed'
+                ? 'Close the pull request and watch the preview get cleaned up.'
+                : state.status === 'cleaning'
+                  ? 'Argo CD is removing the preview environment.'
+                  : 'Open the preview, then approve it or request changes.';
+  const announce =
+    state.status === 'blocked' && failure
+      ? `Failure: ${failure.label}`
+      : state.status === 'ready'
+        ? 'Preview ready'
+        : state.status === 'removed'
+          ? 'Preview removed'
+          : currentScene.label;
 
   return (
-    <section className="mx-auto w-full max-w-6xl" aria-label="Preview environment simulator">
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="flex flex-col gap-4 border-b border-border px-4 py-4 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
-                <GitBranch className="size-4" aria-hidden="true" />
-                Pull request → live preview
-              </div>
-              <h2 className="mt-1 text-xl font-bold sm:text-2xl">
-                Watch intent become an isolated environment
-              </h2>
-            </div>
-            <label
-              title={
-                scene === 'developer'
-                  ? 'Toggle a realistic failure scenario'
-                  : 'Unavailable while the simulation is running'
-              }
-              className={cn(
-                'flex shrink-0 items-center justify-between gap-3 rounded-lg border border-border bg-background/50 px-3 py-2 transition-all',
-                scene === 'developer'
-                  ? 'cursor-pointer hover:-translate-y-0.5 hover:border-blue-500/60 hover:bg-blue-500/5'
-                  : 'cursor-not-allowed opacity-55'
-              )}
-            >
-              <span>
-                <strong className="block text-xs">Practice a failure</strong>
-                <span className="block text-[10px] text-muted-foreground">
-                  Adds one realistic repair
-                </span>
-              </span>
-              <Switch
-                checked={practiceFailure}
-                onCheckedChange={setPracticeFailure}
-                disabled={scene !== 'developer'}
-                aria-label="Practice a failure"
-              />
-            </label>
-          </div>
-          <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Simulator scenes">
-            {SCENES.map((item, index) => {
-              const active = item.id === scene;
-              const complete = index < currentSceneIndex || state.status === 'removed';
-              return (
-                <li
-                  key={item.id}
-                  className={cn(
-                    'relative overflow-hidden rounded-lg border px-2 py-2.5 sm:px-3',
-                    active && 'border-blue-500 bg-blue-500/5',
-                    complete && !active && 'border-emerald-500/30 bg-emerald-500/5',
-                    !active && !complete && 'border-border bg-background/30'
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
+    <MotionConfig reducedMotion="user">
+      <section className="mx-auto w-full max-w-6xl" aria-label="Preview environment simulator">
+        <SimFrame>
+          <SimBar
+            title="Preview Environment Simulator"
+            icon={GitBranch}
+            lead={
+              <ol aria-label="Simulator scenes" className="flex flex-wrap items-center gap-1">
+                {SCENES.map((item, index) => {
+                  const current = item.id === scene;
+                  const done = index < currentSceneIndex || state.status === 'removed';
+                  return (
+                    <li
+                      key={item.id}
+                      aria-current={current ? 'step' : undefined}
                       className={cn(
-                        'grid size-6 shrink-0 place-items-center rounded-full border font-mono text-[10px]',
-                        active && 'border-blue-500 text-blue-400',
-                        complete && !active && 'border-emerald-500 bg-emerald-500 text-white',
-                        !active && !complete && 'border-border text-muted-foreground'
+                        'inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium',
+                        current && 'border-primary bg-primary/10',
+                        done && `${SIM_TONE.success.surface} ${SIM_TONE.success.text}`,
+                        !current && !done && 'text-muted-foreground'
                       )}
                     >
-                      {complete && !active ? <Check className="size-3.5" /> : item.number}
-                    </span>
-                    <span className="truncate text-[10px] font-semibold sm:text-xs">
-                      {item.label}
-                    </span>
-                  </div>
-                  {active && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500" />}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+                      <span className="grid size-5 place-items-center rounded-full border font-mono text-xs">
+                        {done ? <Check className="size-3.5" aria-hidden="true" /> : item.number}
+                      </span>
+                      <span className={cn(!current && 'hidden sm:inline')}>{item.label}</span>
+                      <span className="sr-only">
+                        {current ? ' (current)' : done ? ' (done)' : ''}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            }
+            tools={
+              <>
+                <div
+                  title={
+                    scene === 'developer'
+                      ? 'Toggle a realistic failure scenario'
+                      : 'Unavailable while the simulation is running'
+                  }
+                  className="flex h-10 items-center gap-2 lg:h-8"
+                >
+                  <Switch
+                    id={switchId}
+                    checked={practiceFailure}
+                    onCheckedChange={setPracticeFailure}
+                    disabled={scene !== 'developer'}
+                  />
+                  <FormLabel htmlFor={switchId} className="text-sm font-normal">
+                    Practice a failure
+                  </FormLabel>
+                </div>
+                <SimResetButton onReset={startOver} />
+              </>
+            }
+            progress={{ current: currentSceneIndex + 1, total: SCENES.length }}
+            heading={currentScene.label}
+            meta={
+              practiceFailure ? (
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                    SIM_TONE.warning.surface,
+                    SIM_TONE.warning.text
+                  )}
+                >
+                  <TriangleAlert className="size-3.5" aria-hidden="true" />
+                  Failure practice on
+                </span>
+              ) : undefined
+            }
+            goal={goal}
+          >
+            <SimHowTo summary="Why it pauses">
+              The simulator pauses between systems. In production, the webhook, CI workflow, Argo CD
+              auto-sync, and PR comment continue automatically.
+            </SimHowTo>
+          </SimBar>
 
-        <div className="p-3 sm:p-5">
-          {scene === 'developer' &&
-            (developerView === 'list' ? (
-              <PullRequestList onOpen={openPullRequest} />
-            ) : (
-              <PullRequestDetail
-                pullRequest={selected}
-                labelPickerOpen={labelPickerOpen}
-                onBack={() => {
-                  setDeveloperView('list');
-                  setLabelPickerOpen(false);
-                }}
-                onToggleLabels={() => setLabelPickerOpen((open) => !open)}
-                onAddPreview={addPreviewLabel}
-              />
-            ))}
-          {scene === 'ci' && (
-            <GitHubActionsScene
-              pullRequest={selected}
-              beat={pipelineBeat}
-              phase={automationPhase}
-              progress={progress}
-              state={state}
-              onRun={startAutomation}
-              onContinue={openControlPlane}
-              onRemediate={remediate}
+          <SimAnnouncer message={announce} />
+
+          {state.status === 'removed' ? (
+            <SimComplete
+              title="Preview cleaned up"
+              summary="Cleanup complete. Cost is back to $0.00/hr. The label started a webhook, a CI build, an Argo CD sync and a URL on the pull request, and closing the PR removed all of it."
+              stats={[
+                { label: 'Pull request', value: `#${selected.number}` },
+                { label: 'Failure practised', value: practiceFailure ? 'Yes' : 'No' },
+                {
+                  label: 'Review',
+                  value: state.reviewDecision === 'approve' ? 'Approved' : 'Changes requested',
+                },
+              ]}
+              actions={
+                <Button type="button" variant="outline" onClick={startOver}>
+                  Try another pull request
+                </Button>
+              }
+              onPlayAgain={startAgain}
+              playAgainLabel="Add preview label again"
             />
+          ) : (
+            <div className="min-w-0">
+              {scene === 'developer' &&
+                (developerView === 'list' ? (
+                  <PullRequestList onOpen={openPullRequest} />
+                ) : (
+                  <PullRequestDetail
+                    pullRequest={selected}
+                    labelPickerOpen={labelPickerOpen}
+                    onBack={() => {
+                      setDeveloperView('list');
+                      setLabelPickerOpen(false);
+                    }}
+                    onToggleLabels={() => setLabelPickerOpen((open) => !open)}
+                    onAddPreview={addPreviewLabel}
+                  />
+                ))}
+              {scene === 'ci' && (
+                <GitHubActionsScene
+                  pullRequest={selected}
+                  beat={pipelineBeat}
+                  phase={automationPhase}
+                  progress={progress}
+                  state={state}
+                  onRun={startAutomation}
+                  onContinue={openControlPlane}
+                  onRemediate={remediate}
+                />
+              )}
+              {scene === 'webhook' && (
+                <WebhookScene
+                  pullRequest={selected}
+                  beat={pipelineBeat}
+                  phase={automationPhase}
+                  progress={progress}
+                  state={state}
+                  onRun={startAutomation}
+                  onContinue={openPipeline}
+                  onRemediate={remediate}
+                />
+              )}
+              {scene === 'gitops' && (
+                <ArgoControlPlaneScene
+                  pullRequest={selected}
+                  phase={automationPhase}
+                  progress={progress}
+                  state={state}
+                  onContinue={openEnvironment}
+                  onRemediate={remediate}
+                />
+              )}
+              {scene === 'environment' && (
+                <EnvironmentScene
+                  pullRequest={selected}
+                  state={state}
+                  progress={progress}
+                  onRemediate={remediate}
+                  onReview={(decision) => setState(recordPreviewReview(state, decision))}
+                  onClose={() => setState(beginPreviewTeardown(state, 'pr-closed'))}
+                  onAgain={startAgain}
+                />
+              )}
+            </div>
           )}
-          {scene === 'webhook' && (
-            <WebhookScene
-              pullRequest={selected}
-              beat={pipelineBeat}
-              phase={automationPhase}
-              progress={progress}
-              state={state}
-              onRun={startAutomation}
-              onContinue={openPipeline}
-              onRemediate={remediate}
-            />
-          )}
-          {scene === 'gitops' && (
-            <ArgoControlPlaneScene
-              pullRequest={selected}
-              phase={automationPhase}
-              progress={progress}
-              state={state}
-              onContinue={openEnvironment}
-              onRemediate={remediate}
-            />
-          )}
-          {scene === 'environment' && (
-            <EnvironmentScene
-              pullRequest={selected}
-              state={state}
-              progress={progress}
-              onRemediate={remediate}
-              onReview={(decision) => setState(recordPreviewReview(state, decision))}
-              onClose={() => setState(beginPreviewTeardown(state, 'pr-closed'))}
-              onAgain={startAgain}
-            />
-          )}
-        </div>
-        <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-6">
-          <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
-          The simulator pauses between systems. In production, the webhook, CI workflow, Argo CD
-          auto-sync, and PR comment continue automatically.
-        </div>
-      </div>
-    </section>
+        </SimFrame>
+      </section>
+    </MotionConfig>
   );
 }
 

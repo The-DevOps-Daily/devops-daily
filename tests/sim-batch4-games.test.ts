@@ -7,6 +7,7 @@ import DeploymentStrategiesSimulator from '@/components/games/deployment-strateg
 import KubernetesNetworkingCniSimulator from '@/components/games/kubernetes-networking-cni-simulator';
 import K8sScheduler from '@/components/games/k8s-scheduler';
 import OAuthOidcFlowSimulator from '@/components/games/oauth-oidc-flow-simulator';
+import PreviewEnvironmentSimulator from '@/components/games/preview-environment-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -418,4 +419,82 @@ describe('OAuth/OIDC Flow on the kit', () => {
     await act(async () => lessonThree.click());
     expect(text()).toContain('Scopes & Refresh');
   });
+});
+
+async function renderPreviewEnvironment() {
+  await act(async () => root.render(createElement(PreviewEnvironmentSimulator)));
+}
+
+async function until(label: string, maxMs: number): Promise<HTMLButtonElement> {
+  for (let elapsed = 0; elapsed <= maxMs; elapsed += 200) {
+    const button = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+      (candidate) => !candidate.disabled && name(candidate).includes(label)
+    );
+    if (button) return button;
+    await wait(200);
+  }
+  throw new Error(`no enabled button containing "${label}" after ${maxMs}ms`);
+}
+
+async function clickWhenReady(label: string, maxMs: number) {
+  const button = await until(label, maxMs);
+  await act(async () => button.click());
+}
+
+async function startPreviewRun() {
+  await click('feat: redesign the checkout flow');
+  await click('Add label', true);
+  await click('preview');
+  await click('Deliver webhook', true);
+}
+
+async function continuePreviewToEnd() {
+  await clickWhenReady('Open GitHub Actions', 12_000);
+  await click('Watch workflow run', true);
+  await clickWhenReady('Open Argo CD console', 12_000);
+  await clickWhenReady('Return to pull request', 24_000);
+  await click('Approve preview', true);
+  await click('Close PR & clean up', true);
+}
+
+describe('Preview Environment on the kit', () => {
+  it('no hero, a goal, scenes in the bar', async () => {
+    await renderPreviewEnvironment();
+    expect(text()).not.toContain('Watch intent become an isolated environment');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('1/5');
+    const scenes = container.querySelectorAll('[aria-label="Simulator scenes"] > li');
+    expect(scenes).toHaveLength(5);
+    expect(container.querySelectorAll('[aria-current="step"]')).toHaveLength(1);
+  });
+
+  it('one signal, after the cleanup', async () => {
+    await renderPreviewEnvironment();
+    await startPreviewRun();
+    await continuePreviewToEnd();
+    expect(completions).toBe(0);
+    expect(text()).not.toContain('Preview cleaned up');
+    await wait(3000);
+    expect(completions).toBe(1);
+    expect(text()).toContain('Preview cleaned up');
+    await click('Add preview label again', true);
+    expect(text()).not.toContain('Preview cleaned up');
+    expect(completions).toBe(1);
+  }, 60_000);
+
+  it('a practised failure blocks until repaired', async () => {
+    await renderPreviewEnvironment();
+    const practiceFailure = container.querySelector<HTMLButtonElement>('[role="switch"]');
+    if (!practiceFailure) throw new Error('no Practice a failure switch');
+    await act(async () => practiceFailure.click());
+    await startPreviewRun();
+    await until('Declare the API branch override', 12_000);
+    expect(text()).toContain('Restart the workflow');
+    expect(text()).toContain('Declare the API branch override');
+    expect(text()).toContain('Disable the health gate');
+    await click('Declare the API branch override');
+    await continuePreviewToEnd();
+    await wait(3000);
+    expect(completions).toBe(1);
+  }, 60_000);
 });
