@@ -35,13 +35,13 @@ export function RoadmapPanel({
   return (
     <Dialog.Root open={Boolean(stage)} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-[60] bg-black/40 motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:fade-in-0" />
         <Dialog.Content
           onCloseAutoFocus={(event) => {
             if (returnFocus()) event.preventDefault();
           }}
           className={cn(
-            'fixed z-50 flex flex-col border-border bg-background text-foreground shadow-xl outline-none',
+            'fixed z-[60] flex flex-col border-border bg-background text-foreground shadow-xl outline-none',
             'inset-x-0 bottom-0 max-h-[88dvh] rounded-t-lg border-t',
             'md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[28rem] md:rounded-none md:border-l md:border-t-0',
             'motion-safe:data-[state=open]:animate-in motion-safe:data-[state=open]:slide-in-from-bottom md:motion-safe:data-[state=open]:slide-in-from-right md:motion-safe:data-[state=open]:slide-in-from-bottom-0'
@@ -130,7 +130,7 @@ function TopicBody({
                   aria-pressed={pressed}
                   onClick={() => setStatus(topic.id, pressed ? null : option)}
                   className={cn(
-                    'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors',
+                    'inline-flex min-h-9 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-1.5 text-xs font-medium transition-colors',
                     pressed
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-border bg-background hover:border-primary/50'
