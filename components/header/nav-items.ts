@@ -24,6 +24,7 @@ import {
   Shirt,
   Database,
   Swords,
+  FlaskConical,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -140,9 +141,15 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           icon: Library,
         },
         {
-          label: 'Interactive Games',
+          label: 'Simulators',
+          href: '/simulators',
+          description: 'Hands-on labs for Linux, Docker, Kubernetes and more',
+          icon: FlaskConical,
+        },
+        {
+          label: 'Games',
           href: '/games',
-          description: 'DevOps games and simulators',
+          description: 'Opsville, arcade and party games',
           icon: Gamepad2,
         },
         {

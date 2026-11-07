@@ -77,7 +77,7 @@ export async function Hero() {
           {/* CTA buttons */}
           <div className="flex flex-wrap items-center gap-3 mt-8">
             <Button asChild size="lg">
-              <Link href="/games" className="group">
+              <Link href="/simulators" className="group">
                 Try a Simulator
                 <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
               </Link>

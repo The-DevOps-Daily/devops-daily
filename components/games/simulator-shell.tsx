@@ -82,13 +82,17 @@ export async function SimulatorShell({
   const shareUrl = `https://devops-daily.com${href}`;
   const defaultShareText = shareText ?? `Check out ${title} on DevOps Daily`;
 
+  const hub =
+    game?.type === 'game'
+      ? { label: 'Games', href: '/games' }
+      : { label: 'Simulators', href: '/simulators' };
   const breadcrumbItems = [
-    { label: 'Games', href: '/games' },
+    { label: hub.label, href: hub.href },
     { label: title, href, isCurrent: true },
   ];
   const schemaItems = [
     { name: 'Home', url: '/' },
-    { name: 'Games', url: '/games' },
+    { name: hub.label, url: hub.href },
     { name: title, url: href },
   ];
 
@@ -189,11 +193,11 @@ export async function SimulatorShell({
           {!hideShare && (
             <div className="w-full border-t pt-8 mt-8 flex flex-col sm:flex-row items-center justify-between gap-6">
               <Link
-                href="/games"
+                href={hub.href}
                 className="inline-flex items-center gap-1.5 text-sm font-mono text-muted-foreground hover:text-primary transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span className="text-green-500/80">$</span> cd /games
+                <span className="text-green-500/80">$</span> cd {hub.href}
               </Link>
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="font-mono text-xs">// share</span>

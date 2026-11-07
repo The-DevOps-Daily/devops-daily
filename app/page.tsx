@@ -112,7 +112,11 @@ export default async function Home() {
 
         {/* Featured Simulators */}
         <section className="my-16">
-          <SectionHeader label="featured" title="Interactive Simulators" viewAllHref="/games" />
+          <SectionHeader
+            label="featured"
+            title="Interactive Simulators"
+            viewAllHref="/simulators"
+          />
           <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3 bg-border border rounded-md overflow-hidden">
             {FEATURED_SIMULATORS.map((sim) => {
               const Icon = sim.icon;
@@ -135,7 +139,7 @@ export default async function Home() {
             })}
           </div>
           <Link
-            href="/games"
+            href="/simulators"
             className="sm:hidden inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors mt-4"
           >
             Browse all simulators
