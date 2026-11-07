@@ -1,32 +1,43 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
   Boxes,
-  CheckCircle,
+  Check,
   ChevronLeft,
   ChevronRight,
+  CircleCheck,
   Cloud,
   Globe,
   Layers,
   LockKeyhole,
   Network,
-  Play,
-  RotateCcw,
   Route,
   Server,
   Shield,
+  ShieldAlert,
+  Shuffle,
   Zap,
   type LucideIcon,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type ScenarioId =
@@ -76,7 +87,8 @@ const DATAPLANES: Record<
     description:
       'Pod traffic keeps pod IPs inside the cluster packet, while cross-node hops can be wrapped in an outer node-to-node tunnel.',
     servicePath: 'kube-proxy programs iptables/IPVS rules for Service VIP translation.',
-    crossNodePath: 'Node A encapsulates the pod packet, the underlay carries it to Node B, then Node B decapsulates it.',
+    crossNodePath:
+      'Node A encapsulates the pod packet, the underlay carries it to Node B, then Node B decapsulates it.',
   },
   direct: {
     label: 'Routed CNI',
@@ -84,15 +96,18 @@ const DATAPLANES: Record<
     description:
       'Pod CIDRs are routable through the node or fabric routing table, so cross-node pod traffic can travel without an overlay header.',
     servicePath: 'kube-proxy still handles ClusterIP translation unless the CNI replaces it.',
-    crossNodePath: 'Node A routes directly to Node B because the fabric knows where the destination PodCIDR lives.',
+    crossNodePath:
+      'Node A routes directly to Node B because the fabric knows where the destination PodCIDR lives.',
   },
   ebpf: {
     label: 'eBPF CNI',
     shortLabel: 'eBPF',
     description:
       'eBPF programs can enforce policy and perform Service load balancing in the kernel datapath, sometimes replacing kube-proxy.',
-    servicePath: 'The eBPF datapath can translate the Service VIP to a backend before iptables is involved.',
-    crossNodePath: 'The packet takes native routing or tunneling, with eBPF programs applying policy and visibility at key hooks.',
+    servicePath:
+      'The eBPF datapath can translate the Service VIP to a backend before iptables is involved.',
+    crossNodePath:
+      'The packet takes native routing or tunneling, with eBPF programs applying policy and visibility at key hooks.',
   },
 };
 
@@ -101,7 +116,8 @@ const SCENARIOS: Scenario[] = [
     id: 'same-node',
     title: 'Pod to Pod, Same Node',
     subtitle: 'The simplest packet path',
-    lesson: 'Pods get their own IPs. On the same node, traffic can move through veth pairs and local routing without a Service.',
+    lesson:
+      'Pods get their own IPs. On the same node, traffic can move through veth pairs and local routing without a Service.',
     icon: Boxes,
     steps: [
       {
@@ -167,7 +183,8 @@ const SCENARIOS: Scenario[] = [
         packet: 'node-a -> node-b transport',
         explanation:
           'Depending on the CNI mode, this may be VXLAN/IP-in-IP encapsulation, direct routing with BGP/static routes, or an eBPF-native path.',
-        mutation: 'The node-to-node hop is implementation detail; the Pod packet is still addressed to 10.244.2.21.',
+        mutation:
+          'The node-to-node hop is implementation detail; the Pod packet is still addressed to 10.244.2.21.',
         highlights: ['cni-a', 'node-fabric', 'cni-b', 'cross-node-link'],
       },
       {
@@ -429,7 +446,8 @@ const SCENARIOS: Scenario[] = [
         packet: 'allow 140.82.112.0/20:443, deny all other egress -> verdict: allow',
         explanation:
           'A policy-capable CNI checks egress rules while the packet still carries the Pod IP, so the decision can use workload identity. 140.82.112.6 is inside the allowed GitHub range on port 443, so the packet continues.',
-        mutation: 'Policy decision happens before SNAT. A packet to any other destination would be dropped here.',
+        mutation:
+          'Policy decision happens before SNAT. A packet to any other destination would be dropped here.',
         highlights: ['policy', 'pod-frontend', 'internet'],
       },
       {
@@ -465,266 +483,443 @@ function toneLabel(tone: PacketTone | undefined) {
   return 'forwarded';
 }
 
+const MISSIONS: Mission<{ scenarioId: ScenarioId; step: number; last: number }>[] = SCENARIOS.map(
+  (s) => ({
+    id: s.id,
+    label: s.title,
+    check: (st) => st.scenarioId === s.id && st.step === st.last,
+  })
+);
+
+type Tab = 'hop' | 'cluster' | 'scenarios';
+
 export default function KubernetesNetworkingCniSimulator() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('same-node');
   const [dataplane, setDataplane] = useState<Dataplane>('overlay');
-  const [externalTrafficPolicy, setExternalTrafficPolicy] = useState<ExternalTrafficPolicy>('Cluster');
+  const [externalTrafficPolicy, setExternalTrafficPolicy] =
+    useState<ExternalTrafficPolicy>('Cluster');
   const [stepIndex, setStepIndex] = useState(0);
+  const [tab, setTab] = useState<Tab>('hop');
+  const [dismissed, setDismissed] = useState(false);
 
   const scenario = getScenario(scenarioId);
   const step = scenario.steps[stepIndex] ?? scenario.steps[0]!;
-  const progress = ((stepIndex + 1) / scenario.steps.length) * 100;
+  const scenarioLength = scenario.steps.length;
   const dataplaneCopy = DATAPLANES[dataplane];
-
-  const scenarioCompletedCount = useMemo(() => {
-    return stepIndex === scenario.steps.length - 1 ? 1 : 0;
-  }, [scenario.steps.length, stepIndex]);
+  const missionState = useMemo(
+    () => ({ scenarioId, step: stepIndex, last: scenarioLength - 1 }),
+    [scenarioId, stepIndex, scenarioLength]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+  const scenarioDone =
+    missions.missions.find((mission) => mission.id === scenarioId)?.done ?? false;
 
   const chooseScenario = (nextScenario: ScenarioId) => {
     setScenarioId(nextScenario);
     setStepIndex(0);
+    setTab('hop');
   };
 
   const nextStep = () => {
-    setStepIndex((current) => (current < scenario.steps.length - 1 ? current + 1 : 0));
+    setStepIndex((current) => (current < scenarioLength - 1 ? current + 1 : current));
   };
 
   const previousStep = () => {
-    setStepIndex((current) => (current > 0 ? current - 1 : scenario.steps.length - 1));
+    setStepIndex((current) => (current > 0 ? current - 1 : scenarioLength - 1));
   };
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const tagName = target?.tagName;
-      if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') return;
-
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        setStepIndex((current) => (current < scenario.steps.length - 1 ? current + 1 : 0));
-      } else if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        setStepIndex((current) => (current > 0 ? current - 1 : scenario.steps.length - 1));
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [scenario.steps.length]);
 
   const reset = () => {
     setScenarioId('same-node');
     setDataplane('overlay');
     setExternalTrafficPolicy('Cluster');
     setStepIndex(0);
+    missions.reset();
+    setDismissed(false);
   };
 
+  const nextScenario = () => {
+    const current = SCENARIOS.findIndex((candidate) => candidate.id === scenarioId);
+    const firstOpen = Array.from({ length: SCENARIOS.length }, (_, offset) => {
+      return SCENARIOS[(current + offset + 1) % SCENARIOS.length]!;
+    }).find((candidate) => !missions.missions.find((mission) => mission.id === candidate.id)?.done);
+    chooseScenario((firstOpen ?? SCENARIOS[(current + 1) % SCENARIOS.length]!).id);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    const tagName = target.tagName;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      target.isContentEditable ||
+      tagName === 'INPUT' ||
+      tagName === 'TEXTAREA' ||
+      tagName === 'SELECT'
+    ) {
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nextStep();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      previousStep();
+    }
+  };
+
+  const tone =
+    step.tone === 'blocked'
+      ? SIM_TONE.danger
+      : step.tone === 'translated'
+        ? SIM_TONE.info
+        : step.tone === 'external'
+          ? SIM_TONE.warning
+          : null;
+  const VerdictIcon =
+    step.tone === 'blocked'
+      ? ShieldAlert
+      : step.tone === 'translated'
+        ? Shuffle
+        : step.tone === 'external'
+          ? Globe
+          : ArrowRight;
+  const atLastHop = stepIndex === scenarioLength - 1;
+  const complete = missions.complete && !dismissed;
+  const stepButtons = (size: 'bar' | 'phone') => (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className={size === 'bar' ? 'h-8 w-8 px-0' : 'h-10 w-10 px-0'}
+        onClick={previousStep}
+        aria-label="Previous hop"
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        className={size === 'bar' ? 'h-8' : 'h-10 flex-1'}
+        onClick={atLastHop ? nextScenario : nextStep}
+      >
+        {atLastHop ? 'Next scenario' : 'Next hop'}
+        {atLastHop ? (
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        )}
+      </Button>
+    </>
+  );
+
   return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-md border bg-muted/20 p-3 sm:p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <Network className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">// packet path lab</p>
-              <h2 className="text-2xl font-bold md:text-3xl">
-                Kubernetes Networking / CNI Simulator
-              </h2>
-            </div>
-          </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Follow packets through Pod IP routing, CNI dataplanes, ClusterIP Services, kube-proxy
-            or eBPF translation, Ingress, NetworkPolicy, and internet egress.
-          </p>
-        </div>
+    <MotionConfig reducedMotion="user">
+      <div onKeyDown={handleKeyDown}>
+        <SimFrame phoneBar>
+          <SimBar
+            title="Kubernetes Networking / CNI Simulator"
+            icon={Network}
+            steps={scenario.steps.map((hop, index) => ({
+              title: hop.title,
+              status: index < stepIndex || (index === stepIndex && atLastHop) ? 'done' : 'todo',
+              statusLabel:
+                index < stepIndex ? 'seen' : index === stepIndex ? 'current' : 'not seen yet',
+            }))}
+            current={stepIndex}
+            onStep={setStepIndex}
+            stepNoun="Hop"
+            stepsLabel={`${scenario.title} hops`}
+            tools={<SimResetButton onReset={reset} />}
+            progress={{ current: stepIndex + 1, total: scenarioLength }}
+            heading={step.title}
+            meta={
+              <>
+                <Badge variant="secondary">{scenario.title}</Badge>
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                    tone
+                      ? `${tone.surface} ${tone.text}`
+                      : 'border bg-muted/50 text-muted-foreground'
+                  )}
+                >
+                  <VerdictIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                  {toneLabel(step.tone)}
+                </span>
+              </>
+            }
+            actions={<div className="hidden items-center gap-2 lg:flex">{stepButtons('bar')}</div>}
+            goal={
+              missions.complete
+                ? `All ${SCENARIOS.length} scenarios walked. Switch dataplanes and revisit any path.`
+                : `${scenario.lesson} Walk all ${SCENARIOS.length} scenarios to their last hop (${missions.done}/${missions.total} done).`
+            }
+          />
 
-        <Card>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Current path</span>
-              <span className="text-sm text-muted-foreground">
-                Hop {stepIndex + 1}/{scenario.steps.length}
-              </span>
-            </div>
-            <Progress value={progress} />
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="Nodes" value="2" />
-              <Metric label="Pod CIDRs" value="2" />
-              <Metric label="Dataplane" value={dataplaneCopy.shortLabel} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <SimAnnouncer
+            message={`${scenario.title}, hop ${stepIndex + 1} of ${scenarioLength}: ${step.title}, ${toneLabel(step.tone)}.`}
+          />
 
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Layers className="h-5 w-5" />
-                Packet Scenarios
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {SCENARIOS.map((candidate) => {
-                const active = candidate.id === scenarioId;
-                const Icon = candidate.icon;
-
-                return (
-                  <button
-                    key={candidate.id}
-                    type="button"
-                    onClick={() => chooseScenario(candidate.id)}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">{candidate.title}</p>
-                        <p className="mt-1 text-xs text-muted-foreground">{candidate.subtitle}</p>
-                      </div>
+          {complete ? (
+            <SimComplete
+              title="All 8 packet paths walked"
+              summary="You followed a packet through Pod routing, Services, EndpointSlices, Ingress, a LoadBalancer, NetworkPolicy and egress, and saw where each hop rewrites or drops it."
+              stats={[
+                { label: 'Scenarios', value: `${missions.done}/${SCENARIOS.length}` },
+                { label: 'Hops', value: `${SCENARIOS.reduce((n, s) => n + s.steps.length, 0)}` },
+              ]}
+              actions={
+                <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                  Keep exploring
+                </Button>
+              }
+              onPlayAgain={reset}
+              playAgainLabel="Start over"
+            >
+              <section className="rounded-lg border bg-card p-3">
+                <h3 className="text-sm font-semibold">What each path showed</h3>
+                <dl className="grid gap-2 text-sm sm:grid-cols-2">
+                  {SCENARIOS.map((candidate) => (
+                    <div key={candidate.id}>
+                      <dt className="font-medium">{candidate.title}</dt>
+                      <dd className="text-muted-foreground">{candidate.lesson}</dd>
                     </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Route className="h-5 w-5" />
-                CNI Dataplane
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              <div className="grid gap-2">
-                {(Object.keys(DATAPLANES) as Dataplane[]).map((mode) => (
-                  <Button
-                    key={mode}
-                    type="button"
-                    variant={dataplane === mode ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setDataplane(mode)}
-                    className="justify-start"
-                  >
-                    {DATAPLANES[mode].label}
-                  </Button>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">{dataplaneCopy.description}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Globe className="h-5 w-5" />
-                External Traffic
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              <div className="grid grid-cols-2 gap-2">
-                {(['Cluster', 'Local'] as ExternalTrafficPolicy[]).map((policy) => (
-                  <Button
-                    key={policy}
-                    type="button"
-                    variant={externalTrafficPolicy === policy ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setExternalTrafficPolicy(policy)}
-                  >
-                    {policy}
-                  </Button>
-                ))}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {externalTrafficPolicy === 'Cluster'
-                  ? 'Cluster mode can spread traffic to endpoints on any node, often through an extra hop.'
-                  : 'Local mode preserves client source IP, but only nodes with local endpoints should receive traffic.'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Button size="sm" variant="outline" onClick={reset} className="w-full">
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Reset lab
-          </Button>
-        </div>
-
-        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-4">
-            <Card className="border-primary/40">
-              <CardContent className="space-y-3 p-3 sm:p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary">{scenario.title}</Badge>
-                      <Badge>{toneLabel(step.tone)}</Badge>
+                  ))}
+                </dl>
+              </section>
+            </SimComplete>
+          ) : (
+            <SimStage
+              columns="lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]"
+              minHeight="min-h-[24rem]"
+              tab={tab}
+              onTabChange={(nextTab) => setTab(nextTab as Tab)}
+              tabsLabel="Simulator panels"
+              tabOrder={['hop', 'cluster', 'scenarios']}
+              panels={[
+                {
+                  id: 'scenarios',
+                  label: 'Scenarios',
+                  content: (
+                    <ScenarioControls
+                      scenarioId={scenarioId}
+                      missions={missions.missions}
+                      dataplane={dataplane}
+                      dataplaneCopy={dataplaneCopy}
+                      externalTrafficPolicy={externalTrafficPolicy}
+                      onScenario={chooseScenario}
+                      onDataplane={setDataplane}
+                      onExternalTrafficPolicy={setExternalTrafficPolicy}
+                    />
+                  ),
+                  mobile: (
+                    <ScenarioControls
+                      scenarioId={scenarioId}
+                      missions={missions.missions}
+                      dataplane={dataplane}
+                      dataplaneCopy={dataplaneCopy}
+                      externalTrafficPolicy={externalTrafficPolicy}
+                      onScenario={chooseScenario}
+                      onDataplane={setDataplane}
+                      onExternalTrafficPolicy={setExternalTrafficPolicy}
+                    />
+                  ),
+                  className: 'space-y-2',
+                },
+                {
+                  id: 'hop',
+                  label: 'Hop',
+                  content: (
+                    <div className="space-y-2">
+                      <CurrentHopDetails step={step} />
+                      <PacketFlowDiagram
+                        steps={scenario.steps}
+                        currentIndex={stepIndex}
+                        onSelect={setStepIndex}
+                      />
                     </div>
-                    <p className="text-sm font-medium sm:text-base">{step.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{scenario.lesson}</p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <Button size="sm" variant="outline" onClick={previousStep}>
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" onClick={nextStep}>
-                      <Play className="mr-1 h-4 w-4" />
-                      Next hop
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={nextStep}>
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <Progress value={progress} />
-              </CardContent>
-            </Card>
-
-            <PacketFlowDiagram
-              steps={scenario.steps}
-              currentIndex={stepIndex}
-              onSelect={setStepIndex}
+                  ),
+                  mobile: (
+                    <div className="space-y-2">
+                      <CurrentHopDetails step={step} />
+                      <PacketFlowDiagram
+                        steps={scenario.steps}
+                        currentIndex={stepIndex}
+                        onSelect={setStepIndex}
+                      />
+                    </div>
+                  ),
+                },
+                {
+                  id: 'cluster',
+                  label: 'Cluster',
+                  content: (
+                    <div className="space-y-2">
+                      <ClusterContextMap
+                        step={step}
+                        dataplane={dataplane}
+                        scenarioId={scenarioId}
+                        externalTrafficPolicy={externalTrafficPolicy}
+                      />
+                      <LearningNotes
+                        step={step}
+                        dataplane={dataplane}
+                        scenarioId={scenarioId}
+                        externalTrafficPolicy={externalTrafficPolicy}
+                        scenarioDone={scenarioDone}
+                      />
+                    </div>
+                  ),
+                  mobile: (
+                    <div className="space-y-2">
+                      <ClusterContextMap
+                        step={step}
+                        dataplane={dataplane}
+                        scenarioId={scenarioId}
+                        externalTrafficPolicy={externalTrafficPolicy}
+                      />
+                      <LearningNotes
+                        step={step}
+                        dataplane={dataplane}
+                        scenarioId={scenarioId}
+                        externalTrafficPolicy={externalTrafficPolicy}
+                        scenarioDone={scenarioDone}
+                      />
+                    </div>
+                  ),
+                },
+              ]}
             />
+          )}
 
-            <CurrentHopDetails step={step} />
-          </div>
-
-          <div className="space-y-4">
-            <ClusterContextMap
-              step={step}
-              dataplane={dataplane}
-              scenarioId={scenarioId}
-              externalTrafficPolicy={externalTrafficPolicy}
-            />
-            <LearningNotes
-              step={step}
-              dataplane={dataplane}
-              scenarioId={scenarioId}
-              externalTrafficPolicy={externalTrafficPolicy}
-              scenarioCompletedCount={scenarioCompletedCount}
-            />
-          </div>
-        </div>
+          {!complete && <SimPhoneBar>{stepButtons('phone')}</SimPhoneBar>}
+        </SimFrame>
       </div>
-    </div>
+    </MotionConfig>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function ScenarioControls({
+  scenarioId,
+  missions,
+  dataplane,
+  dataplaneCopy,
+  externalTrafficPolicy,
+  onScenario,
+  onDataplane,
+  onExternalTrafficPolicy,
+}: {
+  scenarioId: ScenarioId;
+  missions: Array<{ id: string; done: boolean }>;
+  dataplane: Dataplane;
+  dataplaneCopy: (typeof DATAPLANES)[Dataplane];
+  externalTrafficPolicy: ExternalTrafficPolicy;
+  onScenario: (scenarioId: ScenarioId) => void;
+  onDataplane: (dataplane: Dataplane) => void;
+  onExternalTrafficPolicy: (policy: ExternalTrafficPolicy) => void;
+}) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <p className="truncate text-sm font-bold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
+    <div className="space-y-2">
+      <section
+        className="rounded-lg border bg-card p-2.5"
+        aria-labelledby="packet-scenarios-heading"
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 id="packet-scenarios-heading" className="text-sm font-semibold">
+            Packet scenarios
+          </h3>
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            {missions.filter((mission) => mission.done).length}/{SCENARIOS.length}
+          </span>
+        </div>
+        <div className="space-y-1">
+          {SCENARIOS.map((candidate) => {
+            const active = candidate.id === scenarioId;
+            const Icon = candidate.icon;
+            const done = missions.find((mission) => mission.id === candidate.id)?.done ?? false;
+            return (
+              <button
+                key={candidate.id}
+                type="button"
+                onClick={() => onScenario(candidate.id)}
+                aria-pressed={active}
+                className={cn(
+                  'flex min-h-10 w-full items-start gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  active
+                    ? 'border-primary/60 bg-primary/10'
+                    : 'border-transparent hover:bg-muted/50'
+                )}
+              >
+                <Icon
+                  className={cn(
+                    'mt-0.5 h-4 w-4 shrink-0',
+                    active ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{candidate.title}</span>
+                  <span className="block text-xs text-muted-foreground">{candidate.subtitle}</span>
+                </span>
+                {done && (
+                  <span className="flex items-center text-correct-foreground">
+                    <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only"> (walked)</span>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="space-y-2 rounded-lg border bg-card p-2.5">
+        <h3 className="text-sm font-semibold">CNI dataplane</h3>
+        <div className="grid grid-cols-3 gap-1">
+          {(Object.keys(DATAPLANES) as Dataplane[]).map((mode) => (
+            <Button
+              key={mode}
+              type="button"
+              variant={dataplane === mode ? 'default' : 'outline'}
+              size="sm"
+              className="h-10 lg:h-8"
+              onClick={() => onDataplane(mode)}
+              aria-pressed={dataplane === mode}
+              title={DATAPLANES[mode].label}
+            >
+              {DATAPLANES[mode].shortLabel}
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">{dataplaneCopy.description}</p>
+      </section>
+
+      <section className="space-y-2 rounded-lg border bg-card p-2.5">
+        <h3 className="text-sm font-semibold">External traffic</h3>
+        <div className="grid grid-cols-2 gap-1">
+          {(['Cluster', 'Local'] as ExternalTrafficPolicy[]).map((policy) => (
+            <Button
+              key={policy}
+              type="button"
+              variant={externalTrafficPolicy === policy ? 'default' : 'outline'}
+              size="sm"
+              className="h-10 lg:h-8"
+              onClick={() => onExternalTrafficPolicy(policy)}
+              aria-pressed={externalTrafficPolicy === policy}
+            >
+              {policy}
+            </Button>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          {externalTrafficPolicy === 'Cluster'
+            ? 'Cluster mode can spread traffic to endpoints on any node, often through an extra hop.'
+            : 'Local mode preserves client source IP, but only nodes with local endpoints should receive traffic.'}
+        </p>
+      </section>
     </div>
   );
 }
@@ -739,90 +934,75 @@ function PacketFlowDiagram({
   onSelect: (index: number) => void;
 }) {
   return (
-    <Card className="border-primary/30">
-      <CardHeader className="p-4 pb-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <ArrowRight className="h-5 w-5" />
-            Packet flow
-          </CardTitle>
-          <Badge variant="secondary" className="font-mono text-[11px]">
-            {steps.length} hops
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="grid gap-2 lg:grid-cols-4">
-          {steps.map((candidate, index) => {
-            const active = index === currentIndex;
-            const complete = index < currentIndex;
-
-            return (
+    <section className="rounded-lg border bg-card p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Packet flow</h3>
+        <span className="text-xs text-muted-foreground">{steps.length} hops</span>
+      </div>
+      <ol className="space-y-1.5">
+        {steps.map((candidate, index) => {
+          const active = index === currentIndex;
+          const seen = index < currentIndex;
+          return (
+            <li key={candidate.title}>
               <button
-                key={candidate.title}
                 type="button"
                 onClick={() => onSelect(index)}
+                aria-current={active ? 'step' : undefined}
                 className={cn(
-                  'relative min-w-0 rounded-md border p-3 text-left transition-colors',
+                  'flex w-full items-start gap-2 rounded-md border p-2 text-left',
                   active
                     ? 'border-primary/60 bg-primary/10'
-                    : complete
-                      ? 'border-emerald-500/30 bg-emerald-500/10'
-                      : 'border-border hover:border-primary/40 hover:bg-muted/40'
+                    : seen
+                      ? SIM_TONE.success.surface
+                      : 'border-border hover:bg-muted/50'
                 )}
               >
-                <div className="mb-2 flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold',
-                      active && 'border-primary bg-primary text-primary-foreground',
-                      complete && 'border-emerald-500 bg-emerald-500 text-white'
-                    )}
-                  >
-                    {complete ? <CheckCircle className="h-3 w-3" /> : index + 1}
+                <span
+                  className={cn(
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
+                    active && 'border-primary bg-primary text-primary-foreground',
+                    seen && 'border-correct bg-correct/15 text-correct-foreground'
+                  )}
+                >
+                  {seen ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : index + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">{candidate.title}</span>
+                  <span className="block break-words font-mono text-xs text-muted-foreground">
+                    {candidate.packet}
                   </span>
-                  <span className="min-w-0 text-xs font-semibold leading-snug">{candidate.title}</span>
-                </div>
-                <p className="break-words font-mono text-[11px] leading-snug text-muted-foreground">
-                  {candidate.packet}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  <Badge variant={active ? 'default' : 'secondary'} className="text-[10px]">
-                    {toneLabel(candidate.tone)}
-                  </Badge>
-                </div>
+                </span>
+                <span className="text-xs text-muted-foreground">{toneLabel(candidate.tone)}</span>
               </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 
 function CurrentHopDetails({ step }: { step: PacketStep }) {
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <ArrowRight className="h-5 w-5" />
-          Current hop
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-3 p-4 pt-0 md:grid-cols-2">
-        <div className="rounded-md border bg-muted/20 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Packet</p>
-          <p className="mt-2 break-words font-mono text-sm">{step.packet}</p>
+    <section className="space-y-2 rounded-lg border bg-card p-3">
+      <h3 className="text-sm font-semibold">Current hop</h3>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-md bg-muted/50 p-2.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Packet
+          </p>
+          <p className="break-words font-mono text-sm">{step.packet}</p>
         </div>
-        <div className="rounded-md border bg-muted/20 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mutation</p>
-          <p className="mt-2 text-sm text-muted-foreground">{step.mutation}</p>
+        <div className="rounded-md bg-muted/50 p-2.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Mutation
+          </p>
+          <p className="text-sm">{step.mutation}</p>
         </div>
-        <div className="rounded-md border border-primary/25 bg-primary/5 p-3 md:col-span-2">
-          <p className="text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <p className="text-sm leading-relaxed">{step.explanation}</p>
+    </section>
   );
 }
 
@@ -851,10 +1031,16 @@ function ClusterContextMap({
   }> = [
     {
       id: 'internet',
-      title: scenarioId === 'ingress' || scenarioId === 'load-balancer' ? 'External client' : 'Internet',
-      detail: scenarioId === 'ingress' || scenarioId === 'load-balancer' ? '203.0.113.8' : 'public API',
+      title:
+        scenarioId === 'ingress' || scenarioId === 'load-balancer' ? 'External client' : 'Internet',
+      detail:
+        scenarioId === 'ingress' || scenarioId === 'load-balancer' ? '203.0.113.8' : 'public API',
       icon: <Globe className="h-4 w-4" />,
-      show: active('internet') || scenarioId === 'ingress' || scenarioId === 'load-balancer' || scenarioId === 'egress',
+      show:
+        active('internet') ||
+        scenarioId === 'ingress' ||
+        scenarioId === 'load-balancer' ||
+        scenarioId === 'egress',
       active: active('internet'),
     },
     {
@@ -886,7 +1072,9 @@ function ClusterContextMap({
       title: 'Service',
       detail: '10.96.12.40:443',
       icon: <Layers className="h-4 w-4" />,
-      show: active('service') || ['cluster-ip', 'service-discovery', 'ingress', 'load-balancer'].includes(scenarioId),
+      show:
+        active('service') ||
+        ['cluster-ip', 'service-discovery', 'ingress', 'load-balancer'].includes(scenarioId),
       active: active('service'),
     },
     {
@@ -919,133 +1107,146 @@ function ClusterContextMap({
   ];
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-b bg-muted/20 p-4 pb-3">
+    <section className="overflow-hidden rounded-lg border bg-card">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Network className="h-5 w-5" />
-            Cluster map
-          </CardTitle>
-          <Badge variant={blocked ? 'destructive' : translated ? 'default' : 'secondary'}>
-            context only
-          </Badge>
+          <h3 className="text-sm font-semibold">Cluster map</h3>
+          {blocked ? (
+            <span
+              className={cn(
+                'rounded border px-1.5 py-0.5 text-xs font-semibold',
+                SIM_TONE.danger.surface,
+                SIM_TONE.danger.text
+              )}
+            >
+              context only
+            </span>
+          ) : translated ? (
+            <span
+              className={cn(
+                'rounded border px-1.5 py-0.5 text-xs font-semibold',
+                SIM_TONE.info.surface,
+                SIM_TONE.info.text
+              )}
+            >
+              context only
+            </span>
+          ) : (
+            <Badge variant="secondary">context only</Badge>
+          )}
         </div>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-primary/5 p-3">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:42px_42px] opacity-20" />
+      </div>
+      <div className="bg-muted/30 p-3">
+        <p className="mb-3 font-mono text-xs text-muted-foreground">
+          cluster.local / pod network 10.244.0.0/16
+        </p>
 
-          <p className="relative z-10 mb-3 font-mono text-xs text-muted-foreground">
-            cluster.local / pod network 10.244.0.0/16
-          </p>
-
-          <div className="relative z-10 grid gap-3">
-            <div className="space-y-3">
-              <NodeBox
-                id="node-a"
-                title="node-a"
-                cidr="PodCIDR 10.244.1.0/24"
-                active={active('node-a')}
-                cniActive={active('cni-a')}
-              >
-                <PodCard
-                  id="pod-frontend"
-                  title="frontend"
-                  ip="10.244.1.12"
-                  labels="app=frontend"
-                  active={active('pod-frontend')}
-                />
-                <PodCard
-                  id="pod-api"
-                  title="api"
-                  ip="10.244.1.34"
-                  labels="app=api"
-                  active={active('pod-api')}
-                />
-              </NodeBox>
-
-              <AuxiliaryCard
-                id="dns"
-                title="CoreDNS"
-                detail="svc DNS -> ClusterIP"
-                icon={<Network className="h-4 w-4" />}
-                active={active('dns')}
+        <div className="grid gap-3">
+          <div className="space-y-3">
+            <NodeBox
+              id="node-a"
+              title="node-a"
+              cidr="PodCIDR 10.244.1.0/24"
+              active={active('node-a')}
+              cniActive={active('cni-a')}
+            >
+              <PodCard
+                id="pod-frontend"
+                title="frontend"
+                ip="10.244.1.12"
+                labels="app=frontend"
+                active={active('pod-frontend')}
               />
-            </div>
-
-            <div className="flex items-center justify-center gap-3 py-1">
-              <Badge variant="outline" className="text-center text-[11px]">
-                {DATAPLANES[dataplane].shortLabel}
-              </Badge>
-              <div
-                className={cn(
-                  'relative h-1 min-w-20 flex-1 overflow-hidden rounded-full bg-border',
-                  active('node-fabric') && 'bg-primary/25'
-                )}
-              >
-                {active('node-fabric') && (
-                  <motion.div
-                    className="absolute left-0 top-0 h-1 w-12 rounded-full bg-primary"
-                    animate={{ x: ['0%', '650%'] }}
-                    transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <NodeBox
-                id="node-b"
-                title="node-b"
-                cidr="PodCIDR 10.244.2.0/24"
-                active={active('node-b')}
-                cniActive={active('cni-b')}
-              >
-                <PodCard
-                  id="pod-payments"
-                  title="payments"
-                  ip="10.244.2.21"
-                  labels="app=payments"
-                  active={active('pod-payments')}
-                  blocked={blocked && active('pod-payments')}
-                />
-                <PodCard
-                  id="pod-worker"
-                  title="worker"
-                  ip="10.244.2.45"
-                  labels="app=worker"
-                  active={active('pod-worker')}
-                />
-              </NodeBox>
-
-              <AuxiliaryCard
-                id="kube-proxy"
-                title={dataplane === 'ebpf' ? 'eBPF Service LB' : 'kube-proxy'}
-                detail={dataplane === 'ebpf' ? 'socket / tc hooks' : 'iptables or IPVS'}
-                icon={<Zap className="h-4 w-4" />}
-                active={active('kube-proxy')}
+              <PodCard
+                id="pod-api"
+                title="api"
+                ip="10.244.1.34"
+                labels="app=api"
+                active={active('pod-api')}
               />
+            </NodeBox>
+
+            <AuxiliaryCard
+              id="dns"
+              title="CoreDNS"
+              detail="svc DNS -> ClusterIP"
+              icon={<Network className="h-4 w-4" />}
+              active={active('dns')}
+            />
+          </div>
+
+          <div className="flex items-center justify-center gap-3 py-1">
+            <Badge variant="outline" className="text-center text-xs">
+              {DATAPLANES[dataplane].shortLabel}
+            </Badge>
+            <div
+              className={cn(
+                'relative h-1 min-w-20 flex-1 overflow-hidden rounded-full bg-border',
+                active('node-fabric') && 'bg-primary/25'
+              )}
+            >
+              {active('node-fabric') && (
+                <motion.div
+                  className="absolute left-0 top-0 h-1 w-12 rounded-full bg-primary"
+                  animate={{ x: ['0%', '650%'] }}
+                  transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }}
+                />
+              )}
             </div>
           </div>
 
-          <div className="relative z-10 mt-3 grid gap-2 sm:grid-cols-2">
-            {resources
-              .filter((resource) => resource.show)
-              .map((resource) => (
-                <AuxiliaryCard
-                  key={resource.id}
-                  id={resource.id}
-                  title={resource.title}
-                  detail={resource.detail}
-                  icon={resource.icon}
-                  active={resource.active}
-                  blocked={resource.blocked}
-                />
-              ))}
+          <div className="space-y-3">
+            <NodeBox
+              id="node-b"
+              title="node-b"
+              cidr="PodCIDR 10.244.2.0/24"
+              active={active('node-b')}
+              cniActive={active('cni-b')}
+            >
+              <PodCard
+                id="pod-payments"
+                title="payments"
+                ip="10.244.2.21"
+                labels="app=payments"
+                active={active('pod-payments')}
+                blocked={blocked && active('pod-payments')}
+              />
+              <PodCard
+                id="pod-worker"
+                title="worker"
+                ip="10.244.2.45"
+                labels="app=worker"
+                active={active('pod-worker')}
+              />
+            </NodeBox>
+
+            <AuxiliaryCard
+              id="kube-proxy"
+              title={dataplane === 'ebpf' ? 'eBPF Service LB' : 'kube-proxy'}
+              detail={dataplane === 'ebpf' ? 'socket / tc hooks' : 'iptables or IPVS'}
+              icon={<Zap className="h-4 w-4" />}
+              active={active('kube-proxy')}
+            />
           </div>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {resources
+            .filter((resource) => resource.show)
+            .map((resource) => (
+              <AuxiliaryCard
+                key={resource.id}
+                id={resource.id}
+                title={resource.title}
+                detail={resource.detail}
+                icon={resource.icon}
+                active={resource.active}
+                blocked={resource.blocked}
+              />
+            ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1064,7 +1265,9 @@ function NodeBox({
   children: ReactNode;
 }) {
   return (
-    <div className={cn('rounded-lg border bg-card/90 p-3 shadow-sm', active && 'border-primary/60 bg-primary/10')}>
+    <div
+      className={cn('rounded-md border bg-card p-2.5', active && 'border-primary/60 bg-primary/10')}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <p className="font-semibold">{title}</p>
@@ -1105,13 +1308,19 @@ function PodCard({
   return (
     <div
       className={cn(
-        'min-w-0 rounded-md border bg-background/80 p-2.5 transition-colors',
+        'min-w-0 rounded-md border bg-card p-2.5 transition-colors',
         active && 'border-primary/60 bg-primary/10',
-        blocked && 'border-red-500/50 bg-red-500/10'
+        blocked && SIM_TONE.danger.surface
       )}
     >
       <div className="mb-2 flex min-w-0 items-center gap-2">
-        <Boxes className={cn('h-4 w-4 shrink-0', active && 'text-primary', blocked && 'text-red-500')} />
+        <Boxes
+          className={cn(
+            'h-4 w-4 shrink-0',
+            active && 'text-primary',
+            blocked && 'text-wrong-foreground'
+          )}
+        />
         <p className="min-w-0 truncate text-sm font-semibold">{title}</p>
       </div>
       <p className="break-all font-mono text-xs leading-snug">{ip}</p>
@@ -1137,13 +1346,21 @@ function AuxiliaryCard({
   return (
     <div
       className={cn(
-        'min-w-0 rounded-md border bg-card/90 p-3 transition-colors',
+        'min-w-0 rounded-md border bg-card p-3 transition-colors',
         active && 'border-primary/60 bg-primary/10',
-        blocked && 'border-red-500/50 bg-red-500/10'
+        blocked && SIM_TONE.danger.surface
       )}
     >
       <div className="mb-1 flex min-w-0 items-center gap-2">
-        <div className={cn('shrink-0 text-muted-foreground', active && 'text-primary', blocked && 'text-red-500')}>{icon}</div>
+        <div
+          className={cn(
+            'shrink-0 text-muted-foreground',
+            active && 'text-primary',
+            blocked && 'text-wrong-foreground'
+          )}
+        >
+          {icon}
+        </div>
         <p className="min-w-0 truncate text-sm font-semibold">{title}</p>
       </div>
       <p className="break-words text-xs leading-snug text-muted-foreground">{detail}</p>
@@ -1156,13 +1373,13 @@ function LearningNotes({
   dataplane,
   scenarioId,
   externalTrafficPolicy,
-  scenarioCompletedCount,
+  scenarioDone,
 }: {
   step: PacketStep;
   dataplane: Dataplane;
   scenarioId: ScenarioId;
   externalTrafficPolicy: ExternalTrafficPolicy;
-  scenarioCompletedCount: number;
+  scenarioDone: boolean;
 }) {
   const scenarioNote =
     scenarioId === 'network-policy'
@@ -1187,61 +1404,59 @@ function LearningNotes({
   ];
 
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <LockKeyhole className="h-5 w-5" />
-          Learning notes
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 p-4 pt-0">
-        <div className="grid gap-2">
-          <div className="rounded-md border bg-muted/20 p-2.5">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Verdict</p>
-            <div className="mt-1.5 flex items-center gap-2">
+    <section className="space-y-2 rounded-lg border bg-card p-3">
+      <h3 className="flex items-center gap-2 text-sm font-semibold">
+        <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+        Learning notes
+      </h3>
+      <div className="grid gap-2">
+        <div className="rounded-md bg-muted/50 p-2.5">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Verdict
+          </p>
+          <div className="mt-1.5 flex items-center gap-2">
             {step.tone === 'blocked' ? (
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <ShieldAlert className="h-5 w-5 text-wrong-foreground" />
             ) : (
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <CircleCheck className="h-5 w-5 text-correct-foreground" />
             )}
             <span className="font-medium">{toneLabel(step.tone)}</span>
-            </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-1">
-            <InspectorRow label="Dataplane" value={DATAPLANES[dataplane].label} />
-            <InspectorRow label="Complete" value={scenarioCompletedCount ? 'yes' : 'not yet'} />
           </div>
         </div>
+        <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-1">
+          <InspectorRow label="Dataplane" value={DATAPLANES[dataplane].label} />
+          <InspectorRow label="Complete" value={scenarioDone ? 'yes' : 'not yet'} />
+        </div>
+      </div>
 
-        <InsightDisclosure title="Why it matters" defaultOpen>
-          <p>{scenarioNote}</p>
-        </InsightDisclosure>
+      <InsightDisclosure title="Why it matters" defaultOpen>
+        <p>{scenarioNote}</p>
+      </InsightDisclosure>
 
-        <InsightDisclosure title="Dataplane details">
-          <div className="space-y-2">
-            <p>{DATAPLANES[dataplane].description}</p>
-            <p>{DATAPLANES[dataplane].servicePath}</p>
-            <p>{DATAPLANES[dataplane].crossNodePath}</p>
-            <p>
-              {externalTrafficPolicy === 'Local'
-                ? 'externalTrafficPolicy=Local preserves client source IP and only uses node-local endpoints.'
-                : 'externalTrafficPolicy=Cluster can route to any endpoint, often at the cost of source IP preservation.'}
-            </p>
-          </div>
-        </InsightDisclosure>
+      <InsightDisclosure title="Dataplane details">
+        <div className="space-y-2">
+          <p>{DATAPLANES[dataplane].description}</p>
+          <p>{DATAPLANES[dataplane].servicePath}</p>
+          <p>{DATAPLANES[dataplane].crossNodePath}</p>
+          <p>
+            {externalTrafficPolicy === 'Local'
+              ? 'externalTrafficPolicy=Local preserves client source IP and only uses node-local endpoints.'
+              : 'externalTrafficPolicy=Cluster can route to any endpoint, often at the cost of source IP preservation.'}
+          </p>
+        </div>
+      </InsightDisclosure>
 
-        <InsightDisclosure title="Mental model">
-          <div className="space-y-2">
-            {facts.map((fact) => (
-              <div key={fact} className="flex items-start gap-2">
-                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                <p>{fact}</p>
-              </div>
-            ))}
-          </div>
-        </InsightDisclosure>
-      </CardContent>
-    </Card>
+      <InsightDisclosure title="Mental model">
+        <div className="space-y-2">
+          {facts.map((fact) => (
+            <div key={fact} className="flex items-start gap-2">
+              <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground" />
+              <p>{fact}</p>
+            </div>
+          ))}
+        </div>
+      </InsightDisclosure>
+    </section>
   );
 }
 
@@ -1264,7 +1479,7 @@ function InsightDisclosure({
   defaultOpen?: boolean;
 }) {
   return (
-    <details className="group rounded-md border bg-muted/20 p-2.5" open={defaultOpen}>
+    <details className="group rounded-md border bg-muted/50 p-2.5" open={defaultOpen}>
       <summary className="cursor-pointer list-none text-sm font-medium">
         <span className="inline-flex items-center gap-2">
           <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />

@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeploymentStrategiesSimulator from '@/components/games/deployment-strategies-simulator';
+import KubernetesNetworkingCniSimulator from '@/components/games/kubernetes-networking-cni-simulator';
 import K8sScheduler from '@/components/games/k8s-scheduler';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
@@ -277,5 +278,91 @@ describe('Kubernetes Scheduler on the kit', () => {
     if (!levelThree) throw new Error('no Level 3 pill');
     await act(async () => levelThree.click());
     expect(text()).toContain('3/4');
+  });
+});
+
+async function renderCni() {
+  await act(async () => root.render(createElement(KubernetesNetworkingCniSimulator)));
+}
+
+function packetScenarioButtons() {
+  const section = [...container.querySelectorAll<HTMLElement>('section')].find(
+    (candidate) => candidate.querySelector('h3')?.textContent === 'Packet scenarios'
+  );
+  if (!section) throw new Error('no Packet scenarios section');
+  const buttons = [...section.querySelectorAll<HTMLButtonElement>('button')].filter(
+    (button) => button.getAttribute('aria-pressed') !== null
+  );
+  if (buttons.length !== 8) throw new Error(`expected 8 scenario buttons, found ${buttons.length}`);
+  return buttons;
+}
+
+async function walkCurrentCniScenario() {
+  for (let clicks = 0; clicks < 20; clicks++) {
+    const next = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+      (button) => name(button) === 'Next hop'
+    );
+    if (!next) {
+      const scenario = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+        (button) => name(button) === 'Next scenario'
+      );
+      if (scenario) return;
+      throw new Error('no CNI next button');
+    }
+    await act(async () => next.click());
+  }
+  throw new Error('Next hop did not become Next scenario');
+}
+
+describe('Kubernetes CNI Simulator on the kit', () => {
+  it('no hero, a goal, scoped keys', async () => {
+    await renderCni();
+    expect(text()).not.toContain('// packet path lab');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/8 done');
+
+    await act(async () =>
+      document.body.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })
+      )
+    );
+    expect(text()).toContain('1/4');
+
+    const inside = container.querySelector<HTMLButtonElement>('button');
+    if (!inside) throw new Error('no CNI button');
+    await act(async () =>
+      inside.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }))
+    );
+    expect(text()).toContain('2/4');
+  });
+
+  it('one signal, after the eighth scenario', async () => {
+    await renderCni();
+    const scenarios = packetScenarioButtons();
+    for (const [index, scenario] of scenarios.entries()) {
+      await act(async () => scenario.click());
+      await walkCurrentCniScenario();
+      if (index < scenarios.length - 1) expect(completions).toBe(0);
+    }
+    expect(completions).toBe(1);
+    expect(text()).toContain('All 8 packet paths walked');
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+
+    const first = packetScenarioButtons()[0];
+    if (!first) throw new Error('no first scenario');
+    await act(async () => first.click());
+    await walkCurrentCniScenario();
+    expect(completions).toBe(1);
+  }, 60_000);
+
+  it('Next scenario goes to the first scenario not walked', async () => {
+    await renderCni();
+    await walkCurrentCniScenario();
+    await click('Next scenario', true);
+    const second = packetScenarioButtons()[1];
+    if (!second) throw new Error('no second scenario');
+    expect(second.getAttribute('aria-pressed')).toBe('true');
+    expect(text()).toContain('1/');
   });
 });
