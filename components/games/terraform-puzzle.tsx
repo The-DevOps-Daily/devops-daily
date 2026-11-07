@@ -912,7 +912,7 @@ export default function TerraformPuzzle() {
       last={next === null}
     />
   );
-  const barButton = 'h-10 w-10 px-0 lg:h-9 lg:w-9';
+  const barButton = 'h-10 w-10 px-0 lg:h-8 lg:w-8';
 
   return (
     <SimFrame>
@@ -979,7 +979,7 @@ export default function TerraformPuzzle() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-10 lg:h-9"
+                className="h-10 lg:h-8"
                 onClick={() => setGame((g) => ({ ...g, finished: true }))}
               >
                 <Trophy className="mr-1.5 h-4 w-4" aria-hidden="true" /> Results

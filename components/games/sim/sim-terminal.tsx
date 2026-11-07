@@ -53,7 +53,7 @@ export function SimTerminalWindow({
         className
       )}
     >
-      <div className="flex min-h-9 items-center justify-between gap-3 border-b border-terminal-border bg-terminal-bar px-3 py-1.5 font-mono text-xs">
+      <div className="flex min-h-8 items-center justify-between gap-3 border-b border-terminal-border bg-terminal-bar px-3 py-1 font-mono text-xs">
         <span className="min-w-0 [overflow-wrap:anywhere] text-terminal-foreground">{label}</span>
         {status && (
           <span className="shrink-0 rounded border border-terminal-border px-1.5 py-0.5 text-terminal-muted">

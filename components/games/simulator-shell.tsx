@@ -113,9 +113,9 @@ export async function SimulatorShell({
       )}
       {explainer && <FAQSchema questions={explainer.faq} />}
 
-      <div className={cn('container px-4 py-8 mx-auto', className)}>
+      <div className={cn('container px-4 pt-4 pb-8 mx-auto', className)}>
         {/* Breadcrumb + actions */}
-        <div className="flex items-center justify-between mb-4 gap-4">
+        <div className="flex items-center justify-between mb-3 gap-4">
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug={slug} gameTitle={title} />
         </div>
@@ -129,10 +129,12 @@ export async function SimulatorShell({
             {title}
           </h1>
           {description && (
-            <p className="text-sm text-muted-foreground max-w-3xl mb-6">{description}</p>
+            <p className="text-sm text-muted-foreground max-w-3xl mb-4 line-clamp-2 sm:line-clamp-none">
+              {description}
+            </p>
           )}
 
-          <GameSponsors />
+          <GameSponsors className="mb-4" />
 
           {/* Simulator itself. The provider gives the game its level, topics
               and the first "Try next" game for its completion card. */}

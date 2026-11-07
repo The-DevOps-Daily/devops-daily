@@ -17,7 +17,8 @@ export function EmbedBadge({ gameSlug, gameTitle }: EmbedBadgeProps) {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-2 duration-500"
+      // Sits above a simulator's fixed phone bar (SimPhoneBar) instead of covering its buttons.
+      className="fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-2 duration-500 [body:has([data-sim-phone-bar])_&]:bottom-24 lg:[body:has([data-sim-phone-bar])_&]:bottom-4"
       style={{ pointerEvents: 'auto' }}
     >
       <a
