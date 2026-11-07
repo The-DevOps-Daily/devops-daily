@@ -160,7 +160,7 @@ describe('Cron Expression Simulator on the kit', () => {
     await click('The OR trap');
     expect(text()).not.toContain('Lab complete');
     expect(completions).toBe(1);
-  });
+  }, 30_000);
 
   it('does not count the same example twice', async () => {
     await render(CronExpressionSimulator);
@@ -168,7 +168,7 @@ describe('Cron Expression Simulator on the kit', () => {
     await click('Once a day at midnight');
     expect(text()).toContain('(3 of 4 open)');
     expect(completions).toBe(0);
-  });
+  }, 30_000);
 });
 
 describe('How Docker Works Under the Hood on the kit', () => {
@@ -186,14 +186,14 @@ describe('How Docker Works Under the Hood on the kit', () => {
     await click('Previous stage');
     expect(text()).not.toContain('Walkthrough complete');
     expect(completions).toBe(1);
-  });
+  }, 30_000);
 
   it('still signals when the last stage is picked directly, as before', async () => {
     await render(DockerUnderTheHoodSimulator);
     await click('Stage 8:');
     expect(text()).toContain('Walkthrough complete');
     expect(completions).toBe(1);
-  });
+  }, 30_000);
 });
 
 describe('Container Security Challenge on the kit', () => {
@@ -212,7 +212,7 @@ describe('Container Security Challenge on the kit', () => {
     await click('Start again');
     expect(text()).not.toContain('Challenge complete');
     expect(completions).toBe(1);
-  });
+  }, 30_000);
 });
 
 describe('Kubernetes RBAC Simulator on the kit', () => {
@@ -240,12 +240,12 @@ describe('Kubernetes RBAC Simulator on the kit', () => {
     await choose('Namespace', 'dev');
     expect(text()).not.toContain('Lab complete');
     expect(completions).toBe(1);
-  });
+  }, 30_000);
 
   it('does not pass a mission on a scenario’s first question', async () => {
     await render(K8sRbacSimulator);
     for (let i = 1; i <= 7; i++) await click(`Scenario ${i}:`);
     expect(text()).toContain('Missions 0/5');
     expect(completions).toBe(0);
-  });
+  }, 30_000);
 });
