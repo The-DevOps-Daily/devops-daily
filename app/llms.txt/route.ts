@@ -31,13 +31,15 @@ export async function GET() {
       getAllChecklists(),
       getAllChallenges(),
     ]);
+  const simulators = games.filter((g) => g.type === 'simulator');
+  const playable = games.filter((g) => g.type === 'game');
 
   const md = `# DevOps Daily
 
 > DevOps Daily is an educational platform providing tutorials, guides, exercises, quizzes, and news for DevOps engineers. Content covers Docker, Kubernetes, Terraform, CI/CD, Linux, AWS, Git, Python, and more.
 
 - Last updated: ${new Date().toISOString().split('T')[0]}
-- Content: ${posts.length} posts, ${guides.length} guides, ${exercises.length} exercises, ${quizzes.length} quizzes, ${flashcards.length} flashcard decks, ${checklists.length} checklists, ${interviewQuestions.length} interview questions, ${games.length} interactive simulators
+- Content: ${posts.length} posts, ${guides.length} guides, ${exercises.length} exercises, ${quizzes.length} quizzes, ${flashcards.length} flashcard decks, ${checklists.length} checklists, ${interviewQuestions.length} interview questions, ${simulators.length} simulators, ${playable.length} games
 - License: Open source (GitHub)
 - Contact: info@devops-daily.com
 
@@ -53,7 +55,8 @@ export async function GET() {
 - [Challenges](${baseUrl}/challenges): Hands-on tasks graded by CI on your pull request
 - [Interview Questions](${baseUrl}/interview-questions): DevOps interview prep for junior to senior
 - [News](${baseUrl}/news): Weekly curated DevOps news digests
-- [Games](${baseUrl}/games): ${games.length}+ interactive DevOps simulators and learning tools
+- [Simulators](${baseUrl}/simulators): ${simulators.length} hands-on DevOps labs that run in the browser
+- [Games](${baseUrl}/games): Opsville, a pixel-art DevOps town, plus ${playable.length} arcade and party games
 - [Roadmap](${baseUrl}/roadmap): DevOps learning path from beginner to expert
 - [Roadmaps](${baseUrl}/roadmaps): Structured learning paths (Junior, DevSecOps)
 - [Books](${baseUrl}/books): Curated DevOps book recommendations
@@ -97,9 +100,14 @@ ${challenges.map((c) => `- [${c.title}](${baseUrl}/challenges/${c.slug}): ${c.de
 
 ${interviewQuestions.map((q) => `- [${q.title}](${baseUrl}/interview-questions/${q.tier}/${q.slug}): ${q.question}`).join('\n')}
 
-## Interactive Simulators & Games
+## Simulators
 
-${games.map((g) => `- [${g.title}](${baseUrl}${g.href}): ${g.description}`).join('\n')}
+${simulators.map((g) => `- [${g.title}](${baseUrl}${g.href}): ${g.description}`).join('\n')}
+
+## Games
+
+- [Opsville](${baseUrl}/opsville/): A free pixel-art DevOps town. Each quest opens one of the simulators.
+${playable.map((g) => `- [${g.title}](${baseUrl}${g.href}): ${g.description}`).join('\n')}
 
 ## News Digests
 

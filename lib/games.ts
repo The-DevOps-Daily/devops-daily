@@ -23,7 +23,8 @@ export interface Game {
   isComingSoon?: boolean;
   featured?: boolean;
   category?: string;
-  type?: 'game' | 'simulator';
+  /** 'simulator' entries are listed on /simulators, 'game' entries on /games. */
+  type: 'game' | 'simulator';
   createdAt?: string; // ISO 8601 date string for sorting
 }
 
@@ -967,7 +968,7 @@ const games: Game[] = [
   },
   {
     id: 'linux-terminal',
-    type: 'game',
+    type: 'simulator',
     title: 'Learn Linux - Interactive Tutorial',
     description:
       'Master essential Linux commands through interactive lessons. Practice pwd, ls, cd, cat, grep, chmod, pipes, and more in a simulated terminal environment with 6 progressive lessons.',
@@ -1218,7 +1219,7 @@ const games: Game[] = [
   },
   {
     id: 'git-quiz',
-    type: 'game',
+    type: 'simulator',
     title: 'Git Command Quiz',
     description:
       'Test your Git knowledge with interactive scenarios covering branches, merges, rebases, conflicts, and the recovery commands you reach for under pressure.',

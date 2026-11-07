@@ -114,8 +114,8 @@ export function NotFoundClient() {
                 <span className="text-muted-foreground"># home</span>
               </li>
               <li>
-                <Link href="/games" className="text-primary hover:underline">
-                  /games
+                <Link href="/simulators" className="text-primary hover:underline">
+                  /simulators
                 </Link>{' '}
                 <span className="text-muted-foreground"># interactive simulators</span>
               </li>

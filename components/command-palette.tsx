@@ -17,6 +17,7 @@ import {
   Dumbbell,
   HelpCircle,
   Gamepad2,
+  FlaskConical,
   Newspaper,
   Home,
   Search,
@@ -289,6 +290,15 @@ export function CommandPalette() {
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
                   View Guides
+                </CommandItem>
+                <CommandItem
+                  onSelect={() => {
+                    router.push('/simulators');
+                    setOpen(false);
+                  }}
+                >
+                  <FlaskConical className="w-4 h-4 mr-2" />
+                  Try a Simulator
                 </CommandItem>
                 <CommandItem
                   onSelect={() => {

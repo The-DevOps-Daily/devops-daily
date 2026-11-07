@@ -81,11 +81,11 @@ const offerings = [
   },
   {
     icon: Gamepad2,
-    title: 'Games & Quizzes',
+    title: 'Simulators & Quizzes',
     description:
       '30+ interactive simulators and 26+ quizzes that make learning DevOps concepts engaging. Test your knowledge and solidify your understanding through play.',
     color: 'orange',
-    href: '/games',
+    href: '/simulators',
     cta: 'Play & Learn',
   },
 ] as const;

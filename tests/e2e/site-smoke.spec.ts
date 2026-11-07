@@ -19,22 +19,38 @@ test('homepage renders in both themes without horizontal overflow', async ({ pag
   }
 });
 
-test('games directory keeps available and coming-soon tools distinct', async ({ page }) => {
-  await page.goto('/games');
+test('simulators directory filters by topic and keeps coming-soon tools unlinked', async ({
+  page,
+}) => {
+  await page.goto('/simulators');
 
-  const counter = page.getByText(/Showing \d+ of \d+ available tools/);
+  const counter = page.getByText(/Showing \d+ of \d+ simulators/);
   await expect(counter).toBeVisible();
   const counts = (await counter.textContent())?.match(/Showing (\d+) of (\d+)/);
   expect(counts?.[1]).toBe(counts?.[2]);
 
-  const comingSoon = page.getByRole('region', { name: 'Coming Soon' });
+  const comingSoon = page.getByRole('region', { name: 'Coming soon' });
   await expect(comingSoon).toBeVisible();
   await expect(comingSoon.getByRole('link')).toHaveCount(0);
 
-  const simulatorsTab = page.getByRole('button', { name: /Simulators/ });
-  await simulatorsTab.click();
-  await expect(simulatorsTab).toHaveAttribute('aria-pressed', 'true');
-  await expect(comingSoon).not.toBeVisible();
+  const dockerTopic = page.getByRole('button', { name: /^Docker \d+$/ });
+  await dockerTopic.click();
+  await expect(dockerTopic).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('region', { name: /^Docker/ })).toBeVisible();
+  await expect(page.getByRole('region', { name: /^Linux/ })).toHaveCount(0);
+});
+
+test('games page features Opsville and links to the simulators', async ({ page }) => {
+  await page.goto('/games');
+
+  await expect(page.getByRole('link', { name: 'Play Opsville' })).toHaveAttribute(
+    'href',
+    '/opsville/'
+  );
+  await expect(page.getByRole('link', { name: /See all \d+ simulators/ }).last()).toHaveAttribute(
+    'href',
+    '/simulators'
+  );
 });
 
 test('representative article and simulator routes render', async ({ page }) => {
