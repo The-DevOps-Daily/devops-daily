@@ -110,10 +110,10 @@ const LESSONS: Lesson[] = [
     commands: [
       {
         instruction: 'List the name and country of customers based in the USA.',
-        hint: "Use \"SELECT name, country FROM customers WHERE country = 'USA';\".",
+        hint: 'Use "SELECT name, country FROM customers WHERE country = \'USA\';".',
         expectedCommand: "SELECT name, country FROM customers WHERE country = 'USA';",
         explanation:
-          "WHERE filters rows before they are returned. String literals go in single quotes and are matched exactly.",
+          'WHERE filters rows before they are returned. String literals go in single quotes and are matched exactly.',
       },
       {
         instruction: 'Show the name and price of products that cost less than 50.',
@@ -266,7 +266,7 @@ const LESSONS: Lesson[] = [
         hint: "LEFT JOIN orders and put the status filter in the ON clause: ON o.customer_id = c.customer_id AND o.status = 'pending'.",
         expectedCommand: LEFT_JOIN_QUERY,
         explanation:
-          "A LEFT JOIN keeps every row from the left table; unmatched right-side columns come back NULL. Filtering on o.status in the ON clause (not WHERE) is what preserves the customers who have no pending order.",
+          'A LEFT JOIN keeps every row from the left table; unmatched right-side columns come back NULL. Filtering on o.status in the ON clause (not WHERE) is what preserves the customers who have no pending order.',
       },
     ],
   },
@@ -292,7 +292,7 @@ const LESSONS: Lesson[] = [
       },
       {
         instruction: 'Delete every cancelled order.',
-        hint: "Use \"DELETE FROM orders WHERE status = 'cancelled';\".",
+        hint: 'Use "DELETE FROM orders WHERE status = \'cancelled\';".',
         expectedCommand: "DELETE FROM orders WHERE status = 'cancelled';",
         explanation:
           'DELETE removes matching rows and reports the count ("DELETE 2" — two orders are cancelled). Again, nothing is persisted here so the lessons stay reproducible.',
@@ -331,7 +331,8 @@ Try:
   SELECT status, count(*) AS orders FROM orders GROUP BY status;`;
 
 const SCHEMA_TEXT = TABLES.map(
-  (table) => `${table.name} (${table.rowCount} rows)\n  ${table.columns.map((col) => col.name).join(', ')}`,
+  (table) =>
+    `${table.name} (${table.rowCount} rows)\n  ${table.columns.map((col) => col.name).join(', ')}`
 ).join('\n\n');
 
 function isNumericColumn(rows: (string | number | null)[][], index: number): boolean {
@@ -350,7 +351,7 @@ function formatTable(result: QueryResult): string {
 
   const numeric = columns.map((_, index) => isNumericColumn(rows, index));
   const widths = columns.map((column, index) =>
-    Math.max(String(column).length, ...rows.map((row) => String(row[index] ?? '').length)),
+    Math.max(String(column).length, ...rows.map((row) => String(row[index] ?? '').length))
   );
 
   const renderCell = (value: string | number | null, index: number) => {
@@ -360,7 +361,9 @@ function formatTable(result: QueryResult): string {
 
   const header = ` ${columns.map((column, index) => (numeric[index] ? String(column).padStart(widths[index]) : String(column).padEnd(widths[index]))).join(' | ')} `;
   const separator = widths.map((width) => '-'.repeat(width + 2)).join('+');
-  const body = rows.map((row) => ` ${row.map((value, index) => renderCell(value, index)).join(' | ')} `);
+  const body = rows.map(
+    (row) => ` ${row.map((value, index) => renderCell(value, index)).join(' | ')} `
+  );
   const footer = `(${rows.length} row${rows.length === 1 ? '' : 's'})`;
 
   return [header, separator, ...body, footer].join('\n');
@@ -376,7 +379,10 @@ function commandMatches(cmd: string, expected: string | string[]): boolean {
 
 function executeCommand(rawInput: string): ExecuteResult {
   const input = rawInput.trim();
-  const bare = input.replace(/;+\s*$/, '').trim().toLowerCase();
+  const bare = input
+    .replace(/;+\s*$/, '')
+    .trim()
+    .toLowerCase();
 
   if (bare === 'clear') return { output: '', clear: true };
   if (bare === 'help' || bare === '\\h' || bare === '\\?') return { output: HELP_TEXT };
@@ -448,7 +454,7 @@ const CHALLENGES: Challenge[] = [
 /** Grade a user's SQL against a challenge's reference solution. */
 function gradeChallenge(
   input: string,
-  challenge: Challenge,
+  challenge: Challenge
 ): { lines: TerminalLine[]; solved: boolean } {
   const now = () => new Date();
   const lines: TerminalLine[] = [{ type: 'input', content: input, timestamp: now() }];
@@ -563,7 +569,10 @@ export default function SqlTerminalSimulator() {
       const input = raw.trim();
       if (!input) return;
       setChallengeInput('');
-      const bare = input.replace(/;+\s*$/, '').trim().toLowerCase();
+      const bare = input
+        .replace(/;+\s*$/, '')
+        .trim()
+        .toLowerCase();
       const now = () => new Date();
 
       if (bare === 'clear') {
@@ -594,7 +603,7 @@ export default function SqlTerminalSimulator() {
         setRevealed((prev) => new Set(prev).add(activeChallenge));
       }
     },
-    [activeChallenge],
+    [activeChallenge]
   );
 
   const handleChallengeSubmit = useCallback(
@@ -602,7 +611,7 @@ export default function SqlTerminalSimulator() {
       event.preventDefault();
       submitChallenge(challengeInput);
     },
-    [challengeInput, submitChallenge],
+    [challengeInput, submitChallenge]
   );
 
   const selectChallenge = useCallback((index: number) => {
@@ -623,14 +632,17 @@ export default function SqlTerminalSimulator() {
     challengeInputRef.current?.focus();
   }, []);
 
-  const switchMode = useCallback((next: 'lessons' | 'challenges') => {
-    setMode(next);
-    if (next === 'challenges') {
-      window.setTimeout(() => challengeInputRef.current?.focus(), 0);
-    } else {
-      window.setTimeout(() => inputRef.current?.focus(), 0);
-    }
-  }, [inputRef]);
+  const switchMode = useCallback(
+    (next: 'lessons' | 'challenges') => {
+      setMode(next);
+      if (next === 'challenges') {
+        window.setTimeout(() => challengeInputRef.current?.focus(), 0);
+      } else {
+        window.setTimeout(() => inputRef.current?.focus(), 0);
+      }
+    },
+    [inputRef]
+  );
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
@@ -647,9 +659,9 @@ export default function SqlTerminalSimulator() {
           </div>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Practice SQL against a small e-commerce schema in a safe browser terminal. Single-table
-            queries run live; the guided join, subquery, window, and CTE lessons return real Postgres
-            output. Learn SELECT, WHERE, ORDER BY, DISTINCT, aggregates, GROUP BY, HAVING, JOINs,
-            LEFT JOIN, INSERT/UPDATE/DELETE, subqueries, window functions, and CTEs.
+            queries run live; the guided join, subquery, window, and CTE lessons return real
+            Postgres output. Learn SELECT, WHERE, ORDER BY, DISTINCT, aggregates, GROUP BY, HAVING,
+            JOINs, LEFT JOIN, INSERT/UPDATE/DELETE, subqueries, window functions, and CTEs.
           </p>
           <div className="mt-4 inline-flex rounded-md border bg-background p-1">
             <button
@@ -659,7 +671,7 @@ export default function SqlTerminalSimulator() {
                 'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors',
                 mode === 'lessons'
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <BookOpen className="h-4 w-4" />
@@ -672,7 +684,7 @@ export default function SqlTerminalSimulator() {
                 'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors',
                 mode === 'challenges'
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Target className="h-4 w-4" />
@@ -694,7 +706,9 @@ export default function SqlTerminalSimulator() {
               </span>
             </div>
             <Progress
-              value={mode === 'lessons' ? progressPercentage : (solvedCount / CHALLENGES.length) * 100}
+              value={
+                mode === 'lessons' ? progressPercentage : (solvedCount / CHALLENGES.length) * 100
+              }
             />
             <div className="grid grid-cols-3 gap-2 text-center">
               <Metric label="Tables" value={TABLES.length} />
@@ -712,328 +726,358 @@ export default function SqlTerminalSimulator() {
       <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
         {mode === 'lessons' ? (
           <>
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BookOpen className="h-5 w-5" />
-                Lessons
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {LESSONS.map((lesson, lessonIndex) => {
-                const lessonCompleted = lesson.commands.every((_, commandIndex) =>
-                  completedCommands.has(`${lessonIndex}-${commandIndex}`),
-                );
-                const active = lessonIndex === currentLessonIndex;
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <BookOpen className="h-5 w-5" />
+                    Lessons
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 p-4 pt-0">
+                  {LESSONS.map((lesson, lessonIndex) => {
+                    const lessonCompleted = lesson.commands.every((_, commandIndex) =>
+                      completedCommands.has(`${lessonIndex}-${commandIndex}`)
+                    );
+                    const active = lessonIndex === currentLessonIndex;
 
-                return (
-                  <button
-                    key={lesson.id}
-                    type="button"
-                    onClick={() => {
-                      jumpToLesson(lessonIndex);
-                      inputRef.current?.focus();
-                    }}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30',
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
-                        {lesson.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium">{lesson.title}</p>
-                          {lessonCompleted && <CheckCircle className="h-4 w-4 text-emerald-500" />}
+                    return (
+                      <button
+                        key={lesson.id}
+                        type="button"
+                        onClick={() => {
+                          jumpToLesson(lessonIndex);
+                          inputRef.current?.focus();
+                        }}
+                        className={cn(
+                          'w-full rounded-md border p-2.5 text-left transition-colors',
+                          active
+                            ? 'border-primary/60 bg-primary/10'
+                            : 'border-border hover:border-primary/40 hover:bg-muted/30'
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={cn(
+                              'rounded-md border p-1.5',
+                              active ? 'text-primary' : 'text-muted-foreground'
+                            )}
+                          >
+                            {lesson.icon}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium">{lesson.title}</p>
+                              {lessonCompleted && (
+                                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                              )}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {lesson.description}
+                            </p>
+                          </div>
                         </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{lesson.description}</p>
+                      </button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+
+              <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
+                <RotateCcw className="mr-1 h-4 w-4" />
+                Reset lab
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <Card className="border-primary/40">
+                <CardContent className="space-y-2.5 p-3.5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">
+                          Lesson {currentLessonIndex + 1} / {LESSONS.length}
+                        </Badge>
+                        <Badge>
+                          Step {currentCommandIndex + 1} / {currentLesson.commands.length}
+                        </Badge>
                       </div>
+                      <p className="text-sm font-medium sm:text-base">
+                        {currentCommand?.instruction}
+                      </p>
+                      {showHint && currentCommand && (
+                        <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
+                          {currentCommand.hint}
+                        </p>
+                      )}
                     </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowHint((value) => !value)}
+                      >
+                        <Lightbulb className="mr-1 h-4 w-4" />
+                        Hint
+                      </Button>
+                      <Button size="sm" onClick={runCurrentCommand}>
+                        <Play className="mr-1 h-4 w-4" />
+                        Run
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Reset lab
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-2.5 p-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                      Lesson {currentLessonIndex + 1} / {LESSONS.length}
+              <Card className="overflow-hidden border-border bg-[#171717]">
+                <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="h-3 w-3 rounded-full bg-red-500" />
+                        <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                        <div className="h-3 w-3 rounded-full bg-green-500" />
+                      </div>
+                      <span className="ml-2 text-sm text-muted-foreground">psql</span>
+                    </div>
+                    <Badge variant="secondary" className="font-mono text-[11px]">
+                      devops=#
                     </Badge>
-                    <Badge>
-                      Step {currentCommandIndex + 1} / {currentLesson.commands.length}
-                    </Badge>
                   </div>
-                  <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
-                  {showHint && currentCommand && (
-                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
-                      {currentCommand.hint}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
-                    <Lightbulb className="mr-1 h-4 w-4" />
-                    Hint
-                  </Button>
-                  <Button size="sm" onClick={runCurrentCommand}>
-                    <Play className="mr-1 h-4 w-4" />
-                    Run
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
-                  </div>
-                  <span className="ml-2 text-sm text-muted-foreground">psql</span>
-                </div>
-                <Badge variant="secondary" className="font-mono text-[11px]">
-                  devops=#
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                className="h-[580px] cursor-text overflow-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                onClick={() => inputRef.current?.focus()}
-              >
-                {terminalHistory.length === 0 && (
-                  <div className="mb-4 text-emerald-400">
-                    <p>Welcome to the SQL terminal playground (Postgres-style).</p>
-                    <p className="mt-2 text-muted-foreground">
-                      Type &quot;help&quot;, run &quot;\dt&quot; to see the tables, or follow the current task above.
-                    </p>
-                  </div>
-                )}
-                {terminalHistory.map((line, index) => (
+                </CardHeader>
+                <CardContent className="p-0">
                   <div
-                    key={`${line.timestamp.getTime()}-${index}`}
-                    className={cn(
-                      'mb-2',
-                      line.type === 'output'
-                        ? 'whitespace-pre'
-                        : 'whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-slate-100',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'success' &&
-                        'whitespace-pre-wrap rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300',
-                    )}
+                    ref={terminalRef}
+                    className="h-[580px] cursor-text overflow-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
+                    onClick={() => inputRef.current?.focus()}
                   >
-                    {line.type === 'input' && <span className="text-emerald-400">devops=# </span>}
-                    {line.content}
+                    {terminalHistory.length === 0 && (
+                      <div className="mb-4 text-emerald-400">
+                        <p>Welcome to the SQL terminal playground (Postgres-style).</p>
+                        <p className="mt-2 text-muted-foreground">
+                          Type &quot;help&quot;, run &quot;\dt&quot; to see the tables, or follow
+                          the current task above.
+                        </p>
+                      </div>
+                    )}
+                    {terminalHistory.map((line, index) => (
+                      <div
+                        key={`${line.timestamp.getTime()}-${index}`}
+                        className={cn(
+                          'mb-2',
+                          line.type === 'output'
+                            ? 'whitespace-pre'
+                            : 'whitespace-pre-wrap break-words',
+                          line.type === 'input' && 'text-slate-100',
+                          line.type === 'output' && 'text-slate-300',
+                          line.type === 'error' && 'text-red-400',
+                          line.type === 'success' &&
+                            'whitespace-pre-wrap rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
+                        )}
+                      >
+                        {line.type === 'input' && (
+                          <span className="text-emerald-400">devops=# </span>
+                        )}
+                        {line.content}
+                      </div>
+                    ))}
+                    <form onSubmit={handleSubmit} className="flex items-center">
+                      <span className="whitespace-nowrap text-emerald-400">devops=#</span>
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={inputValue}
+                        onChange={(event) => setInputValue(event.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
+                        spellCheck={false}
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        placeholder="SELECT * FROM customers;"
+                      />
+                    </form>
                   </div>
-                ))}
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="whitespace-nowrap text-emerald-400">devops=#</span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(event) => setInputValue(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    placeholder="SELECT * FROM customers;"
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         ) : (
           <>
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Target className="h-5 w-5" />
-                Challenges
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {CHALLENGES.map((challenge, index) => {
-                const solved = solvedChallenges.has(index);
-                const active = index === activeChallenge;
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Target className="h-5 w-5" />
+                    Challenges
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 p-4 pt-0">
+                  {CHALLENGES.map((challenge, index) => {
+                    const solved = solvedChallenges.has(index);
+                    const active = index === activeChallenge;
 
-                return (
-                  <button
-                    key={challenge.id}
-                    type="button"
-                    onClick={() => selectChallenge(index)}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30',
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
+                    return (
+                      <button
+                        key={challenge.id}
+                        type="button"
+                        onClick={() => selectChallenge(index)}
                         className={cn(
-                          'mt-0.5 shrink-0',
-                          solved ? 'text-emerald-500' : active ? 'text-primary' : 'text-muted-foreground',
+                          'w-full rounded-md border p-2.5 text-left transition-colors',
+                          active
+                            ? 'border-primary/60 bg-primary/10'
+                            : 'border-border hover:border-primary/40 hover:bg-muted/30'
                         )}
                       >
-                        {solved ? <CheckCircle className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-muted-foreground">
-                          Challenge {index + 1}
-                        </p>
-                        <p className="mt-0.5 text-sm">{challenge.question}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={cn(
+                              'mt-0.5 shrink-0',
+                              solved
+                                ? 'text-emerald-500'
+                                : active
+                                  ? 'text-primary'
+                                  : 'text-muted-foreground'
+                            )}
+                          >
+                            {solved ? (
+                              <CheckCircle className="h-4 w-4" />
+                            ) : (
+                              <Circle className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-muted-foreground">
+                              Challenge {index + 1}
+                            </p>
+                            <p className="mt-0.5 text-sm">{challenge.question}</p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
 
-          <Button size="sm" variant="outline" onClick={resetChallenges} className="w-full">
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Reset challenges
-          </Button>
-        </div>
+              <Button size="sm" variant="outline" onClick={resetChallenges} className="w-full">
+                <RotateCcw className="mr-1 h-4 w-4" />
+                Reset challenges
+              </Button>
+            </div>
 
-        <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-2.5 p-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                      Challenge {activeChallenge + 1} / {CHALLENGES.length}
-                    </Badge>
-                    {solvedChallenges.has(activeChallenge) && (
-                      <Badge className="gap-1 bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15">
-                        <CheckCircle className="h-3.5 w-3.5" />
-                        Solved
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm font-medium sm:text-base">
-                    {CHALLENGES[activeChallenge].question}
-                  </p>
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    Write your own SQL in the terminal below and press Enter. Your result is graded
-                    against the expected rows, ignoring column names.
-                  </p>
-                  {revealed.has(activeChallenge) && (
-                    <div className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2">
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                        Reference solution
+            <div className="space-y-4">
+              <Card className="border-primary/40">
+                <CardContent className="space-y-2.5 p-3.5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <Badge variant="secondary">
+                          Challenge {activeChallenge + 1} / {CHALLENGES.length}
+                        </Badge>
+                        {solvedChallenges.has(activeChallenge) && (
+                          <Badge className="gap-1 bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Solved
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium sm:text-base">
+                        {CHALLENGES[activeChallenge].question}
                       </p>
-                      <code className="block whitespace-pre-wrap break-words font-mono text-xs text-foreground">
-                        {CHALLENGES[activeChallenge].solution};
-                      </code>
+                      <p className="mt-1.5 text-xs text-muted-foreground">
+                        Write your own SQL in the terminal below and press Enter. Your result is
+                        graded against the expected rows, ignoring column names.
+                      </p>
+                      {revealed.has(activeChallenge) && (
+                        <div className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2">
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Reference solution
+                          </p>
+                          <code className="block whitespace-pre-wrap break-words font-mono text-xs text-foreground">
+                            {CHALLENGES[activeChallenge].solution};
+                          </code>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={revealSolution}>
-                    <Lightbulb className="mr-1 h-4 w-4" />
-                    Show solution
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="flex shrink-0 gap-2">
+                      <Button size="sm" variant="outline" onClick={revealSolution}>
+                        <Lightbulb className="mr-1 h-4 w-4" />
+                        Show solution
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
+              <Card className="overflow-hidden border-border bg-[#171717]">
+                <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className="flex gap-1.5">
+                        <div className="h-3 w-3 rounded-full bg-red-500" />
+                        <div className="h-3 w-3 rounded-full bg-yellow-500" />
+                        <div className="h-3 w-3 rounded-full bg-green-500" />
+                      </div>
+                      <span className="ml-2 text-sm text-muted-foreground">psql</span>
+                    </div>
+                    <Badge variant="secondary" className="font-mono text-[11px]">
+                      devops=#
+                    </Badge>
                   </div>
-                  <span className="ml-2 text-sm text-muted-foreground">psql</span>
-                </div>
-                <Badge variant="secondary" className="font-mono text-[11px]">
-                  devops=#
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={challengeTerminalRef}
-                className="h-[580px] cursor-text overflow-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                onClick={() => challengeInputRef.current?.focus()}
-              >
-                {challengeHistory.length === 0 && (
-                  <div className="mb-4 text-emerald-400">
-                    <p>Challenge mode — write the SQL yourself.</p>
-                    <p className="mt-2 text-muted-foreground">
-                      Type a query to answer the current challenge, run &quot;\dt&quot; to see the
-                      tables, or &quot;help&quot; for commands.
-                    </p>
-                  </div>
-                )}
-                {challengeHistory.map((line, index) => (
+                </CardHeader>
+                <CardContent className="p-0">
                   <div
-                    key={`${line.timestamp.getTime()}-${index}`}
-                    className={cn(
-                      'mb-2',
-                      line.type === 'output' ? 'whitespace-pre' : 'whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-slate-100',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'success' &&
-                        'whitespace-pre-wrap rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300',
-                    )}
+                    ref={challengeTerminalRef}
+                    className="h-[580px] cursor-text overflow-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
+                    onClick={() => challengeInputRef.current?.focus()}
                   >
-                    {line.type === 'input' && <span className="text-emerald-400">devops=# </span>}
-                    {line.content}
+                    {challengeHistory.length === 0 && (
+                      <div className="mb-4 text-emerald-400">
+                        <p>Challenge mode — write the SQL yourself.</p>
+                        <p className="mt-2 text-muted-foreground">
+                          Type a query to answer the current challenge, run &quot;\dt&quot; to see
+                          the tables, or &quot;help&quot; for commands.
+                        </p>
+                      </div>
+                    )}
+                    {challengeHistory.map((line, index) => (
+                      <div
+                        key={`${line.timestamp.getTime()}-${index}`}
+                        className={cn(
+                          'mb-2',
+                          line.type === 'output'
+                            ? 'whitespace-pre'
+                            : 'whitespace-pre-wrap break-words',
+                          line.type === 'input' && 'text-slate-100',
+                          line.type === 'output' && 'text-slate-300',
+                          line.type === 'error' && 'text-red-400',
+                          line.type === 'success' &&
+                            'whitespace-pre-wrap rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
+                        )}
+                      >
+                        {line.type === 'input' && (
+                          <span className="text-emerald-400">devops=# </span>
+                        )}
+                        {line.content}
+                      </div>
+                    ))}
+                    <form onSubmit={handleChallengeSubmit} className="flex items-center">
+                      <span className="whitespace-nowrap text-emerald-400">devops=#</span>
+                      <input
+                        ref={challengeInputRef}
+                        type="text"
+                        value={challengeInput}
+                        onChange={(event) => setChallengeInput(event.target.value)}
+                        className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
+                        spellCheck={false}
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        placeholder="SELECT ..."
+                      />
+                    </form>
                   </div>
-                ))}
-                <form onSubmit={handleChallengeSubmit} className="flex items-center">
-                  <span className="whitespace-nowrap text-emerald-400">devops=#</span>
-                  <input
-                    ref={challengeInputRef}
-                    type="text"
-                    value={challengeInput}
-                    onChange={(event) => setChallengeInput(event.target.value)}
-                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    placeholder="SELECT ..."
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
 
@@ -1083,14 +1127,34 @@ export default function SqlTerminalSimulator() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-4 pt-0 text-xs text-muted-foreground">
-              <p><code className="text-foreground">SELECT</code> columns to read</p>
-              <p><code className="text-foreground">WHERE</code> filters rows</p>
-              <p><code className="text-foreground">GROUP BY</code> + aggregates summarise</p>
-              <p><code className="text-foreground">HAVING</code> filters groups</p>
-              <p><code className="text-foreground">ORDER BY</code> / <code className="text-foreground">LIMIT</code> sort and cap</p>
-              <p><code className="text-foreground">JOIN</code> / <code className="text-foreground">LEFT JOIN</code> combine tables</p>
-              <p><code className="text-foreground">INSERT</code> / <code className="text-foreground">UPDATE</code> / <code className="text-foreground">DELETE</code> change data</p>
-              <p><code className="text-foreground">WITH</code> names a subquery (CTE)</p>
+              <p>
+                <code className="text-foreground">SELECT</code> columns to read
+              </p>
+              <p>
+                <code className="text-foreground">WHERE</code> filters rows
+              </p>
+              <p>
+                <code className="text-foreground">GROUP BY</code> + aggregates summarise
+              </p>
+              <p>
+                <code className="text-foreground">HAVING</code> filters groups
+              </p>
+              <p>
+                <code className="text-foreground">ORDER BY</code> /{' '}
+                <code className="text-foreground">LIMIT</code> sort and cap
+              </p>
+              <p>
+                <code className="text-foreground">JOIN</code> /{' '}
+                <code className="text-foreground">LEFT JOIN</code> combine tables
+              </p>
+              <p>
+                <code className="text-foreground">INSERT</code> /{' '}
+                <code className="text-foreground">UPDATE</code> /{' '}
+                <code className="text-foreground">DELETE</code> change data
+              </p>
+              <p>
+                <code className="text-foreground">WITH</code> names a subquery (CTE)
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -1104,9 +1168,9 @@ export default function SqlTerminalSimulator() {
               <div>
                 <p className="font-semibold">Lab complete</p>
                 <p className="text-sm text-muted-foreground">
-                  You practiced the core SQL workflow from SELECT and WHERE all the way to LEFT JOINs,
-                  data changes, subqueries, window functions, and CTEs. Switch to Challenges to write
-                  queries from scratch.
+                  You practiced the core SQL workflow from SELECT and WHERE all the way to LEFT
+                  JOINs, data changes, subqueries, window functions, and CTEs. Switch to Challenges
+                  to write queries from scratch.
                 </p>
               </div>
             </div>
@@ -1125,8 +1189,8 @@ export default function SqlTerminalSimulator() {
               <div>
                 <p className="font-semibold">All challenges solved</p>
                 <p className="text-sm text-muted-foreground">
-                  Nice work — you wrote every query yourself. Reset to practice again, or head back to
-                  the lessons.
+                  Nice work — you wrote every query yourself. Reset to practice again, or head back
+                  to the lessons.
                 </p>
               </div>
             </div>

@@ -92,7 +92,6 @@ interface LessonCommand {
   explanation: string;
 }
 
-
 const REGISTRY_IMAGES: Record<string, DockerImage> = {
   'hello-world:latest': {
     repository: 'hello-world',
@@ -253,7 +252,8 @@ const LESSONS: Lesson[] = [
     icon: <Container className="h-5 w-5" />,
     commands: [
       {
-        instruction: 'Run NGINX in the background as a container named web, publishing host port 8080 to container port 80.',
+        instruction:
+          'Run NGINX in the background as a container named web, publishing host port 8080 to container port 80.',
         hint: 'Use "docker run -d --name web -p 8080:80 nginx:alpine".',
         expectedCommand: [
           'docker run -d --name web -p 8080:80 nginx:alpine',
@@ -337,7 +337,10 @@ const LESSONS: Lesson[] = [
       {
         instruction: 'Build the sample API image and tag it as devops-api:1.0.',
         hint: 'Use "docker build -t devops-api:1.0 .".',
-        expectedCommand: ['docker build -t devops-api:1.0 .', 'docker image build -t devops-api:1.0 .'],
+        expectedCommand: [
+          'docker build -t devops-api:1.0 .',
+          'docker image build -t devops-api:1.0 .',
+        ],
         explanation:
           'A tag gives the image a human-friendly name. Without tags, you end up chasing image IDs.',
       },
@@ -367,11 +370,11 @@ const LESSONS: Lesson[] = [
         instruction: 'Create an application bridge network.',
         hint: 'Use "docker network create appnet".',
         expectedCommand: 'docker network create appnet',
-        explanation:
-          'User-defined bridge networks provide service-name DNS between containers.',
+        explanation: 'User-defined bridge networks provide service-name DNS between containers.',
       },
       {
-        instruction: 'Run PostgreSQL on appnet using the pgdata volume and a password environment variable.',
+        instruction:
+          'Run PostgreSQL on appnet using the pgdata volume and a password environment variable.',
         hint: 'Use "docker run -d --name db --network appnet -v pgdata:/var/lib/postgresql/data -e POSTGRES_PASSWORD=secret postgres:16-alpine".',
         expectedCommand: [
           'docker run -d --name db --network appnet -v pgdata:/var/lib/postgresql/data -e POSTGRES_PASSWORD=secret postgres:16-alpine',
@@ -468,15 +471,18 @@ function idFromName(name: string, salt: number) {
 }
 
 function formatImageTable(images: DockerImage[]) {
-  const rows = images.map((image) =>
-    `${image.repository.padEnd(18)} ${image.tag.padEnd(12)} ${image.id.padEnd(14)} ${image.created.padEnd(14)} ${image.size}`
+  const rows = images.map(
+    (image) =>
+      `${image.repository.padEnd(18)} ${image.tag.padEnd(12)} ${image.id.padEnd(14)} ${image.created.padEnd(14)} ${image.size}`
   );
 
   return ['REPOSITORY         TAG          IMAGE ID       CREATED        SIZE', ...rows].join('\n');
 }
 
 function formatContainerTable(containers: DockerContainer[], all = false) {
-  const visible = all ? containers : containers.filter((container) => container.status === 'running');
+  const visible = all
+    ? containers
+    : containers.filter((container) => container.status === 'running');
 
   if (visible.length === 0) {
     return 'CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES';
@@ -491,21 +497,27 @@ function formatContainerTable(containers: DockerContainer[], all = false) {
     return `${container.id.slice(0, 12).padEnd(14)} ${container.image.padEnd(22)} ${container.command.padEnd(18)} ${container.created.padEnd(14)} ${status.padEnd(20)} ${(container.ports.join(', ') || '-').padEnd(18)} ${container.name}`;
   });
 
-  return ['CONTAINER ID   IMAGE                  COMMAND            CREATED        STATUS               PORTS              NAMES', ...rows].join('\n');
+  return [
+    'CONTAINER ID   IMAGE                  COMMAND            CREATED        STATUS               PORTS              NAMES',
+    ...rows,
+  ].join('\n');
 }
 
 function formatNetworks(networks: DockerNetwork[]) {
   return [
     'NETWORK ID     NAME      DRIVER    SCOPE',
-    ...networks.map((network, index) =>
-      `${String(8_100 + index).padEnd(14)} ${network.name.padEnd(9)} ${network.driver.padEnd(9)} local`
+    ...networks.map(
+      (network, index) =>
+        `${String(8_100 + index).padEnd(14)} ${network.name.padEnd(9)} ${network.driver.padEnd(9)} local`
     ),
   ].join('\n');
 }
 
 function formatVolumes(volumes: DockerVolume[]) {
   if (volumes.length === 0) return 'DRIVER    VOLUME NAME';
-  return ['DRIVER    VOLUME NAME', ...volumes.map((volume) => `local     ${volume.name}`)].join('\n');
+  return ['DRIVER    VOLUME NAME', ...volumes.map((volume) => `local     ${volume.name}`)].join(
+    '\n'
+  );
 }
 
 function statusColor(status: ContainerStatus) {
@@ -542,7 +554,9 @@ export default function DockerTerminalSimulator() {
   const [dockerState, setDockerState] = useState<DockerDaemonState>(createInitialState);
   const idCounter = useRef(1);
 
-  const runningContainers = dockerState.containers.filter((container) => container.status === 'running');
+  const runningContainers = dockerState.containers.filter(
+    (container) => container.status === 'running'
+  );
 
   const findContainer = useCallback(
     (nameOrId: string) =>
@@ -651,7 +665,8 @@ Status: Downloaded newer image for ${imageRef}
         return `docker: Error response from daemon: network ${network} not found.`;
       }
 
-      const containerName = name || `${image.repository.replace(/[^\w-]/g, '-')}-${idCounter.current}`;
+      const containerName =
+        name || `${image.repository.replace(/[^\w-]/g, '-')}-${idCounter.current}`;
       const id = idFromName(containerName, idCounter.current);
       idCounter.current += 1;
 
@@ -675,7 +690,8 @@ Status: Downloaded newer image for ${imageRef}
         id,
         name: containerName,
         image: imageRef,
-        command: command || (image.repository === 'nginx' ? 'nginx -g daemon off;' : '/entrypoint.sh'),
+        command:
+          command || (image.repository === 'nginx' ? 'nginx -g daemon off;' : '/entrypoint.sh'),
         status: detached ? 'running' : 'exited',
         created: 'Less than a second ago',
         ports,
@@ -785,7 +801,10 @@ Server:
         }
 
         case 'ps':
-          return formatContainerTable(dockerState.containers, rest.includes('-a') || rest.includes('--all'));
+          return formatContainerTable(
+            dockerState.containers,
+            rest.includes('-a') || rest.includes('--all')
+          );
 
         case 'run':
           return runContainer(rest);
@@ -978,8 +997,9 @@ Successfully tagged ${tag}`;
           if (!image) return `Error response from daemon: No such image: ${ref}`;
           return [
             'IMAGE          CREATED          CREATED BY                         SIZE',
-            ...image.layers.map((layer, index) =>
-              `${image.id.slice(0, 12).padEnd(14)} ${`${index + 1} minutes ago`.padEnd(16)} ${layer.padEnd(34)} ${index === 0 ? image.size : '<missing>'}`
+            ...image.layers.map(
+              (layer, index) =>
+                `${image.id.slice(0, 12).padEnd(14)} ${`${index + 1} minutes ago`.padEnd(16)} ${layer.padEnd(34)} ${index === 0 ? image.size : '<missing>'}`
             ),
           ].join('\n');
         }
@@ -1055,162 +1075,169 @@ See 'docker --help'.`;
   );
 
   function executeComposeCommand(args: string[]) {
-      const action = args[0];
+    const action = args[0];
 
-      if (action === 'up') {
-        const detached = args.includes('-d') || args.includes('--detach');
-        const apiExists = dockerState.containers.some((container) => container.name === 'docker-sim-api-1');
-        const dbExists = dockerState.containers.some((container) => container.name === 'docker-sim-db-1');
+    if (action === 'up') {
+      const detached = args.includes('-d') || args.includes('--detach');
+      const apiExists = dockerState.containers.some(
+        (container) => container.name === 'docker-sim-api-1'
+      );
+      const dbExists = dockerState.containers.some(
+        (container) => container.name === 'docker-sim-db-1'
+      );
 
-        setDockerState((prev) => {
-          const images = [...prev.images];
-          for (const ref of ['devops-api:1.0', 'postgres:16-alpine']) {
-            if (!images.some((image) => imageName(image) === ref)) {
-              const registryImage = REGISTRY_IMAGES[ref];
-              if (registryImage) images.push(cloneImage(registryImage));
-            }
+      setDockerState((prev) => {
+        const images = [...prev.images];
+        for (const ref of ['devops-api:1.0', 'postgres:16-alpine']) {
+          if (!images.some((image) => imageName(image) === ref)) {
+            const registryImage = REGISTRY_IMAGES[ref];
+            if (registryImage) images.push(cloneImage(registryImage));
           }
+        }
 
-          if (!images.some((image) => imageName(image) === 'devops-api:1.0')) {
-            images.push({
-              repository: 'devops-api',
-              tag: '1.0',
-              id: 'cafe42f00d11',
-              created: 'Less than a second ago',
-              size: '189MB',
-              description: 'Sample Node.js API image built from the tutorial Dockerfile.',
-              layers: ['FROM node:20-alpine', 'WORKDIR /app', 'COPY app', 'CMD node server.js'],
-            });
-          }
+        if (!images.some((image) => imageName(image) === 'devops-api:1.0')) {
+          images.push({
+            repository: 'devops-api',
+            tag: '1.0',
+            id: 'cafe42f00d11',
+            created: 'Less than a second ago',
+            size: '189MB',
+            description: 'Sample Node.js API image built from the tutorial Dockerfile.',
+            layers: ['FROM node:20-alpine', 'WORKDIR /app', 'COPY app', 'CMD node server.js'],
+          });
+        }
 
-          const networks = prev.networks.some((network) => network.name === 'appnet')
-            ? prev.networks
-            : [...prev.networks, { name: 'appnet', driver: 'bridge' as const, containers: [] }];
+        const networks = prev.networks.some((network) => network.name === 'appnet')
+          ? prev.networks
+          : [...prev.networks, { name: 'appnet', driver: 'bridge' as const, containers: [] }];
 
-          const volumes = prev.volumes.some((volume) => volume.name === 'pgdata')
-            ? prev.volumes
-            : [
-                ...prev.volumes,
-                {
-                  name: 'pgdata',
-                  mountpoint: '/var/lib/docker/volumes/pgdata/_data',
-                  usedBy: [],
-                },
-              ];
+        const volumes = prev.volumes.some((volume) => volume.name === 'pgdata')
+          ? prev.volumes
+          : [
+              ...prev.volumes,
+              {
+                name: 'pgdata',
+                mountpoint: '/var/lib/docker/volumes/pgdata/_data',
+                usedBy: [],
+              },
+            ];
 
-          const containers = [...prev.containers];
-          if (!apiExists) {
-            containers.push({
-              id: idFromName('docker-sim-api-1', idCounter.current++),
-              name: 'docker-sim-api-1',
-              image: 'devops-api:1.0',
-              command: 'node server.js',
-              status: 'running',
-              created: 'Less than a second ago',
-              ports: ['3000:3000->tcp'],
-              env: { NODE_ENV: 'production' },
-              network: 'appnet',
-              volumes: [],
-              logs: ['api listening on :3000', 'connected to db:5432', 'GET /health 200 ok'],
-              health: 'healthy',
-            });
-          }
-          if (!dbExists) {
-            containers.push({
-              id: idFromName('docker-sim-db-1', idCounter.current++),
-              name: 'docker-sim-db-1',
-              image: 'postgres:16-alpine',
-              command: 'docker-entrypoint.sh postgres',
-              status: 'running',
-              created: 'Less than a second ago',
-              ports: ['5432/tcp'],
-              env: { POSTGRES_PASSWORD: 'secret' },
-              network: 'appnet',
-              volumes: ['pgdata:/var/lib/postgresql/data'],
-              logs: ['database system is ready to accept connections'],
-              health: 'healthy',
-            });
-          }
+        const containers = [...prev.containers];
+        if (!apiExists) {
+          containers.push({
+            id: idFromName('docker-sim-api-1', idCounter.current++),
+            name: 'docker-sim-api-1',
+            image: 'devops-api:1.0',
+            command: 'node server.js',
+            status: 'running',
+            created: 'Less than a second ago',
+            ports: ['3000:3000->tcp'],
+            env: { NODE_ENV: 'production' },
+            network: 'appnet',
+            volumes: [],
+            logs: ['api listening on :3000', 'connected to db:5432', 'GET /health 200 ok'],
+            health: 'healthy',
+          });
+        }
+        if (!dbExists) {
+          containers.push({
+            id: idFromName('docker-sim-db-1', idCounter.current++),
+            name: 'docker-sim-db-1',
+            image: 'postgres:16-alpine',
+            command: 'docker-entrypoint.sh postgres',
+            status: 'running',
+            created: 'Less than a second ago',
+            ports: ['5432/tcp'],
+            env: { POSTGRES_PASSWORD: 'secret' },
+            network: 'appnet',
+            volumes: ['pgdata:/var/lib/postgresql/data'],
+            logs: ['database system is ready to accept connections'],
+            health: 'healthy',
+          });
+        }
 
-          return {
-            ...prev,
-            images,
-            containers,
-            networks: networks.map((network) =>
-              network.name === 'appnet'
-                ? {
-                    ...network,
-                    containers: Array.from(
-                      new Set([...network.containers, 'docker-sim-api-1', 'docker-sim-db-1'])
-                    ),
-                  }
-                : network
-            ),
-            volumes: volumes.map((volume) =>
-              volume.name === 'pgdata'
-                ? { ...volume, usedBy: Array.from(new Set([...volume.usedBy, 'docker-sim-db-1'])) }
-                : volume
-            ),
-            composeRunning: true,
-          };
-        });
+        return {
+          ...prev,
+          images,
+          containers,
+          networks: networks.map((network) =>
+            network.name === 'appnet'
+              ? {
+                  ...network,
+                  containers: Array.from(
+                    new Set([...network.containers, 'docker-sim-api-1', 'docker-sim-db-1'])
+                  ),
+                }
+              : network
+          ),
+          volumes: volumes.map((volume) =>
+            volume.name === 'pgdata'
+              ? { ...volume, usedBy: Array.from(new Set([...volume.usedBy, 'docker-sim-db-1'])) }
+              : volume
+          ),
+          composeRunning: true,
+        };
+      });
 
-        return `${detached ? '' : '[+] Running 2/2\n'} Network docker-sim_appnet  Created
+      return `${detached ? '' : '[+] Running 2/2\n'} Network docker-sim_appnet  Created
  Container docker-sim-db-1   Started
  Container docker-sim-api-1  Started`;
-      }
+    }
 
-      if (action === 'ps') {
-        const composeContainers = dockerState.containers.filter((container) =>
-          container.name.startsWith('docker-sim-')
-        );
-        if (composeContainers.length === 0) return 'NAME      IMAGE     SERVICE   STATUS    PORTS';
-        return [
-          'NAME                IMAGE                SERVICE   STATUS       PORTS',
-          ...composeContainers.map((container) =>
+    if (action === 'ps') {
+      const composeContainers = dockerState.containers.filter((container) =>
+        container.name.startsWith('docker-sim-')
+      );
+      if (composeContainers.length === 0) return 'NAME      IMAGE     SERVICE   STATUS    PORTS';
+      return [
+        'NAME                IMAGE                SERVICE   STATUS       PORTS',
+        ...composeContainers.map(
+          (container) =>
             `${container.name.padEnd(20)} ${container.image.padEnd(20)} ${container.name.includes('api') ? 'api'.padEnd(9) : 'db'.padEnd(9)} ${container.status.padEnd(12)} ${container.ports.join(', ') || '-'}`
+        ),
+      ].join('\n');
+    }
+
+    if (action === 'logs') {
+      const target = args[1];
+      const containers = dockerState.containers.filter((container) =>
+        target
+          ? container.name === `docker-sim-${target}-1` || container.name.includes(target)
+          : container.name.startsWith('docker-sim-')
+      );
+
+      return containers
+        .flatMap((container) => container.logs.map((line) => `${container.name}  | ${line}`))
+        .join('\n');
+    }
+
+    if (action === 'down') {
+      setDockerState((prev) => ({
+        ...prev,
+        containers: prev.containers.filter(
+          (container) => !container.name.startsWith('docker-sim-')
+        ),
+        networks: prev.networks
+          .filter((network) => network.name !== 'docker-sim_default')
+          .map((network) =>
+            network.name === 'appnet'
+              ? {
+                  ...network,
+                  containers: network.containers.filter((name) => !name.startsWith('docker-sim-')),
+                }
+              : network
           ),
-        ].join('\n');
-      }
+        volumes: prev.volumes.map((volume) => ({
+          ...volume,
+          usedBy: volume.usedBy.filter((name) => !name.startsWith('docker-sim-')),
+        })),
+        composeRunning: false,
+      }));
 
-      if (action === 'logs') {
-        const target = args[1];
-        const containers = dockerState.containers.filter((container) =>
-          target
-            ? container.name === `docker-sim-${target}-1` || container.name.includes(target)
-            : container.name.startsWith('docker-sim-')
-        );
-
-        return containers
-          .flatMap((container) => container.logs.map((line) => `${container.name}  | ${line}`))
-          .join('\n');
-      }
-
-      if (action === 'down') {
-        setDockerState((prev) => ({
-          ...prev,
-          containers: prev.containers.filter((container) => !container.name.startsWith('docker-sim-')),
-          networks: prev.networks
-            .filter((network) => network.name !== 'docker-sim_default')
-            .map((network) =>
-              network.name === 'appnet'
-                ? {
-                    ...network,
-                    containers: network.containers.filter((name) => !name.startsWith('docker-sim-')),
-                  }
-                : network
-            ),
-          volumes: prev.volumes.map((volume) => ({
-            ...volume,
-            usedBy: volume.usedBy.filter((name) => !name.startsWith('docker-sim-')),
-          })),
-          composeRunning: false,
-        }));
-
-        return `Container docker-sim-api-1  Removed
+      return `Container docker-sim-api-1  Removed
 Container docker-sim-db-1   Removed
 Network docker-sim_default  Removed`;
-      }
+    }
 
     return 'Usage: docker compose [up|ps|logs|down]';
   }
@@ -1265,7 +1292,8 @@ Network docker-sim_default  Removed`;
         if (target === 'package.json') {
           return {
             type: 'output',
-            output: '{\n  "scripts": { "start": "node server.js" },\n  "dependencies": { "fastify": "^5.0.0" }\n}',
+            output:
+              '{\n  "scripts": { "start": "node server.js" },\n  "dependencies": { "fastify": "^5.0.0" }\n}',
           };
         }
         return { type: 'error', output: `cat: ${target || ''}: No such file or directory` };

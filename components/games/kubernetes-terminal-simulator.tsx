@@ -107,7 +107,6 @@ interface LessonCommand {
   explanation: string;
 }
 
-
 const SAMPLE_DEPLOYMENT = `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -439,7 +438,8 @@ function splitCommand(input: string): string[] {
 }
 
 function commandMatches(cmd: string, expected: string | string[]) {
-  const normalize = (value: string) => value.trim().replace(/\s+/g, ' ').replace(/^k\s+/, 'kubectl ');
+  const normalize = (value: string) =>
+    value.trim().replace(/\s+/g, ' ').replace(/^k\s+/, 'kubectl ');
   const normalized = normalize(cmd);
 
   if (Array.isArray(expected)) {
@@ -509,8 +509,9 @@ function getFlagValue(args: string[], flag: string) {
 function formatNodes(nodes: KubeNode[]) {
   return [
     'NAME              STATUS   ROLES           AGE   VERSION',
-    ...nodes.map((node) =>
-      `${node.name.padEnd(17)} ${node.status.padEnd(8)} ${node.role.padEnd(15)} 14d   ${node.version}`
+    ...nodes.map(
+      (node) =>
+        `${node.name.padEnd(17)} ${node.status.padEnd(8)} ${node.role.padEnd(15)} 14d   ${node.version}`
     ),
   ].join('\n');
 }
@@ -520,8 +521,9 @@ function formatPods(pods: KubePod[]) {
 
   return [
     'NAME                       READY   STATUS    RESTARTS   AGE',
-    ...pods.map((pod) =>
-      `${pod.name.padEnd(26)} 1/1     ${pod.status.padEnd(9)} ${String(pod.restarts).padEnd(10)} ${pod.age}`
+    ...pods.map(
+      (pod) =>
+        `${pod.name.padEnd(26)} 1/1     ${pod.status.padEnd(9)} ${String(pod.restarts).padEnd(10)} ${pod.age}`
     ),
   ].join('\n');
 }
@@ -531,8 +533,9 @@ function formatDeployments(deployments: KubeDeployment[]) {
 
   return [
     'NAME   READY   UP-TO-DATE   AVAILABLE   AGE',
-    ...deployments.map((deployment) =>
-      `${deployment.name.padEnd(6)} ${`${deployment.readyReplicas}/${deployment.replicas}`.padEnd(7)} ${String(deployment.replicas).padEnd(12)} ${String(deployment.readyReplicas).padEnd(11)} 45s`
+    ...deployments.map(
+      (deployment) =>
+        `${deployment.name.padEnd(6)} ${`${deployment.readyReplicas}/${deployment.replicas}`.padEnd(7)} ${String(deployment.replicas).padEnd(12)} ${String(deployment.readyReplicas).padEnd(11)} 45s`
     ),
   ].join('\n');
 }
@@ -540,8 +543,9 @@ function formatDeployments(deployments: KubeDeployment[]) {
 function formatServices(services: KubeService[]) {
   return [
     'NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE',
-    ...services.map((service) =>
-      `${service.name.padEnd(12)} ${service.type.padEnd(11)} ${service.clusterIP.padEnd(14)} <none>        ${service.port}/TCP   1m`
+    ...services.map(
+      (service) =>
+        `${service.name.padEnd(12)} ${service.type.padEnd(11)} ${service.clusterIP.padEnd(14)} <none>        ${service.port}/TCP   1m`
     ),
   ].join('\n');
 }
@@ -551,8 +555,9 @@ function formatConfigMaps(configMaps: KubeConfigMap[]) {
 
   return [
     'NAME         DATA   AGE',
-    ...configMaps.map((configMap) =>
-      `${configMap.name.padEnd(12)} ${String(Object.keys(configMap.data).length).padEnd(6)} 5s`
+    ...configMaps.map(
+      (configMap) =>
+        `${configMap.name.padEnd(12)} ${String(Object.keys(configMap.data).length).padEnd(6)} 5s`
     ),
   ].join('\n');
 }
@@ -562,8 +567,9 @@ function formatEvents(events: KubeEvent[]) {
 
   return [
     'TYPE      REASON              OBJECT                 MESSAGE',
-    ...events.map((event) =>
-      `${event.type.padEnd(9)} ${event.reason.padEnd(19)} ${event.object.padEnd(22)} ${event.message}`
+    ...events.map(
+      (event) =>
+        `${event.type.padEnd(9)} ${event.reason.padEnd(19)} ${event.object.padEnd(22)} ${event.message}`
     ),
   ].join('\n');
 }
@@ -594,17 +600,20 @@ export default function KubernetesTerminalSimulator() {
   const webService = clusterState.services.find((service) => service.name === 'web');
 
   const findPod = useCallback(
-    (name: string) => clusterState.pods.find((pod) => pod.name === name || pod.name.startsWith(name)),
+    (name: string) =>
+      clusterState.pods.find((pod) => pod.name === name || pod.name.startsWith(name)),
     [clusterState.pods]
   );
 
   const findDeployment = useCallback(
-    (name: string) => clusterState.deployments.find((deployment) => deployment.name === nameFromResource(name)),
+    (name: string) =>
+      clusterState.deployments.find((deployment) => deployment.name === nameFromResource(name)),
     [clusterState.deployments]
   );
 
   const findService = useCallback(
-    (name: string) => clusterState.services.find((service) => service.name === nameFromResource(name)),
+    (name: string) =>
+      clusterState.services.find((service) => service.name === nameFromResource(name)),
     [clusterState.services]
   );
 
@@ -737,7 +746,8 @@ export default function KubernetesTerminalSimulator() {
       const deployment = findDeployment(name);
 
       if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
-      if (!Number.isFinite(replicas) || replicas < 0) return 'error: --replicas must be a non-negative integer';
+      if (!Number.isFinite(replicas) || replicas < 0)
+        return 'error: --replicas must be a non-negative integer';
 
       const nextDeployment = {
         ...deployment,
@@ -750,7 +760,9 @@ export default function KubernetesTerminalSimulator() {
         addEvent(
           {
             ...prev,
-            deployments: prev.deployments.map((item) => (item.name === name ? nextDeployment : item)),
+            deployments: prev.deployments.map((item) =>
+              item.name === name ? nextDeployment : item
+            ),
             pods: [...prev.pods.filter((pod) => pod.app !== name), ...nextPods],
           },
           {
@@ -791,7 +803,9 @@ export default function KubernetesTerminalSimulator() {
         addEvent(
           {
             ...prev,
-            deployments: prev.deployments.map((item) => (item.name === name ? nextDeployment : item)),
+            deployments: prev.deployments.map((item) =>
+              item.name === name ? nextDeployment : item
+            ),
             pods: [...prev.pods.filter((pod) => pod.app !== name), ...nextPods],
           },
           {
@@ -811,7 +825,9 @@ export default function KubernetesTerminalSimulator() {
   const deleteResource = useCallback(
     (args: string[]) => {
       const rawResource = args[0] || '';
-      const [rawKind, rawName] = rawResource.includes('/') ? rawResource.split('/') : [rawResource, args[1]];
+      const [rawKind, rawName] = rawResource.includes('/')
+        ? rawResource.split('/')
+        : [rawResource, args[1]];
       const kind = normalizeKind(rawKind || '');
       const name = rawName;
 
@@ -840,7 +856,8 @@ export default function KubernetesTerminalSimulator() {
 
       if (kind === 'deployments') {
         const deployment = findDeployment(name);
-        if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
+        if (!deployment)
+          return `Error from server (NotFound): deployments.apps "${name}" not found`;
 
         setClusterState((prev) =>
           addEvent(
@@ -909,7 +926,8 @@ Endpoints:         ${endpoints || '<none>'}`;
 
       if (kind === 'deployments') {
         const deployment = name ? findDeployment(name) : null;
-        if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
+        if (!deployment)
+          return `Error from server (NotFound): deployments.apps "${name}" not found`;
         return `Name:                   ${deployment.name}
 Namespace:              ${clusterState.namespace}
 Replicas:               ${deployment.replicas} desired | ${deployment.readyReplicas} available
@@ -968,7 +986,8 @@ CoreDNS is running at https://devops-lab.example:6443/api/v1/namespaces/kube-sys
           return 'Usage: kubectl create [deployment|configmap]';
 
         case 'expose':
-          if (rest[0] === 'deployment' || rest[0]?.startsWith('deployment/')) return exposeDeployment(rest);
+          if (rest[0] === 'deployment' || rest[0]?.startsWith('deployment/'))
+            return exposeDeployment(rest);
           return 'Usage: kubectl expose deployment NAME --port=PORT';
 
         case 'scale':
@@ -983,7 +1002,8 @@ CoreDNS is running at https://devops-lab.example:6443/api/v1/namespaces/kube-sys
           const resource = rest[1];
           const deployment = resource ? findDeployment(resource) : null;
           const name = resource ? nameFromResource(resource) : '';
-          if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
+          if (!deployment)
+            return `Error from server (NotFound): deployments.apps "${name}" not found`;
           if (action === 'status') {
             return `Waiting for deployment "${deployment.name}" rollout to finish: ${deployment.readyReplicas} of ${deployment.replicas} updated replicas are available...
 deployment "${deployment.name}" successfully rolled out`;
@@ -1007,8 +1027,11 @@ ${revisions.join('\n')}`;
           if (!target) return 'error: logs requires a Pod or workload name';
           if (target.startsWith('deployment/')) {
             const deployment = findDeployment(target);
-            const pod = deployment ? clusterState.pods.find((item) => item.app === deployment.name) : null;
-            if (!pod) return `Error from server (NotFound): deployments.apps "${nameFromResource(target)}" not found`;
+            const pod = deployment
+              ? clusterState.pods.find((item) => item.app === deployment.name)
+              : null;
+            if (!pod)
+              return `Error from server (NotFound): deployments.apps "${nameFromResource(target)}" not found`;
             return pod.logs.join('\n');
           }
           const pod = findPod(target);
@@ -1022,9 +1045,14 @@ ${revisions.join('\n')}`;
         case 'exec': {
           const target = rest[0];
           const commandStart = rest.indexOf('--');
-          const commandText = commandStart >= 0 ? rest.slice(commandStart + 1).join(' ') : rest.slice(1).join(' ');
+          const commandText =
+            commandStart >= 0 ? rest.slice(commandStart + 1).join(' ') : rest.slice(1).join(' ');
           const deployment = target?.startsWith('deployment/') ? findDeployment(target) : null;
-          const pod = deployment ? clusterState.pods.find((item) => item.app === deployment.name) : target ? findPod(target) : null;
+          const pod = deployment
+            ? clusterState.pods.find((item) => item.app === deployment.name)
+            : target
+              ? findPod(target)
+              : null;
           if (!pod) return `Error from server (NotFound): pods "${target || ''}" not found`;
           if (commandText === 'printenv') {
             return `KUBERNETES_SERVICE_HOST=10.96.0.1
@@ -1236,7 +1264,12 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
+                      <div
+                        className={cn(
+                          'rounded-md border p-1.5',
+                          active ? 'text-primary' : 'text-muted-foreground'
+                        )}
+                      >
                         {lesson.icon}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -1280,7 +1313,11 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                   )}
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowHint((value) => !value)}
+                  >
                     <Lightbulb className="mr-1 h-4 w-4" />
                     Hint
                   </Button>
@@ -1377,7 +1414,9 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                 <div key={node.name} className="rounded-md border p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <p className="font-medium">{node.name}</p>
-                    <Badge variant={node.status === 'Ready' ? 'default' : 'secondary'}>{node.status}</Badge>
+                    <Badge variant={node.status === 'Ready' ? 'default' : 'secondary'}>
+                      {node.status}
+                    </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <span>{node.role}</span>
@@ -1419,7 +1458,9 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                   <div key={pod.name} className="rounded-md border p-2.5">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate font-mono text-xs">{pod.name}</p>
-                      <span className={cn('text-xs font-medium', statusColor(pod.status))}>{pod.status}</span>
+                      <span className={cn('text-xs font-medium', statusColor(pod.status))}>
+                        {pod.status}
+                      </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{pod.node}</p>
                   </div>

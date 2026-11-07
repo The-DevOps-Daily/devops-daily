@@ -185,7 +185,9 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
       setTerminalHistory((prev) => [
         ...prev,
         { type: 'input', content: cmd, timestamp: new Date() },
-        ...(result.output ? [{ type: outputType, content: result.output, timestamp: new Date() }] : []),
+        ...(result.output
+          ? [{ type: outputType, content: result.output, timestamp: new Date() }]
+          : []),
         ...(isExpected && currentCommand
           ? [
               {
@@ -324,7 +326,9 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
       // inside the advance delay (or on an earlier visit) is not presented
       // again with the repeat guard refusing to advance past it.
       const commands = lessons[index]?.commands ?? [];
-      const firstOpen = commands.findIndex((_, i) => !completedCommands.has(completionKey(index, i)));
+      const firstOpen = commands.findIndex(
+        (_, i) => !completedCommands.has(completionKey(index, i))
+      );
       setCurrentLessonIndex(index);
       setCurrentCommandIndex(Math.max(0, firstOpen));
       setShowHint(false);

@@ -25,10 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import {
-  useTerminalSimulator,
-  type ExecuteResult,
-} from '@/hooks/use-terminal-simulator';
+import { useTerminalSimulator, type ExecuteResult } from '@/hooks/use-terminal-simulator';
 
 /**
  * PostgreSQL / psql terminal simulator.
@@ -111,10 +108,20 @@ const TABLES: TableMeta[] = [
     rows: 200000,
     primaryKey: 'id',
     columns: [
-      { name: 'id', type: 'bigint', nullable: 'not null', default: "nextval('big_events_id_seq'::regclass)" },
+      {
+        name: 'id',
+        type: 'bigint',
+        nullable: 'not null',
+        default: "nextval('big_events_id_seq'::regclass)",
+      },
       { name: 'user_id', type: 'integer', nullable: 'not null', default: '' },
       { name: 'action', type: 'text', nullable: 'not null', default: '' },
-      { name: 'created_at', type: 'timestamp with time zone', nullable: 'not null', default: 'now()' },
+      {
+        name: 'created_at',
+        type: 'timestamp with time zone',
+        nullable: 'not null',
+        default: 'now()',
+      },
     ],
   },
   {
@@ -205,7 +212,9 @@ function renderPsqlTable(
   );
   const separatorLine = widths.map((width) => '-'.repeat(width + 2)).join('+');
   const dataLines = rows.map((row) =>
-    rtrim(columns.map((col, i) => ` ${padCell(row[i] ?? '', widths[i], !!col.rightAlign)} `).join('|'))
+    rtrim(
+      columns.map((col, i) => ` ${padCell(row[i] ?? '', widths[i], !!col.rightAlign)} `).join('|')
+    )
   );
 
   const parts: string[] = [];
@@ -533,7 +542,7 @@ const LESSONS: Lesson[] = [
       },
       {
         instruction: 'Delete the cancelled orders inside the transaction.',
-        hint: "Run \"DELETE FROM orders WHERE status = 'cancelled';\".",
+        hint: 'Run "DELETE FROM orders WHERE status = \'cancelled\';".',
         expectedCommand: "DELETE FROM orders WHERE status = 'cancelled';",
         explanation:
           'DELETE removes matching rows and reports "DELETE 2". Because you are in a transaction, this change is not permanent until you COMMIT.',
@@ -608,13 +617,21 @@ export default function PostgresTerminalSimulator() {
         }
         if (metaKey === '\\?') return { output: HELP_BACKSLASH };
         if (metaKey === '\\q') {
-          return { output: 'This is a browser lab, so there is nothing to quit. Use "Reset lab" to start over.' };
+          return {
+            output:
+              'This is a browser lab, so there is nothing to quit. Use "Reset lab" to start over.',
+          };
         }
         return { output: `invalid command ${base}. Try \\? for help.`, type: 'error' };
       }
 
       // Transaction control
-      if (lower === 'begin' || lower === 'begin work' || lower === 'begin transaction' || lower === 'start transaction') {
+      if (
+        lower === 'begin' ||
+        lower === 'begin work' ||
+        lower === 'begin transaction' ||
+        lower === 'start transaction'
+      ) {
         setPgState((prev) => ({ ...prev, inTransaction: true }));
         return { output: 'BEGIN' };
       }
@@ -631,7 +648,11 @@ export default function PostgresTerminalSimulator() {
       if (lower.startsWith('explain')) {
         const referencesBigEvents = lower.includes('big_events') && lower.includes('user_id');
         if (!referencesBigEvents) {
-          return { output: 'ERROR:  relation referenced in this lab is only big_events; try the EXPLAIN in the lesson.', type: 'error' };
+          return {
+            output:
+              'ERROR:  relation referenced in this lab is only big_events; try the EXPLAIN in the lesson.',
+            type: 'error',
+          };
         }
         if (lower.startsWith('explain analyze')) {
           return { output: pgState.indexCreated ? EXPLAIN_ANALYZE_BITMAP : EXPLAIN_ANALYZE_SEQ };
@@ -672,13 +693,23 @@ export default function PostgresTerminalSimulator() {
       }
 
       if (lower.startsWith('select')) {
-        return { output: 'ERROR:  this lab supports SELECT count(*) FROM orders; and SELECT * FROM customers;', type: 'error' };
+        return {
+          output:
+            'ERROR:  this lab supports SELECT count(*) FROM orders; and SELECT * FROM customers;',
+          type: 'error',
+        };
       }
 
       const firstToken = input.split(/\s+/)[0] || '';
       return { output: `ERROR:  syntax error at or near "${firstToken}"`, type: 'error' };
     },
-    [pgState.expanded, pgState.indexCreated, pgState.inTransaction, pgState.ordersCount, pgState.timing]
+    [
+      pgState.expanded,
+      pgState.indexCreated,
+      pgState.inTransaction,
+      pgState.ordersCount,
+      pgState.timing,
+    ]
   );
 
   const onReset = useCallback(() => {
@@ -758,8 +789,8 @@ export default function PostgresTerminalSimulator() {
           </div>
           <p className="max-w-3xl text-sm text-muted-foreground">
             Practice the psql tool and Postgres engine in a safe browser lab. Explore with
-            meta-commands, read real EXPLAIN plans, add an index and watch a sequential scan become a
-            bitmap index scan, then wrap changes in a transaction and roll them back.
+            meta-commands, read real EXPLAIN plans, add an index and watch a sequential scan become
+            a bitmap index scan, then wrap changes in a transaction and roll them back.
           </p>
         </div>
 
@@ -813,7 +844,12 @@ export default function PostgresTerminalSimulator() {
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
+                      <div
+                        className={cn(
+                          'rounded-md border p-1.5',
+                          active ? 'text-primary' : 'text-muted-foreground'
+                        )}
+                      >
                         {lesson.icon}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -857,7 +893,11 @@ export default function PostgresTerminalSimulator() {
                   )}
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowHint((value) => !value)}
+                  >
                     <Lightbulb className="mr-1 h-4 w-4" />
                     Hint
                   </Button>
@@ -885,7 +925,9 @@ export default function PostgresTerminalSimulator() {
                   variant={pgState.inTransaction ? 'default' : 'secondary'}
                   className="font-mono text-[11px]"
                 >
-                  {pgState.inTransaction ? 'IN TRANSACTION' : `${CONNECTION.database}/${CONNECTION.user}`}
+                  {pgState.inTransaction
+                    ? 'IN TRANSACTION'
+                    : `${CONNECTION.database}/${CONNECTION.user}`}
                 </Badge>
               </div>
             </CardHeader>
@@ -958,7 +1000,10 @@ export default function PostgresTerminalSimulator() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">transaction</span>
-                <Badge variant={pgState.inTransaction ? 'default' : 'secondary'} className="font-mono text-[11px]">
+                <Badge
+                  variant={pgState.inTransaction ? 'default' : 'secondary'}
+                  className="font-mono text-[11px]"
+                >
                   {pgState.inTransaction ? 'IN TRANSACTION' : 'idle'}
                 </Badge>
               </div>
@@ -1008,9 +1053,18 @@ export default function PostgresTerminalSimulator() {
                       isNew && 'border-emerald-500/30 bg-emerald-500/10'
                     )}
                   >
-                    <KeyRound className={cn('h-4 w-4 shrink-0', isNew ? 'text-emerald-500' : 'text-muted-foreground')} />
+                    <KeyRound
+                      className={cn(
+                        'h-4 w-4 shrink-0',
+                        isNew ? 'text-emerald-500' : 'text-muted-foreground'
+                      )}
+                    />
                     <span className="truncate font-mono text-xs">{name}</span>
-                    {isNew && <Badge variant="secondary" className="ml-auto text-[10px]">new</Badge>}
+                    {isNew && (
+                      <Badge variant="secondary" className="ml-auto text-[10px]">
+                        new
+                      </Badge>
+                    )}
                   </div>
                 );
               })}
