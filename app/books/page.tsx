@@ -612,7 +612,7 @@ function BookCard({ book, index }: { book: Book; index: number }) {
             {book.isPopular && (
               <Badge
                 variant="default"
-                className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm text-xs h-6"
+                className="bg-amber-500 hover:bg-amber-600 text-primary-foreground shadow-sm text-xs h-6"
               >
                 <Star className="mr-1 h-3 w-3 fill-current" />
                 Popular

@@ -78,7 +78,7 @@ export function AdventCompletionButton({ day, title }: CompletionButtonProps) {
               className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
                 completed
                   ? 'bg-muted hover:bg-muted/80 text-foreground'
-                  : 'bg-linear-to-r from-primary to-blue-500 hover:shadow-lg hover:shadow-primary/50 text-white'
+                  : 'bg-primary hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/50 text-primary-foreground'
               } ${isAnimating ? 'scale-110' : 'scale-100'}`}
             >
               {completed ? (

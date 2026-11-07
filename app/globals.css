@@ -77,7 +77,9 @@
     --popover-foreground: 240 10% 3.9%;
     /* Brand color — change here to rebrand the entire site */
     --primary: 32 95% 44%;
-    --primary-foreground: 0 0% 100%;
+    /* Dark text on amber: white on this primary is 3.15:1, below the 4.5:1
+       AA minimum; this is 6.1:1, the same text colour as dark mode. */
+    --primary-foreground: 240 10% 6%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
