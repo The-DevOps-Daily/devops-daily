@@ -1,7 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { signalGameComplete } from '@/lib/games/game-complete';
+import { useCallback, useId, useMemo, useRef, useState } from 'react';
+import { ArrowRight, ShieldAlert } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimHowTo,
+  SimResetButton,
+  SimStage,
+  SimTerminalWindow,
+  revealTop,
+  type SimTone,
+} from '@/components/games/sim';
+import { cn } from '@/lib/utils';
 
 /**
  * Container Security Challenge.
@@ -14,10 +29,6 @@ import { signalGameComplete } from '@/lib/games/game-complete';
  * not a security boundary by default, and that most escapes are one flag rather
  * than a kernel exploit. Every scenario here is something people genuinely ship,
  * usually because a tutorial said to.
- *
- * Styling is scoped under `.cesim` (classes prefixed `ces-`) so it does not
- * collide with the site's global Tailwind layer, following bug-hunter and
- * ddos-simulator.
  */
 
 interface Token {
@@ -171,12 +182,33 @@ const SCENARIOS: Scenario[] = [
 ];
 
 type Phase = 'playing' | 'revealed';
+type Tab = 'command' | 'score';
+type Score = { found: number; missed: number; wrong: number };
+
+/** The result line after a check: icon, word and tone, from the same counts as the score. */
+function verdict(s: Score, dangers: number): { tone: SimTone; label: string } {
+  const safe = s.wrong > 0 ? `, and flagged ${s.wrong} safe part${s.wrong > 1 ? 's' : ''}` : '';
+  if (dangers === 0) {
+    return s.wrong === 0
+      ? { tone: 'success', label: 'Correct: nothing here is dangerous' }
+      : { tone: 'warning', label: `Nothing here was dangerous${safe}` };
+  }
+  const all = dangers === 1 ? 'the escape route' : `all ${dangers} escape routes`;
+  if (s.missed === 0)
+    return { tone: s.wrong ? 'warning' : 'success', label: `You found ${all}${safe}` };
+  if (s.found === 0) return { tone: 'danger', label: `You missed ${all}${safe}` };
+  return { tone: 'warning', label: `You found ${s.found} of ${dangers} escape routes${safe}` };
+}
 
 export default function DockerEscape() {
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [phase, setPhase] = useState<Phase>('playing');
-  const [scores, setScores] = useState<{ found: number; missed: number; wrong: number }[]>([]);
+  const [scores, setScores] = useState<Score[]>([]);
+  const [tab, setTab] = useState<Tab>('command');
+  const [announce, setAnnounce] = useState('');
+  const uid = useId();
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   const scenario = SCENARIOS[index];
   const dangerIdx = useMemo(
@@ -217,184 +249,296 @@ export default function DockerEscape() {
     setScores([]);
   }, []);
 
+  // The challenge is done once the last scenario is revealed; SimComplete shows then.
   const done = index >= SCENARIOS.length - 1 && phase === 'revealed';
-
-  useEffect(() => {
-    if (done) signalGameComplete();
-  }, [done]);
   const totals = scores.reduce(
     (a, s) => ({ found: a.found + s.found, missed: a.missed + s.missed, wrong: a.wrong + s.wrong }),
     { found: 0, missed: 0, wrong: 0 }
   );
-  const totalDangers = SCENARIOS.reduce(
-    (n, s) => n + s.tokens.filter((t) => t.danger).length,
-    0
-  );
+  const totalDangers = SCENARIOS.reduce((n, s) => n + s.tokens.filter((t) => t.danger).length, 0);
 
-  return (
-    <div className="cesim">
-      <style>{CSS}</style>
+  const onCheck = () => {
+    const found = [...picked].filter((i) => dangerIdx.has(i)).length;
+    const wrong = [...picked].filter((i) => !dangerIdx.has(i)).length;
+    check();
+    setAnnounce(verdict({ found, missed: dangerIdx.size - found, wrong }, dangerIdx.size).label);
+    // Move focus to the result, in the copy on screen. The last check opens SimComplete,
+    // which takes focus itself.
+    if (index >= SCENARIOS.length - 1) return;
+    const layout = window.matchMedia('(min-width: 1024px)').matches ? 'd' : 'm';
+    requestAnimationFrame(() =>
+      document.getElementById(`${uid}-${layout}-result`)?.focus({ preventScroll: true })
+    );
+  };
 
-      <div className="ces-top">
-        <div className="ces-progress" aria-label={`Scenario ${index + 1} of ${SCENARIOS.length}`}>
-          {SCENARIOS.map((s, i) => (
-            <span
-              key={s.id}
-              className={`ces-dot${i === index ? ' ces-now' : ''}${i < index ? ' ces-past' : ''}`}
-            />
-          ))}
-        </div>
-        <span className="ces-count">
-          {index + 1} / {SCENARIOS.length}
-        </span>
-      </div>
+  const onNext = () => {
+    next();
+    setTab('command');
+    setAnnounce(`Scenario ${index + 2} of ${SCENARIOS.length}: ${SCENARIOS[index + 1]?.title}`);
+    revealTop(tabsRef.current, { onlyIfAbove: true });
+  };
 
-      <h3 className="ces-title">{scenario.title}</h3>
-      <p className="ces-context">{scenario.context}</p>
+  const onRestart = () => {
+    restart();
+    setTab('command');
+    setAnnounce(`Scenario 1 of ${SCENARIOS.length}: ${SCENARIOS[0].title}`);
+  };
 
-      <p className="ces-instruction">
-        {phase === 'playing'
-          ? 'Click every part of this command that would let an attacker reach the host.'
-          : 'Red is a real escape route. Grey was safe.'}
-      </p>
+  const result = phase === 'revealed' ? scores[index] : undefined;
+  const v = result ? verdict(result, dangerIdx.size) : null;
 
-      <div className="ces-cmd" role="group" aria-label="docker run command">
+  const commandWindow = (
+    <SimTerminalWindow
+      label="docker run, for review"
+      status={phase === 'playing' ? `${picked.size} flagged` : 'checked'}
+    >
+      <div className="flex flex-wrap gap-2 p-3" role="group" aria-label="docker run command">
         {scenario.tokens.map((t, i) => {
           const isPicked = picked.has(i);
           const isDanger = dangerIdx.has(i);
-          const cls =
-            phase === 'revealed'
-              ? isDanger
-                ? ' ces-danger'
-                : isPicked
-                  ? ' ces-falsepos'
-                  : ''
-              : isPicked
-                ? ' ces-picked'
-                : '';
+          const revealed = phase === 'revealed';
           return (
             <button
               key={i}
               type="button"
-              className={`ces-tok${cls}`}
               onClick={() => toggle(i)}
-              disabled={phase === 'revealed'}
+              disabled={revealed}
               aria-pressed={isPicked}
+              className={cn(
+                'inline-flex min-h-10 items-center gap-1.5 rounded-md border px-2 py-1 text-left font-mono text-[13px] leading-snug [overflow-wrap:anywhere] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default lg:min-h-8',
+                revealed
+                  ? isDanger
+                    ? 'border-terminal-error bg-terminal-error/15 text-terminal-error'
+                    : isPicked
+                      ? 'border-dashed border-terminal-muted text-terminal-muted line-through'
+                      : 'border-transparent text-terminal-foreground'
+                  : isPicked
+                    ? 'border-primary bg-primary/20 text-terminal-input'
+                    : 'border-dashed border-terminal-border text-terminal-foreground hover:border-terminal-muted hover:text-terminal-input'
+              )}
             >
+              {revealed && isDanger && (
+                <ShieldAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              )}
               {t.text}
+              {revealed && isDanger && <span className="sr-only"> (escape route)</span>}
+              {revealed && !isDanger && isPicked && (
+                <span className="sr-only"> (safe, you flagged it)</span>
+              )}
             </button>
           );
         })}
       </div>
+    </SimTerminalWindow>
+  );
 
-      {phase === 'playing' && (
-        <button className="ces-btn ces-primary" onClick={check}>
-          {picked.size === 0 ? 'Nothing here is dangerous' : `Check ${picked.size} selection${picked.size > 1 ? 's' : ''}`}
-        </button>
-      )}
+  const reveal = (k: string) =>
+    v && (
+      <>
+        <SimFeedback id={`${uid}-${k}-result`} tabIndex={-1} tone={v.tone} label={v.label} />
+        <p className="text-xs text-muted-foreground">
+          Red parts with a shield are real escape routes. Struck-through parts were safe.
+        </p>
 
-      {phase === 'revealed' && (
-        <div className="ces-reveal">
-          {scenario.tokens.map((t, i) =>
-            t.danger ? (
-              <div key={i} className={`ces-card${picked.has(i) ? ' ces-got' : ' ces-miss'}`}>
-                <div className="ces-cardtop">
-                  <code>{t.text}</code>
-                  <span className="ces-tag">{picked.has(i) ? 'you caught this' : 'you missed this'}</span>
-                </div>
-                <p className="ces-escape">
-                  <b>The escape:</b> {t.danger.escape}
-                </p>
-                <p className="ces-fix">
-                  <b>The fix:</b> {t.danger.fix}
-                </p>
-              </div>
-            ) : null
-          )}
-
-          {dangerIdx.size === 0 && (
-            <div className="ces-card ces-got">
-              <div className="ces-cardtop">
-                <code>nothing dangerous</code>
-                <span className="ces-tag">
-                  {picked.size === 0 ? 'correct, you clicked nothing' : 'you flagged a safe flag'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          <p className="ces-lesson">{scenario.lesson}</p>
-
-          {!done ? (
-            <button className="ces-btn ces-primary" onClick={next}>
-              Next scenario &rsaquo;
-            </button>
-          ) : (
-            <div className="ces-final">
-              <p>
-                <b>
-                  {totals.found} of {totalDangers} escape routes found
-                </b>
-                {totals.wrong > 0 && `, ${totals.wrong} safe flag${totals.wrong > 1 ? 's' : ''} flagged`}
+        {scenario.tokens.map((t, i) =>
+          t.danger ? (
+            <SimFeedback
+              key={i}
+              tone={picked.has(i) ? 'success' : 'danger'}
+              label={picked.has(i) ? 'You caught this' : 'You missed this'}
+            >
+              <code className="block font-mono text-[13px] font-semibold [overflow-wrap:anywhere]">
+                {t.text}
+              </code>
+              <p className="leading-relaxed">
+                <strong>The escape:</strong> {t.danger.escape}
               </p>
-              <p className="ces-lesson">
-                A container is not a security boundary on its own. Almost everything here was one
-                flag, not a kernel bug, which is why reviewing the run command matters as much as
-                scanning the image.
+              <p className="leading-relaxed">
+                <strong>The fix:</strong> {t.danger.fix}
               </p>
-              <button className="ces-btn" onClick={restart}>
-                Start again
-              </button>
-            </div>
-          )}
+            </SimFeedback>
+          ) : null
+        )}
+
+        <div className="rounded-md bg-muted/50 p-3 text-sm leading-relaxed">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Lesson
+          </p>
+          <p className="mt-1">{scenario.lesson}</p>
         </div>
+      </>
+    );
+
+  const command = (k: string) => (
+    <div className="space-y-2">
+      <p className="text-sm leading-relaxed text-muted-foreground">{scenario.context}</p>
+      {commandWindow}
+      {phase === 'playing' ? (
+        <Button onClick={onCheck} className="h-10 w-full sm:w-auto">
+          {picked.size === 0
+            ? 'Nothing here is dangerous'
+            : `Check ${picked.size} selection${picked.size > 1 ? 's' : ''}`}
+        </Button>
+      ) : (
+        <>
+          {reveal(k)}
+          <Button onClick={onNext} className="h-10 w-full sm:w-auto">
+            Next scenario <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </>
       )}
     </div>
   );
-}
 
-const CSS = `
-.cesim { --ces-bg:#0d1117; --ces-panel:#161b22; --ces-line:#272e38; --ces-fg:#e6edf3; --ces-dim:#8b949e;
-  --ces-red:#f85149; --ces-amber:#d29922; --ces-green:#3fb950;
-  background:var(--ces-bg); color:var(--ces-fg); border:1px solid var(--ces-line);
-  border-radius:14px; padding:22px; font-family:ui-sans-serif,system-ui,sans-serif; }
-.cesim .ces-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-.cesim .ces-progress { display:flex; gap:6px; }
-.cesim .ces-dot { width:26px; height:4px; border-radius:2px; background:var(--ces-line); display:block; }
-.cesim .ces-dot.ces-past { background:var(--ces-green); }
-.cesim .ces-dot.ces-now { background:var(--ces-amber); }
-.cesim .ces-count { font-size:12px; color:var(--ces-dim); font-variant-numeric:tabular-nums; }
-.cesim .ces-title { margin:0 0 4px; font-size:19px; font-weight:650; }
-.cesim .ces-context { margin:0 0 16px; color:var(--ces-dim); font-size:14px; line-height:1.5; }
-.cesim .ces-instruction { margin:0 0 10px; font-size:13px; color:var(--ces-amber); }
-.cesim .ces-cmd { display:flex; flex-wrap:wrap; gap:8px; background:#010409; border:1px solid var(--ces-line);
-  border-radius:10px; padding:14px; margin-bottom:16px; }
-.cesim .ces-tok { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px;
-  background:transparent; color:var(--ces-fg); border:1px dashed transparent; border-radius:6px;
-  padding:5px 8px; cursor:pointer; transition:background .15s,border-color .15s; }
-.cesim .ces-tok:hover:not(:disabled) { border-color:var(--ces-dim); }
-.cesim .ces-tok:focus-visible { outline:2px solid var(--ces-amber); outline-offset:1px; }
-.cesim .ces-tok:disabled { cursor:default; }
-.cesim .ces-tok.ces-picked { background:#d2992222; border-color:var(--ces-amber); color:var(--ces-amber); }
-.cesim .ces-tok.ces-danger { background:#f8514922; border-color:var(--ces-red); color:var(--ces-red); border-style:solid; }
-.cesim .ces-tok.ces-falsepos { background:#8b949e22; border-color:var(--ces-dim); color:var(--ces-dim); text-decoration:line-through; }
-.cesim .ces-btn { background:var(--ces-panel); color:var(--ces-fg); border:1px solid var(--ces-line);
-  border-radius:8px; padding:9px 15px; font-size:13px; font-weight:550; cursor:pointer; }
-.cesim .ces-btn:hover { border-color:var(--ces-dim); }
-.cesim .ces-btn.ces-primary { background:#1f6feb; border-color:#1f6feb; color:#fff; }
-.cesim .ces-btn.ces-primary:hover { background:#2b7bf3; }
-.cesim .ces-reveal { display:grid; gap:12px; }
-.cesim .ces-card { background:var(--ces-panel); border:1px solid var(--ces-line); border-left-width:3px;
-  border-radius:10px; padding:13px 15px; }
-.cesim .ces-card.ces-got { border-left-color:var(--ces-green); }
-.cesim .ces-card.ces-miss { border-left-color:var(--ces-red); }
-.cesim .ces-cardtop { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:8px; }
-.cesim .ces-cardtop code { font-size:13px; color:var(--ces-fg); }
-.cesim .ces-tag { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ces-dim); }
-.cesim .ces-escape, .cesim .ces-fix { margin:0 0 6px; font-size:13.5px; line-height:1.55; color:var(--ces-dim); }
-.cesim .ces-fix { margin-bottom:0; color:#adbac7; }
-.cesim .ces-lesson { font-size:14px; line-height:1.6; color:var(--ces-fg); background:#1f6feb14;
-  border:1px solid #1f6feb44; border-radius:10px; padding:12px 14px; margin:0; }
-.cesim .ces-final { display:grid; gap:10px; justify-items:start; }
-@media (max-width:640px) { .cesim { padding:16px; } .cesim .ces-cmd { padding:10px; } }
-`;
+  const scorecard = (
+    <section aria-label="Scorecard" className="rounded-lg border bg-card p-2.5 text-sm">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Scorecard</h3>
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">
+          {scores.length}/{SCENARIOS.length}
+        </span>
+      </div>
+      <ol className="space-y-1.5">
+        {SCENARIOS.map((s, i) => {
+          const sc = scores[i];
+          const dangers = s.tokens.filter((t) => t.danger).length;
+          const r = sc ? verdict(sc, dangers) : null;
+          return (
+            <li
+              key={s.id}
+              aria-current={i === index ? 'step' : undefined}
+              className={cn(
+                'flex items-start gap-2 rounded-md px-2 py-1.5',
+                i === index && 'border border-primary/40 bg-primary/5'
+              )}
+            >
+              <span className="mt-0.5 w-4 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
+                {i + 1}
+              </span>
+              <div className="min-w-0">
+                <p className="font-medium">{s.title}</p>
+                <p
+                  className={cn(
+                    'text-xs',
+                    r
+                      ? r.tone === 'success'
+                        ? 'text-correct-foreground'
+                        : r.tone === 'danger'
+                          ? 'text-wrong-foreground'
+                          : 'text-partial-foreground'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {sc
+                    ? dangers === 0
+                      ? sc.wrong === 0
+                        ? 'Nothing to flag: correct'
+                        : `${sc.wrong} safe flagged`
+                      : `${sc.found} of ${dangers} found${sc.wrong ? `, ${sc.wrong} safe flagged` : ''}`
+                    : i === index
+                      ? 'Now'
+                      : 'To do'}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Escape routes found so far: {totals.found}. Some commands have more than one, and one has
+        none.
+      </p>
+    </section>
+  );
+
+  return (
+    <SimFrame>
+      <SimBar
+        title="Container Security Challenge"
+        icon={ShieldAlert}
+        lead={
+          <ol className="flex items-center gap-1" aria-label="Scenarios">
+            {SCENARIOS.map((s, i) => {
+              const finished = i < index || (i === index && phase === 'revealed');
+              return (
+                <li
+                  key={s.id}
+                  className={cn(
+                    'h-1.5 w-6 rounded-full',
+                    finished ? 'bg-correct' : i === index ? 'bg-primary' : 'bg-muted'
+                  )}
+                >
+                  <span className="sr-only">
+                    Scenario {i + 1}: {s.title},{' '}
+                    {finished ? 'checked' : i === index ? 'current' : 'to do'}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        }
+        tools={<SimResetButton onReset={onRestart} />}
+        progress={{ current: index + 1, total: SCENARIOS.length }}
+        heading={scenario.title}
+        goal={
+          done
+            ? 'Challenge complete. The last scenario and your scorecard are below.'
+            : 'Click every part of this command that would let an attacker reach the host, then check.'
+        }
+      >
+        <SimHowTo autoOpen={index === 0 && phase === 'playing'}>
+          Six real <code className="font-mono">docker run</code> commands that people ship, usually
+          because a tutorial said to. Flag the parts that hand an attacker the host, then check to
+          see the escape route and the fix for each one.
+        </SimHowTo>
+      </SimBar>
+
+      <SimAnnouncer message={announce} />
+
+      {done ? (
+        <SimComplete
+          title="Challenge complete"
+          summary={
+            <>
+              {totals.found} of {totalDangers} escape routes found
+              {totals.wrong > 0 &&
+                `, ${totals.wrong} safe flag${totals.wrong > 1 ? 's' : ''} flagged`}
+              . A container is not a security boundary on its own. Almost everything here was one
+              flag, not a kernel bug, which is why reviewing the run command matters as much as
+              scanning the image.
+            </>
+          }
+          stats={[
+            { label: 'Escape routes found', value: `${totals.found}/${totalDangers}` },
+            { label: 'Missed', value: String(totals.missed) },
+            { label: 'Safe parts flagged', value: String(totals.wrong) },
+          ]}
+          onPlayAgain={onRestart}
+          playAgainLabel="Start again"
+        >
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+            <section aria-label="The last scenario" className="space-y-2">
+              <h3 className="text-sm font-semibold">Last scenario: {scenario.title}</h3>
+              {commandWindow}
+              {reveal('c')}
+            </section>
+            {scorecard}
+          </div>
+        </SimComplete>
+      ) : (
+        <SimStage
+          columns="lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]"
+          minHeight="min-h-[22rem]"
+          tab={tab}
+          onTabChange={(t) => setTab(t as Tab)}
+          anchorRef={tabsRef}
+          tabsLabel="Challenge panels"
+          panels={[
+            { id: 'command', label: 'Command', content: command('d'), mobile: command('m') },
+            { id: 'score', label: 'Scorecard', content: scorecard },
+          ]}
+        />
+      )}
+    </SimFrame>
+  );
+}

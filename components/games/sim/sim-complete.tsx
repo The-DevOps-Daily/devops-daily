@@ -121,14 +121,14 @@ export function SimComplete({
   const newTab = embedded ? { target: '_blank', rel: 'noopener' } : {};
 
   return (
-    <section ref={rootRef} aria-labelledby={headingId} className="space-y-4">
-      <div className="rounded-lg border bg-card p-5">
+    <section ref={rootRef} aria-labelledby={headingId} className="space-y-3">
+      <div className="rounded-lg border bg-card p-4">
         {badge && <div className="mb-2 flex flex-wrap items-center gap-2">{badge}</div>}
         <h2
           id={headingId}
           ref={headingRef}
           tabIndex={-1}
-          className="flex items-center gap-2 text-xl font-semibold focus:outline-none"
+          className="flex items-center gap-2 text-lg font-semibold focus:outline-none"
         >
           <Icon className={cn('h-5 w-5 shrink-0', TONE_ICON[tone].className)} aria-hidden="true" />
           {title}
@@ -136,9 +136,9 @@ export function SimComplete({
         {summary && <p className="mt-1 text-sm text-muted-foreground">{summary}</p>}
 
         {stats && stats.length > 0 && (
-          <div className={cn('mt-4 grid gap-3', STAT_COLS[stats.length] ?? STAT_COLS[4])}>
+          <div className={cn('mt-3 grid gap-2', STAT_COLS[stats.length] ?? STAT_COLS[4])}>
             {stats.map((s) => (
-              <div key={s.label} className="rounded-md bg-muted/50 p-3">
+              <div key={s.label} className="rounded-md bg-muted/50 px-3 py-2">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">
                   {s.label}
                 </div>
@@ -150,7 +150,7 @@ export function SimComplete({
         )}
 
         {lines.length > 0 && (
-          <div className="mt-4">
+          <div className="mt-3">
             <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               What you learned
             </h3>
@@ -169,7 +169,7 @@ export function SimComplete({
         )}
 
         {inOpsville && done && (
-          <SimFeedback tone="success" label="Lessons done" className="mt-4">
+          <SimFeedback tone="success" label="Lessons done" className="mt-3">
             <p>Back in Opsville, take the quiz to finish the quest.</p>
           </SimFeedback>
         )}

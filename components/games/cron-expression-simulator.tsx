@@ -1,7 +1,26 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { signalGameComplete } from '@/lib/games/game-complete';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { CalendarClock, CircleCheck } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimResetButton,
+  SimStage,
+  SimTabBadge,
+  revealTop,
+  useMissions,
+  useSimGame,
+  type Mission,
+  type SimTone,
+} from '@/components/games/sim';
+import { cn } from '@/lib/utils';
 import {
   parseCron,
   nextFireTimes,
@@ -12,6 +31,7 @@ import {
   TIMEZONES,
   type FieldName,
   type FieldSpec,
+  type Observation,
 } from '@/lib/games/cron-sim-engine';
 
 /**
@@ -22,12 +42,10 @@ import {
  * in. The parser and the schedule are real and run in the browser, so an
  * expression you invent is treated exactly like the shipped examples.
  *
- * The two grids under the input are the reason this exists. Seeing 60 minute
- * cells with nine of them lit is how `*\/7` stops being an abstract argument.
+ * The grids are the reason this exists. Seeing 60 minute cells with nine of
+ * them lit is how `*\/7` stops being an abstract argument.
  *
  * Engine and its tests: lib/games/cron-sim-engine.ts
- * Styling is scoped under `.cronsim` (classes prefixed `cs-`) so it does not
- * collide with the site's global Tailwind layer.
  */
 
 const FIELD_LABELS: { name: FieldName; label: string; range: string }[] = [
@@ -73,7 +91,13 @@ function fromLocalInput(value: string, tz: string): number | null {
   });
   const wallAsUtc = (t: number) => {
     const p = Object.fromEntries(probe.formatToParts(new Date(t)).map((x) => [x.type, x.value]));
-    return Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour) % 24, Number(p.minute));
+    return Date.UTC(
+      Number(p.year),
+      Number(p.month) - 1,
+      Number(p.day),
+      Number(p.hour) % 24,
+      Number(p.minute)
+    );
   };
   let guess = wanted - (wallAsUtc(wanted) - wanted);
   guess = wanted - (wallAsUtc(guess) - guess);
@@ -86,15 +110,53 @@ function ValueGrid({ spec, from, to }: { spec: FieldSpec; from: number; to: numb
   const cells = [];
   for (let v = from; v <= to; v++) {
     cells.push(
-      <span key={v} className="cs-cell" data-on={hit.has(v) ? '1' : '0'} title={String(v)}>
+      <span
+        key={v}
+        title={String(v)}
+        className={cn(
+          'flex h-6 w-6 items-center justify-center rounded-sm border font-mono text-xs tabular-nums',
+          hit.has(v)
+            ? 'border-primary bg-primary/20 text-foreground'
+            : 'border-transparent bg-muted/70 text-muted-foreground'
+        )}
+      >
         {v % 5 === 0 || to - from < 13 ? v : ''}
-      </span>,
+      </span>
     );
   }
-  return <div className="cs-grid">{cells}</div>;
+  return (
+    <>
+      <div className="flex flex-wrap gap-[3px]" aria-hidden="true">
+        {cells}
+      </div>
+      <p className="sr-only">Matches: {spec.values.join(', ')}</p>
+    </>
+  );
 }
 
 const EXAMPLES_TO_FINISH = 4;
+
+/** The hidden finish rule, made visible: four examples opened, the first one counts. */
+const ORDINAL = ['first', 'second', 'third', 'fourth'];
+const MISSIONS: Mission<{ opened: number }>[] = ORDINAL.map((word, i) => ({
+  id: `open-${i + 1}`,
+  label: i === 0 ? 'Open a first example (one is open already)' : `Open a ${word} example`,
+  hint: 'Pick one from the examples list and read what it teaches.',
+  check: (s) => s.opened >= i + 1,
+}));
+
+const NOTE_TONE: Record<Observation['kind'], SimTone> = {
+  frequency: 'danger',
+  or: 'warning',
+  gap: 'warning',
+  dst: 'info',
+  note: 'info',
+};
+
+const FIELD =
+  'h-10 rounded-md border border-input bg-background px-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-9';
+
+type Tab = 'schedule' | 'examples' | 'matches';
 
 export default function CronExpressionSimulator() {
   const [expr, setExpr] = useState(EXAMPLES[0].expr);
@@ -107,10 +169,18 @@ export default function CronExpressionSimulator() {
   const [now, setNow] = useState<number | null>(null);
   /** Examples opened so far. Looking at four of them counts as finishing the lesson. */
   const [opened, setOpened] = useState<Set<string>>(() => new Set([EXAMPLES[0].id]));
+  const [tab, setTab] = useState<Tab>('schedule');
+  /** "Keep exploring" closes the end card; free play goes on. */
+  const [dismissed, setDismissed] = useState(false);
+  // The marker above the phone tabs, kept in state so handlers built during render can use it.
+  const [tabsAnchor, setTabsAnchor] = useState<HTMLDivElement | null>(null);
+  const game = useSimGame();
+  const uid = useId();
 
-  useEffect(() => {
-    if (opened.size >= EXAMPLES_TO_FINISH) signalGameComplete();
-  }, [opened]);
+  // Done at the same moment as before: when the fourth example is opened.
+  const finished = opened.size >= EXAMPLES_TO_FINISH;
+  const missionState = useMemo(() => ({ opened: opened.size }), [opened.size]);
+  const missions = useMissions(MISSIONS, missionState);
 
   // Date.now() only after mount: a static export would otherwise render a
   // build-time clock into the HTML and hydrate to a different one.
@@ -124,16 +194,16 @@ export default function CronExpressionSimulator() {
   const parsed = useMemo(() => parseCron(expr), [expr]);
   const schedule = useMemo(
     () => (from === null ? null : nextFireTimes(parsed, tz, count, from)),
-    [parsed, tz, count, from],
+    [parsed, tz, count, from]
   );
   const sentence = useMemo(() => describeCron(parsed), [parsed]);
   const notes = useMemo(
     () => (schedule ? observations(parsed, schedule, tz) : []),
-    [parsed, schedule, tz],
+    [parsed, schedule, tz]
   );
   const transition = useMemo(
     () => (from === null ? null : findNextTransition(tz, from)),
-    [tz, from],
+    [tz, from]
   );
 
   const pick = useCallback((id: string) => {
@@ -164,207 +234,207 @@ export default function CronExpressionSimulator() {
     setStartAt(transition.at - 26 * 3_600_000);
   };
 
+  const onPick = (id: string) => {
+    pick(id);
+    // On phones the list is its own tab: show the schedule the example opened.
+    if (!window.matchMedia('(min-width: 1024px)').matches) {
+      setTab('schedule');
+      revealTop(tabsAnchor, { onlyIfAbove: true });
+    }
+  };
+
+  const startOver = () => {
+    pick(EXAMPLES[0].id);
+    setOpened(new Set([EXAMPLES[0].id]));
+    setCount(5);
+    setDismissed(false);
+    missions.reset();
+    setTab('schedule');
+  };
+
   const errorFields = new Set(parsed.errors.map((e) => e.field).filter(Boolean));
   const parts = parsed.normalised.split(/\s+/);
+  const activeExample = EXAMPLES.find((e) => e.id === active);
 
-  return (
-    <div className="cronsim">
-      <style>{`
-        .cronsim { --cs-panel:#111936; --cs-line:rgba(255,255,255,.08); --cs-dim:#94a3b8; --cs-accent:#38bdf8;
-          color:#e2e8f0; font-size:14px; }
-        .cs-examples { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-        .cs-ex { border:1px solid var(--cs-line); background:var(--cs-panel); color:var(--cs-dim);
-          border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; transition:all .15s; }
-        .cs-ex:hover { color:#e2e8f0; border-color:rgba(255,255,255,.2); }
-        .cs-ex[data-on="1"] { background:#1e293b; color:#fff; border-color:var(--cs-accent); }
+  const examples = (k: string) => (
+    <div className="space-y-2">
+      <SimMissionList missions={missions.missions} />
+      <section
+        aria-labelledby={`${uid}-${k}-examples-title`}
+        className="rounded-lg border bg-card p-2.5"
+      >
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 id={`${uid}-${k}-examples-title`} className="text-sm font-semibold">
+            Examples
+          </h3>
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            {opened.size} of {EXAMPLES.length} opened
+          </span>
+        </div>
+        <div className="space-y-1.5">
+          {EXAMPLES.map((ex) => (
+            <button
+              key={ex.id}
+              type="button"
+              aria-pressed={ex.id === active}
+              onClick={() => onPick(ex.id)}
+              className={cn(
+                'flex w-full items-start gap-2 rounded-md border px-2.5 py-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                ex.id === active ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+              )}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium leading-snug">{ex.label}</span>
+                <span className="block font-mono text-xs text-muted-foreground">{ex.expr}</span>
+              </span>
+              {opened.has(ex.id) && (
+                <>
+                  <CircleCheck
+                    className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground"
+                    aria-hidden="true"
+                  />
+                  <span className="sr-only">(opened)</span>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
 
-        .cs-inputrow { display:flex; gap:8px; align-items:stretch; flex-wrap:wrap; }
-        .cs-input { flex:1 1 280px; background:var(--cs-panel); border:1px solid var(--cs-line); border-radius:12px;
-          color:#e2e8f0; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(16px,3.4vw,22px);
-          letter-spacing:.12em; padding:14px 16px; outline:none; min-width:0; }
-        .cs-input:focus { border-color:var(--cs-accent); box-shadow:0 0 0 3px rgba(56,189,248,.15); }
-        .cs-input[data-bad="1"] { border-color:#f8717155; }
-        .cs-copy { border:1px solid var(--cs-line); background:var(--cs-panel); color:var(--cs-dim);
-          border-radius:12px; padding:0 14px; font-size:12px; cursor:pointer; white-space:nowrap; }
-        .cs-copy:hover { color:#e2e8f0; }
-
-        .cs-fields { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-top:8px; }
-        .cs-field { background:var(--cs-panel); border:1px solid var(--cs-line); border-radius:8px; padding:8px 6px;
-          text-align:center; min-width:0; }
-        .cs-field[data-bad="1"] { border-color:#f87171; background:#f8717112; }
-        .cs-field-val { font-family:ui-monospace,monospace; font-size:14px; color:#e2e8f0; overflow:hidden;
-          text-overflow:ellipsis; white-space:nowrap; }
-        .cs-field-name { font-size:10px; color:var(--cs-dim); text-transform:uppercase; letter-spacing:.06em; margin-top:3px; }
-        .cs-field-desc { font-size:11px; color:#64748b; margin-top:4px; line-height:1.4; }
-        @media (max-width:640px) { .cs-field-desc { display:none; } }
-
-        .cs-sentence { margin-top:12px; font-size:clamp(15px,2.6vw,18px); line-height:1.5; color:#fff; }
-        .cs-sentence-sub { color:var(--cs-dim); font-size:13px; margin-top:4px; }
-
-        .cs-err { margin-top:12px; border:1px solid #f8717155; background:#f8717112; border-radius:12px; padding:12px; }
-        .cs-err-line { color:#fca5a5; font-size:14px; line-height:1.6; }
-        .cs-err-hint { color:var(--cs-dim); font-size:13px; line-height:1.6; margin-top:4px; }
-
-        .cs-controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:16px; }
-        .cs-ctl { background:var(--cs-panel); border:1px solid var(--cs-line); border-radius:8px; color:#e2e8f0;
-          padding:7px 10px; font-size:13px; outline:none; font-family:inherit; }
-        .cs-ctl:focus { border-color:var(--cs-accent); }
-        .cs-lab { font-size:12px; color:var(--cs-dim); }
-        .cs-btn { background:var(--cs-panel); border:1px solid var(--cs-line); border-radius:8px; color:var(--cs-dim);
-          padding:7px 10px; font-size:12px; cursor:pointer; }
-        .cs-btn:hover:not(:disabled) { color:#e2e8f0; border-color:rgba(255,255,255,.2); }
-        .cs-btn:disabled { opacity:.4; cursor:default; }
-        .cs-btn[data-accent="1"] { border-color:#f59e0b55; color:#fbbf24; }
-        .cs-seg { display:inline-flex; border:1px solid var(--cs-line); border-radius:8px; overflow:hidden; }
-        .cs-seg button { background:var(--cs-panel); border:0; color:var(--cs-dim); padding:7px 11px; font-size:12px;
-          cursor:pointer; font-family:inherit; }
-        .cs-seg button[data-on="1"] { background:#1e293b; color:#fff; }
-
-        .cs-panes { display:grid; gap:12px; grid-template-columns:1fr; margin-top:12px; }
-        @media (min-width:900px) { .cs-panes { grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); } }
-        .cs-pane { border:1px solid var(--cs-line); border-radius:12px; background:var(--cs-panel); overflow:hidden; min-width:0; }
-        .cs-pane-head { padding:8px 12px; border-bottom:1px solid var(--cs-line); font-size:12px;
-          text-transform:uppercase; letter-spacing:.06em; color:var(--cs-dim); display:flex;
-          justify-content:space-between; gap:8px; }
-        .cs-pane-body { padding:12px; }
-
-        .cs-times { width:100%; border-collapse:collapse; font-size:13px; }
-        .cs-times th { text-align:left; color:var(--cs-dim); font-weight:500; font-size:11px; text-transform:uppercase;
-          letter-spacing:.05em; padding:8px 12px; border-bottom:1px solid var(--cs-line); }
-        .cs-times td { padding:7px 12px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-          border-bottom:1px solid rgba(255,255,255,.04); white-space:nowrap; }
-        .cs-times tr:last-child td { border-bottom:0; }
-        .cs-times tr[data-dup="1"] td { background:#f59e0b12; }
-        .cs-when { color:#fff; }
-        .cs-day { color:var(--cs-dim); }
-        .cs-gap { color:#64748b; text-align:right; }
-        .cs-gap[data-odd="1"] { color:#fbbf24; }
-        .cs-tag { font-size:10px; text-transform:uppercase; letter-spacing:.05em; padding:1px 6px; border-radius:999px;
-          border:1px solid currentColor; margin-left:6px; font-family:system-ui,sans-serif; }
-        .cs-scroll { overflow-x:auto; max-height:420px; overflow-y:auto; }
-
-        .cs-grid { display:flex; flex-wrap:wrap; gap:3px; }
-        .cs-cell { width:22px; height:18px; border-radius:3px; background:rgba(255,255,255,.05);
-          border:1px solid transparent; font-size:9px; color:#475569; display:flex; align-items:center;
-          justify-content:center; font-family:ui-monospace,monospace; }
-        .cs-cell[data-on="1"] { background:rgba(56,189,248,.22); border-color:var(--cs-accent); color:#bae6fd; }
-        .cs-gridlab { font-size:11px; color:var(--cs-dim); text-transform:uppercase; letter-spacing:.05em;
-          margin:0 0 6px; display:flex; justify-content:space-between; }
-        .cs-gridwrap + .cs-gridwrap { margin-top:14px; }
-
-        .cs-note { border-radius:12px; padding:10px 12px; margin-top:10px; line-height:1.6; font-size:13px;
-          border:1px solid var(--cs-line); background:rgba(255,255,255,.02); }
-        .cs-note[data-kind="or"], .cs-note[data-kind="gap"] { border-color:#f59e0b55; background:#f59e0b10; }
-        .cs-note[data-kind="dst"] { border-color:#a78bfa55; background:#a78bfa10; }
-        .cs-note[data-kind="frequency"] { border-color:#f8717155; background:#f8717110; }
-        .cs-note-title { color:#fff; font-weight:600; margin-bottom:3px; }
-        .cs-note-body { color:#cbd5e1; }
-        .cs-note code, .cs-teaches code { background:rgba(255,255,255,.08); padding:1px 5px; border-radius:4px;
-          font-family:ui-monospace,monospace; font-size:.92em; }
-
-        .cs-teaches { margin-top:14px; border-left:3px solid var(--cs-accent); padding:8px 0 8px 12px;
-          color:#cbd5e1; line-height:1.65; }
-        .cs-empty { color:var(--cs-dim); line-height:1.6; }
-        .cs-skipped { margin-top:10px; font-size:12px; color:#c4b5fd; line-height:1.6; }
-      `}</style>
-
-      <div className="cs-examples">
-        {EXAMPLES.map((ex) => (
-          <button key={ex.id} className="cs-ex" data-on={ex.id === active ? '1' : '0'} onClick={() => pick(ex.id)}>
-            {ex.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="cs-inputrow">
+  const scheduleView = (k: string) => (
+    <div className="space-y-2">
+      <div className="flex items-stretch gap-2">
         <input
-          className="cs-input"
-          data-bad={parsed.ok ? '0' : '1'}
+          className={cn(
+            'h-12 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 font-mono text-lg tracking-[0.12em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-xl',
+            !parsed.ok && 'border-wrong/60'
+          )}
           value={expr}
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
           aria-label="Cron expression"
+          aria-invalid={!parsed.ok}
           onChange={(e) => onExpr(e.target.value)}
         />
-        <button className="cs-copy" onClick={copy}>
-          {copied ? 'copied' : 'copy'}
-        </button>
+        <Button type="button" variant="outline" className="h-12" onClick={copy}>
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
       </div>
 
-      {parsed.ok && parsed.fields && (
-        <div className="cs-fields">
-          {FIELD_LABELS.map((f, i) => (
-            <div key={f.name} className="cs-field">
-              <div className="cs-field-val">{parts[i]}</div>
-              <div className="cs-field-name">{f.label}</div>
-              <div className="cs-field-desc">{parsed.fields![f.name].describe}</div>
+      <div className="grid grid-cols-5 gap-1.5">
+        {FIELD_LABELS.map((f, i) => {
+          const bad = !parsed.ok && errorFields.has(f.name);
+          return (
+            <div
+              key={f.name}
+              className={cn(
+                'min-w-0 rounded-md border bg-muted/50 px-1 py-2 text-center',
+                bad && 'border-wrong/60 bg-wrong/10'
+              )}
+            >
+              <div className="truncate font-mono text-sm">
+                {parsed.ok ? parts[i] : (parts[i] ?? '-')}
+              </div>
+              <div className="mt-0.5 text-xs leading-tight text-muted-foreground">{f.label}</div>
+              <div className="mt-1 hidden text-xs leading-snug text-muted-foreground sm:block">
+                {parsed.ok && parsed.fields ? parsed.fields[f.name].describe : f.range}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {!parsed.ok && (
-        <>
-          <div className="cs-fields">
-            {FIELD_LABELS.map((f, i) => (
-              <div key={f.name} className="cs-field" data-bad={errorFields.has(f.name) ? '1' : '0'}>
-                <div className="cs-field-val">{parts[i] ?? '-'}</div>
-                <div className="cs-field-name">{f.label}</div>
-                <div className="cs-field-desc">{f.range}</div>
-              </div>
-            ))}
-          </div>
-          <div className="cs-err">
-            {parsed.errors.map((e, i) => (
-              <div key={i}>
-                <div className="cs-err-line">{e.message}</div>
-                {e.hint && <div className="cs-err-hint">{e.hint}</div>}
-              </div>
-            ))}
-          </div>
-        </>
+        <SimFeedback tone="danger" role="alert" label="This expression does not parse">
+          {parsed.errors.map((e, i) => (
+            <div key={i}>
+              <p className="font-medium">{e.message}</p>
+              {e.hint && <p className="text-muted-foreground">{e.hint}</p>}
+            </div>
+          ))}
+        </SimFeedback>
       )}
 
       {parsed.ok && (
-        <div className="cs-sentence">
-          {sentence}
+        <div>
+          <p className="text-base font-medium leading-relaxed sm:text-lg">{sentence}</p>
           {parsed.macro && (
-            <div className="cs-sentence-sub">
-              <code>{parsed.macro}</code> expands to <code>{parsed.normalised}</code>
-            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              <code className="font-mono">{parsed.macro}</code> expands to{' '}
+              <code className="font-mono">{parsed.normalised}</code>
+            </p>
           )}
         </div>
       )}
 
-      <div className="cs-controls">
-        <span className="cs-lab">timezone</span>
-        <select className="cs-ctl" value={tz} onChange={(e) => setTz(e.target.value)} aria-label="Timezone">
-          {TIMEZONES.map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
+      {activeExample && (
+        <div className="rounded-md border-l-2 border-primary bg-muted/50 px-3 py-2 text-sm leading-relaxed">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Why this example
+          </p>
+          <p className="mt-0.5">{activeExample.teaches}</p>
+        </div>
+      )}
 
-        <span className="cs-lab">from</span>
-        <input
-          className="cs-ctl"
-          type="datetime-local"
-          aria-label="Start from"
-          value={from === null ? '' : toLocalInput(from, tz)}
-          onChange={(e) => {
-            const at = fromLocalInput(e.target.value, tz);
-            if (at !== null) setStartAt(at);
-          }}
-        />
-        <button className="cs-btn" onClick={() => setStartAt(null)} disabled={startAt === null}>
-          now
-        </button>
-
-        <button
-          className="cs-btn"
-          data-accent="1"
+      <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+        <div>
+          <label
+            htmlFor={`${uid}-${k}-tz`}
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            Timezone
+          </label>
+          <select
+            id={`${uid}-${k}-tz`}
+            className={FIELD}
+            value={tz}
+            onChange={(e) => setTz(e.target.value)}
+          >
+            {TIMEZONES.map((z) => (
+              <option key={z} value={z}>
+                {z}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label
+            htmlFor={`${uid}-${k}-from`}
+            className="mb-1 block text-xs font-medium text-muted-foreground"
+          >
+            From
+          </label>
+          <div className="flex gap-1">
+            <input
+              id={`${uid}-${k}-from`}
+              className={FIELD}
+              type="datetime-local"
+              value={from === null ? '' : toLocalInput(from, tz)}
+              onChange={(e) => {
+                const at = fromLocalInput(e.target.value, tz);
+                if (at !== null) setStartAt(at);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 lg:h-9"
+              onClick={() => setStartAt(null)}
+              disabled={startAt === null}
+            >
+              Now
+            </Button>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-10 lg:h-9"
           onClick={jumpToTransition}
           disabled={!transition}
           title={
@@ -374,132 +444,224 @@ export default function CronExpressionSimulator() {
           }
         >
           {transition
-            ? `jump to the ${transition.shiftMinutes > 0 ? 'clock going forward' : 'clock going back'}`
-            : 'no clock change in this zone'}
-        </button>
-
-        <div className="cs-seg" role="group" aria-label="How many runs">
+            ? `Jump to the ${transition.shiftMinutes > 0 ? 'clock going forward' : 'clock going back'}`
+            : 'No clock change in this zone'}
+        </Button>
+        <div className="flex gap-1" role="group" aria-label="How many runs">
           {COUNT_OPTIONS.map((n) => (
-            <button key={n} data-on={n === count ? '1' : '0'} onClick={() => setCount(n)}>
+            <Button
+              key={n}
+              type="button"
+              size="sm"
+              variant={n === count ? 'default' : 'outline'}
+              aria-pressed={n === count}
+              className="h-10 w-11 lg:h-9"
+              onClick={() => setCount(n)}
+            >
               {n}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      <div className="cs-panes">
-        <div className="cs-pane">
-          <div className="cs-pane-head">
-            <span>Next {count} runs</span>
-            <span>{tz}</span>
-          </div>
-          {schedule === null ? (
-            <div className="cs-pane-body cs-empty">Working out the schedule.</div>
-          ) : schedule.never ? (
-            <div className="cs-pane-body cs-empty">
-              {parsed.ok
-                ? `This never fires. Nothing matches in the next ${Math.round(schedule.horizonDays / 365)} years, which for a valid expression means the date it asks for does not exist.`
-                : 'Fix the expression above to see a schedule.'}
-            </div>
-          ) : (
-            <div className="cs-scroll">
-              <table className="cs-times">
-                <thead>
-                  <tr>
-                    <th>when</th>
-                    <th>day</th>
-                    <th style={{ textAlign: 'right' }}>gap</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {schedule.times.map((t, i) => (
-                    <tr key={`${t.at}-${i}`} data-dup={t.repeated ? '1' : '0'}>
-                      <td className="cs-when">
+      <section
+        className="overflow-hidden rounded-lg border bg-card"
+        aria-labelledby={`${uid}-${k}-runs`}
+      >
+        <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+          <h3 id={`${uid}-${k}-runs`} className="text-sm font-semibold">
+            Next {count} runs
+          </h3>
+          <span className="font-mono text-xs text-muted-foreground">{tz}</span>
+        </div>
+        {schedule === null ? (
+          <p className="p-3 text-sm text-muted-foreground">Working out the schedule.</p>
+        ) : schedule.never ? (
+          <p className="p-3 text-sm text-muted-foreground">
+            {parsed.ok
+              ? `This never fires. Nothing matches in the next ${Math.round(schedule.horizonDays / 365)} years, which for a valid expression means the date it asks for does not exist.`
+              : 'Fix the expression above to see a schedule.'}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-3 py-2 font-medium">When</th>
+                  <th className="px-3 py-2 font-medium">Day</th>
+                  <th className="px-3 py-2 text-right font-medium">Gap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedule.times.map((t, i) => {
+                  const odd =
+                    t.gapMinutes !== null &&
+                    schedule.times.some(
+                      (o) => o.gapMinutes !== null && o.gapMinutes !== t.gapMinutes
+                    );
+                  return (
+                    <tr
+                      key={`${t.at}-${i}`}
+                      className={cn('border-b last:border-0', t.repeated && 'bg-partial/10')}
+                    >
+                      <td className="whitespace-nowrap px-3 py-1.5 font-mono">
                         {t.local}
-                        <span className="cs-day" style={{ marginLeft: 8, fontSize: 11 }}>
-                          {t.zoneAbbr}
-                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground">{t.zoneAbbr}</span>
                         {t.repeated && (
-                          <span className="cs-tag" style={{ color: '#fbbf24' }}>
+                          <Badge
+                            variant="outline"
+                            className="ml-2 border-partial/60 font-sans text-partial-foreground"
+                          >
                             twice
-                          </span>
+                          </Badge>
                         )}
                       </td>
-                      <td className="cs-day">{t.weekday}</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{t.weekday}</td>
                       <td
-                        className="cs-gap"
-                        data-odd={
-                          t.gapMinutes !== null &&
-                          schedule.times.some((o) => o.gapMinutes !== null && o.gapMinutes !== t.gapMinutes)
-                            ? '1'
-                            : '0'
-                        }
+                        className={cn(
+                          'whitespace-nowrap px-3 py-1.5 text-right font-mono',
+                          odd ? 'font-semibold text-partial-foreground' : 'text-muted-foreground'
+                        )}
                       >
                         {t.gapMinutes === null ? '' : formatGap(t.gapMinutes)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {schedule && schedule.skipped.length > 0 && (
-            <div className="cs-pane-body cs-skipped">
-              Skipped: {schedule.skipped.map((s) => s.local).join(', ')}. The clock jumped forward over{' '}
-              {schedule.skipped.length === 1 ? 'it' : 'them'}, so nothing ran.
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-        <div className="cs-pane">
-          <div className="cs-pane-head">
-            <span>What matches</span>
+      {schedule && schedule.skipped.length > 0 && (
+        <SimFeedback tone="info" label="Skipped runs">
+          <p>
+            Skipped: {schedule.skipped.map((s) => s.local).join(', ')}. The clock jumped forward
+            over {schedule.skipped.length === 1 ? 'it' : 'them'}, so nothing ran.
+          </p>
+        </SimFeedback>
+      )}
+    </div>
+  );
+
+  const matches = (k: string) => (
+    <div className="space-y-2">
+      <section className="rounded-lg border bg-card p-2.5" aria-labelledby={`${uid}-${k}-matches`}>
+        <h3 id={`${uid}-${k}-matches`} className="mb-2 text-sm font-semibold">
+          What matches
+        </h3>
+        {parsed.ok && parsed.fields ? (
+          <div className="space-y-2">
+            {(
+              [
+                ['minutes of the hour', parsed.fields.minute, 0, 59, 60],
+                ['hours of the day', parsed.fields.hour, 0, 23, 24],
+                ['days of the month', parsed.fields.dom, 1, 31, 31],
+              ] as const
+            ).map(([label, spec, lo, hi, total]) => (
+              <div key={label}>
+                <p className="mb-1.5 flex justify-between gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  <span>{label}</span>
+                  <span className="font-mono tabular-nums">
+                    {spec.values.length} of {total}
+                  </span>
+                </p>
+                <ValueGrid spec={spec} from={lo} to={hi} />
+              </div>
+            ))}
           </div>
-          <div className="cs-pane-body">
-            {parsed.ok && parsed.fields ? (
-              <>
-                <div className="cs-gridwrap">
-                  <p className="cs-gridlab">
-                    <span>minutes of the hour</span>
-                    <span>{parsed.fields.minute.values.length} of 60</span>
-                  </p>
-                  <ValueGrid spec={parsed.fields.minute} from={0} to={59} />
-                </div>
-                <div className="cs-gridwrap">
-                  <p className="cs-gridlab">
-                    <span>hours of the day</span>
-                    <span>{parsed.fields.hour.values.length} of 24</span>
-                  </p>
-                  <ValueGrid spec={parsed.fields.hour} from={0} to={23} />
-                </div>
-                <div className="cs-gridwrap">
-                  <p className="cs-gridlab">
-                    <span>days of the month</span>
-                    <span>{parsed.fields.dom.values.length} of 31</span>
-                  </p>
-                  <ValueGrid spec={parsed.fields.dom} from={1} to={31} />
-                </div>
-              </>
-            ) : (
-              <div className="cs-empty">The grids appear once the expression parses.</div>
-            )}
-          </div>
-        </div>
-      </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            The grids appear once the expression parses.
+          </p>
+        )}
+      </section>
 
       {notes.map((o, i) => (
-        <div key={i} className="cs-note" data-kind={o.kind}>
-          <div className="cs-note-title">
-            <Ticked text={o.title} />
-          </div>
-          <div className="cs-note-body">
+        <SimFeedback key={i} tone={NOTE_TONE[o.kind]} label={<Ticked text={o.title} />}>
+          <p className="leading-relaxed">
             <Ticked text={o.body} />
-          </div>
-        </div>
+          </p>
+        </SimFeedback>
       ))}
-
-      {active && <div className="cs-teaches">{EXAMPLES.find((e) => e.id === active)?.teaches}</div>}
     </div>
+  );
+
+  return (
+    <SimFrame>
+      <SimBar
+        title="Cron Expression Simulator"
+        icon={CalendarClock}
+        tools={<SimResetButton onReset={startOver} />}
+        progress={{ current: missions.done, total: missions.total }}
+        heading={activeExample ? activeExample.label : 'Your own expression'}
+        meta={game?.level && <Badge variant="secondary">{game.level}</Badge>}
+        goal={
+          finished
+            ? 'Done. Keep exploring: type your own expression, or try the daylight saving examples.'
+            : `Open ${EXAMPLES_TO_FINISH} examples and read what each one teaches (${opened.size} of ${EXAMPLES_TO_FINISH} open).`
+        }
+      />
+
+      <SimAnnouncer message={activeExample ? `${activeExample.label}: ${sentence}` : ''} />
+
+      {finished && !dismissed ? (
+        <SimComplete
+          title="Lab complete"
+          summary={`You opened ${opened.size} of the ${EXAMPLES.length} examples. The parser and the schedule work the same for anything you type, so keep trying your own expressions.`}
+          stats={[
+            { label: 'Examples opened', value: `${opened.size}/${EXAMPLES.length}` },
+            { label: 'Missions', value: `${missions.done}/${missions.total}` },
+          ]}
+          actions={
+            <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+              Keep exploring
+            </Button>
+          }
+          onPlayAgain={startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimStage
+          columns="lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.45fr)_minmax(0,1fr)]"
+          minHeight="min-h-[26rem]"
+          tab={tab}
+          onTabChange={(t) => setTab(t as Tab)}
+          anchorRef={setTabsAnchor}
+          tabsLabel="Cron panels"
+          tabOrder={['schedule', 'examples', 'matches']}
+          panels={[
+            {
+              id: 'examples',
+              label: 'Examples',
+              badge: !finished && tab !== 'examples' && (
+                <SimTabBadge>
+                  {opened.size}/{EXAMPLES_TO_FINISH}
+                </SimTabBadge>
+              ),
+              content: examples('d'),
+              mobile: examples('m'),
+            },
+            {
+              id: 'schedule',
+              label: 'Schedule',
+              content: scheduleView('d'),
+              mobile: scheduleView('m'),
+            },
+            {
+              id: 'matches',
+              label: 'Matches',
+              badge: notes.length > 0 && tab !== 'matches' && (
+                <SimTabBadge>{notes.length}</SimTabBadge>
+              ),
+              content: matches('d'),
+              mobile: matches('m'),
+            },
+          ]}
+        />
+      )}
+    </SimFrame>
   );
 }
 
@@ -521,10 +683,12 @@ function Ticked({ text }: { text: string }) {
     <>
       {text.split(/(`[^`]+`)/).map((chunk, i) =>
         chunk.startsWith('`') && chunk.endsWith('`') && chunk.length > 2 ? (
-          <code key={i}>{chunk.slice(1, -1)}</code>
+          <code key={i} className="rounded bg-muted px-1 font-mono text-[0.92em]">
+            {chunk.slice(1, -1)}
+          </code>
         ) : (
           <span key={i}>{chunk}</span>
-        ),
+        )
       )}
     </>
   );

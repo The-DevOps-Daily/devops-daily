@@ -14,14 +14,14 @@ export function SimMissionList({
 }) {
   const done = missions.filter((m) => m.done).length;
   return (
-    <section aria-label={title} className="rounded-lg border bg-card p-3 text-sm">
-      <div className="mb-2 flex items-center justify-between gap-2">
+    <section aria-label={title} className="rounded-lg border bg-card p-2.5 text-sm">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold">{title}</h3>
         <span className="font-mono text-xs tabular-nums text-muted-foreground">
           {done}/{missions.length}
         </span>
       </div>
-      <ol className="space-y-1.5">
+      <ol className="space-y-1">
         {missions.map((m) => {
           const Icon = m.done ? CircleCheck : Circle;
           return (
@@ -29,7 +29,7 @@ export function SimMissionList({
               key={m.id}
               aria-current={m.current ? 'step' : undefined}
               className={cn(
-                'flex gap-2 rounded-md px-2 py-1.5',
+                'flex gap-2 rounded-md px-2 py-1',
                 m.current && 'border border-primary/40 bg-primary/5'
               )}
             >

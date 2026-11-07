@@ -783,27 +783,27 @@ function ClockControls({
 
 function ScenarioPicker({ onStart }: { onStart: (id: string) => void }) {
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border bg-card p-5">
+    <div className="space-y-3">
+      <div className="rounded-lg border bg-card p-4">
         <h2 className="text-lg font-semibold">You are the incident commander</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           You do not fix things with your own hands. You direct a small team, decide what to try,
           keep customers informed, and decide when the incident is really over.
         </p>
-        <ul className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-          <li className="rounded-md bg-muted/50 p-3">
+        <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+          <li className="rounded-md bg-muted/50 px-3 py-2">
             <strong className="block">Send work to your team</strong>
             <span className="text-muted-foreground">
               Each responder takes one task at a time. Investigations answer one question each.
             </span>
           </li>
-          <li className="rounded-md bg-muted/50 p-3">
+          <li className="rounded-md bg-muted/50 px-3 py-2">
             <strong className="block">Reading is free</strong>
             <span className="text-muted-foreground">
               Time only moves when you advance the clock. Take the time to read the evidence.
             </span>
           </li>
-          <li className="rounded-md bg-muted/50 p-3">
+          <li className="rounded-md bg-muted/50 px-3 py-2">
             <strong className="block">Verify before you close</strong>
             <span className="text-muted-foreground">
               Recovery has to hold for {SUSTAIN_MINUTES} minutes before you can resolve.
@@ -811,17 +811,17 @@ function ScenarioPicker({ onStart }: { onStart: (id: string) => void }) {
           </li>
         </ul>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-2">
         {SCENARIOS.map((s) => (
           <Card key={s.id} className="flex flex-col">
-            <CardHeader>
+            <CardHeader className="p-4 pb-2">
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-lg">{s.title}</CardTitle>
                 <Badge variant="secondary">{s.difficulty}</Badge>
               </div>
               <p className="text-sm text-muted-foreground">{s.tagline}</p>
             </CardHeader>
-            <CardContent className="mt-auto space-y-3">
+            <CardContent className="mt-auto space-y-2 p-4 pt-0">
               <p className="text-xs text-muted-foreground">
                 Team: {s.responders.r1.name} ({s.responders.r1.role}) and {s.responders.r2.name} (
                 {s.responders.r2.role})

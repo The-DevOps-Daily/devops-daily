@@ -51,7 +51,7 @@ export const SimFeedback = forwardRef<HTMLDivElement, SimFeedbackProps>(function
       role={role}
       data-tone={tone}
       className={cn(
-        'rounded-lg border p-3 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'rounded-lg border px-3 py-2 text-sm text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         t.surface,
         className
       )}

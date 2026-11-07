@@ -43,18 +43,13 @@ export function SimFrame({
   phoneBar?: boolean;
   className?: string;
 }) {
-  const { embedded } = useEmbed();
-  const [barHeight, setBarHeight] = useState(112);
+  const [barHeight, setBarHeight] = useState(104);
   const value = useMemo(() => ({ barHeight, setBarHeight }), [barHeight]);
   return (
     <FrameContext.Provider value={value}>
       <div
         data-sim-frame=""
-        className={cn(
-          embedded ? 'space-y-2' : 'space-y-3',
-          phoneBar ? 'pb-24 lg:pb-0' : 'pb-6 lg:pb-0',
-          className
-        )}
+        className={cn('space-y-2', phoneBar ? 'pb-20 lg:pb-0' : 'pb-4 lg:pb-0', className)}
       >
         {children}
       </div>
@@ -143,45 +138,58 @@ export function SimBar({
   }, [setBarHeight]);
 
   const secondRow = progress || heading || meta || actions;
+  const showTitle = embedded && title;
+  const pills = steps && steps.length > 0;
+  // With nothing else in the first row (the game page has no title and no pills),
+  // the tools join the second row instead of taking a row of their own.
+  const firstRow = showTitle || lead || pills || (tools && !secondRow);
+  const rowTools = tools && !firstRow;
   return (
     <div
       ref={ref}
-      className="z-20 space-y-2 rounded-lg border bg-card p-2.5 shadow-sm lg:sticky lg:top-[var(--site-header-h,0px)] lg:transition-[top] lg:duration-200 motion-reduce:transition-none"
+      className="z-20 space-y-1.5 rounded-lg border bg-card p-2 shadow-sm lg:sticky lg:top-[var(--site-header-h,0px)] lg:transition-[top] lg:duration-200 motion-reduce:transition-none"
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {embedded && title && (
-          <div className="flex items-center gap-2">
-            {Icon && <Icon className="h-4 w-4 text-primary" aria-hidden="true" />}
-            <span className="font-semibold">{title}</span>
-          </div>
-        )}
-        {lead}
-        {steps && steps.length > 0 && (
-          <nav className="flex flex-wrap items-center gap-1" aria-label={stepsLabel}>
-            {steps.map((step, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => onStep?.(i)}
-                aria-current={i === current ? 'step' : undefined}
-                aria-label={`${stepNoun} ${i + 1}: ${step.title}, ${step.statusLabel ?? STEP_STATUS[step.status]}`}
-                title={step.title}
-                className={cn(
-                  'h-10 w-9 rounded-md border text-xs font-semibold tabular-nums lg:h-8 lg:w-8',
-                  STEP_PILL[step.status],
-                  i === current && 'ring-2 ring-primary ring-offset-1 ring-offset-background'
-                )}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </nav>
-        )}
-        {tools && <div className="ml-auto flex items-center gap-1">{tools}</div>}
-      </div>
+      {firstRow && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {showTitle && (
+            <div className="flex items-center gap-2">
+              {Icon && <Icon className="h-4 w-4 text-primary" aria-hidden="true" />}
+              <span className="font-semibold">{title}</span>
+            </div>
+          )}
+          {lead}
+          {pills && (
+            <nav className="flex flex-wrap items-center gap-1" aria-label={stepsLabel}>
+              {steps.map((step, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => onStep?.(i)}
+                  aria-current={i === current ? 'step' : undefined}
+                  aria-label={`${stepNoun} ${i + 1}: ${step.title}, ${step.statusLabel ?? STEP_STATUS[step.status]}`}
+                  title={step.title}
+                  className={cn(
+                    'h-10 w-9 rounded-md border text-xs font-semibold tabular-nums lg:h-8 lg:w-8',
+                    STEP_PILL[step.status],
+                    i === current && 'ring-2 ring-primary ring-offset-1 ring-offset-background'
+                  )}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </nav>
+          )}
+          {tools && <div className="ml-auto flex items-center gap-1">{tools}</div>}
+        </div>
+      )}
 
       {secondRow && (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t pt-2">
+        <div
+          className={cn(
+            'flex flex-wrap items-center gap-x-3 gap-y-1',
+            firstRow && 'border-t pt-1.5'
+          )}
+        >
           {progress && (
             <span className="font-mono text-xs tabular-nums text-muted-foreground">
               {progress.current}/{progress.total}
@@ -189,7 +197,12 @@ export function SimBar({
           )}
           {heading && <h2 className="text-sm font-semibold sm:text-base">{heading}</h2>}
           {meta}
-          {actions && <div className="ml-auto flex items-center gap-2">{actions}</div>}
+          {(actions || rowTools) && (
+            <div className="ml-auto flex items-center gap-2">
+              {actions}
+              {rowTools && <div className="flex items-center gap-1">{tools}</div>}
+            </div>
+          )}
         </div>
       )}
 
@@ -202,7 +215,7 @@ export function SimBar({
 /** The goal line: visible for the whole step, in the hint tone. */
 export function SimGoal({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-start gap-2 rounded-md border border-hint/30 bg-hint/5 px-3 py-1.5 text-sm">
+    <div className="flex items-start gap-2 rounded-md border border-hint/30 bg-hint/5 px-3 py-1 text-sm">
       <Target className="mt-0.5 h-4 w-4 shrink-0 text-hint" aria-hidden="true" />
       <p>
         <strong>Goal: </strong>
@@ -231,7 +244,7 @@ export function SimHowTo({
       <summary className="w-fit cursor-pointer select-none rounded-sm py-0.5 text-xs font-medium text-muted-foreground hover:text-foreground">
         {summary}
       </summary>
-      <div className="mt-1 rounded-md bg-muted/50 px-3 py-2 leading-relaxed">{children}</div>
+      <div className="mt-1 rounded-md bg-muted/50 px-3 py-1.5 leading-relaxed">{children}</div>
     </details>
   );
 }
@@ -253,7 +266,7 @@ export function SimHintButton({
       type="button"
       variant="ghost"
       size="sm"
-      className="h-10 lg:h-9"
+      className="h-10 lg:h-8"
       onClick={onClick}
       aria-pressed={pressed}
       disabled={disabled}
@@ -285,7 +298,7 @@ export function SimResetButton({
       type="button"
       variant="ghost"
       size="sm"
-      className="h-10 min-w-10 lg:h-9 lg:min-w-9"
+      className="h-10 min-w-10 lg:h-8 lg:min-w-8"
       onClick={() => {
         if (confirming) {
           setConfirming(false);
@@ -335,7 +348,7 @@ export function SimStage({
   onTabChange,
   tabsLabel = 'Panels',
   anchorRef,
-  minHeight = 'min-h-[20rem]',
+  minHeight = 'min-h-[18rem]',
   tabOrder,
 }: {
   panels: SimPanel[];
@@ -354,10 +367,11 @@ export function SimStage({
   return (
     <>
       <div
-        className={cn('hidden gap-3 lg:grid', minHeight, columns)}
-        // --sim-embed-pad is the embed route's own padding, 0 on the game page.
+        className={cn('hidden grid-rows-[minmax(0,1fr)] gap-2.5 lg:grid', minHeight, columns)}
+        // As tall as the content, at most the screen under the sticky bar. --sim-embed-pad
+        // is the embed route's own padding, 0 on the game page.
         style={{
-          height: `calc(100dvh - var(--site-header-h, 0px) - var(--sim-embed-pad, 0px) - ${barHeight + 24}px)`,
+          maxHeight: `calc(100dvh - var(--site-header-h, 0px) - var(--sim-embed-pad, 0px) - ${barHeight + 16}px)`,
         }}
       >
         {panels.map((p) =>
@@ -382,7 +396,7 @@ export function SimStage({
 
       <div ref={anchorRef} aria-hidden="true" className="lg:hidden" />
       <Tabs value={tab} onValueChange={onTabChange} className="lg:hidden">
-        <div className="sticky top-[var(--site-header-h,0px)] z-20 -mx-1 bg-background px-1 py-2 transition-[top] duration-200 motion-reduce:transition-none">
+        <div className="sticky top-[var(--site-header-h,0px)] z-20 -mx-1 bg-background px-1 py-1.5 transition-[top] duration-200 motion-reduce:transition-none">
           <TabsList
             className={cn('grid h-11 w-full', TAB_COLS[tabs.length] ?? 'grid-cols-3')}
             aria-label={tabsLabel}
@@ -396,7 +410,7 @@ export function SimStage({
           </TabsList>
         </div>
         {tabs.map((p) => (
-          <TabsContent key={p.id} value={p.id} className="mt-1 space-y-3">
+          <TabsContent key={p.id} value={p.id} className="mt-0 space-y-2">
             {p.mobile ?? p.content}
           </TabsContent>
         ))}

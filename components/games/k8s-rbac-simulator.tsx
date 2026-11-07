@@ -1,6 +1,25 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, CircleCheck, KeyRound } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimResetButton,
+  SimStage,
+  SimTerminalWindow,
+  revealTop,
+  useMissions,
+  type Mission,
+  type SimStepStatus,
+} from '@/components/games/sim';
+import { cn } from '@/lib/utils';
 import {
   can,
   allowedVerbs,
@@ -10,6 +29,7 @@ import {
   RESOURCES,
   VERBS,
   type Cluster,
+  type Explanation,
   type Question,
   type Verb,
   type Binding,
@@ -26,9 +46,6 @@ import {
  *
  * The engine is real and has no Kubernetes in it: every scenario is evaluated
  * by the rules in lib/games/rbac-sim-engine.ts, which its tests pin down.
- *
- * Styling is scoped under `.rbacsim` (classes prefixed `rb-`) so it does not
- * collide with the site's global Tailwind layer.
  */
 
 function roleYaml(role: Role): string {
@@ -69,15 +86,79 @@ function bindingYaml(b: Binding): string {
   ].join('\n');
 }
 
+interface MissionState {
+  scenarioId: string;
+  question: Question;
+  answer: Explanation;
+}
+
+/**
+ * Each mission is one question a scenario's own lesson asks for, checked with
+ * the engine's answer. Free play stays open after the last one.
+ */
+const MISSIONS: Mission<MissionState>[] = [
+  {
+    id: 'clusterrole-rolebinding',
+    label: 'Find the one namespace where the RoleBinding lets ci list pods',
+    hint: 'In “The one that surprises everyone”, change the namespace.',
+    check: (s) => s.scenarioId === 'clusterrole-rolebinding' && s.answer.allowed,
+  },
+  {
+    id: 'cluster-scoped',
+    label: 'Show that a RoleBinding in dev still cannot grant nodes',
+    hint: 'In “Nodes are not in a namespace”, set the namespace to dev.',
+    check: (s) =>
+      s.scenarioId === 'cluster-scoped' &&
+      s.question.resource === 'nodes' &&
+      s.question.namespace === 'dev' &&
+      !s.answer.allowed,
+  },
+  {
+    id: 'resource-names',
+    label: 'Show that the one-secret rule does not cover list',
+    hint: 'In “One secret, not the list”, switch the verb to list.',
+    check: (s) =>
+      s.scenarioId === 'resource-names' &&
+      s.question.resource === 'secrets' &&
+      s.question.verb === 'list' &&
+      !s.answer.allowed,
+  },
+  {
+    id: 'no-deny',
+    label: 'Show that the empty role takes nothing away',
+    hint: 'In “There is no deny”, ask about a verb ci does have, such as list.',
+    check: (s) => s.scenarioId === 'no-deny' && s.answer.allowed,
+  },
+  {
+    id: 'cluster-wide',
+    label: 'Show that a ClusterRoleBinding reaches prod too',
+    hint: 'In “Genuinely cluster-wide”, set the namespace to prod.',
+    check: (s) =>
+      s.scenarioId === 'cluster-wide' && s.answer.allowed && s.question.namespace === 'prod',
+  },
+];
+
+const FIELD =
+  'h-10 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-9';
+const LABEL = 'mb-1 block text-xs font-medium text-muted-foreground';
+
+type Tab = 'ask' | 'cluster' | 'scenario';
+
 export default function K8sRbacSimulator() {
   const [scenarioId, setScenarioId] = useState(SCENARIOS[0].id);
   const scenario = useMemo(
     () => SCENARIOS.find((s) => s.id === scenarioId) ?? SCENARIOS[0],
-    [scenarioId],
+    [scenarioId]
   );
 
   const [question, setQuestion] = useState<Question>(SCENARIOS[0].question);
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState<Tab>('ask');
+  const [visited, setVisited] = useState<Set<string>>(() => new Set([SCENARIOS[0].id]));
+  /** "Keep exploring" closes the end card; free play goes on. */
+  const [dismissed, setDismissed] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const uid = useId();
 
   const cluster: Cluster = scenario.cluster;
   const answer = useMemo(() => can(cluster, question), [cluster, question]);
@@ -90,8 +171,14 @@ export default function K8sRbacSimulator() {
         resourceName: question.resourceName,
         apiGroup: question.apiGroup,
       }),
-    [cluster, question],
+    [cluster, question]
   );
+
+  const missionState = useMemo(
+    () => ({ scenarioId, question, answer }),
+    [scenarioId, question, answer]
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
   // Every subject any binding in this scenario names, so the picker offers the
   // ones that exist rather than a free-text box nobody can spell.
@@ -130,235 +217,355 @@ export default function K8sRbacSimulator() {
     });
   };
 
-  return (
-    <div className="rbacsim">
-      <style>{`
-        .rbacsim { --rb-panel:#111936; --rb-line:rgba(255,255,255,.08); --rb-dim:#94a3b8;
-          --rb-yes:#34d399; --rb-no:#f87171; color:#e2e8f0; font-size:14px; }
-        .rb-scenarios { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-        .rb-scenario { border:1px solid var(--rb-line); background:var(--rb-panel); color:var(--rb-dim);
-          border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; transition:all .15s; }
-        .rb-scenario:hover { color:#e2e8f0; border-color:rgba(255,255,255,.2); }
-        .rb-scenario[data-on="1"] { background:#1e293b; color:#fff; border-color:#38bdf8; }
-        .rb-teaches { border-left:3px solid #38bdf8; padding:8px 0 8px 12px; color:#cbd5e1;
-          line-height:1.65; margin-bottom:14px; font-size:13px; }
+  const index = SCENARIOS.findIndex((s) => s.id === scenario.id);
+  const doneIds = new Set(missions.missions.filter((m) => m.done).map((m) => m.id));
+  const missionFor = (id: string) => MISSIONS.find((m) => m.id === id);
 
-        .rb-grid { display:grid; gap:12px; grid-template-columns:1fr; }
-        @media (min-width:960px) { .rb-grid { grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); } }
-        .rb-pane { border:1px solid var(--rb-line); border-radius:12px; background:var(--rb-panel);
-          overflow:hidden; min-width:0; }
-        .rb-head { padding:8px 12px; border-bottom:1px solid var(--rb-line); font-size:11px;
-          text-transform:uppercase; letter-spacing:.06em; color:var(--rb-dim);
-          display:flex; justify-content:space-between; gap:8px; }
-        .rb-body { padding:12px; }
-        .rb-yaml { margin:0; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
-          line-height:1.55; white-space:pre-wrap; word-break:break-word; color:#cbd5e1; }
-        .rb-yaml + .rb-yaml { margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.06); }
+  const open = (i: number) => {
+    const s = SCENARIOS[i];
+    if (!s) return;
+    pickScenario(s.id);
+    setVisited((v) => (v.has(s.id) ? v : new Set(v).add(s.id)));
+    revealTop(tabsRef.current, { onlyIfAbove: true });
+  };
 
-        .rb-q { display:grid; gap:8px; grid-template-columns:repeat(2,minmax(0,1fr)); }
-        @media (min-width:600px) { .rb-q { grid-template-columns:repeat(4,minmax(0,1fr)); } }
-        .rb-field label { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.05em;
-          color:var(--rb-dim); margin-bottom:3px; }
-        .rb-field select, .rb-field input { width:100%; background:#0b1020; border:1px solid var(--rb-line);
-          border-radius:6px; color:#e2e8f0; padding:6px 8px; font-size:13px; outline:none; font-family:inherit; }
-        .rb-field select:focus, .rb-field input:focus { border-color:#38bdf8; }
+  const startOver = () => {
+    pickScenario(SCENARIOS[0].id);
+    setVisited(new Set([SCENARIOS[0].id]));
+    setDismissed(false);
+    missions.reset();
+    setTab('ask');
+  };
 
-        .rb-verdict { margin-top:12px; border-radius:12px; padding:12px; border:1px solid; line-height:1.6; }
-        .rb-verdict[data-allowed="1"] { border-color:#34d39955; background:#34d39910; }
-        .rb-verdict[data-allowed="0"] { border-color:#f8717155; background:#f8717110; }
-        .rb-verdict-head { font-weight:600; margin-bottom:4px; }
-        .rb-verdict[data-allowed="1"] .rb-verdict-head { color:var(--rb-yes); }
-        .rb-verdict[data-allowed="0"] .rb-verdict-head { color:var(--rb-no); }
-        .rb-verdict-body { color:#cbd5e1; font-size:13px; }
+  const stepStatus = (id: string): SimStepStatus => {
+    if (!visited.has(id)) return 'todo';
+    return !missionFor(id) || doneIds.has(id) ? 'done' : 'started';
+  };
 
-        .rb-miss { margin-top:10px; border:1px solid #f59e0b44; background:#f59e0b0f; border-radius:10px;
-          padding:10px 12px; font-size:13px; line-height:1.6; color:#cbd5e1; }
-        .rb-miss-name { color:#fbbf24; font-family:ui-monospace,monospace; font-size:12px; }
-
-        .rb-verbs { display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; }
-        .rb-verb { font-family:ui-monospace,monospace; font-size:11px; padding:2px 7px; border-radius:999px;
-          border:1px solid rgba(255,255,255,.12); color:#64748b; }
-        .rb-verb[data-on="1"] { border-color:var(--rb-yes); color:var(--rb-yes); background:#34d3990f; }
-
-        .rb-cmd { margin-top:12px; display:flex; gap:8px; align-items:stretch; }
-        .rb-cmd code { flex:1; background:#0b1020; border:1px solid var(--rb-line); border-radius:8px;
-          padding:9px 10px; font-family:ui-monospace,monospace; font-size:12px; color:#bae6fd;
-          overflow-x:auto; white-space:nowrap; }
-        .rb-copy { border:1px solid var(--rb-line); background:var(--rb-panel); color:var(--rb-dim);
-          border-radius:8px; padding:0 12px; font-size:12px; cursor:pointer; white-space:nowrap; }
-        .rb-copy:hover { color:#e2e8f0; }
-        .rb-note { margin-top:10px; font-size:12px; color:var(--rb-dim); line-height:1.6; }
-      `}</style>
-
-      <div className="rb-scenarios">
-        {SCENARIOS.map((s) => (
-          <button
-            key={s.id}
-            className="rb-scenario"
-            data-on={s.id === scenarioId ? '1' : '0'}
-            onClick={() => pickScenario(s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      <p className="rb-teaches">{scenario.teaches}</p>
-
-      <div className="rb-grid">
-        <div className="rb-pane">
-          <div className="rb-head">
-            <span>The cluster</span>
-            <span>
-              {cluster.roles.length} role{cluster.roles.length === 1 ? '' : 's'},{' '}
-              {cluster.bindings.length} binding{cluster.bindings.length === 1 ? '' : 's'}
-            </span>
-          </div>
-          <div className="rb-body">
-            {cluster.roles.map((r) => (
-              <pre className="rb-yaml" key={`${r.kind}-${r.name}`}>
-                {roleYaml(r)}
-              </pre>
-            ))}
-            {cluster.bindings.map((b) => (
-              <pre className="rb-yaml" key={`${b.kind}-${b.name}`}>
-                {bindingYaml(b)}
-              </pre>
-            ))}
-          </div>
-        </div>
-
-        <div className="rb-pane">
-          <div className="rb-head">
-            <span>Can this subject</span>
-          </div>
-          <div className="rb-body">
-            <div className="rb-q">
-              <div className="rb-field">
-                <label htmlFor="rb-subject">subject</label>
-                <select
-                  id="rb-subject"
-                  value={`${question.subject.kind}/${question.subject.namespace ?? '-'}/${question.subject.name}`}
-                  onChange={(e) => {
-                    const found = subjects.find(
-                      (s) => `${s.kind}/${s.namespace ?? '-'}/${s.name}` === e.target.value,
-                    );
-                    if (found) setQuestion((q) => ({ ...q, subject: found }));
-                  }}
-                >
-                  {subjects.map((s) => (
-                    <option
-                      key={`${s.kind}/${s.namespace ?? '-'}/${s.name}`}
-                      value={`${s.kind}/${s.namespace ?? '-'}/${s.name}`}
-                    >
-                      {s.namespace ? `${s.namespace}/${s.name}` : s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="rb-field">
-                <label htmlFor="rb-verb">verb</label>
-                <select
-                  id="rb-verb"
-                  value={question.verb}
-                  onChange={(e) => setQuestion((q) => ({ ...q, verb: e.target.value as Verb }))}
-                >
-                  {VERBS.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="rb-field">
-                <label htmlFor="rb-resource">resource</label>
-                <select id="rb-resource" value={question.resource} onChange={(e) => setResource(e.target.value)}>
-                  {RESOURCES.map((r) => (
-                    <option key={r.name} value={r.name}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="rb-field">
-                <label htmlFor="rb-ns">namespace</label>
-                <select
-                  id="rb-ns"
-                  value={question.namespace ?? ''}
-                  onChange={(e) =>
-                    setQuestion((q) => ({ ...q, namespace: e.target.value || undefined }))
-                  }
-                >
-                  <option value="">(cluster scope / all namespaces)</option>
-                  {NAMESPACES.map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="rb-field" style={{ marginTop: 8 }}>
-              <label htmlFor="rb-name">named object, optional</label>
-              <input
-                id="rb-name"
-                value={question.resourceName ?? ''}
-                placeholder="e.g. db-password"
-                onChange={(e) =>
-                  setQuestion((q) => ({ ...q, resourceName: e.target.value || undefined }))
-                }
-              />
-            </div>
-
-            <div className="rb-verdict" data-allowed={answer.allowed ? '1' : '0'}>
-              <div className="rb-verdict-head">{answer.allowed ? 'Allowed' : 'Denied'}</div>
-              <div className="rb-verdict-body">{answer.summary}</div>
-            </div>
-
-            {answer.nearMisses.map((m, i) => (
-              <div className="rb-miss" key={i}>
-                <span className="rb-miss-name">
-                  {m.binding.kind}/{m.binding.name}
-                </span>{' '}
-                {m.reason}
-              </div>
-            ))}
-
-            <div className="rb-verbs">
-              {VERBS.map((v) => (
-                <span key={v} className="rb-verb" data-on={verbs.includes(v) ? '1' : '0'}>
-                  {v}
-                </span>
-              ))}
-            </div>
-            <p className="rb-note">
-              Every verb this subject has on {question.resource}
-              {question.namespace
-                ? ` in ${question.namespace}`
-                : isClusterScoped(question.resource)
-                  ? ' at cluster scope'
-                  : ' across all namespaces'}
-              . RBAC has no
-              deny rules, so this list only ever grows as bindings are added.
-            </p>
-
-            <div className="rb-cmd">
-              <code>{answer.kubectl}</code>
-              <button className="rb-copy" onClick={copyKubectl}>
-                {copied ? 'copied' : 'copy'}
-              </button>
-            </div>
-            <p className="rb-note">
-              The same question, asked of a real cluster. Impersonation needs a user who can
-              impersonate, which is usually a cluster admin.
-            </p>
-          </div>
-        </div>
-      </div>
+  const lesson = (
+    <div className="rounded-md border-l-2 border-primary bg-muted/50 px-3 py-2 text-sm leading-relaxed">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        What this one shows
+      </p>
+      <p className="mt-0.5">{scenario.teaches}</p>
     </div>
+  );
+
+  const scenarioPanel = (
+    <div className="space-y-2">
+      {lesson}
+      <SimMissionList missions={missions.missions} />
+    </div>
+  );
+
+  const clusterPanel = (
+    <SimTerminalWindow
+      label="the cluster"
+      status={`${cluster.roles.length} role${cluster.roles.length === 1 ? '' : 's'}, ${cluster.bindings.length} binding${cluster.bindings.length === 1 ? '' : 's'}`}
+      bodyClassName="divide-y divide-terminal-border"
+    >
+      {cluster.roles.map((r) => (
+        <pre
+          className="whitespace-pre-wrap break-words p-3 text-terminal-foreground"
+          key={`${r.kind}-${r.name}`}
+        >
+          {roleYaml(r)}
+        </pre>
+      ))}
+      {cluster.bindings.map((b) => (
+        <pre
+          className="whitespace-pre-wrap break-words p-3 text-terminal-foreground"
+          key={`${b.kind}-${b.name}`}
+        >
+          {bindingYaml(b)}
+        </pre>
+      ))}
+    </SimTerminalWindow>
+  );
+
+  const askPanel = (k: string) => (
+    <section
+      aria-labelledby={`${uid}-${k}-ask`}
+      className="space-y-2 rounded-lg border bg-card p-2.5"
+    >
+      <h3 id={`${uid}-${k}-ask`} className="text-sm font-semibold">
+        Can this subject
+      </h3>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <label htmlFor={`${uid}-${k}-subject`} className={LABEL}>
+            Subject
+          </label>
+          <select
+            id={`${uid}-${k}-subject`}
+            className={FIELD}
+            value={`${question.subject.kind}/${question.subject.namespace ?? '-'}/${question.subject.name}`}
+            onChange={(e) => {
+              const found = subjects.find(
+                (s) => `${s.kind}/${s.namespace ?? '-'}/${s.name}` === e.target.value
+              );
+              if (found) setQuestion((q) => ({ ...q, subject: found }));
+            }}
+          >
+            {subjects.map((s) => (
+              <option
+                key={`${s.kind}/${s.namespace ?? '-'}/${s.name}`}
+                value={`${s.kind}/${s.namespace ?? '-'}/${s.name}`}
+              >
+                {s.namespace ? `${s.namespace}/${s.name}` : s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor={`${uid}-${k}-verb`} className={LABEL}>
+            Verb
+          </label>
+          <select
+            id={`${uid}-${k}-verb`}
+            className={FIELD}
+            value={question.verb}
+            onChange={(e) => setQuestion((q) => ({ ...q, verb: e.target.value as Verb }))}
+          >
+            {VERBS.map((v) => (
+              <option key={v} value={v}>
+                {v}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor={`${uid}-${k}-resource`} className={LABEL}>
+            Resource
+          </label>
+          <select
+            id={`${uid}-${k}-resource`}
+            className={FIELD}
+            value={question.resource}
+            onChange={(e) => setResource(e.target.value)}
+          >
+            {RESOURCES.map((r) => (
+              <option key={r.name} value={r.name}>
+                {r.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor={`${uid}-${k}-ns`} className={LABEL}>
+            Namespace
+          </label>
+          <select
+            id={`${uid}-${k}-ns`}
+            className={FIELD}
+            value={question.namespace ?? ''}
+            onChange={(e) => setQuestion((q) => ({ ...q, namespace: e.target.value || undefined }))}
+          >
+            <option value="">(cluster scope / all namespaces)</option>
+            {NAMESPACES.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label htmlFor={`${uid}-${k}-name`} className={LABEL}>
+          Named object, optional
+        </label>
+        <input
+          id={`${uid}-${k}-name`}
+          className={FIELD}
+          value={question.resourceName ?? ''}
+          placeholder="e.g. db-password"
+          onChange={(e) =>
+            setQuestion((q) => ({ ...q, resourceName: e.target.value || undefined }))
+          }
+        />
+      </div>
+
+      <SimFeedback
+        tone={answer.allowed ? 'success' : 'danger'}
+        label={answer.allowed ? 'Allowed' : 'Denied'}
+      >
+        <p className="leading-relaxed">{answer.summary}</p>
+      </SimFeedback>
+
+      {answer.nearMisses.map((m, i) => (
+        <SimFeedback
+          key={i}
+          tone="warning"
+          label={
+            <span className="font-mono text-xs">
+              {m.binding.kind}/{m.binding.name}
+            </span>
+          }
+        >
+          <p className="leading-relaxed">{m.reason}</p>
+        </SimFeedback>
+      ))}
+
+      <div>
+        <ul className="flex flex-wrap gap-1.5" aria-label={`Verbs allowed on ${question.resource}`}>
+          {VERBS.map((v) => {
+            const on = verbs.includes(v);
+            return (
+              <li
+                key={v}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-xs',
+                  on
+                    ? 'border-correct/50 bg-correct/10 text-correct-foreground'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {on && <CircleCheck className="h-3 w-3" aria-hidden="true" />}
+                {v}
+                <span className="sr-only">{on ? ' (allowed)' : ' (not allowed)'}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          Every verb this subject has on {question.resource}
+          {question.namespace
+            ? ` in ${question.namespace}`
+            : isClusterScoped(question.resource)
+              ? ' at cluster scope'
+              : ' across all namespaces'}
+          . RBAC has no deny rules, so this list only ever grows as bindings are added.
+        </p>
+      </div>
+
+      <div>
+        <SimTerminalWindow label="the same question, on a real cluster" bodyClassName="p-2.5">
+          <div className="flex items-start gap-2">
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap pb-0.5 text-terminal-input">
+              {answer.kubectl}
+            </code>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={copyKubectl}
+              className="h-8 shrink-0 border-terminal-border bg-transparent text-terminal-foreground hover:bg-terminal-bar hover:text-terminal-input"
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
+        </SimTerminalWindow>
+        <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+          Impersonation needs a user who can impersonate, which is usually a cluster admin.
+        </p>
+      </div>
+    </section>
+  );
+
+  const barButton = 'h-10 w-10 px-0 lg:h-8 lg:w-8';
+
+  return (
+    <SimFrame>
+      <SimBar
+        title="Kubernetes RBAC Simulator"
+        icon={KeyRound}
+        steps={SCENARIOS.map((s) => ({ title: s.label, status: stepStatus(s.id) }))}
+        current={index}
+        onStep={open}
+        stepNoun="Scenario"
+        stepsLabel="Scenarios"
+        tools={<SimResetButton onReset={startOver} />}
+        progress={{ current: index + 1, total: SCENARIOS.length }}
+        heading={scenario.label}
+        meta={
+          <Badge variant="secondary" className="tabular-nums">
+            Missions {missions.done}/{missions.total}
+          </Badge>
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              className={barButton}
+              onClick={() => open(index - 1)}
+              disabled={index === 0}
+              aria-label="Previous scenario"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={barButton}
+              onClick={() => open(index + 1)}
+              disabled={index === SCENARIOS.length - 1}
+              aria-label="Next scenario"
+            >
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </>
+        }
+        goal={
+          missions.complete ? (
+            'Missions done. Keep asking your own questions in any scenario.'
+          ) : (
+            <>
+              {missions.current?.label}.{' '}
+              <span className="hidden sm:inline">{missions.current?.hint}</span>
+            </>
+          )
+        }
+      />
+
+      <SimAnnouncer message={`${answer.allowed ? 'Allowed' : 'Denied'}. ${answer.summary}`} />
+
+      {missions.complete && !dismissed ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You found where each binding applies and where it does not: a RoleBinding keeps even a ClusterRole inside its namespace, cluster-scoped resources need a ClusterRoleBinding, and nothing ever takes a permission away."
+          stats={[
+            { label: 'Missions', value: `${missions.done}/${missions.total}` },
+            { label: 'Scenarios opened', value: `${visited.size}/${SCENARIOS.length}` },
+          ]}
+          actions={
+            <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+              Keep exploring
+            </Button>
+          }
+          onPlayAgain={startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimStage
+          columns="lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)_minmax(0,1.25fr)]"
+          minHeight="min-h-[26rem]"
+          tab={tab}
+          onTabChange={(t) => setTab(t as Tab)}
+          anchorRef={tabsRef}
+          tabsLabel="RBAC panels"
+          tabOrder={['ask', 'cluster', 'scenario']}
+          panels={[
+            { id: 'scenario', label: 'Missions', content: scenarioPanel },
+            { id: 'cluster', label: 'Cluster', content: clusterPanel },
+            {
+              id: 'ask',
+              label: 'Ask',
+              content: askPanel('d'),
+              mobile: (
+                <>
+                  {lesson}
+                  {askPanel('m')}
+                </>
+              ),
+            },
+          ]}
+        />
+      )}
+    </SimFrame>
   );
 }
