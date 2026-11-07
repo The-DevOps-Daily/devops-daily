@@ -96,3 +96,20 @@ describe('toJsonLd', () => {
     expect(JSON.parse(out)).toEqual({ name: 'x</script><img src=x onerror=alert(1)>', amp: 'a&b' });
   });
 });
+
+describe('parseMarkdown video', () => {
+  it('keeps a click-to-play video with a poster and an mp4 source', () => {
+    const html = parseMarkdown(
+      '<figure>\n<video controls preload="none" playsinline width="1280" height="720" poster="/v/poster.jpg"><source src="/v/clip.mp4" type="video/mp4"></video>\n</figure>'
+    );
+    expect(html).toContain('<video controls preload="none" playsinline width="1280" height="720" poster="/v/poster.jpg">');
+    expect(html).toContain('<source src="/v/clip.mp4" type="video/mp4" />');
+  });
+
+  it('drops autoplay, handlers and unsafe sources', () => {
+    const html = parseMarkdown(
+      '<video autoplay onplay="alert(1)" poster="javascript:alert(2)" src="http://evil.example/a.mp4"><source src="data:video/mp4;base64,AAAA" type="video/mp4"></video>'
+    );
+    expect(html).not.toMatch(/autoplay|onplay|javascript:|data:|evil\.example/i);
+  });
+});

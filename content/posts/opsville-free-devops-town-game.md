@@ -23,7 +23,12 @@ tags:
 
 Opsville is a small pixel-art town where every district is broken, and you are the one on call. It is free, it runs in your browser, and it is live today at [devops-daily.com/opsville](https://devops-daily.com/opsville/). Most quests open one of the simulators from our [simulators page](/simulators), then ask you three questions from our quiz bank. Fix all eight districts and the town gets its Launch Day.
 
-This post covers the game first, then how we built it.
+This post covers the game first, then how we built it. Here is the 30-second trailer:
+
+<figure>
+<video controls preload="none" playsinline width="1280" height="720" poster="/images/posts/opsville-free-devops-town-game/trailer-poster.jpg"><source src="/images/posts/opsville-free-devops-town-game/trailer.mp4" type="video/mp4"></video>
+<figcaption>The Opsville trailer, recorded in the game.</figcaption>
+</figure>
 
 ![The Opsville title screen in front of a pixel skyline of the town's buildings](../../public/images/posts/opsville-free-devops-town-game/title-skyline.webp)
 
