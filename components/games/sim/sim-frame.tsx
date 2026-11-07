@@ -368,10 +368,12 @@ export function SimStage({
     <>
       <div
         className={cn('hidden grid-rows-[minmax(0,1fr)] gap-2.5 lg:grid', minHeight, columns)}
-        // As tall as the content, at most the screen under the sticky bar. --sim-embed-pad
-        // is the embed route's own padding, 0 on the game page.
+        // As tall as the content, at most the screen under the sticky bar and any part
+        // of the site header still in view. 28px: the gap under the bar, the frame's
+        // gap under the stage and 12px of room when the game top is just in view.
+        // --sim-embed-pad is the embed route's own padding, 0 on the game page.
         style={{
-          maxHeight: `calc(100dvh - var(--site-header-h, 0px) - var(--sim-embed-pad, 0px) - ${barHeight + 16}px)`,
+          maxHeight: `calc(100dvh - max(var(--site-header-h, 0px), var(--site-header-visible, 0px)) - var(--sim-embed-pad, 0px) - ${barHeight + 28}px)`,
         }}
       >
         {panels.map((p) =>

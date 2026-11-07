@@ -96,7 +96,7 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
         <Breadcrumb items={breadcrumbItems} />
 
         <div className="max-w-6xl mx-auto">
-          <GenericQuiz quizConfig={quizConfig} />
+          <GenericQuiz quizConfig={quizConfig} detailsOnPage />
 
           {/* Quiz Description Section */}
           <div className="max-w-4xl mx-auto mt-12">
@@ -140,30 +140,6 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
                   <p className="text-xl font-bold">{quizConfig.questions.length}</p>
                 </div>
               </div>
-
-              {/* Difficulty Breakdown */}
-              {quizConfig.metadata.difficultyLevels && (
-                <div className="p-6 mb-8 border rounded-lg bg-muted/30">
-                  <h2 className="mb-4 text-xl font-semibold">Difficulty Breakdown</h2>
-                  <div className="flex flex-wrap gap-4">
-                    {quizConfig.metadata.difficultyLevels.beginner > 0 && (
-                      <span className="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 rounded-full dark:bg-green-900/30 dark:text-green-300">
-                        {quizConfig.metadata.difficultyLevels.beginner} Beginner
-                      </span>
-                    )}
-                    {quizConfig.metadata.difficultyLevels.intermediate > 0 && (
-                      <span className="px-3 py-1 text-sm font-medium text-yellow-700 bg-yellow-100 rounded-full dark:bg-yellow-900/30 dark:text-yellow-300">
-                        {quizConfig.metadata.difficultyLevels.intermediate} Intermediate
-                      </span>
-                    )}
-                    {quizConfig.metadata.difficultyLevels.advanced > 0 && (
-                      <span className="px-3 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-full dark:bg-red-900/30 dark:text-red-300">
-                        {quizConfig.metadata.difficultyLevels.advanced} Advanced
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
 
               {/* Category-specific tips based on quiz configuration */}
               {quizConfig.category && (
