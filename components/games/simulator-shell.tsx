@@ -10,6 +10,8 @@ import { SimulatorExplainer } from '@/components/games/simulator-explainer';
 import { getSimulatorExplainer } from '@/lib/games-seo-content';
 import { CarbonAds } from '@/components/carbon-ads';
 import { getGameById, getActiveGames } from '@/lib/games';
+import { pickRelatedGames, simGameInfo } from '@/lib/games/sim-game-info';
+import { SimGameProvider } from '@/components/games/sim/sim-game';
 import { cn } from '@/lib/utils';
 
 interface SimulatorShellProps {
@@ -69,15 +71,7 @@ export async function SimulatorShell({
   // active game so even niche categories have a "try next" list. Excludes
   // the current game and anything coming-soon.
   const allGames = await getActiveGames();
-  const sameCategory = game?.category
-    ? allGames.filter(
-        (g) => g.id !== slug && g.category === game.category,
-      )
-    : [];
-  const otherGames = allGames.filter(
-    (g) => g.id !== slug && !sameCategory.includes(g),
-  );
-  const relatedGames = [...sameCategory, ...otherGames].slice(0, 3);
+  const relatedGames = pickRelatedGames(allGames, game, slug);
 
   const shareUrl = `https://devops-daily.com${href}`;
   const defaultShareText = shareText ?? `Check out ${title} on DevOps Daily`;
@@ -140,8 +134,13 @@ export async function SimulatorShell({
 
           <GameSponsors />
 
-          {/* Simulator itself */}
-          <div className="w-full">{children}</div>
+          {/* Simulator itself. The provider gives the game its level, topics
+              and the first "Try next" game for its completion card. */}
+          <div className="w-full">
+            <SimGameProvider info={simGameInfo(slug, game, relatedGames)}>
+              {children}
+            </SimGameProvider>
+          </div>
 
           {/* Educational content */}
           {educational && (

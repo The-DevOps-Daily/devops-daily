@@ -3,6 +3,10 @@
 import { useSearchParams, usePathname } from 'next/navigation';
 import { EmbedBadge } from '@/components/embed';
 import { Suspense, useEffect, useState } from 'react';
+import { SimGameProvider } from '@/components/games/sim/sim-game';
+import { EmbedProvider } from '@/lib/games/embed-context';
+import { embedThemeFromSearch } from '@/lib/games/embed-theme';
+import type { SimGameInfo } from '@/lib/games/sim-game-info';
 import {
   GAME_COMPLETE_EVENT,
   OPSVILLE_CHANNEL,
@@ -16,9 +20,10 @@ interface EmbedClientProps {
   slug: string;
   title: string;
   GameComponent: React.ComponentType;
+  info?: SimGameInfo;
 }
 
-function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
+function EmbedContent({ slug, title, GameComponent, info }: EmbedClientProps) {
   const searchParams = useSearchParams();
   const theme = searchParams.get('theme') || 'dark';
   const hideTitle = searchParams.get('hideTitle') === 'true';
@@ -141,9 +146,27 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
         </div>
       )}
 
-      {/* Game content */}
-      <div className={opsvilleRequested ? 'p-2 md:p-3' : 'p-4'}>
-        <GameComponent />
+      {/* Game content. --sim-embed-pad is this padding, top plus bottom, so a
+          SimFrame stage still fits the frame. */}
+      <div
+        className={
+          opsvilleRequested
+            ? 'p-2 [--sim-embed-pad:16px] md:p-3 md:[--sim-embed-pad:24px]'
+            : 'p-4 [--sim-embed-pad:32px]'
+        }
+      >
+        <EmbedProvider
+          host={opsvilleRequested ? 'opsville' : 'other'}
+          theme={embedThemeFromSearch(`?${searchParams.toString()}`)}
+        >
+          {info ? (
+            <SimGameProvider info={info}>
+              <GameComponent />
+            </SimGameProvider>
+          ) : (
+            <GameComponent />
+          )}
+        </EmbedProvider>
       </div>
 
       {/* Attribution badge: always shown, except inside Opsville, our own game */}

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getGameById, getAllGameIds } from '@/lib/games';
 import { getGameComponent } from '@/components/games/game-component-registry';
+import { getSimGameInfo } from '@/lib/games/sim-game-info';
 import { EmbedClient } from './embed-client';
 
 interface PageProps {
@@ -39,5 +40,12 @@ export default async function EmbedGamePage({ params }: PageProps) {
     notFound();
   }
 
-  return <EmbedClient slug={slug} title={game.title} GameComponent={GameComponent} />;
+  return (
+    <EmbedClient
+      slug={slug}
+      title={game.title}
+      GameComponent={GameComponent}
+      info={await getSimGameInfo(slug)}
+    />
+  );
 }

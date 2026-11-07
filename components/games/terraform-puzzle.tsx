@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,22 +10,35 @@ import {
   CircleDot,
   ExternalLink,
   FileCode,
-  Lightbulb,
   Puzzle as PuzzleIcon,
   RotateCcw,
   Search,
   ShieldAlert,
   SquareTerminal,
   StickyNote,
-  Target,
   Trophy,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimHintButton,
+  SimHowTo,
+  SimResetButton,
+  SimStage,
+  SimTabBadge,
+  SimTerminalWindow,
+  revealTop,
+  type SimStepStatus,
+  type SimTone,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import {
   choose,
@@ -76,57 +88,61 @@ interface ViewItem {
   note?: Note;
 }
 
-const VERDICT: Record<Verdict, { label: string; tone: string; icon: LucideIcon }> = {
-  best: {
-    label: 'Best fix',
-    tone: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300',
-    icon: CircleCheck,
-  },
-  works: {
-    label: 'Works, with a catch',
-    tone: 'border-sky-500/40 bg-sky-500/10 text-sky-800 dark:text-sky-300',
-    icon: Check,
-  },
-  incomplete: {
-    label: 'Safe, but not done',
-    tone: 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300',
-    icon: CircleDot,
-  },
-  unsafe: {
-    label: 'Unsafe',
-    tone: 'border-red-500/40 bg-red-500/10 text-red-800 dark:text-red-300',
-    icon: ShieldAlert,
-  },
+const VERDICT: Record<Verdict, { label: string; tone: SimTone; icon: LucideIcon }> = {
+  best: { label: 'Best fix', tone: 'success', icon: CircleCheck },
+  works: { label: 'Works, with a catch', tone: 'warning', icon: Check },
+  incomplete: { label: 'Safe, but not done', tone: 'info', icon: CircleDot },
+  unsafe: { label: 'Unsafe', tone: 'danger', icon: ShieldAlert },
+};
+
+function verdictClass(v: Verdict): string {
+  const t = SIM_TONE[VERDICT[v].tone];
+  return `${t.surface} ${t.text}`;
+}
+
+const ACTION_TONE: Record<SimTone, string> = {
+  success: 'border-correct/50 text-correct-foreground',
+  warning: 'border-partial/50 text-partial-foreground',
+  danger: 'border-wrong/50 text-wrong-foreground',
+  info: 'border-info/50 text-info-foreground',
+  hint: 'border-hint/50 text-foreground',
 };
 
 const ACTION: Record<BindingAction, { label: string; tone: string }> = {
   none: { label: 'no change', tone: 'border-border text-muted-foreground' },
-  create: { label: 'create', tone: 'border-emerald-500/50 text-emerald-700 dark:text-emerald-400' },
-  destroy: { label: 'destroy', tone: 'border-red-500/50 text-red-700 dark:text-red-400' },
-  replace: { label: 'replace', tone: 'border-red-500/50 text-red-700 dark:text-red-400' },
-  move: { label: 'move', tone: 'border-sky-500/50 text-sky-700 dark:text-sky-400' },
-  import: { label: 'import', tone: 'border-sky-500/50 text-sky-700 dark:text-sky-400' },
-  forget: { label: 'forget', tone: 'border-amber-500/50 text-amber-700 dark:text-amber-400' },
-  untracked: { label: 'untracked', tone: 'border-amber-500/50 text-amber-700 dark:text-amber-400' },
-  conflict: { label: 'two owners', tone: 'border-red-500/50 text-red-700 dark:text-red-400' },
+  create: { label: 'create', tone: ACTION_TONE.success },
+  destroy: { label: 'destroy', tone: ACTION_TONE.danger },
+  replace: { label: 'replace', tone: ACTION_TONE.danger },
+  move: { label: 'move', tone: ACTION_TONE.info },
+  import: { label: 'import', tone: ACTION_TONE.info },
+  forget: { label: 'forget', tone: ACTION_TONE.warning },
+  untracked: { label: 'untracked', tone: ACTION_TONE.warning },
+  conflict: { label: 'two owners', tone: ACTION_TONE.danger },
 };
 
 const LINE: Record<LineTone, string> = {
-  add: 'text-emerald-400',
-  remove: 'text-red-400',
-  change: 'text-amber-300',
-  replace: 'text-fuchsia-300',
-  error: 'font-semibold text-red-400',
-  warn: 'text-amber-300',
-  muted: 'text-zinc-400',
-  plain: 'text-zinc-100',
+  add: 'text-terminal-success',
+  remove: 'text-terminal-error',
+  change: 'text-terminal-warning',
+  replace: 'font-semibold text-terminal-error',
+  error: 'font-semibold text-terminal-error',
+  warn: 'text-terminal-warning',
+  muted: 'text-terminal-muted',
+  plain: 'text-terminal-input',
+};
+
+const STEP_STATUS: Record<PuzzleStatus, SimStepStatus> = {
+  todo: 'todo',
+  started: 'started',
+  clean: 'perfect',
+  solved: 'done',
 };
 
 const STATUS_PILL: Record<PuzzleStatus, string> = {
-  todo: 'border-border text-muted-foreground hover:text-foreground',
-  started: 'border-amber-500/60 text-amber-700 dark:text-amber-400',
-  clean: 'border-emerald-600 bg-emerald-600 text-white',
-  solved: 'border-emerald-500/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+  todo: 'border-border text-muted-foreground',
+  started: 'border-partial/60 text-partial-foreground',
+  clean: 'border-correct bg-correct/25 text-correct-foreground',
+  solved: 'border-correct/50 bg-correct/10 text-correct-foreground',
 };
 
 const STATUS_LABEL: Record<PuzzleStatus, string> = {
@@ -183,18 +199,21 @@ function TerminalView({ t, wrap }: { t: Transcript; wrap: boolean }) {
   return (
     <div className="space-y-2">
       {t.note && <p className="text-xs text-muted-foreground">{t.note}</p>}
-      <div className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
-        <div className="border-b border-zinc-800 px-3 py-1.5 font-mono text-[12px] text-zinc-300">
-          <span className="select-none text-emerald-400">$ </span>
-          {t.command}
-        </div>
-        <pre className={cn('px-3 py-2 font-mono text-[11.5px] leading-[1.55]', preWrap(wrap))}>
+      <SimTerminalWindow
+        label={
+          <>
+            <span className="select-none text-terminal-prompt">$ </span>
+            {t.command}
+          </>
+        }
+      >
+        <pre className={cn('px-3 py-2 font-mono leading-[1.55]', preWrap(wrap))}>
           {t.lines.map((l, i) => (
             <span
               key={i}
               className={cn(
                 'block',
-                l.startsWith('Plan: ') ? 'font-semibold text-white' : LINE[lineTone(l)]
+                l.startsWith('Plan: ') ? 'font-semibold text-terminal-input' : LINE[lineTone(l)]
               )}
             >
               {l || ' '}
@@ -202,35 +221,32 @@ function TerminalView({ t, wrap }: { t: Transcript; wrap: boolean }) {
           ))}
         </pre>
         {t.trimmed && (
-          <div className="border-t border-zinc-800 px-3 py-1 text-[11px] text-zinc-400">
+          <div className="border-t border-terminal-border px-3 py-1 font-sans text-xs text-terminal-muted">
             The output goes on; it is cut here.
           </div>
         )}
-      </div>
+      </SimTerminalWindow>
     </div>
   );
 }
 
 function FileView({ f, wrap }: { f: SourceFile; wrap: boolean }) {
   return (
-    <div className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
-      <div className="border-b border-zinc-800 px-3 py-1.5 font-mono text-[12px] text-zinc-300">
-        {f.name}
-      </div>
-      <pre className={cn('px-3 py-2 font-mono text-[11.5px] leading-[1.55]', preWrap(wrap))}>
+    <SimTerminalWindow label={f.name}>
+      <pre className={cn('px-3 py-2 font-mono leading-[1.55]', preWrap(wrap))}>
         {f.lines.map((l, i) => (
           <span
             key={i}
             className={cn(
               'block',
-              l.trimStart().startsWith('#') ? 'text-zinc-400' : 'text-zinc-100'
+              l.trimStart().startsWith('#') ? 'text-terminal-muted' : 'text-terminal-input'
             )}
           >
             {l || ' '}
           </span>
         ))}
       </pre>
-    </div>
+    </SimTerminalWindow>
   );
 }
 
@@ -288,21 +304,24 @@ function EvidencePanel({
           <CardTitle className="flex items-center gap-2 text-base">
             <SquareTerminal className="h-4 w-4 text-primary" aria-hidden="true" /> Evidence
           </CardTitle>
-          <button
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
             onClick={() => setWrap((w) => !w)}
             aria-pressed={wrap}
             className={cn(
-              'rounded-md border px-2 py-0.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              'h-8 px-2 text-xs pointer-coarse:h-10',
               wrap ? 'border-primary bg-primary/10 text-foreground' : 'text-muted-foreground'
             )}
           >
             Wrap lines
-          </button>
+          </Button>
         </div>
         <div className="space-y-1.5" role="group" aria-label="Evidence to show">
           {groups.map((g) => (
             <div key={g} className="flex flex-wrap items-center gap-1.5">
-              <span className="w-full text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:w-auto sm:pr-1">
+              <span className="w-full text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:w-auto sm:pr-1">
                 {GROUP_LABEL[g]}
               </span>
               {items
@@ -310,10 +329,11 @@ function EvidencePanel({
                 .map((i) => (
                   <button
                     key={i.key}
+                    type="button"
                     aria-pressed={i.key === active?.key}
                     onClick={() => onSelect(i.key)}
                     className={cn(
-                      'inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 py-1 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:min-h-10',
                       i.key === active?.key
                         ? 'border-primary bg-primary/10 font-medium text-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground',
@@ -350,7 +370,7 @@ function BindingList({ rows, stateLabel }: { rows: Binding[]; stateLabel?: strin
         <li key={i} className="rounded-md border bg-background/60 p-2 text-xs">
           <span
             className={cn(
-              'mb-1 inline-block rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase',
+              'mb-1 inline-block rounded border px-1.5 py-0.5 text-xs font-semibold uppercase',
               ACTION[b.action].tone
             )}
           >
@@ -358,11 +378,11 @@ function BindingList({ rows, stateLabel }: { rows: Binding[]; stateLabel?: strin
           </span>
           <dl className="grid grid-cols-[2.75rem_minmax(0,1fr)] gap-x-2 gap-y-0.5">
             <dt className="text-muted-foreground">Code</dt>
-            <dd className="font-mono text-[11px] [overflow-wrap:anywhere]">{b.code ?? none}</dd>
+            <dd className="font-mono text-xs [overflow-wrap:anywhere]">{b.code ?? none}</dd>
             <dt className="text-muted-foreground" title={stateLabel}>
               State
             </dt>
-            <dd className="font-mono text-[11px] [overflow-wrap:anywhere]">{b.state ?? none}</dd>
+            <dd className="font-mono text-xs [overflow-wrap:anywhere]">{b.state ?? none}</dd>
             <dt className="text-muted-foreground">AWS</dt>
             <dd className="[overflow-wrap:anywhere]">{b.object ?? none}</dd>
           </dl>
@@ -386,18 +406,10 @@ function BriefPanel({
       <Card>
         <CardContent className="space-y-3 p-3 text-sm">
           <p>{p.story}</p>
-          <div className="flex gap-2 rounded-md border border-primary/30 bg-primary/5 p-2.5">
-            <Target className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <p>
-              <strong>Goal: </strong>
-              {p.goal}
-            </p>
-          </div>
           {prog.hint && (
-            <div className="flex gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5">
-              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+            <SimFeedback tone="hint">
               <p>{p.hint}</p>
-            </div>
+            </SimFeedback>
           )}
         </CardContent>
       </Card>
@@ -439,15 +451,16 @@ function BriefPanel({
               return (
                 <button
                   key={i.id}
+                  type="button"
                   onClick={() => onInspect(i.id)}
                   className={cn(
                     'flex w-full items-start gap-2 rounded-md border p-2 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    done ? 'border-emerald-500/40 bg-emerald-500/5' : 'hover:bg-muted/60'
+                    done ? 'border-correct/40 bg-correct/5' : 'hover:bg-muted/60'
                   )}
                 >
                   {done ? (
                     <CircleCheck
-                      className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground"
                       aria-hidden="true"
                     />
                   ) : i.transcript ? (
@@ -464,7 +477,7 @@ function BriefPanel({
                   <span className="min-w-0">
                     <span className="block">{i.label}</span>
                     {i.transcript && (
-                      <code className="block break-all text-[11px] text-muted-foreground">
+                      <code className="block break-all text-xs text-muted-foreground">
                         {i.transcript.command}
                       </code>
                     )}
@@ -500,25 +513,27 @@ function ResultCard({
   const option = getOption(p, result.optionId);
   return (
     <div className="space-y-3">
-      <div
+      <SimFeedback
         id={`tfp-${layout}-result`}
         tabIndex={-1}
-        className={cn('rounded-lg border p-3 focus:outline-none', v.tone)}
+        tone={v.tone}
+        icon={v.icon}
+        label={
+          <>
+            {v.label}
+            {result.explore && (
+              <span className="text-xs font-normal text-foreground/80">
+                (exploring, not scored)
+              </span>
+            )}
+          </>
+        }
       >
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold">
-          <v.icon className="h-4 w-4" aria-hidden="true" />
-          {v.label}
-          {result.explore && (
-            <span className="text-xs font-normal text-muted-foreground">
-              (exploring, not scored)
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 text-xs text-foreground/80">You picked: {option.label}</p>
-        <p className="mt-2 text-sm font-medium text-foreground">{result.outcome.summary}</p>
-        <p className="mt-1 text-sm text-foreground/90">{result.outcome.explanation}</p>
+        <p className="text-xs text-foreground/80">You picked: {option.label}</p>
+        <p className="pt-1 font-medium">{result.outcome.summary}</p>
+        <p className="text-foreground/90">{result.outcome.explanation}</p>
         {result.outcome.bindings && (
-          <details className="mt-2 text-foreground">
+          <details className="pt-1">
             <summary className="cursor-pointer select-none text-xs font-semibold">
               What it does to code, state and AWS
             </summary>
@@ -527,7 +542,7 @@ function ResultCard({
             </div>
           </details>
         )}
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <Button size="sm" variant="outline" className="lg:hidden" onClick={onShowOutput}>
             <SquareTerminal className="mr-1.5 h-4 w-4" aria-hidden="true" /> Show the output
           </Button>
@@ -537,7 +552,7 @@ function ResultCard({
             </span>
           )}
         </div>
-      </div>
+      </SimFeedback>
       {solved && (
         <div className="rounded-lg border bg-card p-3 text-sm">
           <h4 className="flex items-center gap-2 font-semibold">
@@ -551,7 +566,7 @@ function ResultCard({
                   href={d.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
+                  className="inline-flex items-center gap-1 font-medium underline decoration-primary/60 underline-offset-4 hover:decoration-primary"
                 >
                   {d.title}
                   <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -633,6 +648,7 @@ function FixPanel({
               return (
                 <li key={o.id}>
                   <button
+                    type="button"
                     onClick={() => setSelected(open ? null : o.id)}
                     aria-expanded={open}
                     className={cn(
@@ -647,8 +663,8 @@ function FixPanel({
                     {VIcon && verdict && (
                       <span
                         className={cn(
-                          'inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold',
-                          VERDICT[verdict].tone
+                          'inline-flex shrink-0 items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                          verdictClass(verdict)
                         )}
                       >
                         <VIcon className="h-3 w-3" aria-hidden="true" />
@@ -658,7 +674,7 @@ function FixPanel({
                   </button>
                   {open && (
                     <div className="mt-1.5 space-y-2 rounded-md border bg-muted/30 p-2.5">
-                      <pre className="overflow-x-auto rounded bg-background p-2 font-mono text-[12px] leading-relaxed">
+                      <pre className="overflow-x-auto rounded bg-background p-2 font-mono text-xs leading-relaxed">
                         {o.code.join('\n')}
                       </pre>
                       <Button size="sm" className="w-full" onClick={() => onTry(o.id)}>
@@ -688,6 +704,7 @@ function ResultsView({
   onRestart: () => void;
 }) {
   const s = score(game, PUZZLES);
+  const allSolved = s.solved === s.total;
   const tiles = [
     { label: 'Solved', value: `${s.solved}/${s.total}` },
     { label: 'Right on the first pick', value: `${s.clean}/${s.total}` },
@@ -695,27 +712,36 @@ function ResultsView({
     { label: 'Hints used', value: String(s.hints) },
   ];
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border bg-card p-5">
-        <h2 className="flex items-center gap-2 text-xl font-semibold">
-          <Trophy className="h-5 w-5 text-primary" aria-hidden="true" /> Your results
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {s.solved === s.total
+    <SimComplete
+      title="Your results"
+      icon={Trophy}
+      // Opsville counts the quest once every puzzle is solved, not on an early look.
+      tone={allSolved ? 'success' : 'neutral'}
+      signal={allSolved}
+      learned={allSolved ? undefined : null}
+      summary={
+        <>
+          {allSolved
             ? 'Every state is fixed.'
             : 'Some puzzles are still open. Pick one below to go back to it.'}{' '}
           An unsafe pick is one that, applied for real, would have destroyed, duplicated or reverted
           something.
-        </p>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {tiles.map((t) => (
-            <div key={t.label} className="rounded-md bg-muted/50 p-3">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">{t.label}</div>
-              <div className="font-mono text-2xl font-semibold tabular-nums">{t.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
+        </>
+      }
+      stats={tiles}
+      next={{ title: 'Terraform Basics Simulator', href: '/games/terraform-terminal-simulator' }}
+      nextLabel="Practise the basics in the Terraform Basics Simulator"
+      actions={
+        <>
+          <Button variant="outline" onClick={() => onOpen(0)}>
+            <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" /> Back to the puzzles
+          </Button>
+          <Button variant="outline" onClick={onRestart}>
+            <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" /> Start over
+          </Button>
+        </>
+      }
+    >
       <ol className="space-y-2">
         {PUZZLES.map((p, i) => {
           const prog = getProgress(game, p.id);
@@ -726,12 +752,13 @@ function ResultsView({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{i + 1}</span>
                 <button
+                  type="button"
                   onClick={() => onOpen(i)}
-                  className="font-semibold underline-offset-4 hover:underline"
+                  className="min-h-8 text-left font-semibold underline-offset-4 hover:underline"
                 >
                   {p.title}
                 </button>
-                <Badge variant="outline" className={cn('text-[10px]', STATUS_PILL[status])}>
+                <Badge variant="outline" className={cn('text-xs', STATUS_PILL[status])}>
                   {STATUS_LABEL[status]}
                 </Badge>
               </div>
@@ -745,20 +772,7 @@ function ResultsView({
           );
         })}
       </ol>
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" onClick={() => onOpen(0)}>
-          <ArrowLeft className="mr-1.5 h-4 w-4" aria-hidden="true" /> Back to the puzzles
-        </Button>
-        <Button variant="outline" onClick={onRestart}>
-          <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" /> Start over
-        </Button>
-        <Button asChild>
-          <Link href="/games/terraform-terminal-simulator">
-            Practise the basics in the Terraform Basics Simulator
-          </Link>
-        </Button>
-      </div>
-    </div>
+    </SimComplete>
   );
 }
 
@@ -770,11 +784,8 @@ export default function TerraformPuzzle() {
   const [mobileTab, setMobileTab] = useState<MobileTab>('brief');
   const [unseenEvidence, setUnseenEvidence] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [confirmReset, setConfirmReset] = useState(false);
   const [started, setStarted] = useState(false);
   const [announce, setAnnounce] = useState('');
-  const [barHeight, setBarHeight] = useState(112);
-  const barRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const evidenceRef = useRef<HTMLDivElement>(null);
   const briefRef = useRef<HTMLDivElement>(null);
@@ -789,16 +800,7 @@ export default function TerraformPuzzle() {
   const activeKey = items.some((i) => i.key === views[p.id]) ? views[p.id] : defaultKey;
   const s = score(game, PUZZLES);
   const status = puzzleStatus(prog);
-  const solved = isSolved(prog);
   const next = nextUnsolved(game, PUZZLES, game.current);
-
-  useEffect(() => {
-    const el = barRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setBarHeight(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [game.finished]);
 
   // Each puzzle starts with every column at its top.
   useEffect(() => {
@@ -809,21 +811,9 @@ export default function TerraformPuzzle() {
     evidenceRef.current?.scrollTo({ top: 0 });
   }, [activeKey]);
 
-  useEffect(() => {
-    if (!confirmReset) return;
-    const t = setTimeout(() => setConfirmReset(false), 3000);
-    return () => clearTimeout(t);
-  }, [confirmReset]);
-
   const setView = (key: string) => setViews((v) => ({ ...v, [p.id]: key }));
 
-  const scrollToTabs = () => {
-    const top = tabsRef.current?.getBoundingClientRect().top ?? 0;
-    if (top < 0) {
-      const header = document.querySelector('header')?.offsetHeight ?? 0;
-      window.scrollBy({ top: top - header });
-    }
-  };
+  const scrollToTabs = () => revealTop(tabsRef.current, { onlyIfAbove: true });
 
   const changeTab = (v: string) => {
     setMobileTab(v as MobileTab);
@@ -860,7 +850,7 @@ export default function TerraformPuzzle() {
   const onTry = (id: string) => {
     setStarted(true);
     const outcome = evaluate(p, id, prog.inspected);
-    const explore = solved;
+    const explore = isSolved(prog);
     setGame((g) => choose(g, p, id));
     setResults((r) => ({ ...r, [p.id]: { optionId: id, outcome, explore } }));
     const first = outcome.transcripts[0];
@@ -897,7 +887,6 @@ export default function TerraformPuzzle() {
     setViews({});
     setSelected(null);
     setShowHint(false);
-    setConfirmReset(false);
     setMobileTab('brief');
     setStarted(false);
   };
@@ -923,86 +912,53 @@ export default function TerraformPuzzle() {
       last={next === null}
     />
   );
+  const barButton = 'h-10 w-10 px-0 lg:h-9 lg:w-9';
 
   return (
-    <div className="space-y-3 pb-6 lg:pb-0">
-      <div
-        ref={barRef}
-        className="z-20 space-y-2 rounded-lg border bg-card p-2.5 shadow-sm lg:sticky lg:top-[var(--site-header-h,0px)] lg:transition-[top] lg:duration-200 motion-reduce:transition-none"
-      >
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <div className="flex items-center gap-2">
-            <PuzzleIcon className="h-4 w-4 text-primary" aria-hidden="true" />
-            <span className="font-semibold">Terraform State Puzzle</span>
-          </div>
-          <nav className="flex flex-wrap items-center gap-1" aria-label="Puzzles">
-            {PUZZLES.map((x, i) => {
-              const st = puzzleStatus(getProgress(game, x.id));
-              return (
-                <button
-                  key={x.id}
-                  onClick={() => open(i)}
-                  aria-current={i === game.current ? 'step' : undefined}
-                  aria-label={`Puzzle ${i + 1}: ${x.title}, ${STATUS_LABEL[st]}`}
-                  title={x.title}
-                  className={cn(
-                    'h-7 w-7 rounded-md border text-xs font-semibold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    STATUS_PILL[st],
-                    i === game.current && 'ring-2 ring-primary ring-offset-1 ring-offset-background'
-                  )}
-                >
-                  {i + 1}
-                </button>
-              );
-            })}
-          </nav>
-          <div className="ml-auto flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8"
-              onClick={onHint}
-              aria-pressed={prog.hint}
-            >
-              <Lightbulb className="mr-1.5 h-4 w-4" aria-hidden="true" /> Hint
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8"
-              onClick={() => (confirmReset ? restart() : setConfirmReset(true))}
-              aria-label={confirmReset ? 'Click again to start over' : 'Start over'}
-            >
-              <RotateCcw className="h-4 w-4" aria-hidden="true" />
-              {confirmReset && <span className="ml-1.5">Start over?</span>}
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t pt-2">
-          <span className="font-mono text-xs tabular-nums text-muted-foreground">
-            {game.current + 1}/{PUZZLES.length}
-          </span>
-          <h2 className="text-sm font-semibold sm:text-base">{p.title}</h2>
-          <Badge variant="secondary">{p.difficulty}</Badge>
-          {p.minVersion && (
-            <Badge variant="outline" title="Oldest Terraform version with the recommended fix">
-              Terraform {p.minVersion}+
-            </Badge>
-          )}
-          {status === 'clean' || status === 'solved' ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-              <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" /> {STATUS_LABEL[status]}
-            </span>
-          ) : null}
-          <div className="ml-auto flex items-center gap-2">
+    <SimFrame>
+      <SimBar
+        title="Terraform State Puzzle"
+        icon={PuzzleIcon}
+        steps={PUZZLES.map((x) => {
+          const st = puzzleStatus(getProgress(game, x.id));
+          return { title: x.title, status: STEP_STATUS[st], statusLabel: STATUS_LABEL[st] };
+        })}
+        current={game.current}
+        onStep={open}
+        stepNoun="Puzzle"
+        stepsLabel="Puzzles"
+        tools={
+          <>
+            <SimHintButton onClick={onHint} pressed={prog.hint} />
+            <SimResetButton onReset={restart} />
+          </>
+        }
+        progress={{ current: game.current + 1, total: PUZZLES.length }}
+        heading={p.title}
+        meta={
+          <>
+            <Badge variant="secondary">{p.difficulty}</Badge>
+            {p.minVersion && (
+              <Badge variant="outline" title="Oldest Terraform version with the recommended fix">
+                Terraform {p.minVersion}+
+              </Badge>
+            )}
+            {status === 'clean' || status === 'solved' ? (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-correct-foreground">
+                <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" /> {STATUS_LABEL[status]}
+              </span>
+            ) : null}
+          </>
+        }
+        actions={
+          <>
             <span className="text-xs tabular-nums text-muted-foreground">
               Solved {s.solved}/{s.total}
             </span>
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-2"
+              className={barButton}
               onClick={() => open(game.current - 1)}
               disabled={game.current === 0}
               aria-label="Previous puzzle"
@@ -1012,7 +968,7 @@ export default function TerraformPuzzle() {
             <Button
               variant="outline"
               size="sm"
-              className="h-8 px-2"
+              className={barButton}
               onClick={() => open(game.current + 1)}
               disabled={game.current === PUZZLES.length - 1}
               aria-label="Next puzzle"
@@ -1023,112 +979,101 @@ export default function TerraformPuzzle() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8"
+                className="h-10 lg:h-9"
                 onClick={() => setGame((g) => ({ ...g, finished: true }))}
               >
                 <Trophy className="mr-1.5 h-4 w-4" aria-hidden="true" /> Results
               </Button>
             )}
-          </div>
-        </div>
-
-        {!started && game.current === 0 && (
-          <p className="rounded-md bg-muted/50 px-3 py-2 text-sm">
-            Each puzzle is a broken Terraform situation from a real team. Read the plan and the
-            code, run read-only checks for free, then choose a fix. A wrong pick shows what
-            Terraform would do, and you try again.
-          </p>
-        )}
-
-        {showHint && prog.hint && (
-          <div
-            className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
-            role="status"
-          >
-            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-            <p className="flex-1">{p.hint}</p>
-            <button
-              onClick={() => setShowHint(false)}
-              className="text-muted-foreground hover:text-foreground"
-              aria-label="Dismiss hint"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      <p className="sr-only" aria-live="polite">
-        {announce}
-      </p>
-
-      <div
-        className="hidden min-h-[20rem] gap-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.7fr)_minmax(0,1fr)]"
-        style={{ height: `calc(100dvh - var(--site-header-h, 0px) - ${barHeight + 24}px)` }}
+          </>
+        }
+        goal={p.goal}
       >
-        <div
-          ref={briefRef}
-          className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
-        >
-          {brief}
-        </div>
-        <div className="min-h-0">
-          <EvidencePanel
-            items={items}
-            activeKey={activeKey}
-            onSelect={setView}
-            layout="desktop"
-            scrollRef={evidenceRef}
-          />
-        </div>
-        <div
-          ref={fixRef}
-          className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
-        >
-          {fix('desktop')}
-        </div>
-      </div>
+        <SimHowTo autoOpen={!started && game.current === 0}>
+          Each puzzle is a broken Terraform situation from a real team. Read the plan and the code,
+          run read-only checks for free, then choose a fix. A wrong pick shows what Terraform would
+          do, and you try again.
+        </SimHowTo>
+        {showHint && prog.hint && (
+          <SimFeedback
+            tone="hint"
+            role="status"
+            onDismiss={() => setShowHint(false)}
+            dismissLabel="Dismiss hint"
+          >
+            <p>{p.hint}</p>
+          </SimFeedback>
+        )}
+      </SimBar>
 
-      <div ref={tabsRef} aria-hidden="true" className="lg:hidden" />
-      <Tabs value={mobileTab} onValueChange={changeTab} className="lg:hidden">
-        <div className="sticky top-[var(--site-header-h,0px)] z-20 -mx-1 bg-background px-1 py-2 transition-[top] duration-200 motion-reduce:transition-none">
-          <TabsList className="grid w-full grid-cols-3" aria-label="Panels">
-            <TabsTrigger value="brief">Situation</TabsTrigger>
-            <TabsTrigger value="evidence" className="gap-1.5">
-              Evidence
-              {unseenEvidence && mobileTab !== 'evidence' && (
-                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">
-                  new
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="fix" className="gap-1.5">
-              Fix
-              {result && (
+      <SimAnnouncer message={announce} />
+
+      <SimStage
+        columns="lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.7fr)_minmax(0,1fr)]"
+        tab={mobileTab}
+        onTabChange={changeTab}
+        anchorRef={tabsRef}
+        panels={[
+          {
+            id: 'brief',
+            label: 'Situation',
+            content: brief,
+            mobile: (
+              <>
+                {brief}
+                <Button className="w-full" onClick={() => changeTab('fix')}>
+                  Choose a fix <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
+                </Button>
+              </>
+            ),
+            scrollRef: briefRef,
+          },
+          {
+            id: 'evidence',
+            label: 'Evidence',
+            badge: unseenEvidence && mobileTab !== 'evidence' && <SimTabBadge>new</SimTabBadge>,
+            scroll: false,
+            content: (
+              <EvidencePanel
+                items={items}
+                activeKey={activeKey}
+                onSelect={setView}
+                layout="desktop"
+                scrollRef={evidenceRef}
+              />
+            ),
+            mobile: (
+              <EvidencePanel
+                items={items}
+                activeKey={activeKey}
+                onSelect={setView}
+                layout="mobile"
+              />
+            ),
+          },
+          {
+            id: 'fix',
+            label: 'Fix',
+            badge: result && (
+              <>
                 <span
                   className={cn(
                     'h-2 w-2 rounded-full',
-                    isSolving(result.outcome.verdict) ? 'bg-emerald-500' : 'bg-amber-500'
+                    isSolving(result.outcome.verdict) ? 'bg-correct' : 'bg-partial'
                   )}
                   aria-hidden="true"
                 />
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </div>
-        <TabsContent value="brief" className="mt-1 space-y-3">
-          {brief}
-          <Button className="w-full" onClick={() => changeTab('fix')}>
-            Choose a fix <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden="true" />
-          </Button>
-        </TabsContent>
-        <TabsContent value="evidence" className="mt-1">
-          <EvidencePanel items={items} activeKey={activeKey} onSelect={setView} layout="mobile" />
-        </TabsContent>
-        <TabsContent value="fix" className="mt-1">
-          {fix('mobile')}
-        </TabsContent>
-      </Tabs>
+                <span className="sr-only">
+                  {isSolving(result.outcome.verdict) ? '(solved)' : '(try again)'}
+                </span>
+              </>
+            ),
+            content: fix('desktop'),
+            mobile: fix('mobile'),
+            scrollRef: fixRef,
+          },
+        ]}
+      />
 
       <p className="text-xs text-muted-foreground">
         All command output was recorded with Terraform {TERRAFORM_VERSION} using local stand-in
@@ -1136,6 +1081,6 @@ export default function TerraformPuzzle() {
         summaries are what Terraform printed; resource bodies are trimmed to the attributes that
         matter.
       </p>
-    </div>
+    </SimFrame>
   );
 }
