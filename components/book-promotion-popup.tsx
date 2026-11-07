@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, CheckCircle2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,8 @@ export function BookPromotionPopup() {
   const [showThankYou, setShowThankYou] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const { status, errorMsg, submit } = useNewsletterSubscribe('book_popup');
+  // The book's own page has its sign-up form and a bottom bar; the popup would cover them.
+  const onBookPage = (usePathname() ?? '').startsWith('/books/devops-survival-guide');
 
   useEffect(() => {
     // Check if user has already dismissed or subscribed
@@ -87,7 +90,7 @@ export function BookPromotionPopup() {
     }, 3000);
   };
 
-  if (!isVisible) return null;
+  if (!isVisible || onBookPage) return null;
 
   return (
     <>

@@ -3,11 +3,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BookOpen, FileText, Library, Mail, PenLine } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
+import { toJsonLd } from '@/lib/json-ld';
 import { EarlyAccessForm } from './early-access-form';
+import { LaunchBar } from './launch-bar';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
+const PAGE_PATH = '/books/devops-survival-guide';
 const IMG = '/images/books/devops-survival-guide';
 const SAMPLE_PDF = '/books/the-devops-survival-guide-sample.pdf';
 
@@ -15,33 +19,56 @@ const title = 'The DevOps Survival Guide: Practical DevOps in the Age of AI Agen
 const description =
   'Practical DevOps in the Age of AI Agents. A book on deployments, on-call, security, platforms and agents with production access. Read a free sample.';
 const ogImage = {
-  url: `${IMG}/og.jpg`,
+  url: `${IMG}/share.jpg`,
   width: 1200,
   height: 630,
-  alt: 'The DevOps Survival Guide cover next to the cast of the book and the Agent robot',
+  alt: 'The DevOps Survival Guide: Practical DevOps in the Age of AI Agents. The book stands on a white plinth next to a DevOps Daily coffee mug.',
 };
 
 export const metadata: Metadata = {
   title,
   description,
-  alternates: { canonical: '/books/devops-survival-guide' },
+  alternates: { canonical: PAGE_PATH },
   openGraph: {
     type: 'website',
     title,
     description,
-    url: '/books/devops-survival-guide',
+    url: PAGE_PATH,
     images: [ogImage],
   },
-  twitter: { card: 'summary_large_image', title, description, images: [ogImage.url] },
+  twitter: { card: 'summary_large_image', title, description, images: [ogImage] },
+};
+
+const bookSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Book',
+  '@id': `${SITE_URL}${PAGE_PATH}#book`,
+  name: 'The DevOps Survival Guide',
+  alternativeHeadline: 'Practical DevOps in the Age of AI Agents',
+  description,
+  url: `${SITE_URL}${PAGE_PATH}`,
+  image: `${SITE_URL}${IMG}/cover.webp`,
+  inLanguage: 'en',
+  author: { '@type': 'Organization', name: 'DevOps Daily', url: SITE_URL },
+  publisher: { '@type': 'Organization', name: 'DevOps Daily', url: SITE_URL },
+  bookEdition: 'First edition',
+  copyrightYear: 2026,
+  license: 'https://creativecommons.org/licenses/by-nc-nd/4.0/',
 };
 
 // Chapter titles are the book's headings; each line is quoted or trimmed from the book's text.
-const chapters: { number: string; title: string; line: string; tag?: string }[] = [
+const chapters: {
+  number: string;
+  title: string;
+  line: string;
+  sample?: boolean;
+  tag?: string;
+}[] = [
   {
     number: '00',
     title: 'Introduction',
     line: 'Producing code got cheap. Reviewing it, running it, recovering it and explaining it did not.',
-    tag: 'in the free sample',
+    sample: true,
   },
   {
     number: '01',
@@ -107,7 +134,7 @@ const chapters: { number: string; title: string; line: string; tag?: string }[] 
     number: '13',
     title: 'The Agent Has Production Access',
     line: 'Agents that can write code, call tools, and sometimes touch production.',
-    tag: 'in the free sample',
+    sample: true,
   },
   {
     number: '14',
@@ -194,6 +221,33 @@ const launchDetails = [
   { label: 'Author', value: 'DevOps Daily' },
 ];
 
+// Answers come from the book's "About This Book" page and the launch plan above.
+const faqs = [
+  {
+    question: 'What formats will it come in?',
+    answer: 'PDF and EPUB on Leanpub, and a Kindle ebook and a paperback on Amazon.',
+  },
+  {
+    question: 'How much will it cost?',
+    answer:
+      'We will announce the price at launch. The free sample is out now, and you can read it without signing up.',
+  },
+  {
+    question: 'Can I share it?',
+    answer:
+      'Yes, within the license. The text and illustrations are CC BY-NC-ND 4.0: you can share the book unchanged, for noncommercial use, with credit. The code examples are MIT, so you can copy them into your own scripts and repositories.',
+  },
+  {
+    question: 'Will the book get updates?',
+    answer: 'Corrections go into the next edition, and this page will list the errata.',
+  },
+  {
+    question: 'Does it come with templates?',
+    answer:
+      'Yes. The templates the book describes, such as the service map, the incident runbook and an AGENTS.md starter, go into a free public DevOps Daily repository after launch. This page will link to it.',
+  },
+];
+
 const primaryButton =
   'inline-flex items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90';
 const secondaryButton =
@@ -206,9 +260,14 @@ export default function DevOpsSurvivalGuidePage() {
         items={[
           { name: 'Home', url: '/' },
           { name: 'Books', url: '/books' },
-          { name: 'The DevOps Survival Guide', url: '/books/devops-survival-guide' },
+          { name: 'The DevOps Survival Guide', url: PAGE_PATH },
         ]}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: toJsonLd(bookSchema) }}
+      />
+      <FAQSchema questions={faqs} />
 
       {/* Hero */}
       <div className="relative overflow-hidden border-b border-border/50">
@@ -216,16 +275,17 @@ export default function DevOpsSurvivalGuidePage() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent"
         />
-        <div className="container mx-auto px-4 py-10 sm:py-14">
+        <div className="container mx-auto px-4 py-8 sm:py-14">
           <Breadcrumb
+            className="mx-auto max-w-5xl"
             items={[
               { label: 'Books', href: '/books' },
               { label: 'The DevOps Survival Guide', isCurrent: true },
             ]}
           />
 
-          <div className="mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[17rem_1fr] lg:grid-cols-[20rem_1fr] lg:gap-14">
-            <div className="mx-auto w-40 sm:w-52 md:w-full">
+          <div className="mx-auto grid max-w-5xl items-center gap-6 md:grid-cols-[17rem_1fr] md:gap-10 lg:grid-cols-[20rem_1fr] lg:gap-14">
+            <div className="mx-auto w-44 sm:w-52 md:w-full">
               <Image
                 src={`${IMG}/cover.webp`}
                 alt="Cover of The DevOps Survival Guide: an open, well-worn travel case packed with a map, a pager, a mug, a first-aid kit, a wrench, a network cable, a lantern and a server"
@@ -237,29 +297,30 @@ export default function DevOpsSurvivalGuidePage() {
               />
             </div>
 
-            <div className="text-center md:text-left">
-              <p className="mb-3 font-mono text-xs text-muted-foreground">
+            {/* On phones the buttons come right after the title, so they show without scrolling. */}
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
+              <p className="mb-3 hidden font-mono text-xs text-muted-foreground sm:block">
                 {'// books/devops-survival-guide'}
               </p>
               <span className="mb-5 inline-flex items-center rounded-md border border-primary/20 bg-primary/5 px-3 py-1 font-mono text-xs text-primary">
                 First edition, 2026
               </span>
-              <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+              <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-balance sm:text-5xl">
                 The DevOps Survival Guide
               </h1>
-              <p className="mt-3 text-xl font-semibold text-primary sm:text-2xl">
+              <p className="mt-3 text-xl font-semibold text-balance text-primary sm:text-2xl">
                 Practical DevOps in the Age of AI Agents
               </p>
               <p className="mt-2 italic text-muted-foreground">
                 How to stay sane, ship fast, and sleep again.
               </p>
-              <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+              <p className="order-1 mt-6 max-w-2xl leading-relaxed text-muted-foreground sm:text-lg md:order-none md:mt-5">
                 For engineers doing DevOps work now that agents are part of the team. Each chapter
                 opens with a short scenario, gives practical advice, and ends with next steps that
                 fit in an ordinary week.
               </p>
 
-              <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 font-mono text-sm text-muted-foreground md:justify-start">
+              <div className="order-1 mt-5 flex flex-wrap justify-center gap-x-6 gap-y-2 font-mono text-sm text-muted-foreground md:order-none md:mt-6 md:justify-start">
                 {[
                   { icon: BookOpen, text: '14 chapters' },
                   { icon: PenLine, text: 'By DevOps Daily' },
@@ -272,7 +333,10 @@ export default function DevOpsSurvivalGuidePage() {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap justify-center gap-3 md:justify-start">
+              <div
+                id="hero-actions"
+                className="mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:justify-center md:mt-8 md:justify-start"
+              >
                 <Link href="#early-access" className={primaryButton}>
                   <Mail className="h-4 w-4" strokeWidth={1.5} />
                   Get it at launch
@@ -291,6 +355,19 @@ export default function DevOpsSurvivalGuidePage() {
       </div>
 
       <div className="container mx-auto px-4">
+        <SectionSeparator command="cat who-its-for.md" />
+        <section className="mx-auto max-w-5xl">
+          <SectionHeader label="readers" title="Who it's for" />
+          <div className="grid gap-4 sm:grid-cols-3">
+            {readers.map((reader) => (
+              <div key={reader.title} className="rounded-md border border-border bg-card p-5">
+                <p className="mb-2 font-medium">{reader.title}</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">{reader.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         <SectionSeparator command="cat table-of-contents.md" />
         <section className="mx-auto max-w-5xl">
           <SectionHeader
@@ -298,23 +375,36 @@ export default function DevOpsSurvivalGuidePage() {
             title="What's in the book"
             description='Chapters 1 to 14 each open with a short scenario and end with "Your Next Steps".'
           />
-          <ol className="grid gap-3 sm:grid-cols-2">
+          {/* Columns, so the list reads top to bottom like a book's contents page. */}
+          <ol className="gap-x-12 sm:columns-2">
             {chapters.map((chapter) => (
               <li
                 key={chapter.title}
-                className="flex gap-4 rounded-md border border-border bg-card p-4"
+                className="flex break-inside-avoid gap-4 border-b border-border py-4"
               >
                 <span className="w-6 shrink-0 pt-0.5 font-mono text-sm tabular-nums text-primary">
                   {chapter.number}
                 </span>
                 <div className="min-w-0">
-                  <p className="font-medium leading-snug">{chapter.title}</p>
+                  <p className="font-medium leading-snug">
+                    {chapter.title}
+                    {chapter.sample && (
+                      <a
+                        href={SAMPLE_PDF}
+                        target="_blank"
+                        rel="noopener"
+                        className="ml-2 inline-block rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 align-middle font-mono text-xs font-normal text-primary transition-colors hover:border-primary/50"
+                      >
+                        free sample
+                      </a>
+                    )}
+                    {chapter.tag && (
+                      <span className="ml-2 inline-block rounded-md border border-border px-2 py-0.5 align-middle font-mono text-xs font-normal text-muted-foreground">
+                        {chapter.tag}
+                      </span>
+                    )}
+                  </p>
                   <p className="mt-1 text-sm text-muted-foreground">{chapter.line}</p>
-                  {chapter.tag && (
-                    <span className="mt-2 inline-block rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 font-mono text-xs text-primary">
-                      {chapter.tag}
-                    </span>
-                  )}
                 </div>
               </li>
             ))}
@@ -331,16 +421,31 @@ export default function DevOpsSurvivalGuidePage() {
           </dl>
         </section>
 
-        <SectionSeparator command="cat who-its-for.md" />
+        <SectionSeparator command="open sample.pdf" />
         <section className="mx-auto max-w-5xl">
-          <SectionHeader label="readers" title="Who it's for" />
-          <div className="grid gap-4 sm:grid-cols-3">
-            {readers.map((reader) => (
-              <div key={reader.title} className="rounded-md border border-border bg-card p-5">
-                <p className="mb-2 font-medium">{reader.title}</p>
-                <p className="text-sm leading-relaxed text-muted-foreground">{reader.text}</p>
-              </div>
-            ))}
+          <div className="flex flex-col gap-5 rounded-md border border-primary/30 bg-primary/5 p-6 sm:flex-row sm:items-center sm:gap-6 sm:p-8">
+            <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-md border border-primary/20 bg-background sm:flex">
+              <FileText className="h-6 w-6 text-primary" strokeWidth={1.5} />
+            </div>
+            <div className="flex-1">
+              <p className="mb-1 font-mono text-xs text-muted-foreground">{'// free sample'}</p>
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
+                Read the introduction and chapter 13
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                29 pages, including all of The Agent Has Production Access. PDF, 1.5 MB. No sign-up
+                needed.
+              </p>
+            </div>
+            <a
+              href={SAMPLE_PDF}
+              target="_blank"
+              rel="noopener"
+              className={`${primaryButton} shrink-0`}
+            >
+              <FileText className="h-4 w-4" strokeWidth={1.5} />
+              Read a free sample
+            </a>
           </div>
         </section>
 
@@ -381,28 +486,17 @@ export default function DevOpsSurvivalGuidePage() {
           </div>
         </section>
 
-        <SectionSeparator command="open sample.pdf" />
+        <SectionSeparator command="cat faq.md" />
         <section className="mx-auto max-w-5xl">
-          <div className="flex flex-col gap-5 rounded-md border border-border bg-card p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="mb-1 font-mono text-xs text-muted-foreground">{'// free sample'}</p>
-              <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
-                Read the introduction and chapter 13
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                29 pages, including all of The Agent Has Production Access. PDF, 1.5 MB.
-              </p>
-            </div>
-            <a
-              href={SAMPLE_PDF}
-              target="_blank"
-              rel="noopener"
-              className={`${primaryButton} shrink-0`}
-            >
-              <FileText className="h-4 w-4" strokeWidth={1.5} />
-              Read a free sample
-            </a>
-          </div>
+          <SectionHeader label="faq" title="Questions" />
+          <dl className="grid gap-x-12 gap-y-6 sm:grid-cols-2">
+            {faqs.map((faq) => (
+              <div key={faq.question}>
+                <dt className="font-medium">{faq.question}</dt>
+                <dd className="mt-1 text-sm leading-relaxed text-muted-foreground">{faq.answer}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       </div>
 
@@ -456,6 +550,8 @@ export default function DevOpsSurvivalGuidePage() {
           </div>
         </div>
       </section>
+
+      <LaunchBar samplePdf={SAMPLE_PDF} />
     </>
   );
 }
