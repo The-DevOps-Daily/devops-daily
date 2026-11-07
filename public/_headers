@@ -48,8 +48,11 @@
   Cache-Control: public, max-age=3600
 
 /opsville/maps/*
-  Cache-Control: public, max-age=3600
+  Cache-Control: no-cache
 
 /opsville/sponsors.json
+  Cache-Control: no-cache
+
+/opsville/version.json
   Cache-Control: no-cache
 # opsville:end

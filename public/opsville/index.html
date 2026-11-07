@@ -14,8 +14,8 @@
     <link rel="canonical" href="https://devops-daily.com/opsville/" />
     <meta property="og:image" content="https://devops-daily.com/opsville/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <script type="module" crossorigin src="/opsville/assets/index-DXqx3Dod.js"></script>
-    <link rel="stylesheet" crossorigin href="/opsville/assets/index-BkWDN-7W.css">
+    <script type="module" crossorigin src="/opsville/assets/index-DXwL28jI.js"></script>
+    <link rel="stylesheet" crossorigin href="/opsville/assets/index-BKrgmqD8.css">
   </head>
   <body class="title-open">
     <div id="game" aria-hidden="true"></div>
@@ -37,6 +37,7 @@
         <button id="btn-help" type="button">Help <kbd>H</kbd></button>
         <button id="btn-map" type="button" aria-pressed="false">Map <kbd>M</kbd></button>
         <button id="btn-feedback" type="button">Feedback</button>
+        <button id="btn-emote-hud" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="emote-menu">Emote</button>
         <button id="btn-chat" type="button" hidden>Chat <kbd>C</kbd></button>
       </nav>
     </header>
@@ -50,8 +51,9 @@
       <button id="btn-emote" class="small-touch emote-btn" type="button">Emote</button>
       <button id="btn-photo" class="small-touch photo-btn" type="button">Photo</button>
       <button id="btn-chat-touch" class="small-touch chat-btn" type="button" hidden>Chat</button>
-      <div id="emote-menu" class="emote-menu" hidden></div>
     </div>
+    <!-- Outside the touch controls, so the desktop HUD's Emote button can open it too. -->
+    <div id="emote-menu" class="emote-menu" hidden></div>
 
     <section id="title" class="title" aria-labelledby="title-heading">
       <canvas id="title-sky" class="title-sky" aria-hidden="true"></canvas>
