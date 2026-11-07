@@ -72,6 +72,8 @@ export interface SimTerminalProps {
   lines: SimTerminalLine[];
   /** The prompt before input lines and the input: "$", "shop=#", "test>". */
   prompt?: string;
+  /** The prompt before past input lines, when it differs from the live one ("shop=*#"). */
+  linePrompt?: string;
   value: string;
   onChange: (value: string) => void;
   onSubmit: (value: string) => void;
@@ -107,6 +109,7 @@ export function SimTerminal({
   status,
   lines,
   prompt = '$',
+  linePrompt = prompt,
   value,
   onChange,
   onSubmit,
@@ -145,9 +148,13 @@ export function SimTerminal({
   }, [lines]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    // An empty prompt lets Tab and Shift+Tab move focus on; Escape belongs to the page.
+    // An empty prompt lets Tab and Shift+Tab move focus on. Escape leaves the
+    // prompt, so the next Tab moves on even with a command typed.
     if (event.key === 'Tab' && (event.shiftKey || !value.trim())) return;
-    if (event.key === 'Escape') return;
+    if (event.key === 'Escape') {
+      event.currentTarget.blur();
+      return;
+    }
     onKeyDown?.(event);
   };
 
@@ -171,10 +178,20 @@ export function SimTerminal({
         }}
       >
         {lines.map((line, i) => (
-          <div key={i} className={cn('whitespace-pre', LINE_CLASS[line.type])}>
+          <div
+            key={i}
+            className={cn(
+              // Command output keeps its columns (tables, plans) and scrolls sideways;
+              // commands and messages wrap, so a phone never scrolls to read a sentence.
+              line.type === 'output'
+                ? 'whitespace-pre'
+                : 'whitespace-pre-wrap [overflow-wrap:anywhere]',
+              LINE_CLASS[line.type]
+            )}
+          >
             {line.type === 'input' && (
               <span className="select-none text-terminal-prompt" aria-hidden="true">
-                {prompt}{' '}
+                {linePrompt}{' '}
               </span>
             )}
             {line.content || ' '}

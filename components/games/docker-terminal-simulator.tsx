@@ -3,32 +3,35 @@
 import React, { useCallback, useRef, useState } from 'react';
 import {
   BookOpen,
-  CheckCircle,
-  ChevronRight,
   Container,
   Cpu,
   Database,
   FileText,
   HardDrive,
-  Lightbulb,
+  ListChecks,
   Network,
   Play,
-  RotateCcw,
   Server,
   Square,
-  Terminal,
-  Trophy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { cn } from '@/lib/utils';
 import {
-  useTerminalSimulator,
-  type ExecuteResult,
-  type TerminalLine,
-} from '@/hooks/use-terminal-simulator';
+  LAB_TERMINAL_HEIGHT,
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+} from '@/components/games/sim';
+import { cn } from '@/lib/utils';
+import { useTerminalSimulator, type ExecuteResult } from '@/hooks/use-terminal-simulator';
 
 type ContainerStatus = 'running' | 'exited' | 'created';
 
@@ -91,7 +94,6 @@ interface LessonCommand {
   expectedCommand: string | string[];
   explanation: string;
 }
-
 
 const REGISTRY_IMAGES: Record<string, DockerImage> = {
   'hello-world:latest': {
@@ -209,7 +211,7 @@ const createInitialState = (): DockerDaemonState => ({
   composeRunning: false,
 });
 
-const LESSONS: Lesson[] = [
+export const LESSONS: Lesson[] = [
   {
     id: 'daemon',
     title: 'Docker Daemon Basics',
@@ -253,7 +255,8 @@ const LESSONS: Lesson[] = [
     icon: <Container className="h-5 w-5" />,
     commands: [
       {
-        instruction: 'Run NGINX in the background as a container named web, publishing host port 8080 to container port 80.',
+        instruction:
+          'Run NGINX in the background as a container named web, publishing host port 8080 to container port 80.',
         hint: 'Use "docker run -d --name web -p 8080:80 nginx:alpine".',
         expectedCommand: [
           'docker run -d --name web -p 8080:80 nginx:alpine',
@@ -337,7 +340,10 @@ const LESSONS: Lesson[] = [
       {
         instruction: 'Build the sample API image and tag it as devops-api:1.0.',
         hint: 'Use "docker build -t devops-api:1.0 .".',
-        expectedCommand: ['docker build -t devops-api:1.0 .', 'docker image build -t devops-api:1.0 .'],
+        expectedCommand: [
+          'docker build -t devops-api:1.0 .',
+          'docker image build -t devops-api:1.0 .',
+        ],
         explanation:
           'A tag gives the image a human-friendly name. Without tags, you end up chasing image IDs.',
       },
@@ -367,11 +373,11 @@ const LESSONS: Lesson[] = [
         instruction: 'Create an application bridge network.',
         hint: 'Use "docker network create appnet".',
         expectedCommand: 'docker network create appnet',
-        explanation:
-          'User-defined bridge networks provide service-name DNS between containers.',
+        explanation: 'User-defined bridge networks provide service-name DNS between containers.',
       },
       {
-        instruction: 'Run PostgreSQL on appnet using the pgdata volume and a password environment variable.',
+        instruction:
+          'Run PostgreSQL on appnet using the pgdata volume and a password environment variable.',
         hint: 'Use "docker run -d --name db --network appnet -v pgdata:/var/lib/postgresql/data -e POSTGRES_PASSWORD=secret postgres:16-alpine".',
         expectedCommand: [
           'docker run -d --name db --network appnet -v pgdata:/var/lib/postgresql/data -e POSTGRES_PASSWORD=secret postgres:16-alpine',
@@ -468,15 +474,18 @@ function idFromName(name: string, salt: number) {
 }
 
 function formatImageTable(images: DockerImage[]) {
-  const rows = images.map((image) =>
-    `${image.repository.padEnd(18)} ${image.tag.padEnd(12)} ${image.id.padEnd(14)} ${image.created.padEnd(14)} ${image.size}`
+  const rows = images.map(
+    (image) =>
+      `${image.repository.padEnd(18)} ${image.tag.padEnd(12)} ${image.id.padEnd(14)} ${image.created.padEnd(14)} ${image.size}`
   );
 
   return ['REPOSITORY         TAG          IMAGE ID       CREATED        SIZE', ...rows].join('\n');
 }
 
 function formatContainerTable(containers: DockerContainer[], all = false) {
-  const visible = all ? containers : containers.filter((container) => container.status === 'running');
+  const visible = all
+    ? containers
+    : containers.filter((container) => container.status === 'running');
 
   if (visible.length === 0) {
     return 'CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES';
@@ -491,26 +500,32 @@ function formatContainerTable(containers: DockerContainer[], all = false) {
     return `${container.id.slice(0, 12).padEnd(14)} ${container.image.padEnd(22)} ${container.command.padEnd(18)} ${container.created.padEnd(14)} ${status.padEnd(20)} ${(container.ports.join(', ') || '-').padEnd(18)} ${container.name}`;
   });
 
-  return ['CONTAINER ID   IMAGE                  COMMAND            CREATED        STATUS               PORTS              NAMES', ...rows].join('\n');
+  return [
+    'CONTAINER ID   IMAGE                  COMMAND            CREATED        STATUS               PORTS              NAMES',
+    ...rows,
+  ].join('\n');
 }
 
 function formatNetworks(networks: DockerNetwork[]) {
   return [
     'NETWORK ID     NAME      DRIVER    SCOPE',
-    ...networks.map((network, index) =>
-      `${String(8_100 + index).padEnd(14)} ${network.name.padEnd(9)} ${network.driver.padEnd(9)} local`
+    ...networks.map(
+      (network, index) =>
+        `${String(8_100 + index).padEnd(14)} ${network.name.padEnd(9)} ${network.driver.padEnd(9)} local`
     ),
   ].join('\n');
 }
 
 function formatVolumes(volumes: DockerVolume[]) {
   if (volumes.length === 0) return 'DRIVER    VOLUME NAME';
-  return ['DRIVER    VOLUME NAME', ...volumes.map((volume) => `local     ${volume.name}`)].join('\n');
+  return ['DRIVER    VOLUME NAME', ...volumes.map((volume) => `local     ${volume.name}`)].join(
+    '\n'
+  );
 }
 
 function statusColor(status: ContainerStatus) {
-  if (status === 'running') return 'text-emerald-500';
-  if (status === 'created') return 'text-yellow-500';
+  if (status === 'running') return 'text-correct-foreground';
+  if (status === 'created') return 'text-partial-foreground';
   return 'text-muted-foreground';
 }
 
@@ -542,7 +557,9 @@ export default function DockerTerminalSimulator() {
   const [dockerState, setDockerState] = useState<DockerDaemonState>(createInitialState);
   const idCounter = useRef(1);
 
-  const runningContainers = dockerState.containers.filter((container) => container.status === 'running');
+  const runningContainers = dockerState.containers.filter(
+    (container) => container.status === 'running'
+  );
 
   const findContainer = useCallback(
     (nameOrId: string) =>
@@ -651,7 +668,8 @@ Status: Downloaded newer image for ${imageRef}
         return `docker: Error response from daemon: network ${network} not found.`;
       }
 
-      const containerName = name || `${image.repository.replace(/[^\w-]/g, '-')}-${idCounter.current}`;
+      const containerName =
+        name || `${image.repository.replace(/[^\w-]/g, '-')}-${idCounter.current}`;
       const id = idFromName(containerName, idCounter.current);
       idCounter.current += 1;
 
@@ -675,7 +693,8 @@ Status: Downloaded newer image for ${imageRef}
         id,
         name: containerName,
         image: imageRef,
-        command: command || (image.repository === 'nginx' ? 'nginx -g daemon off;' : '/entrypoint.sh'),
+        command:
+          command || (image.repository === 'nginx' ? 'nginx -g daemon off;' : '/entrypoint.sh'),
         status: detached ? 'running' : 'exited',
         created: 'Less than a second ago',
         ports,
@@ -785,7 +804,10 @@ Server:
         }
 
         case 'ps':
-          return formatContainerTable(dockerState.containers, rest.includes('-a') || rest.includes('--all'));
+          return formatContainerTable(
+            dockerState.containers,
+            rest.includes('-a') || rest.includes('--all')
+          );
 
         case 'run':
           return runContainer(rest);
@@ -978,8 +1000,9 @@ Successfully tagged ${tag}`;
           if (!image) return `Error response from daemon: No such image: ${ref}`;
           return [
             'IMAGE          CREATED          CREATED BY                         SIZE',
-            ...image.layers.map((layer, index) =>
-              `${image.id.slice(0, 12).padEnd(14)} ${`${index + 1} minutes ago`.padEnd(16)} ${layer.padEnd(34)} ${index === 0 ? image.size : '<missing>'}`
+            ...image.layers.map(
+              (layer, index) =>
+                `${image.id.slice(0, 12).padEnd(14)} ${`${index + 1} minutes ago`.padEnd(16)} ${layer.padEnd(34)} ${index === 0 ? image.size : '<missing>'}`
             ),
           ].join('\n');
         }
@@ -1055,162 +1078,169 @@ See 'docker --help'.`;
   );
 
   function executeComposeCommand(args: string[]) {
-      const action = args[0];
+    const action = args[0];
 
-      if (action === 'up') {
-        const detached = args.includes('-d') || args.includes('--detach');
-        const apiExists = dockerState.containers.some((container) => container.name === 'docker-sim-api-1');
-        const dbExists = dockerState.containers.some((container) => container.name === 'docker-sim-db-1');
+    if (action === 'up') {
+      const detached = args.includes('-d') || args.includes('--detach');
+      const apiExists = dockerState.containers.some(
+        (container) => container.name === 'docker-sim-api-1'
+      );
+      const dbExists = dockerState.containers.some(
+        (container) => container.name === 'docker-sim-db-1'
+      );
 
-        setDockerState((prev) => {
-          const images = [...prev.images];
-          for (const ref of ['devops-api:1.0', 'postgres:16-alpine']) {
-            if (!images.some((image) => imageName(image) === ref)) {
-              const registryImage = REGISTRY_IMAGES[ref];
-              if (registryImage) images.push(cloneImage(registryImage));
-            }
+      setDockerState((prev) => {
+        const images = [...prev.images];
+        for (const ref of ['devops-api:1.0', 'postgres:16-alpine']) {
+          if (!images.some((image) => imageName(image) === ref)) {
+            const registryImage = REGISTRY_IMAGES[ref];
+            if (registryImage) images.push(cloneImage(registryImage));
           }
+        }
 
-          if (!images.some((image) => imageName(image) === 'devops-api:1.0')) {
-            images.push({
-              repository: 'devops-api',
-              tag: '1.0',
-              id: 'cafe42f00d11',
-              created: 'Less than a second ago',
-              size: '189MB',
-              description: 'Sample Node.js API image built from the tutorial Dockerfile.',
-              layers: ['FROM node:20-alpine', 'WORKDIR /app', 'COPY app', 'CMD node server.js'],
-            });
-          }
+        if (!images.some((image) => imageName(image) === 'devops-api:1.0')) {
+          images.push({
+            repository: 'devops-api',
+            tag: '1.0',
+            id: 'cafe42f00d11',
+            created: 'Less than a second ago',
+            size: '189MB',
+            description: 'Sample Node.js API image built from the tutorial Dockerfile.',
+            layers: ['FROM node:20-alpine', 'WORKDIR /app', 'COPY app', 'CMD node server.js'],
+          });
+        }
 
-          const networks = prev.networks.some((network) => network.name === 'appnet')
-            ? prev.networks
-            : [...prev.networks, { name: 'appnet', driver: 'bridge' as const, containers: [] }];
+        const networks = prev.networks.some((network) => network.name === 'appnet')
+          ? prev.networks
+          : [...prev.networks, { name: 'appnet', driver: 'bridge' as const, containers: [] }];
 
-          const volumes = prev.volumes.some((volume) => volume.name === 'pgdata')
-            ? prev.volumes
-            : [
-                ...prev.volumes,
-                {
-                  name: 'pgdata',
-                  mountpoint: '/var/lib/docker/volumes/pgdata/_data',
-                  usedBy: [],
-                },
-              ];
+        const volumes = prev.volumes.some((volume) => volume.name === 'pgdata')
+          ? prev.volumes
+          : [
+              ...prev.volumes,
+              {
+                name: 'pgdata',
+                mountpoint: '/var/lib/docker/volumes/pgdata/_data',
+                usedBy: [],
+              },
+            ];
 
-          const containers = [...prev.containers];
-          if (!apiExists) {
-            containers.push({
-              id: idFromName('docker-sim-api-1', idCounter.current++),
-              name: 'docker-sim-api-1',
-              image: 'devops-api:1.0',
-              command: 'node server.js',
-              status: 'running',
-              created: 'Less than a second ago',
-              ports: ['3000:3000->tcp'],
-              env: { NODE_ENV: 'production' },
-              network: 'appnet',
-              volumes: [],
-              logs: ['api listening on :3000', 'connected to db:5432', 'GET /health 200 ok'],
-              health: 'healthy',
-            });
-          }
-          if (!dbExists) {
-            containers.push({
-              id: idFromName('docker-sim-db-1', idCounter.current++),
-              name: 'docker-sim-db-1',
-              image: 'postgres:16-alpine',
-              command: 'docker-entrypoint.sh postgres',
-              status: 'running',
-              created: 'Less than a second ago',
-              ports: ['5432/tcp'],
-              env: { POSTGRES_PASSWORD: 'secret' },
-              network: 'appnet',
-              volumes: ['pgdata:/var/lib/postgresql/data'],
-              logs: ['database system is ready to accept connections'],
-              health: 'healthy',
-            });
-          }
+        const containers = [...prev.containers];
+        if (!apiExists) {
+          containers.push({
+            id: idFromName('docker-sim-api-1', idCounter.current++),
+            name: 'docker-sim-api-1',
+            image: 'devops-api:1.0',
+            command: 'node server.js',
+            status: 'running',
+            created: 'Less than a second ago',
+            ports: ['3000:3000->tcp'],
+            env: { NODE_ENV: 'production' },
+            network: 'appnet',
+            volumes: [],
+            logs: ['api listening on :3000', 'connected to db:5432', 'GET /health 200 ok'],
+            health: 'healthy',
+          });
+        }
+        if (!dbExists) {
+          containers.push({
+            id: idFromName('docker-sim-db-1', idCounter.current++),
+            name: 'docker-sim-db-1',
+            image: 'postgres:16-alpine',
+            command: 'docker-entrypoint.sh postgres',
+            status: 'running',
+            created: 'Less than a second ago',
+            ports: ['5432/tcp'],
+            env: { POSTGRES_PASSWORD: 'secret' },
+            network: 'appnet',
+            volumes: ['pgdata:/var/lib/postgresql/data'],
+            logs: ['database system is ready to accept connections'],
+            health: 'healthy',
+          });
+        }
 
-          return {
-            ...prev,
-            images,
-            containers,
-            networks: networks.map((network) =>
-              network.name === 'appnet'
-                ? {
-                    ...network,
-                    containers: Array.from(
-                      new Set([...network.containers, 'docker-sim-api-1', 'docker-sim-db-1'])
-                    ),
-                  }
-                : network
-            ),
-            volumes: volumes.map((volume) =>
-              volume.name === 'pgdata'
-                ? { ...volume, usedBy: Array.from(new Set([...volume.usedBy, 'docker-sim-db-1'])) }
-                : volume
-            ),
-            composeRunning: true,
-          };
-        });
+        return {
+          ...prev,
+          images,
+          containers,
+          networks: networks.map((network) =>
+            network.name === 'appnet'
+              ? {
+                  ...network,
+                  containers: Array.from(
+                    new Set([...network.containers, 'docker-sim-api-1', 'docker-sim-db-1'])
+                  ),
+                }
+              : network
+          ),
+          volumes: volumes.map((volume) =>
+            volume.name === 'pgdata'
+              ? { ...volume, usedBy: Array.from(new Set([...volume.usedBy, 'docker-sim-db-1'])) }
+              : volume
+          ),
+          composeRunning: true,
+        };
+      });
 
-        return `${detached ? '' : '[+] Running 2/2\n'} Network docker-sim_appnet  Created
+      return `${detached ? '' : '[+] Running 2/2\n'} Network docker-sim_appnet  Created
  Container docker-sim-db-1   Started
  Container docker-sim-api-1  Started`;
-      }
+    }
 
-      if (action === 'ps') {
-        const composeContainers = dockerState.containers.filter((container) =>
-          container.name.startsWith('docker-sim-')
-        );
-        if (composeContainers.length === 0) return 'NAME      IMAGE     SERVICE   STATUS    PORTS';
-        return [
-          'NAME                IMAGE                SERVICE   STATUS       PORTS',
-          ...composeContainers.map((container) =>
+    if (action === 'ps') {
+      const composeContainers = dockerState.containers.filter((container) =>
+        container.name.startsWith('docker-sim-')
+      );
+      if (composeContainers.length === 0) return 'NAME      IMAGE     SERVICE   STATUS    PORTS';
+      return [
+        'NAME                IMAGE                SERVICE   STATUS       PORTS',
+        ...composeContainers.map(
+          (container) =>
             `${container.name.padEnd(20)} ${container.image.padEnd(20)} ${container.name.includes('api') ? 'api'.padEnd(9) : 'db'.padEnd(9)} ${container.status.padEnd(12)} ${container.ports.join(', ') || '-'}`
+        ),
+      ].join('\n');
+    }
+
+    if (action === 'logs') {
+      const target = args[1];
+      const containers = dockerState.containers.filter((container) =>
+        target
+          ? container.name === `docker-sim-${target}-1` || container.name.includes(target)
+          : container.name.startsWith('docker-sim-')
+      );
+
+      return containers
+        .flatMap((container) => container.logs.map((line) => `${container.name}  | ${line}`))
+        .join('\n');
+    }
+
+    if (action === 'down') {
+      setDockerState((prev) => ({
+        ...prev,
+        containers: prev.containers.filter(
+          (container) => !container.name.startsWith('docker-sim-')
+        ),
+        networks: prev.networks
+          .filter((network) => network.name !== 'docker-sim_default')
+          .map((network) =>
+            network.name === 'appnet'
+              ? {
+                  ...network,
+                  containers: network.containers.filter((name) => !name.startsWith('docker-sim-')),
+                }
+              : network
           ),
-        ].join('\n');
-      }
+        volumes: prev.volumes.map((volume) => ({
+          ...volume,
+          usedBy: volume.usedBy.filter((name) => !name.startsWith('docker-sim-')),
+        })),
+        composeRunning: false,
+      }));
 
-      if (action === 'logs') {
-        const target = args[1];
-        const containers = dockerState.containers.filter((container) =>
-          target
-            ? container.name === `docker-sim-${target}-1` || container.name.includes(target)
-            : container.name.startsWith('docker-sim-')
-        );
-
-        return containers
-          .flatMap((container) => container.logs.map((line) => `${container.name}  | ${line}`))
-          .join('\n');
-      }
-
-      if (action === 'down') {
-        setDockerState((prev) => ({
-          ...prev,
-          containers: prev.containers.filter((container) => !container.name.startsWith('docker-sim-')),
-          networks: prev.networks
-            .filter((network) => network.name !== 'docker-sim_default')
-            .map((network) =>
-              network.name === 'appnet'
-                ? {
-                    ...network,
-                    containers: network.containers.filter((name) => !name.startsWith('docker-sim-')),
-                  }
-                : network
-            ),
-          volumes: prev.volumes.map((volume) => ({
-            ...volume,
-            usedBy: volume.usedBy.filter((name) => !name.startsWith('docker-sim-')),
-          })),
-          composeRunning: false,
-        }));
-
-        return `Container docker-sim-api-1  Removed
+      return `Container docker-sim-api-1  Removed
 Container docker-sim-db-1   Removed
 Network docker-sim_default  Removed`;
-      }
+    }
 
     return 'Usage: docker compose [up|ps|logs|down]';
   }
@@ -1265,7 +1295,8 @@ Network docker-sim_default  Removed`;
         if (target === 'package.json') {
           return {
             type: 'output',
-            output: '{\n  "scripts": { "start": "node server.js" },\n  "dependencies": { "fastify": "^5.0.0" }\n}',
+            output:
+              '{\n  "scripts": { "start": "node server.js" },\n  "dependencies": { "fastify": "^5.0.0" }\n}',
           };
         }
         return { type: 'error', output: `cat: ${target || ''}: No such file or directory` };
@@ -1291,398 +1322,246 @@ Network docker-sim_default  Removed`;
     idCounter.current = 1;
   }, []);
 
-  const {
-    currentLessonIndex,
-    currentCommandIndex,
-    currentLesson,
-    currentCommand,
-    completedCommands,
-    completedCount,
-    totalCommands,
-    progressPercentage,
-    terminalHistory,
-    inputValue,
-    setInputValue,
-    showHint,
-    setShowHint,
-    inputRef,
-    terminalRef,
-    handleSubmit,
-    handleKeyDown,
-    resetProgress,
-    jumpToLesson,
-  } = useTerminalSimulator({
+  const lab = useTerminalSimulator({
     lessons: LESSONS,
     execute: executeCommand,
     matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
     successMessage: (command) => `OK: ${command.explanation}`,
     availableCommands: AVAILABLE_COMMANDS,
     onReset,
+    // SimComplete signals Opsville, on the render that completes the last command.
+    signalOnComplete: false,
+    autoFocus: false,
   });
+  const {
+    currentCommand,
+    terminalHistory,
+    inputValue,
+    setInputValue,
+    inputRef,
+    submitCommand,
+    handleKeyDown,
+  } = lab;
+  const ui = useSimLab(lab);
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
-      <div className="mb-5 text-center" data-game-intro>
-        <div className="mb-3 flex items-center justify-center gap-2.5">
-          <Container className="h-8 w-8 text-primary" strokeWidth={1.5} />
-          <h2 className="text-2xl font-bold md:text-3xl">Docker Terminal Lab</h2>
-        </div>
-        <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-          Practice real Docker CLI workflows in a safe browser simulator. Run containers, inspect
-          logs, build images, wire up networks, persist data with volumes, and manage a Compose
-          stack without needing a local Docker daemon.
-        </p>
-      </div>
+    <SimFrame>
+      <SimLabBar
+        title="Docker Terminal Lab"
+        icon={Container}
+        lessons={LESSONS}
+        lab={lab}
+        ui={ui}
+        task={currentCommand?.instruction}
+        hint={currentCommand?.hint}
+      />
 
-      <Card className="mb-4">
-        <CardContent className="px-4 py-3">
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <span className="font-medium">Progress</span>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {completedCount}/{totalCommands} commands completed
-            </span>
-          </div>
-          <Progress value={progressPercentage} className="h-3" />
-          {progressPercentage === 100 && (
-            <p className="mt-2 text-center font-medium text-emerald-600">
-              Complete. You can now run through the lab again or experiment freely.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[270px_minmax(0,1fr)_330px]">
-        <Card>
-          <CardHeader className="p-4 pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BookOpen className="h-5 w-5" />
-              Lessons
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 p-4 pt-0">
-            {LESSONS.map((lesson, index) => {
-              const lessonCompletedCount = lesson.commands.filter((_, commandIndex) =>
-                completedCommands.has(`${lesson.id}-${commandIndex}`)
-              ).length;
-              const isComplete = lessonCompletedCount === lesson.commands.length;
-              const isCurrent = index === currentLessonIndex;
-
-              return (
-                <button
-                  key={lesson.id}
-                  onClick={() => jumpToLesson(index)}
-                  className={cn(
-                    'w-full rounded-md border p-2.5 text-left transition-colors',
-                    isCurrent
-                      ? 'border-primary/60 bg-primary/10'
-                      : 'border-transparent hover:bg-muted'
-                  )}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      {isComplete ? (
-                        <CheckCircle className="h-5 w-5 text-emerald-500" />
-                      ) : (
-                        lesson.icon
-                      )}
-                      <span className="text-sm font-medium">{lesson.title}</span>
-                    </div>
-                    <Badge variant={isComplete ? 'default' : 'secondary'}>
-                      {lessonCompletedCount}/{lesson.commands.length}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 pl-7 text-xs text-muted-foreground">{lesson.description}</p>
-                </button>
-              );
-            })}
-
-            <Button variant="outline" onClick={resetProgress} className="mt-3 w-full">
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reset Lab
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You pulled and ran images, debugged containers, built an image, wired up a network and a volume, and ran a Compose stack. You can run the lab again or keep experimenting."
+          stats={labStats(lab, LESSONS, ui)}
+          actions={
+            <Button type="button" variant="outline" onClick={ui.keepExploring}>
+              Keep exploring
             </Button>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-4">
-          {currentCommand && (
-            <Card className="border-primary/50">
-              <CardHeader className="p-4 pb-2">
-                <div className="flex items-center justify-between gap-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <ChevronRight className="h-5 w-5 text-primary" />
-                    Current Task
-                  </CardTitle>
-                  <Badge>
-                    Step {currentCommandIndex + 1}/{currentLesson.commands.length}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="mb-3 text-base">{currentCommand.instruction}</p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowHint((value) => !value)}
-                  className="text-muted-foreground"
-                >
-                  <Lightbulb className="mr-1 h-4 w-4" />
-                  {showHint ? 'Hide Hint' : 'Show Hint'}
-                </Button>
-                {showHint && (
-                  <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50 p-2.5 dark:border-yellow-800 dark:bg-yellow-950/30">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                      Hint: {currentCommand.hint}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          <Card className="border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                  </div>
-                  <span className="ml-2 text-sm text-muted-foreground">docker-lab ~/app</span>
-                </div>
-                <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-                  <span>{dockerState.images.length} images</span>
-                  <span>{runningContainers.length} running</span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                onClick={() => inputRef.current?.focus()}
-                className="h-[25rem] cursor-text overflow-y-auto p-3 font-mono text-[13px] sm:text-sm"
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <SimTerminal
+              label="docker-lab ~/app"
+              status={`${dockerState.images.length} images, ${runningContainers.length} running`}
+              lines={labLines(terminalHistory, [
+                { type: 'success', content: 'Welcome to Docker Terminal Lab.' },
+                {
+                  type: 'muted',
+                  content: 'Type "help" for available commands, or follow the task above.',
+                },
+              ])}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={submitCommand}
+              onKeyDown={handleKeyDown}
+              inputRef={inputRef}
+              autoFocus
+              heightClassName={LAB_TERMINAL_HEIGHT}
+            />
+          }
+          aside={
+            <>
+              <SimLabPanel
+                title="Docker daemon"
+                icon={Server}
+                summary={`${dockerState.containers.length} containers`}
               >
-                {terminalHistory.length === 0 && (
-                  <div className="mb-4 text-green-400">
-                    <p>Welcome to Docker Terminal Lab.</p>
-                    <p className="mt-2 text-muted-foreground">
-                      Type "help" for available commands, or follow the current task.
-                    </p>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Metric label="Images" value={dockerState.images.length} icon={<HardDrive />} />
+                    <Metric label="Running" value={runningContainers.length} icon={<Play />} />
+                    <Metric
+                      label="Networks"
+                      value={dockerState.networks.length}
+                      icon={<Network />}
+                    />
+                    <Metric
+                      label="Volumes"
+                      value={dockerState.volumes.length}
+                      icon={<Database />}
+                    />
                   </div>
-                )}
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Engine <span className="font-mono">overlay2</span>. Containers share the host
+                    kernel, isolate processes with namespaces, and persist mutable data through
+                    volumes.
+                  </p>
 
-                {terminalHistory.map((line, index) => (
-                  <div
-                    key={`${line.timestamp.getTime()}-${index}`}
-                    className={cn(
-                      'mb-1',
-                      line.type === 'input' && 'text-white',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'success' &&
-                        'my-2 rounded border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
-                    )}
-                  >
-                    {line.type === 'input' && <span className="text-green-400">$ </span>}
-                    <span className="whitespace-pre-wrap break-words">{line.content}</span>
-                  </div>
-                ))}
+                  <StateHeading>Containers</StateHeading>
+                  {dockerState.containers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No containers yet.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {dockerState.containers.map((container) => (
+                        <li key={container.id} className="rounded-md border p-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium">{container.name}</div>
+                              <div className="truncate font-mono text-xs text-muted-foreground">
+                                {container.image}
+                              </div>
+                            </div>
+                            <Badge
+                              variant={container.status === 'running' ? 'default' : 'secondary'}
+                              className="capitalize"
+                            >
+                              {container.status}
+                            </Badge>
+                          </div>
+                          <div className="mt-1.5 grid gap-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              {container.status === 'running' ? (
+                                <Play
+                                  className={cn('h-3.5 w-3.5', statusColor(container.status))}
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <Square
+                                  className={cn('h-3.5 w-3.5', statusColor(container.status))}
+                                  aria-hidden="true"
+                                />
+                              )}
+                              {container.ports.length
+                                ? container.ports.join(', ')
+                                : 'no published ports'}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Network className="h-3.5 w-3.5" aria-hidden="true" />
+                              {container.network}
+                            </div>
+                            {container.volumes.length > 0 && (
+                              <div className="flex items-center gap-2">
+                                <HardDrive className="h-3.5 w-3.5" aria-hidden="true" />
+                                {container.volumes.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="text-green-400">$ </span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(event) => setInputValue(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="ml-1 flex-1 bg-transparent text-white caret-green-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-base">Quick Reference</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  ['docker ps', 'Running containers'],
-                  ['docker logs web', 'Read stdout/stderr'],
-                  ['docker exec web sh', 'Run inside a container'],
-                  ['docker compose up -d', 'Start a stack'],
-                ].map(([command, label]) => (
-                  <div key={command} className="rounded-md bg-muted p-2">
-                    <code className="text-primary">{command}</code>
-                    <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Server className="h-5 w-5" />
-                Docker Daemon
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              <div className="grid grid-cols-2 gap-2">
-                <Metric label="Images" value={dockerState.images.length} icon={<HardDrive />} />
-                <Metric label="Running" value={runningContainers.length} icon={<Play />} />
-                <Metric label="Networks" value={dockerState.networks.length} icon={<Network />} />
-                <Metric label="Volumes" value={dockerState.volumes.length} icon={<Database />} />
-              </div>
-              <div className="rounded-md border bg-muted/40 p-2.5">
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="font-medium">Engine</span>
-                  <Badge variant="secondary">overlay2</Badge>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Containers share the host kernel, isolate processes with namespaces, and persist
-                  mutable data through volumes.
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Container className="h-5 w-5" />
-                Containers
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {dockerState.containers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No containers yet.</p>
-              ) : (
-                dockerState.containers.map((container) => (
-                  <div key={container.id} className="rounded-md border p-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-medium">{container.name}</div>
-                        <div className="text-xs text-muted-foreground">{container.image}</div>
-                      </div>
-                      <Badge
-                        variant={container.status === 'running' ? 'default' : 'secondary'}
-                        className="capitalize"
-                      >
-                        {container.status}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 grid gap-1.5 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        {container.status === 'running' ? (
-                          <Play className={cn('h-3.5 w-3.5', statusColor(container.status))} />
-                        ) : (
-                          <Square className={cn('h-3.5 w-3.5', statusColor(container.status))} />
-                        )}
-                        {container.ports.length ? container.ports.join(', ') : 'no published ports'}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Network className="h-3.5 w-3.5" />
-                        {container.network}
-                      </div>
-                      {container.volumes.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <HardDrive className="h-3.5 w-3.5" />
-                          {container.volumes.join(', ')}
+                  <StateHeading>Images</StateHeading>
+                  <ul className="space-y-1.5">
+                    {dockerState.images.map((image) => (
+                      <li key={imageName(image)} className="rounded-md border p-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <code className="font-mono text-sm font-semibold">
+                            {imageName(image)}
+                          </code>
+                          <span className="text-xs text-muted-foreground">{image.size}</span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <HardDrive className="h-5 w-5" />
-                Images
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {dockerState.images.map((image) => (
-                <div key={imageName(image)} className="rounded-md border p-2.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <code className="text-sm font-semibold text-primary">{imageName(image)}</code>
-                    <span className="text-xs text-muted-foreground">{image.size}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{image.description}</p>
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {image.layers.slice(0, 4).map((layer) => (
-                      <span
-                        key={layer}
-                        className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-                      >
-                        {layer}
-                      </span>
+                        <p className="mt-1 text-xs text-muted-foreground">{image.description}</p>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {image.layers.slice(0, 4).map((layer) => (
+                            <span
+                              key={layer}
+                              className="rounded bg-muted/50 px-1.5 py-0.5 text-xs text-muted-foreground"
+                            >
+                              {layer}
+                            </span>
+                          ))}
+                        </div>
+                      </li>
                     ))}
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                  </ul>
 
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Network className="h-5 w-5" />
-                Networks & Volumes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              <div className="space-y-2">
-                {dockerState.networks.map((network) => (
-                  <div
-                    key={network.name}
-                    className="flex items-center justify-between rounded-md border px-2.5 py-2 text-sm"
-                  >
-                    <span>{network.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {network.driver} / {network.containers.length} attached
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-2">
-                {dockerState.volumes.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No named volumes yet.</p>
-                ) : (
-                  dockerState.volumes.map((volume) => (
-                    <div
-                      key={volume.name}
-                      className="flex items-center justify-between rounded-md border px-2.5 py-2 text-sm"
-                    >
-                      <span>{volume.name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        used by {volume.usedBy.length}
-                      </span>
+                  <StateHeading>Networks and volumes</StateHeading>
+                  <ul className="space-y-1.5">
+                    {dockerState.networks.map((network) => (
+                      <li
+                        key={network.name}
+                        className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-sm"
+                      >
+                        <span>{network.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {network.driver}, {network.containers.length} attached
+                        </span>
+                      </li>
+                    ))}
+                    {dockerState.volumes.length === 0 ? (
+                      <li className="text-sm text-muted-foreground">No named volumes yet.</li>
+                    ) : (
+                      dockerState.volumes.map((volume) => (
+                        <li
+                          key={volume.name}
+                          className="flex items-center justify-between gap-2 rounded-md border px-2 py-1.5 text-sm"
+                        >
+                          <span>{volume.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            used by {volume.usedBy.length}
+                          </span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                </div>
+              </SimLabPanel>
+              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+              <SimLabPanel title="Quick reference" icon={ListChecks}>
+                <dl className="grid gap-1.5 text-sm">
+                  {QUICK_REFERENCE.map(([command, label]) => (
+                    <div key={command} className="rounded-md bg-muted/50 px-2 py-1.5">
+                      <dt className="font-mono text-xs font-semibold">{command}</dt>
+                      <dd className="text-xs text-muted-foreground">{label}</dd>
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+                  ))}
+                </dl>
+              </SimLabPanel>
+            </>
+          }
+        />
+      )}
+    </SimFrame>
+  );
+}
+
+const QUICK_REFERENCE = [
+  ['docker ps', 'Running containers'],
+  ['docker logs web', 'Read stdout/stderr'],
+  ['docker exec web sh', 'Run inside a container'],
+  ['docker compose up -d', 'Start a stack'],
+];
+
+function StateHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h4>
   );
 }
 
@@ -1693,16 +1572,17 @@ function Metric({
 }: {
   label: string;
   value: number;
-  icon: React.ReactElement<{ className?: string; strokeWidth?: number }>;
+  icon: React.ReactElement<{ className?: string; strokeWidth?: number; 'aria-hidden'?: boolean }>;
 }) {
   return (
-    <div className="rounded-md border bg-card p-2.5">
-      <div className="mb-1.5 flex items-center justify-between">
+    <div className="rounded-md bg-muted/50 px-2 py-1.5">
+      <div className="flex items-center justify-between">
         {React.cloneElement(icon, {
           className: 'h-4 w-4 text-primary',
           strokeWidth: 1.5,
+          'aria-hidden': true,
         })}
-        <span className="text-xl font-bold tabular-nums">{value}</span>
+        <span className="font-mono text-lg font-semibold tabular-nums">{value}</span>
       </div>
       <div className="text-xs text-muted-foreground">{label}</div>
     </div>

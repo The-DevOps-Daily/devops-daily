@@ -2,26 +2,24 @@
 
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
-import {
-  Boxes,
-  CheckCircle,
-  CircleDot,
-  Cloud,
-  Code2,
-  FileText,
-  Globe,
-  Lightbulb,
-  Network,
-  Play,
-  RotateCcw,
-  Server,
-  Terminal,
-  Trophy,
-} from 'lucide-react';
+import { BookOpen, Boxes, Cloud, FileText, Network, Play, Server, Terminal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  LAB_TERMINAL_HEIGHT,
+  SIM_TONE,
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import {
   useTerminalSimulator,
@@ -107,7 +105,6 @@ interface LessonCommand {
   explanation: string;
 }
 
-
 const SAMPLE_DEPLOYMENT = `apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -140,7 +137,7 @@ spec:
     - port: 80
       targetPort: 80`;
 
-const LESSONS: Lesson[] = [
+export const LESSONS: Lesson[] = [
   {
     id: 'cluster',
     title: 'Cluster Basics',
@@ -439,7 +436,8 @@ function splitCommand(input: string): string[] {
 }
 
 function commandMatches(cmd: string, expected: string | string[]) {
-  const normalize = (value: string) => value.trim().replace(/\s+/g, ' ').replace(/^k\s+/, 'kubectl ');
+  const normalize = (value: string) =>
+    value.trim().replace(/\s+/g, ' ').replace(/^k\s+/, 'kubectl ');
   const normalized = normalize(cmd);
 
   if (Array.isArray(expected)) {
@@ -509,8 +507,9 @@ function getFlagValue(args: string[], flag: string) {
 function formatNodes(nodes: KubeNode[]) {
   return [
     'NAME              STATUS   ROLES           AGE   VERSION',
-    ...nodes.map((node) =>
-      `${node.name.padEnd(17)} ${node.status.padEnd(8)} ${node.role.padEnd(15)} 14d   ${node.version}`
+    ...nodes.map(
+      (node) =>
+        `${node.name.padEnd(17)} ${node.status.padEnd(8)} ${node.role.padEnd(15)} 14d   ${node.version}`
     ),
   ].join('\n');
 }
@@ -520,8 +519,9 @@ function formatPods(pods: KubePod[]) {
 
   return [
     'NAME                       READY   STATUS    RESTARTS   AGE',
-    ...pods.map((pod) =>
-      `${pod.name.padEnd(26)} 1/1     ${pod.status.padEnd(9)} ${String(pod.restarts).padEnd(10)} ${pod.age}`
+    ...pods.map(
+      (pod) =>
+        `${pod.name.padEnd(26)} 1/1     ${pod.status.padEnd(9)} ${String(pod.restarts).padEnd(10)} ${pod.age}`
     ),
   ].join('\n');
 }
@@ -531,8 +531,9 @@ function formatDeployments(deployments: KubeDeployment[]) {
 
   return [
     'NAME   READY   UP-TO-DATE   AVAILABLE   AGE',
-    ...deployments.map((deployment) =>
-      `${deployment.name.padEnd(6)} ${`${deployment.readyReplicas}/${deployment.replicas}`.padEnd(7)} ${String(deployment.replicas).padEnd(12)} ${String(deployment.readyReplicas).padEnd(11)} 45s`
+    ...deployments.map(
+      (deployment) =>
+        `${deployment.name.padEnd(6)} ${`${deployment.readyReplicas}/${deployment.replicas}`.padEnd(7)} ${String(deployment.replicas).padEnd(12)} ${String(deployment.readyReplicas).padEnd(11)} 45s`
     ),
   ].join('\n');
 }
@@ -540,8 +541,9 @@ function formatDeployments(deployments: KubeDeployment[]) {
 function formatServices(services: KubeService[]) {
   return [
     'NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)   AGE',
-    ...services.map((service) =>
-      `${service.name.padEnd(12)} ${service.type.padEnd(11)} ${service.clusterIP.padEnd(14)} <none>        ${service.port}/TCP   1m`
+    ...services.map(
+      (service) =>
+        `${service.name.padEnd(12)} ${service.type.padEnd(11)} ${service.clusterIP.padEnd(14)} <none>        ${service.port}/TCP   1m`
     ),
   ].join('\n');
 }
@@ -551,8 +553,9 @@ function formatConfigMaps(configMaps: KubeConfigMap[]) {
 
   return [
     'NAME         DATA   AGE',
-    ...configMaps.map((configMap) =>
-      `${configMap.name.padEnd(12)} ${String(Object.keys(configMap.data).length).padEnd(6)} 5s`
+    ...configMaps.map(
+      (configMap) =>
+        `${configMap.name.padEnd(12)} ${String(Object.keys(configMap.data).length).padEnd(6)} 5s`
     ),
   ].join('\n');
 }
@@ -562,8 +565,9 @@ function formatEvents(events: KubeEvent[]) {
 
   return [
     'TYPE      REASON              OBJECT                 MESSAGE',
-    ...events.map((event) =>
-      `${event.type.padEnd(9)} ${event.reason.padEnd(19)} ${event.object.padEnd(22)} ${event.message}`
+    ...events.map(
+      (event) =>
+        `${event.type.padEnd(9)} ${event.reason.padEnd(19)} ${event.object.padEnd(22)} ${event.message}`
     ),
   ].join('\n');
 }
@@ -582,9 +586,9 @@ function formatAllResources(state: KubeClusterState) {
 }
 
 function statusColor(status: PodPhase) {
-  if (status === 'Running') return 'text-emerald-500';
-  if (status === 'Pending') return 'text-amber-500';
-  return 'text-red-500';
+  if (status === 'Running') return 'text-correct-foreground';
+  if (status === 'Pending') return 'text-partial-foreground';
+  return 'text-wrong-foreground';
 }
 
 export default function KubernetesTerminalSimulator() {
@@ -594,17 +598,20 @@ export default function KubernetesTerminalSimulator() {
   const webService = clusterState.services.find((service) => service.name === 'web');
 
   const findPod = useCallback(
-    (name: string) => clusterState.pods.find((pod) => pod.name === name || pod.name.startsWith(name)),
+    (name: string) =>
+      clusterState.pods.find((pod) => pod.name === name || pod.name.startsWith(name)),
     [clusterState.pods]
   );
 
   const findDeployment = useCallback(
-    (name: string) => clusterState.deployments.find((deployment) => deployment.name === nameFromResource(name)),
+    (name: string) =>
+      clusterState.deployments.find((deployment) => deployment.name === nameFromResource(name)),
     [clusterState.deployments]
   );
 
   const findService = useCallback(
-    (name: string) => clusterState.services.find((service) => service.name === nameFromResource(name)),
+    (name: string) =>
+      clusterState.services.find((service) => service.name === nameFromResource(name)),
     [clusterState.services]
   );
 
@@ -737,7 +744,8 @@ export default function KubernetesTerminalSimulator() {
       const deployment = findDeployment(name);
 
       if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
-      if (!Number.isFinite(replicas) || replicas < 0) return 'error: --replicas must be a non-negative integer';
+      if (!Number.isFinite(replicas) || replicas < 0)
+        return 'error: --replicas must be a non-negative integer';
 
       const nextDeployment = {
         ...deployment,
@@ -750,7 +758,9 @@ export default function KubernetesTerminalSimulator() {
         addEvent(
           {
             ...prev,
-            deployments: prev.deployments.map((item) => (item.name === name ? nextDeployment : item)),
+            deployments: prev.deployments.map((item) =>
+              item.name === name ? nextDeployment : item
+            ),
             pods: [...prev.pods.filter((pod) => pod.app !== name), ...nextPods],
           },
           {
@@ -791,7 +801,9 @@ export default function KubernetesTerminalSimulator() {
         addEvent(
           {
             ...prev,
-            deployments: prev.deployments.map((item) => (item.name === name ? nextDeployment : item)),
+            deployments: prev.deployments.map((item) =>
+              item.name === name ? nextDeployment : item
+            ),
             pods: [...prev.pods.filter((pod) => pod.app !== name), ...nextPods],
           },
           {
@@ -811,7 +823,9 @@ export default function KubernetesTerminalSimulator() {
   const deleteResource = useCallback(
     (args: string[]) => {
       const rawResource = args[0] || '';
-      const [rawKind, rawName] = rawResource.includes('/') ? rawResource.split('/') : [rawResource, args[1]];
+      const [rawKind, rawName] = rawResource.includes('/')
+        ? rawResource.split('/')
+        : [rawResource, args[1]];
       const kind = normalizeKind(rawKind || '');
       const name = rawName;
 
@@ -840,7 +854,8 @@ export default function KubernetesTerminalSimulator() {
 
       if (kind === 'deployments') {
         const deployment = findDeployment(name);
-        if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
+        if (!deployment)
+          return `Error from server (NotFound): deployments.apps "${name}" not found`;
 
         setClusterState((prev) =>
           addEvent(
@@ -909,7 +924,8 @@ Endpoints:         ${endpoints || '<none>'}`;
 
       if (kind === 'deployments') {
         const deployment = name ? findDeployment(name) : null;
-        if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
+        if (!deployment)
+          return `Error from server (NotFound): deployments.apps "${name}" not found`;
         return `Name:                   ${deployment.name}
 Namespace:              ${clusterState.namespace}
 Replicas:               ${deployment.replicas} desired | ${deployment.readyReplicas} available
@@ -968,7 +984,8 @@ CoreDNS is running at https://devops-lab.example:6443/api/v1/namespaces/kube-sys
           return 'Usage: kubectl create [deployment|configmap]';
 
         case 'expose':
-          if (rest[0] === 'deployment' || rest[0]?.startsWith('deployment/')) return exposeDeployment(rest);
+          if (rest[0] === 'deployment' || rest[0]?.startsWith('deployment/'))
+            return exposeDeployment(rest);
           return 'Usage: kubectl expose deployment NAME --port=PORT';
 
         case 'scale':
@@ -983,7 +1000,8 @@ CoreDNS is running at https://devops-lab.example:6443/api/v1/namespaces/kube-sys
           const resource = rest[1];
           const deployment = resource ? findDeployment(resource) : null;
           const name = resource ? nameFromResource(resource) : '';
-          if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
+          if (!deployment)
+            return `Error from server (NotFound): deployments.apps "${name}" not found`;
           if (action === 'status') {
             return `Waiting for deployment "${deployment.name}" rollout to finish: ${deployment.readyReplicas} of ${deployment.replicas} updated replicas are available...
 deployment "${deployment.name}" successfully rolled out`;
@@ -1007,8 +1025,11 @@ ${revisions.join('\n')}`;
           if (!target) return 'error: logs requires a Pod or workload name';
           if (target.startsWith('deployment/')) {
             const deployment = findDeployment(target);
-            const pod = deployment ? clusterState.pods.find((item) => item.app === deployment.name) : null;
-            if (!pod) return `Error from server (NotFound): deployments.apps "${nameFromResource(target)}" not found`;
+            const pod = deployment
+              ? clusterState.pods.find((item) => item.app === deployment.name)
+              : null;
+            if (!pod)
+              return `Error from server (NotFound): deployments.apps "${nameFromResource(target)}" not found`;
             return pod.logs.join('\n');
           }
           const pod = findPod(target);
@@ -1022,9 +1043,14 @@ ${revisions.join('\n')}`;
         case 'exec': {
           const target = rest[0];
           const commandStart = rest.indexOf('--');
-          const commandText = commandStart >= 0 ? rest.slice(commandStart + 1).join(' ') : rest.slice(1).join(' ');
+          const commandText =
+            commandStart >= 0 ? rest.slice(commandStart + 1).join(' ') : rest.slice(1).join(' ');
           const deployment = target?.startsWith('deployment/') ? findDeployment(target) : null;
-          const pod = deployment ? clusterState.pods.find((item) => item.app === deployment.name) : target ? findPod(target) : null;
+          const pod = deployment
+            ? clusterState.pods.find((item) => item.app === deployment.name)
+            : target
+              ? findPod(target)
+              : null;
           if (!pod) return `Error from server (NotFound): pods "${target || ''}" not found`;
           if (commandText === 'printenv') {
             return `KUBERNETES_SERVICE_HOST=10.96.0.1
@@ -1120,28 +1146,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
     setClusterState(createInitialState());
   }, []);
 
-  const {
-    currentLessonIndex,
-    currentCommandIndex,
-    currentLesson,
-    currentCommand,
-    completedCommands,
-    completedCount,
-    totalCommands,
-    progressPercentage,
-    terminalHistory,
-    inputValue,
-    setInputValue,
-    showHint,
-    setShowHint,
-    inputRef,
-    terminalRef,
-    submitCommand,
-    handleSubmit,
-    handleKeyDown,
-    resetProgress,
-    jumpToLesson,
-  } = useTerminalSimulator({
+  const lab = useTerminalSimulator({
     lessons: LESSONS,
     execute: executeCommand,
     matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
@@ -1152,360 +1157,192 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
     promoteOutputType: true,
     guardRepeatCompletion: true,
     onReset,
+    // SimComplete signals Opsville, on the render that completes the last command.
+    signalOnComplete: false,
+    autoFocus: false,
   });
-
-  const resetLab = useCallback(() => {
-    resetProgress();
-    inputRef.current?.focus();
-  }, [inputRef, resetProgress]);
-
-  const runCurrentCommand = useCallback(() => {
-    if (!currentCommand) return;
-    const command = Array.isArray(currentCommand.expectedCommand)
+  const { currentCommand, terminalHistory, inputValue, setInputValue, inputRef, submitCommand } =
+    lab;
+  const ui = useSimLab(lab);
+  const expected = currentCommand
+    ? Array.isArray(currentCommand.expectedCommand)
       ? currentCommand.expectedCommand[0]
-      : currentCommand.expectedCommand;
-    submitCommand(command);
-  }, [currentCommand, submitCommand]);
+      : currentCommand.expectedCommand
+    : undefined;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-md border bg-muted/20 p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <Boxes className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">// kubectl lab</p>
-              <h2 className="text-2xl font-bold md:text-3xl">Kubernetes Terminal Simulator</h2>
-            </div>
-          </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Practice Kubernetes commands in a safe browser lab. Learn contexts, nodes, Pods,
-            Deployments, Services, rollouts, logs, exec, events, ConfigMaps, and cleanup workflows.
-          </p>
-        </div>
+    <SimFrame>
+      <SimLabBar
+        title="Kubernetes Terminal Simulator"
+        icon={Boxes}
+        lessons={LESSONS}
+        lab={lab}
+        ui={ui}
+        task={currentCommand?.instruction}
+        hint={currentCommand?.hint}
+        showMe={expected}
+      />
 
-        <Card>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {completedCount}/{totalCommands}
-              </span>
-            </div>
-            <Progress value={progressPercentage} />
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="Nodes" value={clusterState.nodes.length} />
-              <Metric label="Pods" value={clusterState.pods.length} />
-              <Metric label="Services" value={clusterState.services.length} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_310px]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <BookOpenIcon />
-                Lessons
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {LESSONS.map((lesson, lessonIndex) => {
-                const lessonCompleted = lesson.commands.every((_, commandIndex) =>
-                  completedCommands.has(`${lessonIndex}-${commandIndex}`)
-                );
-                const active = lessonIndex === currentLessonIndex;
-
-                return (
-                  <button
-                    key={lesson.id}
-                    type="button"
-                    onClick={() => {
-                      jumpToLesson(lessonIndex);
-                      inputRef.current?.focus();
-                    }}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
-                        {lesson.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium">{lesson.title}</p>
-                          {lessonCompleted && <CheckCircle className="h-4 w-4 text-emerald-500" />}
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground">{lesson.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
-            <RotateCcw className="mr-1 h-4 w-4" />
-            Reset lab
-          </Button>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-2.5 p-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                      Lesson {currentLessonIndex + 1} / {LESSONS.length}
-                    </Badge>
-                    <Badge>
-                      Step {currentCommandIndex + 1} / {currentLesson.commands.length}
-                    </Badge>
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You practiced the core kubectl workflow from cluster inspection to cleanup."
+          stats={labStats(lab, LESSONS, ui, { showMe: true })}
+          actions={
+            <Button type="button" variant="outline" onClick={ui.keepExploring}>
+              Keep exploring
+            </Button>
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <SimTerminal
+              label="kubectl"
+              status={`${clusterState.context}/${clusterState.namespace}`}
+              lines={labLines(terminalHistory, [
+                { type: 'success', content: 'Welcome to the Kubernetes terminal lab.' },
+                {
+                  type: 'muted',
+                  content: 'Type "help", run "ls", or follow the task above.',
+                },
+              ])}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={submitCommand}
+              onKeyDown={lab.handleKeyDown}
+              inputRef={inputRef}
+              placeholder="kubectl get pods"
+              autoFocus
+              heightClassName={LAB_TERMINAL_HEIGHT}
+            />
+          }
+          aside={
+            <>
+              <SimLabPanel
+                title="Cluster"
+                icon={Server}
+                summary={`${clusterState.pods.length} pods, ${clusterState.services.length} services`}
+              >
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-1.5 text-center">
+                    <Metric label="Nodes" value={clusterState.nodes.length} />
+                    <Metric label="Pods" value={clusterState.pods.length} />
+                    <Metric label="Services" value={clusterState.services.length} />
                   </div>
-                  <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
-                  {showHint && currentCommand && (
-                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
-                      {currentCommand.hint}
+
+                  <StateHeading>Nodes</StateHeading>
+                  <ul className="space-y-1.5">
+                    {clusterState.nodes.map((node) => (
+                      <li key={node.name} className="rounded-md border p-2">
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium">{node.name}</p>
+                          <Badge variant={node.status === 'Ready' ? 'default' : 'secondary'}>
+                            {node.status}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                          <span>{node.role}</span>
+                          <span>{node.version}</span>
+                          <span>cpu {node.cpu}</span>
+                          <span>mem {node.memory}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <StateHeading>Workloads</StateHeading>
+                  {webDeployment ? (
+                    <div className="rounded-md border border-primary/30 bg-primary/5 p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium">deployment/{webDeployment.name}</p>
+                        <Badge variant="secondary" className="tabular-nums">
+                          {webDeployment.readyReplicas}/{webDeployment.replicas}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        image {webDeployment.image}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No application Deployment yet.</p>
+                  )}
+                  <ul className="space-y-1.5">
+                    {clusterState.pods.map((pod) => (
+                      <li key={pod.name} className="rounded-md border p-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="truncate font-mono text-xs">{pod.name}</p>
+                          <span className={cn('text-xs font-medium', statusColor(pod.status))}>
+                            {pod.status}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{pod.node}</p>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <StateHeading>Networking</StateHeading>
+                  {webService ? (
+                    <div className={cn('rounded-md border p-2', SIM_TONE.success.surface)}>
+                      <p className="text-sm font-medium">service/{webService.name}</p>
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">
+                        {webService.clusterIP}:{webService.port} {'->'} app=
+                        {webService.selector.replace('app=', '')}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Expose a Deployment to create a stable Service endpoint.
                     </p>
                   )}
+
+                  <StateHeading>Recent events</StateHeading>
+                  <ul className="space-y-1.5">
+                    {clusterState.events.slice(0, 4).map((event, index) => (
+                      <li key={`${event.reason}-${index}`} className="rounded-md border p-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium">{event.reason}</p>
+                          <Badge variant={event.type === 'Normal' ? 'secondary' : 'destructive'}>
+                            {event.type}
+                          </Badge>
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{event.message}</p>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
-                    <Lightbulb className="mr-1 h-4 w-4" />
-                    Hint
-                  </Button>
-                  <Button size="sm" onClick={runCurrentCommand}>
-                    <Play className="mr-1 h-4 w-4" />
-                    Run
-                  </Button>
+              </SimLabPanel>
+              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+              <SimLabPanel title="Manifests" icon={FileText}>
+                <div className="space-y-2">
+                  <ManifestCard title="deployment.yaml" content={SAMPLE_DEPLOYMENT} />
+                  <ManifestCard title="service.yaml" content={SAMPLE_SERVICE} />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-green-500" />
-                  </div>
-                  <span className="ml-2 text-sm text-muted-foreground">kubectl</span>
-                </div>
-                <Badge variant="secondary" className="font-mono text-[11px]">
-                  {clusterState.context}/{clusterState.namespace}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                className="h-[580px] cursor-text overflow-y-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                onClick={() => inputRef.current?.focus()}
-              >
-                {terminalHistory.length === 0 && (
-                  <div className="mb-4 text-emerald-400">
-                    <p>Welcome to the Kubernetes terminal lab.</p>
-                    <p className="mt-2 text-muted-foreground">
-                      Type "help", run "ls", or follow the current task above.
-                    </p>
-                  </div>
-                )}
-                {terminalHistory.map((line, index) => (
-                  <div
-                    key={`${line.timestamp.getTime()}-${index}`}
-                    className={cn(
-                      'mb-2 whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-slate-100',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'success' &&
-                        'rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
-                    )}
-                  >
-                    {line.type === 'input' && <span className="text-emerald-400">$ </span>}
-                    {line.content}
-                  </div>
-                ))}
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="text-emerald-400">$</span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={(event) => setInputValue(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    placeholder="kubectl get pods"
-                  />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ManifestCard title="deployment.yaml" content={SAMPLE_DEPLOYMENT} />
-            <ManifestCard title="service.yaml" content={SAMPLE_SERVICE} />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Server className="h-5 w-5" />
-                Cluster
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {clusterState.nodes.map((node) => (
-                <div key={node.name} className="rounded-md border p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="font-medium">{node.name}</p>
-                    <Badge variant={node.status === 'Ready' ? 'default' : 'secondary'}>{node.status}</Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                    <span>{node.role}</span>
-                    <span>{node.version}</span>
-                    <span>cpu {node.cpu}</span>
-                    <span>mem {node.memory}</span>
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Boxes className="h-5 w-5" />
-                Workloads
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              {webDeployment ? (
-                <div className="rounded-md border border-primary/30 bg-primary/10 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium">deployment/{webDeployment.name}</p>
-                    <Badge variant="secondary">
-                      {webDeployment.readyReplicas}/{webDeployment.replicas}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">image {webDeployment.image}</p>
-                </div>
-              ) : (
-                <p className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
-                  No application Deployment yet.
-                </p>
-              )}
-
-              <div className="space-y-2">
-                {clusterState.pods.map((pod) => (
-                  <div key={pod.name} className="rounded-md border p-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="truncate font-mono text-xs">{pod.name}</p>
-                      <span className={cn('text-xs font-medium', statusColor(pod.status))}>{pod.status}</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{pod.node}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Globe className="h-5 w-5" />
-                Networking
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {webService ? (
-                <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
-                  <p className="font-medium">service/{webService.name}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {webService.clusterIP}:{webService.port} {'->'} app=
-                    {webService.selector.replace('app=', '')}
-                  </p>
-                </div>
-              ) : (
-                <p className="rounded-md border bg-muted/20 p-3 text-sm text-muted-foreground">
-                  Expose a Deployment to create a stable Service endpoint.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CircleDot className="h-5 w-5" />
-                Recent Events
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {clusterState.events.slice(0, 4).map((event, index) => (
-                <div key={`${event.reason}-${index}`} className="rounded-md border p-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium">{event.reason}</p>
-                    <Badge variant={event.type === 'Normal' ? 'secondary' : 'destructive'}>
-                      {event.type}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{event.message}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {completedCount === totalCommands && (
-        <Card className="mt-4 border-emerald-500/40 bg-emerald-500/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="font-semibold">Lab complete</p>
-                <p className="text-sm text-muted-foreground">
-                  You practiced the core kubectl workflow from cluster inspection to cleanup.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={resetLab}>
-              Start over
-            </Button>
-          </CardContent>
-        </Card>
+              </SimLabPanel>
+            </>
+          }
+        />
       )}
-    </div>
+    </SimFrame>
   );
 }
 
-function BookOpenIcon() {
-  return <Code2 className="h-5 w-5" />;
+function StateHeading({ children }: { children: ReactNode }) {
+  return (
+    <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      {children}
+    </h4>
+  );
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <p className="text-lg font-bold tabular-nums">{value}</p>
+    <div className="rounded-md bg-muted/50 px-2 py-1.5">
+      <p className="font-mono text-lg font-semibold tabular-nums">{value}</p>
       <p className="text-xs text-muted-foreground">{label}</p>
     </div>
   );
@@ -1513,18 +1350,13 @@ function Metric({ label, value }: { label: string; value: number }) {
 
 function ManifestCard({ title, content }: { title: string; content: string }) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-b bg-muted/30 p-3">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <FileText className="h-4 w-4" />
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0">
-        <pre className="max-h-64 overflow-auto p-3 text-xs text-muted-foreground">
-          <code>{content}</code>
-        </pre>
-      </CardContent>
-    </Card>
+    <figure className="overflow-hidden rounded-md border">
+      <figcaption className="border-b bg-muted/50 px-2 py-1 font-mono text-xs font-semibold">
+        {title}
+      </figcaption>
+      <pre className="max-h-64 overflow-auto p-2 font-mono text-xs leading-relaxed">
+        <code>{content}</code>
+      </pre>
+    </figure>
   );
 }
