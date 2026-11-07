@@ -47,9 +47,11 @@ const iconMap = {
 
 interface GenericQuizProps {
   quizConfig: QuizConfig;
+  /** The page shows the title, description and stats next to the quiz (/quizzes pages). */
+  detailsOnPage?: boolean;
 }
 
-export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
+export default function GenericQuiz({ quizConfig, detailsOnPage = false }: GenericQuizProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
@@ -59,8 +61,8 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
   const [showHint, setShowHint] = useState(false);
   const [announce, setAnnounce] = useState('');
   const resultRef = useRef<HTMLDivElement>(null);
-  // The game page and the embed name the quiz already; /quizzes pages have no title above it.
-  const quizHeading = useSimGame() ? undefined : quizConfig.title;
+  // The game page, the embed and the /quizzes pages name the quiz already.
+  const quizHeading = useSimGame() || detailsOnPage ? undefined : quizConfig.title;
 
   const question = quizConfig.questions[currentQuestion];
   const totalPoints = quizConfig.totalPoints;
@@ -168,9 +170,11 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
               goal={`Answer ${quizConfig.questions.length} questions. Each right answer adds its points.`}
             />
             <section className="space-y-3 rounded-lg border bg-card p-4">
-              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-                {quizConfig.description}
-              </p>
+              {!detailsOnPage && (
+                <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+                  {quizConfig.description}
+                </p>
+              )}
               <div className="grid gap-2 sm:grid-cols-3">
                 {[
                   [
@@ -198,10 +202,12 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground">
-                {quizConfig.questions.length} questions, {totalPoints} points,{' '}
-                {quizConfig.metadata.estimatedTime}
-              </p>
+              {!detailsOnPage && (
+                <p className="text-sm text-muted-foreground">
+                  {quizConfig.questions.length} questions, {totalPoints} points,{' '}
+                  {quizConfig.metadata.estimatedTime}
+                </p>
+              )}
               <Button type="button" className="h-10" onClick={() => setGameStarted(true)}>
                 <Play className="h-4 w-4" aria-hidden="true" />
                 Start Quiz

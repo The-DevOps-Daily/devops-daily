@@ -5,7 +5,10 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EmbedClient } from '@/app/games/[slug]/embed/embed-client';
 import { SimComplete } from '@/components/games/sim/sim-complete';
-import { SimResetButton } from '@/components/games/sim/sim-frame';
+import { SimFrame, SimResetButton, SimStage } from '@/components/games/sim/sim-frame';
+import GenericQuiz from '@/components/games/generic-quiz';
+import dockerQuiz from '@/content/quizzes/docker-quiz.json';
+import type { QuizConfig } from '@/lib/quiz-types';
 import { SimGameProvider } from '@/components/games/sim/sim-game';
 import { SimTerminal, resultLine, type SimTerminalLine } from '@/components/games/sim/sim-terminal';
 import { missionProgress, passedMissions, useMissions } from '@/components/games/sim/use-missions';
@@ -357,5 +360,48 @@ describe('missions', () => {
     await act(async () => setState({ p99: 900, avg: 150 }));
     await act(async () => api!.reset());
     expect(api!.done).toBe(0);
+  });
+});
+
+describe('SimStage', () => {
+  it('caps the columns under the bar and any part of the site header in view', async () => {
+    await render(
+      createElement(
+        SimFrame,
+        null,
+        createElement(SimStage, {
+          panels: [
+            { id: 'a', label: 'A', content: 'one' },
+            { id: 'b', label: 'B', content: 'two' },
+          ],
+          columns: 'lg:grid-cols-2',
+          tab: 'a',
+          onTabChange: () => {},
+        })
+      )
+    );
+    const grid = container.querySelector<HTMLElement>('.lg\\:grid');
+    expect(grid?.style.maxHeight).toContain(
+      'max(var(--site-header-h, 0px), var(--site-header-visible, 0px))'
+    );
+  });
+});
+
+describe('GenericQuiz on a /quizzes page', () => {
+  const quiz = dockerQuiz as QuizConfig;
+
+  it('leaves the title, description and stats to the page', async () => {
+    await render(createElement(GenericQuiz, { quizConfig: quiz, detailsOnPage: true }));
+    const text = container.textContent ?? '';
+    expect(container.querySelector('h2')).toBeNull();
+    expect(text).not.toContain(quiz.description);
+    expect(text).not.toContain(`${quiz.totalPoints} points`);
+    expect(text).toContain('Start Quiz');
+  });
+
+  it('keeps them when nothing around it names the quiz', async () => {
+    await render(createElement(GenericQuiz, { quizConfig: quiz }));
+    expect(container.querySelector('h2')?.textContent).toBe(quiz.title);
+    expect(container.textContent).toContain(`${quiz.totalPoints} points`);
   });
 });

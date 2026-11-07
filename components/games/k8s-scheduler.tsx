@@ -1,28 +1,24 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Confetti from 'react-confetti';
+import { MotionConfig } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Sparkles, RotateCcw, HelpCircle, CheckCircle2, XCircle, Award } from 'lucide-react';
+import { Boxes, CircleCheck, CircleX, Star, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimHowTo,
+  SimResetButton,
+  SimStage,
+  revealTop,
+} from '@/components/games/sim';
 
 type TaintEffect = 'NoSchedule' | 'PreferNoSchedule' | 'NoExecute';
 
@@ -467,11 +463,11 @@ function validatePlacement(
 function qosBadgeColor(qos: PodSpec['qos']) {
   switch (qos) {
     case 'Guaranteed':
-      return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/30 dark:bg-emerald-400/10 dark:text-emerald-300 dark:border-emerald-400/30';
+      return `${SIM_CATEGORY.emerald.fill} ${SIM_CATEGORY.emerald.border} text-emerald-800 dark:text-emerald-300`;
     case 'Burstable':
-      return 'bg-blue-500/10 text-blue-700 border-blue-500/30 dark:bg-blue-400/10 dark:text-blue-300 dark:border-blue-400/30';
+      return `${SIM_CATEGORY.sky.fill} ${SIM_CATEGORY.sky.border} text-sky-800 dark:text-sky-300`;
     case 'BestEffort':
-      return 'bg-amber-500/10 text-amber-700 border-amber-500/30 dark:bg-amber-400/10 dark:text-amber-300 dark:border-amber-400/30';
+      return `${SIM_CATEGORY.violet.fill} ${SIM_CATEGORY.violet.border} text-violet-800 dark:text-violet-300`;
     default:
       return 'bg-secondary text-secondary-foreground';
   }
@@ -485,9 +481,12 @@ export default function K8sScheduler() {
   const [secondsLeft, setSecondsLeft] = useState<number | undefined>(INITIAL_LEVELS[0].timeSec);
   const [victory, setVictory] = useState(false);
   const [dragOverNodeId, setDragOverNodeId] = useState<string | null>(null);
-  const [showHowTo, setShowHowTo] = useState(false);
-  const [podSheetOpen, setPodSheetOpen] = useState(false);
+  const [best, setBest] = useState<Record<number, number>>({});
+  const [dismissed, setDismissed] = useState(false);
+  const [tab, setTab] = useState<'board' | 'pod'>('board');
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const [tabsAnchor, setTabsAnchor] = useState<HTMLDivElement | null>(null);
 
   const level = INITIAL_LEVELS[levelIndex];
 
@@ -590,430 +589,492 @@ export default function K8sScheduler() {
     return stars;
   }, [allPlaced, nodesUsed, level.stars, secondsLeft]);
 
-  // Layout helpers
+  if (victory && allPlaced && (best[levelIndex] ?? 0) < starCount)
+    setBest({ ...best, [levelIndex]: starCount });
+
+  const cleared = INITIAL_LEVELS.filter((_, i) => best[i] !== undefined).length;
+  const allCleared = cleared === INITIAL_LEVELS.length;
+  const totalStars = Object.values(best).reduce((total, stars) => total + stars, 0);
+  const levelTitle = level.title.replace(/^Level \d+: /, '');
+
+  useEffect(() => {
+    if (!victory) return;
+    requestAnimationFrame(() => resultRef.current?.focus({ preventScroll: true }));
+  }, [victory]);
+
   const isSelected = (id: string) => selectedPodId === id;
   const selectPod = (id: string) => {
     setSelectedPodId((cur) => (cur === id ? null : id));
-    setPodSheetOpen(true);
+    if (!window.matchMedia('(min-width: 1024px)').matches) setTab('board');
   };
 
-  function useWindowSizeLocal() {
-    const [size, setSize] = useState({ width: 0, height: 0 });
-    useEffect(() => {
-      const onResize = () => setSize({ width: window.innerWidth, height: window.innerHeight });
-      onResize();
-      window.addEventListener('resize', onResize);
-      return () => window.removeEventListener('resize', onResize);
-    }, []);
-    return size;
+  function startOver() {
+    setBest({});
+    setDismissed(false);
+    setLevelIndex(0);
+    resetLevel();
   }
-  const { width, height } = useWindowSizeLocal();
+
+  const remainingPods = (
+    <section className="rounded-lg border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Pods to place</h3>
+        <Badge variant="secondary">{unplacedPods.length}</Badge>
+      </div>
+      {unplacedPods.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {unplacedPods.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => selectPod(p.id)}
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('text/podId', p.id);
+                e.dataTransfer.effectAllowed = 'move';
+                setSelectedPodId(p.id);
+              }}
+              onDragEnd={() => setDragOverNodeId(null)}
+              className={cn(
+                'inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-sm lg:min-h-8',
+                qosBadgeColor(p.qos),
+                isSelected(p.id) && 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+              )}
+              aria-pressed={isSelected(p.id)}
+            >
+              <span>{p.name}</span>
+              <span className="font-mono text-xs">
+                {p.request.cpu}m / {p.request.memory}Mi
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">All pods placed.</p>
+      )}
+      <p className="mt-2 text-xs text-muted-foreground">
+        Colour shows the QoS class:{' '}
+        <span className="text-emerald-800 dark:text-emerald-300">Guaranteed</span>,{' '}
+        <span className="text-sky-800 dark:text-sky-300">Burstable</span>,{' '}
+        <span className="text-violet-800 dark:text-violet-300">BestEffort</span>.
+      </p>
+    </section>
+  );
+
+  const selectedPodPanel = (
+    <section className="rounded-lg border bg-card p-3 text-sm">
+      {selectedPodId ? (
+        (() => {
+          const pod = level.pods.find((pp) => pp.id === selectedPodId)!;
+          return (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">Selected: {pod.name}</h3>
+                <Badge className={cn('text-xs', qosBadgeColor(pod.qos))}>{pod.qos}</Badge>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Requests: {pod.request.cpu}m CPU, {pod.request.memory}Mi Mem
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {pod.limit
+                  ? `Limits: ${pod.limit.cpu}m CPU, ${pod.limit.memory}Mi Mem`
+                  : 'Limits: none'}
+              </p>
+              {(pod.nodeSelector || pod.tolerations || pod.affinity || pod.antiAffinity) && (
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  {pod.nodeSelector && (
+                    <Badge variant="outline">
+                      selector:{' '}
+                      {Object.entries(pod.nodeSelector)
+                        .map(([k, v]) => `${k}=${v}`)
+                        .join(', ')}
+                    </Badge>
+                  )}
+                  {pod.tolerations && pod.tolerations.length > 0 && (
+                    <Badge variant="outline">tolerations: {pod.tolerations.length}</Badge>
+                  )}
+                  {pod.affinity?.requiredLabels && (
+                    <Badge variant="outline">affinity: required labels</Badge>
+                  )}
+                  {pod.antiAffinity?.notWithNames && pod.antiAffinity.notWithNames.length > 0 && (
+                    <Badge variant="outline">
+                      anti-affinity: {pod.antiAffinity.notWithNames.length}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Select a pod to see its constraints and where it fits.
+        </p>
+      )}
+    </section>
+  );
+
+  const feedback =
+    errors.length > 0 ? (
+      <SimFeedback tone="danger" label="Can't place it here" role="alert">
+        <ul className="list-disc pl-5">
+          {errors.map((error) => (
+            <li key={error}>{error}</li>
+          ))}
+        </ul>
+      </SimFeedback>
+    ) : victory ? (
+      <SimFeedback ref={resultRef} tabIndex={-1} tone="success" label="Level cleared">
+        <p>
+          Nodes used: {nodesUsed}. Stars: {starCount} of 3.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-10 lg:h-8"
+            onClick={resetLevel}
+          >
+            Replay
+          </Button>
+          {levelIndex < INITIAL_LEVELS.length - 1 ? (
+            <Button type="button" size="sm" className="h-10 lg:h-8" onClick={nextLevel}>
+              Next level
+            </Button>
+          ) : (
+            (() => {
+              const nextUncleared = INITIAL_LEVELS.findIndex(
+                (_, index) => best[index] === undefined
+              );
+              return nextUncleared >= 0 ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  onClick={() => setLevelIndex(nextUncleared)}
+                >
+                  Go to level {nextUncleared + 1}
+                </Button>
+              ) : null;
+            })()
+          )}
+        </div>
+      </SimFeedback>
+    ) : selectedPodId ? (
+      <SimFeedback
+        tone="hint"
+        label={`Placing ${level.pods.find((p) => p.id === selectedPodId)?.name}`}
+      >
+        <p>Pick a node that shows Fits.</p>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-10 lg:h-8"
+          onClick={() => setSelectedPodId(null)}
+        >
+          Cancel
+        </Button>
+      </SimFeedback>
+    ) : null;
+
+  const nodeGrid = (
+    <div className="grid gap-2 md:grid-cols-2">
+      {nodesWithUsage.map(({ node, used }) => {
+        const cpuPct = Math.min(100, Math.round((used.cpu / node.capacity.cpu) * 100));
+        const memPct = Math.min(100, Math.round((used.memory / node.capacity.memory) * 100));
+        const nodePods = placements
+          .filter((p) => p.nodeId === node.id)
+          .map((p) => level.pods.find((pp) => pp.id === p.podId))
+          .filter((p): p is PodSpec => Boolean(p));
+        const selectedPod = unplacedPods.find((p) => p.id === selectedPodId);
+        const fit = selectedPod
+          ? validatePlacement(selectedPod, node, placements, {
+              pods: level.pods,
+              nodes: level.nodes,
+            })
+          : null;
+        return (
+          <section
+            key={node.id}
+            className={cn(
+              'space-y-2.5 rounded-lg border bg-card p-3',
+              fit?.ok && 'border-correct/60',
+              fit && !fit.ok && 'border-wrong/60'
+            )}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold">{node.name}</h3>
+                <p className="text-xs text-muted-foreground">zone: {node.zone || 'unknown'}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+                {(node.taints || []).map((taint, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs">
+                    taint: {taint.key}
+                  </Badge>
+                ))}
+                {fit && (
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                      fit.ok
+                        ? `${SIM_TONE.success.surface} ${SIM_TONE.success.text}`
+                        : `${SIM_TONE.danger.surface} ${SIM_TONE.danger.text}`
+                    )}
+                  >
+                    {fit.ok ? (
+                      <CircleCheck className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <CircleX className="h-4 w-4" aria-hidden="true" />
+                    )}
+                    {fit.ok ? 'Fits' : 'Does not fit'}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="mb-1 text-xs tabular-nums text-muted-foreground">
+                  CPU {used.cpu}m / {node.capacity.cpu}m
+                </p>
+                <div className="relative h-2 overflow-hidden rounded bg-muted">
+                  {selectedPodId && (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-sky-500/30"
+                      style={{
+                        width: `${Math.min(100, Math.round(((used.cpu + (level.pods.find((pp) => pp.id === selectedPodId)?.request.cpu || 0)) / node.capacity.cpu) * 100))}%`,
+                      }}
+                    />
+                  )}
+                  <div className="relative h-full bg-sky-500" style={{ width: `${cpuPct}%` }} />
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-xs tabular-nums text-muted-foreground">
+                  Mem {used.memory}Mi / {node.capacity.memory}Mi
+                </p>
+                <div className="relative h-2 overflow-hidden rounded bg-muted">
+                  {selectedPodId && (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-violet-500/30"
+                      style={{
+                        width: `${Math.min(100, Math.round(((used.memory + (level.pods.find((pp) => pp.id === selectedPodId)?.request.memory || 0)) / node.capacity.memory) * 100))}%`,
+                      }}
+                    />
+                  )}
+                  <div className="relative h-full bg-violet-500" style={{ width: `${memPct}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <div
+              className={cn(
+                'rounded-lg',
+                (selectedPodId || dragOverNodeId === node.id) &&
+                  'outline outline-1 outline-muted/40 outline-offset-2',
+                dragOverNodeId === node.id && 'outline-2 outline-primary'
+              )}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverNodeId(node.id);
+              }}
+              onDragLeave={() => setDragOverNodeId((cur) => (cur === node.id ? null : cur))}
+              onDrop={(e) => {
+                e.preventDefault();
+                const podId = e.dataTransfer.getData('text/podId');
+                setDragOverNodeId(null);
+                if (podId) tryPlace(podId, node.id);
+              }}
+            >
+              <div className="flex min-h-8 flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Placed pods{nodePods.length === 0 && ': none yet'}
+                </span>
+                {nodePods.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => removePlacement(p.id)}
+                    aria-label={`Remove ${p.name} from ${node.name}`}
+                    className={cn(
+                      'min-h-10 rounded-full border px-3 text-sm lg:min-h-8',
+                      qosBadgeColor(p.qos)
+                    )}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 w-full lg:h-8"
+              disabled={!selectedPodId}
+              onClick={() => selectedPodId && tryPlace(selectedPodId, node.id)}
+            >
+              {selectedPodId
+                ? `Place "${level.pods.find((p) => p.id === selectedPodId)?.name}" on ${node.name}`
+                : 'Select a pod to place'}
+            </Button>
+          </section>
+        );
+      })}
+    </div>
+  );
 
   return (
-    <div className="w-full">
-      <div className="w-full mb-6 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20">
-          <Sparkles className="w-4 h-4 text-sky-500" />
-          <span className="text-sm text-muted-foreground">{level.title}</span>
-        </div>
-        <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">{level.description}</p>
-      </div>
-
-      {/* Top stats row: Time and Score (independent of pods/nodes) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Time</span>
-            <Badge variant="outline">
-              {typeof secondsLeft === 'number' ? `${secondsLeft}s` : 'Free Play'}
-            </Badge>
-          </div>
-          {typeof secondsLeft === 'number' && (
-            <div className="mt-3">
-              <Progress value={Math.max(0, ((secondsLeft ?? 0) / (level.timeSec || 1)) * 100)} />
-            </div>
-          )}
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Score</span>
-            <div className="flex gap-1">
-              {[1, 2, 3].map((s) => (
-                <Award
-                  key={s}
-                  className={cn(
-                    'w-4 h-4',
-                    s <= starCount ? 'text-yellow-500' : 'text-muted-foreground/40'
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="mt-2 text-sm text-muted-foreground">Nodes used: {nodesUsed}</div>
-        </Card>
-      </div>
-
-      {/* Layout grid: left (pods), right (board) */}
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_2fr] gap-4 items-start">
-        {/* Left column: pods & details */}
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Remaining Pods</span>
-            <Badge variant="secondary">{unplacedPods.length}</Badge>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {unplacedPods.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => selectPod(p.id)}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('text/podId', p.id);
-                  e.dataTransfer.effectAllowed = 'move';
-                  setSelectedPodId(p.id);
-                }}
-                onDragEnd={() => setDragOverNodeId(null)}
-                className={cn(
-                  'px-3 py-1 rounded-full border text-sm transition-colors cursor-grab active:cursor-grabbing select-none touch-none',
-                  qosBadgeColor(p.qos),
-                  isSelected(p.id) && 'ring-2 ring-offset-2 ring-sky-400'
-                )}
-                aria-pressed={isSelected(p.id)}
-              >
-                {p.name}
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {p.request.cpu}m / {p.request.memory}Mi
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className="mt-4 overflow-auto rounded-lg border bg-muted/30 p-3">
-            {selectedPodId ? (
-              (() => {
-                const pod = level.pods.find((pp) => pp.id === selectedPodId)!;
-                return (
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <div className="font-medium">Selected: {pod.name}</div>
-                      <Badge className={cn('text-xs', qosBadgeColor(pod.qos))}>{pod.qos}</Badge>
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      Requests: {pod.request.cpu}m CPU, {pod.request.memory}Mi Mem
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {pod.limit
-                        ? `Limits: ${pod.limit.cpu}m CPU, ${pod.limit.memory}Mi Mem`
-                        : 'Limits: none'}
-                    </div>
-                    {(pod.nodeSelector || pod.tolerations || pod.affinity || pod.antiAffinity) && (
-                      <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                        {pod.nodeSelector && (
-                          <Badge variant="outline">
-                            selector:{' '}
-                            {Object.entries(pod.nodeSelector)
-                              .map(([k, v]) => `${k}=${v}`)
-                              .join(', ')}
-                          </Badge>
-                        )}
-                        {pod.tolerations && pod.tolerations.length > 0 && (
-                          <Badge variant="outline">tolerations: {pod.tolerations.length}</Badge>
-                        )}
-                        {pod.affinity?.requiredLabels && (
-                          <Badge variant="outline">affinity: required labels</Badge>
-                        )}
-                        {pod.antiAffinity?.notWithNames &&
-                          pod.antiAffinity.notWithNames.length > 0 && (
-                            <Badge variant="outline">
-                              anti-affinity: {pod.antiAffinity.notWithNames.length}
-                            </Badge>
-                          )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()
-            ) : (
-              <div className="text-xs text-muted-foreground">
-                Tap a pod to see constraints and node compatibility.
-              </div>
-            )}
-          </div>
-        </Card>
-        {/* Board to the right on desktop */}
-        <div className="sm:col-start-2 -mt-4 sm:mt-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 select-none">
-            {nodesWithUsage.map(({ node, used }) => {
-              const cpuPct = Math.min(100, Math.round((used.cpu / node.capacity.cpu) * 100));
-              const memPct = Math.min(100, Math.round((used.memory / node.capacity.memory) * 100));
-              const nodePods = placements
-                .filter((p) => p.nodeId === node.id)
-                .map((p) => level.pods.find((pp) => pp.id === p.podId))
-                .filter((p): p is PodSpec => Boolean(p));
-              const selectedPod = unplacedPods.find((p) => p.id === selectedPodId);
-              const fit = selectedPod
-                ? validatePlacement(selectedPod, node, placements, {
-                    pods: level.pods,
-                    nodes: level.nodes,
-                  })
-                : null;
-              return (
-                <Card
-                  key={node.id}
-                  className={cn(
-                    'p-4 transition-colors',
-                    fit?.ok && 'border-emerald-500/60 dark:border-emerald-400/50',
-                    fit && !fit.ok && 'border-red-500/60 dark:border-red-400/50'
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-semibold">{node.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        zone: {node.zone || 'unknown'}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {(node.taints || []).map((t, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          taint: {t.key}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-xs mb-1 text-muted-foreground">
-                        CPU {used.cpu}m / {node.capacity.cpu}m
-                      </div>
-                      <div className="h-2 rounded bg-muted overflow-hidden relative">
-                        <div
-                          className="h-full bg-linear-to-r from-sky-500 to-cyan-500 dark:from-sky-400 dark:to-cyan-400"
-                          style={{ width: `${cpuPct}%` }}
-                        />
-                        {selectedPodId && (
-                          <div
-                            className="absolute inset-y-0 left-0 h-2 bg-sky-500/30 dark:bg-sky-400/25"
-                            style={{
-                              width: `${Math.min(100, Math.round(((used.cpu + (level.pods.find((pp) => pp.id === selectedPodId)?.request.cpu || 0)) / node.capacity.cpu) * 100))}%`,
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs mb-1 text-muted-foreground">
-                        Mem {used.memory}Mi / {node.capacity.memory}Mi
-                      </div>
-                      <div className="h-2 rounded bg-muted overflow-hidden relative">
-                        <div
-                          className="h-full bg-linear-to-r from-fuchsia-500 to-pink-500 dark:from-fuchsia-400 dark:to-pink-400"
-                          style={{ width: `${memPct}%` }}
-                        />
-                        {selectedPodId && (
-                          <div
-                            className="absolute inset-y-0 left-0 h-2 bg-pink-500/30 dark:bg-pink-400/25"
-                            style={{
-                              width: `${Math.min(100, Math.round(((used.memory + (level.pods.find((pp) => pp.id === selectedPodId)?.request.memory || 0)) / node.capacity.memory) * 100))}%`,
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Drop zone */}
-                  <div
+    <MotionConfig reducedMotion="user">
+      <SimFrame>
+        <SimBar
+          title="Kubernetes Scheduler Challenge"
+          icon={Boxes}
+          steps={INITIAL_LEVELS.map((item, index) => ({
+            title: item.title.replace(/^Level \d+: /, ''),
+            status:
+              best[index] === 3
+                ? 'perfect'
+                : best[index] !== undefined
+                  ? 'done'
+                  : index === levelIndex && placements.length > 0
+                    ? 'started'
+                    : 'todo',
+            statusLabel:
+              best[index] !== undefined
+                ? `cleared, ${best[index]} of 3 stars`
+                : index === levelIndex && placements.length > 0
+                  ? 'in progress'
+                  : 'not cleared',
+          }))}
+          current={levelIndex}
+          onStep={(index) => setLevelIndex(index)}
+          stepNoun="Level"
+          stepsLabel="Levels"
+          tools={
+            <SimResetButton onReset={resetLevel} label="Reset level" confirmLabel="Reset level?" />
+          }
+          progress={{ current: levelIndex + 1, total: INITIAL_LEVELS.length }}
+          heading={levelTitle}
+          meta={
+            <>
+              <Badge variant="outline" className="tabular-nums">
+                <Timer className="mr-1 h-4 w-4" aria-hidden="true" />
+                {typeof secondsLeft === 'number' ? `${secondsLeft}s` : 'Free play'}
+              </Badge>
+              <span className="flex gap-0.5">
+                <span className="sr-only">{starCount} of 3 stars</span>
+                {[1, 2, 3].map((star) => (
+                  <Star
+                    key={star}
                     className={cn(
-                      'mt-4',
-                      (selectedPodId || dragOverNodeId === node.id) &&
-                        'outline outline-1 outline-muted/40 rounded-lg outline-offset-2',
-                      dragOverNodeId === node.id && 'outline-2 outline-sky-400'
+                      'h-4 w-4',
+                      star <= starCount ? 'fill-primary text-primary' : 'text-muted-foreground/40'
                     )}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverNodeId(node.id);
-                    }}
-                    onDragLeave={() => setDragOverNodeId((cur) => (cur === node.id ? null : cur))}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const podId = e.dataTransfer.getData('text/podId');
-                      setDragOverNodeId(null);
-                      if (podId) tryPlace(podId, node.id);
-                    }}
-                  >
-                    <div className="text-xs text-muted-foreground mb-2">Placed Pods</div>
-                    <div className="flex flex-wrap gap-2 min-h-[48px]">
-                      {nodePods.map((p) => (
-                        <button
-                          key={p.id}
-                          onClick={() => removePlacement(p.id)}
-                          title="Remove from node"
-                          className={cn(
-                            'px-3 py-1 rounded-full border text-sm select-none hover:opacity-90 transition',
-                            qosBadgeColor(p.qos)
-                          )}
-                        >
-                          {p.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tap-to-place area for mobile */}
-                  <div className="mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      disabled={!selectedPodId}
-                      onClick={() => selectedPodId && tryPlace(selectedPodId, node.id)}
-                    >
-                      {selectedPodId
-                        ? `Place "${level.pods.find((p) => p.id === selectedPodId)?.name}" on ${node.name}`
-                        : 'Select a Pod to place'}
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Errors */}
-      <AnimatePresence initial={false}>
-        {errors.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-          >
-            <div className="mb-4 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-700">
-              <div className="flex items-center gap-2 font-medium">
-                <XCircle className="w-4 h-4" />
-                Invalid placement
-              </div>
-              <ul className="mt-2 pl-5 list-disc text-sm">
-                {errors.map((e, i) => (
-                  <li key={i}>{e}</li>
+                    aria-hidden="true"
+                  />
                 ))}
-              </ul>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </span>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                Nodes used: {nodesUsed}
+              </span>
+            </>
+          }
+          goal={level.description}
+        >
+          <SimHowTo summary="How to play">
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Select a pod: tap it, or drag it onto a node on desktop.</li>
+              <li>Pick a node: it shows Fits or Does not fit, and bars preview requests.</li>
+              <li>
+                Follow capacity, taints and tolerations, selectors and affinity, anti-affinity, and
+                zone spread.
+              </li>
+              <li>Tap a placed pod to take it off its node.</li>
+              <li>Fewer nodes and a faster finish earn more stars.</li>
+            </ul>
+          </SimHowTo>
+        </SimBar>
 
-      {/* Footer controls */}
-      <div className="mt-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={resetLevel}>
-            <RotateCcw className="w-4 h-4 mr-2" /> Reset Level
-          </Button>
-          <Button variant="ghost" onClick={() => setShowHowTo(true)}>
-            <HelpCircle className="w-4 h-4 mr-2" /> How to play
-          </Button>
-        </div>
-        <div className="flex gap-2 flex-wrap w-full md:w-auto">
-          <Button variant="outline" onClick={() => setLevelIndex(0)} disabled={levelIndex === 0}>
-            Level 1
-          </Button>
-          <Button variant="outline" onClick={() => setLevelIndex(1)} disabled={levelIndex === 1}>
-            Level 2
-          </Button>
-          <Button variant="outline" onClick={() => setLevelIndex(2)} disabled={levelIndex === 2}>
-            Level 3
-          </Button>
-          <Button onClick={nextLevel} disabled={!allPlaced} className="w-full sm:w-auto">
-            {allPlaced ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 mr-2" /> Next Level
-              </>
-            ) : (
-              'Place all Pods to continue'
-            )}
-          </Button>
-        </div>
-      </div>
+        <SimAnnouncer
+          message={
+            errors.length > 0
+              ? errors.join('. ')
+              : victory
+                ? `Level cleared, ${starCount} of 3 stars`
+                : ''
+          }
+        />
 
-      {/* Victory */}
-      <AnimatePresence>
-        {victory && (
-          <div className="fixed inset-x-0 bottom-6 z-50 mx-auto w-[calc(100%-2rem)] md:w-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-            >
-              <div className="mx-auto max-w-xl p-4 rounded-xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-lg">
-                <div className="flex items-center gap-2 text-emerald-600 font-semibold">
-                  <CheckCircle2 className="w-5 h-5" /> Level complete!
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    Nodes used: {nodesUsed} • Stars: {starCount}/3
+        {allCleared && !dismissed ? (
+          <SimComplete
+            title="All four levels cleared"
+            summary={`You scheduled every pod on all ${INITIAL_LEVELS.length} levels and earned ${totalStars} of ${INITIAL_LEVELS.length * 3} stars.`}
+            stats={[
+              { label: 'Levels', value: `${cleared}/${INITIAL_LEVELS.length}` },
+              { label: 'Stars', value: `${totalStars}/${INITIAL_LEVELS.length * 3}` },
+              {
+                label: 'Perfect levels',
+                value: INITIAL_LEVELS.filter((_, index) => best[index] === 3).length,
+              },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.6fr)]"
+            minHeight="min-h-[22rem]"
+            tab={tab}
+            onTabChange={(nextTab) => {
+              setTab(nextTab as 'board' | 'pod');
+              revealTop(tabsAnchor, { onlyIfAbove: true });
+            }}
+            tabsLabel="Scheduler panels"
+            tabOrder={['board', 'pod']}
+            anchorRef={setTabsAnchor}
+            panels={[
+              {
+                id: 'pod',
+                label: 'Pod details',
+                content: (
+                  <div className="space-y-2">
+                    {remainingPods}
+                    {selectedPodPanel}
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={resetLevel}>
-                      Replay
-                    </Button>
-                    <Button size="sm" onClick={nextLevel}>
-                      Next
-                    </Button>
+                ),
+                mobile: selectedPodPanel,
+              },
+              {
+                id: 'board',
+                label: 'Board',
+                content: (
+                  <div className="space-y-2">
+                    {feedback}
+                    {nodeGrid}
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
+                ),
+                mobile: (
+                  <div className="space-y-2">
+                    {remainingPods}
+                    {feedback}
+                    {nodeGrid}
+                  </div>
+                ),
+              },
+            ]}
+          />
         )}
-      </AnimatePresence>
-
-      {/* Confetti */}
-      <AnimatePresence>
-        {victory && <Confetti width={width} height={height} numberOfPieces={220} recycle={false} />}
-      </AnimatePresence>
-
-      {/* How to play dialog */}
-      <Dialog open={showHowTo} onOpenChange={setShowHowTo}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>How to play</DialogTitle>
-            <DialogDescription>
-              Place all Pods onto Nodes without breaking Kubernetes scheduling rules.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 text-sm">
-            <div>
-              <span className="font-medium">1. Select a Pod</span>
-              <div className="text-muted-foreground">Tap a pod, or drag it on desktop.</div>
-            </div>
-            <div>
-              <span className="font-medium">2. Pick a Node</span>
-              <div className="text-muted-foreground">
-                Nodes highlight green/red to show whether placement is allowed. Capacity bars show a
-                light preview of resources after placement.
-              </div>
-            </div>
-            <div>
-              <span className="font-medium">3. Follow the rules</span>
-              <ul className="mt-1 list-disc list-inside text-muted-foreground">
-                <li>Do not exceed CPU/Memory capacity.</li>
-                <li>Match taints with tolerations when required.</li>
-                <li>Respect node selectors and affinity/anti-affinity.</li>
-                <li>Keep topology spread balanced across zones.</li>
-              </ul>
-            </div>
-            <div>
-              <span className="font-medium">Pro tips</span>
-              <ul className="mt-1 list-disc list-inside text-muted-foreground">
-                <li>Tap a placed pod to remove it.</li>
-                <li>Use fewer nodes and finish faster for more stars.</li>
-              </ul>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+      </SimFrame>
+    </MotionConfig>
   );
 }

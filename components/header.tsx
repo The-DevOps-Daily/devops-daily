@@ -19,16 +19,35 @@ export function Header() {
   const onSimulator = /^\/games\/[^/]+/.test(pathname ?? '');
 
   // Sticky elements below the header read its height from --site-header-h.
+  // --site-header-visible is the part of the header on screen: on a simulator
+  // page it shrinks to 0 as the header scrolls away, and the simulator stage
+  // (components/games/sim) leaves room for it.
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
     const root = document.documentElement;
-    const update = () =>
-      root.style.setProperty('--site-header-h', onSimulator ? '0px' : `${el.offsetHeight}px`);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const height = el.offsetHeight;
+      const visible = onSimulator
+        ? Math.min(height, Math.max(0, Math.round(el.getBoundingClientRect().bottom)))
+        : height;
+      root.style.setProperty('--site-header-h', onSimulator ? '0px' : `${height}px`);
+      root.style.setProperty('--site-header-visible', `${visible}px`);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
-    return () => ro.disconnect();
+    if (onSimulator) window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(frame);
+    };
   }, [onSimulator]);
 
   // Close mobile menu on escape key

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
+import { MotionConfig } from 'framer-motion';
 import {
   ArrowDown,
   ArrowLeft,
@@ -26,13 +27,13 @@ import {
   Play,
   Plus,
   RefreshCw,
-  RotateCcw,
   Search,
   ServerCog,
   ShieldCheck,
   Sparkles,
   Tag,
   Trash2,
+  TriangleAlert,
   Webhook,
   Workflow,
   XCircle,
@@ -40,7 +41,17 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Github } from '@/components/icons/social-icons';
+import { Label as FormLabel } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import {
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimHowTo,
+  SimResetButton,
+} from '@/components/games/sim';
 import {
   PREVIEW_FAILURES,
   advancePreviewEnvironment,
@@ -307,18 +318,18 @@ const SCENES: Array<{ id: Scene; number: string; label: string }> = [
 ];
 
 const ACTIVE_CONTROL =
-  'cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117]';
+  'cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-terminal';
 
 function labelClasses(label: string): string {
   return (
     {
-      frontend: 'border-blue-500/40 bg-blue-500/10 text-blue-300',
-      api: 'border-violet-500/40 bg-violet-500/10 text-violet-300',
-      backend: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300',
-      worker: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
-      preview: 'border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200',
-      enhancement: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
-    }[label] ?? 'border-border bg-muted text-muted-foreground'
+      frontend: 'border-sky-500/40 bg-sky-500/15 text-sky-300',
+      api: 'border-violet-500/40 bg-violet-500/15 text-violet-300',
+      backend: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
+      worker: 'border-terminal-warning/40 bg-terminal-warning/15 text-terminal-warning',
+      preview: 'border-primary/50 bg-primary/15 text-primary',
+      enhancement: 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300',
+    }[label] ?? 'border-terminal-border bg-terminal-bar text-terminal-muted'
   );
 }
 
@@ -356,7 +367,7 @@ function UnavailableControl({
       <span className="transition-opacity group-hover:opacity-45">{children}</span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 w-max max-w-48 -translate-x-1/2 rounded-md border border-[#30363d] bg-[#161b22] px-2 py-1 text-center text-[10px] font-medium text-[#c9d1d9] opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
+        className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 w-max max-w-48 -translate-x-1/2 rounded-md border border-terminal-border bg-terminal-bar px-2 py-1 text-center text-xs font-medium text-terminal-foreground opacity-0 transition-opacity group-hover:opacity-100"
       >
         {tooltip}
       </span>
@@ -378,20 +389,20 @@ function GitHubChrome({
     { id: 'actions', label: 'Actions', icon: Play },
   ];
   return (
-    <div className="overflow-hidden rounded-xl border border-[#30363d] bg-[#0d1117] text-[#e6edf3] shadow-2xl shadow-black/20">
-      <div className="flex min-h-14 items-center gap-3 border-b border-[#21262d] bg-[#010409] px-3 sm:px-5">
+    <div className="overflow-hidden rounded-xl border border-terminal-border bg-terminal text-terminal-foreground">
+      <div className="flex min-h-11 items-center gap-3 border-b border-terminal-border bg-terminal px-3 sm:px-5">
         <Github className="size-6 shrink-0 fill-current" aria-hidden="true" />
         <div className="min-w-0 text-sm">
-          <span className="text-[#8b949e]">acme / </span>
-          <span className="font-semibold text-[#2f81f7]">store</span>
+          <span className="text-terminal-muted">acme / </span>
+          <span className="font-semibold text-primary">store</span>
         </div>
-        <span className="rounded-full border border-[#30363d] px-2 py-0.5 text-[10px] text-[#8b949e]">
+        <span className="rounded-full border border-terminal-border px-2 py-0.5 text-xs text-terminal-muted">
           Public
         </span>
       </div>
       <nav
         aria-label="Repository navigation"
-        className="grid grid-cols-4 gap-1 border-b border-[#21262d] bg-[#010409] px-2 pt-1 sm:flex sm:px-4"
+        className="grid grid-cols-4 gap-1 border-b border-terminal-border bg-terminal px-2 pt-1 sm:flex sm:px-4"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -407,7 +418,7 @@ function GitHubChrome({
             return (
               <UnavailableControl
                 key={tab.id}
-                className="min-w-0 justify-center border-b-2 border-transparent px-1 py-2 text-xs font-medium text-[#8b949e] sm:shrink-0 sm:px-3"
+                className="min-w-0 justify-center border-b-2 border-transparent px-1 py-2 text-xs font-medium text-terminal-muted sm:shrink-0 sm:px-3"
               >
                 <span className="flex items-center justify-center gap-2">{content}</span>
               </UnavailableControl>
@@ -417,7 +428,7 @@ function GitHubChrome({
             <div
               key={tab.id}
               aria-current="page"
-              className="flex min-w-0 items-center justify-center gap-2 border-b-2 border-[#f78166] px-1 py-2 text-xs font-medium text-[#e6edf3] sm:shrink-0 sm:px-3"
+              className="flex min-w-0 items-center justify-center gap-2 border-b-2 border-primary px-1 py-2 text-xs font-medium text-terminal-input sm:shrink-0 sm:px-3"
             >
               {content}
             </div>
@@ -433,7 +444,7 @@ function Label({ children }: { children: string }) {
   return (
     <span
       className={cn(
-        'rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+        'rounded-full border px-2 py-0.5 text-xs font-semibold',
         labelClasses(children)
       )}
     >
@@ -445,36 +456,37 @@ function Label({ children }: { children: string }) {
 function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario) => void }) {
   return (
     <GitHubChrome activeTab="pulls">
-      <div className="p-3 sm:p-5">
+      <div className="p-3">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row">
           <UnavailableControl className="flex-1">
-            <span className="flex min-h-9 w-full items-center rounded-md border border-[#30363d] bg-[#010409] px-3 text-xs text-[#8b949e]">
+            <span className="flex min-h-10 w-full items-center rounded-md border border-terminal-border bg-terminal px-3 text-xs text-terminal-muted">
               <Search className="mr-2 size-4" aria-hidden="true" />
               is:pr is:open
             </span>
           </UnavailableControl>
           <div className="flex gap-2">
             <UnavailableControl>
-              <span className="rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-semibold">
+              <span className="flex h-10 items-center rounded-md border border-terminal-border bg-terminal-bar px-3 text-xs font-semibold">
                 Labels
               </span>
             </UnavailableControl>
             <UnavailableControl>
-              <span className="rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold opacity-70">
+              <Button size="sm" disabled className="min-h-10 opacity-70">
                 New pull request
-              </span>
+              </Button>
             </UnavailableControl>
           </div>
         </div>
-        <div className="overflow-hidden rounded-md border border-[#30363d]">
-          <div className="flex items-center gap-5 border-b border-[#30363d] bg-[#161b22] px-4 py-3 text-xs">
+        <div className="overflow-hidden rounded-md border border-terminal-border">
+          <div className="flex items-center gap-5 border-b border-terminal-border bg-terminal-bar px-4 py-3 text-xs">
             <span className="flex items-center gap-2 font-semibold">
-              <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />{PULL_REQUESTS.length} Open
+              <GitPullRequest className="size-4 text-terminal-success" aria-hidden="true" />
+              {PULL_REQUESTS.length} Open
             </span>
-            <UnavailableControl className="text-[#8b949e]">
+            <UnavailableControl className="text-terminal-muted">
               <span>18 Closed</span>
             </UnavailableControl>
-            <span className="ml-auto hidden text-[#8b949e] sm:inline">Sort</span>
+            <span className="ml-auto hidden text-terminal-muted sm:inline">Sort</span>
           </div>
           {PULL_REQUESTS.map((pullRequest) => (
             <button
@@ -483,34 +495,34 @@ function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario
               onClick={() => onOpen(pullRequest)}
               className={cn(
                 ACTIVE_CONTROL,
-                'group flex w-full gap-3 border-b border-[#21262d] px-4 py-4 text-left last:border-b-0 hover:bg-[#161b22] hover:shadow-[inset_3px_0_0_#2f81f7]'
+                'group flex w-full gap-3 border-b border-terminal-border px-4 py-2.5 text-left last:border-b-0 hover:bg-terminal-bar'
               )}
             >
               <GitPullRequest
-                className="mt-0.5 size-4 shrink-0 text-[#3fb950]"
+                className="mt-0.5 size-4 shrink-0 text-terminal-success"
                 aria-hidden="true"
               />
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold group-hover:text-[#2f81f7]">
+                  <span className="font-semibold group-hover:text-primary">
                     {pullRequest.title}
                   </span>
                   {pullRequest.labels.map((label) => (
                     <Label key={label}>{label}</Label>
                   ))}
                 </span>
-                <span className="mt-1 block text-xs text-[#8b949e]">
+                <span className="mt-1 block text-xs text-terminal-muted">
                   #{pullRequest.number} opened {pullRequest.opened} by {pullRequest.author}
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-xs text-[#8b949e]">
+              <span className="flex shrink-0 items-center gap-1 text-xs text-terminal-muted">
                 <MessageSquare className="size-4" aria-hidden="true" />
                 {pullRequest.comments}
               </span>
             </button>
           ))}
         </div>
-        <p className="mt-4 text-center text-xs text-[#8b949e]">
+        <p className="mt-4 text-center text-xs text-terminal-muted">
           Choose a pull request to request its own temporary environment.
         </p>
       </div>
@@ -533,40 +545,40 @@ function PullRequestDetail({
 }) {
   return (
     <GitHubChrome activeTab="pulls">
-      <div className="p-3 sm:p-5">
+      <div className="p-3">
         <button
           type="button"
           onClick={onBack}
           className={cn(
             ACTIVE_CONTROL,
-            'mb-4 flex items-center gap-2 rounded px-1 py-0.5 text-xs font-medium text-[#2f81f7] hover:bg-[#1f6feb1f] hover:underline'
+            'mb-4 flex min-h-10 items-center gap-2 rounded px-1 py-0.5 text-xs font-medium text-primary hover:bg-primary/15 hover:underline'
           )}
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Pull requests
         </button>
-        <div className="border-b border-[#21262d] pb-4">
+        <div className="border-b border-terminal-border pb-4">
           <h3 className="text-xl font-normal leading-tight sm:text-2xl">
             {pullRequest.title}{' '}
-            <span className="font-light text-[#8b949e]">#{pullRequest.number}</span>
+            <span className="font-light text-terminal-muted">#{pullRequest.number}</span>
           </h3>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#8b949e]">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#238636] px-3 py-1 font-semibold text-white">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-terminal-muted">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-terminal-success/15 px-3 py-1 font-semibold text-terminal-success">
               <GitPullRequest className="size-4" aria-hidden="true" />
               Open
             </span>
-            <strong className="text-[#e6edf3]">{pullRequest.author}</strong> wants to merge{' '}
+            <strong className="text-terminal-input">{pullRequest.author}</strong> wants to merge{' '}
             {pullRequest.commits} commits into
-            <span className="rounded-full bg-[#388bfd1a] px-2 py-0.5 font-mono text-[#58a6ff]">
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-primary">
               main
             </span>
             from
-            <span className="rounded-full bg-[#388bfd1a] px-2 py-0.5 font-mono text-[#58a6ff]">
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 font-mono text-primary">
               {pullRequest.branch}
             </span>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-1 border-b border-[#21262d]">
+        <div className="mt-3 grid grid-cols-4 gap-1 border-b border-terminal-border">
           {[
             { label: 'Conversation', short: 'Chat', count: pullRequest.comments },
             { label: 'Commits', short: 'Commits', count: pullRequest.commits },
@@ -577,7 +589,7 @@ function PullRequestDetail({
               <span
                 key={tab.label}
                 aria-current="page"
-                className="min-w-0 border-b-2 border-[#f78166] px-1 py-2 text-center text-[10px] font-medium text-[#e6edf3] sm:px-3 sm:text-xs"
+                className="min-w-0 border-b-2 border-primary px-1 py-2 text-center text-xs font-medium text-terminal-input sm:px-3"
               >
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="sm:hidden">{tab.short}</span> {tab.count}
@@ -585,7 +597,7 @@ function PullRequestDetail({
             ) : (
               <UnavailableControl
                 key={tab.label}
-                className="min-w-0 justify-center border-b-2 border-transparent px-1 py-2 text-center text-[10px] font-medium text-[#8b949e] sm:px-3 sm:text-xs"
+                className="min-w-0 justify-center border-b-2 border-transparent px-1 py-2 text-center text-xs font-medium text-terminal-muted sm:px-3"
               >
                 <span className="truncate">
                   <span className="hidden sm:inline">{tab.label}</span>
@@ -598,19 +610,19 @@ function PullRequestDetail({
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
           <div className="min-w-0">
-            <div className="overflow-hidden rounded-md border border-[#30363d]">
-              <div className="border-b border-[#30363d] bg-[#161b22] px-4 py-3 text-xs">
+            <div className="overflow-hidden rounded-md border border-terminal-border">
+              <div className="border-b border-terminal-border bg-terminal-bar px-4 py-3 text-xs">
                 <strong>{pullRequest.author}</strong>{' '}
-                <span className="text-[#8b949e]">commented {pullRequest.opened}</span>
+                <span className="text-terminal-muted">commented {pullRequest.opened}</span>
               </div>
               <div className="space-y-4 p-4 text-sm leading-6">
                 <p>{pullRequest.summary}</p>
-                <div className="rounded-md border border-[#30363d] bg-[#161b22] p-3">
+                <div className="rounded-md border border-terminal-border bg-terminal-bar p-3">
                   <strong className="flex items-center gap-2 text-xs">
-                    <CheckCircle2 className="size-4 text-[#3fb950]" aria-hidden="true" />
+                    <CheckCircle2 className="size-4 text-terminal-success" aria-hidden="true" />
                     What should reviewers verify?
                   </strong>
-                  <ul className="mt-2 space-y-1 text-xs text-[#8b949e]">
+                  <ul className="mt-2 space-y-1 text-xs text-terminal-muted">
                     <li>• The changed services work together.</li>
                     <li>• Test data stays isolated from production.</li>
                     <li>• The deployed revision matches commit {pullRequest.commit}.</li>
@@ -618,20 +630,20 @@ function PullRequestDetail({
                 </div>
               </div>
             </div>
-            <div className="mt-4 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs text-[#8b949e]">
-              <strong className="text-[#e6edf3]">{pullRequest.author}</strong> added{' '}
+            <div className="mt-4 rounded-md border border-terminal-border bg-terminal-bar p-3 text-xs text-terminal-muted">
+              <strong className="text-terminal-input">{pullRequest.author}</strong> added{' '}
               {pullRequest.additions} lines and removed {pullRequest.deletions}.
             </div>
           </div>
 
           <aside className="text-xs">
             {['Reviewers', 'Assignees', 'Projects'].map((heading) => (
-              <div key={heading} className="border-b border-[#21262d] py-3">
+              <div key={heading} className="border-b border-terminal-border py-3">
                 <strong className="block">{heading}</strong>
-                <span className="text-[#8b949e]">None yet</span>
+                <span className="text-terminal-muted">None yet</span>
               </div>
             ))}
-            <div className="relative border-b border-[#21262d] py-3">
+            <div className="relative border-b border-terminal-border py-3">
               <div className="mb-2 flex items-center justify-between">
                 <strong>Labels</strong>
                 <button
@@ -639,7 +651,7 @@ function PullRequestDetail({
                   onClick={onToggleLabels}
                   className={cn(
                     ACTIVE_CONTROL,
-                    'rounded p-1 text-[#8b949e] hover:bg-[#21262d] hover:text-[#e6edf3]'
+                    'size-10 rounded p-1 text-terminal-muted hover:bg-terminal-bar hover:text-terminal-input'
                   )}
                   aria-label="Add a label"
                 >
@@ -656,19 +668,19 @@ function PullRequestDetail({
                 onClick={onToggleLabels}
                 className={cn(
                   ACTIVE_CONTROL,
-                  'mt-3 w-full rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-left font-semibold hover:border-[#58a6ff] hover:bg-[#30363d]'
+                  'mt-3 min-h-10 w-full rounded-md border border-terminal-border bg-terminal-bar px-3 py-2 text-left font-semibold hover:border-primary hover:bg-terminal'
                 )}
               >
                 Add label
               </button>
               {labelPickerOpen && (
-                <div className="absolute right-0 top-10 z-20 w-64 overflow-hidden rounded-md border border-[#30363d] bg-[#161b22] shadow-2xl shadow-black/60">
-                  <div className="border-b border-[#30363d] px-3 py-2">
+                <div className="absolute right-0 top-10 z-20 w-64 overflow-hidden rounded-md border border-terminal-border bg-terminal-bar">
+                  <div className="border-b border-terminal-border px-3 py-2">
                     <strong>Apply labels</strong>
                     <div
                       aria-disabled="true"
                       title="Unavailable in this simulator"
-                      className="mt-2 flex cursor-not-allowed items-center rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-[#8b949e] hover:opacity-50"
+                      className="mt-2 flex cursor-not-allowed items-center rounded-md border border-terminal-border bg-terminal px-2 py-1.5 text-terminal-muted hover:opacity-50"
                     >
                       <Search className="mr-2 size-3.5" aria-hidden="true" />
                       Filter labels
@@ -687,13 +699,10 @@ function PullRequestDetail({
                         disabled={!available}
                         onClick={available ? onAddPreview : undefined}
                         className={cn(
-                          'group relative flex w-full gap-2 border-b border-[#21262d] px-3 py-2.5 text-left last:border-b-0',
+                          'group relative flex w-full gap-2 border-b border-terminal-border px-3 py-2.5 text-left last:border-b-0',
                           available
-                            ? cn(
-                                ACTIVE_CONTROL,
-                                'hover:bg-[#21262d] hover:shadow-[inset_3px_0_0_#3fb950]'
-                              )
-                            : 'cursor-not-allowed hover:bg-[#21262d]'
+                            ? cn(ACTIVE_CONTROL, 'hover:bg-terminal')
+                            : 'cursor-not-allowed hover:bg-terminal'
                         )}
                       >
                         <span
@@ -706,12 +715,12 @@ function PullRequestDetail({
                           className={cn(!available && 'transition-opacity group-hover:opacity-20')}
                         >
                           <strong className="block">{label}</strong>
-                          <span className="text-[10px] leading-4 text-[#8b949e]">
+                          <span className="text-xs leading-4 text-terminal-muted">
                             {description}
                           </span>
                         </span>
                         {!available && (
-                          <span className="pointer-events-none absolute inset-0 grid place-items-center bg-[#161b22e6] text-[10px] font-semibold text-[#c9d1d9] opacity-0 transition-opacity group-hover:opacity-100">
+                          <span className="pointer-events-none absolute inset-0 grid place-items-center bg-terminal-bar/90 text-xs font-semibold text-terminal-foreground opacity-0 transition-opacity group-hover:opacity-100">
                             Unavailable in this simulator
                           </span>
                         )}
@@ -723,24 +732,22 @@ function PullRequestDetail({
             </div>
           </aside>
         </div>
-        <div className="mt-5 flex items-center justify-between gap-3 rounded-md border border-[#1f6feb] bg-[#0c2d6b33] p-3">
+        <div className="mt-5 flex flex-col items-start justify-between gap-3 rounded-md border border-primary bg-primary/15 p-3 sm:flex-row sm:items-center">
           <span className="flex items-start gap-2 text-xs">
-            <Sparkles className="mt-0.5 size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
+            <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
             <span>
               <strong className="block">Ask for a live preview</strong>
-              <span className="text-[#8b949e]">Add the preview label like a real PR.</span>
+              <span className="text-terminal-muted">Add the preview label like a real PR.</span>
             </span>
           </span>
-          <button
+          <Button
             type="button"
             onClick={onToggleLabels}
-            className={cn(
-              ACTIVE_CONTROL,
-              'shrink-0 rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold shadow-sm hover:bg-[#2ea043] hover:shadow-[0_0_0_3px_#23863633]'
-            )}
+            size="sm"
+            className="min-h-10 shrink-0 cursor-pointer"
           >
             Add label
-          </button>
+          </Button>
         </div>
       </div>
     </GitHubChrome>
@@ -757,13 +764,20 @@ function CircularProgress({
   const circumference = 2 * Math.PI * 10;
   return (
     <svg className="size-6 -rotate-90" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="none" stroke="#30363d" strokeWidth="2" />
+      <circle
+        className="stroke-terminal-border"
+        cx="12"
+        cy="12"
+        r="10"
+        fill="none"
+        strokeWidth="2"
+      />
       <circle
         cx="12"
         cy="12"
         r="10"
         fill="none"
-        stroke={tone === 'purple' ? '#8957e5' : '#2f81f7'}
+        className={tone === 'purple' ? 'stroke-violet-300' : 'stroke-primary'}
         strokeLinecap="round"
         strokeWidth="2"
         strokeDasharray={circumference}
@@ -783,12 +797,12 @@ function FailurePanel({
   if (!state.activeFailure) return null;
   const failure = PREVIEW_FAILURES[state.activeFailure];
   return (
-    <div className="rounded-lg border border-[#f85149] bg-[#49020233] p-4">
+    <div className="rounded-lg border border-terminal-error/40 bg-terminal-error/15 p-3">
       <div className="flex gap-3">
-        <XCircle className="mt-0.5 size-5 shrink-0 text-[#f85149]" aria-hidden="true" />
+        <XCircle className="mt-0.5 size-5 shrink-0 text-terminal-error" aria-hidden="true" />
         <div>
-          <strong className="text-[#ff7b72]">{failure.label}</strong>
-          <p className="mt-1 text-xs leading-5 text-[#c9d1d9]">{failure.signal}</p>
+          <strong className="text-terminal-error">{failure.label}</strong>
+          <p className="mt-1 text-xs leading-5 text-terminal-foreground">{failure.signal}</p>
         </div>
       </div>
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
@@ -799,16 +813,16 @@ function FailurePanel({
             onClick={() => onRemediate(option.id)}
             className={cn(
               ACTIVE_CONTROL,
-              'rounded-md border border-[#30363d] bg-[#161b22] p-3 text-left text-xs hover:border-[#58a6ff] hover:bg-[#1f6feb14]'
+              'rounded-md border border-terminal-border bg-terminal-bar p-3 text-left text-xs hover:border-primary hover:bg-primary/15'
             )}
           >
             <strong className="block">{option.label}</strong>
-            <span className="mt-1 block leading-4 text-[#8b949e]">{option.explanation}</span>
+            <span className="mt-1 block leading-4 text-terminal-muted">{option.explanation}</span>
           </button>
         ))}
       </div>
       {state.failedRemediationAttempts > 0 && (
-        <p className="mt-3 text-xs text-[#ff7b72]">{state.lastEvent}</p>
+        <p className="mt-3 text-xs text-terminal-error">{state.lastEvent}</p>
       )}
     </div>
   );
@@ -826,19 +840,19 @@ function PipelineIcon({
   if (status === 'running') return <CircularProgress progress={progress} tone={tone} />;
   if (status === 'successful') {
     return (
-      <span className="grid size-6 place-items-center rounded-full bg-[#238636]">
-        <Check className="size-4 text-white" aria-hidden="true" />
+      <span className="grid size-6 place-items-center rounded-full bg-terminal-success/15">
+        <Check className="size-4 text-terminal-success" aria-hidden="true" />
       </span>
     );
   }
   if (status === 'failed') {
     return (
-      <span className="grid size-6 place-items-center rounded-full bg-[#da3633]">
-        <XCircle className="size-4 text-white" aria-hidden="true" />
+      <span className="grid size-6 place-items-center rounded-full bg-terminal-error/15">
+        <XCircle className="size-4 text-terminal-error" aria-hidden="true" />
       </span>
     );
   }
-  return <span className="size-6 rounded-full border-2 border-[#30363d]" />;
+  return <span className="size-6 rounded-full border-2 border-terminal-border" />;
 }
 
 function AutomationSteps({
@@ -860,7 +874,7 @@ function AutomationSteps({
 }) {
   const activeIndex = steps.findIndex((step) => step.id === beat);
   return (
-    <div className="overflow-hidden rounded-md border border-[#30363d]">
+    <div className="overflow-hidden rounded-md border border-terminal-border">
       {steps.map((step, stepIndex) => {
         const status =
           phase === 'complete'
@@ -878,10 +892,10 @@ function AutomationSteps({
           <div
             key={step.id}
             className={cn(
-              'flex gap-3 border-b border-[#21262d] px-3 py-3 last:border-b-0',
+              'flex gap-3 border-b border-terminal-border px-3 py-3 last:border-b-0',
               phase === 'running' &&
                 stepIndex === activeIndex &&
-                (tone === 'purple' ? 'bg-[#6e40c914]' : 'bg-[#1f6feb14]')
+                (tone === 'purple' ? 'bg-violet-500/15' : 'bg-primary/15')
             )}
           >
             <PipelineIcon
@@ -892,7 +906,7 @@ function AutomationSteps({
             <div className="min-w-0 flex-1">
               <div className="flex justify-between gap-2">
                 <strong className="text-xs">{step.title}</strong>
-                <span className="text-[10px] uppercase tracking-wide text-[#8b949e]">
+                <span className="text-xs uppercase tracking-wide text-terminal-muted">
                   {status === 'waiting'
                     ? 'Waiting'
                     : status === 'running'
@@ -902,7 +916,7 @@ function AutomationSteps({
                         : 'Failed'}
                 </span>
               </div>
-              <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">{step.detail}</p>
+              <p className="mt-1 text-xs leading-4 text-terminal-muted">{step.detail}</p>
             </div>
           </div>
         );
@@ -944,48 +958,51 @@ function WebhookScene({
         : 'waiting';
 
   return (
-    <div className="overflow-hidden rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] shadow-2xl shadow-black/20">
-      <div className="flex items-center gap-3 border-b border-[#30363d] bg-[#161b22] px-3 py-2">
+    <div className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground">
+      <div className="flex items-center gap-3 border-b border-terminal-border bg-terminal-bar px-3 py-2">
         <div className="flex gap-1.5" aria-hidden="true">
-          <span className="size-2.5 rounded-full bg-red-500/80" />
-          <span className="size-2.5 rounded-full bg-amber-500/80" />
-          <span className="size-2.5 rounded-full bg-emerald-500/80" />
+          <span className="size-2.5 rounded-full bg-terminal-error" />
+          <span className="size-2.5 rounded-full bg-terminal-warning" />
+          <span className="size-2.5 rounded-full bg-terminal-success" />
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center rounded border border-[#30363d] bg-[#010409] px-3 py-1 font-mono text-[10px] text-[#8b949e]">
+        <div className="flex min-w-0 flex-1 items-center justify-center rounded border border-terminal-border bg-terminal px-3 py-1 font-mono text-xs text-terminal-muted">
           <LockKeyhole className="mr-2 size-3" aria-hidden="true" />
           preview-control-plane.internal/webhooks/github
         </div>
       </div>
 
-      <div className="border-b border-[#30363d] px-4 py-4 sm:px-5">
+      <div className="border-b border-terminal-border px-3 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
+            <div className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
               GitHub → preview control plane
             </div>
             <h3 className="flex items-center gap-2 text-lg font-semibold">
               {failed ? (
-                <XCircle className="size-5 text-[#f85149]" aria-hidden="true" />
+                <XCircle className="size-5 text-terminal-error" aria-hidden="true" />
               ) : phase === 'complete' ? (
-                <CheckCircle2 className="size-5 text-[#3fb950]" aria-hidden="true" />
+                <CheckCircle2 className="size-5 text-terminal-success" aria-hidden="true" />
               ) : phase === 'running' ? (
-                <LoaderCircle className="size-5 animate-spin text-[#58a6ff]" aria-hidden="true" />
+                <LoaderCircle
+                  className="size-5 motion-safe:animate-spin text-primary"
+                  aria-hidden="true"
+                />
               ) : (
-                <Webhook className="size-5 text-[#58a6ff]" aria-hidden="true" />
+                <Webhook className="size-5 text-primary" aria-hidden="true" />
               )}
               Deliver the label event
             </h3>
-            <p className="mt-1 text-xs text-[#8b949e]">
+            <p className="mt-1 text-xs text-terminal-muted">
               A webhook speeds up discovery; the ApplicationSet controller still owns desired state.
             </p>
           </div>
-          <span className="rounded-full border border-[#1f6feb] px-2.5 py-1 text-[10px] font-semibold text-[#58a6ff]">
+          <span className="rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary">
             pull_request · labeled
           </span>
         </div>
       </div>
 
-      <div className="p-3 sm:p-5">
+      <div className="p-3">
         <div className="grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
           {[
             {
@@ -1012,35 +1029,34 @@ function WebhookScene({
             return (
               <div key={node.title} className="contents">
                 {nodeIndex > 0 && (
-                  <div className="grid place-items-center text-[#6e7681]" aria-hidden="true">
+                  <div className="grid place-items-center text-terminal-muted" aria-hidden="true">
                     <span className="hidden sm:inline">→</span>
                     <ArrowDown className="size-4 sm:hidden" />
                   </div>
                 )}
                 <div
                   className={cn(
-                    'rounded-lg border p-4 transition-all duration-300',
-                    status === 'waiting' && 'border-[#30363d] bg-[#010409] opacity-55',
-                    status === 'active' &&
-                      'border-[#1f6feb] bg-[#1f6feb14] shadow-lg shadow-blue-950/30',
-                    status === 'complete' && 'border-[#238636] bg-[#23863612]',
-                    status === 'failed' && 'border-[#f85149] bg-[#f8514912]'
+                    'rounded-lg border p-3 transition-colors',
+                    status === 'waiting' && 'border-terminal-border bg-terminal opacity-55',
+                    status === 'active' && 'border-primary bg-primary/15',
+                    status === 'complete' && 'border-terminal-success/40 bg-terminal-success/15',
+                    status === 'failed' && 'border-terminal-error/40 bg-terminal-error/15'
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="grid size-9 place-items-center rounded-md border border-[#30363d] bg-[#0d1117]">
+                    <span className="grid size-9 place-items-center rounded-md border border-terminal-border bg-terminal">
                       <Icon className="size-4" aria-hidden="true" />
                     </span>
                     {status === 'complete' && (
-                      <CheckCircle2 className="size-4 text-[#3fb950]" aria-hidden="true" />
+                      <CheckCircle2 className="size-4 text-terminal-success" aria-hidden="true" />
                     )}
                     {status === 'active' && <CircularProgress progress={progress} />}
                   </div>
-                  <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b949e]">
+                  <div className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-terminal-muted">
                     {node.eyebrow}
                   </div>
                   <strong className="mt-1 block text-sm">{node.title}</strong>
-                  <span className="mt-1 block text-xs text-[#8b949e]">{node.detail}</span>
+                  <span className="mt-1 block text-xs text-terminal-muted">{node.detail}</span>
                 </div>
               </div>
             );
@@ -1056,29 +1072,29 @@ function WebhookScene({
             failed={failed}
             tone="blue"
           />
-          <div className="overflow-hidden rounded-md border border-[#30363d] bg-[#010409]">
-            <div className="flex items-center justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
+          <div className="overflow-hidden rounded-md border border-terminal-border bg-terminal">
+            <div className="flex items-center justify-between border-b border-terminal-border bg-terminal-bar px-3 py-2 text-xs">
               <strong className="flex items-center gap-2">
-                <Webhook className="size-4 text-[#58a6ff]" aria-hidden="true" />
+                <Webhook className="size-4 text-primary" aria-hidden="true" />
                 Delivery payload
               </strong>
-              <span className="font-mono text-[10px] text-[#8b949e]">X-Hub-Signature-256 ✓</span>
+              <span className="font-mono text-xs text-terminal-muted">X-Hub-Signature-256 ✓</span>
             </div>
-            <div className="min-h-44 space-y-1 overflow-x-auto p-4 font-mono text-[11px] leading-5">
-              <div className="text-[#8b949e]">event: pull_request</div>
+            <div className="min-h-44 space-y-1 overflow-x-auto p-3 font-mono text-xs leading-5">
+              <div className="text-terminal-muted">event: pull_request</div>
               <div>action: labeled</div>
               <div>number: {pullRequest.number}</div>
               <div>label: preview</div>
               <div>head.sha: {pullRequest.commit}</div>
               {phase === 'running' && (
-                <div className="mt-3 animate-pulse text-[#58a6ff]">
+                <div className="mt-3 motion-safe:animate-pulse text-primary">
                   receiver › {current.command}
                 </div>
               )}
               {phase === 'complete' && (
-                <div className="mt-3 text-[#3fb950]">202 Accepted · refresh queued</div>
+                <div className="mt-3 text-terminal-success">202 Accepted · refresh queued</div>
               )}
-              {failed && <div className="mt-3 text-[#ff7b72]">Error: {state.lastEvent}</div>}
+              {failed && <div className="mt-3 text-terminal-error">Error: {state.lastEvent}</div>}
             </div>
           </div>
         </div>
@@ -1088,9 +1104,9 @@ function WebhookScene({
             <FailurePanel state={state} onRemediate={onRemediate} />
           </div>
         ) : (
-          <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-[#8b949e]">
-              <Webhook className="size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
+          <div className="mt-4 flex flex-col gap-3 rounded-md border border-terminal-border bg-terminal-bar p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-terminal-muted">
+              <Webhook className="size-4 shrink-0 text-primary" aria-hidden="true" />
               {phase === 'idle'
                 ? 'The label event is ready to leave GitHub.'
                 : phase === 'running'
@@ -1098,13 +1114,13 @@ function WebhookScene({
                   : 'The matching PR is now known to the preview control plane.'}
             </div>
             {phase === 'idle' && (
-              <Button size="sm" className="cursor-pointer" onClick={onRun}>
+              <Button size="sm" className="min-h-10 cursor-pointer" onClick={onRun}>
                 <Play className="size-4" aria-hidden="true" />
                 Deliver webhook
               </Button>
             )}
             {phase === 'complete' && (
-              <Button size="sm" className="cursor-pointer" onClick={onContinue}>
+              <Button size="sm" className="min-h-10 cursor-pointer" onClick={onContinue}>
                 Open GitHub Actions
                 <Workflow className="size-4" aria-hidden="true" />
               </Button>
@@ -1140,16 +1156,16 @@ function GitHubActionsScene({
   const failed = state.status === 'blocked';
   return (
     <GitHubChrome activeTab="actions">
-      <div className="grid min-h-[500px] md:grid-cols-[190px_minmax(0,1fr)]">
-        <aside className="border-b border-[#21262d] p-4 md:border-b-0 md:border-r">
+      <div className="grid md:grid-cols-[190px_minmax(0,1fr)]">
+        <aside className="border-b border-terminal-border p-3 md:border-b-0 md:border-r">
           <strong className="mb-3 flex items-center gap-2 text-xs">
             <Workflow className="size-4" aria-hidden="true" />
             Actions
           </strong>
-          <div className="rounded-md border border-[#1f6feb] bg-[#1f6feb1f] px-3 py-2 text-xs font-semibold text-[#e6edf3]">
+          <div className="rounded-md border border-primary bg-primary/15 px-3 py-2 text-xs font-semibold text-terminal-input">
             Preview image
           </div>
-          <div className="mt-3 space-y-1 text-[10px] text-[#8b949e]">
+          <div className="mt-3 space-y-1 text-xs text-terminal-muted">
             <UnavailableControl
               className="w-full rounded px-3 py-2"
               tooltip="Unavailable in this simulator"
@@ -1165,29 +1181,32 @@ function GitHubActionsScene({
           </div>
         </aside>
 
-        <div className="min-w-0 p-3 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#21262d] pb-4">
+        <div className="min-w-0 p-3">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-terminal-border pb-3">
             <div>
-              <div className="mb-1 text-[10px] text-[#8b949e]">
+              <div className="mb-1 text-xs text-terminal-muted">
                 Preview image / run #{pullRequest.number}
               </div>
               <h3 className="flex items-center gap-2 text-lg font-semibold">
                 {failed ? (
-                  <XCircle className="size-5 text-[#f85149]" aria-hidden="true" />
+                  <XCircle className="size-5 text-terminal-error" aria-hidden="true" />
                 ) : phase === 'complete' ? (
-                  <CheckCircle2 className="size-5 text-[#3fb950]" aria-hidden="true" />
+                  <CheckCircle2 className="size-5 text-terminal-success" aria-hidden="true" />
                 ) : phase === 'running' ? (
-                  <LoaderCircle className="size-5 animate-spin text-[#58a6ff]" aria-hidden="true" />
+                  <LoaderCircle
+                    className="size-5 motion-safe:animate-spin text-primary"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <CircleDot className="size-5 text-[#8b949e]" aria-hidden="true" />
+                  <CircleDot className="size-5 text-terminal-muted" aria-hidden="true" />
                 )}
                 Build and publish the preview
               </h3>
-              <p className="mt-1 text-xs text-[#8b949e]">
+              <p className="mt-1 text-xs text-terminal-muted">
                 GitHub-hosted runner · {pullRequest.branch} · {pullRequest.commit}
               </p>
             </div>
-            <span className="rounded-full border border-[#1f6feb] px-2.5 py-1 text-[10px] font-semibold text-[#58a6ff]">
+            <span className="rounded-full border border-primary px-2.5 py-1 text-xs font-semibold text-primary">
               GitHub Actions · CI
             </span>
           </div>
@@ -1201,73 +1220,75 @@ function GitHubActionsScene({
               failed={failed}
               tone="blue"
               after={
-                <div className="flex gap-3 border-t border-[#21262d] px-3 py-3">
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-[#30363d]">
-                    <MessageSquare className="size-3 text-[#8b949e]" aria-hidden="true" />
+                <div className="flex gap-3 border-t border-terminal-border px-3 py-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-terminal-border">
+                    <MessageSquare className="size-3 text-terminal-muted" aria-hidden="true" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap justify-between gap-2">
                       <strong className="text-xs">Comment preview URL on PR</strong>
-                      <span className="text-[10px] uppercase tracking-wide text-[#8b949e]">
+                      <span className="text-xs uppercase tracking-wide text-terminal-muted">
                         Waiting for Argo CD
                       </span>
                     </div>
-                    <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">
+                    <p className="mt-1 text-xs leading-4 text-terminal-muted">
                       The final job waits for a healthy URL, then calls the GitHub API.
                     </p>
                   </div>
                 </div>
               }
             />
-            <div className="overflow-hidden rounded-md border border-[#30363d] bg-[#010409]">
-              <div className="flex justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
-                <strong className="flex items-center gap-2 text-[#58a6ff]">
+            <div className="overflow-hidden rounded-md border border-terminal-border bg-terminal">
+              <div className="flex justify-between border-b border-terminal-border bg-terminal-bar px-3 py-2 text-xs">
+                <strong className="flex items-center gap-2 text-primary">
                   <Github className="size-4" aria-hidden="true" />
                   GitHub Actions runner
                 </strong>
-                <span className="text-[#8b949e]">
+                <span className="text-terminal-muted">
                   {phase === 'idle' ? 'Queued' : 'ubuntu-latest'}
                 </span>
               </div>
-              <div className="min-h-52 space-y-2 overflow-x-auto p-4 font-mono text-[11px] leading-5">
+              <div className="min-h-52 space-y-2 overflow-x-auto p-3 font-mono text-xs leading-5">
                 {phase === 'idle' ? (
-                  <div className="flex h-40 flex-col items-center justify-center text-center text-[#8b949e]">
+                  <div className="flex h-40 flex-col items-center justify-center text-center text-terminal-muted">
                     <Clock3 className="mb-2 size-6" aria-hidden="true" />
-                    <strong className="text-[#c9d1d9]">Workflow queued by the labeled event</strong>
+                    <strong className="text-terminal-foreground">
+                      Workflow queued by the labeled event
+                    </strong>
                     <span>Start the walkthrough when you are ready.</span>
                   </div>
                 ) : (
                   <>
-                    <div className="text-[#8b949e]">Runner image: ubuntu-latest</div>
+                    <div className="text-terminal-muted">Runner image: ubuntu-latest</div>
                     <div>
-                      <span className="text-[#3fb950]">✓</span> Checkout {pullRequest.branch} at{' '}
-                      {pullRequest.commit}
+                      <span className="text-terminal-success">✓</span> Checkout {pullRequest.branch}{' '}
+                      at {pullRequest.commit}
                     </div>
                     {(index > 0 || phase === 'complete') && (
                       <div>
-                        <span className="text-[#3fb950]">✓</span> Image built successfully
+                        <span className="text-terminal-success">✓</span> Image built successfully
                       </div>
                     )}
                     {phase === 'complete' && (
                       <div>
-                        <span className="text-[#3fb950]">✓</span> Published
+                        <span className="text-terminal-success">✓</span> Published
                         registry.example.dev/store:
                         {pullRequest.commit}
                       </div>
                     )}
                     {phase === 'running' && (
-                      <div className="animate-pulse text-[#58a6ff]">
+                      <div className="motion-safe:animate-pulse text-primary">
                         <span>$ </span>
                         {current.command.replace('SHA', pullRequest.commit)}
                       </div>
                     )}
-                    {failed && <div className="text-[#ff7b72]">Error: {state.lastEvent}</div>}
+                    {failed && <div className="text-terminal-error">Error: {state.lastEvent}</div>}
                   </>
                 )}
               </div>
-              <div className="h-1 bg-[#21262d]">
+              <div className="h-1 bg-terminal-bar">
                 <div
-                  className="h-full bg-[#2f81f7] transition-[width] duration-100"
+                  className="h-full bg-primary transition-[width] duration-100"
                   style={{ width: phase === 'complete' ? '100%' : String(progress) + '%' }}
                 />
               </div>
@@ -1279,12 +1300,12 @@ function GitHubActionsScene({
               <FailurePanel state={state} onRemediate={onRemediate} />
             </div>
           ) : (
-            <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-[#8b949e]">
+            <div className="mt-4 flex flex-col gap-3 rounded-md border border-terminal-border bg-terminal-bar p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-terminal-muted">
                 {phase === 'complete' ? (
-                  <Package className="size-4 shrink-0 text-[#3fb950]" aria-hidden="true" />
+                  <Package className="size-4 shrink-0 text-terminal-success" aria-hidden="true" />
                 ) : (
-                  <Play className="size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
+                  <Play className="size-4 shrink-0 text-primary" aria-hidden="true" />
                 )}
                 {phase === 'idle'
                   ? 'The same labeled event also queued this GitHub Actions workflow.'
@@ -1293,17 +1314,13 @@ function GitHubActionsScene({
                     : `Artifact ready: registry.example.dev/store:${pullRequest.commit}. The PR comment is waiting for Argo.`}
               </div>
               {phase === 'idle' && (
-                <Button size="sm" className="cursor-pointer" onClick={onRun}>
+                <Button size="sm" className="min-h-10 cursor-pointer" onClick={onRun}>
                   <Play className="size-4" aria-hidden="true" />
                   Watch workflow run
                 </Button>
               )}
               {phase === 'complete' && (
-                <Button
-                  size="sm"
-                  className="cursor-pointer bg-violet-600 text-white hover:bg-violet-500"
-                  onClick={onContinue}
-                >
+                <Button size="sm" className="min-h-10 cursor-pointer" onClick={onContinue}>
                   Open Argo CD console
                   <Workflow className="size-4" aria-hidden="true" />
                 </Button>
@@ -1334,36 +1351,38 @@ function ArgoResourceNode({
   return (
     <div
       className={cn(
-        'relative min-h-[58px] rounded-sm border bg-white px-2.5 py-2 shadow-[0_1px_2px_#2135471f] transition-all duration-500',
-        status === 'queued' && 'border-[#c6d1d6] opacity-55',
-        status === 'creating' &&
-          'border-[#0da9c0] shadow-[0_0_0_2px_#0da9c02b,0_2px_5px_#21354724]',
-        status === 'ready' && 'border-[#9fcfc7]'
+        'relative min-h-[58px] rounded-sm border bg-terminal px-2.5 py-2 transition-colors',
+        status === 'queued' && 'border-terminal-border opacity-55',
+        status === 'creating' && 'border-primary bg-primary/15',
+        status === 'ready' && 'border-terminal-success/40 bg-terminal-success/15'
       )}
     >
       <div className="flex min-w-0 items-start gap-2">
-        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#90a6b0] text-white">
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-terminal-bar text-terminal-input">
           <Icon className="size-3.5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center justify-between gap-2">
-            <strong className="truncate text-[10px] font-medium text-[#314451]">{name}</strong>
-            <span className="text-xs font-bold text-[#79909b]" aria-hidden="true">
+            <strong className="truncate text-xs font-medium text-terminal-input">{name}</strong>
+            <span className="text-xs font-bold text-terminal-muted" aria-hidden="true">
               ⋮
             </span>
           </div>
-          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[9px] text-[#657b86]">
+          <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5 text-xs text-terminal-muted">
             <span>{kind}</span>
             <span aria-hidden="true">·</span>
             {status === 'creating' ? (
-              <LoaderCircle className="size-3 animate-spin text-[#00a8c6]" aria-hidden="true" />
+              <LoaderCircle
+                className="size-3 motion-safe:animate-spin text-primary"
+                aria-hidden="true"
+              />
             ) : status === 'ready' ? (
-              <CheckCircle2 className="size-3 text-[#18b99a]" aria-hidden="true" />
+              <CheckCircle2 className="size-3 text-terminal-success" aria-hidden="true" />
             ) : (
-              <CircleDot className="size-3 text-[#9aadb6]" aria-hidden="true" />
+              <CircleDot className="size-3 text-terminal-muted" aria-hidden="true" />
             )}
             <span>{statusLabel}</span>
-            {detail && <span className="ml-auto truncate text-[#8b9ca4]">{detail}</span>}
+            {detail && <span className="ml-auto truncate text-terminal-muted">{detail}</span>}
           </div>
         </div>
       </div>
@@ -1375,10 +1394,10 @@ function ArgoGraphConnector() {
   return (
     <>
       <div className="hidden items-center lg:flex" aria-hidden="true">
-        <span className="w-full border-t border-dashed border-[#91a7b1]" />
-        <span className="-ml-1 text-sm text-[#91a7b1]">›</span>
+        <span className="w-full border-t border-dashed border-terminal-muted" />
+        <span className="-ml-1 text-sm text-terminal-muted">›</span>
       </div>
-      <div className="grid h-5 place-items-center text-[#91a7b1] lg:hidden" aria-hidden="true">
+      <div className="grid h-5 place-items-center text-terminal-muted lg:hidden" aria-hidden="true">
         <ArrowDown className="size-4" />
       </div>
     </>
@@ -1428,76 +1447,76 @@ function ArgoControlPlaneScene({
   // Resources in the tree below the Application: one deployment per service plus six shared
   const resourceCount = state.config.services.length + 6;
   const toolbarButton =
-    'inline-flex min-h-7 items-center gap-1 rounded-full bg-[#738792] px-2.5 text-[9px] font-semibold uppercase text-white';
+    'inline-flex min-h-10 items-center gap-1 rounded-full bg-terminal-bar px-2.5 text-xs font-semibold uppercase text-terminal-foreground';
   return (
     <>
-      <div className="overflow-hidden rounded-lg border border-[#8ca2ac] bg-[#dfe8ec] text-[#2d414c] shadow-2xl shadow-black/20">
-        <div className="flex items-center justify-between border-b border-[#c9d5da] bg-white px-3 py-2 md:hidden">
-          <span className="flex items-center gap-2 font-semibold text-[#173746]">
-            <span className="grid size-7 place-items-center rounded-full bg-[#f36b4f] text-white">
+      <div className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground">
+        <div className="flex items-center justify-between border-b border-terminal-border bg-terminal-bar px-3 py-2 md:hidden">
+          <span className="flex items-center gap-2 font-semibold text-terminal-input">
+            <span className="grid size-7 place-items-center rounded-full bg-terminal-error/15 text-terminal-error">
               <Workflow className="size-4" aria-hidden="true" />
             </span>
             argo
           </span>
-          <span className="text-[9px] font-semibold uppercase text-[#0085a3]">
+          <span className="text-xs font-semibold uppercase text-primary">
             Application details tree
           </span>
         </div>
 
         <div className="md:grid md:grid-cols-[152px_minmax(0,1fr)]">
-          <aside className="hidden min-h-[520px] flex-col bg-[#123441] px-3 py-4 text-[#d7e0e4] md:flex">
-            <div className="flex items-center gap-2 border-b border-[#31515c] pb-4">
-              <span className="grid size-8 place-items-center rounded-full bg-[#f36b4f] text-white">
+          <aside className="hidden min-h-[400px] flex-col bg-terminal-bar px-3 py-3 text-terminal-foreground md:flex">
+            <div className="flex items-center gap-2 border-b border-terminal-border pb-3">
+              <span className="grid size-8 place-items-center rounded-full bg-terminal-error/15 text-terminal-error">
                 <Workflow className="size-4" aria-hidden="true" />
               </span>
               <div>
                 <strong className="block text-base tracking-wide">argo</strong>
-                <span className="block text-[9px] text-[#91a8b2]">v3.3.0</span>
+                <span className="block text-xs text-terminal-muted">v3.3.0</span>
               </div>
             </div>
-            <div className="mt-4 space-y-1 text-[10px]">
-              <div className="flex items-center gap-2 rounded bg-[#0d2a35] px-2 py-2 font-semibold text-white">
-                <Layers3 className="size-3.5 text-[#f36b4f]" aria-hidden="true" />
+            <div className="mt-4 space-y-1 text-xs">
+              <div className="flex items-center gap-2 rounded bg-terminal px-2 py-2 font-semibold text-terminal-input">
+                <Layers3 className="size-3.5 text-terminal-error" aria-hidden="true" />
                 Applications
               </div>
               {['Settings', 'User info', 'Documentation'].map((item) => (
                 <UnavailableControl key={item} className="block w-full" tooltip="Read-only demo">
-                  <span className="flex w-full items-center gap-2 rounded px-2 py-2 text-[#93aab4]">
+                  <span className="flex w-full items-center gap-2 rounded px-2 py-2 text-terminal-muted">
                     <CircleDot className="size-3.5" aria-hidden="true" />
                     {item}
                   </span>
                 </UnavailableControl>
               ))}
             </div>
-            <div className="mt-5 border-t border-[#31515c] pt-3 text-[9px] uppercase tracking-wide text-[#91a8b2]">
+            <div className="mt-5 border-t border-terminal-border pt-3 text-xs uppercase tracking-wide text-terminal-muted">
               Resource filters
             </div>
-            <label className="mt-2 text-[9px] text-[#91a8b2]">
+            <label className="mt-2 text-xs text-terminal-muted">
               Name
               <input
                 readOnly
                 aria-label="Resource name filter"
-                className="mt-1 h-7 w-full cursor-not-allowed rounded-sm border border-[#33545f] bg-[#09232d] px-2 text-[10px] text-[#d7e0e4] outline-none"
+                className="mt-1 h-10 w-full cursor-not-allowed rounded-sm border border-terminal-border bg-terminal px-2 text-xs text-terminal-foreground outline-none"
                 value=""
               />
             </label>
-            <div className="mt-4 space-y-2 text-[9px] text-[#91a8b2]">
+            <div className="mt-4 space-y-2 text-xs text-terminal-muted">
               <strong className="block uppercase">Sync status</strong>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Synced{' '}
+                <span className="size-2.5 rounded-full bg-terminal-success" /> Synced{' '}
                 {ready ? resourceCount : 0}
               </div>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#f0ae2c]" /> OutOfSync{' '}
+                <span className="size-2.5 rounded-full bg-terminal-warning" /> OutOfSync{' '}
                 {ready ? 0 : resourceCount}
               </div>
               <strong className="block pt-2 uppercase">Health status</strong>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Healthy{' '}
+                <span className="size-2.5 rounded-full bg-terminal-success" /> Healthy{' '}
                 {ready ? resourceCount : 0}
               </div>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#13a8db]" /> Progressing{' '}
+                <span className="size-2.5 rounded-full bg-primary" /> Progressing{' '}
                 {ready ? 0 : resourceCount}
               </div>
             </div>
@@ -1507,7 +1526,7 @@ function ArgoControlPlaneScene({
               rel="noreferrer"
               className={cn(
                 ACTIVE_CONTROL,
-                'mt-auto flex items-center gap-1.5 border-t border-[#31515c] pt-3 text-[9px] text-[#91a8b2] hover:text-white'
+                'mt-auto flex items-center gap-1.5 border-t border-terminal-border pt-3 text-xs text-terminal-muted hover:text-terminal-input'
               )}
             >
               Preview automation by Atomsized
@@ -1516,19 +1535,19 @@ function ArgoControlPlaneScene({
           </aside>
 
           <div className="min-w-0">
-            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-[#d5dee2] bg-white px-3 py-2 text-[9px]">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-terminal-border bg-terminal-bar px-3 py-2 text-xs">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="shrink-0 text-[#0085a3]">Applications</span>
-                <span className="text-[#8ca0a9]">/</span>
+                <span className="shrink-0 text-primary">Applications</span>
+                <span className="text-terminal-muted">/</span>
                 <Search className="size-3 shrink-0" aria-hidden="true" />
                 <strong className="truncate">preview-pr-{pullRequest.number}</strong>
               </div>
-              <span className="hidden shrink-0 font-semibold uppercase text-[#0085a3] sm:block">
+              <span className="hidden shrink-0 font-semibold uppercase text-primary sm:block">
                 Application details tree
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 border-b border-[#d5dee2] bg-white px-3 py-2">
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-terminal-border bg-terminal-bar px-3 py-2">
               {['Details', 'Diff'].map((item) => (
                 <UnavailableControl key={item} tooltip="Read-only in this simulator">
                   <span className={toolbarButton}>{item}</span>
@@ -1539,9 +1558,9 @@ function ArgoControlPlaneScene({
                 aria-live="polite"
                 className={cn(
                   toolbarButton,
-                  failed && 'bg-[#c4454d]',
-                  !failed && ready && 'bg-[#18a98c]',
-                  !failed && !ready && 'bg-[#008ba5]'
+                  failed && 'bg-terminal-error/15 text-terminal-error',
+                  !failed && ready && 'bg-terminal-success/15 text-terminal-success',
+                  !failed && !ready && 'bg-primary/15 text-primary'
                 )}
               >
                 {failed ? (
@@ -1549,7 +1568,7 @@ function ArgoControlPlaneScene({
                 ) : ready ? (
                   <CheckCircle2 className="size-3" aria-hidden="true" />
                 ) : (
-                  <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+                  <LoaderCircle className="size-3 motion-safe:animate-spin" aria-hidden="true" />
                 )}
                 {failed ? 'Sync blocked' : ready ? 'Synced' : 'Auto-syncing'}
               </span>
@@ -1569,56 +1588,54 @@ function ArgoControlPlaneScene({
               </UnavailableControl>
             </div>
 
-            <div className="grid grid-cols-3 divide-x divide-[#d5dee2] border-b border-[#c8d4d9] bg-white">
+            <div className="grid grid-cols-3 divide-x divide-terminal-border border-b border-terminal-border bg-terminal-bar">
               {[
                 {
                   eyebrow: 'App health',
                   value: healthLabel,
                   detail: ready ? 'All resources healthy' : activeLabel,
-                  tone: ready ? '#18b99a' : '#13a8db',
+                  tone: ready ? 'text-terminal-success' : 'text-primary',
                 },
                 {
                   eyebrow: 'Sync status',
                   value: syncLabel,
                   detail: `to ${pullRequest.commit}`,
-                  tone: ready ? '#18b99a' : '#f0ae2c',
+                  tone: ready ? 'text-terminal-success' : 'text-terminal-warning',
                 },
                 {
                   eyebrow: 'Last sync',
                   value: lastSyncLabel,
                   detail: phase === 'idle' ? 'Auto-sync enabled' : `revision ${pullRequest.commit}`,
-                  tone: ready ? '#18b99a' : '#13a8db',
+                  tone: ready ? 'text-terminal-success' : 'text-primary',
                 },
               ].map((metric) => (
                 <div key={metric.eyebrow} className="min-w-0 px-2 py-2.5 sm:px-3">
-                  <span className="block text-[8px] font-semibold uppercase text-[#70858f]">
+                  <span className="block text-xs font-semibold uppercase text-terminal-muted">
                     {metric.eyebrow}
                   </span>
-                  <strong className="mt-1 flex items-center gap-1 truncate text-[11px] sm:text-sm">
+                  <strong className="mt-1 flex items-center gap-1 truncate text-xs sm:text-sm">
                     {phase === 'running' && metric.eyebrow !== 'Sync status' ? (
                       <LoaderCircle
-                        className="size-3.5 shrink-0 animate-spin"
-                        style={{ color: metric.tone }}
+                        className={cn('size-3.5 shrink-0 motion-safe:animate-spin', metric.tone)}
                         aria-hidden="true"
                       />
                     ) : (
                       <CheckCircle2
-                        className="size-3.5 shrink-0"
-                        style={{ color: metric.tone }}
+                        className={cn('size-3.5 shrink-0', metric.tone)}
                         aria-hidden="true"
                       />
                     )}
                     {metric.value}
                   </strong>
-                  <span className="mt-0.5 hidden truncate text-[8px] text-[#71848d] sm:block">
+                  <span className="mt-0.5 hidden truncate text-xs text-terminal-muted sm:block">
                     {metric.detail}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="relative bg-[#dfe8ec] p-3 sm:p-4">
-              <div className="absolute left-3 top-3 z-10 hidden items-center divide-x divide-[#c0cdd2] rounded-sm border border-[#bccad0] bg-white text-[#6e848e] shadow-sm sm:flex">
+            <div className="relative overflow-x-auto bg-terminal p-3">
+              <div className="absolute left-3 top-3 z-10 hidden items-center divide-x divide-terminal-border rounded-sm border border-terminal-border bg-terminal-bar text-terminal-muted sm:flex">
                 {[Layers3, Plus, Search].map((Icon, index) => (
                   <UnavailableControl key={index} tooltip="View control unavailable">
                     <span className="grid size-7 place-items-center">
@@ -1626,11 +1643,11 @@ function ArgoControlPlaneScene({
                     </span>
                   </UnavailableControl>
                 ))}
-                <span className="px-2 text-[9px]">100%</span>
+                <span className="px-2 text-xs">100%</span>
               </div>
 
               <div
-                className="grid items-center pt-1 sm:pt-9 lg:grid-cols-[minmax(130px,0.75fr)_30px_minmax(165px,0.95fr)_30px_minmax(190px,1.15fr)]"
+                className="grid min-w-[620px] items-center pt-1 sm:pt-9 lg:grid-cols-[minmax(150px,0.75fr)_30px_minmax(180px,0.95fr)_30px_minmax(210px,1.15fr)]"
                 aria-label={`Argo CD resource tree for preview-pr-${pullRequest.number}`}
               >
                 <ArgoResourceNode
@@ -1693,16 +1710,19 @@ function ArgoControlPlaneScene({
                 </div>
               </div>
 
-              <div className="mt-3 flex min-w-0 items-center gap-2 rounded-sm border border-[#c2d0d5] bg-white px-3 py-2 text-[9px] text-[#617984]">
+              <div className="mt-3 flex min-w-[620px] items-center gap-2 rounded-sm border border-terminal-border bg-terminal-bar px-3 py-2 text-xs text-terminal-muted">
                 {phase === 'running' ? (
                   <LoaderCircle
-                    className="size-3.5 shrink-0 animate-spin text-[#00a8c6]"
+                    className="size-3.5 shrink-0 motion-safe:animate-spin text-primary"
                     aria-hidden="true"
                   />
                 ) : ready ? (
-                  <CheckCircle2 className="size-3.5 shrink-0 text-[#18b99a]" aria-hidden="true" />
+                  <CheckCircle2
+                    className="size-3.5 shrink-0 text-terminal-success"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <Clock3 className="size-3.5 shrink-0 text-[#8298a2]" aria-hidden="true" />
+                  <Clock3 className="size-3.5 shrink-0 text-terminal-muted" aria-hidden="true" />
                 )}
                 <span className="min-w-0 flex-1 truncate">
                   {phase === 'idle'
@@ -1711,25 +1731,28 @@ function ArgoControlPlaneScene({
                       ? `application-controller · ${activeLabel}`
                       : `Sync completed · preview-pr-${pullRequest.number} is Healthy`}
                 </span>
-                <span className="hidden font-mono text-[#81949d] sm:inline">
+                <span className="hidden font-mono text-terminal-muted sm:inline">
                   registry.example.dev/store:{pullRequest.commit}
                 </span>
               </div>
-              <div className="mt-1 h-1 bg-[#c7d4d9]">
+              <div className="mt-1 h-1 min-w-[620px] bg-terminal-bar">
                 <div
-                  className="h-full bg-[#00a8c6] transition-[width] duration-100"
+                  className="h-full bg-primary transition-[width] duration-100"
                   style={{ width: phase === 'complete' ? '100%' : String(progress) + '%' }}
                 />
               </div>
             </div>
 
             {!failed && phase === 'complete' && (
-              <div className="flex flex-col gap-2 border-t border-[#d5dee2] bg-white px-3 py-2.5 text-[10px] sm:flex-row sm:items-center sm:justify-between">
-                <span className="flex items-center gap-2 text-[#5f747e]">
-                  <CheckCircle2 className="size-3.5 shrink-0 text-[#18b99a]" aria-hidden="true" />
+              <div className="flex flex-col gap-2 border-t border-terminal-border bg-terminal-bar px-3 py-2.5 text-xs sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex items-center gap-2 text-terminal-muted">
+                  <CheckCircle2
+                    className="size-3.5 shrink-0 text-terminal-success"
+                    aria-hidden="true"
+                  />
                   Argo CD is Synced and Healthy. GitHub Actions can post the preview URL.
                 </span>
-                <Button size="sm" className="cursor-pointer" onClick={onContinue}>
+                <Button size="sm" className="min-h-10 cursor-pointer" onClick={onContinue}>
                   Return to pull request
                   <MessageSquare className="size-4" aria-hidden="true" />
                 </Button>
@@ -1752,11 +1775,11 @@ function ResourceStatus({ status }: { status: ResourceState }) {
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide',
-          status === 'creating' ? 'text-blue-400' : 'text-amber-300'
+          'inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide',
+          status === 'creating' ? 'text-primary' : 'text-terminal-warning'
         )}
       >
-        <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+        <LoaderCircle className="size-3 motion-safe:animate-spin" aria-hidden="true" />
         {status === 'creating' ? 'Creating' : 'Removing'}
       </span>
     );
@@ -1765,8 +1788,8 @@ function ResourceStatus({ status }: { status: ResourceState }) {
     return (
       <span
         className={cn(
-          'inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide',
-          status === 'ready' ? 'text-emerald-400' : 'text-muted-foreground'
+          'inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide',
+          status === 'ready' ? 'text-terminal-success' : 'text-terminal-muted'
         )}
       >
         <CheckCircle2 className="size-3" aria-hidden="true" />
@@ -1775,7 +1798,7 @@ function ResourceStatus({ status }: { status: ResourceState }) {
     );
   }
   return (
-    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <span className="text-xs font-semibold uppercase tracking-wide text-terminal-muted">
       Queued
     </span>
   );
@@ -1799,17 +1822,17 @@ function ResourceCard({
   return (
     <div
       className={cn(
-        'rounded-lg border p-3 transition-all duration-500',
+        'rounded-lg border p-3 transition-colors',
         wide && 'sm:col-span-2',
-        status === 'creating' && 'border-blue-500 bg-blue-500/5 shadow-lg shadow-blue-500/10',
-        status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
-        status === 'queued' && 'border-border/60 bg-background/40 opacity-55',
-        status === 'removing' && 'border-amber-400/40 bg-amber-400/5 opacity-70',
-        status === 'removed' && 'border-border/40 bg-background/20 opacity-40'
+        status === 'creating' && 'border-primary bg-primary/15',
+        status === 'ready' && 'border-terminal-success/40 bg-terminal-success/15',
+        status === 'queued' && 'border-terminal-border bg-terminal opacity-55',
+        status === 'removing' && 'border-terminal-warning/40 bg-terminal-warning/15 opacity-70',
+        status === 'removed' && 'border-terminal-border bg-terminal opacity-40'
       )}
     >
       <div className="flex items-start gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border text-muted-foreground">
+        <span className="grid size-9 shrink-0 place-items-center rounded-md border border-terminal-border text-terminal-muted">
           <Icon className="size-4" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
@@ -1817,7 +1840,7 @@ function ResourceCard({
             <strong className="text-sm">{title}</strong>
             <ResourceStatus status={status} />
           </div>
-          <p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p>
+          <p className="mt-1 truncate text-xs text-terminal-muted">{detail}</p>
           {children}
         </div>
       </div>
@@ -1832,7 +1855,6 @@ function EnvironmentScene({
   onRemediate,
   onReview,
   onClose,
-  onAgain,
 }: {
   pullRequest: PullRequestScenario;
   state: PreviewEnvironmentState;
@@ -1875,39 +1897,39 @@ function EnvironmentScene({
 
   return (
     <GitHubChrome activeTab="pulls">
-      <div className="flex flex-wrap items-center gap-3 border-b border-[#30363d] bg-[#161b22] px-3 py-3 sm:px-5">
-        <span className="grid size-9 place-items-center rounded-full bg-[#2386361f] text-[#3fb950]">
+      <div className="flex flex-wrap items-center gap-3 border-b border-terminal-border bg-terminal-bar px-3 py-3 sm:px-5">
+        <span className="grid size-9 place-items-center rounded-full bg-terminal-success/15 text-terminal-success">
           <GitPullRequest className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <h3 className="truncate font-semibold">
             {pullRequest.title}{' '}
-            <span className="font-normal text-[#8b949e]">#{pullRequest.number}</span>
+            <span className="font-normal text-terminal-muted">#{pullRequest.number}</span>
           </h3>
-          <p className="text-xs text-[#8b949e]">
+          <p className="text-xs text-terminal-muted">
             {pullRequest.author} wants to merge {pullRequest.branch} into main
           </p>
         </div>
         <span
           className={cn(
-            'ml-auto rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide',
+            'ml-auto rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide',
             cleaning || removed
-              ? 'border-[#8957e5] text-[#a371f7]'
-              : 'border-[#238636] text-[#3fb950]'
+              ? 'border-violet-500/40 text-violet-300'
+              : 'border-terminal-success/40 text-terminal-success'
           )}
         >
           {cleaning || removed ? 'Closed' : 'Open'}
         </span>
       </div>
-      <div className="bg-[#0d1117] p-3 text-[#e6edf3] sm:p-5">
+      <div className="bg-terminal p-3 text-terminal-foreground">
         <div className="mb-4 grid grid-cols-[32px_minmax(0,1fr)] gap-3">
-          <span className="grid size-8 place-items-center rounded-full bg-[#6e40c9] text-white">
+          <span className="grid size-8 place-items-center rounded-full bg-violet-500/15 text-violet-300">
             <Bot className="size-4" aria-hidden="true" />
           </span>
-          <div className="overflow-hidden rounded-md border border-[#30363d]">
-            <div className="border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
+          <div className="overflow-hidden rounded-md border border-terminal-border">
+            <div className="border-b border-terminal-border bg-terminal-bar px-3 py-2 text-xs">
               <strong>preview-environment-bot</strong>{' '}
-              <span className="text-[#8b949e]">
+              <span className="text-terminal-muted">
                 {removed ? 'updated this comment after cleanup' : 'commented just now'}
               </span>
             </div>
@@ -1915,39 +1937,44 @@ function EnvironmentScene({
               {removed ? (
                 <>
                   <strong className="block text-sm">Preview environment removed</strong>
-                  <p className="text-xs text-[#8b949e]">
+                  <p className="text-xs text-terminal-muted">
                     PR #{pullRequest.number} was closed. Argo CD pruned the Application and every
                     namespaced resource together.
                   </p>
                 </>
               ) : cleaning ? (
                 <div className="flex items-center gap-3">
-                  <LoaderCircle className="size-5 animate-spin text-[#e3b341]" aria-hidden="true" />
+                  <LoaderCircle
+                    className="size-5 motion-safe:animate-spin text-terminal-warning"
+                    aria-hidden="true"
+                  />
                   <div>
                     <strong className="block text-sm">Removing preview environment</strong>
-                    <span className="text-xs text-[#8b949e]">Argo CD prune is in progress.</span>
+                    <span className="text-xs text-terminal-muted">
+                      Argo CD prune is in progress.
+                    </span>
                   </div>
                 </div>
               ) : (
                 <>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <strong className="block text-sm text-[#7ee787]">
+                      <strong className="block text-sm text-terminal-success">
                         Preview environment is ready
                       </strong>
-                      <code className="mt-1 block text-xs text-[#58a6ff]">https://{reviewUrl}</code>
+                      <code className="mt-1 block text-xs text-primary">https://{reviewUrl}</code>
                     </div>
-                    <span className="rounded-full border border-[#238636] px-2 py-1 text-[10px] font-semibold text-[#7ee787]">
+                    <span className="rounded-full border border-terminal-success/40 px-2 py-1 text-xs font-semibold text-terminal-success">
                       Argo CD · Synced / Healthy
                     </span>
                   </div>
-                  <div className="grid gap-2 text-xs text-[#8b949e] sm:grid-cols-3">
+                  <div className="grid gap-2 text-xs text-terminal-muted sm:grid-cols-3">
                     <span>Revision · {pullRequest.commit}</span>
                     <span>Namespace · {namespace}</span>
                     <span>Expires · {state.config.ttlHours}h</span>
                   </div>
-                  <div className="flex items-center gap-2 border-t border-[#21262d] pt-3 text-[10px] text-[#8b949e]">
-                    <CheckCircle2 className="size-3.5 text-[#3fb950]" aria-hidden="true" />
+                  <div className="flex items-center gap-2 border-t border-terminal-border pt-3 text-xs text-terminal-muted">
+                    <CheckCircle2 className="size-3.5 text-terminal-success" aria-hidden="true" />
                     GitHub Actions · comment-preview-url · successful
                   </div>
                 </>
@@ -1956,15 +1983,15 @@ function EnvironmentScene({
           </div>
         </div>
 
-        <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#30363d] bg-[#161b22] p-3">
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-terminal-border bg-terminal-bar p-3">
           {removed || ready || reviewed ? (
-            <CheckCircle2 className="size-5 shrink-0 text-[#3fb950]" aria-hidden="true" />
+            <CheckCircle2 className="size-5 shrink-0 text-terminal-success" aria-hidden="true" />
           ) : (
             <CircularProgress progress={progress} />
           )}
           <div className="min-w-0">
             <strong className="block text-sm">{title}</strong>
-            <span className="block truncate text-xs text-[#8b949e]">
+            <span className="block truncate text-xs text-terminal-muted">
               {removed
                 ? 'CI is historical, Argo CD is idle, and no preview resources remain.'
                 : cleaning
@@ -2011,7 +2038,7 @@ function EnvironmentScene({
                 rel="noreferrer"
                 className={cn(
                   ACTIVE_CONTROL,
-                  'mt-2 inline-flex items-center gap-1 rounded text-[10px] font-semibold text-blue-400 hover:underline'
+                  'mt-2 inline-flex items-center gap-1 rounded text-xs font-semibold text-primary hover:underline'
                 )}
               >
                 Preview database branching by Neon
@@ -2033,9 +2060,9 @@ function EnvironmentScene({
             />
           </div>
           <aside className="space-y-3">
-            <div className="rounded-lg border border-border bg-background/50 p-4">
+            <div className="rounded-lg border border-terminal-border bg-terminal-bar p-3">
               <strong className="mb-3 flex items-center gap-2 text-sm">
-                <ShieldCheck className="size-4 text-emerald-400" aria-hidden="true" />
+                <ShieldCheck className="size-4 text-terminal-success" aria-hidden="true" />
                 Verification
               </strong>
               {[
@@ -2046,23 +2073,23 @@ function EnvironmentScene({
               ].map(([label, status]) => (
                 <div
                   key={label}
-                  className="flex justify-between gap-2 border-b border-border/60 py-2 text-xs last:border-b-0"
+                  className="flex justify-between gap-2 border-b border-terminal-border py-2 text-xs last:border-b-0"
                 >
-                  <span className="text-muted-foreground">{label}</span>
+                  <span className="text-terminal-muted">{label}</span>
                   <ResourceStatus status={status as ResourceState} />
                 </div>
               ))}
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-border bg-background/50 p-3">
-                <span className="text-[10px] uppercase text-muted-foreground">Hourly cost</span>
+              <div className="rounded-lg border border-terminal-border bg-terminal-bar p-3">
+                <span className="text-xs uppercase text-terminal-muted">Hourly cost</span>
                 <div className="mt-1 font-mono text-lg font-semibold">
                   <span>$</span>
                   {removed ? '0.00' : metrics.hourlyCost.toFixed(2)}
                 </div>
               </div>
-              <div className="rounded-lg border border-border bg-background/50 p-3">
-                <span className="text-[10px] uppercase text-muted-foreground">Isolation</span>
+              <div className="rounded-lg border border-terminal-border bg-terminal-bar p-3">
+                <span className="text-xs uppercase text-terminal-muted">Isolation</span>
                 <div className="mt-1 font-mono text-lg font-semibold">
                   {metrics.isolationScore}%
                 </div>
@@ -2077,12 +2104,12 @@ function EnvironmentScene({
           </div>
         )}
         {ready && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4 sm:flex-row sm:items-center">
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-terminal-success/40 bg-terminal-success/15 p-3 sm:flex-row sm:items-center">
             <div className="flex-1">
-              <strong className="block text-sm text-emerald-300">
+              <strong className="block text-sm text-terminal-success">
                 The preview is ready for a human decision.
               </strong>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-terminal-muted">
                 Review the URL, then record whether this revision looks right.
               </span>
             </div>
@@ -2090,14 +2117,14 @@ function EnvironmentScene({
               <Button
                 size="sm"
                 variant="outline"
-                className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                className="min-h-10 cursor-pointer border-terminal-border bg-transparent text-terminal-foreground transition-colors hover:bg-terminal-bar hover:text-terminal-input"
                 onClick={() => onReview('request-changes')}
               >
                 Request changes
               </Button>
               <Button
                 size="sm"
-                className="cursor-pointer bg-emerald-600 text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-[0_0_0_3px_#10b98133] active:translate-y-0 active:scale-[0.98]"
+                className="min-h-10 cursor-pointer transition-colors"
                 onClick={() => onReview('approve')}
               >
                 Approve preview
@@ -2106,21 +2133,21 @@ function EnvironmentScene({
           </div>
         )}
         {reviewed && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border bg-background/60 p-4 sm:flex-row sm:items-center">
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-terminal-border bg-terminal-bar p-3 sm:flex-row sm:items-center">
             <div className="flex-1">
               <strong className="block text-sm">
                 {state.reviewDecision === 'approve'
                   ? 'Preview approved. The PR can move forward.'
                   : 'Changes requested. The preview stays isolated.'}
               </strong>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-terminal-muted">
                 Close the PR to watch Argo CD remove the environment automatically.
               </span>
             </div>
             <Button
               size="sm"
               variant="destructive"
-              className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+              className="min-h-10 cursor-pointer transition-colors"
               onClick={onClose}
             >
               <Trash2 className="size-4" aria-hidden="true" />
@@ -2129,34 +2156,17 @@ function EnvironmentScene({
           </div>
         )}
         {cleaning && (
-          <div className="mt-4 flex items-center gap-3 rounded-lg border border-amber-400/40 bg-amber-400/5 p-4 text-sm">
-            <LoaderCircle className="size-5 animate-spin text-amber-300" aria-hidden="true" />
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-terminal-warning/40 bg-terminal-warning/15 p-3 text-sm">
+            <LoaderCircle
+              className="size-5 motion-safe:animate-spin text-terminal-warning"
+              aria-hidden="true"
+            />
             <span>
               <strong>Argo CD is pruning the environment.</strong>{' '}
-              <span className="text-muted-foreground">
+              <span className="text-terminal-muted">
                 All Kubernetes resources disappear in one cleanup.
               </span>
             </span>
-          </div>
-        )}
-        {removed && (
-          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4 sm:flex-row sm:items-center">
-            <div className="flex-1">
-              <strong className="block text-sm text-emerald-300">
-                Cleanup complete. Cost is back to $0.00/hr.
-              </strong>
-              <span className="text-xs text-muted-foreground">
-                The pipeline succeeded earlier; Argo CD is no longer active.
-              </span>
-            </div>
-            <Button
-              size="sm"
-              className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
-              onClick={onAgain}
-            >
-              <RotateCcw className="size-4" aria-hidden="true" />
-              Add preview label again
-            </Button>
           </div>
         )}
       </div>
@@ -2325,153 +2335,211 @@ export function PreviewEnvironmentSimulator() {
   };
 
   const currentSceneIndex = SCENES.findIndex((item) => item.id === scene);
+  const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
+  const currentScene = SCENES[currentSceneIndex];
+  const switchId = useId();
+  const startOver = () => {
+    startAgain();
+    setDeveloperView('list');
+  };
+  const goal =
+    state.status === 'blocked'
+      ? 'Fix the failure: pick the repair that matches the error.'
+      : scene === 'developer'
+        ? developerView === 'list'
+          ? 'Open a pull request, then add the preview label to it.'
+          : 'Add the preview label to this pull request.'
+        : scene === 'webhook'
+          ? 'Deliver the webhook and follow the label event to the ApplicationSet controller.'
+          : scene === 'ci'
+            ? "Run the workflow that builds and pushes this commit's image."
+            : scene === 'gitops'
+              ? 'Watch Argo CD create and sync the preview environment.'
+              : state.status === 'reviewed'
+                ? 'Close the pull request and watch the preview get cleaned up.'
+                : state.status === 'cleaning'
+                  ? 'Argo CD is removing the preview environment.'
+                  : 'Open the preview, then approve it or request changes.';
+  const announce =
+    state.status === 'blocked' && failure
+      ? `Failure: ${failure.label}`
+      : state.status === 'ready'
+        ? 'Preview ready'
+        : state.status === 'removed'
+          ? 'Preview removed'
+          : currentScene.label;
 
   return (
-    <section className="mx-auto w-full max-w-6xl" aria-label="Preview environment simulator">
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="flex flex-col gap-4 border-b border-border px-4 py-4 sm:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
-                <GitBranch className="size-4" aria-hidden="true" />
-                Pull request → live preview
-              </div>
-              <h2 className="mt-1 text-xl font-bold sm:text-2xl">
-                Watch intent become an isolated environment
-              </h2>
-            </div>
-            <label
-              title={
-                scene === 'developer'
-                  ? 'Toggle a realistic failure scenario'
-                  : 'Unavailable while the simulation is running'
-              }
-              className={cn(
-                'flex shrink-0 items-center justify-between gap-3 rounded-lg border border-border bg-background/50 px-3 py-2 transition-all',
-                scene === 'developer'
-                  ? 'cursor-pointer hover:-translate-y-0.5 hover:border-blue-500/60 hover:bg-blue-500/5'
-                  : 'cursor-not-allowed opacity-55'
-              )}
-            >
-              <span>
-                <strong className="block text-xs">Practice a failure</strong>
-                <span className="block text-[10px] text-muted-foreground">
-                  Adds one realistic repair
-                </span>
-              </span>
-              <Switch
-                checked={practiceFailure}
-                onCheckedChange={setPracticeFailure}
-                disabled={scene !== 'developer'}
-                aria-label="Practice a failure"
-              />
-            </label>
-          </div>
-          <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Simulator scenes">
-            {SCENES.map((item, index) => {
-              const active = item.id === scene;
-              const complete = index < currentSceneIndex || state.status === 'removed';
-              return (
-                <li
-                  key={item.id}
-                  className={cn(
-                    'relative overflow-hidden rounded-lg border px-2 py-2.5 sm:px-3',
-                    active && 'border-blue-500 bg-blue-500/5',
-                    complete && !active && 'border-emerald-500/30 bg-emerald-500/5',
-                    !active && !complete && 'border-border bg-background/30'
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
+    <MotionConfig reducedMotion="user">
+      <section className="mx-auto w-full max-w-6xl" aria-label="Preview environment simulator">
+        <SimFrame>
+          <SimBar
+            title="Preview Environment Simulator"
+            icon={GitBranch}
+            lead={
+              <ol aria-label="Simulator scenes" className="flex flex-wrap items-center gap-1">
+                {SCENES.map((item, index) => {
+                  const current = item.id === scene;
+                  const done = index < currentSceneIndex || state.status === 'removed';
+                  return (
+                    <li
+                      key={item.id}
+                      aria-current={current ? 'step' : undefined}
                       className={cn(
-                        'grid size-6 shrink-0 place-items-center rounded-full border font-mono text-[10px]',
-                        active && 'border-blue-500 text-blue-400',
-                        complete && !active && 'border-emerald-500 bg-emerald-500 text-white',
-                        !active && !complete && 'border-border text-muted-foreground'
+                        'inline-flex h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-medium',
+                        current && 'border-primary bg-primary/10',
+                        done && `${SIM_TONE.success.surface} ${SIM_TONE.success.text}`,
+                        !current && !done && 'text-muted-foreground'
                       )}
                     >
-                      {complete && !active ? <Check className="size-3.5" /> : item.number}
-                    </span>
-                    <span className="truncate text-[10px] font-semibold sm:text-xs">
-                      {item.label}
-                    </span>
-                  </div>
-                  {active && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500" />}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+                      <span className="grid size-5 place-items-center rounded-full border font-mono text-xs">
+                        {done ? <Check className="size-3.5" aria-hidden="true" /> : item.number}
+                      </span>
+                      <span className={cn(!current && 'hidden sm:inline')}>{item.label}</span>
+                      <span className="sr-only">
+                        {current ? ' (current)' : done ? ' (done)' : ''}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            }
+            tools={
+              <>
+                <div
+                  title={
+                    scene === 'developer'
+                      ? 'Toggle a realistic failure scenario'
+                      : 'Unavailable while the simulation is running'
+                  }
+                  className="flex h-10 items-center gap-2 lg:h-8"
+                >
+                  <Switch
+                    id={switchId}
+                    checked={practiceFailure}
+                    onCheckedChange={setPracticeFailure}
+                    disabled={scene !== 'developer'}
+                  />
+                  <FormLabel htmlFor={switchId} className="text-sm font-normal">
+                    Practice a failure
+                  </FormLabel>
+                </div>
+                <SimResetButton onReset={startOver} />
+              </>
+            }
+            progress={{ current: currentSceneIndex + 1, total: SCENES.length }}
+            heading={currentScene.label}
+            meta={
+              practiceFailure ? (
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                    SIM_TONE.warning.surface,
+                    SIM_TONE.warning.text
+                  )}
+                >
+                  <TriangleAlert className="size-3.5" aria-hidden="true" />
+                  Failure practice on
+                </span>
+              ) : undefined
+            }
+            goal={goal}
+          >
+            <SimHowTo summary="Why it pauses">
+              The simulator pauses between systems. In production, the webhook, CI workflow, Argo CD
+              auto-sync, and PR comment continue automatically.
+            </SimHowTo>
+          </SimBar>
 
-        <div className="p-3 sm:p-5">
-          {scene === 'developer' &&
-            (developerView === 'list' ? (
-              <PullRequestList onOpen={openPullRequest} />
-            ) : (
-              <PullRequestDetail
-                pullRequest={selected}
-                labelPickerOpen={labelPickerOpen}
-                onBack={() => {
-                  setDeveloperView('list');
-                  setLabelPickerOpen(false);
-                }}
-                onToggleLabels={() => setLabelPickerOpen((open) => !open)}
-                onAddPreview={addPreviewLabel}
-              />
-            ))}
-          {scene === 'ci' && (
-            <GitHubActionsScene
-              pullRequest={selected}
-              beat={pipelineBeat}
-              phase={automationPhase}
-              progress={progress}
-              state={state}
-              onRun={startAutomation}
-              onContinue={openControlPlane}
-              onRemediate={remediate}
+          <SimAnnouncer message={announce} />
+
+          {state.status === 'removed' ? (
+            <SimComplete
+              title="Preview cleaned up"
+              summary="Cleanup complete. Cost is back to $0.00/hr. The label started a webhook, a CI build, an Argo CD sync and a URL on the pull request, and closing the PR removed all of it."
+              stats={[
+                { label: 'Pull request', value: `#${selected.number}` },
+                { label: 'Failure practised', value: practiceFailure ? 'Yes' : 'No' },
+                {
+                  label: 'Review',
+                  value: state.reviewDecision === 'approve' ? 'Approved' : 'Changes requested',
+                },
+              ]}
+              actions={
+                <Button type="button" variant="outline" onClick={startOver}>
+                  Try another pull request
+                </Button>
+              }
+              onPlayAgain={startAgain}
+              playAgainLabel="Add preview label again"
             />
+          ) : (
+            <div className="min-w-0">
+              {scene === 'developer' &&
+                (developerView === 'list' ? (
+                  <PullRequestList onOpen={openPullRequest} />
+                ) : (
+                  <PullRequestDetail
+                    pullRequest={selected}
+                    labelPickerOpen={labelPickerOpen}
+                    onBack={() => {
+                      setDeveloperView('list');
+                      setLabelPickerOpen(false);
+                    }}
+                    onToggleLabels={() => setLabelPickerOpen((open) => !open)}
+                    onAddPreview={addPreviewLabel}
+                  />
+                ))}
+              {scene === 'ci' && (
+                <GitHubActionsScene
+                  pullRequest={selected}
+                  beat={pipelineBeat}
+                  phase={automationPhase}
+                  progress={progress}
+                  state={state}
+                  onRun={startAutomation}
+                  onContinue={openControlPlane}
+                  onRemediate={remediate}
+                />
+              )}
+              {scene === 'webhook' && (
+                <WebhookScene
+                  pullRequest={selected}
+                  beat={pipelineBeat}
+                  phase={automationPhase}
+                  progress={progress}
+                  state={state}
+                  onRun={startAutomation}
+                  onContinue={openPipeline}
+                  onRemediate={remediate}
+                />
+              )}
+              {scene === 'gitops' && (
+                <ArgoControlPlaneScene
+                  pullRequest={selected}
+                  phase={automationPhase}
+                  progress={progress}
+                  state={state}
+                  onContinue={openEnvironment}
+                  onRemediate={remediate}
+                />
+              )}
+              {scene === 'environment' && (
+                <EnvironmentScene
+                  pullRequest={selected}
+                  state={state}
+                  progress={progress}
+                  onRemediate={remediate}
+                  onReview={(decision) => setState(recordPreviewReview(state, decision))}
+                  onClose={() => setState(beginPreviewTeardown(state, 'pr-closed'))}
+                  onAgain={startAgain}
+                />
+              )}
+            </div>
           )}
-          {scene === 'webhook' && (
-            <WebhookScene
-              pullRequest={selected}
-              beat={pipelineBeat}
-              phase={automationPhase}
-              progress={progress}
-              state={state}
-              onRun={startAutomation}
-              onContinue={openPipeline}
-              onRemediate={remediate}
-            />
-          )}
-          {scene === 'gitops' && (
-            <ArgoControlPlaneScene
-              pullRequest={selected}
-              phase={automationPhase}
-              progress={progress}
-              state={state}
-              onContinue={openEnvironment}
-              onRemediate={remediate}
-            />
-          )}
-          {scene === 'environment' && (
-            <EnvironmentScene
-              pullRequest={selected}
-              state={state}
-              progress={progress}
-              onRemediate={remediate}
-              onReview={(decision) => setState(recordPreviewReview(state, decision))}
-              onClose={() => setState(beginPreviewTeardown(state, 'pr-closed'))}
-              onAgain={startAgain}
-            />
-          )}
-        </div>
-        <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-6">
-          <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
-          The simulator pauses between systems. In production, the webhook, CI workflow, Argo CD
-          auto-sync, and PR comment continue automatically.
-        </div>
-      </div>
-    </section>
+        </SimFrame>
+      </section>
+    </MotionConfig>
   );
 }
 
