@@ -1,30 +1,34 @@
 'use client';
 
-import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
-  Bug,
-  CheckCircle,
+  BookOpen,
   Eye,
-  FileWarning,
-  GitCompareArrows,
   GitMerge,
   Layers,
-  Lightbulb,
   PencilLine,
-  Play,
-  RotateCcw,
+  RefreshCcw,
   Save,
   Split,
-  Trophy,
-  Undo2,
   Wand2,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  useSimLab,
+  type SimLabLesson,
+  type SimLabState,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import {
   LESSONS,
@@ -36,7 +40,6 @@ import {
   hasUnstagedChanges,
   saveFile,
   type FileStatus,
-  type Lesson,
   type LineSide,
   type LineType,
   type RepoFile,
@@ -49,37 +52,39 @@ interface TerminalLine {
   content: string;
 }
 
-const LESSON_ICONS: Record<Lesson['icon'], ReactNode> = {
-  markers: <FileWarning className="h-5 w-5" />,
-  edit: <PencilLine className="h-5 w-5" />,
-  side: <Split className="h-5 w-5" />,
-  rebase: <GitCompareArrows className="h-5 w-5" />,
-  abort: <Undo2 className="h-5 w-5" />,
-  bug: <Bug className="h-5 w-5" />,
-};
+const LAB_LESSONS: SimLabLesson[] = LESSONS.map((l) => ({
+  id: l.id,
+  title: l.title,
+  description: l.description,
+  commands: l.steps,
+}));
+
+const EDITOR_HEIGHT = 'h-44 lg:h-[clamp(9rem,calc(50dvh-12rem),16rem)]';
+const TERMINAL_HEIGHT =
+  'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-[clamp(12rem,calc(50dvh-6rem),24rem)]';
 
 const STATUS_STYLE: Record<FileStatus, { label: string; className: string }> = {
   unmerged: {
     label: 'both modified',
-    className: 'border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300',
+    className: `${SIM_TONE.danger.surface} ${SIM_TONE.danger.text}`,
   },
   staged: {
     label: 'staged',
-    className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+    className: `${SIM_TONE.success.surface} ${SIM_TONE.success.text}`,
   },
   modified: {
     label: 'modified',
-    className: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
+    className: `${SIM_TONE.warning.surface} ${SIM_TONE.warning.text}`,
   },
-  clean: { label: 'clean', className: 'border-border bg-muted/40 text-muted-foreground' },
+  clean: { label: 'clean', className: 'border-border bg-muted/50 text-muted-foreground' },
 };
 
 const SIDE_STYLE: Record<LineSide, string> = {
-  plain: 'text-slate-300',
+  plain: 'text-terminal-foreground',
   ours: 'bg-emerald-500/10 text-emerald-100',
   theirs: 'bg-sky-500/10 text-sky-100',
   'marker-ours': 'bg-emerald-500/25 font-semibold text-emerald-300',
-  'marker-sep': 'bg-slate-500/25 font-semibold text-slate-200',
+  'marker-sep': 'bg-terminal-border font-semibold text-terminal-input',
   'marker-theirs': 'bg-sky-500/25 font-semibold text-sky-300',
 };
 
@@ -114,7 +119,6 @@ export default function GitMergeConflictSimulator() {
   const [draft, setDraft] = useState('');
   const [editError, setEditError] = useState<string | null>(null);
   const lineId = useRef(LESSONS[0].intro.length);
-  const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const editButtonRef = useRef<HTMLButtonElement>(null);
@@ -151,10 +155,6 @@ export default function GitMergeConflictSimulator() {
     },
     [makeLines]
   );
-
-  useEffect(() => {
-    if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-  }, [terminal]);
 
   /** Mark steps from the current one up to `through` as done, with their explanations. */
   const completeSteps = useCallback(
@@ -228,11 +228,6 @@ export default function GitMergeConflictSimulator() {
     [activeFile, completeSteps, editing, lesson, makeLines, repo, stepIndex]
   );
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    run(input);
-  };
-
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowUp') {
       event.preventDefault();
@@ -295,6 +290,24 @@ export default function GitMergeConflictSimulator() {
   ).length;
   const stagedCount = Object.values(repo.files).filter((f) => fileStatus(f) === 'staged').length;
   const allDone = completed.size === TOTAL_STEPS;
+  const lab: SimLabState = {
+    currentLessonIndex: lessonIndex,
+    currentCommandIndex: Math.min(stepIndex, lesson.steps.length - 1),
+    completedCount: completed.size,
+    totalCommands: TOTAL_STEPS,
+    isComplete: allDone,
+    isCommandDone: (l, s) => completed.has(`${LESSONS[l].id}-${s}`),
+    showHint,
+    setShowHint,
+    setInputValue: setInput,
+    inputRef,
+    jumpToLesson: openLesson,
+    resetProgress: resetLab,
+  };
+  const ui = useSimLab(lab);
+  const lessonsDone = LESSONS.filter((l) =>
+    l.steps.every((_, i) => completed.has(`${l.id}-${i}`))
+  ).length;
   const opLabel =
     repo.op?.kind === 'merge'
       ? `Merging ${repo.op.other} into ${repo.branch}`
@@ -303,462 +316,327 @@ export default function GitMergeConflictSimulator() {
         : 'No merge or rebase in progress';
 
   return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-md border bg-muted/20 p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <GitMerge className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">{'// CONFLICT (content)'}</p>
-              <h2 className="text-2xl font-bold md:text-3xl">Git Merge Conflict Simulator</h2>
-            </div>
-          </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Each lesson opens on a real-looking conflict. Read the markers, resolve the file, take a
-            side, survive a rebase, back out with --abort, and catch the merge that Git called
-            clean.
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {completed.size}/{TOTAL_STEPS}
-              </span>
-            </div>
-            <Progress
-              value={(completed.size / TOTAL_STEPS) * 100}
-              aria-label={`Lab progress: ${completed.size} of ${TOTAL_STEPS} steps`}
-            />
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="Branch" value={repo.branch ?? 'detached'} />
-              <Metric label="Unmerged" value={String(unmergedCount)} />
-              <Metric label="Staged" value={String(stagedCount)} />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_340px]">
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Layers className="h-5 w-5" />
-                Lessons
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {LESSONS.map((l, index) => {
-                const done = l.steps.every((_, i) => completed.has(`${l.id}-${i}`));
-                const active = index === lessonIndex;
-                return (
-                  <button
-                    key={l.id}
-                    type="button"
-                    onClick={() => openLesson(index)}
-                    className={cn(
-                      'w-full rounded-md border p-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
-                      active
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-border hover:border-primary/40 hover:bg-muted/30'
-                    )}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={cn(
-                          'rounded-md border p-1.5',
-                          active ? 'text-primary' : 'text-muted-foreground'
-                        )}
-                      >
-                        {done ? (
-                          <CheckCircle className="h-5 w-5 text-emerald-500" />
-                        ) : (
-                          LESSON_ICONS[l.icon]
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">
-                          {index + 1}. {l.title}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">{l.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="outline" onClick={() => openLesson(lessonIndex)}>
-              <RotateCcw className="mr-1 h-4 w-4" />
-              Restart lesson
-            </Button>
-            <Button size="sm" variant="outline" onClick={resetLab}>
-              <RotateCcw className="mr-1 h-4 w-4" />
-              Reset lab
-            </Button>
-          </div>
-        </div>
-
-        <div className="min-w-0 space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-2.5 p-3.5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                      Lesson {lessonIndex + 1} / {LESSONS.length}
-                    </Badge>
-                    <Badge>
-                      {step ? `Step ${stepIndex + 1} / ${lesson.steps.length}` : 'Lesson complete'}
-                    </Badge>
-                    {step?.kind === 'edit' && (
-                      <Badge
-                        variant="outline"
-                        className="border-amber-500/50 text-amber-600 dark:text-amber-300"
-                      >
-                        Edit in the editor
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-sm font-medium sm:text-base">
-                    {step
-                      ? step.instruction
-                      : lessonIndex < LESSONS.length - 1
-                        ? `Done with "${lesson.title}". The next lesson opens a new repository.`
-                        : 'That was the last lesson.'}
-                  </p>
-                  {showHint && step && (
-                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 font-mono text-sm text-muted-foreground">
-                      {step.hint}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 flex-wrap gap-2">
-                  {step && (
-                    <Button size="sm" variant="outline" onClick={() => setShowHint((v) => !v)}>
-                      <Lightbulb className="mr-1 h-4 w-4" />
-                      Hint
-                    </Button>
-                  )}
-                  {step?.kind === 'command' && (
-                    <Button size="sm" onClick={() => run(step.command)}>
-                      <Play className="mr-1 h-4 w-4" />
-                      Run
-                    </Button>
-                  )}
-                  {step?.kind === 'edit' && (
-                    <Button size="sm" onClick={() => startEditing(step.solution)}>
-                      <Wand2 className="mr-1 h-4 w-4" />
-                      Show a solution
-                    </Button>
-                  )}
-                  {!step && lessonDone && lessonIndex < LESSONS.length - 1 && (
-                    <Button size="sm" onClick={() => openLesson(lessonIndex + 1)}>
-                      Next lesson
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex min-w-0 flex-wrap gap-1" role="group" aria-label="Files">
-                  {fileNames.map((name) => {
-                    const unmerged = fileStatus(repo.files[name]) === 'unmerged';
-                    return (
-                      <button
-                        key={name}
-                        type="button"
-                        aria-pressed={name === file?.path}
-                        disabled={editing}
-                        onClick={() => setActiveFile(name)}
-                        className={cn(
-                          'rounded px-2 py-1 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-60',
-                          name === file?.path
-                            ? 'bg-[#171717] text-slate-100'
-                            : 'text-slate-400 hover:text-slate-200',
-                          unmerged && 'text-red-300'
-                        )}
-                      >
-                        {name}
-                        {unmerged && <span className="sr-only"> (unmerged)</span>}
-                        {unmerged && <span aria-hidden="true"> !</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex gap-2">
-                  {editing ? (
-                    <>
-                      <Button size="sm" variant="secondary" onClick={() => setEditing(false)}>
-                        <Eye className="mr-1 h-4 w-4" />
-                        Cancel
-                      </Button>
-                      <Button size="sm" onClick={save}>
-                        <Save className="mr-1 h-4 w-4" />
-                        Save
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      ref={editButtonRef}
-                      size="sm"
-                      variant="secondary"
-                      disabled={!editableFile || file?.path !== editableFile}
-                      onClick={() => startEditing()}
-                      title={
-                        editableFile ? undefined : 'This lesson resolves the conflict with commands'
-                      }
-                    >
-                      <PencilLine className="mr-1 h-4 w-4" />
-                      Edit
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {editing ? (
-                <textarea
-                  ref={textareaRef}
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  spellCheck={false}
-                  aria-label={`Edit ${editableFile}`}
-                  aria-describedby={editError ? 'git-conflict-edit-error' : undefined}
-                  className="block h-[280px] w-full resize-y bg-[#171717] p-4 font-mono text-sm leading-relaxed text-slate-100 caret-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
-                />
-              ) : (
-                <FileView file={file} labels={labels} />
-              )}
-              {editError && (
-                <p
-                  id="git-conflict-edit-error"
-                  role="alert"
-                  className="border-t border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+    <SimFrame>
+      <SimLabBar
+        title="Git Merge Conflict Simulator"
+        icon={GitMerge}
+        lessons={LAB_LESSONS}
+        lab={lab}
+        ui={ui}
+        unit="steps"
+        task={
+          step
+            ? step.instruction
+            : lessonIndex < LESSONS.length - 1
+              ? `Done with "${lesson.title}". The next lesson opens a new repository.`
+              : 'That was the last lesson.'
+        }
+        hint={step?.hint}
+        showMe={step?.kind === 'command' ? step.command : undefined}
+        actions={
+          !allDone && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 lg:h-8"
+                onClick={() => openLesson(lessonIndex)}
+              >
+                <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only sm:not-sr-only">Restart lesson</span>
+              </Button>
+              {step?.kind === 'edit' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  onClick={() => startEditing(step.solution)}
                 >
-                  {editError}
-                </p>
+                  <Wand2 className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only sm:not-sr-only">Show a solution</span>
+                </Button>
               )}
-            </CardContent>
-          </Card>
+              {!step && lessonDone && lessonIndex < LESSONS.length - 1 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  onClick={() => openLesson(lessonIndex + 1)}
+                >
+                  Next lesson
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              )}
+            </>
+          )
+        }
+      />
 
-          <Card className="overflow-hidden border-border bg-[#171717]">
-            <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="h-3 w-3 rounded-full bg-red-500" />
-                    <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                    <div className="h-3 w-3 rounded-full bg-emerald-500" />
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You read, resolved, sided, rebased, aborted, and caught the clean merge that broke the build."
+          stats={[
+            { label: 'Steps', value: `${completed.size}/${TOTAL_STEPS}` },
+            { label: 'Lessons', value: `${LESSONS.length}/${LESSONS.length}` },
+            { label: 'Hints used', value: ui.hintsUsed },
+            { label: 'Show me used', value: ui.shownCount },
+          ]}
+          actions={
+            <Button type="button" variant="outline" onClick={ui.keepExploring}>
+              Keep exploring
+            </Button>
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <div className="space-y-2">
+              <section
+                aria-label="Editor"
+                className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-terminal-border bg-terminal-bar px-2 py-1.5">
+                  <div className="flex min-w-0 flex-wrap gap-1" role="group" aria-label="Files">
+                    {fileNames.map((name) => {
+                      const unmerged = fileStatus(repo.files[name]) === 'unmerged';
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          aria-pressed={name === file?.path}
+                          disabled={editing}
+                          onClick={() => setActiveFile(name)}
+                          className={cn(
+                            'min-h-8 rounded px-2 py-1 font-mono text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60',
+                            name === file?.path
+                              ? 'bg-terminal text-terminal-input'
+                              : 'text-terminal-muted hover:text-terminal-input',
+                            unmerged && 'text-terminal-error'
+                          )}
+                        >
+                          {name}
+                          {unmerged && <span className="sr-only"> (unmerged)</span>}
+                          {unmerged && <span aria-hidden="true"> !</span>}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <span className="ml-2 text-sm text-slate-400">~/repo</span>
+                  <div className="flex gap-2">
+                    {editing ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-10 lg:h-8"
+                          onClick={() => setEditing(false)}
+                        >
+                          <Eye className="h-4 w-4" aria-hidden="true" />
+                          Cancel
+                        </Button>
+                        <Button size="sm" className="h-10 lg:h-8" onClick={save}>
+                          <Save className="h-4 w-4" aria-hidden="true" />
+                          Save
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        ref={editButtonRef}
+                        size="sm"
+                        variant="secondary"
+                        className="h-10 lg:h-8"
+                        disabled={!editableFile || file?.path !== editableFile}
+                        onClick={() => startEditing()}
+                        title={
+                          editableFile
+                            ? undefined
+                            : 'This lesson resolves the conflict with commands'
+                        }
+                      >
+                        <PencilLine className="h-4 w-4" aria-hidden="true" />
+                        Edit
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <Badge variant="secondary" className="font-mono text-[11px]">
-                  {repo.op?.kind === 'merge'
+                {editing ? (
+                  <textarea
+                    ref={textareaRef}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    spellCheck={false}
+                    aria-label={`Edit ${editableFile}`}
+                    aria-describedby={editError ? 'git-conflict-edit-error' : undefined}
+                    className={cn(
+                      'block w-full resize-y bg-terminal p-4 font-mono text-sm leading-relaxed text-terminal-input caret-terminal-prompt outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                      EDITOR_HEIGHT
+                    )}
+                  />
+                ) : (
+                  <FileView file={file} labels={labels} />
+                )}
+                {editError && (
+                  <p
+                    id="git-conflict-edit-error"
+                    role="alert"
+                    className="border-t border-terminal-border bg-terminal-error/10 px-3 py-2 text-sm text-terminal-error"
+                  >
+                    {editError}
+                  </p>
+                )}
+              </section>
+              <SimTerminal
+                label="~/repo"
+                status={
+                  repo.op?.kind === 'merge'
                     ? `${repo.branch}|MERGING`
                     : repo.op?.kind === 'rebase'
                       ? `(${repo.op.branch})|REBASE 1/1`
-                      : repo.branch}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div
-                ref={terminalRef}
-                role="log"
-                aria-live="polite"
-                aria-label="Terminal output"
-                className="h-[340px] cursor-text overflow-y-auto p-4 font-mono text-sm leading-relaxed focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary/60"
-                onClick={() => inputRef.current?.focus()}
+                      : repo.branch
+                }
+                lines={terminal.map((l) => ({
+                  type: l.type === 'note' ? 'warning' : l.type,
+                  content: l.content,
+                }))}
+                prompt="$"
+                value={input}
+                onChange={setInput}
+                onSubmit={run}
+                onKeyDown={handleKeyDown}
+                inputRef={inputRef}
+                placeholder={step?.kind === 'command' ? 'type a command, or help' : 'help'}
+                heightClassName={TERMINAL_HEIGHT}
+              />
+            </div>
+          }
+          aside={
+            <>
+              <SimLabPanel
+                title="Repository"
+                icon={GitMerge}
+                summary={`${unmergedCount} unmerged, ${stagedCount} staged`}
               >
-                {terminal.map((line) => (
-                  <div
-                    key={line.id}
+                <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-3 gap-1.5">
+                    <Metric label="Branch" value={repo.branch ?? 'detached'} />
+                    <Metric label="Unmerged" value={String(unmergedCount)} />
+                    <Metric label="Staged" value={String(stagedCount)} />
+                  </div>
+                  <p
                     className={cn(
-                      'mb-2 whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-slate-100',
-                      line.type === 'output' && 'text-slate-300',
-                      line.type === 'error' && 'text-red-400',
-                      line.type === 'note' && 'border-l-2 border-amber-400/60 pl-2 text-amber-200',
-                      line.type === 'success' &&
-                        'rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 font-sans text-emerald-300'
+                      'rounded-md border px-2.5 py-1.5 font-medium',
+                      repo.op ? SIM_TONE.warning.surface : SIM_TONE.success.surface
                     )}
                   >
-                    {line.type === 'input' && <span className="text-emerald-400">$ </span>}
-                    {line.content}
-                  </div>
-                ))}
-                <form onSubmit={handleSubmit} className="flex items-center">
-                  <span className="text-emerald-400">$</span>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    aria-label="Terminal command"
-                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                    spellCheck={false}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    placeholder={step?.kind === 'command' ? 'type a command, or help' : 'help'}
+                    {opLabel}
+                  </p>
+                  <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono text-xs">
+                    <dt className="text-muted-foreground">HEAD</dt>
+                    <dd>
+                      {repo.branch
+                        ? `${repo.branch} @ ${repo.headSha}`
+                        : `detached @ ${repo.headSha}`}
+                    </dd>
+                    {repo.op?.kind === 'merge' && (
+                      <>
+                        <dt className="text-muted-foreground">MERGE_HEAD</dt>
+                        <dd>
+                          {repo.op.other} @ {repo.op.otherSha}
+                        </dd>
+                      </>
+                    )}
+                    {repo.op?.kind === 'rebase' && (
+                      <>
+                        <dt className="text-muted-foreground">REBASE_HEAD</dt>
+                        <dd>{repo.op.commitSha} (your commit)</dd>
+                        <dt className="text-muted-foreground">onto</dt>
+                        <dd>
+                          {repo.op.onto} @ {repo.op.ontoSha}
+                        </dd>
+                      </>
+                    )}
+                    {repo.tests !== null && (
+                      <>
+                        <dt className="text-muted-foreground">make test</dt>
+                        <dd
+                          className={cn(
+                            repo.tests === 'failing' && 'text-wrong-foreground',
+                            repo.tests === 'passing' && 'text-correct-foreground'
+                          )}
+                        >
+                          {repo.tests === 'not-run' ? 'not run since the last change' : repo.tests}
+                        </dd>
+                      </>
+                    )}
+                  </dl>
+                  <ul className="space-y-1.5">
+                    {fileNames.map((name) => {
+                      const f = repo.files[name];
+                      const status = fileStatus(f);
+                      const style = STATUS_STYLE[status];
+                      return (
+                        <li key={name} className="flex items-center justify-between gap-2">
+                          <span className="truncate font-mono text-xs">{name}</span>
+                          <span
+                            className={cn(
+                              'shrink-0 rounded border px-1.5 py-0.5 text-xs',
+                              style.className
+                            )}
+                          >
+                            {style.label}
+                            {status === 'staged' && hasUnstagedChanges(f) ? ', edited since' : ''}
+                            {status !== 'unmerged' && !f.binary && hasMarkers(f.content)
+                              ? ', markers!'
+                              : ''}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </SimLabPanel>
+              <SimLabPanel title="Index stages" icon={Layers} summary={file?.path}>
+                <IndexStages file={file} labels={labels} />
+              </SimLabPanel>
+              <SimLabPanel title="Ours and theirs" icon={Split}>
+                <div className="space-y-2 text-sm">
+                  <SideRow
+                    active={repo.op?.kind === 'merge'}
+                    title="During a merge"
+                    ours="the branch you are on"
+                    theirs="the branch you are merging in"
                   />
-                </form>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <GitMerge className="h-5 w-5" />
-                Repository
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0 text-sm">
-              <p
-                className={cn(
-                  'rounded-md border px-2.5 py-1.5 font-medium',
-                  repo.op
-                    ? 'border-amber-500/40 bg-amber-500/10'
-                    : 'border-emerald-500/40 bg-emerald-500/10'
-                )}
+                  <SideRow
+                    active={repo.op?.kind === 'rebase'}
+                    title="During a rebase"
+                    ours="the rebased result so far: the branch you rebase onto, plus your commits already replayed"
+                    theirs="your commit being replayed"
+                  />
+                </div>
+              </SimLabPanel>
+              <SimLabPanel
+                title="Lessons"
+                icon={BookOpen}
+                summary={`${lessonsDone} of ${LESSONS.length} done`}
               >
-                {opLabel}
-              </p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 font-mono text-xs">
-                <dt className="text-muted-foreground">HEAD</dt>
-                <dd>
-                  {repo.branch ? `${repo.branch} @ ${repo.headSha}` : `detached @ ${repo.headSha}`}
-                </dd>
-                {repo.op?.kind === 'merge' && (
-                  <>
-                    <dt className="text-muted-foreground">MERGE_HEAD</dt>
-                    <dd>
-                      {repo.op.other} @ {repo.op.otherSha}
-                    </dd>
-                  </>
-                )}
-                {repo.op?.kind === 'rebase' && (
-                  <>
-                    <dt className="text-muted-foreground">REBASE_HEAD</dt>
-                    <dd>{repo.op.commitSha} (your commit)</dd>
-                    <dt className="text-muted-foreground">onto</dt>
-                    <dd>
-                      {repo.op.onto} @ {repo.op.ontoSha}
-                    </dd>
-                  </>
-                )}
-                {repo.tests !== null && (
-                  <>
-                    <dt className="text-muted-foreground">make test</dt>
-                    <dd
-                      className={cn(
-                        repo.tests === 'failing' && 'text-red-500',
-                        repo.tests === 'passing' && 'text-emerald-600 dark:text-emerald-400'
-                      )}
-                    >
-                      {repo.tests === 'not-run' ? 'not run since the last change' : repo.tests}
-                    </dd>
-                  </>
-                )}
-              </dl>
-              <ul className="space-y-1.5">
-                {fileNames.map((name) => {
-                  const f = repo.files[name];
-                  const status = fileStatus(f);
-                  const style = STATUS_STYLE[status];
-                  return (
-                    <li key={name} className="flex items-center justify-between gap-2">
-                      <span className="truncate font-mono text-xs">{name}</span>
-                      <span
-                        className={cn(
-                          'shrink-0 rounded border px-1.5 py-0.5 text-[11px]',
-                          style.className
-                        )}
-                      >
-                        {style.label}
-                        {status === 'staged' && hasUnstagedChanges(f) ? ', edited since' : ''}
-                        {status !== 'unmerged' && !f.binary && hasMarkers(f.content)
-                          ? ', markers!'
-                          : ''}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </CardContent>
-          </Card>
-
-          <IndexStages file={file} labels={labels} />
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Split className="h-5 w-5" />
-                Ours and theirs
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0 text-sm">
-              <SideRow
-                active={repo.op?.kind === 'merge'}
-                title="During a merge"
-                ours="the branch you are on"
-                theirs="the branch you are merging in"
-              />
-              <SideRow
-                active={repo.op?.kind === 'rebase'}
-                title="During a rebase"
-                ours="the rebased result so far: the branch you rebase onto, plus your commits already replayed"
-                theirs="your commit being replayed"
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {allDone && (
-        <Card className="mt-4 border-emerald-500/40 bg-emerald-500/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="font-semibold">Lab complete</p>
-                <p className="text-sm text-muted-foreground">
-                  You read, resolved, sided, rebased, aborted, and caught the clean merge that broke
-                  the build.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={resetLab}>
-              <RotateCcw className="mr-1 h-4 w-4" />
-              Start over
-            </Button>
-          </CardContent>
-        </Card>
+                <SimLabLessons lessons={LAB_LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+            </>
+          }
+        />
       )}
-    </div>
+    </SimFrame>
   );
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+    <div className="rounded-md bg-muted/50 px-2 py-1.5">
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="truncate font-mono text-sm font-semibold" title={value}>
         {value}
       </p>
@@ -773,12 +651,20 @@ function FileView({
   file: RepoFile | undefined;
   labels: { ours: string; theirs: string };
 }) {
-  if (!file) return <div className="h-[280px] p-4 font-mono text-sm text-slate-400">No file.</div>;
+  if (!file)
+    return (
+      <div className={cn(EDITOR_HEIGHT, 'p-4 font-mono text-sm text-terminal-muted')}>No file.</div>
+    );
   if (file.binary) {
     return (
-      <div className="flex h-[280px] flex-col justify-center gap-2 p-6 text-sm text-slate-300">
-        <p className="font-mono text-slate-100">{file.content.trim()}</p>
-        <p className="text-slate-400">
+      <div
+        className={cn(
+          EDITOR_HEIGHT,
+          'flex flex-col justify-center gap-2 p-6 text-sm text-terminal-foreground'
+        )}
+      >
+        <p className="font-mono text-terminal-input">{file.content.trim()}</p>
+        <p className="text-terminal-muted">
           {file.stages
             ? 'Binary file. Git cannot merge it line by line, so it writes no markers: the working tree keeps one version and the index holds the conflicting ones.'
             : 'Binary file. The index holds one version of it.'}
@@ -788,18 +674,18 @@ function FileView({
   }
   const lines = classifyLines(file.content.replace(/\n$/, ''));
   return (
-    <div className="h-[280px] overflow-auto py-2 font-mono text-sm leading-relaxed">
+    <div className={cn(EDITOR_HEIGHT, 'overflow-auto py-2 font-mono text-sm leading-relaxed')}>
       {lines.map((line, i) => (
         <div key={i} className={cn('flex min-w-max gap-3 px-4', SIDE_STYLE[line.side])}>
-          <span className="w-6 shrink-0 select-none text-right text-slate-500">{i + 1}</span>
+          <span className="w-6 shrink-0 select-none text-right text-terminal-muted">{i + 1}</span>
           <span className="whitespace-pre">{line.text || ' '}</span>
           {line.side === 'marker-ours' && (
-            <span className="ml-2 select-none rounded bg-emerald-500/20 px-1.5 text-[11px] font-normal text-emerald-200">
+            <span className="ml-2 select-none rounded bg-emerald-500/20 px-1.5 text-xs font-normal text-emerald-200">
               {labels.ours}
             </span>
           )}
           {line.side === 'marker-theirs' && (
-            <span className="ml-2 select-none rounded bg-sky-500/20 px-1.5 text-[11px] font-normal text-sky-200">
+            <span className="ml-2 select-none rounded bg-sky-500/20 px-1.5 text-xs font-normal text-sky-200">
               {labels.theirs}
             </span>
           )}
@@ -822,43 +708,35 @@ function IndexStages({
           n: 1,
           name: 'base (common ancestor)',
           text: file.stages.base,
-          tone: 'border-slate-500/40',
+          tone: SIM_CATEGORY.neutral.border,
         },
-        { n: 2, name: labels.ours, text: file.stages.ours, tone: 'border-emerald-500/50' },
-        { n: 3, name: labels.theirs, text: file.stages.theirs, tone: 'border-sky-500/50' },
+        { n: 2, name: labels.ours, text: file.stages.ours, tone: SIM_CATEGORY.emerald.border },
+        { n: 3, name: labels.theirs, text: file.stages.theirs, tone: SIM_CATEGORY.sky.border },
       ].filter(
         (s): s is { n: number; name: string; text: string; tone: string } => s.text !== undefined
       )
     : null;
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Layers className="h-5 w-5" />
-          Index stages{file ? `: ${file.path}` : ''}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 p-4 pt-0 text-sm">
-        {stages ? (
-          stages.map((s) => (
-            <div key={s.n} className={cn('rounded-md border-l-4 bg-muted/30 p-2', s.tone)}>
-              <p className="mb-1 text-xs font-medium">
-                <span className="font-mono">:{s.n}:</span> {s.name}
-              </p>
-              <pre className="max-h-24 overflow-auto whitespace-pre font-mono text-[11px] leading-snug text-muted-foreground">
-                {s.text.replace(/\n$/, '')}
-              </pre>
-            </div>
-          ))
-        ) : (
-          <p className="text-muted-foreground">
-            {file?.undo
-              ? 'Resolved: git add replaced the conflict stages with the one version you staged.'
-              : 'No conflict in this file. While a path is unmerged, the index holds up to three versions of it here.'}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <div className="space-y-2 text-sm">
+      {stages ? (
+        stages.map((s) => (
+          <div key={s.n} className={cn('rounded-md border-l-4 bg-muted/50 p-2', s.tone)}>
+            <p className="mb-1 text-xs font-medium">
+              <span className="font-mono">:{s.n}:</span> {s.name}
+            </p>
+            <pre className="max-h-24 overflow-auto whitespace-pre font-mono text-xs leading-snug text-muted-foreground">
+              {s.text.replace(/\n$/, '')}
+            </pre>
+          </div>
+        ))
+      ) : (
+        <p className="text-muted-foreground">
+          {file?.undo
+            ? 'Resolved: git add replaced the conflict stages with the one version you staged.'
+            : 'No conflict in this file. While a path is unmerged, the index holds up to three versions of it here.'}
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -885,10 +763,10 @@ function SideRow({
         {active ? ' (now)' : ''}
       </p>
       <p className="text-xs text-muted-foreground">
-        <span className="font-mono text-emerald-600 dark:text-emerald-400">--ours</span> = {ours}
+        <span className="font-mono text-emerald-700 dark:text-emerald-300">--ours</span> = {ours}
       </p>
       <p className="text-xs text-muted-foreground">
-        <span className="font-mono text-sky-600 dark:text-sky-400">--theirs</span> = {theirs}
+        <span className="font-mono text-sky-700 dark:text-sky-300">--theirs</span> = {theirs}
       </p>
     </div>
   );

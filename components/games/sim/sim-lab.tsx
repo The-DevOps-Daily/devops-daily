@@ -171,6 +171,8 @@ export function SimLabBar({
   task,
   hint,
   showMe,
+  actions,
+  unit = 'commands',
   doneGoal = 'All lessons done. The terminal stays open for your own commands.',
 }: {
   /** The short title, shown only in an embed. */
@@ -185,6 +187,10 @@ export function SimLabBar({
   hint?: ReactNode;
   /** The command "Show me" types for the player. Leave undefined for no button. */
   showMe?: string;
+  /** The game's own controls, placed before the Show me button. */
+  actions?: ReactNode;
+  /** The word after the completed count. */
+  unit?: string;
   doneGoal?: ReactNode;
 }) {
   const game = useSimGame();
@@ -230,8 +236,9 @@ export function SimLabBar({
       actions={
         <>
           <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:inline">
-            {lab.completedCount}/{lab.totalCommands} commands
+            {lab.completedCount}/{lab.totalCommands} {unit}
           </span>
+          {actions}
           {open && showMe !== undefined && (
             <Button
               type="button"

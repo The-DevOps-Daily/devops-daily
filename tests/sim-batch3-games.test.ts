@@ -4,7 +4,9 @@ import { act, createElement, type ComponentType } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import GitConceptsSimulator, { LESSONS } from '@/components/games/git-concepts-simulator';
+import GitMergeConflictSimulator from '@/components/games/git-merge-conflict-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
+import { LESSONS as CONFLICT_LESSONS, TOTAL_STEPS } from '@/lib/games/git-conflict-engine';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/games/demo',
@@ -115,6 +117,7 @@ beforeEach(() => {
   Element.prototype.scrollBy = () => {};
   Element.prototype.scrollIntoView = () => {};
   window.scrollBy = () => {};
+  window.requestAnimationFrame = (cb) => setTimeout(() => cb(0), 0) as unknown as number;
   container = document.createElement('div');
   document.body.appendChild(container);
   root = createRoot(container);
@@ -171,4 +174,66 @@ describe('Git Concepts on the kit', () => {
     await run(commands[commands.length - 1]);
     expect(completions).toBe(2);
   }, 60_000);
+});
+
+describe('Git Merge Conflict on the kit', () => {
+  it('plays every lesson through the UI; one signal, on the last step', async () => {
+    await render(GitMergeConflictSimulator);
+    expect(container.querySelector('[data-game-intro]')).toBeNull();
+    expect(text()).not.toContain('// CONFLICT (content)');
+    expect(terminalInputs()).toHaveLength(1);
+    expect(text()).toContain('Goal: ');
+
+    for (let actions = 0; !text().includes('Lab complete') && actions < 200; actions++) {
+      if (
+        [...container.querySelectorAll('button')].some(
+          (button) => !button.disabled && name(button).includes('Next lesson')
+        )
+      ) {
+        await click('Next lesson');
+      } else if (
+        [...container.querySelectorAll('button')].some(
+          (button) => !button.disabled && name(button).includes('Show a solution')
+        )
+      ) {
+        await click('Show a solution');
+        await click('Save', true);
+      } else {
+        await click('Show me');
+        await act(async () => {
+          input().form?.requestSubmit();
+        });
+      }
+
+      if (!text().includes('Lab complete')) expect(completions).toBe(0);
+      else expect(completions).toBe(1);
+    }
+
+    expect(text()).toContain('Lab complete');
+    expect(completions).toBe(1);
+    expect(text()).toContain(`${TOTAL_STEPS}/${TOTAL_STEPS}`);
+    expect(terminalInputs()).toHaveLength(0);
+
+    await click('Keep exploring');
+    await run('git status');
+    expect(completions).toBe(1);
+  }, 60_000);
+
+  it('Show me types the command but does not run it', async () => {
+    await render(GitMergeConflictSimulator);
+    await click('Show me');
+    expect(input().value).toBe(CONFLICT_LESSONS[0].steps[0].command);
+    expect(text()).toContain(`0/${TOTAL_STEPS} steps`);
+  });
+
+  it('Restart lesson keeps finished steps', async () => {
+    await render(GitMergeConflictSimulator);
+    await click('Show me');
+    await act(async () => {
+      input().form?.requestSubmit();
+    });
+    await click('Restart lesson');
+    expect(text()).toContain(`1/${TOTAL_STEPS} steps`);
+    expect(text()).toContain(CONFLICT_LESSONS[0].intro[0].content);
+  });
 });
