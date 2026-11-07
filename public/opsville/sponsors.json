@@ -1,5 +1,5 @@
 {
-  "note": "Two hub billboards. Links must go through go.devops-daily.com with p=game so the sponsor report counts them.",
+  "note": "Hub billboards: paid sponsors only, links through go.devops-daily.com with p=game so the sponsor report counts them. A slot id listed twice takes turns. 'house' is our own products on the Made by DevOps Daily board: direct links, no Sponsor label; id is the go slug for the beacon key.",
   "slots": [
     {
       "id": "slot-1",
@@ -14,6 +14,36 @@
       "tagline": "AWS platform engineering and GitOps",
       "logo": "assets/sponsors/atomsized.svg",
       "link": "https://go.devops-daily.com/atomsized?p=game"
+    },
+    {
+      "id": "slot-3",
+      "name": "DigitalOcean",
+      "tagline": "Cloud infrastructure for developers",
+      "logo": "assets/sponsors/digitalocean-brand.svg",
+      "link": "https://go.devops-daily.com/digitalocean?p=game"
+    }
+  ],
+  "house": [
+    {
+      "id": "devdojo",
+      "name": "DevDojo",
+      "tagline": "Developer community & tools",
+      "logo": "assets/house/devdojo-brand.svg",
+      "link": "https://devdojo.com"
+    },
+    {
+      "id": "smtpfast",
+      "name": "SMTPfast",
+      "tagline": "Developer-first email API",
+      "logo": "assets/house/smtpfast-brand.svg",
+      "link": "https://smtpfa.st"
+    },
+    {
+      "id": "quizapi",
+      "name": "QuizAPI",
+      "tagline": "Developer-first quiz platform",
+      "logo": "assets/house/quizapi.svg",
+      "link": "https://quizapi.io?ref=devops-daily"
     }
   ]
 }

@@ -44,6 +44,9 @@
 /opsville/assets/sponsors/*
   Cache-Control: public, max-age=3600
 
+/opsville/assets/house/*
+  Cache-Control: public, max-age=3600
+
 /opsville/maps/*
   Cache-Control: public, max-age=3600
 
