@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DeploymentStrategiesSimulator from '@/components/games/deployment-strategies-simulator';
 import KubernetesNetworkingCniSimulator from '@/components/games/kubernetes-networking-cni-simulator';
 import K8sScheduler from '@/components/games/k8s-scheduler';
+import OAuthOidcFlowSimulator from '@/components/games/oauth-oidc-flow-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -364,5 +365,57 @@ describe('Kubernetes CNI Simulator on the kit', () => {
     if (!second) throw new Error('no second scenario');
     expect(second.getAttribute('aria-pressed')).toBe('true');
     expect(text()).toContain('1/');
+  });
+});
+
+async function renderOAuthOidc() {
+  await act(async () => root.render(createElement(OAuthOidcFlowSimulator)));
+}
+
+async function runOAuthOidcAction() {
+  const action = [...container.querySelectorAll<HTMLButtonElement>('[data-sim-action]')].find(
+    (button) => !button.disabled
+  );
+  if (!action) throw new Error('no enabled OAuth/OIDC action');
+  await act(async () => action.click());
+  await wait(600);
+}
+
+describe('OAuth/OIDC Flow on the kit', () => {
+  it('no hero, a goal, the explanation in the bar', async () => {
+    await renderOAuthOidc();
+    expect(text()).not.toContain('// oauth oidc lab');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/');
+    await click('Explain', true);
+    expect(text()).toContain('Why this step');
+    await click('Explain', true);
+    expect(text()).not.toContain('Why this step');
+  });
+
+  it('one signal, on the last step', async () => {
+    await renderOAuthOidc();
+    for (let clicks = 0; clicks < 40; clicks++) {
+      if (text().includes('15/15')) break;
+      await runOAuthOidcAction();
+      expect(completions).toBe(text().includes('15/15') ? 1 : 0);
+    }
+    if (!text().includes('15/15'))
+      throw new Error('OAuth/OIDC flow did not complete after 40 clicks');
+    expect(completions).toBe(1);
+    expect(text()).toContain('Lab complete');
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+    expect(text()).toContain('Protocol flow');
+  }, 60_000);
+
+  it('a lesson pill jumps to that lesson', async () => {
+    await renderOAuthOidc();
+    const lessonThree = [...container.querySelectorAll<HTMLButtonElement>('button')].find(
+      (button) => (button.getAttribute('aria-label') ?? '').startsWith('Lesson 3:')
+    );
+    if (!lessonThree) throw new Error('no Lesson 3 pill');
+    await act(async () => lessonThree.click());
+    expect(text()).toContain('Scopes & Refresh');
   });
 });
