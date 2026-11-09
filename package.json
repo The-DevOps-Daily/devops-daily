@@ -124,26 +124,26 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
-    "@playwright/test": "1.64.1",
+    "@playwright/test": "1.65.0",
     "@resvg/resvg-js": "^2.6.2",
-    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.4",
     "@tailwindcss/typography": "0.5.20",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/sanitize-html": "^2.16.2",
-    "@vitest/ui": "^5.0.5",
+    "@vitest/ui": "^5.1.0",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.4.3",
     "fast-glob": "^3.3.3",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "sharp": "^0.35.5",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "^4.3.4",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vite": "8.3.5",
-    "vitest": "^5.0.5"
+    "vite": "8.3.6",
+    "vitest": "^5.1.0"
   },
   "pnpm": {
     "overrides": {
