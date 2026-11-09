@@ -14,11 +14,11 @@
     "difficultyLevels": {
       "beginner": 4,
       "intermediate": 8,
-      "advanced": 3
+      "advanced": 4
     },
     "createdDate": "2024-05-15"
   },
-  "totalPoints": 218,
+  "totalPoints": 236,
   "questions": [
     {
       "id": 1,
@@ -259,6 +259,22 @@
       "correctAnswer": 1,
       "explanation": "Composite actions let you bundle multiple workflow steps into a single action using YAML, without writing JavaScript or building Docker images. They're simpler to create and maintain.",
       "hint": "Composite actions are defined purely in YAML, combining existing steps."
+    },
+    {
+      "id": 16,
+      "title": "Least Privilege Permissions",
+      "description": "What is the recommended default for workflow permissions when you do not need to push changes or publish packages?",
+      "difficulty": "advanced",
+      "points": 18,
+      "options": [
+        "Set permissions: write-all",
+        "Grant all repository scopes by default",
+        "Use permissions: { contents: read } and only add writes when required",
+        "Use GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}"
+      ],
+      "correctAnswer": 2,
+      "explanation": "GitHub Actions follows least-privilege security best practice: set explicit permissions such as `contents: read` and add write scopes only for jobs that truly need them. This reduces the blast radius of compromised workflows.",
+      "hint": "The safest default is the minimum permission required for the job to do its work."
     }
   ]
 }

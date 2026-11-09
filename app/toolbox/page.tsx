@@ -433,6 +433,19 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Trivy',
+    description:
+      'Open-source vulnerability scanner for containers, filesystem, repositories, and infrastructure-as-code.',
+    href: 'https://trivy.dev/',
+    category: 'security',
+    icon: Shield,
+    isPopular: true,
+    badges: [
+      { text: 'Vulnerability Scanning', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
@@ -530,7 +543,7 @@ export default function ToolboxPage() {
                 Know a great DevOps tool we missed?
               </h2>
               <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-                We're always looking to expand our toolbox with the best resources for DevOps
+                We&apos;re always looking to expand our toolbox with the best resources for DevOps
                 engineers. Let us know if you have a suggestion!
               </p>
               <Button asChild size="lg">
