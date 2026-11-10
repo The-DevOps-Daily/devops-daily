@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import {
   BarChart,
   Bar,
@@ -14,24 +21,26 @@ import {
   Line,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Play, Pause, RotateCcw, CircleCheck, CircleX, Gauge } from 'lucide-react';
+import { MotionConfig } from 'framer-motion';
 import {
-  Play,
-  Pause,
-  RotateCcw,
-  Zap,
-  CheckCircle,
-  XCircle,
-  Activity,
-  BarChart3,
-  Settings,
-  Keyboard,
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
+// The header values come from Date.now(), so they render only in the browser (no hydration mismatch).
+const subscribeNothing = () => () => {};
 interface RateLimitConfig {
   limit: number;
   windowMs: number;
@@ -72,61 +81,62 @@ const BACKOFF_STRATEGIES = {
   exponential: { name: 'Exponential Backoff', description: 'Double the delay each time' },
 };
 
-// Simple Select component
-function Select({
-  value,
-  onValueChange,
-  children,
-}: {
-  value: string;
-  onValueChange: (value: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onValueChange(e.target.value)}
-      className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-    >
-      {children}
-    </select>
-  );
+interface RateMissionState {
+  preset: string;
+  strategy: string;
+  burstSize: number;
+  burstInterval: number;
+  throttled: number;
+  requests: RequestData[];
 }
 
-function SelectItem({ value, children }: { value: string; children: React.ReactNode }) {
-  return <option value={value}>{children}</option>;
-}
+const MISSIONS: Mission<RateMissionState>[] = [
+  {
+    id: 'limit',
+    label: 'Start the client and run it into the limit.',
+    hint: 'The demo API allows 20 requests per 30 seconds.',
+    check: (s) => s.throttled > 0,
+  },
+  {
+    id: 'backoff',
+    label: 'With exponential backoff, see a retry wait 8 seconds.',
+    hint: 'Each retry doubles the wait: 1, 2, 4, 8 seconds.',
+    check: (s) => s.requests.some((r) => !r.success && (r.retryAfter ?? 0) >= 8000),
+  },
+  {
+    id: 'recovered',
+    label: 'Keep running until a request succeeds again after a 429.',
+    hint: 'The window resets every 30 seconds.',
+    check: (s) => {
+      const firstThrottle = s.requests.findIndex((r) => !r.success);
+      return firstThrottle >= 0 && s.requests.slice(firstThrottle + 1).some((r) => r.success);
+    },
+  },
+  {
+    id: 'storm',
+    label: 'Switch to No Backoff and watch a blocked request retry six times at once.',
+    hint: 'No delay means every retry hits the closed window.',
+    check: (s) => s.requests.filter((r) => !r.success && r.retryAfter === 0).length >= 6,
+  },
+  {
+    id: 'paced',
+    label: 'Pace the client to 20 requests per 30 s or fewer, then send 10 in a row without a 429.',
+    hint: 'Fewer requests per burst, or more time between bursts.',
+    check: (s) =>
+      s.preset === 'demo' &&
+      s.burstSize * Math.ceil(30000 / s.burstInterval) <= 20 &&
+      s.requests.length >= 10 &&
+      s.requests.slice(-10).every((r) => r.success),
+  },
+];
 
-// Simple Slider component
-function Slider({
-  value,
-  onValueChange,
-  min,
-  max,
-  step,
-}: {
-  value: number[];
-  onValueChange: (value: number[]) => void;
-  min: number;
-  max: number;
-  step: number;
-}) {
-  return (
-    <input
-      type="range"
-      min={min}
-      max={max}
-      step={step}
-      value={value[0]}
-      onChange={(e) => onValueChange([parseInt(e.target.value)])}
-      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-    />
-  );
-}
+type Tab = 'traffic' | 'client' | 'headers';
+const FIELD =
+  'h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-9';
 
 export default function RateLimitSimulator() {
-  // UI State
-  const [activeTab, setActiveTab] = useState('simulator');
+  const [tab, setTab] = useState<Tab>('traffic');
+  const [dismissed, setDismissed] = useState(false);
 
   // Configuration state
   const [preset, setPreset] = useState('demo');
@@ -146,6 +156,24 @@ export default function RateLimitSimulator() {
   const [totalRequests, setTotalRequests] = useState(0);
   const [successfulRequests, setSuccessfulRequests] = useState(0);
   const [throttledRequests, setThrottledRequests] = useState(0);
+
+  const missionState = useMemo(
+    () => ({
+      preset,
+      strategy,
+      burstSize,
+      burstInterval,
+      throttled: throttledRequests,
+      requests,
+    }),
+    [preset, strategy, burstSize, burstInterval, throttledRequests, requests]
+  );
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
   // Chart data - aggregate by 5-second periods for better readability
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -389,38 +417,6 @@ export default function RateLimitSimulator() {
     }
   };
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      // Space to toggle start/stop
-      if (e.key === ' ') {
-        e.preventDefault();
-        handleToggle();
-      }
-
-      // R to reset
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        resetSimulation();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRunning, startSimulation, stopSimulation, resetSimulation]);
-
   // Calculate rates
   const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
   const throttleRate = totalRequests > 0 ? (throttledRequests / totalRequests) * 100 : 0;
@@ -435,365 +431,407 @@ export default function RateLimitSimulator() {
       currentRemaining === 0 ? Math.ceil((windowResetTime - Date.now()) / 1000).toString() : '0',
   });
 
+  const startOver = () => {
+    resetSimulation();
+    missions.reset();
+    setDismissed(false);
+  };
+  const latestRequest = requests[requests.length - 1];
+  const announcement = latestRequest
+    ? latestRequest.success
+      ? `Request accepted, ${latestRequest.remaining} left`
+      : latestRequest.retryAfter === undefined
+        ? '429 Too Many Requests, no retry left'
+        : `429 Too Many Requests, retry in ${latestRequest.retryAfter / 1000} s`
+    : '';
+  const strategyInfo = BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES];
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 p-4">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
-      >
-        <h2 className="text-4xl md:text-5xl font-bold text-primary">
-          Rate Limit Simulator
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Learn rate limiting, backoff strategies, and API throttling through interactive simulation
-        </p>
-      </motion.div>
-
-      {/* Tab Navigation */}
-      <div className="flex justify-center">
-        <div className="inline-flex bg-muted p-1 rounded-lg">
-          <button
-            onClick={() => setActiveTab('simulator')}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-md transition-colors',
-              activeTab === 'simulator'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <Activity className="h-4 w-4" />
-            Simulator
-          </button>
-          <button
-            onClick={() => setActiveTab('headers')}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-md transition-colors',
-              activeTab === 'headers'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            <BarChart3 className="h-4 w-4" />
-            API Headers
-          </button>
-        </div>
-      </div>
-
-      {/* Simulator Tab */}
-      {activeTab === 'simulator' && (
-        <div className="space-y-6">
-          {/* Configuration Panel */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Configuration
-              </CardTitle>
-              <CardDescription>Configure rate limits and simulation parameters</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Rate Limit Preset</label>
-                  <Select value={preset} onValueChange={handlePresetChange}>
-                    <SelectItem value="demo">Demo (20/30sec)</SelectItem>
-                    <SelectItem value="github">GitHub API (5000/hour)</SelectItem>
-                    <SelectItem value="twitter">Twitter API (300/15min)</SelectItem>
-                    <SelectItem value="stripe">Stripe API (100/sec, live mode)</SelectItem>
-                    <SelectItem value="openai">OpenAI API (3/min)</SelectItem>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Backoff Strategy</label>
-                  <Select value={strategy} onValueChange={setStrategy}>
-                    {Object.entries(BACKOFF_STRATEGIES).map(([key, strat]) => (
-                      <SelectItem key={key} value={key}>
-                        {strat.name}
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Burst Size: {burstSize} requests</label>
-                  <Slider
-                    value={[burstSize]}
-                    onValueChange={(value) => setBurstSize(value[0])}
-                    max={20}
-                    min={1}
-                    step={1}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Burst Interval: {burstInterval / 1000}s
-                  </label>
-                  <Slider
-                    value={[burstInterval]}
-                    onValueChange={(value) => setBurstInterval(value[0])}
-                    max={10000}
-                    min={1000}
-                    step={500}
-                  />
-                </div>
-              </div>
-
-              {/* Controls */}
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleToggle}
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Rate Limit Simulator"
+          icon={Gauge}
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading="Missions"
+          meta={
+            <>
+              {isRunning ? (
+                <span
                   className={cn(
-                    'flex items-center gap-2',
-                    isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+                    'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs',
+                    SIM_TONE.info.surface,
+                    SIM_TONE.info.text
                   )}
                 >
-                  {isRunning ? (
-                    <>
-                      <Pause className="h-4 w-4" />
-                      Pause
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4" />
-                      Start
-                    </>
-                  )}
-                </Button>
-                <Button onClick={resetSimulation} variant="outline">
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Reset
-                </Button>
-              </div>
-
-              {/* Real-time status */}
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                  <div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {currentRemaining}/{config.limit}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Remaining</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-green-600">{successfulRequests}</div>
-                    <div className="text-sm text-muted-foreground">Successful</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-red-600">{throttledRequests}</div>
-                    <div className="text-sm text-muted-foreground">Throttled</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-purple-600">{totalRequests}</div>
-                    <div className="text-sm text-muted-foreground">Total</div>
-                  </div>
-                </div>
-
-                {/* Success/Throttle rates */}
-                <div className="mt-4 grid grid-cols-2 gap-4 text-center">
-                  <div>
-                    <div className="text-lg font-semibold text-green-600">
-                      {successRate.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Success Rate</div>
-                  </div>
-                  <div>
-                    <div className="text-lg font-semibold text-red-600">
-                      {throttleRate.toFixed(1)}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">Throttle Rate</div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Keyboard shortcuts hint */}
-          <div className="hidden sm:flex items-center justify-center gap-2 text-xs opacity-70">
-            <Keyboard className="h-3 w-3" />
-            <span>Space start/stop · R reset</span>
-          </div>
-
-          {/* Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Request Timeline (5-second intervals)</CardTitle>
-              <CardDescription>
-                Aggregated view of requests over time - each bar represents a 5-second period
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-96">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value, name) => [
-                        value,
-                        name === 'successful' ? 'Successful' : 'Throttled',
-                      ]}
-                      labelFormatter={(label) => `Period: ${label}`}
-                    />
-                    <Legend />
-                    <Bar dataKey="successful" fill="#10b981" name="Successful Requests" />
-                    <Bar dataKey="throttled" fill="#ef4444" name="Throttled Requests" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Rate limit line chart */}
-              <div className="h-48 mt-6">
-                <h4 className="text-sm font-medium mb-2">Rate Limit Remaining</h4>
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="remaining"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      name="Rate Limit Remaining"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Strategy Info */}
-          <Alert>
-            <Zap className="h-4 w-4" />
-            <AlertDescription>
-              <strong>
-                {BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES]?.name}:
-              </strong>{' '}
-              {BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES]?.description}
-              {strategy === 'exponential' &&
-                ' - Delays grow: 1s → 2s → 4s → 8s → 16s → 30s (max)'}
-              {strategy === 'fixed' && ' - Always waits 1 second between retries'}
-              {strategy === 'none' &&
-                ' - Every retry is another request against the limit, so a throttled client only makes it worse'}
-              {` (up to ${MAX_RETRIES} retries per request)`}
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-
-      {/* Headers Tab */}
-      {activeTab === 'headers' && (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>HTTP Rate Limit Headers</CardTitle>
-              <CardDescription>Standard headers returned by rate-limited APIs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.entries(getRateLimitHeaders()).map(([header, value]) => (
-                  <div
-                    key={header}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <code className="text-sm font-mono text-blue-600">{header}</code>
-                    <Badge variant="outline" className="font-mono">
-                      {value}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <h4 className="font-semibold">Header Explanations:</h4>
-                <div className="grid gap-3 text-sm">
-                  <div>
-                    <strong>X-RateLimit-Limit:</strong> Maximum requests allowed in the time window
-                  </div>
-                  <div>
-                    <strong>X-RateLimit-Remaining:</strong> Requests remaining in current window
-                  </div>
-                  <div>
-                    <strong>X-RateLimit-Reset:</strong> Unix timestamp when the window resets
-                  </div>
-                  <div>
-                    <strong>X-RateLimit-Window:</strong> Duration of the rate limiting window
-                  </div>
-                  <div>
-                    <strong>Retry-After:</strong> Seconds to wait before retrying (when rate
-                    limited)
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Requests Log */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Request Log</CardTitle>
-              <CardDescription>Recent API requests and responses</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {requests
-                  .slice(-20)
-                  .reverse()
-                  .map((request) => (
-                    <motion.div
-                      key={request.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={cn(
-                        'flex items-center gap-3 p-3 rounded-lg border text-sm',
-                        request.success
-                          ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20'
-                          : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20'
-                      )}
-                    >
-                      {request.success ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-600" />
-                      )}
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {new Date(request.timestamp).toLocaleTimeString()}
-                      </span>
-                      <span
-                        className={
-                          request.success
-                            ? 'text-green-700 dark:text-green-300'
-                            : 'text-red-700 dark:text-red-300'
-                        }
-                      >
-                        {request.success ? 'HTTP 200 OK' : 'HTTP 429 Too Many Requests'}
-                      </span>
-                      <span className="text-muted-foreground">Remaining: {request.remaining}</span>
-                      {request.retryAfter !== undefined && (
-                        <Badge variant="outline" className="ml-auto">
-                          {request.retryAfter === 0
-                            ? 'Retry now'
-                            : `Retry in ${(request.retryAfter / 1000).toFixed(1)}s`}
-                        </Badge>
-                      )}
-                    </motion.div>
-                  ))}
-                {requests.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No requests yet. Start the simulation to see request logs.
-                  </div>
+                  <span
+                    className={cn(
+                      'h-1.5 w-1.5 rounded-full motion-safe:animate-pulse',
+                      SIM_TONE.info.fill
+                    )}
+                  />
+                  Running
+                </span>
+              ) : (
+                <span className="rounded-full border bg-muted/50 px-2 py-0.5 text-xs text-muted-foreground">
+                  Stopped
+                </span>
+              )}
+              <Badge variant="secondary" className="font-mono tabular-nums">
+                {currentRemaining}/{config.limit} left
+              </Badge>
+            </>
+          }
+          actions={
+            <div className="hidden items-center gap-2 lg:flex">
+              <Button type="button" className="h-8" onClick={handleToggle}>
+                {isRunning ? (
+                  <Pause className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Play className="h-4 w-4" aria-hidden="true" />
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
+                {isRunning ? 'Stop' : 'Start'}
+              </Button>
+              <Button type="button" variant="outline" className="h-8" onClick={resetSimulation}>
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                Reset run
+              </Button>
+            </div>
+          }
+          goal={
+            missions.complete ? (
+              'All five done. Keep experimenting with presets and backoff.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
+
+        <SimAnnouncer message={announcement} />
+
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Missions complete"
+            summary="You hit the limit, watched exponential backoff stretch its waits, saw the window reset, caused a retry storm and paced a client to stay under the limit."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Requests sent', value: totalRequests },
+              { label: 'Throttled', value: throttledRequests },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)_minmax(0,1fr)]"
+            minHeight="min-h-[24rem]"
+            tab={tab}
+            onTabChange={(next) => {
+              if (next === 'traffic' || next === 'client' || next === 'headers') setTab(next);
+            }}
+            tabsLabel="Simulator panels"
+            tabOrder={['traffic', 'client', 'headers']}
+            panels={[
+              {
+                id: 'client',
+                label: 'Client',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <section className="space-y-3 rounded-lg border bg-card p-3">
+                      <h3 className="text-sm font-semibold">Client settings</h3>
+                      <div>
+                        <label
+                          htmlFor="rate-limit-preset"
+                          className="mb-1 block text-xs font-medium text-muted-foreground"
+                        >
+                          Rate limit preset
+                        </label>
+                        <select
+                          id="rate-limit-preset"
+                          value={preset}
+                          onChange={(event) => handlePresetChange(event.target.value)}
+                          className={FIELD}
+                        >
+                          <option value="demo">Demo (20/30sec)</option>
+                          <option value="github">GitHub API (5000/hour)</option>
+                          <option value="twitter">Twitter API (300/15min)</option>
+                          <option value="stripe">Stripe API (100/sec, live mode)</option>
+                          <option value="openai">OpenAI API (3/min)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="rate-limit-strategy"
+                          className="mb-1 block text-xs font-medium text-muted-foreground"
+                        >
+                          Backoff strategy
+                        </label>
+                        <select
+                          id="rate-limit-strategy"
+                          value={strategy}
+                          onChange={(event) => setStrategy(event.target.value)}
+                          className={FIELD}
+                        >
+                          {Object.entries(BACKOFF_STRATEGIES).map(([key, item]) => (
+                            <option key={key} value={key}>
+                              {item.name}
+                            </option>
+                          ))}
+                        </select>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {strategyInfo.description}
+                        </p>
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="rate-limit-burst-size"
+                          className="mb-1 block text-xs font-medium text-muted-foreground"
+                        >
+                          Burst size: {burstSize} requests
+                        </label>
+                        <input
+                          id="rate-limit-burst-size"
+                          type="range"
+                          min={1}
+                          max={20}
+                          step={1}
+                          value={burstSize}
+                          onChange={(event) => setBurstSize(parseInt(event.target.value))}
+                          className="w-full accent-primary"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="rate-limit-burst-interval"
+                          className="mb-1 block text-xs font-medium text-muted-foreground"
+                        >
+                          Burst interval: {burstInterval / 1000} s
+                        </label>
+                        <input
+                          id="rate-limit-burst-interval"
+                          type="range"
+                          min={1000}
+                          max={10000}
+                          step={500}
+                          value={burstInterval}
+                          onChange={(event) => setBurstInterval(parseInt(event.target.value))}
+                          className="w-full accent-primary"
+                        />
+                      </div>
+                    </section>
+                    <SimMissionList missions={missions.missions} />
+                  </>
+                ),
+              },
+              {
+                id: 'traffic',
+                label: 'Traffic',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        ['Remaining', currentRemaining, 'text-foreground'],
+                        ['Successful', successfulRequests, 'text-correct-foreground'],
+                        ['Throttled', throttledRequests, 'text-wrong-foreground'],
+                        ['Total', totalRequests, 'text-foreground'],
+                      ].map(([label, value, tone]) => (
+                        <div key={label} className="rounded-md border bg-card px-2 py-1.5">
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {label}
+                          </div>
+                          <div className={cn('font-mono text-lg font-semibold tabular-nums', tone)}>
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Success rate {successRate.toFixed(1)}% · Throttle rate{' '}
+                      {throttleRate.toFixed(1)}%
+                    </p>
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="text-sm font-semibold">Request timeline</h3>
+                      <div className="h-56">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={chartData}>
+                            <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                            <XAxis dataKey="period" stroke="hsl(var(--muted-foreground))" />
+                            <YAxis stroke="hsl(var(--muted-foreground))" />
+                            <Tooltip
+                              contentStyle={{
+                                background: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                              }}
+                            />
+                            <Legend />
+                            <Bar
+                              dataKey="successful"
+                              fill="hsl(var(--correct))"
+                              name="Successful requests"
+                            />
+                            <Bar
+                              dataKey="throttled"
+                              fill="hsl(var(--wrong))"
+                              name="Throttled requests"
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <h3 className="mt-2 text-sm font-semibold">Rate limit remaining</h3>
+                      <div className="h-32">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={chartData}>
+                            <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                            <XAxis dataKey="period" stroke="hsl(var(--muted-foreground))" />
+                            <YAxis stroke="hsl(var(--muted-foreground))" />
+                            <Tooltip
+                              contentStyle={{
+                                background: 'hsl(var(--card))',
+                                border: '1px solid hsl(var(--border))',
+                              }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="remaining"
+                              stroke="hsl(var(--primary))"
+                              strokeWidth={2}
+                              name="Rate limit remaining"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </section>
+                  </>
+                ),
+              },
+              {
+                id: 'headers',
+                label: 'Headers',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="mb-2 text-sm font-semibold">Response headers</h3>
+                      <div className="space-y-2">
+                        {Object.entries(getRateLimitHeaders()).map(([header, value]) => (
+                          <div key={header} className="flex items-center justify-between gap-2">
+                            <code className="font-mono text-xs">{header}</code>
+                            <Badge variant="outline" className="font-mono">
+                              {hydrated ? value : ''}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                      <details className="mt-3 text-sm">
+                        <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+                          What the headers mean
+                        </summary>
+                        <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                          <p>
+                            <strong>X-RateLimit-Limit:</strong> Maximum requests allowed in the time
+                            window
+                          </p>
+                          <p>
+                            <strong>X-RateLimit-Remaining:</strong> Requests remaining in current
+                            window
+                          </p>
+                          <p>
+                            <strong>X-RateLimit-Reset:</strong> Unix timestamp when the window
+                            resets
+                          </p>
+                          <p>
+                            <strong>X-RateLimit-Window:</strong> Duration of the rate limiting
+                            window
+                          </p>
+                          <p>
+                            <strong>Retry-After:</strong> Seconds to wait before retrying (when rate
+                            limited)
+                          </p>
+                        </div>
+                      </details>
+                    </section>
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="mb-2 text-sm font-semibold">Request log</h3>
+                      <div className="max-h-72 space-y-2 overflow-y-auto">
+                        {requests
+                          .slice(-20)
+                          .reverse()
+                          .map((request) => (
+                            <div
+                              key={request.id}
+                              className={cn(
+                                'flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs',
+                                request.success ? SIM_TONE.success.surface : SIM_TONE.danger.surface
+                              )}
+                            >
+                              {request.success ? (
+                                <CircleCheck
+                                  className="h-4 w-4 shrink-0 text-correct-foreground"
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <CircleX
+                                  className="h-4 w-4 shrink-0 text-wrong-foreground"
+                                  aria-hidden="true"
+                                />
+                              )}
+                              <span className="font-mono text-muted-foreground">
+                                {new Date(request.timestamp).toLocaleTimeString()}
+                              </span>
+                              <span>
+                                {request.success ? 'HTTP 200 OK' : 'HTTP 429 Too Many Requests'}
+                              </span>
+                              <span className="text-muted-foreground">
+                                Remaining: {request.remaining}
+                              </span>
+                              {request.retryAfter !== undefined && (
+                                <Badge variant="outline" className="ml-auto shrink-0">
+                                  {request.retryAfter === 0
+                                    ? 'Retry now'
+                                    : `Retry in ${(request.retryAfter / 1000).toFixed(1)}s`}
+                                </Badge>
+                              )}
+                            </div>
+                          ))}
+                        {requests.length === 0 && (
+                          <p className="py-4 text-center text-xs text-muted-foreground">
+                            No requests yet. Start the simulation to see request logs.
+                          </p>
+                        )}
+                      </div>
+                    </section>
+                  </>
+                ),
+              },
+            ]}
+          />
+        )}
+        <SimPhoneBar>
+          <Button type="button" className="h-10 flex-1" onClick={handleToggle}>
+            {isRunning ? (
+              <Pause className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Play className="h-4 w-4" aria-hidden="true" />
+            )}
+            {isRunning ? 'Stop' : 'Start'}
+          </Button>
+          <Button type="button" variant="outline" className="h-10" onClick={resetSimulation}>
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            Reset run
+          </Button>
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }

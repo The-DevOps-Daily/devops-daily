@@ -1,31 +1,39 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import {
   Activity,
   AlertTriangle,
-  BarChart3,
   CheckCircle2,
   Gauge,
   Layers3,
-  LineChart,
-  RotateCcw,
   Server,
   SlidersHorizontal,
   Sparkles,
   Target,
-  Timer,
-  Zap,
+  TriangleAlert,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  SimulatorAdvisorCard,
   SimulatorControlSlider,
-  SimulatorMetricCard,
   SimulatorModeButton,
 } from '@/components/games/simulator-primitives';
+import {
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+  type SimTone,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type ScenarioId = 'steady' | 'cache' | 'noisy' | 'cold-start' | 'deploy';
@@ -82,7 +90,8 @@ const SCENARIOS: Record<ScenarioId, ScenarioConfig> = {
   },
   noisy: {
     title: 'Noisy Neighbor',
-    subtitle: 'Shared CPU and disk contention stretch the slow tail without breaking every request.',
+    subtitle:
+      'Shared CPU and disk contention stretch the slow tail without breaking every request.',
     baseMs: 92,
     jitterMs: 34,
     tailMultiplier: 4.8,
@@ -149,6 +158,20 @@ const PERCENTILES: Array<{
   },
 ];
 
+const PERCENTILE_TONE: Record<PercentileKey, { fill: string; text: string }> = {
+  p50: { fill: 'bg-correct', text: 'text-correct-foreground' },
+  p90: { fill: 'bg-info', text: 'text-info-foreground' },
+  p95: { fill: 'bg-partial', text: 'text-partial-foreground' },
+  p99: { fill: 'bg-wrong', text: 'text-wrong-foreground' },
+};
+
+const PATH_TONE: Record<Sample['path'], string> = {
+  fast: 'bg-correct',
+  normal: 'bg-info',
+  slow: 'bg-partial',
+  tail: 'bg-wrong',
+};
+
 const DEFAULTS = {
   scenario: 'cache' as ScenarioId,
   requestCount: 400,
@@ -187,7 +210,7 @@ function generateSamples(
   scenarioId: ScenarioId,
   requestCount: number,
   tailPercent: number,
-  jitter: number,
+  jitter: number
 ): Sample[] {
   const scenario = SCENARIOS[scenarioId];
   const jitterScale = jitter / 50;
@@ -260,6 +283,45 @@ function buildHistogram(samples: Sample[], maxLatency: number) {
   }));
 }
 
+function recommended(stats: PercentileStats): PercentileKey {
+  if (stats.p99 > stats.p50 * 4) return 'p99';
+  if (stats.p95 > stats.p50 * 2) return 'p95';
+  return 'p90';
+}
+
+const MISSIONS: Mission<{
+  scenario: ScenarioId;
+  stats: PercentileStats;
+  selected: PercentileKey;
+  picked: boolean;
+}>[] = [
+  {
+    id: 'tight',
+    label: 'Get P95 within 1.3x of P50: a tight, healthy service.',
+    hint: 'Healthy API keeps requests close together.',
+    check: ({ stats }) => stats.p95 < 1.3 * stats.p50,
+  },
+  {
+    id: 'tail',
+    label: 'Find a service where P99 is more than 4x the median.',
+    hint: 'Try a scenario with a slow tail.',
+    check: ({ stats }) => stats.p99 > 4 * stats.p50,
+  },
+  {
+    id: 'alert',
+    label: 'For Noisy Neighbor, pick the percentile you would page on.',
+    hint: 'Compare each percentile with P50.',
+    check: ({ scenario, stats, selected, picked }) =>
+      scenario === 'noisy' && picked && selected === recommended(stats),
+  },
+  {
+    id: 'average-hides',
+    label: 'Make P99 pass 500 ms while the average stays under 100 ms.',
+    hint: 'Cold Starts, then raise the slow tail a little.',
+    check: ({ stats }) => stats.p99 > 500 && stats.avg < 100,
+  },
+];
+
 function PercentileRuler({
   samples,
   stats,
@@ -275,11 +337,15 @@ function PercentileRuler({
   const selectedConfig = PERCENTILES.find((item) => item.key === selected) ?? PERCENTILES[2];
   const selectedIndex = Math.ceil((selectedConfig.rank / 100) * stats.total) - 1;
   const visible = sorted.filter(
-    (_, index) => index % Math.max(1, Math.floor(sorted.length / 100)) === 0,
+    (_, index) => index % Math.max(1, Math.floor(sorted.length / 100)) === 0
   );
 
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div
+      role="img"
+      aria-label={`Sorted requests: P50 ${formatMs(stats.p50)}, P90 ${formatMs(stats.p90)}, P95 ${formatMs(stats.p95)}, P99 ${formatMs(stats.p99)}`}
+      className="rounded-lg border bg-card p-3"
+    >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Sorted request ruler</h3>
@@ -297,23 +363,26 @@ function PercentileRuler({
         {visible.map((sample, index) => {
           const trueIndex = Math.min(
             sorted.length - 1,
-            index * Math.max(1, Math.floor(sorted.length / 100)),
+            index * Math.max(1, Math.floor(sorted.length / 100))
           );
           const left = (trueIndex / Math.max(sorted.length - 1, 1)) * 100;
           const size = sample.latency >= stats.p99 ? 10 : sample.latency >= stats.p95 ? 8 : 6;
           const tone =
             sample.latency >= stats.p99
-              ? 'bg-red-500'
+              ? PATH_TONE.tail
               : sample.latency >= stats.p95
-                ? 'bg-amber-500'
+                ? PATH_TONE.slow
                 : sample.latency >= stats.p90
-                  ? 'bg-sky-500'
-                  : 'bg-emerald-500';
+                  ? PERCENTILE_TONE.p90.fill
+                  : PATH_TONE.fast;
 
           return (
             <span
               key={`${sample.id}-${index}`}
-              className={cn('absolute top-1/2 rounded-full border border-background shadow-sm', tone)}
+              className={cn(
+                'absolute top-1/2 rounded-full border border-background shadow-sm',
+                tone
+              )}
               style={{
                 left: `calc(${left}% + 12px)`,
                 width: size,
@@ -327,12 +396,14 @@ function PercentileRuler({
         {PERCENTILES.slice(1).map((item) => (
           <div
             key={item.key}
-            className="absolute bottom-2 top-2 w-px"
-            style={{ left: `calc(${item.rank}% + 12px)`, backgroundColor: item.color }}
+            className={cn('absolute bottom-2 top-2 w-px', PERCENTILE_TONE[item.key].fill)}
+            style={{ left: `calc(${item.rank}% + 12px)` }}
           >
             <span
-              className="absolute -top-1 -translate-x-1/2 rounded-sm bg-background px-1 font-mono text-[10px]"
-              style={{ color: item.color }}
+              className={cn(
+                'absolute -top-1 -translate-x-1/2 rounded-sm bg-card px-1 font-mono text-xs',
+                PERCENTILE_TONE[item.key].text
+              )}
             >
               {item.label}
             </span>
@@ -341,20 +412,20 @@ function PercentileRuler({
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2.5">
-          <p className="text-xs font-semibold text-emerald-600">First 90%</p>
+        <div className={cn('rounded-md border p-2.5', SIM_TONE.success.surface)}>
+          <p className={cn('text-xs font-semibold', SIM_TONE.success.text)}>First 90%</p>
           <p className="mt-1 text-xs leading-snug text-muted-foreground">
             Normal user experience. This is what average dashboards over-emphasize.
           </p>
         </div>
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-2.5">
-          <p className="text-xs font-semibold text-amber-600">Next 9%</p>
+        <div className={cn('rounded-md border p-2.5', SIM_TONE.warning.surface)}>
+          <p className={cn('text-xs font-semibold', SIM_TONE.warning.text)}>Next 9%</p>
           <p className="mt-1 text-xs leading-snug text-muted-foreground">
             Slow requests. P95 is usually where support tickets start to appear.
           </p>
         </div>
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 p-2.5">
-          <p className="text-xs font-semibold text-red-600">Slowest 1%</p>
+        <div className={cn('rounded-md border p-2.5', SIM_TONE.danger.surface)}>
+          <p className={cn('text-xs font-semibold', SIM_TONE.danger.text)}>Slowest 1%</p>
           <p className="mt-1 text-xs leading-snug text-muted-foreground">
             The tail. P99 tells you whether rare paths are painful.
           </p>
@@ -378,7 +449,11 @@ function HistogramChart({
   const selectedConfig = PERCENTILES.find((item) => item.key === selected) ?? PERCENTILES[2];
 
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div
+      role="img"
+      aria-label={`Latency distribution: P50 ${formatMs(stats.p50)}, P90 ${formatMs(stats.p90)}, P95 ${formatMs(stats.p95)}, P99 ${formatMs(stats.p99)}`}
+      className="rounded-lg border bg-card p-3"
+    >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Latency distribution</h3>
@@ -386,12 +461,18 @@ function HistogramChart({
             The bars show request counts by latency bucket. Vertical lines mark percentile cutoffs.
           </p>
         </div>
-        <Badge className="font-mono" style={{ backgroundColor: selectedConfig.color }}>
+        <Badge
+          className={cn(
+            'font-mono',
+            PERCENTILE_TONE[selectedConfig.key].fill,
+            PERCENTILE_TONE[selectedConfig.key].text
+          )}
+        >
           {selectedConfig.label} = {formatMs(stats[selected])}
         </Badge>
       </div>
 
-      <div className="relative h-56 overflow-hidden rounded-md border bg-linear-to-b from-muted/40 to-background p-3 pb-7">
+      <div className="relative h-44 overflow-hidden rounded-md border bg-muted/30 p-3 pb-7 lg:h-48">
         <div className="absolute inset-x-3 bottom-7 top-3 grid grid-rows-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="border-t border-dashed border-border/70" />
@@ -400,17 +481,20 @@ function HistogramChart({
         <div className="absolute inset-x-3 bottom-7 top-3 flex items-end gap-1">
           {bins.map((bin, index) => {
             const midpoint = (bin.start + bin.end) / 2;
-            const isTail = midpoint >= stats.p95;
+            const tone =
+              midpoint >= stats.p99
+                ? PATH_TONE.tail
+                : midpoint >= stats.p95
+                  ? PATH_TONE.slow
+                  : index > bins.length * 0.55
+                    ? PATH_TONE.normal
+                    : PATH_TONE.fast;
             return (
               <div key={bin.start} className="flex h-full min-w-0 flex-1 items-end">
                 <div
                   className={cn(
                     'w-full rounded-t-sm border border-background/80 transition-all',
-                    isTail
-                      ? 'bg-linear-to-t from-red-500 to-amber-400'
-                      : index > bins.length * 0.55
-                        ? 'bg-linear-to-t from-sky-500 to-cyan-400'
-                        : 'bg-linear-to-t from-emerald-500 to-teal-400',
+                    tone
                   )}
                   style={{ height: `${bin.height}%` }}
                   title={`${bin.start}-${bin.end}ms: ${bin.count} requests`}
@@ -425,12 +509,15 @@ function HistogramChart({
           return (
             <div
               key={item.key}
-              className="absolute bottom-7 top-3 w-px"
-              style={{ left: `${x}%`, backgroundColor: item.color }}
+              className={cn('absolute bottom-7 top-3 w-px', PERCENTILE_TONE[item.key].fill)}
+              style={{ left: `${x}%` }}
             >
               <span
-                className="absolute -top-1 rounded-sm bg-background px-1 font-mono text-[10px]"
-                style={{ color: item.color, transform: 'translateX(-45%)' }}
+                className={cn(
+                  'absolute -top-1 rounded-sm bg-card px-1 font-mono text-xs',
+                  PERCENTILE_TONE[item.key].text
+                )}
+                style={{ transform: 'translateX(-45%)' }}
               >
                 {item.label}
               </span>
@@ -438,7 +525,7 @@ function HistogramChart({
           );
         })}
 
-        <div className="absolute bottom-2 left-3 right-3 flex justify-between text-[10px] text-muted-foreground">
+        <div className="absolute bottom-2 left-3 right-3 flex justify-between text-xs text-muted-foreground">
           <span>0ms</span>
           <span>{formatMs(maxLatency)}</span>
         </div>
@@ -454,7 +541,7 @@ function RequestHeatmap({ samples, stats }: { samples: Sample[]; stats: Percenti
   }));
 
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-lg border bg-card p-3">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold">Request stream</h3>
@@ -462,7 +549,7 @@ function RequestHeatmap({ samples, stats }: { samples: Sample[]; stats: Percenti
             Each square is one request in arrival order.
           </p>
         </div>
-        <Badge variant="secondary" className="font-mono">
+        <Badge variant="secondary" className="shrink-0 whitespace-nowrap font-mono">
           first {visible.length}
         </Badge>
       </div>
@@ -472,13 +559,7 @@ function RequestHeatmap({ samples, stats }: { samples: Sample[]; stats: Percenti
             key={sample.id}
             className={cn(
               'aspect-square rounded-sm border border-background',
-              sample.path === 'tail'
-                ? 'bg-red-500'
-                : sample.path === 'slow'
-                  ? 'bg-amber-500'
-                  : sample.path === 'fast'
-                    ? 'bg-emerald-500'
-                    : 'bg-sky-500',
+              PATH_TONE[sample.path]
             )}
             title={`request ${sample.id}: ${sample.latency}ms`}
           />
@@ -486,16 +567,16 @@ function RequestHeatmap({ samples, stats }: { samples: Sample[]; stats: Percenti
       </div>
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> fast
+          <span className="h-2.5 w-2.5 rounded-sm bg-correct" /> fast
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-sky-500" /> normal
+          <span className="h-2.5 w-2.5 rounded-sm bg-info" /> normal
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-amber-500" /> above P95
+          <span className="h-2.5 w-2.5 rounded-sm bg-partial" /> above P95
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-sm bg-red-500" /> above P99
+          <span className="h-2.5 w-2.5 rounded-sm bg-wrong" /> above P99
         </span>
       </div>
     </div>
@@ -505,24 +586,26 @@ function RequestHeatmap({ samples, stats }: { samples: Sample[]; stats: Percenti
 function ChallengePanel({
   scenario,
   stats,
+  selected,
+  picked,
 }: {
   scenario: ScenarioId;
   stats: PercentileStats;
+  selected: PercentileKey;
+  picked: boolean;
 }) {
   const answer =
-    stats.p99 > stats.p50 * 4
+    recommended(stats) === 'p99'
       ? 'P99 is the important alarm here. The median is calm, but the slowest 1% are much worse.'
-      : stats.p95 > stats.p50 * 2
+      : recommended(stats) === 'p95'
         ? 'P95 is the useful early-warning metric. A meaningful minority of users are already slow.'
         : 'P90 is enough for this scenario. The tail is present, but it is not dramatically separated.';
   const ScenarioIcon = SCENARIOS[scenario].icon;
 
   return (
-    <div className="rounded-lg border bg-background p-3">
+    <div className="rounded-lg border bg-card p-3">
       <div className="mb-3 flex items-center gap-2">
-        <div className={cn('rounded-md bg-linear-to-br p-2 text-white', SCENARIOS[scenario].color)}>
-          <ScenarioIcon className="h-4 w-4" />
-        </div>
+        <ScenarioIcon className="h-5 w-5 text-primary" aria-hidden="true" />
         <div>
           <h3 className="text-sm font-semibold">Incident readout</h3>
           <p className="text-xs text-muted-foreground">Which metric would catch the user pain?</p>
@@ -535,7 +618,9 @@ function ChallengePanel({
           return (
             <div key={item.key} className="rounded-md border p-2.5">
               <div className="flex items-center justify-between gap-2">
-                <p className="font-mono text-sm font-semibold" style={{ color: item.color }}>
+                <p
+                  className={cn('font-mono text-sm font-semibold', PERCENTILE_TONE[item.key].text)}
+                >
                   {item.label}
                 </p>
                 <span className="text-sm font-semibold">{formatMs(value)}</span>
@@ -547,9 +632,19 @@ function ChallengePanel({
           );
         })}
       </div>
-      <div className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-2.5 text-sm text-muted-foreground">
-        <strong className="text-foreground">Takeaway:</strong> {answer}
-      </div>
+      {!picked ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Which percentile would you page on? Pick one under Highlight a percentile.
+        </p>
+      ) : selected === recommended(stats) ? (
+        <SimFeedback tone="success" label="Right call" className="mt-3">
+          <p>{answer}</p>
+        </SimFeedback>
+      ) : (
+        <SimFeedback tone="warning" label="Look again" className="mt-3">
+          <p>Compare each percentile with P50: how far apart are they?</p>
+        </SimFeedback>
+      )}
     </div>
   );
 }
@@ -560,18 +655,25 @@ export default function LatencyPercentilesSimulator() {
   const [tailPercent, setTailPercent] = useState(DEFAULTS.tailPercent);
   const [jitter, setJitter] = useState(DEFAULTS.jitter);
   const [selectedPercentile, setSelectedPercentile] = useState<PercentileKey>(
-    DEFAULTS.selectedPercentile,
+    DEFAULTS.selectedPercentile
   );
+  const [picked, setPicked] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [tab, setTab] = useState<'chart' | 'controls' | 'readout'>('chart');
 
   const samples = useMemo(
     () => generateSamples(scenario, requestCount, tailPercent, jitter),
-    [scenario, requestCount, tailPercent, jitter],
+    [scenario, requestCount, tailPercent, jitter]
   );
   const stats = useMemo(() => buildStats(samples), [samples]);
   const selectedConfig =
     PERCENTILES.find((item) => item.key === selectedPercentile) ?? PERCENTILES[2];
-  const currentScenario = SCENARIOS[scenario];
   const tailGap = stats.p99 / Math.max(stats.p50, 1);
+  const missionState = useMemo(
+    () => ({ scenario, stats, selected: selectedPercentile, picked }),
+    [scenario, stats, selectedPercentile, picked]
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
   const reset = () => {
     setScenario(DEFAULTS.scenario);
@@ -581,212 +683,289 @@ export default function LatencyPercentilesSimulator() {
     setSelectedPercentile(DEFAULTS.selectedPercentile);
   };
 
+  const pickScenario = (id: ScenarioId) => {
+    setScenario(id);
+    setPicked(false);
+  };
+
+  const pickPercentile = (value: PercentileKey) => {
+    setSelectedPercentile(value);
+    setPicked(true);
+  };
+
+  const startOver = () => {
+    reset();
+    setPicked(false);
+    missions.reset();
+    setDismissed(false);
+  };
+
+  const metricCards: Array<{ label: string; value: number; tone?: SimTone }> = [
+    { label: 'Average', value: stats.avg },
+    { label: 'P50', value: stats.p50 },
+    { label: 'P90', value: stats.p90 },
+    {
+      label: 'P95',
+      value: stats.p95,
+      tone: stats.p95 > stats.p50 * 2 ? 'warning' : undefined,
+    },
+    {
+      label: 'P99',
+      value: stats.p99,
+      tone: tailGap > 4 ? 'danger' : tailGap > 2.5 ? 'warning' : undefined,
+    },
+  ];
+
   return (
-    <div className="space-y-4">
-      <Card className="overflow-hidden border-primary/20">
-        <div className={cn('h-2 bg-linear-to-r', currentScenario.color)} />
-        <CardHeader className="pb-3">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="font-mono">
-                  percentiles are rank cutoffs
-                </Badge>
-                <Badge variant="secondary" className="font-mono">
-                  {stats.total} requests
-                </Badge>
-              </div>
-              <CardTitle className="text-lg sm:text-xl">
-                Explore P90, P95, and P99 latency
-              </CardTitle>
-              <p className="mt-1.5 max-w-3xl text-sm leading-snug text-muted-foreground">
-                Generate a latency sample, sort every request, and watch how a tiny slow tail
-                changes the numbers your dashboards show.
-              </p>
-            </div>
-            <Button type="button" variant="outline" size="sm" onClick={reset} className="w-fit gap-2">
-              <RotateCcw className="h-4 w-4" />
-              Reset
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-2 md:grid-cols-5">
-            {(Object.keys(SCENARIOS) as ScenarioId[]).map((id) => {
-              const item = SCENARIOS[id];
-              const Icon = item.icon;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setScenario(id)}
-                  className={cn(
-                    'rounded-lg border p-2.5 text-left transition-colors hover:border-primary/40 hover:bg-muted/40',
-                    scenario === id && 'border-primary bg-primary/5',
-                  )}
-                >
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className={cn('rounded-md bg-linear-to-br p-1.5 text-white', item.color)}>
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-sm font-semibold">{item.title}</span>
-                  </div>
-                  <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">
-                    {item.subtitle}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                <SlidersHorizontal className="h-4 w-4 text-primary" />
-                Shape the latency sample
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <SimulatorControlSlider
-                  label="Requests"
-                  value={requestCount}
-                  min={100}
-                  max={1000}
-                  step={100}
-                  onChange={setRequestCount}
-                />
-                <SimulatorControlSlider
-                  label="Slow tail"
-                  value={tailPercent}
-                  min={1}
-                  max={15}
-                  step={1}
-                  suffix="%"
-                  onChange={setTailPercent}
-                />
-                <SimulatorControlSlider
-                  label="Jitter"
-                  value={jitter}
-                  min={10}
-                  max={100}
-                  step={5}
-                  suffix="%"
-                  onChange={setJitter}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-lg border bg-muted/20 p-3">
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                <Target className="h-4 w-4 text-primary" />
-                Highlight a percentile
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {PERCENTILES.map((item) => (
-                  <SimulatorModeButton
-                    key={item.key}
-                    value={item.key}
-                    current={selectedPercentile}
-                    onClick={setSelectedPercentile}
-                  >
-                    {item.label}
-                  </SimulatorModeButton>
-                ))}
-              </div>
-              <p className="mt-3 text-sm leading-snug text-muted-foreground">
-                <strong className="text-foreground">{selectedConfig.label}</strong> means{' '}
-                {selectedConfig.rank}% of requests finished in{' '}
-                <strong className="text-foreground">{formatMs(stats[selectedPercentile])}</strong>{' '}
-                or less. The remaining {100 - selectedConfig.rank}% were slower.
-              </p>
-              <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
-                {selectedConfig.description}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <SimulatorMetricCard
-          label="Average"
-          value={formatMs(stats.avg)}
+    <MotionConfig reducedMotion="user">
+      <SimFrame>
+        <SimBar
+          title="P90, P95 & P99 Latency Simulator"
           icon={Gauge}
-          detail="Can hide a painful tail"
+          lead={
+            <div
+              role="group"
+              aria-label="Scenario"
+              className="grid min-w-0 flex-1 grid-cols-2 gap-1 sm:flex sm:flex-wrap"
+            >
+              {(Object.keys(SCENARIOS) as ScenarioId[]).map((id) => {
+                const item = SCENARIOS[id];
+                const Icon = item.icon;
+                return (
+                  <Button
+                    key={id}
+                    type="button"
+                    size="sm"
+                    title={item.subtitle}
+                    variant={scenario === id ? 'default' : 'outline'}
+                    aria-pressed={scenario === id}
+                    onClick={() => pickScenario(id)}
+                    className="h-10 min-w-0 justify-start lg:h-8"
+                  >
+                    <Icon className="hidden h-3.5 w-3.5 shrink-0 sm:block" aria-hidden="true" />
+                    <span className="truncate">{item.title}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          }
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading="Missions"
+          meta={
+            <Badge variant="secondary" className="font-mono tabular-nums">
+              {stats.total} requests
+            </Badge>
+          }
+          goal={
+            missions.complete ? (
+              'All four done. Keep shaping samples.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
         />
-        <SimulatorMetricCard
-          label="P50"
-          value={formatMs(stats.p50)}
-          icon={Timer}
-          tone="good"
-          detail="Median request"
-        />
-        <SimulatorMetricCard
-          label="P90"
-          value={formatMs(stats.p90)}
-          icon={BarChart3}
-          tone="good"
-          detail="10% are slower"
-        />
-        <SimulatorMetricCard
-          label="P95"
-          value={formatMs(stats.p95)}
-          icon={LineChart}
-          tone={stats.p95 > stats.p50 * 2 ? 'warn' : 'good'}
-          detail="5% are slower"
-        />
-        <SimulatorMetricCard
-          label="P99"
-          value={formatMs(stats.p99)}
-          icon={Zap}
-          tone={tailGap > 4 ? 'bad' : tailGap > 2.5 ? 'warn' : 'good'}
-          detail="1% are slower"
-        />
-      </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <HistogramChart samples={samples} stats={stats} selected={selectedPercentile} />
-        <div className="space-y-4">
-          <RequestHeatmap samples={samples} stats={stats} />
-          <SimulatorAdvisorCard
-            title="Read the tail before you tune"
-            icon={Activity}
-            tone={tailGap > 4 ? 'bad' : tailGap > 2.5 ? 'warn' : 'primary'}
-          >
-            P99 is {tailGap.toFixed(1)}x the median in this sample. If average and P50 look fine
-            while P99 jumps, optimize the rare slow path: cache misses, cold starts, retries, lock
-            waits, noisy nodes, or downstream calls.
-          </SimulatorAdvisorCard>
-        </div>
-      </div>
+        <SimAnnouncer
+          message={`P50 ${formatMs(stats.p50)}, P95 ${formatMs(stats.p95)}, P99 ${formatMs(stats.p99)}, average ${formatMs(stats.avg)}`}
+        />
 
-      <PercentileRuler samples={samples} stats={stats} selected={selectedPercentile} />
-
-      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <ChallengePanel scenario={scenario} stats={stats} />
-        <div className="rounded-lg border bg-background p-3">
-          <div className="mb-3 flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
-            <h3 className="text-sm font-semibold">What the numbers say</h3>
-          </div>
-          <div className="space-y-2 text-sm leading-snug text-muted-foreground">
-            <p>
-              <strong className="text-foreground">P90:</strong> {formatMs(stats.p90)} means 90%
-              of sampled requests completed by that point. It describes the upper edge of normal.
-            </p>
-            <p>
-              <strong className="text-foreground">P95:</strong> {formatMs(stats.p95)} leaves only
-              5% of requests above it. It is a practical SLO metric because it catches recurring
-              pain without being as jumpy as P99.
-            </p>
-            <p>
-              <strong className="text-foreground">P99:</strong> {formatMs(stats.p99)} isolates
-              the slowest 1%. In this run, that group averages{' '}
-              <strong className="text-foreground">{formatMs(stats.slowestOnePercent)}</strong>,
-              while the median is only <strong className="text-foreground">{formatMs(stats.p50)}</strong>.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Missions complete"
+            summary="You found a tight service, a long tail, the percentile worth paging on, and a P99 the average hides."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'P99 now', value: formatMs(stats.p99) },
+              { label: 'Average now', value: formatMs(stats.avg) },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.5fr)_minmax(0,1fr)]"
+            minHeight="min-h-[24rem]"
+            tab={tab}
+            onTabChange={(next) => {
+              if (next === 'chart' || next === 'controls' || next === 'readout') setTab(next);
+            }}
+            tabsLabel="Simulator panels"
+            tabOrder={['chart', 'controls', 'readout']}
+            panels={[
+              {
+                id: 'controls',
+                label: 'Controls',
+                content: (
+                  <div className="space-y-2">
+                    <div className="rounded-lg border bg-card p-3">
+                      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                        <SlidersHorizontal className="h-4 w-4 text-primary" aria-hidden="true" />
+                        Shape the latency sample
+                      </div>
+                      <div className="space-y-3">
+                        <SimulatorControlSlider
+                          label="Requests"
+                          value={requestCount}
+                          min={100}
+                          max={1000}
+                          step={100}
+                          onChange={setRequestCount}
+                        />
+                        <SimulatorControlSlider
+                          label="Slow tail"
+                          value={tailPercent}
+                          min={1}
+                          max={15}
+                          step={1}
+                          suffix="%"
+                          onChange={setTailPercent}
+                        />
+                        <SimulatorControlSlider
+                          label="Jitter"
+                          value={jitter}
+                          min={10}
+                          max={100}
+                          step={5}
+                          suffix="%"
+                          onChange={setJitter}
+                        />
+                      </div>
+                    </div>
+                    <div className="rounded-lg border bg-card p-3">
+                      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+                        <Target className="h-4 w-4 text-primary" aria-hidden="true" />
+                        Highlight a percentile
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {PERCENTILES.map((item) => (
+                          <SimulatorModeButton
+                            key={item.key}
+                            value={item.key}
+                            current={selectedPercentile}
+                            onClick={pickPercentile}
+                          >
+                            {item.label}
+                          </SimulatorModeButton>
+                        ))}
+                      </div>
+                      <p className="mt-3 text-sm leading-snug text-muted-foreground">
+                        <strong className="text-foreground">{selectedConfig.label}</strong> means{' '}
+                        {selectedConfig.rank}% of requests finished in{' '}
+                        <strong className="text-foreground">
+                          {formatMs(stats[selectedPercentile])}
+                        </strong>{' '}
+                        or less. The remaining {100 - selectedConfig.rank}% were slower.
+                      </p>
+                      <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+                        {selectedConfig.description}
+                      </p>
+                    </div>
+                    <SimMissionList missions={missions.missions} />
+                  </div>
+                ),
+              },
+              {
+                id: 'chart',
+                label: 'Chart',
+                content: (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-5">
+                      {metricCards.map((metric) => (
+                        <div
+                          key={metric.label}
+                          className={cn(
+                            'rounded-md border bg-card px-2 py-1.5',
+                            metric.tone && SIM_TONE[metric.tone].surface
+                          )}
+                        >
+                          <div className="flex items-center gap-1 text-xs uppercase tracking-wide text-muted-foreground">
+                            {metric.label}
+                            {metric.tone && (
+                              <TriangleAlert
+                                className={cn('h-3.5 w-3.5', SIM_TONE[metric.tone].iconClass)}
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+                          <div className="font-mono text-lg font-semibold tabular-nums">
+                            {formatMs(metric.value)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <HistogramChart samples={samples} stats={stats} selected={selectedPercentile} />
+                    <PercentileRuler
+                      samples={samples}
+                      stats={stats}
+                      selected={selectedPercentile}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'readout',
+                label: 'Readout',
+                content: (
+                  <div className="space-y-2">
+                    <ChallengePanel
+                      scenario={scenario}
+                      stats={stats}
+                      selected={selectedPercentile}
+                      picked={picked}
+                    />
+                    <RequestHeatmap samples={samples} stats={stats} />
+                    <SimFeedback
+                      tone={tailGap > 4 ? 'danger' : tailGap > 2.5 ? 'warning' : 'info'}
+                      label="Read the tail before you tune"
+                    >
+                      <p>
+                        P99 is {tailGap.toFixed(1)}x the median in this sample. If average and P50
+                        look fine while P99 jumps, optimize the rare slow path: cache misses, cold
+                        starts, retries, lock waits, noisy nodes, or downstream calls.
+                      </p>
+                    </SimFeedback>
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-semibold">
+                        What the numbers say
+                      </summary>
+                      <div className="mt-3 space-y-2 text-sm leading-snug text-muted-foreground">
+                        <p>
+                          <strong className="text-foreground">P90:</strong> {formatMs(stats.p90)}{' '}
+                          means 90% of sampled requests completed by that point. It describes the
+                          upper edge of normal.
+                        </p>
+                        <p>
+                          <strong className="text-foreground">P95:</strong> {formatMs(stats.p95)}{' '}
+                          leaves only 5% of requests above it. It is a practical SLO metric because
+                          it catches recurring pain without being as jumpy as P99.
+                        </p>
+                        <p>
+                          <strong className="text-foreground">P99:</strong> {formatMs(stats.p99)}{' '}
+                          isolates the slowest 1%. In this run, that group averages{' '}
+                          <strong className="text-foreground">
+                            {formatMs(stats.slowestOnePercent)}
+                          </strong>
+                          , while the median is only{' '}
+                          <strong className="text-foreground">{formatMs(stats.p50)}</strong>.
+                        </p>
+                      </div>
+                    </details>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        )}
+      </SimFrame>
+    </MotionConfig>
   );
 }
