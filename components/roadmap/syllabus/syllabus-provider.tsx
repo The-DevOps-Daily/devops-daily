@@ -55,10 +55,6 @@ export function useSyllabus() {
   return value;
 }
 
-export function topicAnchor(topicId: string) {
-  return `topic-${topicId.replace('/', '-')}`;
-}
-
 export function SyllabusProvider({
   roadmap,
   stages,

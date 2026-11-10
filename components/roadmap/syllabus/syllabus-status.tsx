@@ -4,12 +4,8 @@ import { useState } from 'react';
 import { Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { TopicStatus } from '@/lib/roadmap-progress';
-import {
-  topicAnchor,
-  useStageCounts,
-  useSyllabus,
-  type SyllabusStageInfo,
-} from './syllabus-provider';
+import { topicAnchor } from '@/lib/roadmap-syllabus';
+import { useStageCounts, useSyllabus, type SyllabusStageInfo } from './syllabus-provider';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -26,7 +22,7 @@ export function SyllabusContinueLink() {
         href="#roadmap"
         className="inline-flex min-h-10 items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
       >
-        All topics done. Review the path
+        No topics left. Review the path
       </a>
     );
   }
@@ -196,7 +192,7 @@ export function SyllabusStatusCard() {
               </p>
             </>
           ) : (
-            <p className="text-terminal-success">all topics done</p>
+            <p className="text-terminal-success">no topics left: each one is done or skipped</p>
           )}
         </div>
         <p className="mt-2 px-1.5">

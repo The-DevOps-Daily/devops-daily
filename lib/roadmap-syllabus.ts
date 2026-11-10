@@ -69,6 +69,11 @@ export function getSyllabusTotals(stages: SyllabusStage[]) {
   };
 }
 
+/** The row anchor for a topic, e.g. "topic-foundation-linux". */
+export function topicAnchor(topicId: string) {
+  return `topic-${topicId.replace('/', '-')}`;
+}
+
 export function syllabusTimeLabel(stage: Pick<SyllabusStage, 'weeks'>): string {
   return `${stage.weeks[0]}-${stage.weeks[1]} weeks`;
 }

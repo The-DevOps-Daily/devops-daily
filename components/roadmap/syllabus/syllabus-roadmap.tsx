@@ -12,9 +12,14 @@ import {
   type ResolvedSyllabusStage,
   type ResolvedSyllabusTopic,
 } from '@/lib/roadmap-resources';
-import { getSyllabusTotals, type SyllabusStage, type TopicPriority } from '@/lib/roadmap-syllabus';
+import {
+  getSyllabusTotals,
+  topicAnchor,
+  type SyllabusStage,
+  type TopicPriority,
+} from '@/lib/roadmap-syllabus';
 import { sponsors } from '@/lib/sponsors';
-import { SyllabusProvider, topicAnchor, type SyllabusStageInfo } from './syllabus-provider';
+import { SyllabusProvider, type SyllabusStageInfo } from './syllabus-provider';
 import { StageProgress, SyllabusContinueLink, SyllabusStatusCard } from './syllabus-status';
 import { TopicRow, TopicStatusControl, UpNextTag } from './syllabus-topic';
 import { SyllabusNav } from './syllabus-nav';
