@@ -7,6 +7,7 @@ import PromqlPlayground from '@/components/games/promql-playground';
 import LogAggregationPipelineSimulator from '@/components/games/log-aggregation-pipeline-simulator';
 import LatencyPercentilesSimulator from '@/components/games/latency-percentiles-simulator';
 import RateLimitSimulator from '@/components/games/rate-limit-simulator';
+import DDoSSimulator from '@/components/games/ddos-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -452,4 +453,106 @@ describe('Rate Limit Simulator on the kit', () => {
     for (let elapsed = 0; elapsed < 10_000; elapsed += 500) await wait(500);
     expect(completions).toBe(1);
   }, 60_000);
+});
+
+async function renderDdos() {
+  await act(async () => root.render(createElement(DDoSSimulator)));
+}
+
+async function toggleDefence(label: string) {
+  const toggle = container.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`);
+  if (!toggle) throw new Error(`no ${label} switch`);
+  await act(async () => toggle.click());
+}
+
+async function advanceDdos(milliseconds: number) {
+  for (let elapsed = 0; elapsed < milliseconds; elapsed += 250) {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250);
+    });
+  }
+}
+
+describe('DDoS Attack Simulator on the kit', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    window.requestAnimationFrame = (callback) =>
+      setTimeout(() => callback(Date.now()), 50) as unknown as number;
+    window.cancelAnimationFrame = (id) => clearTimeout(id);
+  });
+
+  it('no hero, no page scroll, a goal', async () => {
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    await renderDdos();
+
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(text()).not.toContain('Educational simulator to understand');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/4');
+    expect(
+      [...container.querySelectorAll<HTMLElement>('[class]')].some(
+        (element) =>
+          (element.getAttribute('class') ?? '').includes('animate-shake') ||
+          (element.getAttribute('class') ?? '').includes('bg-linear')
+      )
+    ).toBe(false);
+  });
+
+  it('losing shows a danger card and never signals', async () => {
+    await renderDdos();
+    await setRange('Intensity', 10);
+    await click('Start attack', true);
+
+    for (let elapsed = 0; elapsed < 60_000 && !text().includes('Server offline'); elapsed += 250) {
+      await advanceDdos(250);
+    }
+    if (!text().includes('Server offline')) throw new Error('server did not go offline');
+    expect(completions).toBe(0);
+
+    await click('Try again', true);
+    expect(container.querySelector('[aria-label^="Attack field:"]')).not.toBeNull();
+  }, 60_000);
+
+  it('rate limiting switches on', async () => {
+    await renderDdos();
+    await setRange('Intensity', 10);
+    await toggleDefence('Auto Rate Limit');
+    await click('Start attack', true);
+
+    const rateLimitRow = () =>
+      container.querySelector('button[aria-label="Auto Rate Limit"]')?.parentElement?.textContent ??
+      '';
+    expect(rateLimitRow()).toContain('Standby');
+    for (let elapsed = 0; elapsed < 6_000 && !rateLimitRow().includes('Active'); elapsed += 250) {
+      await advanceDdos(250);
+    }
+    if (!rateLimitRow().includes('Active')) throw new Error('rate limiting did not activate');
+    expect(completions).toBe(0);
+  }, 60_000);
+
+  it('one signal, after surviving a minute', async () => {
+    await renderDdos();
+    await setRange('Intensity', 6);
+    await toggleDefence('Firewall');
+    await toggleDefence('Load Balancer');
+    await toggleDefence('Auto Rate Limit');
+    await click('Start attack', true);
+
+    for (let elapsed = 0; elapsed < 75_000 && !text().includes('Attack survived'); elapsed += 250) {
+      await advanceDdos(250);
+    }
+    if (!text().includes('Attack survived')) throw new Error('attack was not survived');
+    expect(text()).toContain('4/4');
+    expect(completions).toBe(1);
+    expect(
+      [...container.querySelectorAll('button')].some((button) => name(button) === 'Pause attack')
+    ).toBe(false);
+
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+    await click('Start attack', true);
+    await advanceDdos(5_000);
+    expect(completions).toBe(1);
+  }, 120_000);
 });
