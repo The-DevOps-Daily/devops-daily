@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
+import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -98,6 +99,16 @@ async function render() {
   await act(async () => root.render(createElement(SslTlsHandshakeSimulator)));
 }
 
+async function renderDatabase() {
+  await act(async () => root.render(createElement(DbIndexingSimulator)));
+}
+
+async function advanceDatabase() {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(2500);
+  });
+}
+
 describe('SSL/TLS Handshake on the kit', () => {
   it('no hero, no page keys, a goal', async () => {
     await render();
@@ -157,6 +168,81 @@ describe('SSL/TLS Handshake on the kit', () => {
     await chooseVersion('TLS 1.3');
     await chooseScenario('none');
     await next(4);
+    expect(completions).toBe(1);
+  }, 60_000);
+});
+
+describe('Database Indexing on the kit', () => {
+  it('no hero, no page keys, a goal', async () => {
+    await renderDatabase();
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/5');
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await vi.advanceTimersByTimeAsync(2500);
+    });
+    expect(text()).toContain('Run a query to see how the database found the rows.');
+  });
+
+  it('the index rows show only real single indexes', async () => {
+    await renderDatabase();
+    await click('Add index on (age, city)', true);
+    const ageRow = [...container.querySelectorAll('div')].find(
+      (element) => element.textContent?.trim() === 'ageAdd'
+    );
+    if (!ageRow) throw new Error('no age index row');
+    expect(ageRow.textContent).not.toContain('Indexed');
+    expect(
+      [...container.querySelectorAll('button')].some(
+        (button) => button.getAttribute('aria-label') === 'Add index on age'
+      )
+    ).toBe(true);
+  });
+
+  it('Start over stops a running query', async () => {
+    await renderDatabase();
+    await click('Run query', true);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300);
+    });
+    await click('Start over', true);
+    await click('Click again to start over', true);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+    expect(text()).toContain('0/5');
+    expect(text()).toContain('Run a query to see how the database found the rows.');
+  }, 60_000);
+
+  it('one signal, after the fifth mission', async () => {
+    await renderDatabase();
+    await click('Run query', true);
+    await advanceDatabase();
+    expect(text()).toContain('1/5');
+    await click('Add index on email', true);
+    await click('Run query', true);
+    await advanceDatabase();
+    await click('Add index on age', true);
+    await click('Age Range', true);
+    await click('Run query', true);
+    await advanceDatabase();
+    await click('Add index on (age, city)', true);
+    await click('Age + City', true);
+    await click('Run query', true);
+    await advanceDatabase();
+    await click('City + Age', true);
+    await click('Run query', true);
+    await advanceDatabase();
+    expect(text()).toContain('4/5');
+    expect(completions).toBe(0);
+    await click('Find by City', true);
+    await click('Run query', true);
+    await advanceDatabase();
+    expect(completions).toBe(1);
+    expect(text()).toContain('Missions complete');
+    await click('Keep exploring', true);
+    await click('Run query', true);
+    await advanceDatabase();
     expect(completions).toBe(1);
   }, 60_000);
 });
