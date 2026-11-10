@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PromqlPlayground from '@/components/games/promql-playground';
 import LogAggregationPipelineSimulator from '@/components/games/log-aggregation-pipeline-simulator';
 import LatencyPercentilesSimulator from '@/components/games/latency-percentiles-simulator';
+import RateLimitSimulator from '@/components/games/rate-limit-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -361,6 +362,92 @@ describe('Latency Simulator on the kit', () => {
     expect(text()).toContain('Missions complete');
 
     await click('Keep exploring', true);
+    expect(completions).toBe(1);
+  }, 60_000);
+});
+
+async function renderRateLimit() {
+  await act(async () => root.render(createElement(RateLimitSimulator)));
+}
+
+async function setSelect(label: string, value: string) {
+  const labelElement = [...container.querySelectorAll('label')].find(
+    (candidate) => candidate.textContent?.trim() === label
+  );
+  const field = labelElement?.htmlFor ? container.querySelector(`#${labelElement.htmlFor}`) : null;
+  if (!(field instanceof HTMLSelectElement)) throw new Error(`no select "${label}"`);
+  await act(async () => {
+    field.value = value;
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+async function setRange(label: string, value: number) {
+  const labelElement = [...container.querySelectorAll('label')].find((candidate) =>
+    candidate.textContent?.trim().startsWith(label)
+  );
+  const field = labelElement?.htmlFor ? container.querySelector(`#${labelElement.htmlFor}`) : null;
+  if (!(field instanceof HTMLInputElement)) throw new Error(`no range "${label}"`);
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  if (!setValue) throw new Error('no range value setter');
+  await act(async () => {
+    setValue.call(field, String(value));
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+async function wait(milliseconds: number) {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(milliseconds);
+  });
+}
+
+describe('Rate Limit Simulator on the kit', () => {
+  it('no hero, no page-wide keys, a goal', async () => {
+    await renderRateLimit();
+    expect(text()).not.toContain('Learn rate limiting, backoff strategies');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/5');
+
+    await act(async () => {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+    });
+    expect(
+      [...container.querySelectorAll('button')].some((button) => name(button) === 'Start')
+    ).toBe(true);
+  });
+
+  it('one signal, after the fifth mission', async () => {
+    await renderRateLimit();
+    await click('Start', true);
+    for (let elapsed = 0; elapsed < 20_000; elapsed += 500) await wait(500);
+    expect(text()).toContain('2/5');
+    expect(completions).toBe(0);
+
+    for (let elapsed = 20_000; elapsed < 35_000; elapsed += 500) await wait(500);
+    expect(text()).toContain('3/5');
+
+    await setSelect('Backoff strategy', 'none');
+    for (let elapsed = 0; elapsed < 20_000; elapsed += 500) await wait(500);
+    expect(text()).toContain('4/5');
+    expect(completions).toBe(0);
+
+    await setRange('Burst size:', 1);
+    await setRange('Burst interval:', 2000);
+    for (
+      let elapsed = 0;
+      elapsed < 120_000 && !text().includes('Missions complete');
+      elapsed += 500
+    ) {
+      await wait(500);
+    }
+    if (!text().includes('Missions complete')) throw new Error('missions did not complete');
+    expect(completions).toBe(1);
+
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+    for (let elapsed = 0; elapsed < 10_000; elapsed += 500) await wait(500);
     expect(completions).toBe(1);
   }, 60_000);
 });
