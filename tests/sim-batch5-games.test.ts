@@ -304,7 +304,9 @@ function slider(label: string): HTMLElement {
   );
   const labelId = labelElement?.id;
   if (!labelId) throw new Error(`no slider label "${label}"`);
-  const thumb = container.querySelector(`[role="slider"][aria-labelledby="${labelId}"]`);
+  const thumb = container.querySelector<HTMLElement>(
+    `[role="slider"][aria-labelledby="${labelId}"]`
+  );
   if (!thumb) throw new Error(`no slider "${label}"`);
   return thumb;
 }
