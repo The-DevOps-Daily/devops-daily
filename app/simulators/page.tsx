@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
 import { LottiePlayer } from '@/components/lottie-player';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { CarbonAds } from '@/components/carbon-ads';
 import { GameCard, toCardGame } from '@/components/game-card';
 import { SimulatorsHub, type HubGroup } from '@/components/simulators-hub';
 import { getActiveByType, getComingSoonSimulators, groupSimulatorsByTopic } from '@/lib/game-hubs';
@@ -103,6 +104,11 @@ export default async function SimulatorsPage() {
       <section className="container mx-auto px-4 py-8">
         <SimulatorsHub groups={groups} />
       </section>
+
+      {/* Inline ad at the natural break before upcoming simulators. */}
+      <div className="max-w-2xl mx-auto mt-12 px-4">
+        <CarbonAds />
+      </div>
 
       {comingSoon.length > 0 && (
         <section aria-labelledby="coming-soon-heading" className="container mx-auto px-4 py-8">
