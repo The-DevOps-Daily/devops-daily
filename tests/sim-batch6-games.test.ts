@@ -197,10 +197,12 @@ async function chooseSimulatorMode(label: string) {
 }
 
 function databaseSlider(label: string) {
-  const thumb = [...container.querySelectorAll('[role="slider"]')].find((candidate) => {
-    const labelId = candidate.getAttribute('aria-labelledby');
-    return labelId ? document.getElementById(labelId)?.textContent?.trim() === label : false;
-  });
+  const thumb = [...container.querySelectorAll<HTMLElement>('[role="slider"]')].find(
+    (candidate) => {
+      const labelId = candidate.getAttribute('aria-labelledby');
+      return labelId ? document.getElementById(labelId)?.textContent?.trim() === label : false;
+    }
+  );
   if (!thumb) throw new Error(`no ${label} slider`);
   return thumb;
 }

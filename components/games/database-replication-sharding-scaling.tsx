@@ -264,7 +264,7 @@ function shardingView(s: ShardingState) {
           : all.filter((index) => createdAtRange(index, shards).toDaysAgo < windowDays)
         : [shardLoads.queryIndex];
   const fansOut = targetShards.length > 1;
-  const hotSpotTone =
+  const hotSpotTone: 'bad' | 'warn' | 'good' =
     shardLoads.hotspot > 1.65 ? 'bad' : shardLoads.hotspot > 1.25 ? 'warn' : 'good';
   return {
     distribution,
