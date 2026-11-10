@@ -1,13 +1,12 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   ArrowUpDown,
   BarChart3,
   BookOpen,
-  CheckCircle,
-  Circle,
+  CircleCheck,
   Columns3,
   Combine,
   Database,
@@ -17,18 +16,32 @@ import {
   Leaf,
   Lightbulb,
   Pencil,
-  Play,
-  RotateCcw,
   Sigma,
   Table,
   Target,
   Terminal,
-  Trophy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  LAB_TERMINAL_HEIGHT,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimHowTo,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimResetButton,
+  SimTerminal,
+  focusTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 import {
   useTerminalSimulator,
@@ -265,7 +278,10 @@ function outputFor(input: string): ExecuteResult {
 
 function executeCommand(rawInput: string): ExecuteResult {
   const input = rawInput.trim();
-  const bare = input.replace(/;+\s*$/, '').trim().toLowerCase();
+  const bare = input
+    .replace(/;+\s*$/, '')
+    .trim()
+    .toLowerCase();
 
   if (bare === 'clear') return { output: '', clear: true };
   if (bare === 'help' || bare === '\\h' || bare === '\\?') return { output: HELP_TEXT };
@@ -297,7 +313,8 @@ const CHALLENGES: Challenge[] = [
   },
   {
     id: 'top-3-expensive',
-    question: 'Return the 3 most expensive products (name and price, no _id), most expensive first.',
+    question:
+      'Return the 3 most expensive products (name and price, no _id), most expensive first.',
     solution: 'db.products.find({}, { name: 1, price: 1, _id: 0 }).sort({ price: -1 }).limit(3)',
   },
   {
@@ -308,7 +325,8 @@ const CHALLENGES: Challenge[] = [
   {
     id: 'cheap-products',
     question: 'Return the products under 20 (name and price, no _id), cheapest first.',
-    solution: 'db.products.find({ price: { $lt: 20 } }, { name: 1, price: 1, _id: 0 }).sort({ price: 1 })',
+    solution:
+      'db.products.find({ price: { $lt: 20 } }, { name: 1, price: 1, _id: 0 }).sort({ price: 1 })',
   },
   {
     id: 'products-per-category',
@@ -325,7 +343,7 @@ const CHALLENGES: Challenge[] = [
 
 function gradeChallenge(
   input: string,
-  challenge: Challenge,
+  challenge: Challenge
 ): { lines: TerminalLine[]; solved: boolean } {
   const now = () => new Date();
   const lines: TerminalLine[] = [{ type: 'input', content: input, timestamp: now() }];
@@ -335,7 +353,7 @@ function gradeChallenge(
     lines.push({ type: 'error', content: `Error: ${userResult.error}`, timestamp: now() });
     lines.push({
       type: 'error',
-      content: "Not quite — that command didn't run. Fix it and try again.",
+      content: "Not quite: that command didn't run. Fix it and try again.",
       timestamp: now(),
     });
     return { lines, solved: false };
@@ -344,7 +362,10 @@ function gradeChallenge(
   const output = formatResult(userResult);
   lines.push({
     type: 'output',
-    content: userResult.kind === 'docs' && userResult.docs.length === 0 ? '(no documents matched)' : output,
+    content:
+      userResult.kind === 'docs' && userResult.docs.length === 0
+        ? '(no documents matched)'
+        : output,
     timestamp: now(),
   });
 
@@ -360,35 +381,17 @@ function gradeChallenge(
 
   lines.push({
     type: 'error',
-    content: "Not quite — your result doesn't match the expected output. Check the fields, filter, and order.",
+    content:
+      "Not quite: your result doesn't match the expected output. Check the fields, filter, and order.",
     timestamp: now(),
   });
   return { lines, solved: false };
 }
 
+type Mode = 'lessons' | 'challenges';
+
 export default function MongodbTerminalSimulator() {
-  const {
-    currentLessonIndex,
-    currentCommandIndex,
-    currentLesson,
-    currentCommand,
-    completedCommands,
-    completedCount,
-    totalCommands,
-    progressPercentage,
-    terminalHistory,
-    inputValue,
-    setInputValue,
-    showHint,
-    setShowHint,
-    inputRef,
-    terminalRef,
-    submitCommand,
-    handleSubmit,
-    handleKeyDown,
-    resetProgress,
-    jumpToLesson,
-  } = useTerminalSimulator({
+  const lab = useTerminalSimulator({
     lessons: LESSONS,
     execute: executeCommand,
     matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
@@ -398,44 +401,40 @@ export default function MongodbTerminalSimulator() {
     historyStyle: 'recent-first',
     promoteOutputType: true,
     guardRepeatCompletion: true,
+    // SimComplete signals Opsville, on the render that completes the last command.
+    signalOnComplete: false,
+    autoFocus: false,
   });
-
-  const resetLab = useCallback(() => {
-    resetProgress();
-    inputRef.current?.focus();
-  }, [inputRef, resetProgress]);
-
-  const runCurrentCommand = useCallback(() => {
-    if (!currentCommand) return;
-    const command = Array.isArray(currentCommand.expectedCommand)
+  const { currentCommand, terminalHistory, inputValue, setInputValue, inputRef, submitCommand } =
+    lab;
+  const ui = useSimLab(lab);
+  const expected = currentCommand
+    ? Array.isArray(currentCommand.expectedCommand)
       ? currentCommand.expectedCommand[0]
-      : currentCommand.expectedCommand;
-    submitCommand(command);
-  }, [currentCommand, submitCommand]);
+      : currentCommand.expectedCommand
+    : undefined;
 
   // --- Challenge mode state -------------------------------------------------
-  const [mode, setMode] = useState<'lessons' | 'challenges'>('lessons');
+  const [mode, setMode] = useState<Mode>('lessons');
   const [activeChallenge, setActiveChallenge] = useState(0);
   const [challengeInput, setChallengeInput] = useState('');
   const [challengeHistory, setChallengeHistory] = useState<TerminalLine[]>([]);
   const [solvedChallenges, setSolvedChallenges] = useState<Set<number>>(new Set());
   const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  /** "Keep practicing" closes the challenges' end card. */
+  const [challengesDismissed, setChallengesDismissed] = useState(false);
   const challengeInputRef = useRef<HTMLInputElement>(null);
-  const challengeTerminalRef = useRef<HTMLDivElement>(null);
   const solvedCount = solvedChallenges.size;
-
-  useEffect(() => {
-    if (challengeTerminalRef.current) {
-      challengeTerminalRef.current.scrollTop = challengeTerminalRef.current.scrollHeight;
-    }
-  }, [challengeHistory]);
 
   const submitChallenge = useCallback(
     (raw: string) => {
       const input = raw.trim();
       if (!input) return;
       setChallengeInput('');
-      const bare = input.replace(/;+\s*$/, '').trim().toLowerCase();
+      const bare = input
+        .replace(/;+\s*$/, '')
+        .trim()
+        .toLowerCase();
       const now = () => new Date();
 
       if (bare === 'clear') {
@@ -466,20 +465,12 @@ export default function MongodbTerminalSimulator() {
         setRevealed((prev) => new Set(prev).add(activeChallenge));
       }
     },
-    [activeChallenge],
-  );
-
-  const handleChallengeSubmit = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-      submitChallenge(challengeInput);
-    },
-    [challengeInput, submitChallenge],
+    [activeChallenge]
   );
 
   const selectChallenge = useCallback((index: number) => {
     setActiveChallenge(index);
-    challengeInputRef.current?.focus();
+    focusTerminal(challengeInputRef.current);
   }, []);
 
   const revealSolution = useCallback(() => {
@@ -492,539 +483,344 @@ export default function MongodbTerminalSimulator() {
     setChallengeHistory([]);
     setSolvedChallenges(new Set());
     setRevealed(new Set());
-    challengeInputRef.current?.focus();
+    setChallengesDismissed(false);
+    focusTerminal(challengeInputRef.current);
   }, []);
 
-  const switchMode = useCallback(
-    (next: 'lessons' | 'challenges') => {
-      setMode(next);
-      if (next === 'challenges') {
-        window.setTimeout(() => challengeInputRef.current?.focus(), 0);
-      } else {
-        window.setTimeout(() => inputRef.current?.focus(), 0);
-      }
-    },
-    [inputRef],
+  // The lessons' end card shows once per finished run: leaving it for the
+  // challenges closes it, as "Keep exploring" does, so coming back to the
+  // lessons never shows it (and signals Opsville) a second time.
+  const switchMode = (next: Mode) => {
+    if (next !== mode && lab.isComplete) ui.keepExploring();
+    setMode(next);
+  };
+
+  const modeToggle = (
+    <div role="group" aria-label="Mode" className="flex items-center gap-1">
+      {(
+        [
+          ['lessons', 'Lessons', BookOpen],
+          ['challenges', 'Challenges', Target],
+        ] as const
+      ).map(([value, label, Icon]) => (
+        <Button
+          key={value}
+          type="button"
+          size="sm"
+          variant={mode === value ? 'default' : 'outline'}
+          aria-pressed={mode === value}
+          onClick={() => switchMode(value)}
+          className="h-10 lg:h-8"
+        >
+          <Icon className="h-4 w-4" aria-hidden="true" />
+          {label}
+        </Button>
+      ))}
+    </div>
   );
 
-  return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-md border bg-muted/20 p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <Leaf className="h-6 w-6" />
+  const collectionsPanel = (
+    <SimLabPanel
+      title="Collections"
+      icon={Database}
+      summary={`${COLLECTIONS.length} collections, ${TOTAL_DOCS} documents`}
+    >
+      <div className="space-y-2">
+        {COLLECTIONS.map((collection) => (
+          <div key={collection.name} className="rounded-md border p-2">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 font-mono text-sm font-medium">
+                <Table className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                {collection.name}
+              </p>
+              <Badge variant="secondary" className="tabular-nums">
+                {collection.count} docs
+              </Badge>
             </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">// mongo shell playground</p>
-              <h2 className="text-2xl font-bold md:text-3xl">MongoDB Terminal Simulator</h2>
-            </div>
-          </div>
-          <p className="max-w-3xl text-sm text-muted-foreground">
-            Practice MongoDB queries against a small e-commerce dataset in a safe browser terminal.
-            Every command runs live: filter and project with find(), shape the cursor with sort, skip,
-            and limit, write with insertOne, updateOne, and deleteMany, and summarise with the
-            aggregation pipeline. The data mirrors the SQL simulator, so you can see the same records
-            as documents.
-          </p>
-          <div className="mt-4 inline-flex rounded-md border bg-background p-1">
-            <button
-              type="button"
-              onClick={() => switchMode('lessons')}
-              className={cn(
-                'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors',
-                mode === 'lessons'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <BookOpen className="h-4 w-4" />
-              Lessons
-            </button>
-            <button
-              type="button"
-              onClick={() => switchMode('challenges')}
-              className={cn(
-                'flex items-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors',
-                mode === 'challenges'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <Target className="h-4 w-4" />
-              Challenges
-            </button>
-          </div>
-        </div>
-
-        <Card>
-          <CardContent className="space-y-3 p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">
-                {mode === 'lessons' ? 'Progress' : 'Challenges solved'}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {mode === 'lessons'
-                  ? `${completedCount}/${totalCommands}`
-                  : `${solvedCount}/${CHALLENGES.length}`}
-              </span>
-            </div>
-            <Progress
-              value={mode === 'lessons' ? progressPercentage : (solvedCount / CHALLENGES.length) * 100}
-            />
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <Metric label="Collections" value={COLLECTIONS.length} />
-              <Metric label="Documents" value={TOTAL_DOCS} />
-              {mode === 'lessons' ? (
-                <Metric label="Lessons" value={LESSONS.length} />
-              ) : (
-                <Metric label="Challenges" value={CHALLENGES.length} />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_320px]">
-        {mode === 'lessons' ? (
-          <>
-            <div className="space-y-4">
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <BookOpen className="h-5 w-5" />
-                    Lessons
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-4 pt-0">
-                  {LESSONS.map((lesson, lessonIndex) => {
-                    const lessonCompleted = lesson.commands.every((_, commandIndex) =>
-                      completedCommands.has(`${lessonIndex}-${commandIndex}`),
-                    );
-                    const active = lessonIndex === currentLessonIndex;
-
-                    return (
-                      <button
-                        key={lesson.id}
-                        type="button"
-                        onClick={() => {
-                          jumpToLesson(lessonIndex);
-                          inputRef.current?.focus();
-                        }}
-                        className={cn(
-                          'w-full rounded-md border p-2.5 text-left transition-colors',
-                          active
-                            ? 'border-primary/60 bg-primary/10'
-                            : 'border-border hover:border-primary/40 hover:bg-muted/30',
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={cn(
-                              'rounded-md border p-1.5',
-                              active ? 'text-primary' : 'text-muted-foreground',
-                            )}
-                          >
-                            {lesson.icon}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className="font-medium">{lesson.title}</p>
-                              {lessonCompleted && <CheckCircle className="h-4 w-4 text-emerald-500" />}
-                            </div>
-                            <p className="mt-1 text-xs text-muted-foreground">{lesson.description}</p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-
-              <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
-                <RotateCcw className="mr-1 h-4 w-4" />
-                Reset lab
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <Card className="border-primary/40">
-                <CardContent className="space-y-2.5 p-3.5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
-                          Lesson {currentLessonIndex + 1} / {LESSONS.length}
-                        </Badge>
-                        <Badge>
-                          Step {currentCommandIndex + 1} / {currentLesson.commands.length}
-                        </Badge>
-                      </div>
-                      <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
-                      {showHint && currentCommand && (
-                        <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
-                          {currentCommand.hint}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
-                        <Lightbulb className="mr-1 h-4 w-4" />
-                        Hint
-                      </Button>
-                      <Button size="sm" onClick={runCurrentCommand}>
-                        <Play className="mr-1 h-4 w-4" />
-                        Run
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden border-border bg-[#171717]">
-                <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1.5">
-                        <div className="h-3 w-3 rounded-full bg-red-500" />
-                        <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                        <div className="h-3 w-3 rounded-full bg-green-500" />
-                      </div>
-                      <span className="ml-2 text-sm text-muted-foreground">mongosh</span>
-                    </div>
-                    <Badge variant="secondary" className="font-mono text-[11px]">
-                      devops&gt;
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div
-                    ref={terminalRef}
-                    className="h-[580px] cursor-text overflow-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                    onClick={() => inputRef.current?.focus()}
-                  >
-                    {terminalHistory.length === 0 && (
-                      <div className="mb-4 text-emerald-400">
-                        <p>Welcome to the MongoDB shell playground.</p>
-                        <p className="mt-2 text-muted-foreground">
-                          Type &quot;help&quot;, run &quot;show collections&quot;, or follow the current
-                          task above.
-                        </p>
-                      </div>
-                    )}
-                    {terminalHistory.map((line, index) => (
-                      <div
-                        key={`${line.timestamp.getTime()}-${index}`}
-                        className={cn(
-                          'mb-2',
-                          line.type === 'output' ? 'whitespace-pre' : 'whitespace-pre-wrap break-words',
-                          line.type === 'input' && 'text-slate-100',
-                          line.type === 'output' && 'text-slate-300',
-                          line.type === 'error' && 'text-red-400',
-                          line.type === 'success' &&
-                            'whitespace-pre-wrap rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300',
-                        )}
-                      >
-                        {line.type === 'input' && <span className="text-emerald-400">devops&gt; </span>}
-                        {line.content}
-                      </div>
-                    ))}
-                    <form onSubmit={handleSubmit} className="flex items-center">
-                      <span className="whitespace-nowrap text-emerald-400">devops&gt;</span>
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={inputValue}
-                        onChange={(event) => setInputValue(event.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                        spellCheck={false}
-                        autoComplete="off"
-                        autoCapitalize="off"
-                        placeholder="db.customers.find()"
-                      />
-                    </form>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="space-y-4">
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Target className="h-5 w-5" />
-                    Challenges
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2 p-4 pt-0">
-                  {CHALLENGES.map((challenge, index) => {
-                    const solved = solvedChallenges.has(index);
-                    const active = index === activeChallenge;
-
-                    return (
-                      <button
-                        key={challenge.id}
-                        type="button"
-                        onClick={() => selectChallenge(index)}
-                        className={cn(
-                          'w-full rounded-md border p-2.5 text-left transition-colors',
-                          active
-                            ? 'border-primary/60 bg-primary/10'
-                            : 'border-border hover:border-primary/40 hover:bg-muted/30',
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={cn(
-                              'mt-0.5 shrink-0',
-                              solved ? 'text-emerald-500' : active ? 'text-primary' : 'text-muted-foreground',
-                            )}
-                          >
-                            {solved ? <CheckCircle className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-semibold text-muted-foreground">
-                              Challenge {index + 1}
-                            </p>
-                            <p className="mt-0.5 text-sm">{challenge.question}</p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-
-              <Button size="sm" variant="outline" onClick={resetChallenges} className="w-full">
-                <RotateCcw className="mr-1 h-4 w-4" />
-                Reset challenges
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <Card className="border-primary/40">
-                <CardContent className="space-y-2.5 p-3.5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary">
-                          Challenge {activeChallenge + 1} / {CHALLENGES.length}
-                        </Badge>
-                        {solvedChallenges.has(activeChallenge) && (
-                          <Badge className="gap-1 bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15">
-                            <CheckCircle className="h-3.5 w-3.5" />
-                            Solved
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-sm font-medium sm:text-base">
-                        {CHALLENGES[activeChallenge].question}
-                      </p>
-                      <p className="mt-1.5 text-xs text-muted-foreground">
-                        Write your own query in the terminal below and press Enter. Your result is graded
-                        against the expected output.
-                      </p>
-                      {revealed.has(activeChallenge) && (
-                        <div className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2">
-                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            Reference solution
-                          </p>
-                          <code className="block whitespace-pre-wrap break-words font-mono text-xs text-foreground">
-                            {CHALLENGES[activeChallenge].solution}
-                          </code>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button size="sm" variant="outline" onClick={revealSolution}>
-                        <Lightbulb className="mr-1 h-4 w-4" />
-                        Show solution
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="overflow-hidden border-border bg-[#171717]">
-                <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1.5">
-                        <div className="h-3 w-3 rounded-full bg-red-500" />
-                        <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                        <div className="h-3 w-3 rounded-full bg-green-500" />
-                      </div>
-                      <span className="ml-2 text-sm text-muted-foreground">mongosh</span>
-                    </div>
-                    <Badge variant="secondary" className="font-mono text-[11px]">
-                      devops&gt;
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div
-                    ref={challengeTerminalRef}
-                    className="h-[580px] cursor-text overflow-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
-                    onClick={() => challengeInputRef.current?.focus()}
-                  >
-                    {challengeHistory.length === 0 && (
-                      <div className="mb-4 text-emerald-400">
-                        <p>Challenge mode — write the query yourself.</p>
-                        <p className="mt-2 text-muted-foreground">
-                          Type a query to answer the current challenge, run &quot;show collections&quot;,
-                          or &quot;help&quot; for commands.
-                        </p>
-                      </div>
-                    )}
-                    {challengeHistory.map((line, index) => (
-                      <div
-                        key={`${line.timestamp.getTime()}-${index}`}
-                        className={cn(
-                          'mb-2',
-                          line.type === 'output' ? 'whitespace-pre' : 'whitespace-pre-wrap break-words',
-                          line.type === 'input' && 'text-slate-100',
-                          line.type === 'output' && 'text-slate-300',
-                          line.type === 'error' && 'text-red-400',
-                          line.type === 'success' &&
-                            'whitespace-pre-wrap rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300',
-                        )}
-                      >
-                        {line.type === 'input' && <span className="text-emerald-400">devops&gt; </span>}
-                        {line.content}
-                      </div>
-                    ))}
-                    <form onSubmit={handleChallengeSubmit} className="flex items-center">
-                      <span className="whitespace-nowrap text-emerald-400">devops&gt;</span>
-                      <input
-                        ref={challengeInputRef}
-                        type="text"
-                        value={challengeInput}
-                        onChange={(event) => setChallengeInput(event.target.value)}
-                        className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
-                        spellCheck={false}
-                        autoComplete="off"
-                        autoCapitalize="off"
-                        placeholder="db.products.find(...)"
-                      />
-                    </form>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </>
-        )}
-
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Database className="h-5 w-5" />
-                Collections
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              {COLLECTIONS.map((collection) => (
-                <div key={collection.name} className="rounded-md border p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <p className="flex items-center gap-1.5 font-mono text-sm font-medium">
-                      <Table className="h-3.5 w-3.5 text-primary" />
-                      {collection.name}
-                    </p>
-                    <Badge variant="secondary" className="tabular-nums">
-                      {collection.count} docs
-                    </Badge>
-                  </div>
-                  <ul className="space-y-1">
-                    {collection.fields.map((field) => (
-                      <li
-                        key={field.name}
-                        className="flex items-center justify-between gap-2 font-mono text-xs text-muted-foreground"
-                      >
-                        <span>{field.name}</span>
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                          {field.type}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+            <ul className="space-y-0.5">
+              {collection.fields.map((field) => (
+                <li
+                  key={field.name}
+                  className="flex items-center justify-between gap-2 font-mono text-xs"
+                >
+                  <span>{field.name}</span>
+                  <span className="uppercase tracking-wide text-muted-foreground">
+                    {field.type}
+                  </span>
+                </li>
               ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Terminal className="h-5 w-5" />
-                Cheat sheet
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0 text-xs text-muted-foreground">
-              <p><code className="text-foreground">find(filter, projection)</code> read documents</p>
-              <p><code className="text-foreground">{'{ field: 1, _id: 0 }'}</code> include / exclude fields</p>
-              <p><code className="text-foreground">{'$lt $gt $gte $lte $ne'}</code> comparisons</p>
-              <p><code className="text-foreground">{'$in'}</code> / <code className="text-foreground">{'$and'}</code> / <code className="text-foreground">{'$or'}</code> combine</p>
-              <p><code className="text-foreground">sort / skip / limit</code> shape the cursor</p>
-              <p><code className="text-foreground">countDocuments(filter)</code> count matches</p>
-              <p><code className="text-foreground">insertOne / updateOne / deleteMany</code> write</p>
-              <p><code className="text-foreground">aggregate([ $match, $group, $sort ])</code> pipeline</p>
-            </CardContent>
-          </Card>
-        </div>
+            </ul>
+          </div>
+        ))}
       </div>
-
-      {mode === 'lessons' && completedCount === totalCommands && (
-        <Card className="mt-4 border-emerald-500/40 bg-emerald-500/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="font-semibold">Lab complete</p>
-                <p className="text-sm text-muted-foreground">
-                  You practiced the core MongoDB workflow from find() and projections through operators,
-                  sorting, paging, writes, and the aggregation pipeline. Switch to Challenges to write
-                  queries from scratch.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={resetLab}>
-              Start over
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {mode === 'challenges' && solvedCount === CHALLENGES.length && (
-        <Card className="mt-4 border-emerald-500/40 bg-emerald-500/10">
-          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <Trophy className="h-8 w-8 text-emerald-500" />
-              <div>
-                <p className="font-semibold">All challenges solved</p>
-                <p className="text-sm text-muted-foreground">
-                  Nice work — you wrote every query yourself. Reset to practice again, or head back
-                  to the lessons.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={resetChallenges}>
-              Reset challenges
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+    </SimLabPanel>
   );
-}
 
-function Metric({ label, value }: { label: string; value: number }) {
+  const cheatSheet = (
+    <SimLabPanel title="Cheat sheet" icon={Terminal}>
+      <ul className="space-y-1 text-sm text-muted-foreground">
+        {CHEAT_SHEET.map(([keywords, what]) => (
+          <li key={keywords}>
+            <code className="font-mono text-xs font-semibold text-foreground">{keywords}</code>{' '}
+            {what}
+          </li>
+        ))}
+      </ul>
+    </SimLabPanel>
+  );
+
+  if (mode === 'challenges') {
+    const challenge = CHALLENGES[activeChallenge];
+    const solved = solvedChallenges.has(activeChallenge);
+    return (
+      <SimFrame key="challenges">
+        <SimBar
+          title="MongoDB Terminal Simulator"
+          icon={Leaf}
+          lead={modeToggle}
+          steps={CHALLENGES.map((c, i) => ({
+            title: c.question,
+            status: solvedChallenges.has(i) ? 'done' : 'todo',
+            statusLabel: solvedChallenges.has(i) ? 'solved' : 'not solved yet',
+          }))}
+          current={activeChallenge}
+          onStep={selectChallenge}
+          stepNoun="Challenge"
+          stepsLabel="Challenges"
+          tools={
+            <SimResetButton
+              onReset={resetChallenges}
+              label="Reset challenges"
+              confirmLabel="Reset challenges?"
+            />
+          }
+          progress={{ current: activeChallenge + 1, total: CHALLENGES.length }}
+          heading={`Challenge ${activeChallenge + 1}`}
+          meta={
+            solved && (
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-correct-foreground">
+                <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" /> Solved
+              </span>
+            )
+          }
+          actions={
+            <>
+              <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                {solvedCount}/{CHALLENGES.length} solved
+              </span>
+              {!revealed.has(activeChallenge) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  onClick={revealSolution}
+                >
+                  <Lightbulb className="h-4 w-4" aria-hidden="true" />
+                  Show solution
+                </Button>
+              )}
+            </>
+          }
+          goal={challenge.question}
+        >
+          <SimHowTo summary="How challenges work" autoOpen={challengeHistory.length === 0}>
+            Write your own MongoDB command in the terminal and press Enter. Your result is graded
+            against the expected output.
+          </SimHowTo>
+          {revealed.has(activeChallenge) && (
+            <SimFeedback tone="hint" label="Reference solution" role="status">
+              <code className="block whitespace-pre-wrap break-words font-mono text-xs">
+                {challenge.solution}
+              </code>
+            </SimFeedback>
+          )}
+        </SimBar>
+
+        {solvedCount === CHALLENGES.length && !challengesDismissed ? (
+          <SimComplete
+            title="All challenges solved"
+            summary="You wrote every command yourself. Reset to practice again, or head back to the lessons."
+            signal={false}
+            learned={null}
+            stats={[
+              { label: 'Challenges', value: `${solvedCount}/${CHALLENGES.length}` },
+              { label: 'Lessons', value: `${lab.completedCount}/${lab.totalCommands}` },
+            ]}
+            actions={
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setChallengesDismissed(true)}
+                >
+                  Keep practicing
+                </Button>
+                <Button type="button" variant="outline" onClick={() => switchMode('lessons')}>
+                  Back to the lessons
+                </Button>
+              </>
+            }
+            onPlayAgain={resetChallenges}
+            playAgainLabel="Reset challenges"
+          />
+        ) : (
+          <SimLabLayout
+            terminal={
+              <SimTerminal
+                label="mongosh"
+                status="challenge mode"
+                prompt="devops>"
+                lines={labLines(challengeHistory, [
+                  {
+                    type: 'success',
+                    content: 'Challenge mode: write the MongoDB command yourself.',
+                  },
+                  {
+                    type: 'muted',
+                    content:
+                      'Type a command to answer the current challenge, run "show collections", or "help" for commands.',
+                  },
+                ])}
+                value={challengeInput}
+                onChange={setChallengeInput}
+                onSubmit={submitChallenge}
+                inputRef={challengeInputRef}
+                placeholder="db.products.find(...)"
+                autoFocus
+                heightClassName={LAB_TERMINAL_HEIGHT}
+              />
+            }
+            aside={
+              <>
+                <SimLabPanel
+                  title="Challenges"
+                  icon={Target}
+                  summary={`${solvedCount} of ${CHALLENGES.length} solved`}
+                >
+                  <ol className="space-y-0.5">
+                    {CHALLENGES.map((c, index) => {
+                      const done = solvedChallenges.has(index);
+                      const active = index === activeChallenge;
+                      return (
+                        <li key={c.id}>
+                          <button
+                            type="button"
+                            onClick={() => selectChallenge(index)}
+                            aria-current={active ? 'step' : undefined}
+                            aria-label={`Challenge ${index + 1}: ${c.question}${done ? ', solved' : ''}`}
+                            className={cn(
+                              'flex w-full items-start gap-2 rounded-md border px-2 py-1.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                              active
+                                ? 'border-primary/60 bg-primary/10'
+                                : 'border-transparent hover:bg-muted'
+                            )}
+                          >
+                            {done ? (
+                              <CircleCheck
+                                className="mt-0.5 h-4 w-4 shrink-0 text-correct-foreground"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <span className="mt-0.5 w-4 shrink-0 text-center font-mono text-xs text-muted-foreground">
+                                {index + 1}
+                              </span>
+                            )}
+                            <span className="min-w-0 flex-1">{c.question}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </SimLabPanel>
+                {collectionsPanel}
+              </>
+            }
+          />
+        )}
+      </SimFrame>
+    );
+  }
+
   return (
-    <div className="rounded-md border bg-muted/30 p-2">
-      <p className="text-lg font-bold tabular-nums">{value}</p>
-      <p className="text-xs text-muted-foreground">{label}</p>
-    </div>
+    <SimFrame key="lessons">
+      <SimLabBar
+        title="MongoDB Terminal Simulator"
+        icon={Leaf}
+        lead={modeToggle}
+        lessons={LESSONS}
+        lab={lab}
+        ui={ui}
+        task={currentCommand?.instruction}
+        hint={currentCommand?.hint}
+        showMe={expected}
+      />
+
+      {ui.showComplete ? (
+        <SimComplete
+          title="Lab complete"
+          summary="You queried, filtered, projected, sorted, counted, grouped and changed documents in the mongo shell."
+          stats={labStats(lab, LESSONS, ui, { showMe: true })}
+          actions={
+            <>
+              <Button type="button" variant="outline" onClick={ui.keepExploring}>
+                Keep exploring
+              </Button>
+              <Button type="button" variant="outline" onClick={() => switchMode('challenges')}>
+                <Target className="h-4 w-4" aria-hidden="true" />
+                Try the challenges
+              </Button>
+            </>
+          }
+          onPlayAgain={ui.startOver}
+          playAgainLabel="Start over"
+        />
+      ) : (
+        <SimLabLayout
+          terminal={
+            <SimTerminal
+              label="mongosh"
+              status="devops>"
+              prompt="devops>"
+              lines={labLines(terminalHistory, [
+                { type: 'success', content: 'Welcome to the MongoDB shell.' },
+                {
+                  type: 'muted',
+                  content: 'Type "help", run "show collections", or follow the task above.',
+                },
+              ])}
+              value={inputValue}
+              onChange={setInputValue}
+              onSubmit={submitCommand}
+              onKeyDown={lab.handleKeyDown}
+              inputRef={inputRef}
+              placeholder="db.customers.find()"
+              autoFocus
+              heightClassName={LAB_TERMINAL_HEIGHT}
+            />
+          }
+          aside={
+            <>
+              {collectionsPanel}
+              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+              </SimLabPanel>
+              {cheatSheet}
+            </>
+          }
+        />
+      )}
+    </SimFrame>
   );
 }
+
+const CHEAT_SHEET = [
+  ['find(filter, projection)', 'read documents'],
+  ['{ field: 1, _id: 0 }', 'include / exclude fields'],
+  ['$lt $gt $gte $lte $ne', 'comparisons'],
+  ['$in / $and / $or', 'combine'],
+  ['sort / skip / limit', 'shape the cursor'],
+  ['countDocuments(filter)', 'count matches'],
+  ['insertOne / updateOne / deleteMany', 'write'],
+  ['aggregate([ $match, $group, $sort ])', 'pipeline'],
+] as const;

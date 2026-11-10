@@ -1,24 +1,24 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
+import { Database, Loader2, Play, Plus, Trash2, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  RotateCcw,
-  Database,
-  Search,
-  Zap,
-  Clock,
-  TrendingUp,
-  Table,
-  ArrowRight,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Trash2,
-  Keyboard,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 interface TableRow {
@@ -28,12 +28,10 @@ interface TableRow {
   age: number;
   city: string;
 }
-
 interface IndexInfo {
   columns: string[];
   type: 'btree' | 'hash';
 }
-
 interface QueryResult {
   query: string;
   rowsScanned: number;
@@ -44,14 +42,12 @@ interface QueryResult {
   explanation: string;
   explainPlan?: ExplainStep[];
 }
-
 interface ExplainStep {
   operation: string;
   detail: string;
   cost: number;
   rows: number;
 }
-
 interface ScanAnimation {
   type: 'full-scan' | 'index-seek';
   currentRow: number;
@@ -59,6 +55,7 @@ interface ScanAnimation {
   foundRows: number[];
   isComplete: boolean;
 }
+type RunRecord = { plan: string; usedIndex: boolean; rowsScanned: number; indexName?: string };
 
 const SAMPLE_DATA: TableRow[] = [
   { id: 1, email: 'alice@example.com', name: 'Alice Johnson', age: 28, city: 'New York' },
@@ -72,7 +69,6 @@ const SAMPLE_DATA: TableRow[] = [
   { id: 9, email: 'ivy@example.com', name: 'Ivy Taylor', age: 33, city: 'Chicago' },
   { id: 10, email: 'jack@example.com', name: 'Jack Anderson', age: 28, city: 'Austin' },
 ];
-
 const QUERIES = [
   {
     id: 'email-exact',
@@ -138,85 +134,80 @@ const QUERIES = [
     type: 'composite' as const,
   },
 ];
-
 const INDEXABLE_COLUMNS = ['email', 'age', 'city'] as const;
 type IndexableColumn = (typeof INDEXABLE_COLUMNS)[number];
-
 const COMPOSITE_INDEX_OPTIONS: [IndexableColumn, IndexableColumn][] = [
   ['age', 'city'],
   ['city', 'age'],
 ];
+const MISSIONS: Mission<{ runs: Partial<Record<string, RunRecord>> }>[] = [
+  {
+    id: 'full-scan',
+    label: 'Run a query with no index and watch the full table scan.',
+    hint: 'Pick any query and press Run query.',
+    check: ({ runs }) => Object.values(runs).some((r) => r && !r.usedIndex),
+  },
+  {
+    id: 'email-seek',
+    label: 'Add an index on email, then find Emma with an index seek.',
+    hint: 'An index jumps straight to the matching row.',
+    check: ({ runs }) =>
+      runs['email-exact']?.usedIndex === true && runs['email-exact'].rowsScanned === 1,
+  },
+  {
+    id: 'range',
+    label: 'Make the Age Range query use an index.',
+    hint: 'A B-tree keeps ages in order, so ages 30 to 40 are one short read.',
+    check: ({ runs }) => runs['age-range']?.usedIndex === true,
+  },
+  {
+    id: 'both-orders',
+    label: 'Serve Age + City and City + Age with one composite index.',
+    hint: 'The order in WHERE does not matter. Two single indexes are not enough.',
+    check: ({ runs }) => {
+      const a = runs['age-city-composite'];
+      const b = runs['city-age-composite'];
+      return (
+        a?.plan === 'composite-exact' &&
+        b?.plan === 'composite-exact' &&
+        a.indexName === b.indexName
+      );
+    },
+  },
+  {
+    id: 'leftmost',
+    label: 'Show that a composite index cannot seek on its second column.',
+    hint: 'Run Find by City with only (age, city), or Find by Age with only (city, age).',
+    check: ({ runs }) => Object.values(runs).some((r) => r?.plan === 'non-leading'),
+  },
+];
+type Tab = 'setup' | 'table' | 'result';
 
 export default function DbIndexingSimulator() {
   const [indexes, setIndexes] = useState<IndexInfo[]>([]);
   const [selectedQuery, setSelectedQuery] = useState(QUERIES[0]);
   const [lastResult, setLastResult] = useState<QueryResult | null>(null);
+  const [resultQuery, setResultQuery] = useState<(typeof QUERIES)[number] | null>(null);
   const [animation, setAnimation] = useState<ScanAnimation | null>(null);
   const [stats, setStats] = useState({ queries: 0, totalTime: 0, indexHits: 0 });
   const [isRunning, setIsRunning] = useState(false);
-
-  // Keyboard navigation handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      // Number keys 1-4 to select query
-      const num = parseInt(e.key);
-      if (num >= 1 && num <= QUERIES.length && !isRunning) {
-        e.preventDefault();
-        setSelectedQuery(QUERIES[num - 1]);
-      }
-
-      // Enter or Space to run query
-      if ((e.key === 'Enter' || e.key === ' ') && !isRunning) {
-        e.preventDefault();
-        runQuery();
-      }
-
-      // R to reset
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        reset();
-      }
-
-      // Escape to reset
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        reset();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRunning]);
-
+  const [runs, setRuns] = useState<Partial<Record<string, RunRecord>>>({});
+  const [tab, setTab] = useState<Tab>('setup');
+  const [dismissed, setDismissed] = useState(false);
+  const runToken = useRef(0);
   const hasIndex = useCallback(
     (column: string) => indexes.some((idx) => idx.columns[0] === column),
     [indexes]
   );
-
   const hasCompositeIndex = useCallback(
     (columns: string[]) => {
       return indexes.some(
         (idx) =>
-          idx.columns.length === columns.length &&
-          idx.columns.every((col, i) => col === columns[i])
+          idx.columns.length === columns.length && idx.columns.every((col, i) => col === columns[i])
       );
     },
     [indexes]
   );
-
   const canUseIndexForQuery = useCallback(
     (queryColumns: string[]) => {
       // ANDed equality predicates have no order, so the WHERE clause order is
@@ -232,9 +223,16 @@ export default function DbIndexingSimulator() {
       if (!best) {
         // An index that holds the column, just not first, is still eligible:
         // the planner could read all of it. It cannot seek, so it loses on cost.
-        const nonLeading = indexes.find((idx) => idx.columns.some((col) => queryColumns.includes(col)));
+        const nonLeading = indexes.find((idx) =>
+          idx.columns.some((col) => queryColumns.includes(col))
+        );
         return nonLeading
-          ? { usable: false, type: 'non-leading' as const, indexColumns: nonLeading.columns, prefix: 0 }
+          ? {
+              usable: false,
+              type: 'non-leading' as const,
+              indexColumns: nonLeading.columns,
+              prefix: 0,
+            }
           : { usable: false, type: 'none' as const };
       }
 
@@ -245,7 +243,8 @@ export default function DbIndexingSimulator() {
       if (indexColumns.length > 1) {
         return {
           usable: true,
-          type: queryColumns.length > 1 ? ('composite-exact' as const) : ('composite-partial' as const),
+          type:
+            queryColumns.length > 1 ? ('composite-exact' as const) : ('composite-partial' as const),
           indexColumns,
           prefix: best.prefix,
         };
@@ -254,63 +253,71 @@ export default function DbIndexingSimulator() {
     },
     [indexes]
   );
-
   const addIndex = useCallback((column: IndexableColumn) => {
     setIndexes((prev) => {
       if (prev.some((idx) => idx.columns.length === 1 && idx.columns[0] === column)) return prev;
       return [...prev, { columns: [column], type: 'btree' }];
     });
   }, []);
-
-  const addCompositeIndex = useCallback((columns: [IndexableColumn, IndexableColumn]) => {
-    setIndexes((prev) => {
-      if (hasCompositeIndex(columns)) return prev;
-      return [...prev, { columns: [...columns], type: 'btree' }];
-    });
-  }, [hasCompositeIndex]);
-
+  const addCompositeIndex = useCallback(
+    (columns: [IndexableColumn, IndexableColumn]) => {
+      setIndexes((prev) => {
+        if (hasCompositeIndex(columns)) return prev;
+        return [...prev, { columns: [...columns], type: 'btree' }];
+      });
+    },
+    [hasCompositeIndex]
+  );
   const removeIndex = useCallback((columns: string[]) => {
     setIndexes((prev) =>
       prev.filter(
         (idx) =>
-          !(idx.columns.length === columns.length &&
-            idx.columns.every((col, i) => col === columns[i]))
+          !(
+            idx.columns.length === columns.length &&
+            idx.columns.every((col, i) => col === columns[i])
+          )
       )
     );
   }, []);
 
   const runQuery = useCallback(async () => {
-   if (isRunning) return;
-   setIsRunning(true);
-   setLastResult(null);
+    if (isRunning) return;
+    const token = ++runToken.current;
+    setIsRunning(true);
+    setLastResult(null);
 
-   const query = selectedQuery;
+    const query = selectedQuery;
     const indexResult = canUseIndexForQuery(query.columns);
     const usesIndex = indexResult.usable;
 
-   const matchingRows: number[] = [];
-   SAMPLE_DATA.forEach((row, idx) => {
-     if (query.type === 'exact') {
-       const value = row[query.column as keyof TableRow];
-       if (value === query.value) matchingRows.push(idx);
-     } else if (query.type === 'range' && 'valueMin' in query && 'valueMax' in query) {
-       const value = row[query.column as keyof TableRow] as number;
-       if (value >= query.valueMin && value <= query.valueMax) matchingRows.push(idx);
+    const matchingRows: number[] = [];
+    SAMPLE_DATA.forEach((row, idx) => {
+      if (query.type === 'exact') {
+        const value = row[query.column as keyof TableRow];
+        if (value === query.value) matchingRows.push(idx);
+      } else if (query.type === 'range' && 'valueMin' in query && 'valueMax' in query) {
+        const value = row[query.column as keyof TableRow] as number;
+        if (value >= query.valueMin && value <= query.valueMax) matchingRows.push(idx);
       } else if (query.type === 'composite' && 'secondValue' in query) {
         const value1 = row[query.columns[0] as keyof TableRow];
         const value2 = row[query.columns[1] as keyof TableRow];
         if (value1 === query.value && value2 === query.secondValue) matchingRows.push(idx);
-     }
-   });
+      }
+    });
 
     // An index scan reads every row that matches its leading columns, then
     // filters out rows that fail the rest of the WHERE clause.
     const expectedValue = (column: string) =>
       column === query.columns[0]
-        ? ('value' in query ? query.value : undefined)
-        : ('secondValue' in query ? query.secondValue : undefined);
+        ? 'value' in query
+          ? query.value
+          : undefined
+        : 'secondValue' in query
+          ? query.secondValue
+          : undefined;
     const conditionFor = (column: string) => {
-      if (query.type === 'range') return `${column} BETWEEN ${query.valueMin} AND ${query.valueMax}`;
+      if (query.type === 'range')
+        return `${column} BETWEEN ${query.valueMin} AND ${query.valueMax}`;
       const value = expectedValue(column);
       return `${column} = ${typeof value === 'string' ? `'${value}'` : value}`;
     };
@@ -318,14 +325,17 @@ export default function DbIndexingSimulator() {
       SAMPLE_DATA.flatMap((row, idx) =>
         columns.every((column) => {
           const value = row[column as keyof TableRow];
-          if (query.type === 'range') return (value as number) >= query.valueMin && (value as number) <= query.valueMax;
+          if (query.type === 'range')
+            return (value as number) >= query.valueMin && (value as number) <= query.valueMax;
           return value === expectedValue(column);
         })
           ? [idx]
           : []
       );
     const seekColumns =
-      usesIndex && indexResult.type !== 'none' ? indexResult.indexColumns.slice(0, indexResult.prefix) : [];
+      usesIndex && indexResult.type !== 'none'
+        ? indexResult.indexColumns.slice(0, indexResult.prefix)
+        : [];
     const residualColumns = query.columns.filter((column) => !seekColumns.includes(column));
     const indexRows = usesIndex ? rowsMatching(seekColumns) : [];
 
@@ -342,6 +352,7 @@ export default function DbIndexingSimulator() {
 
     for (let i = 0; i < scanRows; i++) {
       await new Promise((r) => setTimeout(r, usesIndex ? 80 : 150));
+      if (token !== runToken.current) return;
       const rowIdx = usesIndex ? (matchingRows[i] ?? -1) : i;
       const isMatch = matchingRows.includes(rowIdx) || (usesIndex && matchingRows.includes(i));
 
@@ -357,8 +368,8 @@ export default function DbIndexingSimulator() {
     }
 
     const baseTime = usesIndex ? 5 : 50;
-   const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
-   const timeMs = Math.round(baseTime + variance);
+    const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
+    const timeMs = Math.round(baseTime + variance);
 
     const indexName =
       indexResult.type !== 'none' && indexResult.type !== 'non-leading'
@@ -399,14 +410,14 @@ export default function DbIndexingSimulator() {
           },
         ];
 
-   const result: QueryResult = {
-     query: query.sql,
-     rowsScanned: usesIndex ? indexRows.length : totalRows,
-     rowsReturned: matchingRows.length,
-     timeMs,
-     usedIndex: usesIndex,
+    const result: QueryResult = {
+      query: query.sql,
+      rowsScanned: usesIndex ? indexRows.length : totalRows,
+      rowsReturned: matchingRows.length,
+      timeMs,
+      usedIndex: usesIndex,
       indexName,
-     explanation: usesIndex
+      explanation: usesIndex
         ? indexResult.type === 'composite-exact'
           ? `Composite index seek on ${indexName} - matched both columns. The order in the WHERE clause does not matter`
           : indexResult.type === 'composite-partial'
@@ -418,609 +429,386 @@ export default function DbIndexingSimulator() {
           ? `Seq scan chosen by cost. idx_${indexResult.indexColumns.join('_')} holds ${query.columns.join(', ')}, but not as its first column, so it cannot jump to matching rows. Postgres could still read the whole index (PostgreSQL 18 can also skip scan through each ${indexResult.indexColumns[0]} value), but on a table this small reading every row costs less.`
           : `Full table scan - checked every row in the table`,
       explainPlan,
-   };
+    };
 
     await new Promise((r) => setTimeout(r, 150));
+    if (token !== runToken.current) return;
 
     setAnimation((prev) => (prev ? { ...prev, isComplete: true, foundRows: matchingRows } : null));
     setLastResult(result);
+    setRuns((prev) => ({
+      ...prev,
+      [query.id]: {
+        plan: indexResult.type,
+        usedIndex: usesIndex,
+        rowsScanned: result.rowsScanned,
+        indexName: result.indexName,
+      },
+    }));
+    setResultQuery(query);
     setStats((prev) => ({
-     queries: prev.queries + 1,
-     totalTime: prev.totalTime + timeMs,
-     indexHits: prev.indexHits + (usesIndex ? 1 : 0),
-   }));
+      queries: prev.queries + 1,
+      totalTime: prev.totalTime + timeMs,
+      indexHits: prev.indexHits + (usesIndex ? 1 : 0),
+    }));
 
-   await new Promise((r) => setTimeout(r, 500));
-   setIsRunning(false);
+    await new Promise((r) => setTimeout(r, 500));
+    if (token !== runToken.current) return;
+    setIsRunning(false);
   }, [selectedQuery, canUseIndexForQuery, isRunning]);
-
+  const missions = useMissions(
+    MISSIONS,
+    useMemo(() => ({ runs }), [runs])
+  );
   const reset = useCallback(() => {
+    runToken.current += 1;
     setIndexes([]);
     setLastResult(null);
     setAnimation(null);
     setStats({ queries: 0, totalTime: 0, indexHits: 0 });
     setIsRunning(false);
+    setRuns({});
+    setResultQuery(null);
   }, []);
-
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* 1. Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
-            Database Indexing
-          </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            See how indexes speed up queries by avoiding full table scans
+  const startOver = () => {
+    reset();
+    missions.reset();
+    setDismissed(false);
+  };
+  const run = () => {
+    void runQuery();
+    if (!window.matchMedia('(min-width: 1024px)').matches) setTab('table');
+  };
+  const resultPlan = resultQuery ? runs[resultQuery.id]?.plan : undefined;
+  const tone = lastResult?.usedIndex
+    ? 'success'
+    : resultPlan === 'non-leading'
+      ? 'info'
+      : 'warning';
+  const label = lastResult?.usedIndex
+    ? 'Index used'
+    : resultPlan === 'non-leading'
+      ? 'Index not usable'
+      : 'Full table scan';
+  const setup = (
+    <div className="space-y-2">
+      <section className="space-y-2 rounded-lg border bg-card p-3">
+        <h3 className="text-sm font-semibold">Indexes</h3>
+        {INDEXABLE_COLUMNS.map((column) => {
+          const indexed = indexes.some(
+            (idx) => idx.columns.length === 1 && idx.columns[0] === column
+          );
+          return (
+            <div
+              key={column}
+              className="flex items-center justify-between gap-2 rounded-md border p-2"
+            >
+              <span className="font-mono text-sm">{column}</span>
+              {indexed && (
+                <Badge
+                  variant="secondary"
+                  className={cn(SIM_TONE.success.surface, SIM_TONE.success.text)}
+                >
+                  Indexed
+                </Badge>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                variant={indexed ? 'ghost' : 'outline'}
+                className="h-10 lg:h-8"
+                aria-label={`${indexed ? 'Remove' : 'Add'} index on ${column}`}
+                onClick={() => (indexed ? removeIndex([column]) : addIndex(column))}
+              >
+                {indexed ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {indexed ? 'Remove' : 'Add'}
+              </Button>
+            </div>
+          );
+        })}
+        <div className="space-y-2 border-t pt-2">
+          {COMPOSITE_INDEX_OPTIONS.map((columns) => {
+            const indexed = hasCompositeIndex(columns);
+            const name = columns.join(', ');
+            return (
+              <div
+                key={name}
+                className="flex items-center justify-between gap-2 rounded-md border p-2"
+              >
+                <span className="font-mono text-sm">({name})</span>
+                {indexed && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(SIM_TONE.success.surface, SIM_TONE.success.text)}
+                  >
+                    Indexed
+                  </Badge>
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={indexed ? 'ghost' : 'outline'}
+                  className="h-10 lg:h-8"
+                  aria-label={`${indexed ? 'Remove' : 'Add'} index on (${name})`}
+                  onClick={() => (indexed ? removeIndex(columns) : addCompositeIndex(columns))}
+                >
+                  {indexed ? <Trash2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {indexed ? 'Remove' : 'Add'}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <section className="space-y-2 rounded-lg border bg-card p-3">
+        <h3 className="text-sm font-semibold">Query</h3>
+        {QUERIES.map((q) => (
+          <button
+            key={q.id}
+            type="button"
+            aria-pressed={selectedQuery.id === q.id}
+            onClick={() => setSelectedQuery(q)}
+            className={cn(
+              'min-h-10 w-full rounded-md border px-2.5 py-2 text-left text-sm',
+              selectedQuery.id === q.id && 'border-primary/50 bg-primary/5'
+            )}
+          >
+            {q.label}
+          </button>
+        ))}
+        <code className="block break-all rounded bg-muted/50 px-2 py-1.5 font-mono text-xs">
+          {selectedQuery.sql}
+        </code>
+      </section>
+    </div>
+  );
+  const table = (
+    <div className="space-y-2">
+      <section className="overflow-hidden rounded-lg border bg-card">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <tr>
+              <th className="px-2 py-1.5 font-medium">id</th>
+              <th className="px-2 py-1.5 font-medium">
+                email{' '}
+                {hasIndex('email') && (
+                  <Zap className="inline h-3.5 w-3.5 text-primary" aria-label="indexed" />
+                )}
+              </th>
+              <th className="hidden px-2 py-1.5 font-medium sm:table-cell">name</th>
+              <th className="px-2 py-1.5 font-medium">
+                age{' '}
+                {hasIndex('age') && (
+                  <Zap className="inline h-3.5 w-3.5 text-primary" aria-label="indexed" />
+                )}
+              </th>
+              <th className="px-2 py-1.5 font-medium">
+                city{' '}
+                {hasIndex('city') && (
+                  <Zap className="inline h-3.5 w-3.5 text-primary" aria-label="indexed" />
+                )}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {SAMPLE_DATA.map((row, idx) => {
+              const scanning = animation && !animation.isComplete && animation.type === 'full-scan';
+              const read = scanning && idx < animation.currentRow;
+              const current = scanning && idx === animation.currentRow - 1;
+              const found = animation?.foundRows.includes(idx);
+              return (
+                <tr
+                  key={row.id}
+                  className={cn(
+                    'border-t transition-colors duration-150',
+                    read && 'bg-partial/10',
+                    current && 'bg-partial/25',
+                    found && 'bg-correct/20'
+                  )}
+                >
+                  <td className="px-2 py-1.5 tabular-nums">{row.id}</td>
+                  <td className="max-w-[8rem] truncate px-2 py-1.5 font-mono text-xs sm:max-w-none">
+                    {row.email}
+                  </td>
+                  <td className="hidden px-2 py-1.5 sm:table-cell">{row.name}</td>
+                  <td className="px-2 py-1.5 tabular-nums">{row.age}</td>
+                  <td className="px-2 py-1.5">{row.city}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+      {animation && !animation.isComplete && (
+        <div className="rounded-lg border bg-card p-3">
+          <p className="text-xs">
+            {animation.type === 'index-seek' ? 'Index seek' : 'Full table scan'}{' '}
+            {animation.currentRow} / {animation.totalRows}
+          </p>
+          <div className="mt-2 h-2 rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary"
+              style={{ width: `${(animation.currentRow / animation.totalRows) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+  const result = (
+    <div className="space-y-2">
+      {lastResult ? (
+        <section className="space-y-3 rounded-lg border bg-card p-3">
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              ['Rows read', lastResult.rowsScanned],
+              ['Rows returned', lastResult.rowsReturned],
+              ['Time', `${lastResult.timeMs} ms`],
+            ].map(([name, value]) => (
+              <div key={name} className="rounded-md border bg-card px-2 py-1.5">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">{name}</p>
+                <p className="font-mono text-lg font-semibold tabular-nums">{value}</p>
+              </div>
+            ))}
+          </div>
+          <SimFeedback tone={tone} label={label}>
+            <p>{lastResult.explanation}</p>
+          </SimFeedback>
+          <ol className="text-xs font-mono">
+            {lastResult.explainPlan?.map((s, i) => (
+              <li key={i}>
+                {s.operation}: {s.detail}
+              </li>
+            ))}
+          </ol>
+          {!lastResult.usedIndex && resultQuery && (
+            <SimFeedback tone="hint" label="Tip">
+              <p>
+                {resultQuery.type === 'composite' ? (
+                  <>
+                    Add a composite index on <strong>({resultQuery.columns.join(' + ')})</strong>{' '}
+                    for best performance, or at least on <strong>{resultQuery.columns[0]}</strong>.
+                  </>
+                ) : (
+                  <>
+                    Add an index on <strong>{resultQuery.columns[0]}</strong> to speed up this
+                    query.
+                  </>
+                )}
+              </p>
+            </SimFeedback>
+          )}
+        </section>
+      ) : (
+        <section className="rounded-lg border bg-card p-3 text-sm text-muted-foreground">
+          Run a query to see how the database found the rows.
+        </section>
+      )}
+      <SimMissionList missions={missions.missions} />
+      <details className="rounded-lg border bg-card p-3">
+        <summary className="cursor-pointer text-sm font-semibold">How indexes work</summary>
+        <div className="mt-2 text-sm text-muted-foreground">
+          <h3 className="text-foreground">Without an index</h3>
+          <p>
+            The database checks every row in a full table scan. An index can jump directly to
+            matching rows. Composite indexes are sorted by their first column, so (age, city) cannot
+            seek on city alone.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={reset} className="w-fit">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          <span>Reset</span>
-        </Button>
-      </div>
-
-      {/* 2. Table Visualization - SHOW DATA FIRST so users understand context */}
-      <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-        <CardHeader className="pb-2 sm:pb-4">
-          <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
-            <Table className="h-4 w-4 text-purple-400 sm:h-5 sm:w-5" />
-            <span>users table</span>
-            <span className="ml-auto text-xs font-normal text-slate-500 dark:text-slate-400">
-              {SAMPLE_DATA.length} rows
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="max-h-64 overflow-auto rounded-lg border border-slate-300 dark:border-slate-600">
-            <table className="w-full text-xs sm:text-sm">
-              <thead className="sticky top-0 bg-slate-200 dark:bg-slate-700">
-                <tr>
-                  <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">id</th>
-                  <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">
-                    email
-                    {hasIndex('email') && (
-                      <Zap className="ml-1 inline h-3 w-3 text-yellow-400" />
-                    )}
-                  </th>
-                  <th className="hidden px-2 py-1.5 text-left text-slate-600 dark:text-slate-300 sm:table-cell">
-                    name
-                  </th>
-                  <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">
-                    age
-                    {hasIndex('age') && (
-                      <Zap className="ml-1 inline h-3 w-3 text-yellow-400" />
-                    )}
-                  </th>
-                  <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">
-                    city
-                    {hasIndex('city') && (
-                      <Zap className="ml-1 inline h-3 w-3 text-yellow-400" />
-                    )}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {SAMPLE_DATA.map((row, idx) => {
-                  const isScanning =
-                    animation &&
-                    !animation.isComplete &&
-                    animation.type === 'full-scan' &&
-                    idx < animation.currentRow;
-                  const isFound = animation?.foundRows.includes(idx);
-                  const isCurrentlyScanningRow =
-                    animation &&
-                    !animation.isComplete &&
-                    animation.type === 'full-scan' &&
-                    idx === animation.currentRow - 1;
-
-                  return (
-                    <motion.tr
-                      key={row.id}
-                      className={cn(
-                        'border-t border-slate-300 dark:border-slate-600',
-                        isCurrentlyScanningRow && 'bg-yellow-500/30',
-                        isFound && 'bg-emerald-500/20'
-                      )}
-                      animate={{
-                        backgroundColor: isFound
-                          ? 'rgba(16, 185, 129, 0.2)'
-                          : isScanning
-                            ? 'rgba(234, 179, 8, 0.1)'
-                            : 'transparent',
-                      }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <td className="px-2 py-1.5 text-slate-700 dark:text-slate-300">{row.id}</td>
-                      <td className="max-w-[100px] truncate px-2 py-1.5 text-slate-700 dark:text-slate-300 sm:max-w-none">
-                        {row.email}
-                      </td>
-                      <td className="hidden px-2 py-1.5 text-slate-700 dark:text-slate-300 sm:table-cell">
-                        {row.name}
-                      </td>
-                      <td className="px-2 py-1.5 text-slate-700 dark:text-slate-300">{row.age}</td>
-                      <td className="px-2 py-1.5 text-slate-700 dark:text-slate-300">{row.city}</td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Scan Progress */}
-          <AnimatePresence>
-            {animation && !animation.isComplete && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-3"
-              >
-                <div className="flex items-center justify-between text-xs">
-                  <span
-                    className={cn(
-                      'font-medium',
-                      animation.type === 'index-seek' ? 'text-emerald-400' : 'text-yellow-400'
-                    )}
-                  >
-                    {animation.type === 'index-seek' ? (
-                      <>
-                        <Zap className="mr-1 inline h-3 w-3" />
-                        Index Seek
-                      </>
-                    ) : (
-                      <>
-                        <ArrowRight className="mr-1 inline h-3 w-3" />
-                        Full Table Scan
-                      </>
-                    )}
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400">
-                    Scanned {animation.currentRow} / {animation.totalRows} rows
-                  </span>
-                </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-300 dark:bg-slate-600">
-                  <motion.div
-                    className={cn(
-                      'h-full rounded-full',
-                      animation.type === 'index-seek' ? 'bg-emerald-500' : 'bg-yellow-500'
-                    )}
-                    initial={{ width: 0 }}
-                    animate={{
-                      width: `${(animation.currentRow / animation.totalRows) * 100}%`,
-                    }}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </CardContent>
-      </Card>
-
-      {/* 3. Controls - Index Manager + Query Selector side by side on desktop */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Index Manager */}
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardHeader className="pb-2 sm:pb-4">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
-              <Zap className="h-4 w-4 text-yellow-400 sm:h-5 sm:w-5" />
-              <span className="hidden sm:inline">Index Manager</span>
-              <span className="sm:hidden">Indexes</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Add indexes to columns to speed up queries on those columns.
-            </p>
-            <div className="space-y-2">
-              {INDEXABLE_COLUMNS.map((column) => {
-                const indexed = hasIndex(column);
-                return (
-                  <div
-                    key={column}
-                    className={cn(
-                      'flex items-center justify-between rounded-lg border p-2 sm:p-3',
-                      indexed
-                        ? 'border-emerald-500/50 bg-emerald-500/10'
-                        : 'border-slate-300 bg-slate-200/50 dark:border-slate-600 dark:bg-slate-700/50'
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Database className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                      <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                        {column}
-                      </span>
-                      {indexed && (
-                        <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-400">
-                          INDEXED
-                        </span>
-                      )}
-                    </div>
-                   <Button
-                     variant={indexed ? 'destructive' : 'default'}
-                     size="sm"
-                      onClick={() => (indexed ? removeIndex([column]) : addIndex(column))}
-                     className="h-7 px-2 text-xs sm:h-8 sm:px-3"
-                   >
-                      {indexed ? (
-                        <>
-                          <Trash2 className="mr-1 h-3 w-3" />
-                          <span className="hidden sm:inline">Remove</span>
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="mr-1 h-3 w-3" />
-                          <span className="hidden sm:inline">Add Index</span>
-                          <span className="sm:hidden">Add</span>
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                );
-              })}
-           </div>
-
-            {/* Composite Indexes */}
-           <div className="mt-4 border-t border-slate-300 pt-4 dark:border-slate-600">
-              <div className="mb-2">
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
-               Composite Indexes
-               <span className="ml-1 text-[10px] text-slate-400">(order matters)</span>
-             </p>
-                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-                  A composite index is a <strong>single index</strong> on multiple columns. The leftmost column is used first for filtering.
-                </p>
-              </div>
-             <div className="space-y-2">
-               {COMPOSITE_INDEX_OPTIONS.map((columns) => {
-                 const indexed = hasCompositeIndex(columns);
-                 const label = columns.join(' + ');
-                  const tooltipText = `Creates one B-tree index ordered by ${columns[0]}, then ${columns[1]}. Serves queries that filter on ${columns[0]}, alone or with ${columns[1]} in either order.`;
-                 return (
-                   <div
-                     key={label}
-                      title={tooltipText}
-                     className={cn(
-                       'flex items-center justify-between rounded-lg border p-2 sm:p-3',
-                       indexed
-                          ? 'border-purple-500/50 bg-purple-500/10'
-                          : 'border-slate-300 bg-slate-200/50 dark:border-slate-600 dark:bg-slate-700/50'
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Database className="h-4 w-4 text-slate-500 dark:text-slate-400" />
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                          ({label})
-                        </span>
-                        {indexed && (
-                          <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] text-purple-400">
-                            INDEXED
-                          </span>
-                        )}
-                      </div>
-                      <Button
-                        variant={indexed ? 'destructive' : 'default'}
-                        size="sm"
-                        onClick={() => (indexed ? removeIndex(columns) : addCompositeIndex(columns))}
-                        className="h-7 px-2 text-xs sm:h-8 sm:px-3"
-                      >
-                        {indexed ? (
-                          <>
-                            <Trash2 className="mr-1 h-3 w-3" />
-                            <span className="hidden sm:inline">Remove</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="mr-1 h-3 w-3" />
-                            <span className="hidden sm:inline">Add Index</span>
-                            <span className="sm:hidden">Add</span>
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-         </CardContent>
-       </Card>
-
-       {/* Query Selector */}
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardHeader className="pb-2 sm:pb-4">
-            <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
-              <Search className="h-4 w-4 text-blue-400 sm:h-5 sm:w-5" />
-              <span className="hidden sm:inline">Select Query</span>
-              <span className="sm:hidden">Query</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-             {QUERIES.map((query) => {
-               const isSelected = selectedQuery.id === query.id;
-                const willUseIndex = canUseIndexForQuery(query.columns).usable;
-               return (
-                 <Button
-                   key={query.id}
-                    variant={isSelected ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedQuery(query)}
-                    className={cn(
-                      'h-auto flex-col py-2',
-                      isSelected && 'ring-2 ring-blue-500',
-                      willUseIndex && !isSelected && 'border-emerald-500/50'
-                    )}
-                  >
-                    <span className="text-xs font-medium sm:hidden">{query.shortLabel}</span>
-                    <span className="hidden text-xs font-medium sm:inline">{query.label}</span>
-                    {willUseIndex && (
-                      <span className="mt-1 text-[10px] text-emerald-400">
-                        <Zap className="mr-0.5 inline h-3 w-3" />
-                        Fast
-                      </span>
-                    )}
-                  </Button>
-                );
-              })}
-            </div>
-
-            {/* SQL Preview */}
-            <div className="rounded-lg bg-slate-200 p-2 dark:bg-slate-900 sm:p-3">
-              <code className="break-all text-[10px] text-blue-600 dark:text-blue-300 sm:text-xs">
-                {selectedQuery.sql}
-              </code>
-            </div>
-
-            <Button
-              onClick={runQuery}
-              disabled={isRunning}
-              className="w-full bg-blue-600 hover:bg-blue-700"
-            >
-              {isRunning ? (
-                <>
-                  <Clock className="mr-2 h-4 w-4 animate-spin" />
-                  Running...
-                </>
-              ) : (
-                <>
-                  <Search className="mr-2 h-4 w-4" />
-                  Run Query
-                </>
-              )}
-            </Button>
-            <p className="mt-2 hidden items-center justify-center gap-1 text-[10px] text-muted-foreground sm:flex">
-              <Keyboard className="h-3 w-3" />
-              <span>
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">1-4</kbd> select,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Enter</kbd> run,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">R</kbd> reset
-              </span>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 4. Query Result - Immediate feedback after running */}
-      <AnimatePresence>
-        {lastResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-          >
-            <Card
-              className={cn(
-                'border-2',
-                lastResult.usedIndex
-                  ? 'border-emerald-500/50 bg-emerald-500/10'
-                  : 'border-yellow-500/50 bg-yellow-500/10'
-              )}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2">
-                    {lastResult.usedIndex ? (
-                      <CheckCircle className="h-5 w-5 text-emerald-400" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-yellow-400" />
-                    )}
-                    <span
-                      className={cn(
-                        'font-semibold',
-                        lastResult.usedIndex ? 'text-emerald-400' : 'text-yellow-400'
-                      )}
-                    >
-                      {lastResult.usedIndex ? 'Index Used!' : 'Full Table Scan'}
-                    </span>
-                  </div>
-                  <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                    {lastResult.timeMs}ms
-                  </span>
-                </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Rows Scanned</span>
-                    <div className="font-medium text-slate-700 dark:text-slate-200">
-                      {lastResult.rowsScanned}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Rows Returned</span>
-                    <div className="font-medium text-slate-700 dark:text-slate-200">
-                      {lastResult.rowsReturned}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-3 rounded-lg bg-slate-200 p-2 dark:bg-slate-800/50">
-                 <p className="text-xs text-slate-600 dark:text-slate-300">
-                   {lastResult.explanation}
-                 </p>
-               </div>
-
-                {/* EXPLAIN Plan Visualization */}
-                {lastResult.explainPlan && lastResult.explainPlan.length > 0 && (
-                  <div className="mt-3 rounded-lg border border-slate-300 bg-slate-200/50 p-3 dark:border-slate-600 dark:bg-slate-800/30">
-                    <p className="mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      Query Execution Plan (EXPLAIN)
-                    </p>
-                    <div className="space-y-2">
-                      {lastResult.explainPlan.map((step, idx) => (
-                        <div
-                          key={idx}
-                          className={cn(
-                            'flex items-center justify-between rounded border px-2 py-1.5 text-xs',
-                            step.operation === 'Index Scan'
-                              ? 'border-emerald-500/30 bg-emerald-500/10'
-                              : step.operation === 'Seq Scan'
-                                ? 'border-yellow-500/30 bg-yellow-500/10'
-                                : 'border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-700/50'
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            {idx > 0 && <ArrowRight className="h-3 w-3 text-slate-400" />}
-                            <span
-                              className={cn(
-                                'font-medium',
-                                step.operation === 'Index Scan'
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : step.operation === 'Seq Scan'
-                                    ? 'text-yellow-600 dark:text-yellow-400'
-                                    : 'text-slate-600 dark:text-slate-300'
-                              )}
-                            >
-                              {step.operation}
-                            </span>
-                            <span className="text-slate-500 dark:text-slate-400">
-                              {step.detail}
-                            </span>
-                          </div>
-                          <div className="flex gap-3 text-[10px] text-slate-400">
-                            <span>cost: {step.cost.toFixed(2)}</span>
-                            <span>rows: {step.rows}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+      </details>
+    </div>
+  );
+  return (
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Database Indexing Simulator"
+          icon={Database}
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={selectedQuery.label}
+          meta={
+            <>
+              <Badge variant="secondary" className="tabular-nums">
+                {stats.queries} queries
+              </Badge>
+              <Badge variant="secondary" className="tabular-nums">
+                {stats.indexHits} index hits
+              </Badge>
+            </>
+          }
+          actions={
+            <div className="hidden items-center gap-2 lg:flex">
+              <Button type="button" size="sm" className="h-8" onClick={run} disabled={isRunning}>
+                {isRunning ? (
+                  <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
                 )}
-
-               {!lastResult.usedIndex && (
-                 <div className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
-                   <p className="text-xs text-blue-600 dark:text-blue-300">
-                     <TrendingUp className="mr-1 inline h-3 w-3" />
-                      Tip: {selectedQuery.type === 'composite' ? (
-                        <>Add a composite index on <strong>({selectedQuery.columns.join(' + ')})</strong> for best performance, or at least on <strong>{selectedQuery.columns[0]}</strong>.</>
-                      ) : (
-                        <>Add an index on <strong>{selectedQuery.columns[0]}</strong> to speed up this query!</>
-                      )}
-                   </p>
-                 </div>
-               )}
-              </CardContent>
-            </Card>
-          </motion.div>
+                {isRunning ? 'Running' : 'Run query'}
+              </Button>
+            </div>
+          }
+          goal={
+            missions.current ? (
+              <>
+                {missions.current.label}{' '}
+                <span className="text-muted-foreground">{missions.current.hint}</span>
+              </>
+            ) : (
+              'All five done. Keep trying index sets.'
+            )
+          }
+        />
+        <SimAnnouncer
+          message={
+            lastResult
+              ? `${lastResult.usedIndex ? 'Index used' : 'Full scan'}: ${lastResult.rowsScanned} rows read, ${lastResult.rowsReturned} returned, ${lastResult.timeMs} ms`
+              : ''
+          }
+        />
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Missions complete"
+            summary="You watched a full scan, sought one row by email, read an age range from a B-tree, served both column orders with one composite index, and saw why a composite index cannot seek on its second column."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Queries run', value: stats.queries },
+              { label: 'Index hits', value: stats.indexHits },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)_minmax(0,1fr)]"
+            minHeight="min-h-[24rem]"
+            tab={tab}
+            onTabChange={(next) => setTab(next as Tab)}
+            tabsLabel="Simulator panels"
+            panels={[
+              { id: 'setup', label: 'Setup', content: setup },
+              { id: 'table', label: 'Table', content: table },
+              { id: 'result', label: 'Result', content: result },
+            ]}
+          />
         )}
-      </AnimatePresence>
-
-      {/* 5. Stats Row - Cumulative metrics (moved down, secondary importance) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardContent className="p-3 text-center sm:p-4">
-            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
-              {stats.queries}
-            </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
-              Queries Run
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardContent className="p-3 text-center sm:p-4">
-            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
-              {stats.totalTime}ms
-            </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
-              Total Time
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardContent className="p-3 text-center sm:p-4">
-            <div className="text-lg font-bold text-emerald-400 sm:text-2xl">{stats.indexHits}</div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
-              Index Hits
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 6. Educational Section */}
-      <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-        <CardContent className="p-4">
-          <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
-            <Database className="h-4 w-4 text-emerald-400" />
-            How Database Indexes Work
-          </h3>
-          <div className="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <h4 className="mb-1 font-medium text-yellow-400">Without Index (Full Table Scan)</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                The database must check <strong>every row</strong> in the table to find matches.
-                Slow for large tables!
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-1 font-medium text-emerald-400">With Index (Index Seek)</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                The index acts like a book&apos;s index - the database jumps{' '}
-                <strong>directly</strong> to matching rows. Much faster!
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 rounded-lg bg-slate-200/50 p-3 dark:bg-slate-700/50">
-            <h4 className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">
-              When to Create an Index:
-            </h4>
-            <ul className="grid gap-1 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-2">
-             <li>• Columns used frequently in WHERE clauses</li>
-             <li>• Columns used in JOIN conditions</li>
-             <li>• Columns used for sorting (ORDER BY)</li>
-             <li>• High-cardinality columns (many unique values)</li>
-           </ul>
-         </div>
-
-          {/* Composite Index Explanation */}
-          <div className="mt-4 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3">
-            <h4 className="mb-2 text-xs font-medium text-purple-600 dark:text-purple-300">
-              🔑 Why Does Composite Index Order Matter?
-            </h4>
-            <p className="mb-2 text-xs text-slate-600 dark:text-slate-400">
-              A composite index like <code className="rounded bg-slate-200 px-1 dark:bg-slate-700">(age, city)</code> is
-              a <strong>single B-tree</strong> sorted first by age, then by city within each age.
-            </p>
-            <div className="grid gap-2 text-xs sm:grid-cols-2">
-              <div className="rounded bg-emerald-500/10 p-2">
-                <p className="font-medium text-emerald-600 dark:text-emerald-400">✓ Can use (age, city) index:</p>
-                <ul className="mt-1 text-slate-500 dark:text-slate-400">
-                  <li>• WHERE age = 28</li>
-                  <li>• WHERE age = 28 AND city = &apos;NYC&apos;</li>
-                  <li>• WHERE city = &apos;NYC&apos; AND age = 28 (WHERE order does not matter)</li>
-                </ul>
-              </div>
-              <div className="rounded bg-yellow-500/10 p-2">
-                <p className="font-medium text-yellow-600 dark:text-yellow-400">✗ Cannot seek with (age, city) index:</p>
-                <ul className="mt-1 text-slate-500 dark:text-slate-400">
-                  <li>• WHERE city = &apos;NYC&apos; (the index is sorted by age first)</li>
-                  <li>• Postgres may still read the whole index, or skip scan in PG 18, but often a seq scan costs less</li>
-                  <li>• A (city, age) index serves it directly</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-       </CardContent>
-     </Card>
-   </div>
+        <SimPhoneBar>
+          <Button type="button" className="h-10 flex-1" onClick={run} disabled={isRunning}>
+            {isRunning ? (
+              <Loader2 className="h-4 w-4 motion-safe:animate-spin" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+            {isRunning ? 'Running' : 'Run query'}
+          </Button>
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }

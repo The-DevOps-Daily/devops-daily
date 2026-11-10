@@ -1,24 +1,29 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  BookOpen,
-  CheckCircle,
-  ChevronRight,
-  Cloud,
-  FileCode,
-  Lightbulb,
-  Boxes,
-  Pencil,
-  RotateCcw,
-  Server,
-  Trophy,
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import React, { useCallback, useMemo, useState } from 'react';
+import { BookOpen, Cloud, FileCode, Boxes, Pencil, RotateCcw, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { MotionConfig } from 'framer-motion';
+import {
+  SimComplete,
+  SimFrame,
+  SimLabBar,
+  SimLabLayout,
+  SimLabLessons,
+  SimLabPanel,
+  SimTerminal,
+  labLines,
+  labStats,
+  lessonsSummary,
+  useSimLab,
+  type SimLabState,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
+
+// The file editor sits above the terminal, so both share the lab's height (as in the git lab).
+const EDITOR_HEIGHT = 'h-40 lg:h-[clamp(9rem,calc(50dvh-13rem),12rem)]';
+const TERMINAL_HEIGHT =
+  'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-[clamp(12rem,calc(50dvh-8rem),24rem)]';
 
 type FileName = 'main.tf' | 'variables.tf' | 'outputs.tf';
 
@@ -504,27 +509,32 @@ export default function TerraformTerminalSimulator() {
   const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
   const [showHint, setShowHint] = useState(false);
 
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useMemo(() => ({ current: null as HTMLInputElement | null }), []);
 
   const currentLesson = LESSONS[currentLessonIndex];
   const currentCommand = currentLesson?.commands[currentCommandIndex];
   const completedCount = completedCommands.size;
-  const progressPercentage = Math.round((completedCount / TOTAL_COMMANDS) * 100);
-
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [terminalHistory]);
+  const isComplete = completedCount === TOTAL_COMMANDS;
 
   const pushLines = useCallback((lines: TerminalLine[]) => {
     setTerminalHistory((prev) => [...prev, ...lines]);
   }, []);
 
-  const out = (content: string): TerminalLine => ({ type: 'output', content, timestamp: new Date() });
-  const err = (content: string): TerminalLine => ({ type: 'error', content, timestamp: new Date() });
-  const ok = (content: string): TerminalLine => ({ type: 'success', content, timestamp: new Date() });
+  const out = (content: string): TerminalLine => ({
+    type: 'output',
+    content,
+    timestamp: new Date(),
+  });
+  const err = (content: string): TerminalLine => ({
+    type: 'error',
+    content,
+    timestamp: new Date(),
+  });
+  const ok = (content: string): TerminalLine => ({
+    type: 'success',
+    content,
+    timestamp: new Date(),
+  });
 
   const advanceLesson = useCallback(
     (command: string) => {
@@ -567,7 +577,9 @@ export default function TerraformTerminalSimulator() {
       lines.push(out(`  # ${resource.address} will be created`));
       lines.push(out(`  + resource "${resource.type}" "${resource.name}" {`));
       Object.entries(resource.attributes).forEach(([key, value]) => {
-        lines.push(out(`      + ${key} = ${computed.includes(key) ? '(known after apply)' : `"${value}"`}`));
+        lines.push(
+          out(`      + ${key} = ${computed.includes(key) ? '(known after apply)' : `"${value}"`}`)
+        );
       });
       lines.push(out('    }'));
     });
@@ -641,7 +653,9 @@ export default function TerraformTerminalSimulator() {
         const lines = plan.deletes
           .slice()
           .reverse()
-          .map((resource) => out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
+          .map((resource) =>
+            out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`)
+          );
         lines.push(out(''));
         lines.push(ok(`Destroy complete! Resources: ${plan.deletes.length} destroyed.`));
         setState([]);
@@ -655,7 +669,9 @@ export default function TerraformTerminalSimulator() {
         setPendingConfirm(null);
         pushLines([out(`  Enter a value: ${raw.trim()}`), out('')]);
         if (command !== 'yes') {
-          pushLines([err(pendingConfirm.kind === 'apply' ? 'Apply cancelled.' : 'Destroy cancelled.')]);
+          pushLines([
+            err(pendingConfirm.kind === 'apply' ? 'Apply cancelled.' : 'Destroy cancelled.'),
+          ]);
           return;
         }
         if (pendingConfirm.kind === 'apply') applyChanges(pendingConfirm);
@@ -763,7 +779,9 @@ export default function TerraformTerminalSimulator() {
         const plan = diffPlan(parsed.resources, state);
         setLastPlan(plan);
         pushLines(planToLines(plan));
-        advanceLesson(command);
+        if (!(currentLesson.id === 'change' && currentCommandIndex === 0 && planIsEmpty(plan))) {
+          advanceLesson(command);
+        }
         return;
       }
 
@@ -781,7 +799,12 @@ export default function TerraformTerminalSimulator() {
           advanceLesson(command);
           return;
         }
-        const pending: PendingConfirm = { kind: 'apply', command, plan, resources: parsed.resources };
+        const pending: PendingConfirm = {
+          kind: 'apply',
+          command,
+          plan,
+          resources: parsed.resources,
+        };
         setLastPlan(plan);
         pushLines(planToLines(plan));
         if (args.includes('-auto-approve')) {
@@ -874,21 +897,25 @@ export default function TerraformTerminalSimulator() {
 
       pushLines([err(`Terraform has no command named "${sub ?? ''}". Run "help" for the list.`)]);
     },
-    [advanceLesson, files, hasApplied, initialized, pendingConfirm, pushLines, state]
+    [
+      advanceLesson,
+      currentCommandIndex,
+      currentLesson.id,
+      files,
+      hasApplied,
+      initialized,
+      pendingConfirm,
+      pushLines,
+      state,
+    ]
   );
-
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!inputValue.trim()) return;
-    runCommand(inputValue);
-    setInputValue('');
-  };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowUp') {
       event.preventDefault();
       if (commandHistory.length === 0) return;
-      const nextIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+      const nextIndex =
+        historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
       setHistoryIndex(nextIndex);
       setInputValue(commandHistory[nextIndex]);
     } else if (event.key === 'ArrowDown') {
@@ -906,8 +933,11 @@ export default function TerraformTerminalSimulator() {
   };
 
   const jumpToLesson = (index: number) => {
+    const nextCommandIndex = LESSONS[index].commands.findIndex(
+      (_, commandIndex) => !completedCommands.has(`${LESSONS[index].id}-${commandIndex}`)
+    );
     setCurrentLessonIndex(index);
-    setCurrentCommandIndex(0);
+    setCurrentCommandIndex(nextCommandIndex === -1 ? 0 : nextCommandIndex);
     setShowHint(false);
   };
 
@@ -943,269 +973,188 @@ export default function TerraformTerminalSimulator() {
     return { adds: 0, changes: 0, destroys: 0, label: hasApplied ? 'applied' : 'no plan yet' };
   }, [lastPlan, hasApplied]);
 
+  const lab: SimLabState = {
+    currentLessonIndex,
+    currentCommandIndex,
+    completedCount,
+    totalCommands: TOTAL_COMMANDS,
+    isComplete,
+    isCommandDone: (l, c) => completedCommands.has(`${LESSONS[l].id}-${c}`),
+    showHint,
+    setShowHint,
+    setInputValue,
+    inputRef,
+    jumpToLesson,
+    resetProgress: resetLab,
+  };
+  const ui = useSimLab(lab);
+
   return (
-    <div className="w-full max-w-7xl mx-auto">
-      <div className="mb-5 text-center">
-        <div className="mb-3 flex items-center justify-center gap-2.5">
-          <FileCode className="h-8 w-8 text-primary" strokeWidth={1.5} />
-          <h2 className="text-2xl font-bold md:text-3xl">Terraform Basics Lab</h2>
-        </div>
-        <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-          Learn Terraform by doing. Read and edit the HCL on the left, run init, plan, apply, and
-          destroy in the terminal, and watch state change on the right. Edit the config and plan
-          again to see Terraform detect the difference. Nothing is provisioned for real.
-        </p>
-      </div>
+    <MotionConfig reducedMotion="user">
+      <SimFrame>
+        <SimLabBar
+          title="Terraform Terminal Simulator"
+          icon={FileCode}
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={currentCommand?.expectedCommand[0]}
+        />
 
-      <Card className="mb-4">
-        <CardContent className="px-4 py-3">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-yellow-500" />
-              <span className="font-medium">Progress</span>
-              <span className="text-sm text-muted-foreground">
-                {completedCount}/{TOTAL_COMMANDS} steps
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {LESSONS.map((lesson, index) => {
-                const lessonDone = lesson.commands.every((_, commandIndex) =>
-                  completedCommands.has(`${lesson.id}-${commandIndex}`)
-                );
-                return (
-                  <button
-                    key={lesson.id}
-                    onClick={() => jumpToLesson(index)}
-                    className={cn(
-                      'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs transition-colors',
-                      index === currentLessonIndex
-                        ? 'border-primary/60 bg-primary/10'
-                        : 'border-transparent hover:bg-muted'
-                    )}
-                  >
-                    {lessonDone ? (
-                      <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                    )}
-                    {lesson.title}
-                  </button>
-                );
-              })}
-              <Button variant="outline" size="sm" onClick={resetLab} className="ml-1 h-7">
-                <RotateCcw className="mr-1 h-3.5 w-3.5" />
-                Reset
+        {ui.showComplete ? (
+          <SimComplete
+            title="Lab complete"
+            summary="You ran init, validate, plan and apply, changed a variable and applied the update, read state and outputs, and destroyed what you built."
+            stats={labStats(lab, LESSONS, ui, { showMe: true })}
+            actions={
+              <Button type="button" variant="outline" onClick={ui.keepExploring}>
+                Keep exploring
               </Button>
-            </div>
-          </div>
-          <Progress value={progressPercentage} className="h-2.5" />
-          {currentCommand ? (
-            <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-              <div className="flex items-start gap-2">
-                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <div>
-                  <p className="text-sm">
-                    <span className="font-medium">{currentLesson.title}:</span>{' '}
-                    {currentCommand.instruction}
-                  </p>
-                  {showHint && (
-                    <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-300">
-                      Hint: {currentCommand.hint}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowHint((value) => !value)}
-                className="h-7 text-muted-foreground"
-              >
-                <Lightbulb className="mr-1 h-3.5 w-3.5" />
-                {showHint ? 'Hide hint' : 'Hint'}
-              </Button>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm font-medium text-emerald-600">
-              Lab complete. Edit the config and experiment freely, or reset to run through it again.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
-        {/* Config files (editable) */}
-        <Card className="overflow-hidden border-border bg-[#171717]">
-          <CardHeader className="flex flex-row items-center gap-1 border-b border-border/60 bg-[#262626] p-0">
-            {FILE_ORDER.map((file) => (
-              <button
-                key={file}
-                onClick={() => setActiveFile(file)}
-                className={cn(
-                  'border-r border-border/60 px-3 py-2 font-mono text-xs transition-colors',
-                  activeFile === file
-                    ? 'bg-[#171717] text-primary'
-                    : 'text-muted-foreground hover:text-slate-200'
-                )}
-              >
-                {file}
-              </button>
-            ))}
-            <button
-              onClick={() => setEditing((value) => !value)}
-              className="ml-auto flex items-center gap-1 px-3 py-2 font-mono text-xs text-muted-foreground hover:text-slate-200"
-              title="Toggle editing"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              {editing ? 'done' : 'edit'}
-            </button>
-          </CardHeader>
-          <CardContent className="p-0">
-            {editing ? (
-              <textarea
-                value={files[activeFile]}
-                onChange={(event) =>
-                  setFiles((prev) => ({ ...prev, [activeFile]: event.target.value }))
-                }
-                spellCheck={false}
-                className="h-[28rem] w-full resize-none bg-[#171717] p-3 font-mono text-[12px] leading-relaxed text-slate-200 outline-none sm:text-[13px]"
-                aria-label={`Edit ${activeFile}`}
-              />
-            ) : (
-              <pre className="h-[28rem] overflow-auto p-3 font-mono text-[12px] leading-relaxed text-slate-300 sm:text-[13px]">
-                {files[activeFile]}
-              </pre>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Terminal */}
-        <Card className="border-border bg-[#171717]">
-          <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-red-500" />
-                  <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                  <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                </div>
-                <span className="ml-2 text-sm text-muted-foreground">terraform-lab ~/infra</span>
-              </div>
-              <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
-                <span>{initialized ? 'initialized' : 'not initialized'}</span>
-                <span>{state.length} resources</span>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div
-              ref={terminalRef}
-              onClick={() => inputRef.current?.focus()}
-              className="h-[28rem] cursor-text overflow-y-auto p-3 font-mono text-[12px] sm:text-[13px]"
-            >
-              {terminalHistory.length === 0 && (
-                <div className="mb-4 text-green-400">
-                  <p>Welcome to the Terraform Basics Lab.</p>
-                  <p className="mt-2 text-muted-foreground">
-                    Type &quot;help&quot; for commands, or follow the current task. Start with{' '}
-                    <span className="text-primary">terraform init</span>.
-                  </p>
-                </div>
-              )}
-
-              {terminalHistory.map((line, index) => (
-                <div
-                  key={`${line.timestamp.getTime()}-${index}`}
-                  className={cn(
-                    'mb-0.5',
-                    line.type === 'input' && 'text-white',
-                    line.type === 'output' && 'text-slate-300',
-                    line.type === 'error' && 'text-red-400',
-                    line.type === 'success' &&
-                      'my-2 rounded border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
-                  )}
+            }
+            onPlayAgain={ui.startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimLabLayout
+            terminal={
+              <div className="space-y-2">
+                <section
+                  aria-label="Terraform files"
+                  className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground"
                 >
-                  {line.type === 'input' && <span className="text-green-400">$ </span>}
-                  <span className="whitespace-pre-wrap break-words">{line.content}</span>
-                </div>
-              ))}
-
-              <form onSubmit={handleSubmit} className="flex items-center">
-                <span className="whitespace-pre text-green-400">
-                  {pendingConfirm ? '  Enter a value: ' : '$ '}
-                </span>
-                <input
-                  ref={inputRef}
-                  type="text"
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-terminal-border bg-terminal-bar px-2 py-1.5">
+                    <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label="Files">
+                      {FILE_ORDER.map((file) => (
+                        <button
+                          key={file}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeFile === file}
+                          onClick={() => setActiveFile(file)}
+                          className={cn(
+                            'h-10 rounded px-2 font-mono text-xs transition-colors lg:h-8',
+                            activeFile === file
+                              ? 'bg-terminal text-terminal-input'
+                              : 'text-terminal-muted hover:text-terminal-input'
+                          )}
+                        >
+                          {file}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditing((value) => !value)}
+                      aria-pressed={editing}
+                      className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 font-mono text-xs text-terminal-muted hover:text-terminal-input focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:h-8"
+                    >
+                      <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                      {editing ? 'Done' : 'Edit'}
+                    </button>
+                  </div>
+                  {editing ? (
+                    <textarea
+                      value={files[activeFile]}
+                      onChange={(event) =>
+                        setFiles((prev) => ({ ...prev, [activeFile]: event.target.value }))
+                      }
+                      spellCheck={false}
+                      className={cn(
+                        EDITOR_HEIGHT,
+                        'w-full resize-none bg-terminal p-3 font-mono text-xs leading-relaxed text-terminal-input caret-terminal-prompt outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
+                      )}
+                      aria-label={`Edit ${activeFile}`}
+                    />
+                  ) : (
+                    <pre
+                      className={cn(
+                        EDITOR_HEIGHT,
+                        'overflow-auto p-3 font-mono text-xs leading-relaxed text-terminal-foreground'
+                      )}
+                    >
+                      {files[activeFile]}
+                    </pre>
+                  )}
+                </section>
+                <SimTerminal
+                  label="terraform"
+                  status={initialized ? 'initialized' : 'not initialized'}
+                  prompt={pendingConfirm ? 'Enter a value:' : '$'}
+                  linePrompt="$"
+                  lines={labLines(terminalHistory, [
+                    { type: 'success', content: 'Welcome to the Terraform terminal.' },
+                    {
+                      type: 'muted',
+                      content:
+                        'Type "help", or follow the current task. Start with terraform init.',
+                    },
+                  ])}
                   value={inputValue}
-                  onChange={(event) => setInputValue(event.target.value)}
+                  onChange={setInputValue}
+                  onSubmit={(value) => {
+                    if (!value.trim()) return;
+                    runCommand(value);
+                    setInputValue('');
+                  }}
                   onKeyDown={handleKeyDown}
-                  className="ml-1 flex-1 bg-transparent text-white caret-green-400 outline-none"
-                  spellCheck={false}
-                  autoComplete="off"
-                  autoCapitalize="off"
-                  placeholder={pendingConfirm ? 'yes' : 'terraform init'}
-                  aria-label="Terraform command input"
+                  inputRef={inputRef}
+                  placeholder="terraform init"
+                  autoFocus
+                  heightClassName={TERMINAL_HEIGHT}
                 />
-              </form>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Plan + state */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FileCode className="h-5 w-5" />
-                Plan
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="flex items-center gap-3 text-sm">
-                <span className="text-emerald-500">+{planSummary.adds}</span>
-                <span className="text-amber-500">~{planSummary.changes}</span>
-                <span className="text-red-500">-{planSummary.destroys}</span>
-                <Badge variant="secondary" className="ml-auto">
-                  {planSummary.label}
-                </Badge>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Server className="h-5 w-5" />
-                State
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {state.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No resources yet. Run <code className="text-primary">terraform apply</code> to
-                  create them.
-                </p>
-              ) : (
-                <div className="max-h-[20rem] space-y-2 overflow-y-auto">
-                  {state.map((resource) => (
-                    <div key={resource.address} className="rounded-md border bg-muted/30 p-2.5">
-                      <p className="font-mono text-xs text-primary">{resource.address}</p>
-                      <div className="mt-1.5 space-y-0.5">
-                        {Object.entries(resource.attributes).map(([key, value]) => (
-                          <p key={key} className="font-mono text-[11px] text-muted-foreground">
-                            {key} = {value}
-                          </p>
+            }
+            aside={
+              <>
+                <SimLabPanel title="Plan" icon={FileCode} summary={planSummary.label}>
+                  <div className="space-y-2 font-mono text-xs">
+                    <div className="flex gap-3">
+                      <span className="text-correct-foreground">+{planSummary.adds}</span>
+                      <span className="text-partial-foreground">~{planSummary.changes}</span>
+                      <span className="text-wrong-foreground">-{planSummary.destroys}</span>
+                    </div>
+                    {lastPlan && (
+                      <div className="max-h-48 overflow-auto whitespace-pre-wrap text-muted-foreground">
+                        {planToLines(lastPlan).map((line, index) => (
+                          <p key={index}>{line.content || ' '}</p>
                         ))}
                       </div>
+                    )}
+                  </div>
+                </SimLabPanel>
+                <SimLabPanel title="State" icon={Server} summary={`${state.length} resources`}>
+                  {state.length === 0 ? (
+                    <p className="text-xs font-mono text-muted-foreground">
+                      No resources in state.
+                    </p>
+                  ) : (
+                    <div className="space-y-2 text-xs font-mono">
+                      {state.map((resource) => (
+                        <div
+                          key={resource.address}
+                          className="rounded-md border border-border bg-muted/30 p-2"
+                        >
+                          <p className="text-primary">{resource.address}</p>
+                          {Object.entries(resource.attributes).map(([key, value]) => (
+                            <p key={key} className="text-muted-foreground">
+                              {key} = {value}
+                            </p>
+                          ))}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
+                  )}
+                </SimLabPanel>
+                <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
+                  <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
+                </SimLabPanel>
+              </>
+            }
+          />
+        )}
+      </SimFrame>
+    </MotionConfig>
   );
 }
