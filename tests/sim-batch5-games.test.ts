@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PromqlPlayground from '@/components/games/promql-playground';
 import LogAggregationPipelineSimulator from '@/components/games/log-aggregation-pipeline-simulator';
+import LatencyPercentilesSimulator from '@/components/games/latency-percentiles-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -63,6 +64,11 @@ function scalarValue(): number {
 beforeEach(() => {
   vi.useFakeTimers();
   completions = 0;
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as typeof ResizeObserver;
   window.addEventListener(GAME_COMPLETE_EVENT, countCompletion);
   window.matchMedia = vi.fn((query: string) => ({
     matches: false,
@@ -271,6 +277,86 @@ describe('Log Aggregation Pipeline on the kit', () => {
     await runPipeline(5);
     await openSearchLogs();
     await chooseLevel('ERROR');
+    expect(completions).toBe(1);
+    expect(text()).toContain('Missions complete');
+
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+  }, 60_000);
+});
+
+async function renderLatency() {
+  await act(async () => root.render(createElement(LatencyPercentilesSimulator)));
+}
+
+function percentileButton(label: string): HTMLButtonElement {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === label
+  );
+  if (!button) throw new Error(`no percentile button "${label}"`);
+  return button;
+}
+
+function slider(label: string): HTMLElement {
+  const labelElement = [...container.querySelectorAll('span')].find(
+    (candidate) => candidate.textContent === label
+  );
+  const labelId = labelElement?.id;
+  if (!labelId) throw new Error(`no slider label "${label}"`);
+  const thumb = container.querySelector(`[role="slider"][aria-labelledby="${labelId}"]`);
+  if (!thumb) throw new Error(`no slider "${label}"`);
+  return thumb;
+}
+
+async function moveSlider(label: string, key: 'ArrowLeft' | 'ArrowRight') {
+  const thumb = slider(label);
+  await act(async () => {
+    thumb.focus();
+    thumb.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+  });
+}
+
+describe('Latency Simulator on the kit', () => {
+  it('no hero, a goal, nothing done at the defaults', async () => {
+    await renderLatency();
+    expect(text()).not.toContain('Explore P90, P95, and P99 latency');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/4');
+    expect(scenario('Cache Churn').getAttribute('aria-pressed')).toBe('true');
+    await moveSlider('Slow tail', 'ArrowRight');
+    expect(slider('Slow tail').getAttribute('aria-valuenow')).toBe('7');
+  });
+
+  it('the readout waits for a pick', async () => {
+    await renderLatency();
+    await pickScenario('Noisy Neighbor');
+    expect(text()).toContain('Which percentile would you page on?');
+
+    await act(async () => percentileButton('P95').click());
+    expect(text()).toContain('Look again');
+
+    await act(async () => percentileButton('P99').click());
+    expect(text()).toContain('Right call');
+    const alert = [...container.querySelectorAll('li')].find((item) =>
+      item.textContent?.includes('For Noisy Neighbor, pick the percentile you would page on.')
+    );
+    if (!alert) throw new Error('no alert mission');
+    expect(alert.textContent).toContain('(done)');
+  }, 60_000);
+
+  it('one signal, after the fourth mission', async () => {
+    await renderLatency();
+
+    await pickScenario('Healthy API');
+    await pickScenario('Noisy Neighbor');
+    await act(async () => percentileButton('P99').click());
+    expect(completions).toBe(0);
+    expect(text()).toContain('3/4');
+
+    await pickScenario('Cold Starts');
+    expect(text()).not.toContain('Missions complete');
+    expect(slider('Slow tail').getAttribute('aria-valuenow')).toBe('6');
+    await moveSlider('Slow tail', 'ArrowRight');
     expect(completions).toBe(1);
     expect(text()).toContain('Missions complete');
 
