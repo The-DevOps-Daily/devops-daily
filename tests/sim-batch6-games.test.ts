@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
+import DatabaseReplicationShardingScaling from '@/components/games/database-replication-sharding-scaling';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -101,6 +102,47 @@ async function render() {
 
 async function renderDatabase() {
   await act(async () => root.render(createElement(DbIndexingSimulator)));
+}
+
+async function renderReplicationShardingScaling() {
+  await act(async () => root.render(createElement(DatabaseReplicationShardingScaling)));
+}
+
+async function chooseDatabaseMode(mode: 'Replication' | 'Sharding' | 'Scaling') {
+  const group = container.querySelector('[role="group"][aria-label="Mode"]');
+  if (!group) throw new Error('no database mode group');
+  const button = [...group.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === mode
+  );
+  if (!button) throw new Error(`no database mode "${mode}"`);
+  await act(async () => button.click());
+}
+
+async function chooseSimulatorMode(label: string) {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) => !candidate.disabled && candidate.textContent?.trim() === label
+  );
+  if (!button) throw new Error(`no simulator mode "${label}"`);
+  await act(async () => button.click());
+}
+
+function databaseSlider(label: string) {
+  const thumb = [...container.querySelectorAll('[role="slider"]')].find((candidate) => {
+    const labelId = candidate.getAttribute('aria-labelledby');
+    return labelId ? document.getElementById(labelId)?.textContent?.trim() === label : false;
+  });
+  if (!thumb) throw new Error(`no ${label} slider`);
+  return thumb;
+}
+
+async function moveDatabaseSlider(label: string, key: string, count = 1) {
+  for (let index = 0; index < count; index += 1) {
+    const thumb = databaseSlider(label);
+    await act(async () => {
+      thumb.focus();
+      thumb.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    });
+  }
 }
 
 async function advanceDatabase() {
@@ -243,6 +285,56 @@ describe('Database Indexing on the kit', () => {
     await click('Keep exploring', true);
     await click('Run query', true);
     await advanceDatabase();
+    expect(completions).toBe(1);
+  }, 60_000);
+});
+
+describe('Database Replication, Sharding and Scaling on the kit', () => {
+  it('no hero, a goal, state survives a mode switch', async () => {
+    await renderReplicationShardingScaling();
+    expect(text()).not.toContain('See how databases survive load');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/5');
+
+    await chooseDatabaseMode('Sharding');
+    await chooseSimulatorMode('Range');
+    await chooseDatabaseMode('Scaling');
+    await chooseDatabaseMode('Sharding');
+
+    const range = [...container.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === 'Range'
+    );
+    if (!range) throw new Error('no Range button');
+    expect(range.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('one signal, after the fifth mission', async () => {
+    await renderReplicationShardingScaling();
+    await click('Kill primary', true);
+    await chooseSimulatorMode('Leaderless');
+    expect(text()).toContain('1/5');
+
+    await click('Recover primary', true);
+    await chooseSimulatorMode('Sync');
+    expect(text()).toContain('2/5');
+
+    await chooseDatabaseMode('Sharding');
+    await click('region', true);
+    expect(text()).toContain('3/5');
+
+    await chooseSimulatorMode('Range');
+    await click('created_at', true);
+    await click("created_at > now() - '1 day'", true);
+    expect(text()).toContain('4/5');
+    expect(completions).toBe(0);
+
+    await chooseDatabaseMode('Scaling');
+    await moveDatabaseSlider('Load', 'ArrowRight', 36);
+    await moveDatabaseSlider('Vertical tier', 'ArrowRight');
+    expect(completions).toBe(1);
+    expect(text()).toContain('Missions complete');
+
+    await click('Keep exploring', true);
     expect(completions).toBe(1);
   }, 60_000);
 });
