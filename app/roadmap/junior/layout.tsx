@@ -1,5 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { toJsonLd } from '@/lib/json-ld';
+import { juniorStages } from '@/lib/roadmap-junior-data';
 
 export const metadata: Metadata = {
   title: { absolute: 'Junior DevOps Roadmap - Start Your DevOps Journey' },
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://devops-daily.com/images/junior-roadmap-og.png',
+        url: 'https://devops-daily.com/images/pages/roadmap-junior.jpg',
         width: 1200,
         height: 630,
         alt: 'Junior DevOps Roadmap - Start Your Journey',
@@ -30,7 +32,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     images: [
       {
-        url: 'https://devops-daily.com/images/junior-roadmap-og.png',
+        url: 'https://devops-daily.com/images/pages/roadmap-junior.jpg',
         width: 1200,
         height: 630,
         alt: 'Junior DevOps Roadmap - Start Your Journey',
@@ -55,6 +57,28 @@ export const metadata: Metadata = {
   ],
 };
 
+const stagesJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Junior DevOps Roadmap',
+  description:
+    'Five-stage learning path for a first DevOps role, from Linux and Git to containers, CI/CD and the cloud.',
+  itemListElement: juniorStages.map((stage, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: stage.title,
+    url: `https://devops-daily.com/roadmap/junior#stage-${stage.id}`,
+  })),
+};
+
 export default function JuniorRoadmapLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: toJsonLd(stagesJsonLd) }}
+      />
+      {children}
+    </>
+  );
 }

@@ -16,6 +16,7 @@ import {
   type RoadmapStage,
   type RoadmapTopic,
 } from './roadmap-data';
+import { syllabusTimeLabel, type SyllabusStage, type SyllabusTopic } from './roadmap-syllabus';
 
 export type ResourceType = InternalResourceType | 'external';
 
@@ -33,6 +34,15 @@ export type ResolvedStage = Omit<RoadmapStage, 'topics' | 'projects'> & {
   timeLabel: string;
   topics: ResolvedTopic[];
   projects: ResolvedProject[];
+};
+
+export type ResolvedSyllabusTopic = Omit<SyllabusTopic, 'resources'> & {
+  resources: ResolvedResource[];
+};
+export type ResolvedSyllabusStage = Omit<SyllabusStage, 'topics' | 'project'> & {
+  timeLabel: string;
+  topics: ResolvedSyllabusTopic[];
+  project: Omit<SyllabusStage['project'], 'practice'> & { practice?: ResolvedResource };
 };
 
 type Lookup = (slug: string) => ResolvedResource | undefined;
@@ -77,7 +87,19 @@ async function buildLookups(): Promise<Record<InternalResourceType, Lookup>> {
 
   return {
     guide: (slug) => {
-      const g = guideMap.get(slug);
+      const [guideSlug, partSlug] = slug.split('/');
+      const g = guideMap.get(guideSlug);
+      if (g && partSlug) {
+        const at = g.parts.findIndex((p) => p.slug === partSlug);
+        return at < 0
+          ? undefined
+          : {
+              type: 'guide',
+              title: g.parts[at].title,
+              href: `/guides/${guideSlug}/${partSlug}`,
+              meta: `part ${at + 1} of ${g.title}`,
+            };
+      }
       return (
         g && {
           type: 'guide',
@@ -210,4 +232,23 @@ export async function resolveRoadmap(stages: RoadmapStage[] = roadmapStages) {
   }));
   const reading = careerReading.map((ref) => resolveRef(ref, lookups, 'career notes'));
   return { stages: resolved, careerReading: reading };
+}
+
+/** A syllabus roadmap (Junior, DevSecOps) with every resource resolved. Throws on a dead slug. */
+export async function resolveSyllabus(stages: SyllabusStage[]): Promise<ResolvedSyllabusStage[]> {
+  const lookups = await buildLookups();
+  return stages.map(({ project: { practice, ...project }, ...stage }) => ({
+    ...stage,
+    timeLabel: syllabusTimeLabel(stage),
+    topics: stage.topics.map((topic) => ({
+      ...topic,
+      resources: topic.resources.map((ref) => resolveRef(ref, lookups, topic.id)),
+    })),
+    project: {
+      ...project,
+      ...(practice && {
+        practice: resolveRef(practice, lookups, `${stage.id} project "${project.name}"`),
+      }),
+    },
+  }));
 }

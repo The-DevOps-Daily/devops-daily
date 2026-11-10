@@ -1,101 +1,78 @@
-// Data for the /roadmap/junior page: milestone and skill definitions.
-// Rendering lives in app/roadmap/junior/page.tsx.
+// The /roadmap/junior syllabus. See lib/roadmap-syllabus.ts for the model.
 
-import {
-  CheckCircle2,
-  Cloud,
-  Code,
-  Container,
-  FileText,
-  GitBranch,
-  Globe,
-  Server,
-  Terminal,
-  Workflow,
-  type LucideIcon,
-} from 'lucide-react';
+import { ref, type SyllabusStage } from './roadmap-syllabus';
 
-export interface JuniorSkill {
-  name: string;
-  description: string;
-  link?: string;
-  simulators?: { name: string; link: string }[];
-  external?: boolean;
-  icon: LucideIcon;
-  priority: 'essential' | 'important' | 'nice-to-have';
-  estimatedHours: number;
-}
+const { guide, part, post, sim, lab, challenge, quiz, cards, checklist } = ref;
 
-export interface JuniorMilestone {
-  id: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: LucideIcon;
-  color: string;
-  bgColor: string;
-  timeframe: string;
-  skills: JuniorSkill[];
-  project: {
-    name: string;
-    description: string;
-    difficulty: 'easy' | 'medium';
-  };
-  outcomes: string[];
-  tips: string[];
-}
-
-export const milestones: JuniorMilestone[] = [
+export const juniorStages: SyllabusStage[] = [
   {
     id: 'foundation',
     title: 'Foundation',
-    subtitle: 'Month 1-2',
-    description: 'Build your core skills with Linux and command line basics',
-    icon: Terminal,
-    color: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-500/10 border-blue-500/20',
-    timeframe: '4-8 weeks',
-    skills: [
+    shortTitle: 'Foundation',
+    description: 'Build your core skills with Linux and command line basics.',
+    weeks: [4, 8],
+    topics: [
       {
+        id: 'foundation/linux',
         name: 'Linux Basics',
-        description: 'Learn essential Linux commands, file system navigation, and permissions',
-        link: '/guides/introduction-to-linux',
-        simulators: [{ name: 'Linux Terminal', link: '/games/linux-terminal' }],
-        icon: Terminal,
+        description: 'Learn essential Linux commands, file system navigation, and permissions.',
         priority: 'essential',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          guide('introduction-to-linux'),
+          post('linux-git-docker-learning-order'),
+          sim('linux-terminal'),
+          lab('cloud-server-setup'),
+          quiz('linux-quiz'),
+          cards('linux-fundamentals'),
+        ],
       },
       {
+        id: 'foundation/bash',
         name: 'Bash Scripting',
-        description: 'Automate repetitive tasks with simple shell scripts',
-        link: '/guides/introduction-to-bash',
-        icon: Code,
+        description: 'Automate repetitive tasks with simple shell scripts.',
         priority: 'essential',
-        estimatedHours: 15,
+        hours: 15,
+        resources: [
+          guide('introduction-to-bash'),
+          post('parse-command-line-arguments-bash'),
+          sim('cron-expression-simulator'),
+          challenge('script-it'),
+        ],
       },
       {
+        id: 'foundation/git',
         name: 'Git Basics',
-        description: 'Learn version control fundamentals - commit, push, pull, and branches',
-        link: '/guides/introduction-to-git',
-        simulators: [{ name: 'Git Concepts', link: '/games/git-concepts-simulator' }],
-        icon: GitBranch,
+        description: 'Learn version control fundamentals: commit, push, pull, and branches.',
         priority: 'essential',
-        estimatedHours: 10,
+        hours: 10,
+        resources: [
+          guide('introduction-to-git'),
+          sim('git-concepts-simulator'),
+          quiz('git-quiz'),
+          cards('git-fundamentals'),
+        ],
       },
       {
+        id: 'foundation/networking',
         name: 'Networking Fundamentals',
-        description: 'Understand IP addresses, DNS, HTTP, and basic networking concepts',
-        link: '/guides/networking-fundamentals',
-        simulators: [{ name: 'DNS Resolution', link: '/games/dns-simulator' }],
-        icon: Globe,
+        description: 'Understand IP addresses, DNS, HTTP, and basic networking concepts.',
         priority: 'important',
-        estimatedHours: 12,
+        hours: 12,
+        resources: [
+          guide('networking-fundamentals'),
+          sim('dns-simulator'),
+          sim('tcp-vs-udp'),
+          sim('packet-journey'),
+          quiz('network-security-quiz'),
+        ],
       },
     ],
     project: {
       name: 'Personal Dev Environment',
-      description: 'Set up a Linux VM, configure Git, and write scripts to automate your setup',
-      difficulty: 'easy',
+      description: 'Set up a Linux VM, configure Git, and write scripts to automate your setup.',
+      difficulty: 'beginner',
+      practice: lab('cloud-server-setup'),
     },
     outcomes: [
       'Navigate confidently in the terminal',
@@ -103,7 +80,7 @@ export const milestones: JuniorMilestone[] = [
       'Use Git for version control',
     ],
     tips: [
-      'Practice commands daily - muscle memory is key',
+      'Practice commands daily. Muscle memory is key.',
       'Use a Linux VM or WSL for hands-on learning',
       'Break complex tasks into smaller scripts',
     ],
@@ -111,42 +88,53 @@ export const milestones: JuniorMilestone[] = [
   {
     id: 'version-control',
     title: 'Version Control & Collaboration',
-    subtitle: 'Month 2-3',
-    description: 'Master Git workflows and start collaborating with teams',
-    icon: GitBranch,
-    color: 'text-orange-600 dark:text-orange-400',
-    bgColor: 'bg-orange-500/10 border-orange-500/20',
-    timeframe: '3-4 weeks',
-    skills: [
+    shortTitle: 'Version control',
+    description: 'Master Git workflows and start collaborating with teams.',
+    weeks: [3, 4],
+    topics: [
       {
+        id: 'version-control/branching',
         name: 'Git Branching Strategies',
-        description: 'Learn GitFlow, trunk-based development, and when to use each',
-        link: '/guides/introduction-to-git/04-branching',
-        icon: GitBranch,
+        description: 'Learn GitFlow, trunk-based development, and when to use each.',
         priority: 'essential',
-        estimatedHours: 8,
+        hours: 8,
+        resources: [
+          part('introduction-to-git', '04-branching'),
+          part('introduction-to-git', '05-merging'),
+          post('how-do-i-resolve-merge-conflicts-in-a-git-repository'),
+          sim('git-merge-conflict-simulator'),
+        ],
       },
       {
+        id: 'version-control/pull-requests',
         name: 'Pull Requests & Code Review',
-        description: 'Create PRs, review code, and collaborate effectively',
-        link: '/guides/introduction-to-git/07-collaboration',
-        icon: FileText,
+        description: 'Create PRs, review code, and collaborate effectively.',
         priority: 'essential',
-        estimatedHours: 6,
+        hours: 6,
+        resources: [
+          part('introduction-to-git', '07-collaboration'),
+          post('difference-between-git-pull-and-git-fetch'),
+          lab('git-workflow-collaboration'),
+        ],
       },
       {
+        id: 'version-control/github-actions',
         name: 'GitHub Actions Basics',
-        description: 'Automate simple workflows like linting and testing',
-        link: '/guides/introduction-to-cicd',
-        icon: Workflow,
+        description: 'Automate simple workflows like linting and testing.',
         priority: 'important',
-        estimatedHours: 10,
+        hours: 10,
+        resources: [
+          guide('introduction-to-cicd'),
+          quiz('github-actions-quiz'),
+          cards('cicd-concepts'),
+        ],
       },
     ],
     project: {
       name: 'Automated Testing Pipeline',
-      description: 'Create a GitHub repo with automated tests running on every push',
-      difficulty: 'easy',
+      description: 'Create a GitHub repo with automated tests running on every push.',
+      difficulty: 'beginner',
+      practice: lab('ci-cd-github-actions'),
     },
     outcomes: [
       'Collaborate on code with confidence',
@@ -162,43 +150,59 @@ export const milestones: JuniorMilestone[] = [
   {
     id: 'containers',
     title: 'Containers',
-    subtitle: 'Month 3-4',
-    description: 'Learn Docker and understand containerization concepts',
-    icon: Container,
-    color: 'text-cyan-600 dark:text-cyan-400',
-    bgColor: 'bg-cyan-500/10 border-cyan-500/20',
-    timeframe: '4-6 weeks',
-    skills: [
+    shortTitle: 'Containers',
+    description: 'Learn Docker and understand containerization concepts.',
+    weeks: [4, 6],
+    topics: [
       {
+        id: 'containers/docker',
         name: 'Docker Fundamentals',
-        description: 'Build, run, and manage containers with Docker',
-        link: '/guides/introduction-to-docker',
-        simulators: [{ name: 'Docker Terminal', link: '/games/docker-terminal-simulator' }],
-        icon: Container,
+        description: 'Build, run, and manage containers with Docker.',
         priority: 'essential',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          guide('introduction-to-docker'),
+          post('docker-image-vs-container'),
+          sim('docker-terminal-simulator'),
+          sim('docker-under-the-hood-simulator'),
+          lab('docker-server-deployment'),
+          quiz('docker-quiz'),
+          cards('docker-essentials'),
+        ],
       },
       {
+        id: 'containers/dockerfile',
         name: 'Dockerfile Best Practices',
-        description: 'Write efficient, secure, and maintainable Dockerfiles',
-        link: '/guides/introduction-to-docker/05-building-custom-docker-images',
-        icon: FileText,
+        description: 'Write efficient, secure, and maintainable Dockerfiles.',
         priority: 'essential',
-        estimatedHours: 8,
+        hours: 8,
+        resources: [
+          part('introduction-to-docker', '05-building-custom-docker-images'),
+          post('difference-between-cmd-and-entrypoint-in-dockerfiles'),
+          post('docker-image-optimization-best-practices'),
+          lab('docker-multi-stage-build'),
+          challenge('shrink-the-image'),
+          checklist('docker-security'),
+        ],
       },
       {
+        id: 'containers/compose',
         name: 'Docker Compose',
-        description: 'Define and run multi-container applications',
-        link: '/guides/introduction-to-docker/08-docker-compose',
-        icon: Server,
+        description: 'Define and run multi-container applications.',
         priority: 'important',
-        estimatedHours: 10,
+        hours: 10,
+        resources: [
+          part('introduction-to-docker', '08-docker-compose'),
+          post('docker-compose-ports-vs-expose'),
+          post('communication-multiple-docker-compose'),
+        ],
       },
     ],
     project: {
       name: 'Containerized Web App',
-      description: 'Containerize a web application with a database using Docker Compose',
-      difficulty: 'medium',
+      description: 'Containerize a web application with a database using Docker Compose.',
+      difficulty: 'intermediate',
+      practice: lab('docker-server-deployment'),
     },
     outcomes: [
       'Containerize any application',
@@ -214,42 +218,55 @@ export const milestones: JuniorMilestone[] = [
   {
     id: 'ci-cd',
     title: 'CI/CD Pipelines',
-    subtitle: 'Month 4-5',
-    description: 'Build automated pipelines for testing and deployment',
-    icon: Workflow,
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-500/10 border-green-500/20',
-    timeframe: '4-6 weeks',
-    skills: [
+    shortTitle: 'CI/CD',
+    description: 'Build automated pipelines for testing and deployment.',
+    weeks: [4, 6],
+    topics: [
       {
+        id: 'ci-cd/concepts',
         name: 'CI/CD Concepts',
-        description: 'Understand continuous integration and delivery principles',
-        link: '/guides/introduction-to-cicd/01-understanding-cicd-and-first-workflow',
-        icon: Workflow,
+        description: 'Understand continuous integration and delivery principles.',
         priority: 'essential',
-        estimatedHours: 6,
+        hours: 6,
+        resources: [
+          part('introduction-to-cicd', '01-understanding-cicd-and-first-workflow'),
+          quiz('cicd-fundamentals-quiz'),
+          cards('cicd-concepts'),
+        ],
       },
       {
+        id: 'ci-cd/github-actions',
         name: 'GitHub Actions Advanced',
-        description: 'Build complete CI/CD pipelines with GitHub Actions',
-        link: '/guides/introduction-to-cicd/07-advanced-workflows-and-automation',
-        icon: Workflow,
+        description: 'Build complete CI/CD pipelines with GitHub Actions.',
         priority: 'essential',
-        estimatedHours: 15,
+        hours: 15,
+        resources: [
+          part('introduction-to-cicd', '07-advanced-workflows-and-automation'),
+          post('github-actions-fast'),
+          lab('ci-cd-github-actions'),
+          quiz('github-actions-quiz'),
+          checklist('cicd-pipeline-setup'),
+        ],
       },
       {
+        id: 'ci-cd/testing',
         name: 'Testing in Pipelines',
-        description: 'Integrate unit tests, linting, and security scans',
-        link: '/guides/introduction-to-cicd/03-building-and-testing-applications',
-        icon: CheckCircle2,
+        description: 'Integrate unit tests, linting, and security scans.',
         priority: 'important',
-        estimatedHours: 10,
+        hours: 10,
+        resources: [
+          part('introduction-to-cicd', '03-building-and-testing-applications'),
+          post('api-testing-types-where-each-belongs-in-your-pipeline'),
+          sim('deployment-strategies'),
+          quiz('cicd-pipelines-quiz'),
+        ],
       },
     ],
     project: {
       name: 'Full CI/CD Pipeline',
-      description: 'Build a pipeline that tests, builds Docker images, and deploys to staging',
-      difficulty: 'medium',
+      description: 'Build a pipeline that tests, builds Docker images, and deploys to staging.',
+      difficulty: 'intermediate',
+      practice: lab('ci-cd-github-actions'),
     },
     outcomes: [
       'Build end-to-end CI/CD pipelines',
@@ -259,49 +276,62 @@ export const milestones: JuniorMilestone[] = [
     tips: [
       'Start simple, then add complexity',
       'Always have a staging environment',
-      'Make pipelines fast - aim for under 10 minutes',
+      'Keep pipelines fast: aim for under 10 minutes',
     ],
   },
   {
     id: 'cloud',
     title: 'Cloud Basics',
-    subtitle: 'Month 5-6',
-    description: 'Get started with cloud platforms and core services',
-    icon: Cloud,
-    color: 'text-purple-600 dark:text-purple-400',
-    bgColor: 'bg-purple-500/10 border-purple-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'Cloud',
+    description: 'Get started with cloud platforms and core services.',
+    weeks: [6, 8],
+    topics: [
       {
+        id: 'cloud/fundamentals',
         name: 'Cloud Fundamentals',
-        description: 'Understand cloud computing concepts, pricing, and service models',
-        link: '/guides/introduction-to-aws',
-        icon: Cloud,
+        description: 'Understand cloud computing concepts, pricing, and service models.',
         priority: 'essential',
-        estimatedHours: 10,
+        hours: 10,
+        resources: [
+          guide('introduction-to-aws'),
+          post('what-is-finops-a-beginners-guide-to-cloud-cost-management'),
+          quiz('aws-quiz'),
+          cards('aws-essentials'),
+        ],
       },
       {
+        id: 'cloud/core-services',
         name: 'AWS/Azure/GCP Core Services',
-        description: 'Learn compute, storage, and networking basics on your chosen platform',
-        link: '/guides/introduction-to-aws/03-ec2-servers',
-        simulators: [{ name: 'AWS VPC', link: '/games/aws-vpc-simulator' }],
-        icon: Server,
+        description: 'Learn compute, storage, and networking basics on your chosen platform.',
         priority: 'essential',
-        estimatedHours: 25,
+        hours: 25,
+        resources: [
+          part('introduction-to-aws', '03-ec2-servers'),
+          part('introduction-to-aws', '04-s3-storage'),
+          part('introduction-to-aws', '05-vpc-networking'),
+          sim('aws-vpc-simulator'),
+        ],
       },
       {
+        id: 'cloud/iac',
         name: 'Infrastructure as Code Basics',
-        description: 'Introduction to Terraform for managing cloud resources',
-        link: '/guides/introduction-to-terraform',
-        icon: Code,
+        description: 'Introduction to Terraform for managing cloud resources.',
         priority: 'important',
-        estimatedHours: 15,
+        hours: 15,
+        resources: [
+          guide('introduction-to-terraform'),
+          sim('terraform-terminal-simulator'),
+          lab('terraform-digitalocean-droplet'),
+          quiz('terraform-quiz'),
+          cards('terraform-basics'),
+        ],
       },
     ],
     project: {
       name: 'Deploy to the Cloud',
-      description: 'Deploy your containerized app to a cloud platform using IaC',
-      difficulty: 'medium',
+      description: 'Deploy your containerized app to a cloud platform using IaC.',
+      difficulty: 'intermediate',
+      practice: lab('terraform-digitalocean-droplet'),
     },
     outcomes: [
       'Navigate cloud consoles confidently',
@@ -310,9 +340,8 @@ export const milestones: JuniorMilestone[] = [
     ],
     tips: [
       'Use free tier resources for learning',
-      'Pick ONE cloud provider to start',
+      'Pick one cloud provider to start',
       'Always set up billing alerts',
     ],
   },
 ];
-

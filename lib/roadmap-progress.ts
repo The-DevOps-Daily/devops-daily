@@ -1,6 +1,6 @@
-// Saved progress for /roadmap. The page talks to a ProgressStore, so syncing
-// with a learning account later means adding another store, not changing the
-// page.
+// Saved progress for /roadmap, /roadmap/junior and /roadmap/devsecops. The
+// pages talk to a ProgressStore, so syncing with a learning account later means
+// adding another store, not changing the pages.
 
 export type TopicStatus = 'done' | 'progress' | 'skip';
 
@@ -26,6 +26,11 @@ export interface ProgressStore {
 }
 
 export const PROGRESS_KEY = 'roadmap-progress:v1';
+
+/** Each smaller roadmap keeps its own progress, apart from the main one. */
+export function progressKey(roadmap: 'junior' | 'devsecops') {
+  return `roadmap-progress:${roadmap}:v1`;
+}
 
 export function emptyProgress(): RoadmapProgress {
   return { topics: {} };
@@ -115,11 +120,12 @@ export function summarize(progress: RoadmapProgress, topicIds: readonly string[]
 
 /**
  * The topic to work on next: the first one in progress, else the first core
- * topic not done or skipped, else any topic not done or skipped.
+ * topic not done or skipped, else any topic not done or skipped. Topics with
+ * no kind are taken in order.
  */
 export function nextTopicId(
   progress: RoadmapProgress,
-  topics: readonly { id: string; kind: 'core' | 'optional' }[]
+  topics: readonly { id: string; kind?: 'core' | 'optional' }[]
 ): string | null {
   const open = topics.filter((t) => {
     const status = progress.topics[t.id];
