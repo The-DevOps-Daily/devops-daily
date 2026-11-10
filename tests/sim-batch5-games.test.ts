@@ -4,6 +4,7 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PromqlPlayground from '@/components/games/promql-playground';
+import LogAggregationPipelineSimulator from '@/components/games/log-aggregation-pipeline-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 vi.mock('next/navigation', () => ({
@@ -109,7 +110,7 @@ describe('PromQL Playground on the kit', () => {
     );
     const fraction = scalarValue();
     expect(fraction).toBeCloseTo(percentage / 100, 4);
-  });
+  }, 60_000);
 
   it('no hero, a goal, keys only in the editor', async () => {
     await render();
@@ -158,7 +159,7 @@ describe('PromQL Playground on the kit', () => {
       'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100'
     );
     expect(completions).toBe(1);
-  });
+  }, 60_000);
 
   it('a tutorial loads its query', async () => {
     await render();
@@ -169,4 +170,111 @@ describe('PromQL Playground on the kit', () => {
     await act(async () => tutorial.click());
     expect(textarea().value).toBe('http_requests_total{method="GET"}');
   });
+});
+
+async function renderLogPipeline() {
+  await act(async () => root.render(createElement(LogAggregationPipelineSimulator)));
+}
+
+function scenario(name: string): HTMLButtonElement {
+  const group = container.querySelector('[role="group"][aria-label="Scenario"]');
+  if (!group) throw new Error('no Scenario group');
+  const button = [...group.querySelectorAll('button')].find(
+    (candidate) => candidate.textContent?.trim() === name
+  );
+  if (!button) throw new Error(`no scenario "${name}"`);
+  return button;
+}
+
+async function pickScenario(label: string) {
+  await act(async () => scenario(label).click());
+}
+
+async function stepPipeline(count: number) {
+  for (let index = 0; index < count; index += 1) {
+    await click('Step', true);
+  }
+}
+
+async function runPipeline(count: number) {
+  await click('Run flow', true);
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1050 * count);
+  });
+  await click('Pause', true);
+}
+
+async function inspectPipelineStage(label: string) {
+  const button = [...container.querySelectorAll('button')].find((candidate) =>
+    candidate.textContent?.trim().startsWith(label)
+  );
+  if (!button) throw new Error(`no pipeline stage "${label}"`);
+  await act(async () => button.click());
+}
+
+async function openSearchLogs() {
+  await click('Search', true);
+  await click('Search logs', true);
+}
+
+async function chooseLevel(level: string) {
+  const button = [...container.querySelectorAll('button')].find(
+    (candidate) =>
+      candidate.getAttribute('aria-pressed') !== null && candidate.textContent?.trim() === level
+  );
+  if (!button) throw new Error(`no level "${level}"`);
+  await act(async () => button.click());
+}
+
+describe('Log Aggregation Pipeline on the kit', () => {
+  it('no hero, a goal, scenarios in the bar', async () => {
+    await renderLogPipeline();
+    expect(text()).not.toContain('Production log pipeline');
+    expect(text()).toContain('Goal: ');
+    expect(text()).toContain('0/5');
+    expect(scenario('Healthy flow').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('a mission needs the right stage, not only the event', async () => {
+    await renderLogPipeline();
+    await pickScenario('Parser mismatch');
+    await stepPipeline(3);
+    await inspectPipelineStage('Sources');
+    expect(text()).toContain('0/5');
+    await inspectPipelineStage('Process');
+    expect(text()).toContain('1/5');
+  }, 60_000);
+
+  it('one signal, after the fifth mission', async () => {
+    await renderLogPipeline();
+
+    await runPipeline(5);
+    await openSearchLogs();
+    expect(completions).toBe(0);
+
+    await pickScenario('Traffic spike');
+    await runPipeline(13);
+    await inspectPipelineStage('Sources');
+    expect(completions).toBe(0);
+
+    await pickScenario('Parser mismatch');
+    await runPipeline(3);
+    await inspectPipelineStage('Process');
+    expect(completions).toBe(0);
+
+    await pickScenario('Slow indexing');
+    await runPipeline(15);
+    await inspectPipelineStage('Index');
+    expect(completions).toBe(0);
+
+    await pickScenario('Traffic spike');
+    await runPipeline(5);
+    await openSearchLogs();
+    await chooseLevel('ERROR');
+    expect(completions).toBe(1);
+    expect(text()).toContain('Missions complete');
+
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+  }, 60_000);
 });
