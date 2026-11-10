@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useEffectEvent, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useResolvedTheme } from '@/components/theme-provider';
@@ -170,6 +170,7 @@ export default function DDoSSimulator() {
   const [totalRequests, setTotalRequests] = useState(0);
   const [blockedRequests, setBlockedRequests] = useState(0);
   const [currentRPS, setCurrentRPS] = useState(0);
+  const [lastSecondRPS, setLastSecondRPS] = useState(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [explosions, setExplosions] = useState<Explosion[]>([]);
   const [attackType, setAttackType] = useState<keyof typeof ATTACK_TYPES>('http');
@@ -359,79 +360,75 @@ export default function DDoSSimulator() {
       return;
     }
 
-    // Activate when RPS is too high
-    if (currentRPS > 50) {
+    // Activate when the last full second had too many requests (the loop lands at most
+    // about 20 hits a second, so the old 50/20 thresholds never switched it on).
+    if (lastSecondRPS > 5) {
       setRateLimitActive(true);
-    } else if (currentRPS < 20) {
+    } else if (lastSecondRPS < 2) {
       setRateLimitActive(false);
     }
-  }, [currentRPS, autoRateLimiting]);
+  }, [lastSecondRPS, autoRateLimiting]);
 
-  // Server recovery system
+  // Server recovery system. An effect event reads the load, so hits no longer restart the
+  // 1 s timer (before this, health never recovered during an attack).
+  const recoverTick = useEffectEvent(() => {
+    setServerHealth((prev) => {
+      if (prev >= 100) {
+        setIsRecovering(false);
+        setRecoveryRate(0);
+        return 100;
+      }
+
+      // If paused, always recover (server resources normalizing)
+      if (!isRunning) {
+        const pausedRecovery = 3; // Faster recovery when paused
+        setIsRecovering(true);
+        setRecoveryRate(pausedRecovery);
+        return Math.min(100, prev + pausedRecovery);
+      }
+
+      // Calculate effective RPS based on active defenses
+      const effectiveRPS =
+        lastSecondRPS *
+        (hasFirewall ? 0.7 : 1) * // Firewall blocks 30%
+        (rateLimitActive ? 0.6 : 1) * // Rate limiter blocks 40%
+        (hasLoadBalancer ? 0.5 : 1); // Load balancer reduces load 50%
+
+      // Recovery depends on effective load (lower load = faster recovery)
+      const effectiveLoad = Math.min(effectiveRPS / 100, 1); // 0 to 1
+      const baseRecovery = 2.5; // Base recovery per second
+
+      // More defenses = better recovery even under load
+      const defenseCount = [
+        hasFirewall,
+        hasLoadBalancer,
+        autoRateLimiting && rateLimitActive,
+      ].filter(Boolean).length;
+      const defenseBonus = defenseCount * 0.5; // Each active defense adds 0.5/s
+
+      // Recovery calculation: better recovery when load is low and defenses are active
+      const loadRecovery = baseRecovery * (1 - effectiveLoad * 0.7);
+      const totalRecovery = Math.max(0.2, loadRecovery + defenseBonus); // Minimum 0.2/s recovery
+
+      setIsRecovering(true);
+      setRecoveryRate(totalRecovery);
+
+      // Check for phoenix achievement
+      if (prev < 30 && prev + totalRecovery >= 90) {
+        criticalRecoveryCheck.current = true;
+      }
+
+      return Math.min(100, prev + totalRecovery);
+    });
+  });
+
   useEffect(() => {
     if (gameOver) return;
 
-    const recoveryInterval = setInterval(() => {
-      setServerHealth((prev) => {
-        if (prev >= 100) {
-          setIsRecovering(false);
-          setRecoveryRate(0);
-          return 100;
-        }
-
-        // If paused, always recover (server resources normalizing)
-        if (!isRunning) {
-          const pausedRecovery = 3; // Faster recovery when paused
-          setIsRecovering(true);
-          setRecoveryRate(pausedRecovery);
-          return Math.min(100, prev + pausedRecovery);
-        }
-
-        // Calculate effective RPS based on active defenses
-        const effectiveRPS =
-          currentRPS *
-          (hasFirewall ? 0.7 : 1) * // Firewall blocks 30%
-          (rateLimitActive ? 0.6 : 1) * // Rate limiter blocks 40%
-          (hasLoadBalancer ? 0.5 : 1); // Load balancer reduces load 50%
-
-        // Recovery depends on effective load (lower load = faster recovery)
-        const effectiveLoad = Math.min(effectiveRPS / 100, 1); // 0 to 1
-        const baseRecovery = 2.5; // Base recovery per second
-
-        // More defenses = better recovery even under load
-        const defenseCount = [
-          hasFirewall,
-          hasLoadBalancer,
-          autoRateLimiting && rateLimitActive,
-        ].filter(Boolean).length;
-        const defenseBonus = defenseCount * 0.5; // Each active defense adds 0.5/s
-
-        // Recovery calculation: better recovery when load is low and defenses are active
-        const loadRecovery = baseRecovery * (1 - effectiveLoad * 0.7);
-        const totalRecovery = Math.max(0.2, loadRecovery + defenseBonus); // Minimum 0.2/s recovery
-
-        setIsRecovering(true);
-        setRecoveryRate(totalRecovery);
-
-        // Check for phoenix achievement
-        if (prev < 30 && prev + totalRecovery >= 90) {
-          criticalRecoveryCheck.current = true;
-        }
-
-        return Math.min(100, prev + totalRecovery);
-      });
-    }, 1000);
+    const recoveryInterval = setInterval(() => recoverTick(), 1000);
 
     return () => clearInterval(recoveryInterval);
-  }, [
-    isRunning,
-    gameOver,
-    currentRPS,
-    hasLoadBalancer,
-    hasFirewall,
-    rateLimitActive,
-    autoRateLimiting,
-  ]);
+  }, [isRunning, gameOver]);
 
   // Animation loop
   const animate = useCallback(() => {
@@ -553,11 +550,14 @@ export default function DDoSSimulator() {
     }
   }, [serverHealth, isRunning, highScore]);
 
-  // Reset current RPS every second
+  // Every second, keep the last full second's count (readout, rate limiting, recovery).
+  const closeRpsWindow = useEffectEvent(() => {
+    setLastSecondRPS(currentRPS);
+    setCurrentRPS(0);
+  });
+
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentRPS(0);
-    }, 1000);
+    const interval = setInterval(() => closeRpsWindow(), 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -582,6 +582,7 @@ export default function DDoSSimulator() {
     setTotalRequests(0);
     setBlockedRequests(0);
     setCurrentRPS(0);
+    setLastSecondRPS(0);
     setParticles([]);
     setExplosions([]);
     setGameOver(false);
@@ -1498,7 +1499,7 @@ export default function DDoSSimulator() {
                   </div>
                 </div>
                 <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                  <div className="text-2xl font-bold text-purple-400">{currentRPS}</div>
+                  <div className="text-2xl font-bold text-purple-400">{lastSecondRPS}</div>
                   <div className={cn('text-xs', isDark ? 'text-gray-400' : 'text-gray-600')}>
                     Requests/sec
                   </div>
