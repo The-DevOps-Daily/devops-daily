@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/page-hero';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { CarbonAds } from '@/components/carbon-ads';
 import { GameCard, toCardGame } from '@/components/game-card';
 import { getActiveByType, getGameGroup } from '@/lib/game-hubs';
 
@@ -163,6 +164,11 @@ export default async function GamesPage() {
           </div>
         </section>
       ))}
+
+      {/* Inline ad at the natural break between the game grid and labs. */}
+      <div className="max-w-2xl mx-auto mt-12 px-4">
+        <CarbonAds />
+      </div>
 
       <section className="container mx-auto px-4 pt-14">
         <div className="flex flex-col gap-5 rounded-lg border border-primary/30 bg-primary/5 p-6 sm:flex-row sm:items-center sm:p-8">
