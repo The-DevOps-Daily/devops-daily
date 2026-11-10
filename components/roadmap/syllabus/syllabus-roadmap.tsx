@@ -30,7 +30,7 @@ const ISSUE_URL = 'https://github.com/The-DevOps-Daily/devops-daily/issues/new';
 
 // Anchors clear the sticky site header, plus the stage bar below xl.
 const SCROLL_MARGIN =
-  'scroll-mt-[calc(var(--site-header-h,4.5rem)+4.5rem)] xl:scroll-mt-[calc(var(--site-header-h,4.5rem)+1.5rem)]';
+  'scroll-mt-[calc(var(--site-header-h,5.5rem)+4.5rem)] xl:scroll-mt-[calc(var(--site-header-h,5.5rem)+1.5rem)]';
 
 const ROW_GRID = 'lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.1fr)_8.25rem] lg:gap-x-6';
 

@@ -18,7 +18,7 @@ function useActiveStage(stages: SyllabusStageInfo[]) {
       const header =
         parseFloat(
           getComputedStyle(document.documentElement).getPropertyValue('--site-header-h')
-        ) || 72;
+        ) || 88;
       let current = 0;
       stages.forEach((stage, i) => {
         const el = document.getElementById(`stage-${stage.id}`);
@@ -153,7 +153,7 @@ export function SyllabusNav() {
     <>
       <div
         ref={bar}
-        className="sticky top-[var(--site-header-h,4.5rem)] z-30 -mx-4 mt-6 border-y border-border bg-background/95 px-4 backdrop-blur xl:hidden"
+        className="sticky top-[var(--site-header-h,5.5rem)] z-30 -mx-4 mt-6 border-y border-border bg-background/95 px-4 backdrop-blur xl:hidden"
       >
         <nav aria-label="Roadmap stages">
           <button
@@ -204,7 +204,7 @@ export function SyllabusNav() {
       <aside className="hidden xl:block">
         <nav
           aria-label="Roadmap stages"
-          className="sticky top-[calc(var(--site-header-h,4.5rem)+1.5rem)] pt-10"
+          className="sticky top-[calc(var(--site-header-h,5.5rem)+1.5rem)] pt-10"
         >
           <p className="mb-3 font-mono text-xs text-muted-foreground">{'// stages'}</p>
           <StageList active={active} short />

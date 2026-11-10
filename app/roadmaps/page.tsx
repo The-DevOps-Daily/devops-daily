@@ -6,6 +6,15 @@ import { roadmapCatalog, type RoadmapEntry } from '@/lib/roadmap-catalog';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+/** Let the last stage fill the row, so the hairline grid has no empty cell. */
+function lastCellSpan(count: number, featured: boolean) {
+  const phone = count % 2 === 1 ? 'last:col-span-2' : '';
+  const rest = count % 3;
+  const tablet =
+    rest === 1 ? 'sm:last:col-span-3' : rest === 2 ? 'sm:last:col-span-2' : 'sm:last:col-span-1';
+  return cn(phone, tablet, featured && 'lg:last:col-span-1');
+}
+
 function Facts({ entry }: { entry: RoadmapEntry }) {
   const { totals } = entry;
   const facts = [
@@ -57,7 +66,10 @@ function RoadmapCard({ entry, featured = false }: { entry: RoadmapEntry; feature
         )}
       >
         {entry.stages.map((stage, i) => (
-          <li key={stage} className="bg-background px-3 py-2">
+          <li
+            key={stage}
+            className={cn('bg-background px-3 py-2', lastCellSpan(entry.stages.length, featured))}
+          >
             <span className="block font-mono text-[11px] text-muted-foreground">{pad(i + 1)}</span>
             <span className="block text-sm font-medium leading-tight">{stage}</span>
           </li>
