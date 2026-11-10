@@ -1,31 +1,41 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  Play,
-  Pause,
-  RotateCcw,
+  ArrowLeftRight,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  FileCheck,
   Lock,
-  Unlock,
+  Monitor,
+  Pause,
+  Play,
+  RotateCcw,
+  Server,
   Shield,
   ShieldCheck,
   ShieldX,
-  Key,
-  FileCheck,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  ArrowRight,
-  ArrowLeftRight,
-  Server,
-  Monitor,
-  Keyboard,
-  Info,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import {
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+  type SimStepStatus,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type TLSVersion = '1.2' | '1.3';
@@ -256,58 +266,72 @@ const CERTIFICATE_CHAIN = [
   },
 ];
 
+type SslMissionState = {
+  tlsVersion: TLSVersion;
+  failureScenario: FailureScenario;
+  hasFailed: boolean;
+  isComplete: boolean;
+  failsAt: HandshakePhase | null;
+};
+
+const MISSIONS: Mission<SslMissionState>[] = [
+  {
+    id: 'tls13',
+    label: 'Complete a TLS 1.3 handshake.',
+    hint: 'Press Play, or step with Next until the lock shows.',
+    check: (state) => state.tlsVersion === '1.3' && state.isComplete,
+  },
+  {
+    id: 'tls12',
+    label: 'Complete a TLS 1.2 handshake.',
+    hint: 'TLS 1.2 needs 9 steps. TLS 1.3 needs only 5.',
+    check: (state) => state.tlsVersion === '1.2' && state.isComplete,
+  },
+  {
+    id: 'bad-cert',
+    label: 'Watch the browser reject a bad certificate.',
+    hint: 'Pick Expired Certificate, Hostname Mismatch or Untrusted CA.',
+    check: (state) => state.hasFailed && state.failsAt === 'certificate',
+  },
+  {
+    id: 'weak-cipher',
+    label: 'Find the failure that stops the handshake before any certificate is sent.',
+    hint: 'Client and server must agree on a secure cipher suite.',
+    check: (state) => state.failureScenario === 'weak-cipher' && state.hasFailed,
+  },
+];
+
+type Tab = 'handshake' | 'details';
+
+function isFailureScenario(value: string): value is FailureScenario {
+  return value in FAILURE_SCENARIOS;
+}
+
+function directionText(direction: HandshakeStep['direction']): string {
+  if (direction === 'client-to-server') return 'Client to server';
+  if (direction === 'server-to-client') return 'Server to client';
+  if (direction === 'both') return 'Both client and server';
+  return 'No message in transit';
+}
+
+function withoutLeadingEmoji(text: string): string {
+  return text.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, '');
+}
+
 export default function SslTlsHandshakeSimulator() {
   const [tlsVersion, setTlsVersion] = useState<TLSVersion>('1.3');
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [failureScenario, setFailureScenario] = useState<FailureScenario>('none');
   const [showCertChain, setShowCertChain] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [tab, setTab] = useState<Tab>('handshake');
 
   const steps = tlsVersion === '1.3' ? TLS_13_STEPS : TLS_12_STEPS;
   const currentStep = steps[currentStepIndex];
   const failure = FAILURE_SCENARIOS[failureScenario];
   const hasFailed = failureScenario !== 'none' && currentStep?.phase === failure.failsAt;
   const isComplete = currentStep?.phase === 'secure' && !hasFailed;
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      if (e.key === ' ' || e.key === 'Enter') {
-        e.preventDefault();
-        if (isComplete || hasFailed) {
-          reset();
-        } else {
-          setIsPlaying((p) => !p);
-        }
-      }
-      if (
-        e.key === 'ArrowRight' &&
-        !isPlaying &&
-        currentStepIndex < steps.length - 1 &&
-        !hasFailed
-      ) {
-        e.preventDefault();
-        setCurrentStepIndex((i) => i + 1);
-      }
-      if (e.key === 'ArrowLeft' && !isPlaying && currentStepIndex > 0) {
-        e.preventDefault();
-        setCurrentStepIndex((i) => i - 1);
-      }
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-       e.preventDefault();
-       reset();
-     }
-   };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, currentStepIndex, steps.length, isComplete, hasFailed]);
 
   // Auto-play
   useEffect(() => {
@@ -342,510 +366,514 @@ export default function SslTlsHandshakeSimulator() {
     return ((currentStepIndex + 1) / steps.length) * 100;
   };
 
+  const missionState = useMemo<SslMissionState>(
+    () => ({
+      tlsVersion,
+      failureScenario,
+      hasFailed,
+      isComplete,
+      failsAt: failureScenario === 'none' ? null : failure.failsAt,
+    }),
+    [failure.failsAt, failureScenario, hasFailed, isComplete, tlsVersion]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+  const playing = isPlaying && !isComplete && !hasFailed;
+
+  const startOver = () => {
+    setTlsVersion('1.3');
+    setFailureScenario('none');
+    reset();
+    missions.reset();
+    setDismissed(false);
+  };
+
+  const previous = () => {
+    setIsPlaying(false);
+    setCurrentStepIndex((i) => Math.max(0, i - 1));
+  };
+  const next = () => setCurrentStepIndex((i) => Math.min(steps.length - 1, i + 1));
+  const playOrRestart = () => {
+    if (isComplete || hasFailed) {
+      reset();
+    } else {
+      setIsPlaying((value) => !value);
+    }
+  };
+  const status = isComplete ? 'success' : hasFailed ? 'danger' : 'info';
+  const StatusIcon = isComplete ? Lock : hasFailed ? ShieldX : Shield;
+  const statusLabel = isComplete ? 'Secure' : hasFailed ? 'Failed' : 'In progress';
+  const stepStatus = (index: number): SimStepStatus => {
+    if (isComplete && index === steps.length - 1) return 'perfect';
+    if (index < currentStepIndex) return 'done';
+    if (index === currentStepIndex) return 'started';
+    return 'todo';
+  };
+  const stepItems = steps.map((step, index) => ({ title: step.title, status: stepStatus(index) }));
+  const certificateFailure = hasFailed && failure.failsAt === 'certificate';
+  const endCard = missions.complete && !dismissed;
+
+  const controls = (height: string, phone = false) => (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className={height}
+        onClick={previous}
+        disabled={currentStepIndex === 0 || playing}
+      >
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        Prev
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        className={cn(height, phone && 'flex-1')}
+        onClick={playOrRestart}
+      >
+        {isComplete || hasFailed ? (
+          <>
+            <RotateCcw className="h-4 w-4" aria-hidden="true" /> Restart
+          </>
+        ) : playing ? (
+          <>
+            <Pause className="h-4 w-4" aria-hidden="true" /> Pause
+          </>
+        ) : (
+          <>
+            <Play className="h-4 w-4" aria-hidden="true" /> Play
+          </>
+        )}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className={height}
+        onClick={next}
+        disabled={currentStepIndex === steps.length - 1 || playing || hasFailed}
+      >
+        Next
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </Button>
+    </>
+  );
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Educational Intro */}
-      {currentStepIndex === 0 && !isPlaying && (
-        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
-          <CardContent className="pt-4">
-            <div className="flex items-start gap-3">
-              <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
-              <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                  How to use this simulator
-                </h3>
-                <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
-                  Watch how your browser establishes a secure HTTPS connection. Use the{' '}
-                  <strong>Play</strong> button for auto-advance, or <strong>Next/Prev</strong> to
-                  step through manually. Each step shows what data is exchanged between client and
-                  server.
-                </p>
-                <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                  💡 Tip: Try different TLS versions and failure scenarios to see how the handshake
-                  changes.
-                </p>
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="SSL/TLS Handshake Simulator"
+          icon={Lock}
+          lead={
+            <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:min-w-0 sm:flex-1">
+              <div role="group" aria-label="TLS version" className="flex gap-1.5">
+                <Button
+                  type="button"
+                  variant={tlsVersion === '1.3' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  aria-pressed={tlsVersion === '1.3'}
+                  onClick={() => {
+                    setTlsVersion('1.3');
+                    reset();
+                  }}
+                >
+                  TLS 1.3
+                </Button>
+                <Button
+                  type="button"
+                  variant={tlsVersion === '1.2' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  aria-pressed={tlsVersion === '1.2'}
+                  onClick={() => {
+                    setTlsVersion('1.2');
+                    reset();
+                  }}
+                >
+                  TLS 1.2
+                </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
-            SSL/TLS Handshake
-          </h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-            Visualize how secure connections are established
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1 text-xs">
-            <Keyboard className="h-3 w-3" />
-            <span className="hidden sm:inline">Space/Arrows/R</span>
-          </Badge>
-          <Button variant="outline" size="sm" onClick={reset}>
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      {/* TLS Version & Scenario Selector */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-700 dark:text-slate-300">
-              TLS Version
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            {(['1.2', '1.3'] as TLSVersion[]).map((v) => (
-              <Button
-                key={v}
-                variant={tlsVersion === v ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => {
-                  setTlsVersion(v);
+              <label htmlFor="tls-failure-scenario" className="sr-only">
+                Failure scenario
+              </label>
+              <select
+                id="tls-failure-scenario"
+                value={failureScenario}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  if (!isFailureScenario(value)) return;
+                  setFailureScenario(value);
                   reset();
                 }}
-                className="flex-1"
+                className="h-10 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none lg:h-8"
               >
-                TLS {v}
-                {v === '1.3' && <Badge className="ml-1 bg-emerald-500 text-[10px]">Faster</Badge>}
-              </Button>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-700 dark:text-slate-300">Scenario</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <select
-              value={failureScenario}
-              onChange={(e) => {
-                setFailureScenario(e.target.value as FailureScenario);
-                reset();
-              }}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
-            >
-              <option value="none">✅ Successful Handshake</option>
-              <option value="expired-cert">❌ Expired Certificate</option>
-              <option value="wrong-hostname">❌ Hostname Mismatch</option>
-              <option value="weak-cipher">❌ Weak Cipher Suite</option>
-              <option value="untrusted-ca">❌ Untrusted CA</option>
-            </select>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Visualization */}
-      <Card className="overflow-hidden border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-        <CardContent className="p-4 sm:p-6">
-          {/* Client <-> Server Diagram */}
-          <div className="mb-6 flex items-center justify-between">
-            {/* Client */}
-            <div className="flex flex-col items-center">
-              <div
-                className={cn(
-                  'flex h-16 w-16 items-center justify-center rounded-xl border-2 sm:h-20 sm:w-20',
-                  isComplete
-                    ? 'border-emerald-500 bg-emerald-500/20'
-                    : hasFailed
-                      ? 'border-red-500 bg-red-500/20'
-                      : 'border-blue-500 bg-blue-500/20'
-                )}
-              >
-                <Monitor
-                  className={cn(
-                    'h-8 w-8 sm:h-10 sm:w-10',
-                    isComplete ? 'text-emerald-500' : hasFailed ? 'text-red-500' : 'text-blue-500'
-                  )}
-                />
-              </div>
-              <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">
-                Client
-              </span>
+                <option value="none">Normal</option>
+                <option value="expired-cert">Expired Certificate</option>
+                <option value="wrong-hostname">Hostname Mismatch</option>
+                <option value="weak-cipher">Weak Cipher</option>
+                <option value="untrusted-ca">Untrusted CA</option>
+              </select>
             </div>
-
-            {/* Connection Visualization */}
-            <div className="relative mx-4 flex-1">
-              {/* Connection Progress Bar */}
-              <div
-                className={cn(
-                  'relative h-3 overflow-hidden rounded-full bg-slate-300 transition-shadow duration-300 dark:bg-slate-600',
-                  isPlaying && !isComplete && !hasFailed && 'shadow-[0_0_10px_rgba(59,130,246,0.7)]'
-                )}
-              >
-                <motion.div
-                  className={cn(
-                    'h-full rounded-full',
-                    hasFailed ? 'bg-red-500' : isComplete ? 'bg-emerald-500' : 'bg-blue-500',
-                    isPlaying && !isComplete && !hasFailed && 'animate-pulse'
-                  )}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${getProgressPercentage()}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-
-              {/* Animated Packet */}
-              <AnimatePresence>
-                {currentStep && currentStep.direction !== 'none' && !hasFailed && !isComplete && (
-                  <motion.div
-                    key={`${currentStepIndex}-${currentStep.direction}`}
-                    className="absolute -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg"
-                    initial={{
-                      left: currentStep.direction === 'client-to-server' ? '0%' : '100%',
-                      x: currentStep.direction === 'client-to-server' ? 0 : -32,
-                    }}
-                    animate={{
-                      left: currentStep.direction === 'client-to-server' ? '100%' : '0%',
-                      x: currentStep.direction === 'client-to-server' ? -32 : 0,
-                    }}
-                    transition={{ duration: 2, ease: 'easeInOut' }}
-                  >
-                    {currentStep.direction === 'both' ? (
-                      <ArrowLeftRight className="h-4 w-4" />
-                    ) : (
-                      <ArrowRight
-                        className={cn(
-                          'h-4 w-4',
-                          currentStep.direction === 'server-to-client' && 'rotate-180'
-                        )}
-                      />
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Lock Icon for Secure */}
-              {isComplete && (
-                <motion.div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg">
-                    <Lock className="h-5 w-5" />
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Error Icon for Failure */}
-              {hasFailed && (
-                <motion.div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white shadow-lg">
-                    <ShieldX className="h-5 w-5" />
-                  </div>
-                </motion.div>
-              )}
-            </div>
-
-            {/* Server */}
-            <div className="flex flex-col items-center">
-              <div
-                className={cn(
-                  'flex h-16 w-16 items-center justify-center rounded-xl border-2 sm:h-20 sm:w-20',
-                  isComplete
-                    ? 'border-emerald-500 bg-emerald-500/20'
-                    : hasFailed
-                      ? 'border-red-500 bg-red-500/20'
-                      : 'border-purple-500 bg-purple-500/20'
-                )}
-              >
-                <Server
-                  className={cn(
-                    'h-8 w-8 sm:h-10 sm:w-10',
-                    isComplete ? 'text-emerald-500' : hasFailed ? 'text-red-500' : 'text-purple-500'
-                  )}
-                />
-              </div>
-              <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">
-                Server
-              </span>
-            </div>
-          </div>
-
-          {/* Current Step Info */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStepIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+          }
+          steps={stepItems}
+          current={currentStepIndex}
+          onStep={(index) => {
+            if (index > currentStepIndex) return;
+            setIsPlaying(false);
+            setCurrentStepIndex(index);
+          }}
+          stepNoun="Step"
+          stepsLabel="Handshake steps"
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={currentStep.title}
+          meta={
+            <span
               className={cn(
-                'rounded-lg border p-4',
-                hasFailed
-                  ? 'border-red-500/50 bg-red-500/10'
-                  : isComplete
-                    ? 'border-emerald-500/50 bg-emerald-500/10'
-                    : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-700/50'
+                'inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-xs font-semibold',
+                SIM_TONE[status].surface,
+                SIM_TONE[status].text
               )}
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        hasFailed
-                          ? 'border-red-500 text-red-500'
-                          : isComplete
-                            ? 'border-emerald-500 text-emerald-500'
-                            : 'border-blue-500 text-blue-500'
-                      )}
-                    >
-                      {currentStepIndex + 1}/{steps.length}
-                    </Badge>
-                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                      {hasFailed ? `❌ ${failure.title}` : currentStep?.title}
-                    </h3>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                    {hasFailed ? failure.description : currentStep?.description}
-                  </p>
-                </div>
-                {currentStep?.direction && currentStep.direction !== 'none' && !hasFailed && (
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      'text-xs',
-                      currentStep.direction === 'client-to-server'
-                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                        : currentStep.direction === 'server-to-client'
-                          ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300'
-                          : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                    )}
-                  >
-                    {currentStep.direction === 'client-to-server'
-                      ? 'Client → Server'
-                      : currentStep.direction === 'server-to-client'
-                        ? 'Server → Client'
-                        : 'Both'}
-                  </Badge>
-                )}
-              </div>
+              <StatusIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              {statusLabel}
+            </span>
+          }
+          actions={<div className="hidden items-center gap-2 lg:flex">{controls('h-8')}</div>}
+          goal={
+            missions.current ? (
+              <>
+                {missions.current.label}{' '}
+                <span className="text-muted-foreground">{missions.current.hint}</span>
+              </>
+            ) : (
+              'All four done. Try other versions and failures.'
+            )
+          }
+        />
+        <SimAnnouncer
+          message={`Step ${currentStepIndex + 1} of ${steps.length}: ${currentStep.title}${
+            isComplete
+              ? '. Handshake complete, connection secure.'
+              : hasFailed
+                ? `. Handshake failed: ${failure.title}`
+                : ''
+          }`}
+        />
 
-              {/* Step Details */}
-              {!hasFailed && currentStep && (
-                <div className="mt-3 space-y-1">
-                  {currentStep.details.map((detail, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400"
-                    >
-                      <span className="text-slate-400">•</span>
-                      {detail}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Failure Details */}
-              {hasFailed && (
-                <div className="mt-3 rounded bg-red-100 p-2 dark:bg-red-900/30">
-                  <p className="text-xs text-red-700 dark:text-red-300">
-                    <AlertTriangle className="mr-1 inline h-3 w-3" />
-                    Connection aborted. The browser will show a security warning.
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Controls */}
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentStepIndex((i) => Math.max(0, i - 1))}
-              disabled={currentStepIndex === 0 || isPlaying}
-            >
-              ← Prev
-            </Button>
-            <Button
-              variant={isPlaying ? 'destructive' : 'default'}
-              size="sm"
-              onClick={() => {
-                if (isComplete || hasFailed) {
-                  reset();
-                } else {
-                  setIsPlaying((p) => !p);
-                }
+        {endCard ? (
+          <SimComplete
+            title="Handshakes explored"
+            summary="You completed a TLS 1.3 and a TLS 1.2 handshake, saw a bad certificate rejected, and found the cipher failure that ends a handshake before any certificate is sent."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Version now', value: `TLS ${tlsVersion}` },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <>
+            <SimStage
+              columns="lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"
+              minHeight="min-h-[22rem]"
+              tab={tab}
+              onTabChange={(value) => {
+                if (value === 'handshake' || value === 'details') setTab(value);
               }}
-              className="w-24"
-            >
-              {isComplete || hasFailed ? (
-                <>
-                  <RotateCcw className="mr-1 h-4 w-4" /> Restart
-                </>
-              ) : isPlaying ? (
-                <>
-                  <Pause className="mr-1 h-4 w-4" /> Pause
-                </>
-              ) : (
-                <>
-                  <Play className="mr-1 h-4 w-4" /> Play
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentStepIndex((i) => Math.min(steps.length - 1, i + 1))}
-              disabled={currentStepIndex === steps.length - 1 || isPlaying || hasFailed}
-            >
-              Next →
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Certificate Chain Visualization */}
-      <AnimatePresence>
-        {showCertChain && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Shield className="h-4 w-4 text-amber-500" />
-                  Certificate Chain (Chain of Trust)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-4">
-                  {CERTIFICATE_CHAIN.map((cert, i) => (
-                    <React.Fragment key={cert.name}>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.2 }}
-                        className={cn(
-                          'flex items-center gap-3 rounded-lg border p-3',
-                          hasFailed && currentStep?.phase === 'certificate'
-                            ? 'border-red-500/50 bg-red-500/10'
-                            : 'border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-700/50'
-                        )}
+              tabsLabel="Simulator panels"
+              panels={[
+                {
+                  id: 'handshake',
+                  label: 'Handshake',
+                  className: 'space-y-2',
+                  content: (
+                    <div className="space-y-2">
+                      <section
+                        className="rounded-lg border bg-card p-3"
+                        aria-label="Client and server"
                       >
-                        <cert.icon className={cn('h-6 w-6', cert.color)} />
-                        <div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                            {cert.name}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Issued by: {cert.issuer}
-                          </p>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex flex-col items-center gap-1">
+                            <div
+                              className={cn(
+                                'flex h-14 w-14 items-center justify-center rounded-lg border-2 sm:h-16 sm:w-16',
+                                isComplete
+                                  ? SIM_TONE.success.surface
+                                  : hasFailed
+                                    ? SIM_TONE.danger.surface
+                                    : cn(SIM_CATEGORY.sky.fill, SIM_CATEGORY.sky.border)
+                              )}
+                            >
+                              <Monitor
+                                className={cn(
+                                  'h-6 w-6',
+                                  isComplete
+                                    ? SIM_TONE.success.iconClass
+                                    : hasFailed
+                                      ? SIM_TONE.danger.iconClass
+                                      : 'text-foreground'
+                                )}
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <span className="text-xs font-medium">Client</span>
+                          </div>
+                          <div className="relative flex-1">
+                            <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+                              <motion.div
+                                className={cn(
+                                  'h-full rounded-full',
+                                  isComplete ? 'bg-correct' : hasFailed ? 'bg-wrong' : 'bg-primary'
+                                )}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${getProgressPercentage()}%` }}
+                                transition={{ duration: 0.3 }}
+                              />
+                            </div>
+                            <AnimatePresence>
+                              {currentStep.direction !== 'none' && !hasFailed && !isComplete && (
+                                <motion.div
+                                  key={`${currentStepIndex}-${currentStep.direction}`}
+                                  className="absolute -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground"
+                                  initial={{
+                                    left:
+                                      currentStep.direction === 'client-to-server' ? '0%' : '100%',
+                                    x: currentStep.direction === 'client-to-server' ? 0 : -32,
+                                  }}
+                                  animate={{
+                                    left:
+                                      currentStep.direction === 'client-to-server' ? '100%' : '0%',
+                                    x: currentStep.direction === 'client-to-server' ? -32 : 0,
+                                  }}
+                                  transition={{ duration: 2, ease: 'easeInOut' }}
+                                >
+                                  {currentStep.direction === 'both' ? (
+                                    <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                                  ) : (
+                                    <ArrowRight
+                                      className={cn(
+                                        'h-4 w-4',
+                                        currentStep.direction === 'server-to-client' && 'rotate-180'
+                                      )}
+                                      aria-hidden="true"
+                                    />
+                                  )}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            {isComplete && (
+                              <motion.div
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 200 }}
+                              >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-correct text-background">
+                                  <Lock className="h-5 w-5" aria-hidden="true" />
+                                </div>
+                              </motion.div>
+                            )}
+                            {hasFailed && (
+                              <motion.div
+                                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: 'spring', stiffness: 200 }}
+                              >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-wrong text-background">
+                                  <ShieldX className="h-5 w-5" aria-hidden="true" />
+                                </div>
+                              </motion.div>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-center gap-1">
+                            <div
+                              className={cn(
+                                'flex h-14 w-14 items-center justify-center rounded-lg border-2 sm:h-16 sm:w-16',
+                                isComplete
+                                  ? SIM_TONE.success.surface
+                                  : hasFailed
+                                    ? SIM_TONE.danger.surface
+                                    : cn(SIM_CATEGORY.violet.fill, SIM_CATEGORY.violet.border)
+                              )}
+                            >
+                              <Server
+                                className={cn(
+                                  'h-6 w-6',
+                                  isComplete
+                                    ? SIM_TONE.success.iconClass
+                                    : hasFailed
+                                      ? SIM_TONE.danger.iconClass
+                                      : 'text-foreground'
+                                )}
+                                aria-hidden="true"
+                              />
+                            </div>
+                            <span className="text-xs font-medium">Server</span>
+                          </div>
                         </div>
-                        {!hasFailed && <CheckCircle className="h-4 w-4 text-emerald-500" />}
-                        {hasFailed && i === CERTIFICATE_CHAIN.length - 1 && (
-                          <XCircle className="h-4 w-4 text-red-500" />
+                      </section>
+                      <section className="rounded-lg border bg-card p-3">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="font-mono text-xs text-muted-foreground">
+                            Step {currentStepIndex + 1}/{steps.length}
+                          </span>
+                          <h3 className="font-semibold">{currentStep.title}</h3>
+                        </div>
+                        {hasFailed && (
+                          <SimFeedback tone="danger" label="Handshake failed" className="mt-2">
+                            <p>
+                              <strong>{failure.title}.</strong> {failure.description}
+                            </p>
+                          </SimFeedback>
                         )}
-                      </motion.div>
-                      {i < CERTIFICATE_CHAIN.length - 1 && (
-                        <ArrowRight className="hidden h-4 w-4 rotate-90 text-slate-400 sm:block sm:rotate-0" />
+                        {isComplete && (
+                          <SimFeedback tone="success" label="Secure connection" className="mt-2">
+                            <p>All application data encrypted.</p>
+                          </SimFeedback>
+                        )}
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {currentStep.description}
+                        </p>
+                        <p className="mt-2 text-sm font-medium">
+                          {directionText(currentStep.direction)}
+                        </p>
+                        <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                          {currentStep.details.map((detail) => (
+                            <li key={detail}>{withoutLeadingEmoji(detail)}</li>
+                          ))}
+                        </ul>
+                      </section>
+                    </div>
+                  ),
+                },
+                {
+                  id: 'details',
+                  label: 'Details',
+                  className: 'space-y-2',
+                  content: (
+                    <div className="space-y-2">
+                      <SimMissionList missions={missions.missions} />
+                      {showCertChain && (
+                        <section
+                          className="rounded-lg border bg-card p-3"
+                          aria-label="Certificate chain"
+                        >
+                          <h3 className="text-sm font-semibold">Certificate chain</h3>
+                          <div className="mt-2 space-y-1.5">
+                            {CERTIFICATE_CHAIN.map((cert, index) => {
+                              const Icon = cert.icon;
+                              const failing =
+                                certificateFailure && index === CERTIFICATE_CHAIN.length - 1;
+                              return (
+                                <div
+                                  key={cert.name}
+                                  className={cn(
+                                    'flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm',
+                                    failing ? SIM_TONE.danger.surface : 'bg-muted/40'
+                                  )}
+                                >
+                                  <Icon
+                                    className="h-4 w-4 shrink-0 text-foreground"
+                                    aria-hidden="true"
+                                  />
+                                  <span className="font-medium">{cert.name}</span>
+                                  <span className="text-muted-foreground">
+                                    Issued by: {cert.issuer}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </section>
                       )}
-                    </React.Fragment>
-                  ))}
-                </div>
-                <p className="mt-3 text-center text-xs text-slate-500 dark:text-slate-400">
-                  The browser verifies each certificate up to a trusted Root CA
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
+                      <details className="rounded-lg border bg-card p-3">
+                        <summary className="cursor-pointer text-sm font-semibold">
+                          TLS 1.2 vs TLS 1.3 and key terms
+                        </summary>
+                        <div className="mt-3 space-y-3 text-sm text-muted-foreground">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <h3 className="font-medium text-foreground">TLS 1.2</h3>
+                              <ul className="mt-1 space-y-1">
+                                <li>2 round-trips (2-RTT) to establish</li>
+                                <li>Supports older cipher suites</li>
+                                <li>RSA key exchange still allowed</li>
+                                <li>Separate ChangeCipherSpec message</li>
+                                <li>Widely supported (legacy systems)</li>
+                              </ul>
+                            </div>
+                            <div>
+                              <h3 className="flex items-center gap-2 font-medium text-foreground">
+                                TLS 1.3{' '}
+                                <Badge variant="secondary" className="text-xs">
+                                  Recommended
+                                </Badge>
+                              </h3>
+                              <ul className="mt-1 space-y-1">
+                                <li>1 round-trip (1-RTT) - 50% faster!</li>
+                                <li>Only AEAD ciphers (more secure)</li>
+                                <li>Perfect Forward Secrecy required</li>
+                                <li>Encrypted earlier in handshake</li>
+                                <li>0-RTT resumption possible</li>
+                              </ul>
+                            </div>
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <h3 className="font-medium text-foreground">Cipher Suite</h3>
+                              <p>
+                                A combination of algorithms: key exchange (ECDHE), authentication
+                                (RSA/ECDSA), encryption (AES-GCM), and hashing (SHA256).
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-foreground">
+                                Perfect Forward Secrecy
+                              </h3>
+                              <p>
+                                Even if the server&apos;s private key is compromised, past sessions
+                                remain secure because each session uses unique ephemeral keys.
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-foreground">
+                                Certificate Authority (CA)
+                              </h3>
+                              <p>
+                                A trusted organization that issues digital certificates. Browsers
+                                have a list of trusted root CAs built-in.
+                              </p>
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-foreground">
+                                AEAD (Authenticated Encryption)
+                              </h3>
+                              <p>
+                                Combines encryption and authentication in one step (e.g., AES-GCM).
+                                Required in TLS 1.3 for better security.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </>
         )}
-      </AnimatePresence>
-
-      {/* TLS 1.2 vs 1.3 Comparison */}
-      <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Info className="h-4 w-4 text-blue-500" />
-            TLS 1.2 vs TLS 1.3
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-slate-300 bg-white p-3 dark:border-slate-600 dark:bg-slate-700/50">
-              <h4 className="mb-2 font-medium text-slate-900 dark:text-slate-100">TLS 1.2</h4>
-              <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                <li>• 2 round-trips (2-RTT) to establish</li>
-                <li>• Supports older cipher suites</li>
-                <li>• RSA key exchange still allowed</li>
-                <li>• Separate ChangeCipherSpec message</li>
-                <li>• Widely supported (legacy systems)</li>
-              </ul>
-            </div>
-            <div className="rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-3">
-              <h4 className="mb-2 flex items-center gap-2 font-medium text-slate-900 dark:text-slate-100">
-                TLS 1.3
-                <Badge className="bg-emerald-500 text-[10px]">Recommended</Badge>
-              </h4>
-              <ul className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
-                <li>• 1 round-trip (1-RTT) - 50% faster!</li>
-                <li>• Only AEAD ciphers (more secure)</li>
-                <li>• Perfect Forward Secrecy required</li>
-                <li>• Encrypted earlier in handshake</li>
-                <li>• 0-RTT resumption possible</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Educational Section */}
-      <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
-        <CardContent className="p-4">
-          <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
-            <Key className="h-4 w-4 text-amber-500" />
-            Key Concepts
-          </h3>
-          <div className="grid gap-4 text-sm sm:grid-cols-2">
-            <div>
-              <h4 className="mb-1 font-medium text-blue-500">Cipher Suite</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                A combination of algorithms: key exchange (ECDHE), authentication (RSA/ECDSA),
-                encryption (AES-GCM), and hashing (SHA256).
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-1 font-medium text-purple-500">Perfect Forward Secrecy</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Even if the server&apos;s private key is compromised, past sessions remain secure
-                because each session uses unique ephemeral keys.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-1 font-medium text-emerald-500">Certificate Authority (CA)</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                A trusted organization that issues digital certificates. Browsers have a list of
-                trusted root CAs built-in.
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-1 font-medium text-amber-500">AEAD (Authenticated Encryption)</h4>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Combines encryption and authentication in one step (e.g., AES-GCM). Required in TLS
-                1.3 for better security.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        <SimPhoneBar>{controls('h-10', true)}</SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }
