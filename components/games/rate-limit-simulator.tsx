@@ -1,6 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import {
   BarChart,
   Bar,
@@ -32,6 +39,8 @@ import {
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
+// The header values come from Date.now(), so they render only in the browser (no hydration mismatch).
+const subscribeNothing = () => () => {};
 interface RateLimitConfig {
   limit: number;
   windowMs: number;
@@ -158,6 +167,11 @@ export default function RateLimitSimulator() {
       requests,
     }),
     [preset, strategy, burstSize, burstInterval, throttledRequests, requests]
+  );
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false
   );
   const missions = useMissions(MISSIONS, missionState);
 
@@ -714,7 +728,7 @@ export default function RateLimitSimulator() {
                           <div key={header} className="flex items-center justify-between gap-2">
                             <code className="font-mono text-xs">{header}</code>
                             <Badge variant="outline" className="font-mono">
-                              {value}
+                              {hydrated ? value : ''}
                             </Badge>
                           </div>
                         ))}
