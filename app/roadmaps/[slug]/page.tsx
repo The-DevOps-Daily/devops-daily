@@ -35,11 +35,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: 'Junior DevOps Roadmap - Start Your DevOps Journey',
         description:
           'A beginner-friendly roadmap specifically designed for aspiring DevOps engineers. Clear, focused learning path without the overwhelm.',
-        url: 'https://devops-daily.com/roadmaps/junior',
+        url: 'https://devops-daily.com/roadmap/junior',
         type: 'website',
         images: [
           {
-            url: 'https://devops-daily.com/images/junior-roadmap-og.png',
+            url: 'https://devops-daily.com/images/pages/roadmap-junior.jpg',
             width: 1200,
             height: 630,
             alt: 'Junior DevOps Roadmap - Start Your Journey',
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: 'Junior DevOps Roadmap - Start Your DevOps Journey',
         description:
           'A beginner-friendly roadmap for aspiring DevOps engineers. Clear, focused learning path without the overwhelm.',
-        images: ['https://devops-daily.com/images/junior-roadmap-og.png'],
+        images: ['https://devops-daily.com/images/pages/roadmap-junior.jpg'],
       },
     },
     devsecops: {
@@ -65,11 +65,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: 'DevSecOps Roadmap - Security-First DevOps',
         description:
           'Master the integration of security practices into the DevOps pipeline. Learn to build secure, compliant, and resilient systems.',
-        url: 'https://devops-daily.com/roadmaps/devsecops',
+        url: 'https://devops-daily.com/roadmap/devsecops',
         type: 'website',
         images: [
           {
-            url: 'https://devops-daily.com/images/devsecops-roadmap-og.png',
+            url: 'https://devops-daily.com/images/pages/roadmap-devsecops.jpg',
             width: 1200,
             height: 630,
             alt: 'DevSecOps Roadmap - Security-First DevOps',
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: 'DevSecOps Roadmap - Security-First DevOps',
         description:
           'Master security practices in the DevOps pipeline. Build secure, compliant, and resilient systems.',
-        images: ['https://devops-daily.com/images/devsecops-roadmap-og.png'],
+        images: ['https://devops-daily.com/images/pages/roadmap-devsecops.jpg'],
       },
     },
   };

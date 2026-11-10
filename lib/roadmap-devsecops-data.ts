@@ -1,120 +1,83 @@
-// Data for the /roadmap/devsecops page: milestone and skill definitions.
-// Rendering lives in app/roadmap/devsecops/page.tsx.
+// The /roadmap/devsecops syllabus. See lib/roadmap-syllabus.ts for the model.
 
-import {
-  AlertTriangle,
-  Bug,
-  Cloud,
-  Code,
-  Container,
-  Database,
-  Eye,
-  FileSearch,
-  FileText,
-  Fingerprint,
-  GitBranch,
-  Globe,
-  Key,
-  Lock,
-  Network,
-  Scan,
-  Server,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  Target,
-  Terminal,
-  Workflow,
-  type LucideIcon,
-} from 'lucide-react';
+import { ref, type SyllabusStage } from './roadmap-syllabus';
 
-export interface DevSecOpsSkill {
-  name: string;
-  description: string;
-  link?: string;
-  simulators?: { name: string; link: string }[];
-  external?: boolean;
-  icon: LucideIcon;
-  priority: 'essential' | 'important' | 'nice-to-have';
-  estimatedHours: number;
-}
+const { guide, part, post, sim, lab, challenge, quiz, cards, checklist, ext } = ref;
 
-export interface DevSecOpsMilestone {
-  id: string;
-  title: string;
-  subtitle: string;
-  description: string;
-  icon: LucideIcon;
-  color: string;
-  bgColor: string;
-  timeframe: string;
-  skills: DevSecOpsSkill[];
-  project: {
-    name: string;
-    description: string;
-    difficulty: 'easy' | 'medium' | 'hard';
-  };
-  outcomes: string[];
-  tips: string[];
-}
-
-export const milestones: DevSecOpsMilestone[] = [
+export const devsecopsStages: SyllabusStage[] = [
   {
     id: 'security-fundamentals',
     title: 'Security Fundamentals',
-    subtitle: 'Month 1-2',
-    description: 'Build your security foundation with core concepts and threat modeling',
-    icon: Shield,
-    color: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-500/10 border-red-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'Fundamentals',
+    description: 'Build your security foundation with core concepts and threat modeling.',
+    weeks: [6, 8],
+    topics: [
       {
+        id: 'security-fundamentals/principles',
         name: 'Security Principles',
-        description: 'Learn CIA triad, defense in depth, least privilege, and zero trust concepts',
-        icon: Shield,
+        description: 'Learn CIA triad, defense in depth, least privilege, and zero trust concepts.',
         priority: 'essential',
-        estimatedHours: 15,
-        link: '/guides/security-principles',
+        hours: 15,
+        resources: [guide('security-principles'), quiz('network-security-quiz')],
       },
       {
+        id: 'security-fundamentals/owasp-top-10',
         name: 'OWASP Top 10',
-        description: 'Understand the most critical web application security risks',
-        icon: AlertTriangle,
+        description: 'Understand the most critical web application security risks.',
         priority: 'essential',
-        estimatedHours: 20,
-        link: '/guides/owasp-top-10',
-     },
-     {
-       name: 'Threat Modeling',
-       description: 'Learn STRIDE, DREAD, and attack tree methodologies',
-       icon: Bug,
-       priority: 'important',
-       estimatedHours: 15,
-        link: '/guides/threat-modeling',
-     },
-     {
-        name: 'Linux Security Basics',
-        description: 'File permissions, user management, SSH hardening, and firewall basics',
-        link: '/checklists/ssh-hardening',
-        simulators: [{ name: 'Linux Terminal', link: '/games/linux-terminal' }],
-        icon: Terminal,
-        priority: 'essential',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          guide('owasp-top-10'),
+          ext('OWASP Top Ten project', 'https://owasp.org/www-project-top-ten/'),
+        ],
       },
       {
-       name: 'Cryptography Essentials',
-       description: 'Symmetric/asymmetric encryption, hashing, TLS/SSL, and PKI basics',
-       icon: Key,
-       priority: 'important',
-       estimatedHours: 15,
-       link: '/guides/cryptography-essentials',
-     },
+        id: 'security-fundamentals/threat-modeling',
+        name: 'Threat Modeling',
+        description: 'Learn STRIDE, DREAD, and attack tree methodologies.',
+        priority: 'important',
+        hours: 15,
+        resources: [
+          guide('threat-modeling'),
+          ext(
+            'OWASP Threat Modeling Cheat Sheet',
+            'https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html'
+          ),
+        ],
+      },
+      {
+        id: 'security-fundamentals/linux',
+        name: 'Linux Security Basics',
+        description: 'File permissions, user management, SSH hardening, and firewall basics.',
+        priority: 'essential',
+        hours: 20,
+        resources: [
+          part('introduction-to-linux', '06-user-management'),
+          post('alpine-openssh-password-bypass'),
+          sim('linux-terminal'),
+          lab('linux-server-security'),
+          checklist('ssh-hardening'),
+        ],
+      },
+      {
+        id: 'security-fundamentals/cryptography',
+        name: 'Cryptography Essentials',
+        description: 'Symmetric and asymmetric encryption, hashing, TLS/SSL, and PKI basics.',
+        priority: 'important',
+        hours: 15,
+        resources: [
+          guide('cryptography-essentials'),
+          post('base64-explained'),
+          post('lets-encrypt-64-day-certificates-renewal-check'),
+          sim('ssl-tls-handshake'),
+        ],
+      },
     ],
     project: {
       name: 'Security Assessment Report',
-      description: 'Perform a basic security assessment on a sample application using OWASP guidelines',
-      difficulty: 'easy',
+      description:
+        'Perform a basic security assessment on a sample application using OWASP guidelines.',
+      difficulty: 'beginner',
     },
     outcomes: [
       'Identify common security vulnerabilities',
@@ -131,58 +94,63 @@ export const milestones: DevSecOpsMilestone[] = [
   {
     id: 'secure-development',
     title: 'Secure Development',
-    subtitle: 'Month 2-3',
-    description: 'Shift security left by integrating security into the development process',
-    icon: Code,
-    color: 'text-orange-600 dark:text-orange-400',
-    bgColor: 'bg-orange-500/10 border-orange-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'Secure dev',
+    description: 'Shift security left by integrating security into the development process.',
+    weeks: [6, 8],
+    topics: [
       {
+        id: 'secure-development/secure-coding',
         name: 'Secure Coding Practices',
-        description: 'Input validation, output encoding, parameterized queries, and error handling',
-        icon: Code,
+        description:
+          'Input validation, output encoding, parameterized queries, and error handling.',
         priority: 'essential',
-        estimatedHours: 25,
-        link: '/posts/secure-coding-practices-guide',
+        hours: 25,
+        resources: [
+          post('secure-coding-practices-guide'),
+          post('postgres-row-level-security-multi-tenant'),
+          post('authorization-if-statements-vs-cerbos-vs-spicedb'),
+        ],
       },
-     {
-       name: 'SAST Tools',
-       description: 'Static Application Security Testing with SonarQube, Semgrep, or CodeQL',
-       icon: FileSearch,
-       priority: 'essential',
-       estimatedHours: 20,
-       link: '/guides/sast-tools',
-     },
       {
+        id: 'secure-development/sast',
+        name: 'SAST Tools',
+        description: 'Static Application Security Testing with SonarQube, Semgrep, or CodeQL.',
+        priority: 'essential',
+        hours: 20,
+        resources: [guide('sast-tools')],
+      },
+      {
+        id: 'secure-development/dependency-scanning',
         name: 'Dependency Scanning',
-        description: 'Find vulnerable dependencies with Dependabot, Snyk, or OWASP Dependency-Check',
-        icon: Scan,
+        description:
+          'Find vulnerable dependencies with Dependabot, Snyk, or OWASP Dependency-Check.',
         priority: 'essential',
-        estimatedHours: 10,
-       link: '/posts/dependency-scanning-guide',
+        hours: 10,
+        resources: [post('dependency-scanning-guide'), post('npm-v12-install-scripts-audit')],
       },
       {
+        id: 'secure-development/pre-commit-hooks',
         name: 'Pre-commit Hooks',
-        description: 'Implement security checks before code is committed using git hooks',
-        icon: GitBranch,
+        description: 'Implement security checks before code is committed using git hooks.',
         priority: 'important',
-        estimatedHours: 8,
-        link: '/posts/pre-commit-hooks-security-guide',
+        hours: 8,
+        resources: [post('pre-commit-hooks-security-guide')],
       },
       {
+        id: 'secure-development/code-review',
         name: 'Code Review for Security',
-        description: 'Learn to identify security issues during code reviews',
-        icon: Eye,
+        description: 'Learn to identify security issues during code reviews.',
         priority: 'important',
-        estimatedHours: 15,
-        link: '/posts/security-focused-code-reviews',
+        hours: 15,
+        resources: [post('security-focused-code-reviews'), lab('git-workflow-collaboration')],
       },
     ],
     project: {
       name: 'Secure Code Pipeline',
-      description: 'Set up a CI pipeline with SAST, dependency scanning, and pre-commit security hooks',
-      difficulty: 'medium',
+      description:
+        'Set up a CI pipeline with SAST, dependency scanning, and pre-commit security hooks.',
+      difficulty: 'intermediate',
+      practice: lab('ci-cd-github-actions'),
     },
     outcomes: [
       'Write secure code following best practices',
@@ -199,58 +167,76 @@ export const milestones: DevSecOpsMilestone[] = [
   {
     id: 'pipeline-security',
     title: 'CI/CD Security',
-    subtitle: 'Month 3-4',
-    description: 'Secure your build and deployment pipelines from threats',
-    icon: Workflow,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bgColor: 'bg-yellow-500/10 border-yellow-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'CI/CD security',
+    description: 'Secure your build and deployment pipelines from threats.',
+    weeks: [6, 8],
+    topics: [
       {
-       name: 'Pipeline Hardening',
-       description: 'Secure CI/CD configurations, runner isolation, and artifact signing',
-        link: '/posts/cicd-pipeline-hardening-guide',
-       icon: Workflow,
-       priority: 'essential',
-        estimatedHours: 20,
+        id: 'pipeline-security/hardening',
+        name: 'Pipeline Hardening',
+        description: 'Secure CI/CD configurations, runner isolation, and artifact signing.',
+        priority: 'essential',
+        hours: 20,
+        resources: [
+          post('cicd-pipeline-hardening-guide'),
+          part('introduction-to-cicd', '09-security-best-practices-and-production-patterns'),
+          lab('ci-cd-github-actions'),
+          checklist('cicd-pipeline-setup'),
+        ],
       },
       {
+        id: 'pipeline-security/secrets',
         name: 'Secrets Management',
-        description: 'HashiCorp Vault, AWS Secrets Manager, or Azure Key Vault for secure secrets',
-        icon: Key,
+        description: 'HashiCorp Vault, AWS Secrets Manager, or Azure Key Vault for secure secrets.',
         priority: 'essential',
-        estimatedHours: 25,
-        link: '/posts/secrets-management-guide',
+        hours: 25,
+        resources: [
+          post('secrets-management-guide'),
+          post('hashicorp-vault-secrets-management-best-practices'),
+          post('you-cannot-rotate-a-secret-you-cannot-find'),
+          lab('infrastructure-security-vault-sops'),
+          quiz('vault-secrets-management-quiz'),
+          cards('vault-secrets-management'),
+          checklist('hashicorp-vault-secrets-management'),
+        ],
       },
       {
+        id: 'pipeline-security/dast',
         name: 'DAST Integration',
-        description: 'Dynamic Application Security Testing with OWASP ZAP or Burp Suite',
-        icon: Bug,
+        description: 'Dynamic Application Security Testing with OWASP ZAP or Burp Suite.',
         priority: 'important',
-        estimatedHours: 20,
-        link: '/posts/dast-integration-guide',
+        hours: 20,
+        resources: [
+          post('dast-integration-guide'),
+          ext('ZAP docs', 'https://www.zaproxy.org/docs/'),
+        ],
       },
       {
+        id: 'pipeline-security/supply-chain',
         name: 'Supply Chain Security',
-        description: 'SBOM generation, artifact verification, and Sigstore/cosign',
-        icon: Network,
-       priority: 'important',
-       estimatedHours: 15,
-       link: '/posts/software-supply-chain-security',
-     },
-     {
+        description: 'SBOM generation, artifact verification, and Sigstore/cosign.',
+        priority: 'important',
+        hours: 15,
+        resources: [
+          post('software-supply-chain-security'),
+          post('axios-supply-chain-attack-what-happened-and-what-to-do'),
+          ext('Sigstore docs', 'https://docs.sigstore.dev/'),
+        ],
+      },
+      {
+        id: 'pipeline-security/gates',
         name: 'Security Gates',
-        description: 'Implement quality gates that block deployments on security failures',
-        icon: ShieldAlert,
+        description: 'Implement quality gates that block deployments on security failures.',
         priority: 'essential',
-        estimatedHours: 10,
-        link: '/guides/security-gates',
+        hours: 10,
+        resources: [guide('security-gates'), checklist('production-deployment')],
       },
     ],
     project: {
       name: 'Secure CI/CD Pipeline',
-      description: 'Build a complete pipeline with secrets management, DAST, and security gates',
-      difficulty: 'medium',
+      description: 'Build a complete pipeline with secrets management, DAST, and security gates.',
+      difficulty: 'intermediate',
+      practice: lab('infrastructure-security-vault-sops'),
     },
     outcomes: [
       'Design and implement secure CI/CD pipelines',
@@ -259,7 +245,7 @@ export const milestones: DevSecOpsMilestone[] = [
       'Generate and verify software bills of materials',
     ],
     tips: [
-      'Treat pipeline configurations as code - version control and review them',
+      'Treat pipeline configurations as code: version control and review them',
       'Never store secrets in environment variables visible in logs',
       'Use ephemeral build environments when possible',
     ],
@@ -267,60 +253,84 @@ export const milestones: DevSecOpsMilestone[] = [
   {
     id: 'container-security',
     title: 'Container Security',
-    subtitle: 'Month 4-5',
-    description: 'Secure containerized applications from build to runtime',
-    icon: Container,
-    color: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-500/10 border-blue-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'Containers',
+    description: 'Secure containerized applications from build to runtime.',
+    weeks: [6, 8],
+    topics: [
       {
+        id: 'container-security/images',
         name: 'Image Security',
-        description: 'Build minimal images, scan with Trivy/Grype, and use trusted base images',
-        link: '/checklists/docker-security',
-        icon: Container,
+        description: 'Build minimal images, scan with Trivy/Grype, and use trusted base images.',
         priority: 'essential',
-        estimatedHours: 20,
-      },
-      {
-        name: 'Container Runtime Security',
-        description: 'Seccomp, AppArmor, read-only filesystems, and non-root users',
-        icon: Lock,
-        priority: 'essential',
-        estimatedHours: 20,
-      },
-      {
-        name: 'Kubernetes Security',
-        description: 'RBAC, Network Policies, Pod Security Standards, and admission controllers',
-        link: '/checklists/kubernetes-security',
-        simulators: [
-          { name: 'Kubernetes Terminal', link: '/games/kubernetes-terminal-simulator' },
-          { name: 'K8s Network Policies', link: '/games/kubernetes-networking-cni-simulator' },
+        hours: 20,
+        resources: [
+          post('docker-security-best-practices'),
+          post('why-your-base-image-has-1684-cves'),
+          lab('docker-multi-stage-build'),
+          challenge('shrink-the-image'),
+          checklist('docker-security'),
         ],
-        icon: Server,
+      },
+      {
+        id: 'container-security/runtime',
+        name: 'Container Runtime Security',
+        description: 'Seccomp, AppArmor, read-only filesystems, and non-root users.',
         priority: 'essential',
-        estimatedHours: 30,
+        hours: 20,
+        resources: [
+          post('security-profiles-operator-seccomp-boundary'),
+          post('ghostlock-cve-2026-43499-container-boundary'),
+          post('copy-fail-cve-2026-31431-linux-container-escape'),
+          sim('docker-escape'),
+          sim('docker-under-the-hood-simulator'),
+        ],
       },
       {
+        id: 'container-security/kubernetes',
+        name: 'Kubernetes Security',
+        description: 'RBAC, Network Policies, Pod Security Standards, and admission controllers.',
+        priority: 'essential',
+        hours: 30,
+        resources: [
+          post('hostnetwork-footgun-cve-2026-32193'),
+          sim('kubernetes-terminal-simulator'),
+          sim('k8s-rbac-simulator'),
+          sim('kubernetes-networking-cni-simulator'),
+          cards('pod-security-standards-kubernetes'),
+          checklist('kubernetes-security'),
+        ],
+      },
+      {
+        id: 'container-security/threat-detection',
         name: 'Runtime Threat Detection',
-        description: 'Falco, Sysdig, or Aqua for detecting anomalous container behavior',
-        icon: Eye,
+        description: 'Falco, Sysdig, or Aqua for detecting anomalous container behavior.',
         priority: 'important',
-        estimatedHours: 15,
+        hours: 15,
+        resources: [
+          ext('Falco docs', 'https://falco.org/docs/'),
+          quiz('ebpf-network-observability-quiz'),
+          cards('ebpf-network-observability'),
+        ],
       },
       {
+        id: 'container-security/service-mesh',
         name: 'Service Mesh Security',
-        description: 'mTLS, authorization policies, and traffic encryption with Istio or Linkerd',
-        simulators: [{ name: 'Service Mesh', link: '/games/service-mesh-simulator' }],
-        icon: Network,
+        description: 'mTLS, authorization policies, and traffic encryption with Istio or Linkerd.',
         priority: 'nice-to-have',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          ext('Istio security concepts', 'https://istio.io/latest/docs/concepts/security/'),
+          sim('service-mesh-simulator'),
+          checklist('istio-traffic-management'),
+        ],
       },
     ],
     project: {
       name: 'Secure Kubernetes Deployment',
-      description: 'Deploy an application to Kubernetes with all security best practices implemented',
-      difficulty: 'hard',
+      description:
+        'Deploy an application to Kubernetes with all security best practices implemented.',
+      difficulty: 'advanced',
+      practice: checklist('kubernetes-security'),
     },
     outcomes: [
       'Build and scan secure container images',
@@ -337,59 +347,83 @@ export const milestones: DevSecOpsMilestone[] = [
   {
     id: 'cloud-security',
     title: 'Cloud Security',
-    subtitle: 'Month 5-6',
-    description: 'Secure cloud infrastructure and implement cloud-native security controls',
-    icon: Cloud,
-    color: 'text-purple-600 dark:text-purple-400',
-    bgColor: 'bg-purple-500/10 border-purple-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'Cloud',
+    description: 'Secure cloud infrastructure and implement cloud-native security controls.',
+    weeks: [6, 8],
+    topics: [
       {
+        id: 'cloud-security/iam',
         name: 'IAM Best Practices',
-        description: 'Least privilege, role-based access, and identity federation',
-        link: '/checklists/aws-security',
-        simulators: [{ name: 'OAuth / OIDC Flow', link: '/games/oauth-oidc-flow-simulator' }],
-        icon: Fingerprint,
+        description: 'Least privilege, role-based access, and identity federation.',
         priority: 'essential',
-        estimatedHours: 25,
-      },
-      {
-        name: 'Infrastructure as Code Security',
-        description: 'Scan Terraform/CloudFormation with Checkov, tfsec, or KICS',
-        icon: FileText,
-        priority: 'essential',
-        estimatedHours: 15,
-      },
-      {
-        name: 'Cloud Security Posture',
-        description: 'CSPM tools like Prowler, ScoutSuite, or cloud-native solutions',
-        icon: ShieldCheck,
-        priority: 'important',
-        estimatedHours: 20,
-      },
-      {
-        name: 'Data Protection',
-        description: 'Encryption at rest/in transit, key management, and data classification',
-        icon: Database,
-        priority: 'essential',
-        estimatedHours: 15,
-      },
-      {
-        name: 'Network Security',
-        description: 'VPCs, security groups, WAF, and DDoS protection',
-        simulators: [
-          { name: 'DDoS Defense', link: '/games/ddos-simulator' },
-          { name: 'Rate Limiting', link: '/games/rate-limit-simulator' },
+        hours: 25,
+        resources: [
+          part('introduction-to-aws', '02-iam-security'),
+          post('minimum-aws-permissions-for-terraform'),
+          sim('oauth-oidc-flow-simulator'),
+          checklist('aws-security'),
         ],
-        icon: Globe,
+      },
+      {
+        id: 'cloud-security/iac',
+        name: 'Infrastructure as Code Security',
+        description: 'Scan Terraform/CloudFormation with Checkov, tfsec, or KICS.',
+        priority: 'essential',
+        hours: 15,
+        resources: [
+          post('infrastructure-as-code-fundamentals'),
+          post('terraform-plan-gate-digitalocean-inference'),
+          ext('Checkov', 'https://www.checkov.io/'),
+        ],
+      },
+      {
+        id: 'cloud-security/posture',
+        name: 'Cloud Security Posture',
+        description: 'CSPM tools like Prowler, ScoutSuite, or cloud-native solutions.',
         priority: 'important',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          post('ec2-imdsv1-enabled-metric'),
+          ext('Prowler docs', 'https://docs.prowler.com/'),
+          checklist('aws-well-architected'),
+        ],
+      },
+      {
+        id: 'cloud-security/data-protection',
+        name: 'Data Protection',
+        description: 'Encryption at rest and in transit, key management, and data classification.',
+        priority: 'essential',
+        hours: 15,
+        resources: [
+          ext(
+            'AWS KMS developer guide',
+            'https://docs.aws.amazon.com/kms/latest/developerguide/overview.html'
+          ),
+          lab('nginx-web-deployment'),
+        ],
+      },
+      {
+        id: 'cloud-security/network',
+        name: 'Network Security',
+        description: 'VPCs, security groups, WAF, and DDoS protection.',
+        priority: 'important',
+        hours: 20,
+        resources: [
+          part('introduction-to-aws', '05-vpc-networking'),
+          post('designing-rate-limiting-for-apis'),
+          sim('aws-vpc-simulator'),
+          sim('ddos-simulator'),
+          sim('rate-limit-simulator'),
+          lab('terraform-aws-vpc'),
+        ],
       },
     ],
     project: {
       name: 'Secure Cloud Architecture',
-      description: 'Design and implement a secure multi-tier cloud architecture following Well-Architected Framework',
-      difficulty: 'hard',
+      description:
+        'Design and implement a secure multi-tier cloud architecture following the Well-Architected Framework.',
+      difficulty: 'advanced',
+      practice: lab('terraform-aws-vpc'),
     },
     outcomes: [
       'Design IAM policies following least privilege',
@@ -406,54 +440,80 @@ export const milestones: DevSecOpsMilestone[] = [
   {
     id: 'security-operations',
     title: 'Security Operations',
-    subtitle: 'Month 6-7',
-    description: 'Monitor, detect, and respond to security incidents effectively',
-    icon: Eye,
-    color: 'text-green-600 dark:text-green-400',
-    bgColor: 'bg-green-500/10 border-green-500/20',
-    timeframe: '6-8 weeks',
-    skills: [
+    shortTitle: 'SecOps',
+    description: 'Monitor, detect, and respond to security incidents effectively.',
+    weeks: [6, 8],
+    topics: [
       {
+        id: 'security-operations/monitoring',
         name: 'Security Monitoring',
-        description: 'SIEM concepts, log aggregation, and security dashboards',
-        link: '/checklists/monitoring-observability',
-        icon: Eye,
+        description: 'SIEM concepts, log aggregation, and security dashboards.',
         priority: 'essential',
-        estimatedHours: 25,
+        hours: 25,
+        resources: [
+          sim('log-aggregation-pipeline-simulator'),
+          lab('prometheus-grafana-monitoring'),
+          challenge('write-the-alerts'),
+          checklist('monitoring-observability'),
+        ],
       },
       {
+        id: 'security-operations/incident-response',
         name: 'Incident Response',
-        description: 'IR playbooks, containment strategies, and post-incident reviews',
-        icon: AlertTriangle,
+        description: 'IR playbooks, containment strategies, and post-incident reviews.',
         priority: 'essential',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          post('the-postmortem-nobody-reads'),
+          post('on-call-rotation-escalation-policy-guide'),
+          sim('incident-commander-simulator'),
+          quiz('security-incident-response-quiz'),
+          quiz('incident-response-quiz'),
+          checklist('on-call-rotation-escalation-policy'),
+        ],
       },
       {
+        id: 'security-operations/vulnerability-management',
         name: 'Vulnerability Management',
-        description: 'Vulnerability scanning, prioritization, and remediation workflows',
-        icon: Bug,
+        description: 'Vulnerability scanning, prioritization, and remediation workflows.',
         priority: 'essential',
-        estimatedHours: 15,
+        hours: 15,
+        resources: [
+          post('node-october-2026-security-release-find-every-node'),
+          post('php2shell-check-every-php-is-patched'),
+          post('why-your-base-image-has-1684-cves'),
+          ext(
+            'CISA Known Exploited Vulnerabilities',
+            'https://www.cisa.gov/known-exploited-vulnerabilities-catalog'
+          ),
+        ],
       },
       {
+        id: 'security-operations/compliance',
         name: 'Compliance Automation',
-        description: 'Automate compliance checks for SOC2, PCI-DSS, HIPAA, or ISO 27001',
-        icon: FileText,
+        description: 'Automate compliance checks for SOC2, PCI-DSS, HIPAA, or ISO 27001.',
         priority: 'important',
-        estimatedHours: 20,
+        hours: 20,
+        resources: [
+          post('soc2-evidence-from-github-and-terraform'),
+          ext('Open Policy Agent docs', 'https://www.openpolicyagent.org/docs'),
+        ],
       },
       {
+        id: 'security-operations/metrics',
         name: 'Security Metrics',
-        description: 'Track MTTD, MTTR, vulnerability counts, and security debt',
-        icon: Target,
+        description: 'Track MTTD, MTTR, vulnerability counts, and security debt.',
         priority: 'important',
-        estimatedHours: 10,
+        hours: 10,
+        resources: [post('dora-metrics-from-git-history')],
       },
     ],
     project: {
       name: 'Security Operations Center',
-      description: 'Set up monitoring, alerting, and incident response procedures for a production environment',
-      difficulty: 'hard',
+      description:
+        'Set up monitoring, alerting, and incident response procedures for a production environment.',
+      difficulty: 'advanced',
+      practice: lab('prometheus-grafana-monitoring'),
     },
     outcomes: [
       'Set up centralized security monitoring',
@@ -462,10 +522,9 @@ export const milestones: DevSecOpsMilestone[] = [
       'Track and report on security metrics',
     ],
     tips: [
-      'Start small - you cannot monitor everything from day one',
+      'Start small. You cannot monitor everything from day one.',
       'Practice incident response with tabletop exercises',
       'Build relationships with development teams, not walls',
     ],
   },
 ];
-

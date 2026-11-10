@@ -7,13 +7,18 @@ import {
   roadmapStages,
   type RoadmapStage,
 } from '@/lib/roadmap-data';
-import { resolveRoadmap } from '@/lib/roadmap-resources';
+import { resolveRoadmap, resolveSyllabus } from '@/lib/roadmap-resources';
 import {
   nextTopicId,
   parseProgress,
+  progressKey,
+  PROGRESS_KEY,
   summarize,
   type RoadmapProgress,
 } from '@/lib/roadmap-progress';
+import { getSyllabusTotals, type SyllabusStage } from '@/lib/roadmap-syllabus';
+import { juniorStages } from '@/lib/roadmap-junior-data';
+import { devsecopsStages } from '@/lib/roadmap-devsecops-data';
 
 const ROOT = process.cwd();
 const topics = roadmapStages.flatMap((s) => s.topics);
@@ -32,6 +37,9 @@ const ROUTES: Record<string, string> = {
 
 function routeFileFor(href: string): string | null {
   const [, section, slug, ...rest] = href.split('/');
+  if (section === 'guides' && rest.length === 1 && rest[0]) {
+    return 'app/guides/[slug]/[part]/page.tsx';
+  }
   if (rest.length || !slug) return null;
   if (section === 'games') return `app/games/${slug}/page.tsx`;
   return ROUTES[section] ?? null;
@@ -212,6 +220,109 @@ describe('roadmap progress', () => {
     );
     expect(nextTopicId({ topics: { 'containers/helm': 'progress' } }, tracked)).toBe(
       'containers/helm'
+    );
+  });
+});
+
+const SYLLABI: [string, SyllabusStage[], string[], Record<string, number>][] = [
+  [
+    'junior',
+    juniorStages,
+    [
+      'Foundation',
+      'Version Control & Collaboration',
+      'Containers',
+      'CI/CD Pipelines',
+      'Cloud Basics',
+    ],
+    { stages: 5, topics: 16, projects: 5, minWeeks: 21, maxWeeks: 32 },
+  ],
+  [
+    'devsecops',
+    devsecopsStages,
+    [
+      'Security Fundamentals',
+      'Secure Development',
+      'CI/CD Security',
+      'Container Security',
+      'Cloud Security',
+      'Security Operations',
+    ],
+    { stages: 6, topics: 30, projects: 6, minWeeks: 36, maxWeeks: 48 },
+  ],
+];
+
+describe.each(SYLLABI)('%s roadmap', (slug, stages, titles, totals) => {
+  const syllabusTopics = stages.flatMap((s) => s.topics);
+
+  it('resolves every resource to content that exists', async () => {
+    const resolved = await resolveSyllabus(stages);
+    const all = resolved.flatMap((s) => [
+      ...s.topics.flatMap((t) => t.resources),
+      ...(s.project.practice ? [s.project.practice] : []),
+    ]);
+    const internal = all.filter((r) => r.type !== 'external');
+    expect(internal.length).toBeGreaterThan(30);
+    for (const resource of internal) {
+      const file = routeFileFor(resource.href);
+      expect(file, `no route for ${resource.href}`).not.toBeNull();
+      expect(existsSync(path.join(ROOT, file!)), `missing ${file} for ${resource.href}`).toBe(true);
+      expect(resource.title.length, resource.href).toBeGreaterThan(0);
+    }
+    for (const r of all.filter((r) => r.type === 'external')) {
+      expect(r.href).toMatch(/^https:\/\/[^/]+\.[a-z]+/);
+    }
+  });
+
+  it('fails on a slug that does not exist', async () => {
+    const broken = [
+      {
+        ...stages[0],
+        topics: [
+          {
+            ...stages[0].topics[0],
+            resources: [{ type: 'guide' as const, slug: 'introduction-to-git/99-nope' }],
+          },
+        ],
+      },
+    ];
+    await expect(resolveSyllabus(broken)).rejects.toThrow(/99-nope/);
+  });
+
+  it('keeps the stage names and gives every topic a stable id', () => {
+    expect(stages.map((s) => s.title)).toEqual(titles);
+    expect(new Set(syllabusTopics.map((t) => t.id)).size).toBe(syllabusTopics.length);
+    for (const stage of stages) {
+      expect(stage.id).toMatch(/^[a-z0-9-]+$/);
+      for (const topic of stage.topics) {
+        expect(topic.id).toMatch(new RegExp(`^${stage.id}/[a-z0-9-]+$`));
+        const keys = topic.resources.map((r) =>
+          r.type === 'external' ? r.href : `${r.type}:${r.slug}`
+        );
+        expect(new Set(keys).size, topic.id).toBe(keys.length);
+      }
+    }
+  });
+
+  it('derives the totals the hero shows', () => {
+    expect(getSyllabusTotals(stages)).toMatchObject(totals);
+  });
+
+  it('keeps its progress apart from the other roadmaps', () => {
+    expect(progressKey(slug as 'junior' | 'devsecops')).toBe(`roadmap-progress:${slug}:v1`);
+    expect(progressKey(slug as 'junior' | 'devsecops')).not.toBe(PROGRESS_KEY);
+    const ids = new Set(syllabusTopics.map((t) => t.id));
+    const parsed = parseProgress(
+      { topics: { [syllabusTopics[0].id]: 'done', 'fundamentals/linux': 'done' } },
+      ids
+    );
+    expect(parsed.topics).toEqual({ [syllabusTopics[0].id]: 'done' });
+  });
+
+  it('suggests topics in order when they have no kind', () => {
+    expect(nextTopicId({ topics: {} }, syllabusTopics)).toBe(syllabusTopics[0].id);
+    expect(nextTopicId({ topics: { [syllabusTopics[0].id]: 'skip' } }, syllabusTopics)).toBe(
+      syllabusTopics[1].id
     );
   });
 });
