@@ -7,6 +7,7 @@ import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simul
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import DatabaseReplicationShardingScaling from '@/components/games/database-replication-sharding-scaling';
 import MongodbTerminalSimulator from '@/components/games/mongodb-terminal-simulator';
+import TerraformTerminalSimulator from '@/components/games/terraform-terminal-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -58,6 +59,25 @@ async function submitTerminal() {
 async function runMongoCommand(command: string) {
   await typeIntoTerminal(command);
   await submitTerminal();
+}
+
+async function runTerraformCommand(command: string) {
+  await typeIntoTerminal(command);
+  await submitTerminal();
+}
+
+async function editTerraformVariables() {
+  await click('variables.tf', true);
+  await click('Edit', true);
+  const textarea = container.querySelector('textarea[aria-label="Edit variables.tf"]');
+  if (!(textarea instanceof HTMLTextAreaElement)) throw new Error('no variables.tf editor');
+  const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+  if (!setValue) throw new Error('no textarea value setter');
+  await act(async () => {
+    setValue.call(textarea, textarea.value.replace('t3.micro', 't3.small'));
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click('Done', true);
 }
 
 async function advance(ms: number) {
@@ -418,6 +438,54 @@ describe('MongoDB Terminal on the kit', () => {
     expect(completions).toBe(1);
     await click('Lessons', true);
     expect(text()).not.toContain('Lab complete');
+    expect(completions).toBe(1);
+  }, 60_000);
+});
+
+describe('Terraform Terminal on the kit', () => {
+  it('no hero, one terminal input', async () => {
+    await act(async () => root.render(createElement(TerraformTerminalSimulator)));
+
+    expect(text()).not.toContain('Terraform Basics Lab');
+    expect(container.querySelectorAll('input[aria-label="Terminal command"]')).toHaveLength(1);
+  });
+
+  it('Make a change needs a real change', async () => {
+    await act(async () => root.render(createElement(TerraformTerminalSimulator)));
+    await runTerraformCommand('terraform init');
+    await runTerraformCommand('terraform validate');
+    await runTerraformCommand('terraform plan');
+    await runTerraformCommand('terraform apply -auto-approve');
+
+    expect(text()).toContain('Step 1 of 2');
+    await runTerraformCommand('terraform plan');
+    expect(text()).toContain('Step 1 of 2');
+
+    await editTerraformVariables();
+    await runTerraformCommand('terraform plan');
+    expect(text()).toContain('Step 2 of 2');
+  }, 60_000);
+
+  it('one signal, on the ninth command', async () => {
+    await act(async () => root.render(createElement(TerraformTerminalSimulator)));
+    await runTerraformCommand('terraform init');
+    await runTerraformCommand('terraform validate');
+    await runTerraformCommand('terraform plan');
+    await runTerraformCommand('terraform apply -auto-approve');
+    await editTerraformVariables();
+    await runTerraformCommand('terraform plan');
+    await runTerraformCommand('terraform apply -auto-approve');
+    await runTerraformCommand('terraform state list');
+    await runTerraformCommand('terraform output');
+
+    expect(completions).toBe(0);
+    await runTerraformCommand('terraform destroy -auto-approve');
+    expect(completions).toBe(1);
+    expect(text()).toContain('Lab complete');
+
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+    await runTerraformCommand('terraform plan');
     expect(completions).toBe(1);
   }, 60_000);
 });
