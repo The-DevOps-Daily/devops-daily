@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import DatabaseReplicationShardingScaling from '@/components/games/database-replication-sharding-scaling';
+import MongodbTerminalSimulator from '@/components/games/mongodb-terminal-simulator';
 import { GAME_COMPLETE_EVENT } from '@/lib/games/game-complete';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -28,6 +29,55 @@ async function click(label: string, exact = false) {
   );
   if (!button) throw new Error(`no enabled button "${label}"`);
   await act(async () => button.click());
+}
+
+function terminalInput(): HTMLInputElement {
+  const inputs = [
+    ...container.querySelectorAll<HTMLInputElement>('input[aria-label="Terminal command"]'),
+  ];
+  if (inputs.length !== 1) throw new Error(`expected one terminal input, found ${inputs.length}`);
+  return inputs[0];
+}
+
+async function typeIntoTerminal(value: string) {
+  const input = terminalInput();
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  if (!setValue) throw new Error('no input value setter');
+  await act(async () => {
+    setValue.call(input, value);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+}
+
+async function submitTerminal() {
+  const input = terminalInput();
+  if (!input.form) throw new Error('no terminal form');
+  await act(async () => input.form?.requestSubmit());
+}
+
+async function runMongoCommand(command: string) {
+  await typeIntoTerminal(command);
+  await submitTerminal();
+}
+
+async function advance(ms: number) {
+  await act(async () => {
+    vi.advanceTimersByTime(ms);
+  });
+}
+
+async function showAndRunMongoCommand() {
+  await click('Show me', true);
+  await runMongoCommand(terminalInput().value);
+}
+
+async function finishMongoLab() {
+  for (let command = 0; command < 12; command += 1) {
+    await showAndRunMongoCommand();
+    await advance(750);
+  }
+  expect(completions).toBe(0);
+  await showAndRunMongoCommand();
 }
 
 async function chooseVersion(version: 'TLS 1.2' | 'TLS 1.3') {
@@ -335,6 +385,39 @@ describe('Database Replication, Sharding and Scaling on the kit', () => {
     expect(text()).toContain('Missions complete');
 
     await click('Keep exploring', true);
+    expect(completions).toBe(1);
+  }, 60_000);
+});
+
+describe('MongoDB Terminal on the kit', () => {
+  it('no hero, one terminal input, no Run button', async () => {
+    await act(async () => root.render(createElement(MongodbTerminalSimulator)));
+    expect(text()).not.toContain('mongo shell playground');
+    expect(container.querySelectorAll('input[aria-label="Terminal command"]')).toHaveLength(1);
+    expect(
+      [...container.querySelectorAll('button')].some((button) => buttonName(button) === 'Run')
+    ).toBe(false);
+  });
+
+  it('one signal on the last command, before the advance delay', async () => {
+    await act(async () => root.render(createElement(MongodbTerminalSimulator)));
+    await finishMongoLab();
+
+    expect(completions).toBe(1);
+    expect(text()).toContain('Lab complete');
+    await click('Keep exploring', true);
+    expect(completions).toBe(1);
+  }, 60_000);
+
+  it('challenges never signal, and coming back does not show the card again', async () => {
+    await act(async () => root.render(createElement(MongodbTerminalSimulator)));
+    await finishMongoLab();
+    expect(completions).toBe(1);
+
+    await click('Try the challenges', true);
+    expect(completions).toBe(1);
+    await click('Lessons', true);
+    expect(text()).not.toContain('Lab complete');
     expect(completions).toBe(1);
   }, 60_000);
 });

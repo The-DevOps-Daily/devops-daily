@@ -10,7 +10,6 @@ import KubernetesTerminalSimulator, {
   LESSONS as K8S_LESSONS,
 } from '@/components/games/kubernetes-terminal-simulator';
 import LinuxTerminal, { LESSONS as LINUX_LESSONS } from '@/components/games/linux-terminal';
-import MongoDbTerminalSimulator from '@/components/games/mongodb-terminal-simulator';
 import PostgresTerminalSimulator, {
   LESSONS as PG_LESSONS,
 } from '@/components/games/postgres-terminal-simulator';
@@ -269,33 +268,6 @@ describe('terminal labs on the kit', () => {
     await click('Lessons', true);
     expect(text()).not.toContain('Lab complete');
     expect(terminalInputs()).toHaveLength(1);
-    expect(completions).toBe(1);
-  }, 60_000);
-});
-
-/** Clicks Run until the lab signals; returns the number of clicks and whether it fired at once. */
-async function runUntilSignal(delayMs: number, max = 80) {
-  for (let i = 1; i <= max; i++) {
-    await click('Run', true);
-    if (completions > 0) {
-      const atOnce = completions === 1;
-      await wait(delayMs + 50);
-      return { clicks: i, atOnce };
-    }
-    await wait(delayMs + 50);
-  }
-  throw new Error('no signal');
-}
-
-describe('the hook for labs not on the kit yet', () => {
-  it('MongoDB still signals once, on the last command', async () => {
-    await render(MongoDbTerminalSimulator);
-    const { atOnce } = await runUntilSignal(700);
-    expect(atOnce).toBe(true);
-    for (let i = 0; i < 3; i++) {
-      await click('Run', true);
-      await wait(750);
-    }
     expect(completions).toBe(1);
   }, 60_000);
 });
