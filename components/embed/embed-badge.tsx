@@ -17,16 +17,16 @@ export function EmbedBadge({ gameSlug, gameTitle }: EmbedBadgeProps) {
 
   return (
     <div
-      // Sits above a simulator's fixed phone bar (SimPhoneBar) instead of covering its buttons.
-      className="fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-2 duration-500 [body:has([data-sim-phone-bar])_&]:bottom-24 lg:[body:has([data-sim-phone-bar])_&]:bottom-4"
-      style={{ pointerEvents: 'auto' }}
+      // A footer line after the game, never an overlay on its controls. The extra bottom
+      // padding keeps it above a simulator's fixed phone bar (SimPhoneBar).
+      className="flex justify-end px-4 pb-4 pt-1 [body:has([data-sim-phone-bar])_&]:pb-24 lg:[body:has([data-sim-phone-bar])_&]:pb-4"
     >
       <a
         href={gameUrl}
         target="_blank"
         rel="noopener"
         title={`${gameTitle} - DevOps Daily`}
-        className="group flex items-center gap-2 px-3 py-2 bg-slate-900/95 hover:bg-slate-800 border border-slate-700 hover:border-blue-500/50 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105"
+        className="group flex items-center gap-2 px-3 py-2 bg-slate-900/95 hover:bg-slate-800 border border-slate-700 hover:border-blue-500/50 rounded-lg transition-colors duration-200"
       >
         {/* Logo */}
         <div className="flex items-center justify-center w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-cyan-500">
