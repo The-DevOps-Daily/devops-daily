@@ -1640,6 +1640,11 @@
 /images/interview-questions/zero-trust-architecture-og.png /images/interview-questions/zero-trust-architecture-og.jpg 301
 /images/comparisons/bitrise-build-hub-vs-github-hosted-runners-og.png /images/comparisons/bitrise-build-hub-vs-github-hosted-runners-og.jpg 301
 /images/posts/github-actions-bill-keeps-growing.png /images/posts/github-actions-bill-keeps-growing.jpg 301
+/images/games/cdn-edge-cache-lab-og.png /images/games/cdn-edge-cache-lab-og.jpg 301
+/images/games/http-versions-lab-og.png /images/games/http-versions-lab-og.jpg 301
+/images/games/email-auth-lab-og.png /images/games/email-auth-lab-og.jpg 301
+/images/games/graphql-dataloader-lab-og.png /images/games/graphql-dataloader-lab-og.jpg 301
+/images/games/idempotency-retry-lab-og.png /images/games/idempotency-retry-lab-og.jpg 301
 
 # Dynamic redirects (splats and placeholders) stay at the end of this file.
 # Cloudflare applies static redirects only when they come before the first
