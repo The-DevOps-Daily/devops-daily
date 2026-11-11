@@ -1,6 +1,6 @@
 ---
-title: 'We Gave an Agent a read_only Neon Role: 23 of 40 Probes Still Worked'
-excerpt: 'A Neon read_only role blocked every INSERT, UPDATE, DELETE and schema change we sent, but over a direct connection 23 of 40 probes still ran, 4 of them durable writes. The read-only MCP mode stopped all 4, not the read that stalled a migration for up to 12.8 seconds.'
+title: 'We Gave an AI Agent a read_only Neon Role. Here Is What It Blocked'
+excerpt: 'A Neon read_only role blocked every INSERT, UPDATE, DELETE and schema change we sent, and the Neon MCP Server with a pinned role stopped every durable write. What still ran comes from standard Postgres defaults, and the real risk was a read that stalled a migration.'
 category:
   name: 'Security'
   slug: 'security'
@@ -28,6 +28,8 @@ The bigger risk was not a write. A 15-second read from the agent held a routine 
 
 ## TLDR
 
+- The Neon MCP Server with `readonly=true` and a pinned `read_only` role stopped every durable write we tried. That is the setup to give an agent.
+- Almost everything that still ran over a direct connection comes from standard Postgres defaults granted to `PUBLIC`, not from Neon. The same probes behave the same way on any Postgres, and a few `REVOKE` statements close most of them.
 - `neon roles create --access read_only` runs plain SQL as the database owner: `SELECT` on the tables that exist, `USAGE` on the schema, and default privileges for the owner's future tables. It does not touch what Postgres grants to `PUBLIC`.
 - Over a direct connection, that role could still create temp tables, call a `SECURITY DEFINER` function that writes, create a large object, change its own role settings, send `NOTIFY`, take advisory locks, and read a signing key from a function body.
 - The Neon MCP Server with `readonly=true&roleName=<role>` wraps each statement in a `READ ONLY` transaction and logs in as the pinned role. That blocked every durable write. `NOTIFY`, advisory locks and reading function source still worked.
