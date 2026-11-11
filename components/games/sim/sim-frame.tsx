@@ -398,8 +398,12 @@ export function SimStage({
             <div
               key={p.id}
               ref={p.scrollRef}
+              // A scrolling column must be reachable by keyboard even when it holds no control.
+              tabIndex={0}
+              role={typeof p.label === 'string' ? 'region' : undefined}
+              aria-label={typeof p.label === 'string' ? p.label : undefined}
               className={cn(
-                'min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]',
+                'min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 p.className
               )}
             >
@@ -417,7 +421,7 @@ export function SimStage({
             aria-label={tabsLabel}
           >
             {tabs.map((p) => (
-              <TabsTrigger key={p.id} value={p.id} className="h-9 gap-1.5">
+              <TabsTrigger key={p.id} value={p.id} className="h-9 gap-1.5 text-foreground/80">
                 {p.label}
                 {p.badge}
               </TabsTrigger>
