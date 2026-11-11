@@ -35,6 +35,7 @@ package-lock.json
 /public/guides/
 /public/advent-of-devops/
 /public/comparisons/
+/public/cli/
 
 # local/editor backup files
 *.orig

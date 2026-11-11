@@ -1,0 +1,502 @@
+{
+  "schema": 1,
+  "source": "30 Days of Real-World DevOps Problems, answered days only",
+  "incidents": [
+    {
+      "id": "day-01",
+      "title": "502s on every rollout",
+      "topic": "Pod termination races load balancer deregistration",
+      "difficulty": "Intermediate",
+      "technologies": ["Kubernetes", "AWS ALB", "Deployments"],
+      "scenario": "Your API runs on Kubernetes behind an AWS Application Load Balancer (target type: ip).\n\nEvery rolling deployment produces about 10 seconds of 502 errors. Never during normal traffic. Only during rollouts.\n\nReadiness probes pass. New pods are healthy before old ones are removed. The app exits as soon as it receives SIGTERM.\n\nWhat fixes it?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Raise replicas from 4 to 8 so fewer requests land on a pod that is shutting down"
+        },
+        {
+          "key": "B",
+          "text": "Add a preStop sleep and make the app drain in-flight requests on SIGTERM"
+        },
+        {
+          "key": "C",
+          "text": "Lower the readiness probe period to 1 second so old pods leave the endpoints faster"
+        },
+        {
+          "key": "D",
+          "text": "Switch the Deployment strategy to Recreate so old and new pods never overlap"
+        }
+      ],
+      "correct": "B",
+      "fix": "When Kubernetes deletes a pod, shutdown and endpoint updates happen independently: the kubelet runs the preStop hook and then sends SIGTERM, while the control plane marks the pod's endpoint as terminating and not ready. That update is not instant for the load balancer. The AWS Load Balancer Controller has to see the change and deregister the target, and the ALB keeps sending new requests until that takes effect.\n\nYour app exits on SIGTERM right away. For a few seconds the ALB still routes requests to an IP where nothing is listening, and those requests come back as 502.\n\nThe fix is to stay alive longer than the slowest part of that chain:\n- a preStop hook that sleeps (10 to 20 seconds is common)\n- terminationGracePeriodSeconds longer than the sleep plus your drain time\n- an app that stops accepting new connections and finishes in-flight requests on SIGTERM\n\nA) More replicas spread the errors thinner. Every rollout still drops requests.\nC) Readiness does not help here. Termination marks the endpoint not ready whatever the probe says. The delay is in the controller and the load balancer, not the probe.\nD) Recreate stops all old pods before new ones start. You trade 10 seconds of 502s for real downtime.\n\nThe mental model: Kubernetes updates the endpoints and stops the pod at the same time. Your shutdown has to outlast the propagation, not race it.",
+      "lesson": "Endpoint updates and container shutdown happen in parallel. Make shutdown outlast the load balancer's view of the pod.",
+      "linkTitle": "Kubernetes Beyond the Basics: 7 Concepts That Take You From Junior to Mid-Level",
+      "linkUrl": "https://devops-daily.com/posts/kubernetes-concepts-junior-to-mid-level"
+    },
+    {
+      "id": "day-02",
+      "title": "OOMKilled with 18 GiB free",
+      "topic": "Container memory limits are enforced per cgroup, not per node",
+      "difficulty": "Intermediate",
+      "technologies": ["Kubernetes", "Linux cgroups", "JVM"],
+      "scenario": "A Java service on Kubernetes restarts a few times a day.\n\nkubectl describe pod shows:\nLast State: Terminated\nReason: OOMKilled\nExit Code: 137\n\nThe node has 32 GiB of RAM and 18 GiB free. The container's memory limit is 1Gi. Your JVM heap dashboard never goes above 600 MiB. The node's kernel log says: Memory cgroup out of memory: Killed process (java).\n\nWhat is going on?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The node is under memory pressure, so the kubelet is evicting the pod"
+        },
+        {
+          "key": "B",
+          "text": "The memory request is too low, so the pod landed on a crowded node"
+        },
+        {
+          "key": "C",
+          "text": "The heap metric is wrong, and the JVM is leaking heap that the dashboard cannot see"
+        },
+        {
+          "key": "D",
+          "text": "The process hit the 1Gi container limit; the heap is only part of its memory"
+        }
+      ],
+      "correct": "D",
+      "fix": "The kernel enforces the container's memory limit through cgroups. When usage reaches the limit and reclaim cannot free enough, the kernel runs the cgroup OOM killer. Killing the Java process gives OOMKilled with exit code 137 (128 + SIGKILL). Spare memory on the node does not override the limit, and the kernel log line says it was the cgroup, not the node.\n\nThe heap is not the whole JVM. Metaspace, thread stacks (default sizes vary by JVM and platform), the JIT code cache, GC data structures, and direct or native buffers (Netty, compression libraries) all live outside it. A 600 MiB heap leaves only 424 MiB of a 1Gi limit for all of that.\n\nWhat to do:\n- compare the container's working set (container_memory_working_set_bytes) with the limit, not the heap\n- size the heap as a share of the limit, for example -XX:MaxRAMPercentage=60 to 75, and leave headroom for native memory\n- turn on Native Memory Tracking to see the JVM's own native allocations (it does not count every third-party native library)\n\nA) Eviction looks different: the pod status says Evicted and the node reports memory pressure. Here the kernel log names the memory cgroup.\nB) Requests affect scheduling and which pods go first under node memory pressure, but they do not raise the container's hard limit.\nC) The heap may be fine. The memory outside the heap is what the dashboard does not show.\n\nThe mental model: the node's free memory is not your budget. The container limit is.",
+      "lesson": "A container can be OOM-killed at its own limit even when the node has free memory. Measure the container's working set, not just the heap.",
+      "linkTitle": "Kubernetes Beyond the Basics: 7 Concepts That Take You From Junior to Mid-Level",
+      "linkUrl": "https://devops-daily.com/posts/kubernetes-concepts-junior-to-mid-level"
+    },
+    {
+      "id": "day-03",
+      "title": "The NAT Gateway bill",
+      "topic": "S3 traffic from private subnets through a NAT Gateway",
+      "difficulty": "Intermediate",
+      "technologies": ["AWS", "VPC", "S3", "FinOps"],
+      "scenario": "Your AWS bill arrives (us-east-1). One line jumped:\n\nNAT Gateway, data processed: $4,460 (last month: $410)\n\nThe only change: a new nightly job on EC2 instances in private subnets. It reads about 3,000 GB per night from an S3 bucket in the same region. Same-region transfer from S3 to EC2 is free, so nobody expected a cost.\n\nWhich fix removes the NAT charge for this job and keeps the instances private?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Add an S3 gateway VPC endpoint and route the private subnets' S3 traffic through it"
+        },
+        {
+          "key": "B",
+          "text": "Move the job's instances to a public subnet with public IPs so they skip the NAT Gateway"
+        },
+        {
+          "key": "C",
+          "text": "Compress the objects in S3 so the job reads fewer bytes each night"
+        },
+        {
+          "key": "D",
+          "text": "Replace the NAT Gateway with a self-managed NAT instance on a large EC2 type"
+        }
+      ],
+      "correct": "A",
+      "fix": "Same-region transfer from S3 to EC2 is free, but this traffic did not go straight to S3. Instances in a private subnet reach S3's public endpoints through the NAT Gateway, and the NAT Gateway charges for every GB it processes: $0.045 per GB in us-east-1. 3,000 GB a night for 30 nights is 90,000 GB, about $4,050 a month for traffic that was supposed to cost nothing.\n\nAn S3 gateway endpoint adds a route for S3's prefix list to the subnet route tables. The traffic skips the NAT Gateway, and gateway endpoints for S3 and DynamoDB have no hourly or per-GB charge. You can also attach an endpoint policy that limits which buckets are reachable.\n\nB) Public instances can skip the NAT Gateway, but then they are no longer private, and you widened the attack surface to solve a routing problem.\nC) Fewer bytes means a smaller bill, but you still pay the NAT for every byte that is left.\nD) A NAT instance has no per-GB processing fee, but now you run, patch, and size a single point of failure for all outbound traffic. It is a workaround, not a fix.\n\nThe mental model: free data transfer is only free on the path you think it takes. Check the route table, not just the price list.",
+      "lesson": "Data transfer prices depend on the path. Private subnets reach S3 through the NAT Gateway unless a gateway endpoint gives them another route.",
+      "linkTitle": "AWS VPC Networking Simulator",
+      "linkUrl": "https://devops-daily.com/games/aws-vpc-simulator"
+    },
+    {
+      "id": "day-04",
+      "title": "Too many clients at 22% CPU",
+      "topic": "PostgreSQL connection exhaustion after scaling the app",
+      "difficulty": "Intermediate",
+      "technologies": ["PostgreSQL", "Kubernetes", "Connection pooling"],
+      "scenario": "Launch day. You scale your API from 10 to 30 pods to handle the traffic.\n\nTen minutes later, new requests fail with:\nFATAL: sorry, too many clients already\n\nPostgreSQL CPU is 22%. Memory is fine. max_connections is 200. Each API pod opens a connection pool of 10. pg_stat_activity shows most sessions idle between queries.\n\nWhat is the best fix?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Raise max_connections from 200 to 2,000 so every pod gets its full pool"
+        },
+        {
+          "key": "B",
+          "text": "Move PostgreSQL to an instance with twice the CPU and memory so it can take the extra load"
+        },
+        {
+          "key": "C",
+          "text": "Put PgBouncer in transaction mode in front of PostgreSQL and size the pools to the database"
+        },
+        {
+          "key": "D",
+          "text": "Scale back to 10 pods and put a queue in front of the API to absorb the spike"
+        }
+      ],
+      "correct": "C",
+      "fix": "30 pods with 10 connections each want 300 connections. PostgreSQL allows 200 and keeps a few of those for superusers. The immediate failure is connection-slot exhaustion, and pg_stat_activity shows most of those connections sitting idle between queries.\n\nA pooler in transaction mode lets many client connections share a small number of server connections, because a server connection is only held for the length of a transaction. You size the server side to what PostgreSQL handles well (often a small multiple of its CPU cores), and the app can add pods without touching max_connections. Managed options such as RDS Proxy do the same job.\n\nThe caveat: transaction mode cannot keep session state across transactions. Session-level SET, session advisory locks, and LISTEN need care or session pooling. Protocol-level prepared statements need PgBouncer 1.21 or later with max_prepared_statements set. Check your app before you switch.\n\nA) Each PostgreSQL connection is a separate backend process with its own memory. 2,000 mostly idle connections cost memory and make contention worse under load.\nB) CPU is at 22%. With max_connections still at 200, a bigger instance does not remove the cap.\nD) It stops the errors by giving up the capacity you scaled for.\n\nThe mental model: connections are a scarce resource on the database side, even when CPU is not. Multiply pods by pool size every time you change either one.",
+      "lesson": "Pods times pool size is a number the database has to serve. Pool connections in front of PostgreSQL instead of raising max_connections.",
+      "linkTitle": "Serverless killed your connection pool",
+      "linkUrl": "https://devops-daily.com/posts/serverless-killed-your-connection-pool"
+    },
+    {
+      "id": "day-05",
+      "title": "Nine-minute builds for a one-line change",
+      "topic": "Docker layer cache invalidation and cold CI runners",
+      "difficulty": "Intermediate",
+      "technologies": ["Docker", "CI/CD", "BuildKit"],
+      "scenario": "Every CI build of your Node.js service takes 9 minutes, even when the change is one line in the README.\n\nThe Dockerfile:\nFROM node:22\nWORKDIR /app\nCOPY . .\nRUN npm ci\nRUN npm run build\n\nMost of the time is spent in npm ci. CI runners are fresh VMs for every job.\n\nWhat gives you the biggest win?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Copy package files first, run npm ci, copy the source, and export the build cache"
+        },
+        {
+          "key": "B",
+          "text": "Move the pipeline to CI runners with twice the CPU and a faster disk"
+        },
+        {
+          "key": "C",
+          "text": "Switch the base image to node:22-alpine so there is far less to download and build"
+        },
+        {
+          "key": "D",
+          "text": "Run npm ci on the CI host first and COPY the finished node_modules into the image"
+        }
+      ],
+      "correct": "A",
+      "fix": "Docker caches each instruction as a layer and reuses it until something it depends on changes. COPY . . copies the whole repository, so any change, even to the README, invalidates that layer and every layer after it, including npm ci.\n\nCopy only the dependency manifests first, run npm ci, then copy the source. With a reusable cache, npm ci now reruns only when the package files or earlier layers change, not on every source edit.\n\nThere is a second half. A fresh CI VM starts with an empty local cache, so a good layer order alone helps less than you expect. Export the cache and import it on the next run, for example docker buildx build --cache-to type=registry,ref=<image>:buildcache,mode=max --cache-from type=registry,ref=<image>:buildcache . (this needs a builder that supports registry cache, such as the docker-container driver). A .dockerignore that excludes node_modules and build output keeps the build context small too.\n\nB) More CPU makes the same wasted work a little faster.\nC) A smaller base image speeds up pulls, but npm ci still reruns on every change. Alpine also uses musl, so native modules can behave differently.\nD) It can work, but node_modules built on the CI host may not match the image's OS or CPU architecture, and the image is no longer reproducible from the Dockerfile alone.\n\nThe mental model: order Dockerfile instructions from least to most often changed, and remember that on ephemeral runners a cache you do not export does not exist.",
+      "lesson": "Order layers from least to most often changed, and export the build cache when your CI runners start empty.",
+      "linkTitle": "Docker Best Practices (Introduction to Docker guide)",
+      "linkUrl": "https://devops-daily.com/guides/introduction-to-docker/09-docker-best-practices"
+    },
+    {
+      "id": "day-06",
+      "title": "DNS moved, 4% did not",
+      "topic": "Traffic that keeps reaching the old endpoint after a DNS change",
+      "difficulty": "Intermediate",
+      "technologies": ["DNS", "Load balancing", "Networking"],
+      "scenario": "You moved your app to a new load balancer.\n\nThe day before, you lowered the A record's TTL from 3600 to 60. On Monday at 10:00 you pointed the record at the new load balancer.\n\nIt is now Wednesday. 4% of requests still arrive at the old load balancer. dig from three different networks returns the new address.\n\nWhat do you do next?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Wait. DNS propagation can take up to 72 hours to reach every resolver on the internet"
+        },
+        {
+          "key": "B",
+          "text": "Purge the old record using the public resolvers' cache flush pages"
+        },
+        {
+          "key": "C",
+          "text": "Lower the TTL again, from 60 to 5 seconds, so clients refresh faster"
+        },
+        {
+          "key": "D",
+          "text": "Check the old load balancer's logs for who still connects, and keep it forwarding"
+        }
+      ],
+      "correct": "D",
+      "fix": "Lowering the TTL a day ahead gave ordinary caches time to drop the old 3600-second value, and the new 60-second TTL means normal resolver caching cannot explain traffic two days later. Whatever still reaches the old load balancer is holding on to the old address some other way.\n\nCommon causes:\n- long-lived connections (HTTP keep-alive pools, WebSockets, gRPC) that never reconnect\n- clients that cache DNS results in the process for a long time\n- the old IP address hardcoded in a client or proxy configuration\n- a few resolvers that do not honour TTLs\n\nThe old load balancer's access logs help you find them: source IPs, user agents, and paths. Keep the old endpoint forwarding to the new backend, contact the owners of the remaining clients, and switch it off only when the logs show no more traffic.\n\nA) There is no universal 72-hour propagation period. Ordinary caches expire after the TTL they received, which here was at most an hour.\nB) Not the first step. You do not yet know which resolvers the stuck clients use, and flushing unrelated ones does nothing for clients that never look up the name.\nC) A lower TTL does not shorten lifetimes already cached, and it does not move existing connections or pinned addresses.\n\nThe mental model: DNS only moves new lookups. Plan for the clients that never look again, and never switch off the old endpoint until its logs say nobody uses it.",
+      "lesson": "DNS changes only reach clients that look up the name again. Watch the old endpoint's logs before you turn it off.",
+      "linkTitle": "DNS simulator",
+      "linkUrl": "https://devops-daily.com/games/dns-simulator"
+    },
+    {
+      "id": "day-07",
+      "title": "Four nodes free, pod still Pending",
+      "topic": "Zonal EBS volumes pin stateful pods to one availability zone",
+      "difficulty": "Intermediate",
+      "technologies": ["Kubernetes", "AWS EBS", "StatefulSets", "Cluster Autoscaler"],
+      "scenario": "An EKS cluster spans three availability zones with one node group across all three.\n\nThe only node in us-east-1a fails. Your StatefulSet pod, with a 200 GiB EBS volume, is rescheduled and stays Pending. The cluster autoscaler adds a node, in us-east-1b. The pod is still Pending:\n\n0/4 nodes are available: 4 node(s) had volume node affinity conflict.\n\nThe four nodes have plenty of free CPU and memory.\n\nWhat is the right fix?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Delete the PVC so Kubernetes provisions a new volume in a zone that has free nodes"
+        },
+        {
+          "key": "B",
+          "text": "Change the StorageClass to volumeBindingMode: WaitForFirstConsumer"
+        },
+        {
+          "key": "C",
+          "text": "Get a node into us-east-1a, and split the node group so each zone has its own"
+        },
+        {
+          "key": "D",
+          "text": "Give the pod a higher PriorityClass so it can preempt pods on other nodes"
+        }
+      ],
+      "correct": "C",
+      "fix": "An EBS volume lives in one availability zone and can only attach to an instance in that zone. The PersistentVolume carries a node affinity for us-east-1a, so the scheduler can only place this pod on a node in us-east-1a. There is none, so the pod waits.\n\nThe new node in us-east-1b does not help. With one node group spanning three zones, the autoscaler cannot reliably add capacity in a specific zone. The cluster autoscaler documentation recommends one node group per zone for workloads with zonal volumes, together with --balance-similar-node-groups. Then 'add a node in us-east-1a' is something it can actually do.\n\nA) Deleting the PVC does not move the existing volume. With a Delete reclaim policy it can delete the disk itself; with Retain the old data stays behind, detached. Either way the new volume starts empty unless you restore a snapshot.\nB) WaitForFirstConsumer is the right default: it creates new volumes in the zone where the pod is scheduled. It does nothing for a volume that already exists.\nD) Preemption frees space on nodes the pod could use. No usable node exists in us-east-1a, so there is nothing to preempt.\n\nThe mental model: a stateful pod is pinned to the zone its disk lives in. Plan capacity per zone, not per cluster.",
+      "lesson": "Zonal disks pin pods to zones. Give the autoscaler one node group per zone so it can add capacity where the volume is.",
+      "linkTitle": "The anatomy of Kubernetes persistent storage",
+      "linkUrl": "https://devops-daily.com/posts/anatomy-of-kubernetes-persistent-storage"
+    },
+    {
+      "id": "day-08",
+      "title": "A refactor that destroys production",
+      "topic": "Moving a Terraform resource into a module changes its address",
+      "difficulty": "Intermediate",
+      "technologies": ["Terraform", "AWS RDS", "Infrastructure as Code"],
+      "scenario": "You clean up your Terraform code and move the production database into a module. No settings change.\n\nterraform plan says:\n# aws_db_instance.main will be destroyed\n# module.database.aws_db_instance.main will be created\nPlan: 1 to add, 0 to change, 1 to destroy.\n\nWhat is the cleanest fix?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Add lifecycle { prevent_destroy = true } to the database and apply"
+        },
+        {
+          "key": "B",
+          "text": "Add a moved block from aws_db_instance.main to module.database.aws_db_instance.main and run plan again"
+        },
+        {
+          "key": "C",
+          "text": "Apply with -target=module.database so the new database exists before the old one goes away"
+        },
+        {
+          "key": "D",
+          "text": "Remove the old address with terraform state rm, then terraform import the database at the new address"
+        }
+      ],
+      "correct": "B",
+      "fix": "Terraform tracks resources by address. Moving the resource into a module changes its address, and Terraform does not know that aws_db_instance.main and module.database.aws_db_instance.main are the same database. To Terraform, one resource disappeared from the code and a new one appeared, so it plans a destroy and a create.\n\nA moved block (Terraform 1.1 and later, and OpenTofu) records the rename in code:\n\nmoved {\n  from = aws_db_instance.main\n  to   = module.database.aws_db_instance.main\n}\n\nThe next plan shows the move and nothing to destroy. Because the move is in code, it is reviewed in the pull request and applies the same way in every environment.\n\nA) This one is a trap. The resource being destroyed is the old address, which no longer has a block in the code, so a prevent_destroy on the new block does not protect it. The apply would still delete the database.\nC) -target does not move the existing database. It tries to create a new one, which either fails because the identifier is taken or gives you a second, empty database, and the old one is still planned for destruction.\nD) It works, but it is manual, happens outside code review, and is easy to get wrong across several environments. terraform state mv is the closer manual tool; a moved block is the reviewable one.\n\nThe mental model: in Terraform, a rename is a new identity unless you say otherwise. After an address-only refactor, an unexpected destroy and create is your signal to add a moved block.",
+      "lesson": "Terraform identifies resources by address. When a refactor changes addresses, declare the move with a moved block before you apply.",
+      "linkTitle": "Terraform State: Remove, Move and Migrate Resources",
+      "linkUrl": "https://devops-daily.com/posts/terraform-state-remove-move-migrate-backend"
+    },
+    {
+      "id": "day-09",
+      "title": "p99 at 3.8 seconds, CPU at 35%",
+      "topic": "Connection pool queueing after holding connections across an external call",
+      "difficulty": "Advanced",
+      "technologies": ["Observability", "PostgreSQL", "Connection pools", "Latency"],
+      "scenario": "Yesterday's release added a call to an external fraud-check API (about 400 ms) to checkout.\n\nCheckout p50 went from 80 ms to 500 ms. You expected that. But checkout p99 at peak went from 300 ms to 3.8 s.\n\nCPU is 35%. Memory is 50%. Error rate is 0.1%. Database query p99 is 12 ms.\n\nThe fraud check runs inside the database transaction. Each pod has a pool of 20 database connections and handles about 45 checkouts per second at peak. Traces show the fraud call itself stays under 500 ms at p99, and GC pause times have not changed.\n\nWhat is causing the p99?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The fraud-check API is slow at peak; ask the vendor for a better latency SLA and a timeout"
+        },
+        {
+          "key": "B",
+          "text": "The new code allocates more, so GC pauses got longer; tune the garbage collector settings"
+        },
+        {
+          "key": "C",
+          "text": "Requests queue for a database connection, because checkout now holds one 400 ms longer"
+        },
+        {
+          "key": "D",
+          "text": "The database is overloaded at peak and needs a read replica to take the checkout reads"
+        }
+      ],
+      "correct": "C",
+      "fix": "Queries take 12 ms at p99, the fraud call stays under 500 ms, and GC has not changed, yet checkouts take seconds. The missing time is spent before the query starts: waiting for a connection from the pool.\n\nBefore the release, a checkout held a connection for a few milliseconds. Now it holds one through a 400 ms external call. By Little's law, average connections in use = arrival rate x average time held: 45 per second x 0.4 s = about 18 connections busy on average just for the fraud call, out of 20. That leaves almost no headroom. Bursts above the average fill the pool, requests queue for a connection, and the queue time lands in the tail. CPU stays low because waiting costs no CPU.\n\nThe fix is to move the external call out of the transaction: run the fraud check first, then open the transaction for the writes. Add metrics for pool wait time and pool utilisation, because they show this problem directly. A bigger pool can help if PostgreSQL has room, but it raises database concurrency and keeps the needless long hold.\n\nA) The fraud API explains the 400 ms added to p50, and traces show its p99 stays under 500 ms. It cannot explain a 3.8 s tail on its own.\nB) GC pauses can hurt tail latency, but GC pause times have not changed.\nD) Query p99 is 12 ms, and a read replica does nothing about connections held during the fraud call.\n\nThe mental model: when latency rises and utilisation does not, look for a queue. A connection pool is a queue with a fixed number of servers.",
+      "lesson": "Little's law: average connections in use = rate x average hold time. Do not hold a database connection across a slow external call.",
+      "linkTitle": "Latency percentiles simulator",
+      "linkUrl": "https://devops-daily.com/games/latency-percentiles-simulator"
+    },
+    {
+      "id": "day-10",
+      "title": "Redis recovered. Postgres didn't.",
+      "topic": "Cold cache, stampedes and retries after a cache outage",
+      "difficulty": "Advanced",
+      "technologies": ["Redis", "PostgreSQL", "Caching", "Resilience"],
+      "scenario": "Your Redis cache node restarts and is gone for 90 seconds. It has no persistence, so it comes back empty.\n\nRedis is healthy again, but PostgreSQL goes to 100% CPU and stays there for 25 minutes. API p99 is 9 seconds, timeouts are everywhere, and the cache hit rate climbs very slowly.\n\nBefore the incident, the cache hit rate was 97% and PostgreSQL ran at 30% CPU. Database logs now show the same hot queries running hundreds of times at once, and clients retry immediately after each timeout.\n\nWhat is the real problem?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Every miss hits PostgreSQL at once, hot keys stampede, and retries keep the load up"
+        },
+        {
+          "key": "B",
+          "text": "PostgreSQL is undersized and must be scaled up to survive a cache outage"
+        },
+        {
+          "key": "C",
+          "text": "The cache TTLs are too short; make them much longer so keys stay cached between requests"
+        },
+        {
+          "key": "D",
+          "text": "Redis needs a replica with automatic failover so it never comes back empty"
+        }
+      ],
+      "correct": "A",
+      "fix": "At a 97% hit rate, PostgreSQL only sees 3% of cache-backed reads. When the cache comes back empty, it sees close to all of them: about 33 times its normal number of those reads, if every miss runs one query. It cannot serve that, queries slow down, and the cache fills slowly because every fill waits on a slow query.\n\nTwo things keep it stuck. Popular keys are requested by many clients at once, and each one misses and runs the same query (a cache stampede). And slow queries hit client timeouts, the clients retry, and the retries add more load. The original failure lasted 90 seconds; the overload lasts much longer.\n\nFixes, roughly in order:\n- collapse concurrent misses for the same key into one query (single-flight, or a short lock per key)\n- cap concurrency to the database and shed or degrade requests above the cap\n- retry with backoff, jitter, and a retry budget\n- add jitter to TTLs so keys do not expire together\n- warm the hottest keys before a cold cache takes full traffic\n\nB) More database capacity can help, but it does not remove the duplicate cache fills or the retry amplification, and sizing for this spike is expensive.\nC) Longer TTLs can help keep entries during recovery, but they do not prevent the first cold-cache surge.\nD) A healthy replica with failover can keep most of the cache this time and is worth having. It does not guarantee a warm cache, and the next flush, eviction storm, or deploy that clears keys finds the same weakness.\n\nThe mental model: a cache with a 97% hit rate is part of your capacity, not an optimisation. Design for the moment it is empty.",
+      "lesson": "A high hit-rate cache is load-bearing. Collapse duplicate misses, cap database concurrency, and budget retries so a cold cache cannot take the database down.",
+      "linkTitle": "Caching Strategies Simulator",
+      "linkUrl": "https://devops-daily.com/games/caching-simulator"
+    },
+    {
+      "id": "day-11",
+      "title": "Twice the consumers, same lag",
+      "topic": "Partition count caps consumer group parallelism",
+      "difficulty": "Advanced",
+      "technologies": ["Kafka", "Kubernetes", "Event streaming"],
+      "scenario": "Your orders-events consumer group is 6 hours behind, and the lag grows every afternoon.\n\nEach message triggers a call to an internal pricing API (about 80 ms), processed one message at a time. Consumer CPU is 25%.\n\nYou scale the consumer Deployment from 6 to 12 pods. Throughput does not change at all. The topic has 6 partitions.\n\nWhat is going on?",
+      "options": [
+        {
+          "key": "A",
+          "text": "max.poll.records is too low; raise it so each poll returns a bigger batch"
+        },
+        {
+          "key": "B",
+          "text": "The brokers are the bottleneck; add two more brokers to the cluster"
+        },
+        {
+          "key": "C",
+          "text": "The consumers are CPU-starved; raise their CPU limits and requests"
+        },
+        {
+          "key": "D",
+          "text": "Only 6 consumers can own a partition, so the extra 6 sit idle"
+        }
+      ],
+      "correct": "D",
+      "fix": "In a Kafka consumer group, each partition is assigned to exactly one consumer at a time. With 6 partitions, at most 6 consumers get work. Consumers 7 to 12 join the group, get no partitions, and sit idle. The parallelism of a consumer group is capped by the partition count.\n\nThe low CPU tells the rest of the story. Each consumer handles one message at a time and waits about 80 ms on the pricing API, so one partition tops out around 12 messages per second, and 6 partitions around 75. The consumers are waiting, not working.\n\nTwo ways out:\n- add partitions, so new messages spread across more consumers. The existing backlog stays in the original partitions, and with key-based hashing a key can move to a new partition, which can break per-key ordering during the change. Plan for it.\n- process concurrently inside each consumer, for example a worker pool that keeps ordering per key, or a library built for this such as Confluent's parallel consumer\n\nA) Bigger batches cut poll overhead, but each message still waits 80 ms in sequence.\nB) The brokers are not the limit. The consumers are waiting on an API.\nC) CPU is at 25%. More CPU does not shorten a network wait.\n\nThe mental model: a consumer group can never use more consumers than the topic has partitions. When CPU is low and lag is high, look for waiting, not work.",
+      "lesson": "Partition count is the ceiling on consumer parallelism. Low CPU with high lag means the consumers are waiting, so add partitions or concurrency, not pods.",
+      "linkTitle": "Message queue simulator",
+      "linkUrl": "https://devops-daily.com/games/message-queue-simulator"
+    },
+    {
+      "id": "day-12",
+      "title": "Retire the deploy key",
+      "topic": "CI access to AWS with OIDC instead of long-lived keys",
+      "difficulty": "Advanced",
+      "technologies": ["GitLab CI", "AWS IAM", "OIDC", "Security"],
+      "scenario": "Your GitLab CI pipelines deploy to AWS with an IAM user's access key stored as a CI/CD variable. The key is 3 years old and shared by 40 projects.\n\nSecurity wants it gone. Deploys from the main branch of the production project must keep working. A pipeline on a feature branch must not be able to deploy to production.\n\nWhat do you set up?",
+      "options": [
+        {
+          "key": "A",
+          "text": "A scheduled job that rotates the shared access key every 90 days for all 40 projects"
+        },
+        {
+          "key": "B",
+          "text": "GitLab as an IAM OIDC provider, with a role trusted only for main of that project"
+        },
+        {
+          "key": "C",
+          "text": "The same key moved into a secrets manager and fetched at the start of each job"
+        },
+        {
+          "key": "D",
+          "text": "A self-hosted runner on EC2 whose instance profile has the deploy permissions"
+        }
+      ],
+      "correct": "B",
+      "fix": "With OIDC there is no stored key at all. The job asks GitLab for a signed ID token (the id_tokens keyword), sends it to AWS STS with AssumeRoleWithWebIdentity, and gets temporary credentials that expire in about an hour by default.\n\nThe control is in the role's trust policy. It trusts the GitLab OIDC provider and checks the token's claims, for example:\naud = your configured audience\nsub = project_path:my-group/my-app:ref_type:branch:ref:main\n\nA feature branch gets a token with a different sub, so AWS refuses to hand it the production role. Protect the main branch too, so only reviewed code reaches it.\n\nA) Rotation shortens the window, but a key shared by 40 projects is still a long-lived secret that any of them can leak or misuse.\nC) A secrets manager hides the key better, but the key is the same and any job that can fetch it gets production access.\nD) An instance profile removes the stored key, but every job that runs on that runner gets the deploy role, including feature branches, unless you lock the runner down separately.\n\nThe mental model: do not protect a long-lived secret better. Replace it with short-lived credentials that are issued only to the identity you trust.",
+      "lesson": "Replace long-lived CI keys with OIDC: short-lived credentials, and a trust policy that names exactly which project and branch may assume the role.",
+      "linkTitle": "OAuth and OIDC flow simulator",
+      "linkUrl": "https://devops-daily.com/games/oauth-oidc-flow-simulator"
+    },
+    {
+      "id": "day-13",
+      "title": "Scaling out makes it worse",
+      "topic": "Cold pods take full traffic before they are warm",
+      "difficulty": "Advanced",
+      "technologies": ["Kubernetes", "HPA", "JVM", "Load balancing"],
+      "scenario": "A Java API runs on Kubernetes. Every morning at 9:00 traffic doubles, and the HPA scales from 6 to 14 pods at 70% CPU.\n\nFor about 5 minutes after the new pods start, p99 goes from 200 ms to 2.5 s and the error rate rises. After that, everything is fine.\n\nThe readiness probe calls /health, which returns 200 as soon as the HTTP server is listening. During those 5 minutes the new pods get about the same request rate as the old ones, but only the new ones are slow, and their CPU is pinned at the limit.\n\nWhat is the real problem?",
+      "options": [
+        {
+          "key": "A",
+          "text": "New pods take a full share of traffic while still cold; readiness passes too early"
+        },
+        {
+          "key": "B",
+          "text": "The HPA target is too high; lower it to 50% CPU so scaling starts sooner"
+        },
+        {
+          "key": "C",
+          "text": "The nodes are too small; move the workload to bigger and faster instance types"
+        },
+        {
+          "key": "D",
+          "text": "The HPA reacts too slowly; replace it with the Vertical Pod Autoscaler instead"
+        }
+      ],
+      "correct": "A",
+      "fix": "These new JVM pods are still warming up: the JIT has not compiled the hot paths, caches are empty, and connection pools are still filling, and all of that costs CPU. The readiness probe says ready as soon as the HTTP server listens, so the Service sends the new pod its full share of traffic right away. Eight cold pods at their CPU limit serve over half the requests slowly, and p99 jumps.\n\nFixes:\n- make readiness mean 'can serve at normal speed': warm up first (replay a few requests, fill caches, open pools), then report ready\n- ramp traffic to new pods gradually where supported, for example ALB slow start with round-robin routing and pods registered as IP targets\n- for traffic you can predict, scale out before 9:00 on a schedule instead of waiting for CPU to rise\n- give pods more CPU headroom during startup, since JIT compilation itself uses CPU\n\nB) Scaling earlier helps a little, but the new pods are still cold when they take traffic.\nC) Bigger nodes do not warm up a JVM. The pods are at their own CPU limit.\nD) The VPA changes requests and limits, usually by restarting pods. It does not handle a daily doubling of traffic.\n\nThe mental model: 'ready' should mean ready to serve at normal speed, not just listening. Scaling out with cold capacity can hurt before it helps.",
+      "lesson": "Readiness should mean ready to serve at normal speed. Warm up before ready, ramp traffic to new pods, and pre-scale for predictable peaks.",
+      "linkTitle": "Horizontal vs Vertical Scaling Simulator",
+      "linkUrl": "https://devops-daily.com/games/scaling-simulator"
+    },
+    {
+      "id": "day-14",
+      "title": "Three pods busy, seven idle",
+      "topic": "gRPC long-lived connections defeat L4 load balancing",
+      "difficulty": "Advanced",
+      "technologies": ["Kubernetes", "gRPC", "kube-proxy", "Load balancing"],
+      "scenario": "You run 10 replicas of a gRPC service behind a ClusterIP Service. Its only clients are 3 replicas of your API gateway.\n\nDashboards show 3 server pods at 90% CPU and 7 nearly idle. You scale the service to 20 replicas. The new pods get almost no traffic.\n\nReadiness is fine on all pods. No errors in the gateway. Connection metrics show one long-lived connection from each gateway pod.\n\nWhat is wrong?",
+      "options": [
+        {
+          "key": "A",
+          "text": "The pods need anti-affinity rules so they spread across more nodes and zones"
+        },
+        {
+          "key": "B",
+          "text": "The busy pods are underpowered; raise their CPU limits and requests"
+        },
+        {
+          "key": "C",
+          "text": "Each gateway keeps one HTTP/2 connection, and kube-proxy balances connections"
+        },
+        {
+          "key": "D",
+          "text": "The Service needs sessionAffinity: ClientIP so clients spread out evenly"
+        }
+      ],
+      "correct": "C",
+      "fix": "gRPC runs over HTTP/2 and keeps a connection open for a long time, sending many requests over it. A ClusterIP Service is balanced by kube-proxy at layer 4: it picks a backend when a connection opens, then every request on that connection goes to the same pod.\n\nThree gateway pods opened roughly one connection each, so three server pods get all the work. New replicas only receive traffic when a new connection opens, which may not happen for hours.\n\nFixes, pick what fits:\n- client-side load balancing: point the gRPC client at a headless Service and use the round_robin policy, so it connects to every pod and spreads requests\n- an L7 proxy or service mesh that balances per request\n- a maximum connection age on the server (gRPC MAX_CONNECTION_AGE), so clients reconnect to different pods over time. With only three connections, this rotates the load but still cannot keep all replicas busy at once\n\nA) Anti-affinity changes where pods run, not how requests on an existing connection are distributed.\nB) More CPU for three pods treats the symptom while seven sit idle.\nD) ClientIP affinity keeps each client on the same pod on purpose, which is the opposite of spreading requests.\n\nThe mental model: an L4 load balancer balances connections, not requests. With long-lived connections, balance at L7 or in the client.",
+      "lesson": "kube-proxy balances connections, not requests. For gRPC and other long-lived HTTP/2 traffic, balance per request in the client or an L7 proxy.",
+      "linkTitle": "Load Balancer Algorithm Simulator",
+      "linkUrl": "https://devops-daily.com/games/load-balancer-simulator"
+    },
+    {
+      "id": "day-15",
+      "title": "Three changes, one incident",
+      "topic": "Mitigate first: undo the fastest change that matches the symptom",
+      "difficulty": "Advanced",
+      "technologies": ["Incident response", "Feature flags", "Deployments", "SRE"],
+      "scenario": "14:00 You deploy checkout v2.14.\n14:02 A teammate flips the new-pricing feature flag from 10% to 100%.\n14:04 The platform team starts a node pool upgrade.\n14:05 Checkout errors jump from 0.2% to 9%. The errors are 500s from the pricing endpoint.\n\nYou are the incident commander. What do you do first?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Roll back all three changes at the same time to be safe"
+        },
+        {
+          "key": "B",
+          "text": "Hold all changes and find the root cause before touching anything"
+        },
+        {
+          "key": "C",
+          "text": "Turn the flag back to 10%, pause the node upgrade, and watch"
+        },
+        {
+          "key": "D",
+          "text": "Roll back checkout v2.14, since deploys cause most incidents"
+        }
+      ],
+      "correct": "C",
+      "fix": "During an incident, the first goal is to stop the damage, not to find the root cause. Pick the change that best matches the symptom and is fastest and safest to undo.\n\nThe errors come from the pricing endpoint, and the pricing flag went from 10% to 100% three minutes before they started. A flag flip back takes seconds, has almost no risk, and tells you something either way. Pausing the node upgrade stops a third variable from changing while you look.\n\nWatch for a couple of minutes. If the errors fall to the old level, you have your mitigation and can debug calmly. If not, roll back v2.14 next: its pricing code is the second suspect, and the flag result has narrowed it down.\n\nA) Undoing everything at once is slow (a node pool rollback is not instant), adds risk, and hides which change caused it.\nB) Root cause can wait. Every minute of analysis is a minute of 9% errors.\nD) It might be the deploy, but the flag matches the symptom better and is much faster to undo.\n\nThe mental model: mitigate first, with the smallest and fastest reversible change that matches the evidence. Change one thing at a time so you learn from each step.",
+      "lesson": "Mitigate before you diagnose. Undo the fastest, safest change that matches the symptom, one change at a time.",
+      "linkTitle": "How to Implement Progressive Delivery with Feature Flags",
+      "linkUrl": "https://devops-daily.com/posts/how-to-implement-progressive-delivery-with-feature-flags"
+    },
+    {
+      "id": "day-16",
+      "title": "Deleted after ten minutes",
+      "topic": "A secret pushed to a public repository is compromised",
+      "difficulty": "Senior",
+      "technologies": ["Security", "Secrets management", "Git", "AWS IAM"],
+      "scenario": "11:02 A developer pushes a commit to a public repository. It contains a production AWS access key ID and secret access key in config/settings.yml.\n11:12 They push a second commit that deletes the file.\n11:20 They tell you. Nobody else has said anything.\n\nWhat do you do?",
+      "options": [
+        {
+          "key": "A",
+          "text": "Rewrite the history with git filter-repo and force-push, so the key is gone"
+        },
+        {
+          "key": "B",
+          "text": "Make the repository private until you have time to clean it up properly"
+        },
+        {
+          "key": "C",
+          "text": "Nothing urgent; it was public for only 10 minutes and the repo is quiet"
+        },
+        {
+          "key": "D",
+          "text": "Deactivate the key now, check its use in CloudTrail since 11:02, then clean up"
+        }
+      ],
+      "correct": "D",
+      "fix": "Treat the key as stolen. Automated scanners watch public pushes and pick up credentials within minutes, and a deleting commit does not remove the original one: the key is still in the history, in clones and forks, and in any cache or mirror that saw it.\n\nIn order:\n1. Deactivate the key right away, then delete it once the replacement is in place\n2. Review CloudTrail across all regions from 11:02 for that access key and any sessions it created: new IAM users, keys, roles, or instances. Event history covers management events; data events such as S3 object reads only appear if you enabled data event logging\n3. Issue a new credential, ideally short-lived (a role) instead of another long-lived key\n4. Then clean up: rewrite history if you want, and add secret scanning to pre-commit and CI so it does not happen again\n\nSome providers detect leaked keys and restrict them automatically. Do not count on it.\n\nA) Rewriting history is worth doing later, but the key is still public in the history until then, and anyone who copied it keeps it.\nB) Making the repo private stops new readers, not the ones who already saw it.\nC) Ten minutes is plenty. Keys pushed to public repositories are often tried within minutes.\n\nThe mental model: once a secret is public, it is compromised. Revoke first, investigate second, clean up third.",
+      "lesson": "A secret that was public for any length of time is compromised. Revoke it, check its use, replace it, and only then clean up the history.",
+      "linkTitle": "You cannot rotate a secret you cannot find",
+      "linkUrl": "https://devops-daily.com/posts/you-cannot-rotate-a-secret-you-cannot-find"
+    }
+  ]
+}
