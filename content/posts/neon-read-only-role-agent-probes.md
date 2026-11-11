@@ -5,8 +5,8 @@ category:
   name: 'Security'
   slug: 'security'
 date: '2026-11-11'
-publishedAt: '2026-11-11T15:00:00Z'
-updatedAt: '2026-11-11T15:00:00Z'
+publishedAt: '2026-11-11T12:00:00Z'
+updatedAt: '2026-11-11T12:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
