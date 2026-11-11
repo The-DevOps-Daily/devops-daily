@@ -53,9 +53,7 @@ const root = process.cwd();
 const force = process.argv.includes('--force');
 const preview = process.argv.includes('--preview');
 const check = process.argv.includes('--check');
-// --migrate replaces covers that are still PNG; --limit=N caps one run so the
-// migration can go in small batches.
-const migrate = process.argv.includes('--migrate');
+// --limit=N caps how many covers one run generates.
 function numericFlag(name: string, fallback: number): number {
   const argument = process.argv.find((value) => value.startsWith(`--${name}=`));
   const value = argument ? Number(argument.slice(name.length + 3)) : fallback;
@@ -346,11 +344,11 @@ async function writeCover(item: CoverItem): Promise<'generated' | 'skipped' | 'v
     assertRenderedTitleBounds(item);
     return 'validated';
   }
-  // Keep an existing cover, JPEG or older PNG, unless --force or --migrate
-  // asks for it; a new item gets one on the next run.
+  // Keep an existing JPEG unless --force. A PNG is never kept: it is an old
+  // or hand-made cover, so it is replaced and redirected to the JPEG.
   const hasJpg = await pathExists(jpgPath);
   const hasPng = await pathExists(pngPath);
-  if (!force && (hasJpg || (hasPng && !migrate))) return 'skipped';
+  if (!force && hasJpg) return 'skipped';
 
   await fs.mkdir(outputDirectory, { recursive: true });
   const jpg = await renderContentCoverJpeg({

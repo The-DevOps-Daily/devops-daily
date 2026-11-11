@@ -107,6 +107,16 @@ After creating the quiz, run:
 npm run quiz:validate
 ```
 
+## Cover image
+
+Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+
+```bash
+npx tsx scripts/generate-content-og.ts --only=quiz/<quiz-id>
+```
+
+It writes `public/images/quizzes/<quiz-id>-og.jpg` (1200x630 JPEG). Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
+
 ## Checklist
 
 - [ ] All questions have situation + codeExample

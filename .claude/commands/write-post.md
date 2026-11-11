@@ -238,14 +238,15 @@ Example, a Docker-on-a-Pi infra diagram:
 
 Keep diagrams to a handful of nodes so they stay readable, and validate the JSON before finishing (a quick `node -e` JSON.parse over each ` ```diagram ` block). For a sprawling topology that needs auto-routing, a plain image is still the better choice.
 
-## OG Image
+## Cover image
 
-After creating the post, remind the user to generate the OG image:
+Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+
 ```bash
-pnpm generate:images
+npx tsx scripts/generate-content-og.ts --only=post/<slug>
 ```
 
-The OG image is auto-generated from the post title, category and tags — no manual image creation needed. The social image will be at `/images/posts/<slug>.jpg` (1200x630 JPEG). The background illustration follows the rule documented at `selectCoverBackground` in `scripts/og-utils.ts`.
+It writes `public/images/posts/<slug>.jpg` (1200x630 JPEG) from the post title, category and tags. The background illustration follows the rule documented at `selectCoverBackground` in `scripts/og-utils.ts`. Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
 
 ## Writing about Neon
 
