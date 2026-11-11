@@ -195,7 +195,16 @@ export function SimBar({
               {progress.current}/{progress.total}
             </span>
           )}
-          {heading && <h2 className="text-sm font-semibold sm:text-base">{heading}</h2>}
+          {heading && (
+            // With a goal line, the goal is the one instruction; the heading is quiet context.
+            <h2
+              className={
+                goal ? 'text-xs text-muted-foreground' : 'text-sm font-semibold sm:text-base'
+              }
+            >
+              {heading}
+            </h2>
+          )}
           {meta}
           {(actions || rowTools) && (
             <div className="ml-auto flex items-center gap-2">

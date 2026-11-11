@@ -115,7 +115,7 @@ export async function SimulatorShell({
 
       <div className={cn('container px-4 pt-4 pb-8 mx-auto', className)}>
         {/* Breadcrumb + actions */}
-        <div className="flex items-center justify-between mb-3 gap-4">
+        <div className="flex flex-wrap items-center justify-between mb-3 gap-x-4 gap-y-2">
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug={slug} gameTitle={title} />
         </div>
