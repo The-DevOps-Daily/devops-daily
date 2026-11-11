@@ -515,20 +515,27 @@ describe('DDoS Attack Simulator on the kit', () => {
   }, 60_000);
 
   it('rate limiting switches on', async () => {
-    await renderDdos();
-    await setRange('Intensity', 10);
-    await toggleDefence('Auto Rate Limit');
-    await click('Start attack', true);
+    // A high, fixed particle speed makes enough requests land in a full RPS window.
+    // The simulator's random positions do not matter to this rate-limit behavior.
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    try {
+      await renderDdos();
+      await setRange('Intensity', 10);
+      await toggleDefence('Auto Rate Limit');
+      await click('Start attack', true);
 
-    const rateLimitRow = () =>
-      container.querySelector('button[aria-label="Auto Rate Limit"]')?.parentElement?.textContent ??
-      '';
-    expect(rateLimitRow()).toContain('Standby');
-    for (let elapsed = 0; elapsed < 6_000 && !rateLimitRow().includes('Active'); elapsed += 250) {
-      await advanceDdos(250);
+      const rateLimitRow = () =>
+        container.querySelector('button[aria-label="Auto Rate Limit"]')?.parentElement
+          ?.textContent ?? '';
+      expect(rateLimitRow()).toContain('Standby');
+      for (let elapsed = 0; elapsed < 6_000 && !rateLimitRow().includes('Active'); elapsed += 250) {
+        await advanceDdos(250);
+      }
+      if (!rateLimitRow().includes('Active')) throw new Error('rate limiting did not activate');
+      expect(completions).toBe(0);
+    } finally {
+      random.mockRestore();
     }
-    if (!rateLimitRow().includes('Active')) throw new Error('rate limiting did not activate');
-    expect(completions).toBe(0);
   }, 60_000);
 
   it('one signal, after surviving a minute', async () => {

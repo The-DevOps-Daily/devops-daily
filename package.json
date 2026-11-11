@@ -12,6 +12,7 @@
     "dev": "next dev",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:live": "playwright test -c playwright.live.config.ts",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "build": "pnpm images:all && pnpm copy:markdown && pnpm generate-search-index && pnpm generate-feed && pnpm generate-devto-feed && pnpm generate-cli-data && next build && node scripts/prune-locked-advent-seeds.cjs && pnpm copy:markdown:out",
