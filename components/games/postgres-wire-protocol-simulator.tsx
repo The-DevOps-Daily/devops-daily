@@ -2,36 +2,41 @@
 
 import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import {
-  Activity,
   AlertTriangle,
-  ArrowRight,
   Binary,
   Braces,
-  CheckCircle2,
-  Clock,
-  Code2,
   Database,
-  Gauge,
   KeyRound,
   Lock,
-  Network,
   Pause,
   Play,
   Rows3,
   Server,
-  ShieldCheck,
-  Shuffle,
   Terminal,
-  TimerReset,
   Unplug,
   Zap,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { MotionConfig } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+  type SimStep,
+  type SimTone,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type Scenario = 'startup' | 'simple' | 'extended' | 'copy';
@@ -62,7 +67,8 @@ interface ScenarioConfig {
 const BASE_SCENARIOS: Record<Scenario, ScenarioConfig> = {
   startup: {
     title: 'Startup and authentication',
-    subtitle: 'SSL negotiation, startup parameters, SCRAM challenge, session settings, ready state.',
+    subtitle:
+      'SSL negotiation, startup parameters, SCRAM challenge, session settings, ready state.',
     icon: KeyRound,
     query: 'psql "postgres://app@db.prod:5432/app"',
     steps: [
@@ -388,7 +394,7 @@ const BASE_SCENARIOS: Record<Scenario, ScenarioConfig> = {
     title: 'COPY streaming',
     subtitle: 'Bulk import/export uses CopyInResponse, CopyData chunks, and CopyDone.',
     icon: Rows3,
-    query: "COPY events FROM STDIN WITH (FORMAT csv);",
+    query: 'COPY events FROM STDIN WITH (FORMAT csv);',
     steps: [
       {
         id: 'copy-query',
@@ -466,21 +472,13 @@ const BASE_SCENARIOS: Record<Scenario, ScenarioConfig> = {
   },
 };
 
-const toneStyles: Record<MessageTone, string> = {
-  startup: 'border-cyan-400/40 bg-cyan-400/10 text-cyan-100',
-  query: 'border-blue-400/40 bg-blue-400/10 text-blue-100',
-  data: 'border-emerald-400/40 bg-emerald-400/10 text-emerald-100',
-  auth: 'border-amber-400/40 bg-amber-400/10 text-amber-100',
-  ready: 'border-violet-400/40 bg-violet-400/10 text-violet-100',
-  error: 'border-red-400/40 bg-red-400/10 text-red-100',
-};
-
 const providers = [
   {
     name: 'DigitalOcean Managed PostgreSQL',
     label: 'Managed',
     href: 'https://m.do.co/c/2a9bba940f39',
-    description: 'Managed Postgres with backups, standby nodes, VPC networking, and simple pricing.',
+    description:
+      'Managed Postgres with backups, standby nodes, VPC networking, and simple pricing.',
     sponsored: true,
   },
   {
@@ -493,13 +491,15 @@ const providers = [
     name: 'Supabase',
     label: 'App platform',
     href: 'https://supabase.com/database',
-    description: 'Managed Postgres with auth, storage, realtime, edge functions, and dashboard tooling.',
+    description:
+      'Managed Postgres with auth, storage, realtime, edge functions, and dashboard tooling.',
   },
   {
     name: 'Crunchy Bridge',
     label: 'Postgres experts',
     href: 'https://www.crunchydata.com/products/crunchy-bridge',
-    description: 'Fully managed Postgres backed by Crunchy Data support and multi-cloud deployment.',
+    description:
+      'Fully managed Postgres backed by Crunchy Data support and multi-cloud deployment.',
   },
 ];
 
@@ -523,7 +523,12 @@ function compactCode(code: string) {
   return compact[code] ?? code;
 }
 
-function getScenarioSteps(scenario: Scenario, tlsEnabled: boolean, rowCount: number, injectError: boolean) {
+function getScenarioSteps(
+  scenario: Scenario,
+  tlsEnabled: boolean,
+  rowCount: number,
+  injectError: boolean
+) {
   let steps = BASE_SCENARIOS[scenario].steps;
 
   if (!tlsEnabled && scenario === 'startup') {
@@ -582,6 +587,58 @@ function getScenarioSteps(scenario: Scenario, tlsEnabled: boolean, rowCount: num
   return steps;
 }
 
+const MESSAGE_TONE: Record<MessageTone, SimTone> = {
+  startup: 'info',
+  query: 'info',
+  data: 'success',
+  auth: 'warning',
+  ready: 'success',
+  error: 'danger',
+};
+
+interface MissionState {
+  scenario: Scenario;
+  activeIndex: number;
+  injectError: boolean;
+  steps: ProtocolStep[];
+  tlsEnabled: boolean;
+}
+
+const MISSIONS: Mission<MissionState>[] = [
+  {
+    id: 'startup',
+    label: 'Connect and authenticate: from SSLRequest to ReadyForQuery.',
+    hint: 'Pick Startup with TLS on and press Play.',
+    check: (state) =>
+      state.scenario === 'startup' &&
+      state.tlsEnabled &&
+      state.activeIndex === state.steps.length - 1,
+  },
+  {
+    id: 'simple',
+    label: 'Send one query with the simple protocol.',
+    hint: 'Pick Simple and press Play: one Query message, then rows, then ReadyForQuery.',
+    check: (state) => state.scenario === 'simple' && state.activeIndex === state.steps.length - 1,
+  },
+  {
+    id: 'extended',
+    label: 'Run a query with parameters through the extended protocol.',
+    hint: 'Pick Extended and press Play: Parse, Bind, Execute, Sync.',
+    check: (state) => state.scenario === 'extended' && state.activeIndex === state.steps.length - 1,
+  },
+  {
+    id: 'error',
+    label: 'Inject an error and see the server recover to ReadyForQuery.',
+    hint: 'Turn on Error, pick Simple or Extended and press Play.',
+    check: (state) =>
+      state.scenario !== 'startup' &&
+      state.injectError &&
+      state.activeIndex === state.steps.length - 1 &&
+      state.steps.some((step) => step.id === 'error-response') &&
+      state.steps[state.steps.length - 1]?.id === 'ready-after-error',
+  },
+];
+
 function MessageRail({
   steps,
   activeIndex,
@@ -591,79 +648,46 @@ function MessageRail({
   activeIndex: number;
   onSelect: (index: number) => void;
 }) {
-  const visibleSteps = steps.slice(0, activeIndex + 1);
-
   return (
-    <div className="relative overflow-hidden rounded-lg border bg-zinc-950 p-4 text-slate-100">
-      <div
-        className={cn(
-          'mb-4 grid grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-center gap-4 text-xs',
-          'font-medium uppercase tracking-wide text-slate-400'
-        )}
-      >
+    <section aria-label="PostgreSQL messages" className="rounded-lg border bg-card p-3">
+      <div className="mb-2 grid grid-cols-2 gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground sm:grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)]">
         <div className="flex items-center gap-2">
           <Terminal className="h-4 w-4" />
           Client
         </div>
-        <div className="text-center">Wire</div>
+        <div className="hidden text-center sm:block">Wire</div>
         <div className="flex items-center justify-end gap-2">
           <Server className="h-4 w-4" />
           Server
         </div>
       </div>
-
-      <div className="absolute bottom-4 left-1/2 top-14 w-px bg-slate-700" />
-      <div className="space-y-3">
-        <AnimatePresence initial={false}>
-          {visibleSteps.map((step, index) => {
-            const isClient = step.from === 'client';
-            const isServer = step.from === 'server';
-            const isActive = index === activeIndex;
-            return (
-              <motion.button
-                key={step.id}
-                type="button"
-                onClick={() => onSelect(index)}
-                className={cn(
-                  'grid w-full grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-center gap-4',
-                  'rounded-md p-1 text-left',
-                  'transition-colors hover:bg-white/5',
-                  isActive && 'bg-white/10'
-                )}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className={cn('min-w-0', isClient ? 'opacity-100' : 'opacity-25')}>
-                  {isClient && <Packet step={step} active={isActive} />}
-                </div>
-                <div className="relative flex h-10 items-center justify-center">
-                  <motion.div
-                    className={cn(
-                      'h-2.5 w-2.5 rounded-full border bg-zinc-950',
-                      isActive ? 'border-primary shadow-[0_0_20px_rgba(34,197,94,0.7)]' : 'border-slate-600'
-                    )}
-                    animate={isActive ? { scale: [1, 1.35, 1] } : { scale: 1 }}
-                    transition={{ repeat: isActive ? Infinity : 0, duration: 1.1 }}
-                  />
-                  <ArrowRight
-                    className={cn(
-                      'absolute h-4 w-4 text-slate-500',
-                      isServer && 'rotate-180',
-                      step.from === 'both' && 'opacity-0'
-                    )}
-                  />
-                  {step.from === 'both' && <Shuffle className="absolute h-4 w-4 text-slate-400" />}
-                </div>
-                <div className={cn('min-w-0', isServer ? 'opacity-100' : 'opacity-25')}>
-                  {isServer && <Packet step={step} active={isActive} />}
-                </div>
-              </motion.button>
-            );
-          })}
-        </AnimatePresence>
+      <div className="space-y-1.5">
+        {steps.map((step, index) => {
+          const isClient = step.from === 'client';
+          const isActive = index === activeIndex;
+          return (
+            <button
+              key={step.id}
+              type="button"
+              onClick={() => onSelect(index)}
+              className={cn(
+                'grid w-full grid-cols-1 gap-1.5 rounded-md p-1 text-left sm:grid-cols-[minmax(0,1fr)_72px_minmax(0,1fr)] sm:items-center',
+                isActive && 'bg-primary/10 ring-1 ring-primary/40',
+                index > activeIndex && 'opacity-55'
+              )}
+              aria-current={isActive ? 'step' : undefined}
+            >
+              <div className={cn('min-w-0', !isClient && 'sm:col-start-3')}>
+                <Packet step={step} active={isActive} />
+              </div>
+              <span className="hidden text-center font-mono text-xs text-muted-foreground sm:block">
+                {index + 1}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -671,125 +695,82 @@ function Packet({ step, active }: { step: ProtocolStep; active: boolean }) {
   return (
     <div
       className={cn(
-        'rounded-md border px-3 py-2 shadow-sm',
-        toneStyles[step.tone],
-        active && 'ring-1 ring-white/30'
+        'rounded-md border px-3 py-2',
+        SIM_TONE[MESSAGE_TONE[step.tone]].surface,
+        active && 'ring-1 ring-primary/50'
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span
             title={step.code}
-            className="flex h-6 min-w-8 max-w-16 shrink-0 items-center justify-center truncate
-              rounded bg-black/35 px-2 font-mono text-[11px]"
+            className="flex h-6 min-w-8 max-w-16 shrink-0 items-center justify-center truncate rounded bg-background px-2 font-mono text-xs"
           >
             {compactCode(step.code)}
           </span>
           <span className="truncate text-sm font-semibold">{step.label}</span>
         </div>
-        <span className="shrink-0 font-mono text-[11px] opacity-70">{formatBytes(step.bytes)}</span>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">
+          {formatBytes(step.bytes)}
+        </span>
       </div>
-      <p className="mt-1 truncate text-xs opacity-75">{step.payload}</p>
+      <p className="mt-1 truncate text-xs text-muted-foreground">{step.payload}</p>
     </div>
   );
 }
 
 function MessageInspector({ step }: { step: ProtocolStep }) {
   return (
-    <Card className="h-full overflow-hidden">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Binary className="h-5 w-5 text-primary" />
-              Message inspector
-            </CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">{flowDirection(step)}</p>
-          </div>
-          <Badge variant="secondary" className="font-mono" title={step.code}>
-            {compactCode(step.code)}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-lg border bg-muted/30 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold">{step.label}</span>
-            <span className="font-mono text-xs text-muted-foreground">{formatBytes(step.bytes)}</span>
-          </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">{step.note}</p>
-        </div>
-
+    <section className="space-y-3 rounded-lg border bg-card p-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-            <Code2 className="h-4 w-4 text-primary" />
-            Payload shape
-          </div>
-          <div className="grid gap-2">
-            {step.fields.map((field) => (
-              <div
-                key={field}
-                className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm"
-              >
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                <span className="font-mono text-xs">{field}</span>
-              </div>
-            ))}
-          </div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <Binary className="h-4 w-4 text-primary" />
+            Message inspector
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">{flowDirection(step)}</p>
         </div>
-
-        <div className="rounded-lg bg-zinc-950 p-3 text-slate-100">
-          <div className="mb-2 text-xs uppercase tracking-wide text-slate-400">Frame sketch</div>
-          <div
-            className={cn(
-              'grid grid-cols-[46px_68px_1fr] overflow-hidden rounded border',
-              'border-slate-700 text-center font-mono text-[11px]'
-            )}
-          >
-            <div className="border-r border-slate-700 bg-slate-800 px-2 py-2">type</div>
-            <div className="border-r border-slate-700 bg-slate-800 px-2 py-2">length</div>
-            <div className="bg-slate-800 px-2 py-2">payload</div>
-            <div className="border-r border-t border-slate-700 px-2 py-3 text-primary">
-              {compactCode(step.code)}
-            </div>
-            <div className="border-r border-t border-slate-700 px-2 py-3">{step.bytes}</div>
-            <div className="truncate border-t border-slate-700 px-2 py-3 text-left">{step.payload}</div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  detail,
-  icon: Icon,
-  tone = 'default',
-}: {
-  label: string;
-  value: string;
-  detail: string;
-  icon: ComponentType<{ className?: string }>;
-  tone?: 'default' | 'good' | 'warn' | 'bad';
-}) {
-  const tones = {
-    default: 'border-border bg-card',
-    good: 'border-emerald-500/30 bg-emerald-500/5',
-    warn: 'border-amber-500/30 bg-amber-500/5',
-    bad: 'border-red-500/30 bg-red-500/5',
-  };
-
-  return (
-    <div className={cn('rounded-lg border p-4', tones[tone])}>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        {label}
+        <Badge variant="secondary" className="font-mono" title={step.code}>
+          {compactCode(step.code)}
+        </Badge>
       </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight">{value}</div>
-      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-    </div>
+      <div className="rounded-lg border bg-muted/30 p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold">{step.label}</span>
+          <span className="font-mono text-xs text-muted-foreground">{formatBytes(step.bytes)}</span>
+        </div>
+        <p className="text-sm leading-relaxed text-muted-foreground">{step.note}</p>
+      </div>
+
+      <div>
+        <div className="mb-2 text-sm font-semibold">Payload shape</div>
+        <div className="grid gap-2">
+          {step.fields.map((field) => (
+            <div
+              key={field}
+              className="flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="font-mono text-xs">{field}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-muted/30 p-3">
+        <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+          Frame sketch
+        </div>
+        <div className="grid grid-cols-[46px_68px_1fr] overflow-hidden rounded border text-center font-mono text-xs">
+          <div className="border-r bg-muted px-2 py-2">type</div>
+          <div className="border-r bg-muted px-2 py-2">length</div>
+          <div className="bg-muted px-2 py-2">payload</div>
+          <div className="border-r border-t px-2 py-3 text-primary">{compactCode(step.code)}</div>
+          <div className="border-r border-t px-2 py-3">{step.bytes}</div>
+          <div className="truncate border-t px-2 py-3 text-left">{step.payload}</div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -819,7 +800,13 @@ function ControlSlider({
           {suffix}
         </Badge>
       </div>
-      <Slider value={[value]} min={min} max={max} step={step} onValueChange={([next]) => onChange(next ?? value)} />
+      <Slider
+        value={[value]}
+        min={min}
+        max={max}
+        step={step}
+        onValueChange={([next]) => onChange(next ?? value)}
+      />
     </div>
   );
 }
@@ -833,6 +820,8 @@ export default function PostgresWireProtocolSimulator() {
   const [injectError, setInjectError] = useState(false);
   const [rowCount, setRowCount] = useState(3);
   const [latency, setLatency] = useState(42);
+  const [tab, setTab] = useState('messages');
+  const [dismissed, setDismissed] = useState(false);
 
   const steps = useMemo(
     () => getScenarioSteps(scenario, tlsEnabled, rowCount, injectError),
@@ -842,6 +831,12 @@ export default function PostgresWireProtocolSimulator() {
   const config = BASE_SCENARIOS[scenario];
   const ScenarioIcon = config.icon;
 
+  const missionState = useMemo(
+    () => ({ scenario, activeIndex, injectError, steps, tlsEnabled }),
+    [activeIndex, injectError, scenario, steps, tlsEnabled]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+
   const metrics = useMemo(() => {
     const payloadBytes = steps.reduce((sum, step) => sum + step.bytes, 0);
     const serverTurns = steps.filter((step) => step.from === 'server').length;
@@ -850,7 +845,9 @@ export default function PostgresWireProtocolSimulator() {
     const pipelineSavings = scenario === 'extended' && pipelineEnabled ? 1.1 : 0;
     const roundTrips = Math.max(1, baseRoundTrips - pipelineSavings);
     const totalMs = Math.round(roundTrips * latency + payloadBytes / 520);
-    const decodeCost = Math.round(rowCount * (scenario === 'copy' ? 0.06 : 0.18) + steps.length * 0.9);
+    const decodeCost = Math.round(
+      rowCount * (scenario === 'copy' ? 0.06 : 0.18) + steps.length * 0.9
+    );
 
     return {
       payloadBytes,
@@ -888,317 +885,315 @@ export default function PostgresWireProtocolSimulator() {
     return () => window.clearTimeout(timer);
   }, [activeIndex, isPlaying, steps.length]);
 
+  const startOver = () => {
+    setActiveIndex(0);
+    setIsPlaying(false);
+    missions.reset();
+    setDismissed(false);
+  };
+
+  const goPrevious = () => {
+    setIsPlaying(false);
+    setActiveIndex((index) => Math.max(index - 1, 0));
+  };
+
+  const goNext = () => {
+    setIsPlaying(false);
+    setActiveIndex((index) => Math.min(index + 1, steps.length - 1));
+  };
+
+  const stepPills: SimStep[] = steps.map((step, index) => ({
+    title: `${step.code}: ${step.label}`,
+    status: index < activeIndex ? 'done' : index === activeIndex ? 'started' : 'todo',
+  }));
+  const currentGoal = missions.current;
+
   return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden border-primary/20">
-        <div className="bg-zinc-950 p-5 text-slate-100 sm:p-6">
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            <div>
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Badge className="bg-emerald-500 text-emerald-950 hover:bg-emerald-500">PostgreSQL v3 protocol</Badge>
-                <Badge variant="outline" className="border-slate-600 text-slate-300">
-                  frontend/backend messages
-                </Badge>
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                Watch every byte between a Postgres client and server.
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">
-                Step through connection startup, SCRAM authentication, simple queries,
-                prepared statements, row streaming, errors, and COPY. The lab shows what drivers
-                actually send over the wire.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <MetricCard
-                label="Round trips"
-                value={metrics.roundTrips.toFixed(1)}
-                detail={pipelineEnabled && scenario === 'extended' ? 'pipelining enabled' : 'protocol turns'}
-                icon={Network}
-                tone={metrics.roundTrips <= 2 ? 'good' : 'warn'}
-              />
-              <MetricCard
-                label="Wire bytes"
-                value={formatBytes(metrics.payloadBytes)}
-                detail={`${metrics.clientTurns} client, ${metrics.serverTurns} server messages`}
-                icon={Binary}
-              />
-              <MetricCard
-                label="Estimated latency"
-                value={`${metrics.totalMs} ms`}
-                detail={`${latency} ms network baseline`}
-                icon={Clock}
-                tone={metrics.totalMs < 160 ? 'good' : metrics.totalMs < 320 ? 'warn' : 'bad'}
-              />
-              <MetricCard
-                label="Decode work"
-                value={`${metrics.decodeCost} ms`}
-                detail={`${rowCount.toLocaleString()} rows modeled`}
-                icon={Gauge}
-              />
-            </div>
-          </div>
-        </div>
-
-        <CardContent className="p-4 sm:p-6">
-          <Tabs value={scenario} onValueChange={(value) => setScenario(value as Scenario)}>
-            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 lg:grid-cols-4">
-              {(Object.keys(BASE_SCENARIOS) as Scenario[]).map((key) => {
-                const TabIcon = BASE_SCENARIOS[key].icon;
-                return (
-                  <TabsTrigger key={key} value={key} className="gap-2 py-2">
-                    <TabIcon className="h-4 w-4" />
-                    {BASE_SCENARIOS[key].title.split(' ')[0]}
-                  </TabsTrigger>
-                );
-              })}
-            </TabsList>
-
-            {(Object.keys(BASE_SCENARIOS) as Scenario[]).map((key) => (
-              <TabsContent key={key} value={key} className="mt-6">
-                <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <h3 className="flex items-center gap-2 text-xl font-semibold">
-                      <ScenarioIcon className="h-5 w-5 text-primary" />
-                      {config.title}
-                    </h3>
-                    <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{config.subtitle}</p>
-                    <pre className="mt-3 overflow-x-auto rounded-md border bg-muted/35 px-3 py-2 text-xs">
-                      <code>{config.query}</code>
-                    </pre>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => setIsPlaying((value) => !value)}
-                      className="gap-2"
-                    >
-                      {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      {isPlaying ? 'Pause' : 'Play'}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setActiveIndex(0);
-                        setIsPlaying(false);
-                      }}
-                      className="gap-2"
-                    >
-                      <TimerReset className="h-4 w-4" />
-                      Reset
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
-
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <div className="space-y-4">
-              <MessageRail
-                steps={steps}
-                activeIndex={Math.min(activeIndex, steps.length - 1)}
-                onSelect={setActiveIndex}
-              />
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {steps.map((step, index) => (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => setActiveIndex(index)}
-                    className={cn(
-                      'rounded-md border px-3 py-2 text-left text-xs transition-colors hover:border-primary/50',
-                      index === activeIndex ? 'border-primary bg-primary/10' : 'bg-muted/20'
-                    )}
-                  >
-                    <div className="mb-1 flex items-center justify-between gap-2">
-                      <span className="font-mono font-semibold">{step.code}</span>
-                      <span className="text-muted-foreground">{index + 1}</span>
-                    </div>
-                    <div className="truncate font-medium">{step.label}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="grid gap-2 rounded-lg border bg-muted/20 p-3 text-xs sm:grid-cols-3">
-                <div className="flex items-center gap-2">
-                  <span className="rounded bg-cyan-500/15 px-2 py-1 font-mono text-cyan-600 dark:text-cyan-300">
-                    START
-                  </span>
-                  Startup packets have no type byte.
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'rounded bg-emerald-500/15 px-2 py-1 font-mono',
-                      'text-emerald-600 dark:text-emerald-300'
-                    )}
-                  >
-                    D
-                  </span>
-                  DataRow messages carry one row each.
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'rounded bg-violet-500/15 px-2 py-1 font-mono',
-                      'text-violet-600 dark:text-violet-300'
-                    )}
-                  >
-                    Z
-                  </span>
-                  ReadyForQuery ends the exchange.
-                </div>
-              </div>
-            </div>
-
-            {activeStep && <MessageInspector step={activeStep} />}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Activity className="h-5 w-5 text-primary" />
-              Lab controls
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <ControlSlider
-              label="Rows returned"
-              value={rowCount}
-              min={1}
-              max={scenario === 'copy' ? 25000 : 250}
-              step={scenario === 'copy' ? 500 : 1}
-              onChange={setRowCount}
-            />
-            <ControlSlider
-              label="Network latency"
-              value={latency}
-              min={5}
-              max={180}
-              step={1}
-              suffix=" ms"
-              onChange={setLatency}
-            />
-
-            <div className="grid gap-2">
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="PostgreSQL wire protocol"
+          icon={Database}
+          lead={
+            <div
+              className="flex flex-wrap items-center gap-1"
+              aria-label="Scenario and protocol controls"
+            >
+              {(Object.keys(BASE_SCENARIOS) as Scenario[]).map((key) => (
+                <Button
+                  key={key}
+                  type="button"
+                  variant={scenario === key ? 'default' : 'outline'}
+                  className="h-10 lg:h-8"
+                  aria-pressed={scenario === key}
+                  onClick={() => setScenario(key)}
+                >
+                  {BASE_SCENARIOS[key].title.split(' ')[0]}
+                </Button>
+              ))}
               <Button
                 type="button"
                 variant={tlsEnabled ? 'default' : 'outline'}
+                className="h-10 gap-1 lg:h-8"
+                aria-pressed={tlsEnabled}
                 onClick={() => setTlsEnabled((value) => !value)}
-                className="justify-start gap-2"
               >
                 {tlsEnabled ? <Lock className="h-4 w-4" /> : <Unplug className="h-4 w-4" />}
-                TLS negotiation {tlsEnabled ? 'on' : 'off'}
+                TLS
               </Button>
               <Button
                 type="button"
                 variant={pipelineEnabled ? 'default' : 'outline'}
-                onClick={() => setPipelineEnabled((value) => !value)}
-                className="justify-start gap-2"
+                className="h-10 gap-1 lg:h-8"
+                aria-pressed={pipelineEnabled}
                 disabled={scenario !== 'extended'}
+                onClick={() => setPipelineEnabled((value) => !value)}
               >
                 <Zap className="h-4 w-4" />
-                Extended pipelining {pipelineEnabled ? 'on' : 'off'}
+                Pipeline
               </Button>
               <Button
                 type="button"
                 variant={injectError ? 'destructive' : 'outline'}
-                onClick={() => setInjectError((value) => !value)}
-                className="justify-start gap-2"
+                className="h-10 gap-1 lg:h-8"
+                aria-pressed={injectError}
                 disabled={scenario === 'startup'}
+                onClick={() => {
+                  setInjectError((value) => !value);
+                  setActiveIndex(0);
+                  setIsPlaying(false);
+                }}
               >
                 <AlertTriangle className="h-4 w-4" />
-                Inject ErrorResponse
+                Error
               </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ShieldCheck className="h-5 w-5 text-primary" />
-              Driver mental model
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-lg border bg-muted/20 p-4">
-                <CheckCircle2 className="mb-3 h-5 w-5 text-emerald-500" />
-                <h4 className="mb-2 text-sm font-semibold">Always wait for Z</h4>
-                <p className="text-sm text-muted-foreground">
-                  ReadyForQuery is the connection boundary. It tells a pooler whether the session is
-                  idle, inside a transaction, or stuck in a failed transaction.
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/20 p-4">
-                <CheckCircle2 className="mb-3 h-5 w-5 text-emerald-500" />
-                <h4 className="mb-2 text-sm font-semibold">Rows are framed</h4>
-                <p className="text-sm text-muted-foreground">
-                  Each DataRow carries field lengths, so clients can decode NULLs, text values, and
-                  binary values without guessing delimiters.
-                </p>
-              </div>
-              <div className="rounded-lg border bg-muted/20 p-4">
-                <CheckCircle2 className="mb-3 h-5 w-5 text-emerald-500" />
-                <h4 className="mb-2 text-sm font-semibold">Prepared queries split work</h4>
-                <p className="text-sm text-muted-foreground">
-                  Parse and Bind separate SQL shape from values, which helps reuse plans and keeps
-                  parameter values out of string concatenation.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Database className="h-5 w-5 text-primary" />
-            Try Postgres without running your own server
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            These providers give you a real Postgres endpoint, so the same wire protocol shown above
-            is what your application driver speaks in production.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {providers.map((provider) => (
-              <a
-                key={provider.name}
-                href={provider.href}
-                target="_blank"
-                rel={provider.sponsored ? 'noopener noreferrer sponsored' : 'noopener noreferrer'}
-                className={cn(
-                  'rounded-lg border bg-muted/20 p-4 transition-colors',
-                  'hover:border-primary/50 hover:bg-muted/35'
-                )}
+          }
+          steps={stepPills}
+          current={activeIndex}
+          onStep={(index) => {
+            setIsPlaying(false);
+            setActiveIndex(index);
+          }}
+          stepNoun="Message"
+          stepsLabel="Protocol messages"
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={
+            <>
+              <ScenarioIcon className="mr-1 inline h-4 w-4 text-primary" />
+              {config.title}: {activeStep?.label}
+            </>
+          }
+          actions={
+            <div className="hidden items-center gap-1 lg:flex">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 lg:h-8"
+                onClick={goPrevious}
+                disabled={activeIndex === 0}
               >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <h4 className="text-sm font-semibold leading-snug">{provider.name}</h4>
-                  <Badge variant={provider.sponsored ? 'default' : 'secondary'} className="shrink-0">
-                    {provider.label}
-                  </Badge>
-                </div>
-                <p className="text-sm leading-relaxed text-muted-foreground">{provider.description}</p>
-                {provider.sponsored && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Affiliate link. We may earn a commission at no extra cost to you.
-                  </p>
-                )}
-              </a>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Button>
+              <Button
+                type="button"
+                className="h-10 lg:h-8"
+                onClick={() => setIsPlaying((value) => !value)}
+              >
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                {isPlaying ? 'Pause' : 'Play'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 lg:h-8"
+                onClick={goNext}
+                disabled={activeIndex === steps.length - 1}
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          }
+          goal={
+            currentGoal ? (
+              <>
+                {currentGoal.label}{' '}
+                <span className="text-muted-foreground">{currentGoal.hint}</span>
+              </>
+            ) : (
+              'All four missions are complete. Keep exploring the protocol.'
+            )
+          }
+        />
+        <SimAnnouncer
+          message={`${config.title}, message ${activeIndex + 1} of ${steps.length}: ${activeStep?.label ?? 'ready'}.`}
+        />
+
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="PostgreSQL wire tour complete"
+            summary="You followed secure startup, simple and extended queries, then watched an error drain back to ReadyForQuery."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Messages', value: steps.length },
+              { label: 'Wire bytes', value: formatBytes(metrics.payloadBytes) },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            panels={[
+              {
+                id: 'messages',
+                label: 'Messages',
+                content: (
+                  <MessageRail
+                    steps={steps}
+                    activeIndex={activeIndex}
+                    onSelect={(index) => {
+                      setIsPlaying(false);
+                      setActiveIndex(index);
+                    }}
+                  />
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                content: (
+                  <div className="space-y-3">
+                    {activeStep && <MessageInspector step={activeStep} />}
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <ControlSlider
+                        label="Rows returned"
+                        value={rowCount}
+                        min={1}
+                        max={scenario === 'copy' ? 25000 : 250}
+                        step={scenario === 'copy' ? 500 : 1}
+                        onChange={setRowCount}
+                      />
+                      <ControlSlider
+                        label="Network latency"
+                        value={latency}
+                        min={5}
+                        max={180}
+                        step={1}
+                        suffix=" ms"
+                        onChange={setLatency}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 rounded-lg border bg-card p-3 text-sm">
+                      <span>
+                        Round trips{' '}
+                        <strong className="font-mono">{metrics.roundTrips.toFixed(1)}</strong>
+                      </span>
+                      <span>
+                        Latency <strong className="font-mono">{metrics.totalMs} ms</strong>
+                      </span>
+                      <span>
+                        Client messages <strong className="font-mono">{metrics.clientTurns}</strong>
+                      </span>
+                      <span>
+                        Server messages <strong className="font-mono">{metrics.serverTurns}</strong>
+                      </span>
+                    </div>
+                    <SimMissionList missions={missions.missions} />
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-medium">
+                        How the wire exchange works
+                      </summary>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Startup messages do not have a type byte. A driver waits for ReadyForQuery
+                        before reusing a connection; extended protocol separates SQL shape from
+                        values with Parse and Bind.
+                      </p>
+                    </details>
+                    <section
+                      className="rounded-lg border bg-card p-3"
+                      aria-label="Postgres providers"
+                    >
+                      <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                        <Database className="h-4 w-4 text-primary" />
+                        Try Postgres without running your own server
+                      </div>
+                      <div className="grid gap-2">
+                        {providers.map((provider) => (
+                          <a
+                            key={provider.name}
+                            href={provider.href}
+                            target="_blank"
+                            rel={
+                              provider.sponsored
+                                ? 'noopener noreferrer sponsored'
+                                : 'noopener noreferrer'
+                            }
+                            className="rounded-md border p-3 text-sm hover:border-primary/50"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="font-medium">{provider.name}</span>
+                              <Badge variant={provider.sponsored ? 'default' : 'secondary'}>
+                                {provider.label}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {provider.description}
+                            </p>
+                            {provider.sponsored && (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Affiliate link. We may earn a commission at no extra cost to you.
+                              </p>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    </section>
+                  </div>
+                ),
+              },
+            ]}
+            columns="lg:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)]"
+            tab={tab}
+            onTabChange={setTab}
+            tabsLabel="Protocol panels"
+            minHeight="min-h-[24rem]"
+          />
+        )}
+        <SimPhoneBar>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 flex-1"
+            onClick={goPrevious}
+            disabled={activeIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4" /> Previous
+          </Button>
+          <Button
+            type="button"
+            className="h-10 flex-1"
+            onClick={() => setIsPlaying((value) => !value)}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {isPlaying ? 'Pause' : 'Play'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-10 flex-1"
+            onClick={goNext}
+            disabled={activeIndex === steps.length - 1}
+          >
+            Next <ChevronRight className="h-4 w-4" />
+          </Button>
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }

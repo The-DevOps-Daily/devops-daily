@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,16 +12,26 @@ import {
   FastForward,
   Pause,
   Play,
-  RotateCcw,
   Sparkles,
   Timer,
   Workflow,
   XCircle,
 } from 'lucide-react';
+import { MotionConfig } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type ScenarioId = 'microtasks' | 'async-await' | 'rejection' | 'promise-all';
@@ -65,6 +75,7 @@ interface Scenario {
   prediction: Prediction;
 }
 
+// prettier-ignore
 const SCENARIOS: Scenario[] = [
   {
     id: 'microtasks',
@@ -436,6 +447,44 @@ const PHASES: Array<{
   { id: 'console', label: 'Console', description: 'Logs appear in order.' },
 ];
 
+type PromiseMissionState = {
+  scenarioId: ScenarioId;
+  activeStepIndex: number;
+};
+
+const MISSIONS: Mission<PromiseMissionState>[] = [
+  {
+    id: 'microtasks',
+    label: 'Run the microtask scenario to the end and read the console order.',
+    hint: 'Pick Microtasks beat timers and press Play: promise callbacks run before the zero-delay timer.',
+    check: (state) =>
+      state.scenarioId === 'microtasks' && state.activeStepIndex === SCENARIOS[0]!.steps.length - 1,
+  },
+  {
+    id: 'async-await',
+    label: 'Step through async/await and watch the function pause and resume.',
+    hint: 'Pick Await suspends the function and press Next through it: code after await runs as a microtask.',
+    check: (state) =>
+      state.scenarioId === 'async-await' &&
+      state.activeStepIndex === SCENARIOS[1]!.steps.length - 1,
+  },
+  {
+    id: 'rejection',
+    label: 'Follow a rejected promise to its catch.',
+    hint: 'Pick Rejections jump to catch and press Play.',
+    check: (state) =>
+      state.scenarioId === 'rejection' && state.activeStepIndex === SCENARIOS[2]!.steps.length - 1,
+  },
+  {
+    id: 'promise-all',
+    label: 'Run Promise.all and see when it settles.',
+    hint: 'Pick Promise combinators and press Play: it waits for all of them, or rejects on the first rejection.',
+    check: (state) =>
+      state.scenarioId === 'promise-all' &&
+      state.activeStepIndex === SCENARIOS[3]!.steps.length - 1,
+  },
+];
+
 function getScenario(id: ScenarioId) {
   return SCENARIOS.find((scenario) => scenario.id === id) ?? SCENARIOS[0]!;
 }
@@ -458,12 +507,19 @@ export default function JavascriptPromisesAsyncSimulator() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1500);
   const [prediction, setPrediction] = useState<string | null>(null);
+  const [tab, setTab] = useState('event-loop');
+  const [dismissed, setDismissed] = useState(false);
 
   const scenario = getScenario(scenarioId);
   const activeStepIndex = Math.min(stepIndex, scenario.steps.length - 1);
   const step = scenario.steps[activeStepIndex] ?? scenario.steps[0]!;
   const progress = ((activeStepIndex + 1) / scenario.steps.length) * 100;
   const isCorrect = prediction === scenario.prediction.answer;
+  const missionState = useMemo(
+    () => ({ scenarioId, activeStepIndex }),
+    [scenarioId, activeStepIndex]
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
   useEffect(() => {
     setStepIndex(0);
@@ -506,195 +562,245 @@ export default function JavascriptPromisesAsyncSimulator() {
     setPrediction(null);
   };
 
+  const startOver = () => {
+    reset();
+    missions.reset();
+    setDismissed(false);
+  };
+
+  const controls = (height: string, phone = false) => (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className={height}
+        onClick={() => goToStep(activeStepIndex - 1)}
+        disabled={activeStepIndex === 0}
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Previous
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        className={cn(height, phone && 'min-w-[7rem]')}
+        onClick={() => setIsPlaying((playing) => !playing)}
+        disabled={activeStepIndex === scenario.steps.length - 1 && !isPlaying}
+        aria-pressed={isPlaying}
+      >
+        {isPlaying ? (
+          <Pause className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Play className="h-4 w-4" aria-hidden="true" />
+        )}
+        {isPlaying ? 'Pause' : 'Play'}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className={height}
+        onClick={() => goToStep(activeStepIndex + 1)}
+        disabled={activeStepIndex === scenario.steps.length - 1}
+      >
+        Next
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </Button>
+    </>
+  );
+
   return (
-    <div className="mx-auto w-full max-w-[1500px]">
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b bg-muted/20 p-3 sm:p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-                <Braces className="h-5 w-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="font-mono text-xs text-muted-foreground">// event loop lab</p>
-                <CardTitle className="text-xl md:text-2xl">
-                  JavaScript Promises & Async/Await Simulator
-                </CardTitle>
-              </div>
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="JavaScript Promises & Async/Await Simulator"
+          icon={Braces}
+          lead={
+            <div
+              role="group"
+              aria-label="Scenario"
+              className="flex w-full flex-wrap gap-1 sm:w-auto"
+            >
+              {SCENARIOS.map((candidate) => (
+                <Button
+                  key={candidate.id}
+                  type="button"
+                  variant={candidate.id === scenario.id ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-10 lg:h-8"
+                  aria-pressed={candidate.id === scenario.id}
+                  onClick={() => selectScenario(candidate.id)}
+                >
+                  {candidate.title}
+                </Button>
+              ))}
             </div>
-            <Badge variant="secondary" className="shrink-0">
-              step {activeStepIndex + 1}/{scenario.steps.length}
-            </Badge>
-          </div>
-        </CardHeader>
+          }
+          steps={scenario.steps.map((item, index) => ({
+            title: item.title,
+            status:
+              index < activeStepIndex ? 'done' : index === activeStepIndex ? 'started' : 'todo',
+          }))}
+          current={activeStepIndex}
+          onStep={goToStep}
+          stepsLabel={`${scenario.title} steps`}
+          tools={
+            <>
+              <label className="hidden items-center gap-1 text-xs text-muted-foreground xl:flex">
+                <FastForward className="h-4 w-4" aria-hidden="true" />
+                <select
+                  value={speed}
+                  onChange={(event) => setSpeed(Number(event.target.value))}
+                  className="h-8 rounded-md border bg-background px-2 text-sm text-foreground"
+                >
+                  <option value={1500}>Slow</option>
+                  <option value={1100}>Normal</option>
+                  <option value={650}>Fast</option>
+                </select>
+              </label>
+              <SimResetButton onReset={startOver} />
+            </>
+          }
+          progress={{ current: missions.done, total: missions.total }}
+          heading={step.title}
+          meta={
+            <>
+              <Badge variant="secondary">{phaseLabel(step.focus)}</Badge>
+              <span className="font-mono text-xs text-muted-foreground">
+                {Math.round(progress)}%
+              </span>
+            </>
+          }
+          actions={<div className="hidden items-center gap-2 lg:flex">{controls('h-8')}</div>}
+          goal={
+            missions.current ? (
+              <>
+                {missions.current.label}{' '}
+                <span className="text-muted-foreground">{missions.current.hint}</span>
+              </>
+            ) : (
+              'All four missions are done. Keep exploring the event loop.'
+            )
+          }
+        />
+        <SimAnnouncer
+          message={`${scenario.title}, step ${activeStepIndex + 1}: ${step.title}. ${step.explanation}`}
+        />
 
-        <CardContent className="space-y-3 p-3 sm:p-4">
-          <WorkbenchToolbar
-            scenario={scenario}
-            activeStepIndex={activeStepIndex}
-            stepCount={scenario.steps.length}
-            isPlaying={isPlaying}
-            progress={progress}
-            speed={speed}
-            onScenarioSelect={selectScenario}
-            onPrevious={() => goToStep(activeStepIndex - 1)}
-            onNext={() => goToStep(activeStepIndex + 1)}
-            onTogglePlay={() => setIsPlaying((playing) => !playing)}
-            onReset={reset}
-            onSpeedChange={setSpeed}
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Async code mapped"
+            summary="You stepped through microtasks, async/await, rejection handling, and Promise.all."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Scenario', value: scenario.title },
+              { label: 'Step', value: `${activeStepIndex + 1}/${scenario.steps.length}` },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
           />
-
-          <div className="rounded-md border border-primary/25 bg-primary/5 p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Workflow className="h-4 w-4 text-primary" />
-              <p className="text-sm font-semibold">{step.title}</p>
-              <Badge variant="secondary" className="ml-auto capitalize">
-                {phaseLabel(step.focus)}
-              </Badge>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
-          </div>
-
-          <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)_300px]">
-            <div className="order-2 space-y-3 xl:order-1">
-              <CodePanel code={scenario.code} activeLine={step.activeLine} compact />
-              <MentalModelPanel scenarioId={scenario.id} />
-            </div>
-
-            <div className="order-1 xl:order-2">
-              <EventLoopBoard step={step} />
-            </div>
-
-            <div className="order-3 grid gap-3 lg:grid-cols-2 xl:grid-cols-1">
-              <ConsolePanel items={step.console} />
-              <PredictionCard
-                prediction={scenario.prediction}
-                selected={prediction}
-                isCorrect={isCorrect}
-                onSelect={setPrediction}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)]"
+            minHeight="min-h-[22rem]"
+            tab={tab}
+            onTabChange={setTab}
+            tabsLabel="Simulator panels"
+            panels={[
+              {
+                id: 'event-loop',
+                label: 'Event loop',
+                className: 'space-y-2',
+                content: (
+                  <div className="space-y-2">
+                    <section className="rounded-lg border bg-card p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Workflow className="h-4 w-4 text-primary" aria-hidden="true" />
+                        <h3 className="text-sm font-semibold">What is happening now</h3>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{step.explanation}</p>
+                    </section>
+                    <CodePanel code={scenario.code} activeLine={step.activeLine} compact />
+                    <EventLoopBoard step={step} />
+                  </div>
+                ),
+              },
+              {
+                id: 'console',
+                label: 'Console',
+                className: 'space-y-2',
+                content: (
+                  <div className="space-y-2">
+                    <ConsolePanel items={step.console} />
+                    <PredictionCard
+                      prediction={scenario.prediction}
+                      selected={prediction}
+                      isCorrect={isCorrect}
+                      onSelect={setPrediction}
+                    />
+                  </div>
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                className: 'space-y-2',
+                content: (
+                  <div className="space-y-2">
+                    <SimMissionList missions={missions.missions} />
+                    <MentalModelPanel scenarioId={scenario.id} />
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-semibold">
+                        How the event loop is shown
+                      </summary>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Step through each scenario to see synchronous work leave the call stack,
+                        then watch promise reactions and await continuations drain before timer
+                        tasks.
+                      </p>
+                    </details>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        )}
+        <SimPhoneBar>
+          <div className="flex items-center justify-center gap-2">{controls('h-10', true)}</div>
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }
 
-function WorkbenchToolbar({
-  scenario,
-  activeStepIndex,
-  stepCount,
-  isPlaying,
-  progress,
-  speed,
-  onScenarioSelect,
-  onPrevious,
-  onNext,
-  onTogglePlay,
-  onReset,
-  onSpeedChange,
+function CodePanel({
+  code,
+  activeLine,
+  compact = false,
 }: {
-  scenario: Scenario;
-  activeStepIndex: number;
-  stepCount: number;
-  isPlaying: boolean;
-  progress: number;
-  speed: number;
-  onScenarioSelect: (scenarioId: ScenarioId) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  onTogglePlay: () => void;
-  onReset: () => void;
-  onSpeedChange: (value: number) => void;
+  code: string[];
+  activeLine: number;
+  compact?: boolean;
 }) {
   return (
-    <div className="rounded-md border bg-background/80 p-3">
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {SCENARIOS.map((candidate) => {
-            const active = candidate.id === scenario.id;
-
-            return (
-              <button
-                key={candidate.id}
-                type="button"
-                onClick={() => onScenarioSelect(candidate.id)}
-                className={cn(
-                  'min-w-[170px] rounded-md border px-3 py-2 text-left transition-colors xl:min-w-[190px]',
-                  active ? 'border-primary/60 bg-primary/10' : 'border-border hover:bg-muted/30'
-                )}
-              >
-                <span className="block text-sm font-semibold">{candidate.title}</span>
-                <span className="mt-1 block text-xs leading-snug text-muted-foreground">{candidate.subtitle}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-          <Button type="button" variant="outline" size="icon" onClick={onPrevious} disabled={activeStepIndex === 0}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            className="min-w-[108px]"
-            onClick={onTogglePlay}
-            disabled={activeStepIndex === stepCount - 1 && !isPlaying}
-          >
-            {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-            {isPlaying ? 'Pause' : 'Play'}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={onNext}
-            disabled={activeStepIndex === stepCount - 1}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="outline" size="icon" onClick={onReset}>
-            <RotateCcw className="h-4 w-4" />
-          </Button>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            <FastForward className="h-4 w-4" />
-            <select
-              value={speed}
-              onChange={(event) => onSpeedChange(Number(event.target.value))}
-              className="h-9 rounded-md border bg-background px-2 text-sm text-foreground"
-            >
-              <option value={1500}>Slow</option>
-              <option value={1100}>Normal</option>
-              <option value={650}>Fast</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
-        <Progress value={progress} className="flex-1" />
-        <Badge variant="secondary" className="shrink-0">
-          {activeStepIndex + 1}/{stepCount}
-        </Badge>
-      </div>
-    </div>
-  );
-}
-
-function CodePanel({ code, activeLine, compact = false }: { code: string[]; activeLine: number; compact?: boolean }) {
-  return (
-    <div className="overflow-hidden rounded-md border bg-[#09090b]">
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+    <div className="overflow-hidden rounded-lg border bg-card">
+      <div className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
         <div className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-          <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />
+          <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" />
+          <span className="h-2.5 w-2.5 rounded-full bg-primary" />
         </div>
-        <span className="font-mono text-xs text-slate-400">async-lab.js</span>
+        <span className="font-mono text-xs text-muted-foreground">async-lab.js</span>
       </div>
       <div
         className={cn(
-          'overflow-x-auto font-mono text-slate-200',
+          'overflow-x-auto font-mono text-foreground',
           compact ? 'max-h-[320px] p-3 text-xs leading-6' : 'p-4 text-sm leading-7'
         )}
       >
@@ -710,7 +816,9 @@ function CodePanel({ code, activeLine, compact = false }: { code: string[]; acti
                 active && 'bg-primary/20 text-primary'
               )}
             >
-              <span className="select-none pr-3 text-right text-slate-500">{lineNumber}</span>
+              <span className="select-none pr-3 text-right text-muted-foreground">
+                {lineNumber}
+              </span>
               <span className="whitespace-pre">{line || ' '}</span>
             </div>
           );
@@ -759,7 +867,10 @@ function EventLoopBoard({ step }: { step: StepState }) {
           <RuntimePanel
             title="Promise Inspector"
             icon={<Workflow className="h-4 w-4" />}
-            items={[`${step.promise.label}: ${statusLabel(step.promise.status)}`, `value: ${step.promise.value}`]}
+            items={[
+              `${step.promise.label}: ${statusLabel(step.promise.status)}`,
+              `value: ${step.promise.value}`,
+            ]}
             empty="not created"
             tone={statusTone(step.promise.status)}
             size="compact"
@@ -823,17 +934,24 @@ function PhaseRail({ focus }: { focus: StepFocus }) {
               <div className="mb-1 flex min-w-0 items-center gap-1.5">
                 <span
                   className={cn(
-                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] font-semibold',
-                    active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-xs font-semibold',
+                    active
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border bg-background'
                   )}
                 >
                   {index + 1}
                 </span>
-                <span className={cn('min-w-0 whitespace-nowrap text-xs font-semibold leading-tight', active && 'text-primary')}>
+                <span
+                  className={cn(
+                    'min-w-0 whitespace-nowrap text-xs font-semibold leading-tight',
+                    active && 'text-primary'
+                  )}
+                >
                   {phase.label}
                 </span>
               </div>
-              <p className="text-[11px] leading-snug text-muted-foreground">{phase.description}</p>
+              <p className="text-xs leading-snug text-muted-foreground">{phase.description}</p>
             </div>
           );
         })}
@@ -905,7 +1023,10 @@ function ConsolePanel({ items }: { items: string[] }) {
       <div className="space-y-2">
         {items.length ? (
           items.map((item, index) => (
-            <div key={`${item}-${index}`} className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs">
+            <div
+              key={`${item}-${index}`}
+              className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs"
+            >
               {index + 1}. {item}
             </div>
           ))
@@ -930,7 +1051,11 @@ function MentalModelPanel({ scenarioId }: { scenarioId: ScenarioId }) {
         <ModelRule number="1" text="Run stack first." />
         <ModelRule number="2" text="Drain microtasks before tasks." />
         <ModelRule number="3" text="Timers and I/O wait as tasks." />
-        <ModelRule number="4" text="await resumes as a microtask." active={scenarioId === 'async-await'} />
+        <ModelRule
+          number="4"
+          text="await resumes as a microtask."
+          active={scenarioId === 'async-await'}
+        />
       </div>
     </div>
   );
@@ -970,15 +1095,15 @@ function PredictionCard({
                 className={cn(
                   'flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors',
                   chosen ? 'border-primary/60 bg-primary/10' : 'hover:bg-muted/30',
-                  correct && 'border-emerald-500/50 bg-emerald-500/10'
+                  correct && 'border-correct/50 bg-correct/10'
                 )}
               >
                 <span className="min-w-0 flex-1 break-words">{option}</span>
                 {chosen &&
                   (isCorrect ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-correct-foreground" />
                   ) : (
-                    <XCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <XCircle className="h-4 w-4 shrink-0 text-wrong-foreground" />
                   ))}
               </button>
             );
@@ -988,10 +1113,12 @@ function PredictionCard({
           <div
             className={cn(
               'rounded-md border p-3 text-sm',
-              isCorrect ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'
+              isCorrect ? 'border-correct/30 bg-correct/10' : 'border-partial/30 bg-partial/10'
             )}
           >
-            <p className="font-medium">{isCorrect ? 'Correct' : `Not quite. Answer: ${prediction.answer}`}</p>
+            <p className="font-medium">
+              {isCorrect ? 'Correct' : `Not quite. Answer: ${prediction.answer}`}
+            </p>
             <p className="mt-1 text-muted-foreground">{prediction.explanation}</p>
           </div>
         )}
@@ -1000,9 +1127,22 @@ function PredictionCard({
   );
 }
 
-function ModelRule({ number, text, active = false }: { number: string; text: string; active?: boolean }) {
+function ModelRule({
+  number,
+  text,
+  active = false,
+}: {
+  number: string;
+  text: string;
+  active?: boolean;
+}) {
   return (
-    <div className={cn('flex gap-2 rounded-md border p-2', active ? 'border-primary/50 bg-primary/10' : 'bg-muted/20')}>
+    <div
+      className={cn(
+        'flex gap-2 rounded-md border p-2',
+        active ? 'border-primary/50 bg-primary/10' : 'bg-muted/20'
+      )}
+    >
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
         {number}
       </span>
