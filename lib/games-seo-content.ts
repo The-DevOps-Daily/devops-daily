@@ -20,6 +20,46 @@ export interface SimulatorExplainerContent {
 }
 
 const explainers: Record<string, SimulatorExplainerContent> = {
+  'idempotency-retry-lab': {
+    summary:
+      'A network failure after a payment request is ambiguous: the client may not have a response, while the server may already have created the charge. This lab makes that ambiguity visible. First, you lose a response without a key and retry, which creates two charges. Then you repeat the checkout with one UUID v4 idempotency key for the intended operation. The API saves the first completed response and returns that same saved result to the retry, so the ledger has one charge. You also reuse a key with a different amount and see a 422 response, then send two identical keyed requests at once and see a 409 while the first request is processing. For retries, the lab compares immediate retrying, capped exponential backoff, and full jitter in a deterministic outage model with 200 clients. Full jitter randomizes each capped wait, reducing the arrival peak compared with no backoff. Finally, a job that remains unavailable through five attempts moves to a dead-letter queue with its idempotency key and final error. The model follows the IETF idempotency-key draft, Stripe idempotent-request behavior, and AWS guidance on exponential backoff and jitter.',
+    teaches: [
+      'Idempotency keys',
+      'Safe payment retries',
+      'HTTP conflict and mismatch responses',
+      'Exponential backoff and full jitter',
+      'Dead-letter queues',
+    ],
+    level: 'Intermediate',
+    tryThis: [
+      'Press "Run duplicate checkout" and inspect the ledger after the lost response causes a second charge.',
+      'Press "Run keyed checkout" and compare its one charge with the saved response replay in the idempotency store.',
+      'Press "Run no backoff", then "Run full jitter", and compare the peak requests in the outage arrival chart.',
+    ],
+    faq: [
+      {
+        question: 'Why does an idempotency key stop a duplicate charge?',
+        answer:
+          'The server associates the key with one request fingerprint and saves the first result. A later request with that key and fingerprint returns the saved status and body instead of executing the charge again.',
+      },
+      {
+        question: 'What happens when the same key has a different payload?',
+        answer:
+          'The lab returns 422 Unprocessable Content because one key cannot name two different operations. Stripe describes the equivalent case as an idempotency error, so the client should create a new key only for a genuinely new intended operation.',
+      },
+      {
+        question: 'Which failures should a client retry?',
+        answer:
+          'Retry network errors, 409 conflicts, 429 rate limits, and 5xx responses, using a bounded delay. Do not retry 400 or 422, because those describe a request that needs correction rather than a transient failure.',
+      },
+      {
+        question: 'What does a dead-letter queue do here?',
+        answer:
+          'After five unsuccessful attempts, the job is retained with its idempotency key and final error for inspection or deliberate replay. The queue does not automatically send it again, which prevents an endless retry loop.',
+      },
+    ],
+  },
+
   'graphql-dataloader-lab': {
     summary:
       'GraphQL makes a nested response look like one request, but each field resolver can still issue database work. This lab follows Query.posts(first: 10) for a blog with ten posts, three comments per post, and six users. With post authors only, naive resolvers send one posts query and one user query for every post, for eleven queries. Add comments and each comment author, and the same pattern becomes fifty-one queries. The execution trace groups resolver work by level: all post author resolvers call load in one tick, comments resolve at the next level, and comment authors run only after comments resolve. Turn on the User DataLoader to coalesce same-tick user keys into one ordered batch, with duplicate keys loaded once through its cache. Turn on the Comments DataLoader too and the whole nested page uses four queries in this model. Finally, run as Ada, share loaders across requests, then run as Bo. The shared user cache returns Ada’s cached object, including the email visible when Ada loaded it. Switch back to Per request and Bo receives null for Ada’s email. The model leaves out awaits between loads, which would split DataLoader batches.',

@@ -65,6 +65,7 @@ import CdnEdgeCacheLab from '@/components/games/cdn-edge-cache-lab';
 import HttpVersionsLab from '@/components/games/http-versions-lab';
 import EmailAuthLab from '@/components/games/email-auth-lab';
 import GraphqlDataloaderLab from '@/components/games/graphql-dataloader-lab';
+import IdempotencyRetryLab from '@/components/games/idempotency-retry-lab';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
@@ -133,6 +134,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'http-versions-lab': HttpVersionsLab,
   'email-auth-lab': EmailAuthLab,
   'graphql-dataloader-lab': GraphqlDataloaderLab,
+  'idempotency-retry-lab': IdempotencyRetryLab,
 };
 
 export function getGameComponent(slug: string): ComponentType | undefined {
