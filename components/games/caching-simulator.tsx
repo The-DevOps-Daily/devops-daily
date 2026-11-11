@@ -1,21 +1,24 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { Database, HardDrive, Zap } from 'lucide-react';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
-  RotateCcw,
-  Database,
-  HardDrive,
-  Zap,
-  Clock,
-  TrendingUp,
-  CheckCircle,
-  XCircle,
-  ArrowDown,
-  Keyboard,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type EvictionPolicy = 'lru' | 'fifo' | 'lfu';
@@ -80,7 +83,46 @@ const CACHE_SIZE = 4;
 const getCacheLatency = () => Math.floor(Math.random() * 9) + 1;
 const getDbLatency = () => Math.floor(Math.random() * 150) + 50;
 
+interface CacheMissionState {
+  hits: number;
+  evictionPolicies: EvictionPolicy[];
+}
+
+const MISSIONS: Mission<CacheMissionState>[] = [
+  {
+    id: 'hit',
+    label: 'Ask for the same item twice and get a cache hit.',
+    hint: 'The first request is a miss and fills the cache.',
+    check: (state) => state.hits > 0,
+  },
+  {
+    id: 'evict-lru',
+    label: 'Fill the cache with LRU and watch the least recently used item go.',
+    hint: 'The cache holds four items. Ask for a fifth.',
+    check: (state) => state.evictionPolicies.includes('lru'),
+  },
+  {
+    id: 'evict-other',
+    label: 'Evict again with LFU or FIFO and compare who goes.',
+    hint: 'Switch the policy, then fill the cache again.',
+    check: (state) =>
+      state.evictionPolicies.some(
+        (evictionPolicy) => evictionPolicy === 'lfu' || evictionPolicy === 'fifo'
+      ),
+  },
+  {
+    id: 'second-policy',
+    label: 'Evict with all three policies: LRU, LFU and FIFO.',
+    hint: 'Each one picks a different item to throw out.',
+    check: (state) => new Set(state.evictionPolicies).size >= 3,
+  },
+];
+
+type CacheTab = 'cache' | 'details';
+
 export default function CachingSimulator() {
+  const [tab, setTab] = useState<CacheTab>('cache');
+  const [dismissed, setDismissed] = useState(false);
   const [policy, setPolicy] = useState<EvictionPolicy>('lru');
   const [cache, setCache] = useState<CacheItem[]>([]);
   const [animation, setAnimation] = useState<RequestAnimation | null>(null);
@@ -93,46 +135,7 @@ export default function CachingSimulator() {
     time: number;
     key: string;
   } | null>(null);
-
-  // Keyboard navigation handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      // Number keys 1-6 to request data item (A-F)
-      const num = parseInt(e.key);
-      if (num >= 1 && num <= DATA_ITEMS.length && !animation) {
-        e.preventDefault();
-        handleRequest(DATA_ITEMS[num - 1].key);
-      }
-
-      // R to reset
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        reset();
-      }
-
-      // Escape to reset
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        reset();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [animation]);
+  const [evictionPolicies, setEvictionPolicies] = useState<EvictionPolicy[]>([]);
 
   const getItemToEvict = useCallback(
     (currentCache: CacheItem[]): CacheItem | null => {
@@ -254,6 +257,7 @@ export default function CachingSimulator() {
         setTimeout(() => {
           const itemToEvict = getItemToEvict(cache);
           if (itemToEvict) {
+            setEvictionPolicies((previous) => [...previous, policy]);
             setEvictingKey(itemToEvict.key);
             setRequestSteps([
               { step: 1, label: 'Not found', shortLabel: 'Miss', status: 'done' },
@@ -322,7 +326,7 @@ export default function CachingSimulator() {
         }, 1800);
       }
     },
-    [animation, cache, getItemToEvict, tick]
+    [animation, cache, getItemToEvict, policy, tick]
   );
 
   const reset = () => {
@@ -339,540 +343,359 @@ export default function CachingSimulator() {
     stats.hits + stats.misses > 0
       ? ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(0)
       : '0';
+  const getItemLabel = (key: string) => DATA_ITEMS.find((item) => item.key === key)?.label || key;
 
-  const getItemColor = (key: string) =>
-    DATA_ITEMS.find((item) => item.key === key)?.color || 'bg-gray-500';
+  const missionState = useMemo(
+    () => ({ hits: stats.hits, evictionPolicies }),
+    [evictionPolicies, stats.hits]
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
-  const getItemLabel = (key: string) =>
-    DATA_ITEMS.find((item) => item.key === key)?.label || key;
+  const startOver = () => {
+    reset();
+    setEvictionPolicies([]);
+    missions.reset();
+    setDismissed(false);
+  };
+
+  const selectPolicy = (nextPolicy: EvictionPolicy) => {
+    if (!animation) {
+      setPolicy(nextPolicy);
+      reset();
+    }
+  };
+
+  const statusMessage = animation
+    ? `Requesting ${getItemLabel(animation.key)}.`
+    : lastResult
+      ? `${lastResult.isHit ? 'Cache hit' : 'Cache miss'} for ${getItemLabel(lastResult.key)}.`
+      : 'Choose an item to begin.';
+
+  const policyPicker = (phone = false) => (
+    <div
+      className={cn('flex items-center gap-1', phone && 'w-full')}
+      role="group"
+      aria-label="Eviction policy"
+    >
+      {(Object.keys(EVICTION_POLICIES) as EvictionPolicy[]).map((nextPolicy) => (
+        <Button
+          key={nextPolicy}
+          type="button"
+          variant={policy === nextPolicy ? 'default' : 'outline'}
+          className={cn('h-10 min-w-10 px-2 text-xs lg:h-8', phone && 'flex-1')}
+          aria-pressed={policy === nextPolicy}
+          onClick={() => selectPolicy(nextPolicy)}
+          disabled={!!animation}
+        >
+          {EVICTION_POLICIES[nextPolicy].name}
+        </Button>
+      ))}
+    </div>
+  );
+
+  const currentGoal = missions.current;
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-4 sm:space-y-6">
-      {/* Policy Selector */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-3">
-          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-            <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500" />
-            Eviction Policy
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {(Object.keys(EVICTION_POLICIES) as EvictionPolicy[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => {
-                  if (!animation) {
-                    setPolicy(p);
-                    reset();
-                  }
-                }}
-                className={cn(
-                  'p-2 sm:p-3 rounded-lg border-2 transition-all text-left',
-                  policy === p
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
-                )}
-              >
-                <div className="font-bold text-xs sm:text-sm">{EVICTION_POLICIES[p].name}</div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
-                  {EVICTION_POLICIES[p].description}
-                </div>
-                <div className="text-[10px] text-muted-foreground sm:hidden">
-                  {EVICTION_POLICIES[p].shortDesc}
-                </div>
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-muted-foreground bg-muted/50 p-2 rounded">
-            <strong>{EVICTION_POLICIES[policy].name}:</strong> {EVICTION_POLICIES[policy].how}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Main Visualization */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base sm:text-lg">Cache Simulator</CardTitle>
-            <Button variant="outline" size="sm" onClick={reset} disabled={!!animation}>
-              <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              <span className="text-xs sm:text-sm">Reset</span>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4 sm:space-y-6">
-          {/* Request Buttons */}
-          <div>
-            <div className="text-xs sm:text-sm font-medium mb-2 text-muted-foreground">
-              Tap to request data:
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-              {DATA_ITEMS.map((item) => (
-                <Button
-                  key={item.key}
-                  variant="outline"
-                  onClick={() => handleRequest(item.key)}
-                  disabled={!!animation}
-                  className={cn(
-                    'flex flex-col items-center py-2 sm:py-3 h-auto px-1 sm:px-3',
-                    cache.some((c) => c.key === item.key) && 'ring-2 ring-green-500'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm mb-1',
-                      item.color
-                    )}
-                  >
-                    {item.key}
-                  </span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground truncate w-full text-center">
-                    <span className="sm:hidden">{item.shortLabel}</span>
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </span>
-                </Button>
-              ))}
-            </div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
-              Green ring = in cache
-            </p>
-            <p className="hidden text-[10px] text-muted-foreground mt-1 items-center gap-1 sm:flex">
-              <Keyboard className="h-3 w-3" />
-              <span>
-                Press <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">1-6</kbd> to request,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">R</kbd> to reset
-              </span>
-            </p>
-          </div>
-
-          {/* Visual Animation Area - Vertical on mobile, horizontal on desktop */}
-          <div className="relative bg-gradient-to-b sm:bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/50 dark:to-slate-800/30 rounded-lg overflow-hidden p-3 sm:p-4">
-            {/* Mobile: Vertical layout */}
-            <div className="flex flex-col sm:hidden items-center gap-3">
-              {/* Your App */}
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <Zap className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-xs text-muted-foreground">Your App</span>
-              </div>
-
-              <ArrowDown className="h-4 w-4 text-muted-foreground" />
-
-              {/* Cache */}
-              <div className="flex flex-col items-center">
-                <div className="grid grid-cols-4 gap-1 p-2 bg-emerald-500/20 rounded-lg border-2 border-emerald-500">
-                  {Array.from({ length: CACHE_SIZE }).map((_, i) => {
-                    const item = cache[i];
-                    return (
-                      <div
-                        key={i}
-                        className={cn(
-                          'w-8 h-8 rounded flex items-center justify-center text-white font-bold text-xs transition-all',
-                          item
-                            ? cn(
-                                getItemColor(item.key),
-                                evictingKey === item.key && 'animate-pulse ring-2 ring-red-500'
-                              )
-                            : 'bg-gray-300 dark:bg-gray-700'
-                        )}
-                      >
-                        {item ? item.key : '-'}
-                      </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <HardDrive className="h-3 w-3 text-emerald-500" />
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                    Cache (1-10ms)
-                  </span>
-                </div>
-              </div>
-
-              <ArrowDown className="h-4 w-4 text-muted-foreground" />
-
-              {/* Database */}
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
-                  <Database className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-left">
-                  <span className="text-xs text-muted-foreground block">Database</span>
-                  <span className="text-[10px] text-red-500 font-medium">(50-200ms)</span>
-                </div>
-              </div>
-
-              {/* Mobile Animation Indicator */}
-              <AnimatePresence>
-                {animation && (
-                  <motion.div
-                    key={animation.id}
-                    className={cn(
-                      'absolute w-6 h-6 rounded-full flex items-center justify-center text-white font-bold text-xs z-10',
-                      getItemColor(animation.key)
-                    )}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
-                  >
-                    {animation.key}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Desktop: Horizontal layout */}
-            <div className="hidden sm:block h-32">
-              {/* Database */}
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
-                <div className="w-12 h-12 bg-slate-600 rounded-lg flex items-center justify-center">
-                  <Database className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs mt-1 text-muted-foreground">Database</span>
-                <span className="text-xs text-red-500 font-medium">50-200ms</span>
-              </div>
-
-              {/* Cache */}
-              <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
-                <div className="flex flex-col items-center">
-                  <div className="flex gap-1 p-2 bg-emerald-500/20 rounded-lg border-2 border-emerald-500">
-                    {Array.from({ length: CACHE_SIZE }).map((_, i) => {
-                      const item = cache[i];
-                      return (
-                        <div
-                          key={i}
-                          className={cn(
-                            'w-10 h-10 rounded flex items-center justify-center text-white font-bold text-sm transition-all',
-                            item
-                              ? cn(
-                                  getItemColor(item.key),
-                                  evictingKey === item.key && 'animate-pulse ring-2 ring-red-500'
-                                )
-                              : 'bg-gray-300 dark:bg-gray-700'
-                          )}
-                        >
-                          {item ? item.key : '-'}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <HardDrive className="h-3 w-3 text-emerald-500" />
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                      Cache (1-10ms)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* App/User */}
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
-                <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                  <Zap className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xs mt-1 text-muted-foreground">Your App</span>
-              </div>
-
-              {/* Desktop Animated Request */}
-              <AnimatePresence>
-                {animation && (
-                  <motion.div
-                    key={animation.id}
-                    className={cn(
-                      'absolute w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm z-10',
-                      getItemColor(animation.key)
-                    )}
-                    initial={{ right: 16, top: '50%', y: '-50%' }}
-                    animate={{
-                      right:
-                        animation.phase === 'checking'
-                          ? '50%'
-                          : animation.phase === 'hit'
-                            ? 16
-                            : animation.phase === 'miss-fetching'
-                              ? 'calc(100% - 64px)'
-                              : animation.phase === 'storing'
-                                ? '50%'
-                                : 16,
-                      x:
-                        animation.phase === 'checking' || animation.phase === 'storing'
-                          ? '50%'
-                          : 0,
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {animation.key}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Step-by-step Status Window */}
-          <div className="bg-slate-900 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
-            <div className="flex items-center gap-2 mb-2 sm:mb-3 text-slate-400 text-[10px] sm:text-xs">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500" />
-                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500" />
-                <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500" />
-              </div>
-              <span>Request Log</span>
-            </div>
-
-            {requestSteps.length === 0 ? (
-              <div className="text-slate-500 text-xs sm:text-sm">
-                <span className="text-green-400">$</span>{' '}
-                <span className="hidden sm:inline">Click a data item to see how caching works...</span>
-                <span className="sm:hidden">Tap an item above...</span>
-              </div>
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Caching"
+          icon={HardDrive}
+          lead={policyPicker()}
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={missions.complete ? 'Caching patterns explored' : 'Watch the cache decide'}
+          goal={
+            missions.complete ? (
+              'Missions done: keep experimenting with cache behavior.'
             ) : (
-              <div className="space-y-1 sm:space-y-2">
-                {requestSteps.map((step, i) => (
-                  <div key={i} className="flex items-center gap-1 sm:gap-2">
-                    {step.status === 'done' ? (
-                      <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-400 flex-shrink-0" />
-                    ) : step.status === 'active' ? (
-                      <motion.div
-                        animate={{ opacity: [1, 0.5, 1] }}
-                        transition={{ repeat: Infinity, duration: 0.8 }}
-                        className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-yellow-400 flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-slate-600 flex-shrink-0" />
-                    )}
-                    <span
-                      className={cn(
-                        'truncate',
-                        step.status === 'done'
-                          ? 'text-green-400'
-                          : step.status === 'active'
-                            ? 'text-yellow-400'
-                            : 'text-slate-500'
-                      )}
-                    >
-                      <span className="hidden sm:inline">{step.label}</span>
-                      <span className="sm:hidden">{step.shortLabel}</span>
-                    </span>
-                    {step.time && (
-                      <span
-                        className={cn(
-                          'ml-auto flex-shrink-0',
-                          step.time <= 10 ? 'text-green-400' : 'text-red-400'
-                        )}
-                      >
-                        +{step.time}ms
+              <>
+                {currentGoal?.label}{' '}
+                <span className="text-muted-foreground">{currentGoal?.hint}</span>
+              </>
+            )
+          }
+        />
+        <SimAnnouncer message={statusMessage} />
+
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Caching missions complete"
+            summary="You compared repeated reads with the three eviction policies."
+            stats={[
+              { label: 'Hits', value: stats.hits, note: 'Repeated reads served from cache' },
+              { label: 'Misses', value: stats.misses, note: 'Database fetches' },
+              {
+                label: 'Policies',
+                value: new Set(evictionPolicies).size,
+                note: 'Eviction rules observed',
+              },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            panels={[
+              {
+                id: 'cache',
+                label: 'Cache',
+                content: (
+                  <section className="space-y-3 rounded-lg border bg-card p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">Request data</p>
+                        <p className="text-xs text-muted-foreground">
+                          A miss fills a slot; a repeat request becomes a hit.
+                        </p>
+                      </div>
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {cache.length}/{CACHE_SIZE} slots
                       </span>
-                    )}
-                  </div>
-                ))}
-
-                {/* Result summary */}
-                {lastResult && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={cn(
-                      'mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-slate-700 flex items-center gap-1 sm:gap-2 flex-wrap',
-                      lastResult.isHit ? 'text-green-400' : 'text-amber-400'
-                    )}
-                  >
-                    {lastResult.isHit ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="font-bold">HIT!</span>
-                        <span className="text-green-300 text-[10px] sm:text-xs">
-                          {lastResult.time}ms <span className="hidden sm:inline">(~20x faster!)</span>
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                        <span className="font-bold">MISS</span>
-                        <span className="text-amber-300 text-[10px] sm:text-xs">
-                          {lastResult.time}ms{' '}
-                          <span className="hidden sm:inline">
-                            ("{lastResult.key}" now cached)
-                          </span>
-                        </span>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats & Cache Details - Stack on mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Stats */}
-        <Card>
-          <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
-              Stats
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2 sm:gap-4">
-              <div className="text-center p-2 sm:p-3 bg-green-500/10 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
-                  {stats.hits}
-                </div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Hits</div>
-              </div>
-              <div className="text-center p-2 sm:p-3 bg-amber-500/10 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-amber-600 dark:text-amber-400">
-                  {stats.misses}
-                </div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Misses</div>
-              </div>
-              <div className="text-center p-2 sm:p-3 bg-blue-500/10 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {hitRate}%
-                </div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Hit Rate</div>
-              </div>
-              <div className="text-center p-2 sm:p-3 bg-purple-500/10 rounded-lg">
-                <div className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  {stats.totalTime}<span className="text-sm">ms</span>
-                </div>
-                <div className="text-[10px] sm:text-xs text-muted-foreground">Total Time</div>
-              </div>
-            </div>
-            {stats.hits + stats.misses > 0 && (
-              <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-muted/50 rounded-lg">
-                <div className="text-xs sm:text-sm font-medium mb-2">Time Saved</div>
-                <div className="space-y-1 sm:space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground w-16 sm:w-24">
-                      With cache:
-                    </span>
-                    <div className="flex-1 bg-muted rounded-full h-3 sm:h-4 overflow-hidden">
-                      <motion.div
-                        className="h-full bg-green-500"
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: `${stats.withoutCacheTime > 0 ? Math.min((stats.totalTime / stats.withoutCacheTime) * 100, 100) : 0}%`,
-                        }}
-                      />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-medium text-green-600 dark:text-green-400 w-12 sm:w-16 text-right">
-                      {stats.totalTime}ms
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs text-muted-foreground w-16 sm:w-24">
-                      Without:
-                    </span>
-                    <div className="flex-1 bg-muted rounded-full h-3 sm:h-4 overflow-hidden">
-                      <div className="h-full bg-red-500 w-full" />
-                    </div>
-                    <span className="text-[10px] sm:text-xs font-medium text-red-600 dark:text-red-400 w-12 sm:w-16 text-right">
-                      {stats.withoutCacheTime}ms
-                    </span>
-                  </div>
-                </div>
-                <p className="text-[10px] sm:text-xs text-center mt-2 text-emerald-600 dark:text-emerald-400 font-medium">
-                  Saved {stats.withoutCacheTime - stats.totalTime}ms!
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Cache Contents */}
-        <Card>
-          <CardHeader className="pb-2 sm:pb-3">
-            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-              <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500" />
-              Cache ({cache.length}/{CACHE_SIZE})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {cache.length === 0 ? (
-              <p className="text-muted-foreground text-xs sm:text-sm text-center py-4">
-                Cache is empty
-              </p>
-            ) : (
-              <div className="space-y-1 sm:space-y-2">
-                {cache.map((item) => (
-                  <div
-                    key={item.key}
-                    className={cn(
-                      'flex items-center gap-2 sm:gap-3 p-2 rounded-lg bg-muted/50',
-                      evictingKey === item.key && 'ring-2 ring-red-500 animate-pulse'
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {DATA_ITEMS.map((item) => {
+                        const cached = cache.some((cacheItem) => cacheItem.key === item.key);
+                        return (
+                          <Button
+                            key={item.key}
+                            type="button"
+                            variant="outline"
+                            onClick={() => handleRequest(item.key)}
+                            disabled={!!animation}
+                            className={cn(
+                              'h-10 justify-start gap-2 px-3 text-left',
+                              cached && 'border-primary bg-primary/5'
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                                cached
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'bg-muted text-muted-foreground'
+                              )}
+                            >
+                              {item.key}
+                            </span>
+                            <span className="truncate">{item.label}</span>
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="grid gap-3 rounded-lg border bg-muted/30 p-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                      <div
+                        className={cn(
+                          'rounded-md border p-3',
+                          SIM_CATEGORY.neutral.fill,
+                          SIM_CATEGORY.neutral.border
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Database className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                          <div>
+                            <p className="text-sm font-medium">Database</p>
+                            <p className="text-xs text-muted-foreground">50 to 200 ms on a miss</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <AnimatePresence mode="wait">
+                        {animation ? (
+                          <motion.div
+                            key={animation.id}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className={cn(
+                              'mx-auto flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold',
+                              SIM_CATEGORY.primary.fill,
+                              SIM_CATEGORY.primary.border
+                            )}
+                            aria-label={`Request for ${getItemLabel(animation.key)}`}
+                          >
+                            {animation.key}
+                          </motion.div>
+                        ) : (
+                          <Zap
+                            className="mx-auto h-5 w-5 text-muted-foreground"
+                            aria-hidden="true"
+                          />
+                        )}
+                      </AnimatePresence>
+
+                      <div
+                        className={cn(
+                          'rounded-md border p-3',
+                          SIM_CATEGORY.emerald.fill,
+                          SIM_CATEGORY.emerald.border
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <HardDrive className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                          <div>
+                            <p className="text-sm font-medium">Cache</p>
+                            <p className="text-xs text-muted-foreground">1 to 10 ms on a hit</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid grid-cols-4 gap-1.5" aria-label="Cache slots">
+                          {Array.from({ length: CACHE_SIZE }).map((_, index) => {
+                            const item = cache[index];
+                            return (
+                              <div
+                                key={index}
+                                className={cn(
+                                  'flex h-10 items-center justify-center rounded-md border text-sm font-semibold',
+                                  item
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border bg-background text-muted-foreground',
+                                  evictingKey === item?.key && 'ring-2 ring-primary ring-offset-1'
+                                )}
+                              >
+                                {item?.key ?? '-'}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {lastResult && (
+                      <SimFeedback
+                        tone={lastResult.isHit ? 'success' : 'warning'}
+                        label={lastResult.isHit ? 'Cache hit' : 'Cache miss'}
+                      >
+                        <p>
+                          {getItemLabel(lastResult.key)} returned in {lastResult.time} ms.
+                          {!lastResult.isHit && ' It is now in the cache.'}
+                        </p>
+                      </SimFeedback>
                     )}
-                  >
-                    <span
-                      className={cn(
-                        'w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0',
-                        getItemColor(item.key)
+                  </section>
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                content: (
+                  <div className="space-y-3">
+                    <SimMissionList missions={missions.missions} />
+
+                    <section className="rounded-lg border bg-card p-3" aria-label="Cache stats">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className={cn('rounded-md p-2', SIM_TONE.success.surface)}>
+                          <p className="font-mono text-lg font-semibold tabular-nums">
+                            {stats.hits}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Hits</p>
+                        </div>
+                        <div className={cn('rounded-md p-2', SIM_TONE.warning.surface)}>
+                          <p className="font-mono text-lg font-semibold tabular-nums">
+                            {stats.misses}
+                          </p>
+                          <p className="text-xs text-muted-foreground">Misses</p>
+                        </div>
+                        <div className="rounded-md bg-muted p-2">
+                          <p className="font-mono text-lg font-semibold tabular-nums">{hitRate}%</p>
+                          <p className="text-xs text-muted-foreground">Hit rate</p>
+                        </div>
+                        <div className="rounded-md bg-muted p-2">
+                          <p className="font-mono text-lg font-semibold tabular-nums">
+                            {stats.withoutCacheTime - stats.totalTime} ms
+                          </p>
+                          <p className="text-xs text-muted-foreground">Time saved</p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <section className="rounded-lg border bg-card p-3" aria-label="Request log">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold">Request log</h3>
+                        <span className="text-xs text-muted-foreground">
+                          {EVICTION_POLICIES[policy].name}: {EVICTION_POLICIES[policy].how}
+                        </span>
+                      </div>
+                      {requestSteps.length === 0 ? (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Select a data item to trace its request.
+                        </p>
+                      ) : (
+                        <ol className="mt-2 space-y-1.5">
+                          {requestSteps.map((step) => {
+                            const tone =
+                              step.status === 'done'
+                                ? SIM_TONE.success
+                                : step.status === 'active'
+                                  ? SIM_TONE.info
+                                  : SIM_TONE.hint;
+                            return (
+                              <li
+                                key={step.step}
+                                className={cn(
+                                  'flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm',
+                                  tone.surface
+                                )}
+                              >
+                                <span className="font-mono text-xs tabular-nums">{step.step}</span>
+                                <span className="min-w-0 flex-1">{step.label}</span>
+                                {step.time && (
+                                  <span className="font-mono text-xs tabular-nums">
+                                    {step.time} ms
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ol>
                       )}
-                    >
-                      {item.key}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-xs sm:text-sm truncate">
-                        {getItemLabel(item.key)}
-                      </div>
-                      <div className="text-[10px] sm:text-xs text-muted-foreground">
-                        <span className="hidden sm:inline">
-                          Accessed: {item.accessCount}x | Last: #{item.lastAccess} | Added: #
-                          {item.insertTime}
-                        </span>
-                        <span className="sm:hidden">
-                          {item.accessCount}x | #{item.lastAccess}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    </section>
 
-      {/* Educational Section */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-3">
-          <CardTitle className="text-base sm:text-lg">Why Use Caching?</CardTitle>
-        </CardHeader>
-        <CardContent className="text-xs sm:text-sm text-muted-foreground space-y-2 sm:space-y-3">
-          <div className="grid grid-cols-2 gap-2 sm:gap-4">
-            <div className="p-2 sm:p-3 bg-red-500/10 rounded-lg border border-red-500/20">
-              <div className="font-medium text-red-600 dark:text-red-400 mb-1 text-xs sm:text-sm">
-                Without Cache
-              </div>
-              <p className="text-[10px] sm:text-sm">
-                <span className="hidden sm:inline">
-                  Every request goes to the database (50-200ms). Slow!
-                </span>
-                <span className="sm:hidden">Every request = slow DB call</span>
-              </p>
-            </div>
-            <div className="p-2 sm:p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-              <div className="font-medium text-green-600 dark:text-green-400 mb-1 text-xs sm:text-sm">
-                With Cache
-              </div>
-              <p className="text-[10px] sm:text-sm">
-                <span className="hidden sm:inline">
-                  Repeated requests return instantly (1-10ms). 20x faster!
-                </span>
-                <span className="sm:hidden">Repeat requests = instant!</span>
-              </p>
-            </div>
-          </div>
-          <p className="text-[10px] sm:text-sm">
-            The eviction policy decides what to remove when cache is full.
-          </p>
-        </CardContent>
-      </Card>
-    </div>
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-medium">
+                        How cache eviction works
+                      </summary>
+                      <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          Repeating a request avoids the slower database path. When four slots are
+                          full, the selected policy decides which entry leaves.
+                        </p>
+                        <ul className="list-disc space-y-1 pl-5">
+                          {(Object.keys(EVICTION_POLICIES) as EvictionPolicy[]).map(
+                            (evictionPolicy) => (
+                              <li key={evictionPolicy}>
+                                <strong className="text-foreground">
+                                  {EVICTION_POLICIES[evictionPolicy].name}:
+                                </strong>{' '}
+                                {EVICTION_POLICIES[evictionPolicy].how}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      </div>
+                    </details>
+                  </div>
+                ),
+              },
+            ]}
+            columns="lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]"
+            tab={tab}
+            onTabChange={(nextTab) => {
+              if (nextTab === 'cache' || nextTab === 'details') setTab(nextTab);
+            }}
+            tabsLabel="Caching panels"
+            minHeight="min-h-[24rem]"
+          />
+        )}
+
+        <SimPhoneBar>{policyPicker(true)}</SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }
