@@ -37,14 +37,14 @@ This is not an account of taking the exam. It is a study guide built from the [p
 
 - CKA-level comfort with `kubectl`: contexts, namespaces, Deployments, Services, logs, and `describe`.
 - A workstation that can run a three-node [kind](https://kind.sigs.k8s.io/) cluster in Docker or Podman.
-- `kubectl`, `kind`, and the [Cilium CLI](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/) installed.
+- `kubectl`, `kind`, the [Cilium CLI](https://docs.cilium.io/en/stable/gettingstarted/k8s-install-default/), and the [Hubble CLI](https://docs.cilium.io/en/stable/observability/hubble/setup/) installed.
 - Basic Linux networking: `ip`, `ss`, `tcpdump`, and reading a route table.
 
 ## What CKNE tests, and whether it fits you
 
 CKNE is for an administrator who already knows how to inspect workloads and cluster resources, and now needs to reason about the data path between them. It has no prerequisite certification, but doing CKA first is a sensible order because a networking drill should not also be a `kubectl` syntax drill.
 
-The Linux Foundation lists the exam-only price as $445, the exam plus THRIVE-ONE annual subscription as $625, and the exam plus Certification Pathway as $645. Eligibility lasts 12 months, one retake is included, and the certification is valid for two years. Those are purchase decisions, not study requirements. The useful practice resource bundled with the exam is the Killer.sh simulator: it provides two sessions, each with 17 questions and 36 hours of access. Use those sessions late in preparation to test navigation, pacing, and recovery after a bad assumption, not as your first exposure to a CNI or Gateway API.
+The [Linux Foundation certification page](https://training.linuxfoundation.org/certification/certified-kubernetes-network-engineer-ckne/) lists the exam-only price as $445, the exam plus THRIVE-ONE annual subscription as $625, and the exam plus Certification Pathway as $645. Eligibility lasts 12 months, one retake is included, and the certification is valid for two years. Those are purchase decisions, not study requirements. The useful practice resource bundled with the exam is the [Killer.sh CKNE simulator](https://killer.sh/ckne): two sessions, each open for 36 hours after activation. (The Linux Foundation page and Killer.sh currently give different question counts per session, 17 and 20, so do not plan around an exact number.) Use those sessions late in preparation to test navigation, pacing, and recovery after a bad assumption, not as your first exposure to a CNI or Gateway API.
 
 ```chart
 {
@@ -90,6 +90,11 @@ cilium install \
   --set encryption.enabled=true \
   --set encryption.type=wireguard
 cilium status --wait
+
+# Hubble flow visibility for the observability drills
+cilium hubble enable
+cilium hubble port-forward &
+hubble status
 ```
 
 WireGuard encrypts Cilium-managed traffic between nodes, not traffic on the same node. Confirm the control plane before trusting the lab:
@@ -108,7 +113,7 @@ kind: NetworkAttachmentDefinition
 metadata:
   name: lab-net
 spec:
-  config: '{"cniVersion":"1.0.0","type":"macvlan","master":"eth1","mode":"bridge","ipam":{"type":"host-local","subnet":"192.0.2.0/24"}}'
+  config: '{"cniVersion":"1.0.0","type":"macvlan","master":"eth0","mode":"bridge","ipam":{"type":"host-local","subnet":"192.0.2.0/24"}}'
 ---
 apiVersion: v1
 kind: Pod
@@ -123,7 +128,7 @@ spec:
       command: ['sh', '-c', 'sleep 3600']
 ```
 
-The NAD is only a definition. The secondary CNI and its node-level prerequisites must exist first, so use the Multus documentation for the plugin you choose. That distinction is a good troubleshooting habit.
+The NAD is only a definition. `master` must name an interface that exists on every node that can schedule the Pod (kind nodes have `eth0`; check yours in the node's host namespace first), and the `macvlan` and `host-local` plugin binaries must be present in the node's CNI directory. Use the Multus documentation for the plugin you choose. That distinction is a good troubleshooting habit.
 
 ## Practice every published domain as a terminal drill
 
@@ -135,7 +140,8 @@ Use an ephemeral node debug container to inspect the host network namespace. `ip
 
 ```bash
 # Open a shell in the node's network namespace (pick an image that ships tcpdump)
-kubectl debug node/<node> -it --image=nicolaka/netshoot --profile=sysadmin
+NODE="$(kubectl get nodes -o jsonpath='{.items[1].metadata.name}')"
+kubectl debug "node/${NODE}" -it --image=nicolaka/netshoot --profile=sysadmin
 
 # What does the node believe about addresses and routes?
 ip addr
@@ -174,10 +180,13 @@ kubectl -n kube-system get configmap coredns -o yaml
 kubectl -n kube-system logs -l k8s-app=kube-dns
 ```
 
-For a configuration drill, edit the CoreDNS ConfigMap in a disposable cluster and add a name rewrite inside the existing server block, before the `kubernetes` plugin. The [CoreDNS rewrite plugin](https://coredns.io/plugins/rewrite/) documents the syntax.
+For a configuration drill, edit the CoreDNS ConfigMap in a disposable cluster and add a name rewrite inside the existing server block. Its position in the Corefile does not matter: CoreDNS fixes the [plugin execution order](https://coredns.io/manual/configuration/) when it is built. `answer auto` rewrites the response back to the name the client asked for, which the [rewrite plugin](https://coredns.io/plugins/rewrite/) requires for suffix rewrites to look right to the client.
 
 ```text
-rewrite name suffix example.internal default.svc.cluster.local
+rewrite stop {
+    name suffix .example.internal. .default.svc.cluster.local.
+    answer auto
+}
 ```
 
 That maps `payments.example.internal` to `payments.default.svc.cluster.local`. Restart the CoreDNS deployment if your distribution does not reload the Corefile, then test both names. Also find its metrics endpoint in the installed Corefile before deciding that a dashboard is a DNS diagnosis. Kubernetes has a useful [DNS debugging sequence](https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/) for this exact progression.
@@ -279,7 +288,7 @@ spec:
           port: 53
 ```
 
-The label and namespace are cluster conventions, so inspect your DNS Service and Pods before applying this unchanged. Test from a labeled client pod, first expecting a timeout, then allowing the target Service on its actual port and running `curl -sv http://<service>.<namespace>.svc.cluster.local:<port>/`. Kubernetes defines NetworkPolicy as an API, but the chosen network plugin must enforce it. The [NetworkPolicy documentation](https://kubernetes.io/docs/concepts/services-networking/network-policies/) is the baseline for the API semantics.
+The label and namespace are cluster conventions, so inspect your DNS Service and Pods before applying this unchanged. Test from a labeled client pod, first expecting a timeout, then allowing the target Service on its actual port and running `curl -sv "http://${SERVICE}.${NAMESPACE}.svc.cluster.local:${PORT}/"` with those three variables set to your target. Kubernetes defines NetworkPolicy as an API, but the chosen network plugin must enforce it. The [NetworkPolicy documentation](https://kubernetes.io/docs/concepts/services-networking/network-policies/) is the baseline for the API semantics.
 
 Encryption is not proof of authorization. In this Cilium lab, confirm WireGuard with `cilium-dbg status | grep Encryption`, and capture on `cilium_wg0` from a Cilium pod if you need to see the tunnel. Cilium documents the status check, tunnel device, and the fact that same-node traffic is not encrypted in its [WireGuard guide](https://docs.cilium.io/en/stable/security/network/encryption-wireguard/).
 
