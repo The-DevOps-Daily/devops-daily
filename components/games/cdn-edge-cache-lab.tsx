@@ -512,12 +512,16 @@ export default function CdnEdgeCacheLab() {
           onStep={() => setTab('details')}
           stepNoun="Mission"
           progress={{ current: missions.done, total: missions.total }}
-          heading={currentMission ? `Mission: ${currentMission.label}` : 'Free play'}
           tools={<SimResetButton onReset={startOver} />}
           goal={
-            currentMission
-              ? currentMission.hint
-              : 'All missions complete. Explore any cache policy or traffic pattern.'
+            currentMission ? (
+              <>
+                {currentMission.label}{' '}
+                <span className="text-muted-foreground">{currentMission.hint}</span>
+              </>
+            ) : (
+              'All missions complete. Explore any cache policy or traffic pattern.'
+            )
           }
         >
           {actionBar}

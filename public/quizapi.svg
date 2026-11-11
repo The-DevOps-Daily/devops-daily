@@ -7,7 +7,7 @@
   </defs>
   <rect x="0" y="0" width="48" height="48" rx="11" fill="url(#quizapiMark)"/>
   <text x="24" y="34" text-anchor="middle" font-family="'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" fill="white">Q</text>
-  <text x="58" y="32" font-family="'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#6366f1">
+  <text x="58" y="32" font-family="'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#6366f1" textLength="78" lengthAdjust="spacingAndGlyphs">
     <tspan>Quiz</tspan><tspan fill="#8b5cf6">API</tspan>
   </text>
 </svg>
