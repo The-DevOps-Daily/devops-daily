@@ -82,8 +82,16 @@ test('a terminal lab fills a tall window down to a small gap', async ({ page, is
       window.scrollTo(0, frame.getBoundingClientRect().top + window.scrollY - 12);
       return Math.round(window.innerHeight - form.getBoundingClientRect().bottom);
     });
-  await expect.poll(gapUnderInput).toBeLessThanOrEqual(60);
-  expect(await gapUnderInput()).toBeGreaterThanOrEqual(0);
+  // Polled until hydration: before it, the bar height is a default and the gap can be off.
+  await expect
+    .poll(
+      async () => {
+        const gap = await gapUnderInput();
+        return gap >= 0 && gap <= 60 ? 'in range' : gap;
+      },
+      { timeout: 15_000 }
+    )
+    .toBe('in range');
 });
 
 // axe-core rules for WCAG 2.0, 2.1 and 2.2 at levels A and AA.
