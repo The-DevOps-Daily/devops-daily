@@ -100,7 +100,7 @@ aws ce get-cost-and-usage \
       | select(.Keys[0] | test("extended|support"; "i"))'
 ```
 
-Inspect the result before adding a Cost Category, budget, CUR query, or saved Cost Explorer filter. The point is to prove the actual usage type in the billing account, not to make a dashboard look complete with a guessed string. For detailed allocation, query the cost and usage data export using the service, usage-type, usage amount, and cost columns that appear in your exported schema. Data Exports schemas vary by export choice, so copy column names from the table's own definition rather than borrowing an Athena query from a different export. Pair this with [cost-allocation tags](/posts/cloud-cost-allocation-tags-aws-gcp-azure) if a team needs to own the upgrade decision.
+Inspect the result before adding a Cost Category, budget, CUR query, or saved Cost Explorer filter. The point is to prove the actual usage type in the billing account, not to make a dashboard look complete with a guessed string. For detailed allocation, query the cost and usage data export using the service, usage-type, usage amount, and cost columns that appear in your exported schema. Data Exports schemas vary by export choice, so copy column names from the [table's own definition](https://docs.aws.amazon.com/cur/latest/userguide/dataexports-table-dictionary.html) rather than borrowing an Athena query from a different export. Pair this with [cost-allocation tags](/posts/cloud-cost-allocation-tags-aws-gcp-azure) if a team needs to own the upgrade decision.
 
 ```tabs
 {
@@ -175,7 +175,7 @@ The [EKS pricing page](https://aws.amazon.com/eks/pricing/) has the current rate
 
 ## Decide whether to upgrade or pay knowingly
 
-For RDS MySQL, 8.0 to 8.4 is a supported major upgrade path. AWS does not automatically apply major upgrades because of compatibility risk. Its [major-upgrade guide](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.MySQL.Major.html) says RDS runs mandatory 8.0 to 8.4 prechecks before stopping the instance. Failures are logged in `PrePatchCompatibility.log`, so treat that log as an upgrade backlog, not a reason to ignore the charge.
+For RDS MySQL, 8.0 to 8.4 is a supported major upgrade path. Outside the lifecycle behavior described below, AWS does not automatically apply major upgrades, because they can break compatibility. Its [major-upgrade guide](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_UpgradeDBInstance.MySQL.Major.html) says RDS runs mandatory 8.0 to 8.4 prechecks before stopping the instance. Failures are logged in `PrePatchCompatibility.log`, so treat that log as an upgrade backlog, not a reason to ignore the charge.
 
 Test three classes of problems before a production cutover:
 
