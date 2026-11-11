@@ -74,25 +74,25 @@ For an unchanged representation, the expected shape is `HTTP/... 304` with an `E
 3. Turn on **Ignore utm\_ in cache key**, then send traffic again to see later visitors get `HIT`.
 4. Select `/index.html`, send traffic, choose **Wait 61 s**, and send traffic again to expose a `304` revalidation.
 
-The lab models a Frankfurt origin and three edges. Its latency values are illustrative estimates, and it deliberately does not apply heuristic freshness when an explicit lifetime is absent.
+The lab models one origin and three CDN edges. Its latency values are illustrative estimates, and it deliberately does not apply heuristic freshness when an explicit lifetime is absent.
 :::
 
 ## One lost packet pauses every active HTTP/2 stream
 
 HTTP/2 usually removes the browser-side request queues that made HTTP/1.1 pages painful: it multiplexes streams on one connection. The tradeoff is lower in the stack. HTTP/2 runs over TCP, and TCP delivers bytes in order. If a TCP packet containing bytes for one stream is missing, later bytes for all active streams on that connection wait for recovery. On a lossy high-latency path, that can make HTTP/2 slower than several HTTP/1.1 connections carrying independent TCP flows.
 
-[RFC 9113](https://www.rfc-editor.org/rfc/rfc9113) defines HTTP/2 streams and multiplexed framing. [RFC 9114](https://www.rfc-editor.org/rfc/rfc9114#section-1) describes HTTP/3 as HTTP semantics over QUIC and calls out avoiding TCP head-of-line blocking. QUIC streams have independent delivery and loss recovery under [RFC 9000](https://www.rfc-editor.org/rfc/rfc9000#section-2.2), so a lost packet holds up the affected stream rather than every stream.
+[RFC 9113](https://www.rfc-editor.org/rfc/rfc9113) defines HTTP/2 streams and multiplexed framing. [RFC 9114](https://www.rfc-editor.org/rfc/rfc9114#section-1) describes HTTP/3 as HTTP semantics over QUIC and calls out avoiding TCP head-of-line blocking. QUIC streams have independent delivery and loss recovery under [RFC 9000](https://www.rfc-editor.org/rfc/rfc9000#section-2.2), so a lost packet holds up only the streams whose data it carried, while streams with data in other packets keep moving. That removes TCP's connection-wide head-of-line blocking, not every stall.
 
 Check what your endpoint actually negotiates before drawing conclusions from an application dashboard:
 
 ```bash
 curl -sI --http2 -w '%{http_version}\n' -o /dev/null https://app.example.com
-curl -sI --http3 -w '%{http_version}\n' -o /dev/null https://app.example.com
+curl -sI --http3-only -w '%{http_version}\n' -o /dev/null https://app.example.com
 curl -sI https://app.example.com | grep -i '^alt-svc:'
 curl -V
 ```
 
-The first two commands print the negotiated version, such as `2` or `3`. The `Alt-Svc` header can advertise an `h3` alternative service. The HTTP/3 command only works when the installed curl was compiled with HTTP/3 support, which `curl -V` reports. Test on representative networks as well as a clean office connection: protocol choice is a latency and loss question, not a permanent leaderboard.
+The first two commands print the negotiated version, such as `2` or `3`. Use `--http3-only` for the check: plain `--http3` falls back to an earlier version when QUIC cannot be set up, which hides the answer you are looking for. The `Alt-Svc` header can advertise an `h3` alternative service. The HTTP/3 command only works when the installed curl was compiled with HTTP/3 support, which `curl -V` reports. Test on representative networks as well as a clean office connection: protocol choice is a latency and loss question, not a permanent leaderboard.
 
 ```diagram
 {
@@ -103,7 +103,7 @@ The first two commands print the negotiated version, such as `2` or `3`. The `Al
   ],
   "branch": [
     { "label": "HTTP/2 over TCP: active streams wait for in-order delivery", "variant": "bad" },
-    { "label": "HTTP/3 over QUIC: affected stream waits, other streams can progress", "variant": "good" }
+    { "label": "HTTP/3 over QUIC: streams in the lost packet wait, others progress", "variant": "good" }
   ]
 }
 ```
@@ -165,7 +165,10 @@ async function createOrder() {
     try {
       const response = await fetch('https://api.example.com/orders', {
         method: 'POST',
+        // Stripe documents a bare value; the IETF draft defines a quoted string.
+        // Use the serialization your API documents.
         headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+        signal: AbortSignal.timeout(10_000), // a stalled request must reach the retry path
         body: JSON.stringify({ sku: 'pro-monthly', customerId: 'cus_123' }),
       });
       if (response.ok || !retryableStatuses.has(response.status)) return response;
@@ -181,17 +184,21 @@ async function createOrder() {
 }
 ```
 
-On the server, make the uniqueness boundary visible. The transaction must save the fingerprint and final response before a later retry can replay it:
+On the server, make the uniqueness boundary visible. Scope keys to the authenticated caller, so one client's key can never replay another client's saved response, and save the fingerprint and final response before a later retry can replay it:
 
 ```sql
 CREATE TABLE idempotency_responses (
-  idempotency_key text PRIMARY KEY,
+  account_id uuid NOT NULL,          -- from authentication, never from the request body
+  idempotency_key text NOT NULL,
   request_fingerprint text NOT NULL,
   status_code integer,
   response_body jsonb,
-  completed_at timestamptz
+  completed_at timestamptz,
+  PRIMARY KEY (account_id, idempotency_key)
 );
 ```
+
+Every lookup, insert and replay filters on both columns. The [Idempotency-Key draft](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) calls out data leaks from shared keys for the same reason.
 
 Use a transaction or equivalent concurrency control to insert the key, create the order, and save the response. A matching completed row returns `status_code` and `response_body`; a differing fingerprint returns a client error; a matching unfinished row should tell the client the first request is still processing. The same pattern matters for webhooks, where a delivery can be retried after your handler completes. See [how Stripe avoids double charging](/posts/how-stripe-avoids-double-charging-idempotency-keys) and [reliable webhook delivery](/posts/reliable-webhook-delivery-retries-signatures-idempotency).
 
@@ -222,15 +229,22 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 const server = new ApolloServer({ typeDefs, resolvers });
 
 await startStandaloneServer(server, {
-  context: async ({ req }) => ({
-    viewer: await authenticate(req.headers.authorization),
-    userById: new DataLoader(async (ids) => {
-      const users = await db.query('SELECT id, name FROM users WHERE id = ANY($1::uuid[])', [ids]);
-      return ids.map((id) => users.rows.find((user) => user.id === id) ?? null);
-    }),
-  }),
+  context: async ({ req }) => {
+    const viewer = await authenticate(req.headers.authorization);
+    return {
+      viewer,
+      // A new loader per request: its cache dies with the request.
+      userById: new DataLoader(async (ids) => {
+        // Authorization lives in the data access: only rows this viewer may see.
+        const users = await loadUsersVisibleTo(viewer, ids);
+        return ids.map((id) => users.find((user) => user.id === id) ?? null);
+      }),
+    };
+  },
 });
 ```
+
+`loadUsersVisibleTo` stands in for your own query, for example `SELECT id, name FROM users WHERE id = ANY($1::uuid[])` plus the viewer's visibility rule. A per-request loader stops one request's cache from serving the next; it does not authorize reads inside a request, so the permission check has to be in the batch function.
 
 Without the loader, resolver logs often show repeated `SELECT ... WHERE id = $1` statements. With it, same-tick loads become one `WHERE id IN (...)` query or its parameterized equivalent. Deduplication reduces repeated keys in that batch, but it does not authorize the cached result for another request. Log query count and the request ID together so a shared cache is visible before it becomes a data exposure.
 
