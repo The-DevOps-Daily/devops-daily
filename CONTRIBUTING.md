@@ -240,8 +240,8 @@ npm run generate-feed
 # Generate search index
 npm run generate-search-index
 
-# Generate post images
-npm run generate:images:parallel
+# Generate missing cover images (JPEG, scripts/generate-content-og.ts)
+npm run generate:images
 ```
 
 ## 📬 Pull Request Process

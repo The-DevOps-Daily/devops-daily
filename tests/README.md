@@ -71,6 +71,10 @@ Calls the metadata generators of every page in `app/` (no build) and merges them
 - **Redirects**: No canonical points at a source path in `public/_redirects`
 - **Sitemap**: Every sitemap URL is a page that is canonical to itself
 
+### 8. Content Covers (`content-covers.test.ts`)
+
+- **JPEG only**: Fails on any PNG in the cover directories under `public/images/` (posts, guides, games, quizzes, ...). Covers come only from `scripts/generate-content-og.ts`; the old dark PNG template is gone. Fix a failure by deleting the PNG and running `npx tsx scripts/generate-content-og.ts --only=<type>/<slug>`.
+
 ## Running Tests
 
 ### Run all tests

@@ -6,7 +6,8 @@ import path from 'path';
 // images and assets that only exist in those formats (logos, placeholders).
 const WEB_IMAGE_EXTENSIONS = ['jpg', 'png', 'svg'];
 
-// Social cards: the generated JPEG, or a hand-made PNG if one was added.
+// Social cards: the generated JPEG. PNG is only a fallback for the few legacy
+// files; tests/content-covers.test.ts fails CI on a new PNG cover.
 const SOCIAL_IMAGE_EXTENSIONS = ['jpg', 'png'];
 
 // In production builds the public/ tree is immutable, so one readdir per
