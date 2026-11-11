@@ -20,6 +20,46 @@ export interface SimulatorExplainerContent {
 }
 
 const explainers: Record<string, SimulatorExplainerContent> = {
+  'http-versions-lab': {
+    summary:
+      'HTTP/1.1, HTTP/2 and HTTP/3 move the same bytes, but they differ in how many connections they open, how many round trips they spend before the first request, and what one lost packet costs. This lab loads the same page, one HTML document and twelve assets, over each version on a 20 Mbit/s link and draws every request in a waterfall. HTTP/1.1 sends one request at a time per connection, so the browser opens up to six connections to the origin and the other requests wait in line, each paying a full round trip. HTTP/2 multiplexes every request as a stream over one TCP connection, so all assets are requested at once. Both need two round trips before the first request: one for the TCP handshake and one for TLS 1.3. HTTP/3 runs over QUIC, which combines the transport and TLS 1.3 handshakes into one round trip. Raise the round-trip time from 20 to 250 ms and the gap grows, because for a small page latency matters more than bandwidth. Turn on packet loss and the difference becomes visible: TCP delivers bytes in order, so on HTTP/2 every stream still receiving waits for the resent packet, while QUIC holds back only the stream that lost it. The model is deliberately simple and leaves out DNS, congestion control and 0-RTT resumption.',
+    teaches: [
+      'HTTP/1.1 connections and request queuing',
+      'HTTP/2 multiplexing',
+      'HTTP/3 and QUIC',
+      'TCP and TLS 1.3 handshake round trips',
+      'Head-of-line blocking',
+    ],
+    level: 'Intermediate',
+    tryThis: [
+      'Pick HTTP/1.1 and 250 ms, press Play all, and count the six connection lanes and the requests queued behind them.',
+      'Press Play all on HTTP/2 and then on HTTP/3 at the same round-trip time, and compare when the first request starts and when the last byte arrives.',
+      'Turn on Lose one packet and press Play all on HTTP/2 and then on HTTP/3 to see how many streams stall in each.',
+    ],
+    faq: [
+      {
+        question: 'Why is HTTP/2 faster than HTTP/1.1?',
+        answer:
+          'HTTP/1.1 handles one request at a time on each connection, so browsers open several connections and still queue requests, paying a round trip for each. HTTP/2 multiplexes all requests as streams over one connection, so the whole page can be requested at once. The gain is largest when the round-trip time is high.',
+      },
+      {
+        question: 'What is head-of-line blocking in HTTP/2?',
+        answer:
+          'HTTP/2 removes head-of-line blocking at the HTTP layer, but all its streams share one TCP byte stream. When a packet is lost, TCP holds back every later byte until the retransmission arrives, so streams that lost nothing wait too. QUIC, under HTTP/3, delivers each stream independently.',
+      },
+      {
+        question: 'How does HTTP/3 save a round trip?',
+        answer:
+          'HTTP/3 runs over QUIC, which carries the TLS 1.3 handshake inside its own handshake. A new connection is ready after one round trip instead of two for TCP plus TLS 1.3, and a resumed connection can even send its first request with 0-RTT data.',
+      },
+      {
+        question: 'Why do browsers open six connections for HTTP/1.1?',
+        answer:
+          'The limit is a browser convention, not part of the HTTP/1.1 specification: Chrome and Firefox open up to six connections per origin. It gives some parallelism without overloading servers. HTTP/1.1 pipelining exists in the specification, but browsers do not use it.',
+      },
+    ],
+  },
+
   'cdn-edge-cache-lab': {
     summary:
       'A content delivery network keeps copies of responses in edge caches close to visitors, so most requests never travel to the origin. This lab puts an origin in Frankfurt behind three edges, in Frankfurt, Virginia and Singapore, and lets you set the Cache-Control header for a page, a versioned asset and a shopping cart API. Send traffic and each edge reports a HIT, a MISS, a 304 revalidation or a BYPASS, with the hit ratio, the number of origin requests and an approximate latency per city. The rules follow RFC 9111. A shared cache must not store a response marked private or no-store. no-cache lets the edge store a response but makes it check with the origin before every reuse, and the origin can answer 304 Not Modified instead of sending the body again. s-maxage overrides max-age in shared caches, and stale-while-revalidate from RFC 5861 lets an edge serve a stale copy while it fetches a fresh one. Deploy a new version and you see why a long max-age on HTML keeps visitors on the old page until it expires or you purge it, while a fingerprinted asset can be cached for a year. The cache key is the method plus the full URL, so tracking parameters such as utm_source split one file into many cache entries unless the key ignores them.',
