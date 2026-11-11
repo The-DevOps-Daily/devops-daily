@@ -1,5 +1,5 @@
 {
-  "note": "Hub billboards: paid sponsors only, links through go.devops-daily.com with p=game so the sponsor report counts them. A slot id listed twice takes turns. 'house' is our own products on the Made by DevOps Daily board: direct links, no Sponsor label; id is the go slug for the beacon key.",
+  "note": "Billboards (the town square's slot-1 to slot-3, Edgeport's edge-1, the Night Market's night-1): paid sponsors only, links through go.devops-daily.com with p=game so the sponsor report counts them. A slot id listed twice takes turns. 'house' is our own products on the Made by DevOps Daily board: direct links, no Sponsor label; id is the go slug for the beacon key.",
   "slots": [
     {
       "id": "slot-1",
@@ -17,6 +17,48 @@
     },
     {
       "id": "slot-3",
+      "name": "DigitalOcean",
+      "tagline": "Cloud infrastructure for developers",
+      "logo": "assets/sponsors/digitalocean-brand.svg",
+      "link": "https://go.devops-daily.com/digitalocean?p=game"
+    },
+    {
+      "id": "edge-1",
+      "name": "Bitrise",
+      "tagline": "Managed runners for GitHub Actions",
+      "logo": "assets/sponsors/bitrise-brand.svg",
+      "link": "https://go.devops-daily.com/bitrise?p=game"
+    },
+    {
+      "id": "edge-1",
+      "name": "Atomsized",
+      "tagline": "AWS platform engineering and GitOps",
+      "logo": "assets/sponsors/atomsized.svg",
+      "link": "https://go.devops-daily.com/atomsized?p=game"
+    },
+    {
+      "id": "edge-1",
+      "name": "DigitalOcean",
+      "tagline": "Cloud infrastructure for developers",
+      "logo": "assets/sponsors/digitalocean-brand.svg",
+      "link": "https://go.devops-daily.com/digitalocean?p=game"
+    },
+    {
+      "id": "night-1",
+      "name": "Bitrise",
+      "tagline": "Managed runners for GitHub Actions",
+      "logo": "assets/sponsors/bitrise-brand.svg",
+      "link": "https://go.devops-daily.com/bitrise?p=game"
+    },
+    {
+      "id": "night-1",
+      "name": "Atomsized",
+      "tagline": "AWS platform engineering and GitOps",
+      "logo": "assets/sponsors/atomsized.svg",
+      "link": "https://go.devops-daily.com/atomsized?p=game"
+    },
+    {
+      "id": "night-1",
       "name": "DigitalOcean",
       "tagline": "Cloud infrastructure for developers",
       "logo": "assets/sponsors/digitalocean-brand.svg",
