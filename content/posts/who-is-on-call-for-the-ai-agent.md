@@ -75,11 +75,11 @@ groups:
       # The runner increments this when the same tool + argument fingerprint
       # repeats inside its window. The fingerprint stays out of the label set.
       - alert: AgentRepeatedToolCallLoop
-        expr: sum by (agent_id, tool) (increase(agent_repeated_tool_calls_total[10m])) > 0
+        expr: sum by (agent_id, tool) (rate(agent_repeated_tool_calls_total[5m])) > 0.2
         for: 5m
         labels: { severity: page }
         annotations:
-          summary: 'Same successful tool call is repeating'
+          summary: 'Repeated tool-call rate indicates a loop'
 
       - alert: AgentHourlySpendBudgetExceeded
         expr: sum by (agent_id) (increase(agent_spend_usd_total[1h])) > 25
@@ -137,16 +137,23 @@ The model must not decide whether it is paused. Enforce a stop before every tool
 }
 ```
 
-Any on-call engineer may pull the switch, with no approval. That rule prevents a debate from extending an incident. "Pause" means no new tool call starts. It does not mean that the runner discards the current run, conversation, pending approval, or audit records. Keep that state inspectable so responders can see what the agent was about to do.
+Any on-call engineer may pull the switch, with no approval. That rule prevents a debate from extending an incident. "Pause" means calls that have not yet passed the runner's check are refused. A call that passed the check a moment before the switch can still start or finish, which is why credential revocation and egress deny exist as the next layers for immediate containment at the target. Pausing does not mean that the runner discards the current run, conversation, pending approval, or audit records. Keep that state inspectable so responders can see what the agent was about to do.
 
-This short wrapper uses Redis as the control store. The switch is the existence of a key, so there is no value format to get wrong, and an unreachable or slow store stops the call instead of allowing it. Put the same check in every execution path, including retries and asynchronous workers.
+This short wrapper uses Redis as the control store. The switch is the existence of a key, so there is no value format to get wrong, and an unreachable or slow store stops the call instead of allowing it. Treat the store as a security control: connect over TLS, and give the runner an ACL user that can only read the pause keys, while responders use a separate user that can set and delete them ([Redis ACLs](https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/)). Put the same check in every execution path, including retries and asynchronous workers.
 
 ```python
+import os
+
 from redis import Redis
 from redis.exceptions import RedisError
 
-# A short timeout: a hung control store must fail closed quickly.
-control = Redis(host="agent-control", port=6379, socket_timeout=0.5)
+# rediss:// URL with the runner's read-only ACL user. Short connect and read
+# timeouts: a hung control store must fail closed quickly.
+control = Redis.from_url(
+    os.environ["AGENT_CONTROL_REDIS_URL"],
+    socket_timeout=0.5,
+    socket_connect_timeout=0.5,
+)
 
 
 class AgentPaused(RuntimeError):
@@ -166,10 +173,16 @@ def run_tool(agent_id: str, tool_name: str, arguments: dict, call_tool):
     return call_tool(tool_name, arguments)
 ```
 
-Pulling the switch is then one command that any responder can run, and deleting the key is the deliberate resume step:
+Pulling the switch is then one command that any responder can run, as the incident-control ACL user. Deleting the key is the deliberate resume step, and it belongs in the incident record with who ran it and why:
 
 ```bash
-redis-cli -h agent-control SET agent:deploy-agent-prod:paused "paged-by-oncall $(date -u +%FT%TZ)"
+# Pause (any on-call engineer)
+redis-cli --tls -h agent-control --user incident-control --askpass \
+  SET agent:deploy-agent-prod:paused "paged-by-oncall $(date -u +%FT%TZ)"
+
+# Resume (service owner, after the review in step 7 of the runbook below)
+redis-cli --tls -h agent-control --user incident-control --askpass \
+  DEL agent:deploy-agent-prod:paused
 ```
 
 Test all four layers in a monthly game day. Start a harmless, repeatable test action, pause the agent while it is active, revoke its identity, exhaust a test gateway budget, and verify that egress policy blocks the target. Record time to containment and any action that escaped after the first stop signal. A kill switch that only exists in documentation is not a control.
