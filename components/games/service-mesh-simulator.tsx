@@ -1,26 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ArrowRight, Network, Pause, Play } from 'lucide-react';
+import { MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  Network,
-  Play,
-  Pause,
-  RotateCcw,
-  Lock,
-  Shield,
-  Zap,
-  TrendingUp,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle2,
-  ArrowRight,
-  ChevronRight,
-  ChevronLeft,
-} from 'lucide-react';
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 
 interface Scenario {
   id: string;
@@ -61,7 +56,7 @@ const SCENARIOS: Scenario[] = [
     description: 'Every request is encrypted with mTLS',
     problem: 'Hackers can read your network traffic and steal sensitive data.',
     solution:
-      'The sidecars automatically encrypt ALL traffic using mTLS (mutual TLS). Both services verify each other\'s identity. No code changes required!',
+      "The sidecars automatically encrypt ALL traffic using mTLS (mutual TLS). Both services verify each other's identity. No code changes required!",
     visual: 'mtls',
     difficulty: 'intermediate',
   },
@@ -100,20 +95,104 @@ const SCENARIOS: Scenario[] = [
   },
 ];
 
+type ServiceMeshMissionState = {
+  playedScenarioIds: ReadonlySet<string>;
+  circuitState: 'closed' | 'open';
+};
+
+const MISSIONS: Mission<ServiceMeshMissionState>[] = [
+  {
+    id: 'mtls',
+    label: 'Watch the sidecars encrypt a request with mutual TLS.',
+    hint: 'Press step 3, Automatic Encryption, then Play until the request reaches Orders API.',
+    check: (state) => state.playedScenarioIds.has('mtls'),
+  },
+  {
+    id: 'canary',
+    label: 'Watch 10% of the traffic go to the new version.',
+    hint: 'Press step 4, Safe Deployments, then Play until the requests reach both versions.',
+    check: (state) => state.playedScenarioIds.has('traffic-split'),
+  },
+  {
+    id: 'retries',
+    label: 'Watch a retry save a failed call.',
+    hint: 'Press step 5, Smart Retries, then Play until the retried call gets through.',
+    check: (state) => state.playedScenarioIds.has('retry'),
+  },
+  {
+    id: 'breaker',
+    label: 'Open the circuit breaker while a service keeps failing.',
+    hint: 'Press step 6, Circuit Breaker, then Play until the breaker opens.',
+    check: (state) => state.circuitState === 'open',
+  },
+];
+
+function ServiceNode({
+  x,
+  y,
+  label,
+  detail,
+  failing = false,
+  sidecar = true,
+}: {
+  x: number;
+  y: number;
+  label: string;
+  detail: string;
+  failing?: boolean;
+  sidecar?: boolean;
+}) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <rect width="112" height="64" rx="8" className="fill-card stroke-border" strokeWidth="2" />
+      <rect x="7" y="7" width="98" height="18" rx="4" className="fill-primary/15" />
+      <text x="56" y="20" textAnchor="middle" className="fill-foreground text-xs font-semibold">
+        {label}
+      </text>
+      <text x="56" y="43" textAnchor="middle" className="fill-muted-foreground text-xs">
+        {detail}
+      </text>
+      <text
+        x="56"
+        y="57"
+        textAnchor="middle"
+        className={
+          failing || !sidecar ? 'fill-wrong-foreground text-xs' : 'fill-correct-foreground text-xs'
+        }
+      >
+        {failing ? 'failing' : sidecar ? 'sidecar proxy' : 'no sidecar'}
+      </text>
+    </g>
+  );
+}
+
 export default function ServiceMeshSimulator() {
   const [currentScenario, setCurrentScenario] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
   const [circuitState, setCircuitState] = useState<'closed' | 'open'>('closed');
+  const [playedScenarioIds, setPlayedScenarioIds] = useState<Set<string>>(() => new Set());
+  const [dismissed, setDismissed] = useState(false);
+  const [tab, setTab] = useState<'diagram' | 'details'>('diagram');
 
   const scenario = SCENARIOS[currentScenario];
+  const scenarioIdRef = useRef(scenario.id);
+
+  useEffect(() => {
+    scenarioIdRef.current = scenario.id;
+  }, [scenario.id]);
 
   // Animation loop
   useEffect(() => {
     if (!isPlaying) return;
 
     const interval = setInterval(() => {
-      setAnimationProgress((prev) => (prev + 1) % 100);
+      setAnimationProgress((prev) => {
+        const next = (prev + 1) % 100;
+        if (next === 99)
+          setPlayedScenarioIds((before) => new Set(before).add(scenarioIdRef.current));
+        return next;
+      });
     }, 50);
 
     return () => clearInterval(interval);
@@ -124,51 +203,18 @@ export default function ServiceMeshSimulator() {
     // Reset animation progress but keep playing state
     setAnimationProgress(0);
     setCircuitState('closed');
-}, [currentScenario]);
+  }, [currentScenario]);
 
-// Circuit breaker state management
-useEffect(() => {
-  if (scenario.visual === 'circuit-breaker') {
-    if (isPlaying && animationProgress > 50) {
-      setCircuitState('open');
-    } else {
-      setCircuitState('closed');
-    }
-  }
-}, [animationProgress, isPlaying, scenario.visual]);
-
-// Keyboard navigation
-useEffect(() => {
-  if (typeof window === 'undefined') return;
-
-    const handleKeyPress = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case ' ':
-        case 'Enter':
-          e.preventDefault();
-          setIsPlaying(!isPlaying);
-          break;
-        case 'ArrowLeft':
-          if (currentScenario > 0) {
-            setCurrentScenario(currentScenario - 1);
-          }
-          break;
-        case 'ArrowRight':
-          if (currentScenario < SCENARIOS.length - 1) {
-            setCurrentScenario(currentScenario + 1);
-          }
-          break;
-        case 'r':
-        case 'R':
-          setAnimationProgress(0);
-          setIsPlaying(false);
-          break;
+  // Circuit breaker state management
+  useEffect(() => {
+    if (scenario.visual === 'circuit-breaker') {
+      if (isPlaying && animationProgress > 50) {
+        setCircuitState('open');
+      } else {
+        setCircuitState('closed');
       }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentScenario, isPlaying]);
+    }
+  }, [animationProgress, isPlaying, scenario.visual]);
 
   const handleNext = () => {
     if (currentScenario < SCENARIOS.length - 1) {
@@ -187,598 +233,259 @@ useEffect(() => {
     setIsPlaying(false);
   };
 
-  const renderVisualization = () => {
-    const progress = animationProgress / 100;
-
-    switch (scenario.visual) {
-      case 'before':
-        return (
-          <div className="relative w-full h-80 flex items-center justify-center gap-16 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 rounded-xl p-8 border-2 border-red-200 dark:border-red-800">
-            {/* Service A */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-32 h-32 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600" />
-                <div className="relative text-white text-center">
-                  <div className="font-bold text-lg">Service A</div>
-                  <div className="text-xs opacity-80">Frontend</div>
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
-                ⚠️ No Protection
-              </Badge>
-            </div>
-
-            {/* Traffic Line */}
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="relative w-48 h-1 bg-red-300 dark:bg-red-700 rounded-full">
-               {isPlaying && (
-                 <div
-                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                 >
-                   <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg animate-pulse" />
-                 </div>
-               )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-red-300 dark:text-red-700" />
-             </div>
-             <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-semibold">
-               <AlertTriangle className="w-4 h-4" />
-                <span>Unencrypted Data</span>
-              </div>
-            </div>
-
-            {/* Service B */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-32 h-32 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600" />
-                <div className="relative text-white text-center">
-                  <div className="font-bold text-lg">Service B</div>
-                  <div className="text-xs opacity-80">API</div>
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
-                ⚠️ No Protection
-              </Badge>
-            </div>
-
-            {/* Hacker Warning */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-4 py-2 rounded-full border border-red-300 dark:border-red-700">
-              <AlertTriangle className="w-5 h-5" />
-              <span className="text-sm font-semibold">Anyone can read this data!</span>
-            </div>
-          </div>
-        );
-
-      case 'after-sidecar':
-        return (
-          <div className="relative w-full h-80 flex items-center justify-center gap-16 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl p-8 border-2 border-green-200 dark:border-green-800">
-            {/* Service A with Sidecar */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service A</div>
-                    <div className="text-xs opacity-80">Frontend</div>
-                  </div>
-                </div>
-                {/* Sidecar Badge */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                ✅ Protected
-              </Badge>
-            </div>
-
-            {/* Traffic Line */}
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="relative w-48 h-1 bg-green-300 dark:bg-green-700 rounded-full">
-               {isPlaying && (
-                 <div
-                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                 >
-                   <div className="w-4 h-4 bg-green-500 rounded-full shadow-lg animate-pulse" />
-                 </div>
-               )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-green-300 dark:text-green-700" />
-             </div>
-             <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold">
-               <Shield className="w-4 h-4" />
-                <span>Proxied by Sidecars</span>
-              </div>
-            </div>
-
-            {/* Service B with Sidecar */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service B</div>
-                    <div className="text-xs opacity-80">API</div>
-                  </div>
-                </div>
-                {/* Sidecar Badge */}
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300">
-                ✅ Protected
-              </Badge>
-            </div>
-
-            {/* Success Message */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-4 py-2 rounded-full border border-green-300 dark:border-green-700">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="text-sm font-semibold">All traffic goes through sidecars!</span>
-            </div>
-          </div>
-        );
-
-      case 'mtls':
-        return (
-          <div className="relative w-full h-80 flex items-center justify-center gap-16 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 rounded-xl p-8 border-2 border-yellow-200 dark:border-yellow-800">
-            {/* Service A */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service A</div>
-                    <div className="text-xs opacity-80">Frontend</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-            </div>
-
-            {/* Encrypted Traffic */}
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="relative w-48 h-1 bg-yellow-300 dark:bg-yellow-700 rounded-full">
-               {isPlaying && (
-                 <div
-                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                 >
-                   <Lock className="w-5 h-5 text-yellow-600 fill-yellow-200 dark:fill-yellow-800" />
-                   <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-lg" />
-                 </div>
-               )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-yellow-300 dark:text-yellow-700" />
-             </div>
-             <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-sm font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
-               <Lock className="w-4 h-4" />
-                <span>mTLS Encrypted</span>
-              </div>
-            </div>
-
-            {/* Service B */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service B</div>
-                    <div className="text-xs opacity-80">API</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-4 py-2 rounded-full border border-yellow-300 dark:border-yellow-700">
-              <Lock className="w-5 h-5" />
-              <span className="text-sm font-semibold">Encrypted + Authenticated</span>
-            </div>
-          </div>
-        );
-
-      case 'traffic-split':
-        return (
-          <div className="relative w-full h-80 flex items-center justify-around bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 rounded-xl p-8 border-2 border-blue-200 dark:border-blue-800">
-            {/* Service A */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-28 h-28 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold">Service A</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                </div>
-              </div>
-            </div>
-
-            {/* Split Traffic */}
-            <div className="flex flex-col gap-8">
-              {/* 90% to v1.0 */}
-              <div className="relative flex items-center gap-3">
-              <Badge className="bg-green-500 text-white">90%</Badge>
-             <div className="relative w-32 h-1 bg-green-300 dark:bg-green-700 rounded-full">
-                {isPlaying && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg" />
-                  </div>
-                )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-green-300 dark:text-green-700" />
-             </div>
-           </div>
-
-              {/* 10% to v2.0 */}
-              <div className="relative flex items-center gap-3">
-              <Badge className="bg-orange-500 text-white">10%</Badge>
-             <div className="relative w-32 h-1 bg-orange-300 dark:bg-orange-700 rounded-full">
-                {isPlaying && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <div className="w-3 h-3 bg-orange-500 rounded-full shadow-lg" />
-                  </div>
-                )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-orange-300 dark:text-orange-700" />
-             </div>
-           </div>
-           </div>
-
-            {/* Destination Services */}
-            <div className="flex flex-col gap-8">
-              {/* v1.0 Stable */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600" />
-                    <div className="relative text-white text-center">
-                      <div className="font-bold text-sm">Service B</div>
-                      <div className="text-xs">v1.0</div>
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                    <Shield className="w-3 h-3" />
-                  </div>
-                </div>
-                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-300 text-xs">
-                  Stable
-                </Badge>
-              </div>
-
-              {/* v2.0 Testing */}
-              <div className="flex flex-col items-center gap-2">
-                <div className="relative">
-                  <div className="w-24 h-24 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600" />
-                    <div className="relative text-white text-center">
-                      <div className="font-bold text-sm">Service B</div>
-                      <div className="text-xs">v2.0</div>
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                    <Shield className="w-3 h-3" />
-                  </div>
-                </div>
-                <Badge variant="outline" className="bg-orange-100 text-orange-700 border-orange-300 text-xs">
-                  Testing
-                </Badge>
-              </div>
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-4 py-2 rounded-full border border-blue-300 dark:border-blue-700">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-sm font-semibold">Canary Deployment: Low-risk testing</span>
-            </div>
-          </div>
-        );
-
-      case 'retry':
-        return (
-          <div className="relative w-full h-80 flex items-center justify-center gap-16 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-8 border-2 border-purple-200 dark:border-purple-800">
-            {/* Service A */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service A</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-            </div>
-
-            {/* Traffic with Retry */}
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="relative w-48 h-1 bg-purple-300 dark:bg-purple-700 rounded-full">
-               {isPlaying && (
-                 <div
-                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                 >
-                   <RefreshCw className="w-5 h-5 text-purple-600 animate-spin" />
-                   <div className="w-4 h-4 bg-purple-500 rounded-full shadow-lg" />
-                 </div>
-               )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-purple-300 dark:text-purple-700" />
-             </div>
-             <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-semibold bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
-               <RefreshCw className="w-4 h-4" />
-                <span>Auto-Retry on Failure</span>
-              </div>
-            </div>
-
-            {/* Service B */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-green-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service B</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
-                ⚠️ Flaky (50% fail)
-              </Badge>
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-full border border-purple-300 dark:border-purple-700">
-              <RefreshCw className="w-5 h-5" />
-              <span className="text-sm font-semibold">Failed? The sidecar retries automatically!</span>
-            </div>
-          </div>
-        );
-
-      case 'circuit-breaker':
-        return (
-          <div className="relative w-full h-80 flex items-center justify-center gap-16 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 rounded-xl p-8 border-2 border-red-200 dark:border-red-800">
-            {/* Service A */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-blue-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-400 to-blue-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service A</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-            </div>
-
-            {/* Circuit Breaker Visualization */}
-            <div className="relative flex flex-col items-center gap-3">
-              <div className="relative w-48 h-1 bg-gray-300 dark:bg-gray-700 rounded-full">
-               {isPlaying && circuitState === 'closed' && (
-                 <div
-                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                 >
-                   <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg" />
-                 </div>
-               )}
-               {circuitState === 'open' && (
-                 <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                   <Zap className="w-8 h-8 text-red-600 fill-red-200 dark:fill-red-900" />
-                 </div>
-               )}
-               {circuitState === 'closed' && (
-                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-gray-300 dark:text-gray-700" />
-               )}
-             </div>
-             <div
-                className={`flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full ${
-                  circuitState === 'open'
-                    ? 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700'
-                    : 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-900/30 border border-gray-300 dark:border-gray-700'
-                }`}
-              >
-                {circuitState === 'open' ? (
-                  <>
-                    <Zap className="w-4 h-4" />
-                    <span>Circuit OPEN</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Circuit Closed</span>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Service B */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative">
-                <div className="w-32 h-32 bg-red-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-400 to-red-600" />
-                  <div className="relative text-white text-center">
-                    <div className="font-bold text-lg">Service B</div>
-                  </div>
-                </div>
-                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-purple-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center gap-1 border-2 border-white dark:border-gray-900">
-                  <Shield className="w-3 h-3" />
-                  Sidecar
-                </div>
-              </div>
-              <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
-                💥 Failing (100%)
-              </Badge>
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-4 py-2 rounded-full border border-red-300 dark:border-red-700">
-              <Zap className="w-5 h-5" />
-              <span className="text-sm font-semibold">
-                {circuitState === 'open' ? 'Circuit tripped! Requests blocked.' : 'Too many failures...'}
-              </span>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+  const missionState = useMemo(
+    () => ({ playedScenarioIds, circuitState }),
+    [circuitState, playedScenarioIds]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+  const startOver = () => {
+    handleReset();
+    setPlayedScenarioIds(new Set());
+    missions.reset();
+    setDismissed(false);
   };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner':
-        return 'bg-green-100 text-green-700 border-green-300';
-      case 'intermediate':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
-      case 'advanced':
-        return 'bg-red-100 text-red-700 border-red-300';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
-    }
-  };
+  const protectedTraffic = scenario.visual === 'mtls';
+  const hasSplit = scenario.visual === 'traffic-split';
+  const hasRetry = scenario.visual === 'retry';
+  const breakerOpen = scenario.visual === 'circuit-breaker' && circuitState === 'open';
+  const packetX = 124 + (animationProgress / 100) * 128;
+  const controls = (phone: boolean) => (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        className={phone ? 'h-10 flex-1' : 'h-10 lg:h-8'}
+        onClick={handlePrevious}
+        disabled={currentScenario === 0}
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        <span className={phone ? 'sr-only' : undefined}>Previous</span>
+      </Button>
+      <Button
+        type="button"
+        className={phone ? 'h-10 flex-1' : 'h-10 lg:h-8'}
+        onClick={() => setIsPlaying(!isPlaying)}
+        aria-pressed={isPlaying}
+      >
+        {isPlaying ? (
+          <Pause className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Play className="h-4 w-4" aria-hidden="true" />
+        )}
+        {isPlaying ? 'Pause' : 'Play'}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className={phone ? 'h-10 flex-1' : 'h-10 lg:h-8'}
+        onClick={handleNext}
+        disabled={currentScenario === SCENARIOS.length - 1}
+      >
+        <span className={phone ? 'sr-only' : undefined}>Next</span>
+        <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </Button>
+    </>
+  );
+  const diagram = (
+    <section className="space-y-2 rounded-lg border bg-card p-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">Traffic path</h3>
+        <span className="text-xs text-muted-foreground">
+          {isPlaying ? 'Traffic is moving' : 'Traffic is paused'}
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 390 196"
+        className="mx-auto block h-auto w-full max-w-[390px]"
+        role="img"
+        aria-label="Service mesh traffic diagram"
+      >
+        <ServiceNode
+          x={8}
+          y={66}
+          label="Frontend"
+          detail={scenario.visual === 'before' ? 'plain HTTP' : 'app container'}
+          sidecar={scenario.visual !== 'before'}
+        />
+        {hasSplit ? (
+          <>
+            <path
+              d="M120 88 H164 L206 48 M120 108 H164 L206 148"
+              className="fill-none stroke-primary"
+              strokeWidth="3"
+            />
+            <text x="160" y="64" className="fill-muted-foreground text-xs">
+              90%
+            </text>
+            <text x="160" y="142" className="fill-muted-foreground text-xs">
+              10%
+            </text>
+            <ServiceNode x={220} y={16} label="Orders v1" detail="stable" />
+            <ServiceNode x={220} y={116} label="Orders v2" detail="canary" />
+          </>
+        ) : (
+          <>
+            <path
+              d="M120 98 H270"
+              className={
+                breakerOpen ? 'fill-none stroke-wrong-foreground' : 'fill-none stroke-primary'
+              }
+              strokeWidth="3"
+              strokeDasharray={breakerOpen ? '7 5' : undefined}
+            />
+            <ServiceNode
+              x={270}
+              y={66}
+              label="Orders API"
+              detail={scenario.visual === 'before' ? 'plain HTTP' : 'app container'}
+              sidecar={scenario.visual !== 'before'}
+              failing={scenario.visual === 'circuit-breaker'}
+            />
+          </>
+        )}
+        {isPlaying && !breakerOpen && (
+          <circle cx={packetX} cy="98" r="6" className="fill-primary" />
+        )}
+        {protectedTraffic && (
+          <text
+            x="195"
+            y="84"
+            textAnchor="middle"
+            className="fill-correct-foreground text-xs font-semibold"
+          >
+            mTLS
+          </text>
+        )}
+        {hasRetry && (
+          <text
+            x="195"
+            y="84"
+            textAnchor="middle"
+            className="fill-partial-foreground text-xs font-semibold"
+          >
+            retry
+          </text>
+        )}
+        {breakerOpen && (
+          <text
+            x="195"
+            y="84"
+            textAnchor="middle"
+            className="fill-wrong-foreground text-xs font-semibold"
+          >
+            open
+          </text>
+        )}
+      </svg>
+      <p className="text-xs text-muted-foreground">
+        {breakerOpen
+          ? 'Requests stop while the host recovers.'
+          : protectedTraffic
+            ? 'Both workloads authenticate and encrypt traffic.'
+            : hasRetry
+              ? 'Retries are bounded before failures reach callers.'
+              : 'Sidecars can apply traffic policy without changing application code.'}
+      </p>
+    </section>
+  );
+  const details = (
+    <div className="space-y-2">
+      <section className="rounded-lg border bg-card p-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Scenario
+        </p>
+        <h3 className="mt-1 text-sm font-semibold">
+          {scenario.title.replace(/^\p{Extended_Pictographic}️?\s*/u, '')}
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">{scenario.description}</p>
+        <p className="mt-3 text-sm">
+          <strong>Problem:</strong> {scenario.problem}
+        </p>
+        <p className="mt-2 text-sm">
+          <strong>Mesh response:</strong> {scenario.solution}
+        </p>
+      </section>
+      <SimMissionList missions={missions.missions} />
+      <details className="rounded-lg border bg-card p-3">
+        <summary className="cursor-pointer text-sm font-medium">How this simulation works</summary>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Play a scenario through one traffic cycle to record it. mTLS authenticates both workloads
+          and encrypts traffic; retry policies need limits so they do not multiply load; Istio calls
+          its circuit-breaking protection outlier detection.
+        </p>
+      </details>
+    </div>
+  );
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      <Card className="shadow-xl">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <Network className="w-8 h-8 text-primary" />
-                <CardTitle className="text-2xl">Service Mesh Traffic Simulator</CardTitle>
-              </div>
-              <CardDescription className="text-base">
-                Learn how service meshes solve real production problems through interactive scenarios
-              </CardDescription>
-            </div>
-            <Badge variant="outline" className={getDifficultyColor(scenario.difficulty)}>
-              {scenario.difficulty}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          {/* Scenario Navigation */}
-          <div className="flex items-center justify-between gap-4">
-            <Button onClick={handlePrevious} disabled={currentScenario === 0} variant="outline" size="lg">
-              <ChevronLeft className="mr-2 h-5 w-5" />
-              Previous
-            </Button>
-            <div className="flex-1 text-center">
-              <div className="text-sm text-muted-foreground mb-1">
-                Scenario {currentScenario + 1} of {SCENARIOS.length}
-              </div>
-              <div className="flex items-center justify-center gap-1.5">
-                {SCENARIOS.map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`h-2 rounded-full transition-all ${
-                      idx === currentScenario
-                        ? 'w-8 bg-primary'
-                        : idx < currentScenario
-                          ? 'w-2 bg-primary/50'
-                          : 'w-2 bg-muted'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-            <Button
-              onClick={handleNext}
-              disabled={currentScenario === SCENARIOS.length - 1}
-              variant="outline"
-              size="lg"
-            >
-              Next
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          </div>
-
-          {/* Scenario Title */}
-          <div className="text-center space-y-2">
-            <h3 className="text-2xl font-bold">{scenario.title}</h3>
-            <p className="text-muted-foreground">{scenario.description}</p>
-          </div>
-
-          {/* Visualization */}
-          <div className="border-2 border-muted rounded-xl overflow-hidden">{renderVisualization()}</div>
-
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-3">
-            <Button onClick={() => setIsPlaying(!isPlaying)} size="lg" variant="default">
-              {isPlaying ? (
-                <>
-                  <Pause className="mr-2 h-5 w-5" />
-                  Pause
-                </>
-              ) : (
-                <>
-                  <Play className="mr-2 h-5 w-5" />
-                  Play
-                </>
-              )}
-            </Button>
-            <Button onClick={handleReset} variant="outline" size="lg">
-              <RotateCcw className="mr-2 h-5 w-5" />
-              Reset
-            </Button>
-          </div>
-
-          {/* Problem/Solution Cards */}
-          <div className="grid md:grid-cols-2 gap-4">
-              <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <AlertDescription>
-                  <div className="font-semibold text-red-900 dark:text-red-100 mb-1">The Problem</div>
-                  <div className="text-red-700 dark:text-red-300 text-sm">{scenario.problem}</div>
-                </AlertDescription>
-              </Alert>
-              <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                <AlertDescription>
-                  <div className="font-semibold text-green-900 dark:text-green-100 mb-1">The Solution</div>
-                  <div className="text-green-700 dark:text-green-300 text-sm">{scenario.solution}</div>
-                </AlertDescription>
-              </Alert>
-            </div>
-
-          {/* Keyboard Shortcuts */}
-          <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
-            <p className="font-medium mb-2">Keyboard Shortcuts:</p>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1">
-              <span>
-                <kbd className="px-2 py-1 bg-background rounded border text-xs">Space/Enter</kbd> Play/Pause
-              </span>
-              <span>
-                <kbd className="px-2 py-1 bg-background rounded border text-xs">←/→</kbd> Navigate
-              </span>
-              <span>
-                <kbd className="px-2 py-1 bg-background rounded border text-xs">R</kbd> Reset
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Service Mesh"
+          icon={Network}
+          steps={SCENARIOS.map((item) => ({
+            title: item.title.replace(/^\p{Extended_Pictographic}️?\s*/u, ''),
+            status: playedScenarioIds.has(item.id)
+              ? 'done'
+              : item.id === scenario.id
+                ? 'started'
+                : 'todo',
+            statusLabel: playedScenarioIds.has(item.id) ? 'played' : 'not played',
+          }))}
+          current={currentScenario}
+          onStep={setCurrentScenario}
+          stepNoun="Scenario"
+          stepsLabel="Service mesh scenarios"
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={scenario.title.replace(/^\p{Extended_Pictographic}️?\s*/u, '')}
+          actions={<div className="flex items-center gap-1">{controls(false)}</div>}
+          goal={
+            missions.complete ? (
+              'All four missions are complete. Replay any scenario, or start over.'
+            ) : (
+              <>
+                <strong>{missions.current?.label}</strong>{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
+        <SimAnnouncer
+          message={`${scenario.description}. ${isPlaying ? 'Traffic is moving.' : 'Traffic is paused.'}`}
+        />
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Service mesh missions complete"
+            summary="You protected traffic with mTLS, shifted a canary, observed a retry, and stopped calls to a failing host."
+            stats={[
+              { label: 'Missions', value: '4/4' },
+              { label: 'Scenarios played', value: `${playedScenarioIds.size}/6` },
+              { label: 'Breaker', value: 'Opened' },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]"
+            minHeight="min-h-[17rem]"
+            tab={tab}
+            onTabChange={(next) => setTab(next as 'diagram' | 'details')}
+            tabsLabel="Service mesh panels"
+            panels={[
+              { id: 'diagram', label: 'Diagram', content: diagram },
+              { id: 'details', label: 'Details', content: details },
+            ]}
+          />
+        )}
+        <SimPhoneBar>{controls(true)}</SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }

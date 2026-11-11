@@ -1462,7 +1462,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'microservices-simulator': {
     summary:
-      'A microservices architecture splits an application into small services that each own one job and talk over the network. This simulator models a small shop built that way: an API gateway in front of user, product, cart and order services. When you start the simulation, calls travel between the services, and each service shows its CPU, memory, latency and status, healthy, degraded or down. A degraded or down service lowers the success rate of the calls that involve it, and the failures add up in the overall request counters, which makes the main cost of microservices visible: every network call is a new way to fail. Each service gets a fixed share of the traffic and each instance handles a set amount, so clicking a service shows its load as a share of capacity. The user service starts overloaded, with high CPU, slow responses and failing calls; scaling it up spreads the same load over more instances until it recovers, and scaling a busy service down does the opposite. A short tutorial walks you through it, and the notes below cover when a modular monolith is the better choice.',
+      'A microservices architecture splits an application into small services that each own one job and talk over the network. This simulator models a small shop built that way: an API gateway in front of user, product, cart and order services. When you start the simulation, calls travel between the services, and each service shows its CPU, memory, latency and status, healthy, degraded or down. A degraded or down service lowers the success rate of the calls that involve it, and the failures add up in the overall request counters, which makes the main cost of microservices visible: every network call is a new way to fail. Each service gets a fixed share of the traffic and each instance handles a set amount, so clicking a service shows its load as a share of capacity. The user service starts overloaded, with high CPU, slow responses and failing calls; scaling it up spreads the same load over more instances until it recovers, and scaling a busy service down does the opposite. Four missions walk you through traffic, scaling, an outage and the recovery, and the notes below cover when a modular monolith is the better choice.',
     teaches: [
       'Microservices architecture',
       'API gateways',
@@ -1472,7 +1472,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     ],
     level: 'Beginner',
     tryThis: [
-      'Follow the tutorial: select a service, start the simulation and scale the service.',
+      'Press Start, use Cycle health on a service until it is down and watch the failed count climb, then cycle it back to healthy.',
       'Start the simulation and watch the overall request totals as calls travel between the services.',
       'Select the user service, which starts overloaded, and scale it up until its load drops below capacity and the success rate recovers.',
     ],

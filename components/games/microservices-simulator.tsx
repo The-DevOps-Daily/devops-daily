@@ -1,31 +1,35 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useResolvedTheme } from '@/components/theme-provider';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, MotionConfig, useReducedMotion } from 'framer-motion';
+import { Activity, Boxes, Minus, Network, Pause, Play, Plus, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
-  Play,
-  Pause,
-  RotateCcw,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Activity,
-  Boxes,
-  Network,
-  Info,
-} from 'lucide-react';
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+  type SimTone,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
-import { CAPACITY_PER_INSTANCE, SERVICE_DEMAND, callSuccessChance, serviceMetrics } from '@/lib/games/microservices-load';
+import {
+  CAPACITY_PER_INSTANCE,
+  SERVICE_DEMAND,
+  callSuccessChance,
+  serviceMetrics,
+} from '@/lib/games/microservices-load';
 
 // Service types
 type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order';
 type ServiceStatus = 'healthy' | 'degraded' | 'down';
-type TutorialStep = 'welcome' | 'click-service' | 'start-sim' | 'scale-service' | 'complete';
 
 interface Service {
   id: string;
@@ -50,10 +54,10 @@ interface ServiceCall {
 
 const SERVICE_TEMPLATES: Record<ServiceType, { name: string; icon: string }> = {
   'api-gateway': { name: 'API Gateway', icon: '🌐' },
-  'user': { name: 'User Service', icon: '👤' },
-  'product': { name: 'Product Service', icon: '📦' },
-  'cart': { name: 'Cart Service', icon: '🛒' },
-  'order': { name: 'Order Service', icon: '📋' },
+  user: { name: 'User Service', icon: '👤' },
+  product: { name: 'Product Service', icon: '📦' },
+  cart: { name: 'Cart Service', icon: '🛒' },
+  order: { name: 'Order Service', icon: '📋' },
 };
 
 // Simulation constants
@@ -64,8 +68,6 @@ const SERVICE_CALL_ANIMATION_MAX_MS = 500; // Max latency for visual animation
 const MIN_INSTANCES = 1;
 const MAX_INSTANCES = 10;
 
-// Tutorial constants
-const TUTORIAL_COMPLETE_DELAY_MS = 3000; // Delay before exiting tutorial mode
 const CALL_CLEANUP_DELAY_MS = 1000; // Delay before removing completed service calls
 
 // Metrics calculation constants
@@ -78,14 +80,87 @@ const MEMORY_DEGRADED_MIN = 55;
 const MEMORY_DEGRADED_RANGE = 25;
 const MEMORY_VARIATION = 4;
 
-
 const HEALTH_MULTIPLIER_DOWN = 0.2; // Success rate multiplier for down services
 const HEALTH_MULTIPLIER_DEGRADED = 0.8; // Success rate multiplier for degraded services
 
+const GRAPH_POSITIONS: Record<ServiceType, { x: number; y: number }> = {
+  'api-gateway': { x: 195, y: 36 },
+  user: { x: 98, y: 140 },
+  product: { x: 292, y: 140 },
+  cart: { x: 66, y: 244 },
+  order: { x: 324, y: 244 },
+};
+
+const SERVICE_CATEGORY: Record<ServiceType, keyof typeof SIM_CATEGORY> = {
+  'api-gateway': 'primary',
+  user: 'sky',
+  product: 'violet',
+  cart: 'emerald',
+  order: 'neutral',
+};
+
+interface MicroservicesMissionState {
+  services: Service[];
+  totalRequests: number;
+  successfulRequests: number;
+  outageConfirmed: boolean;
+  recoverySuccessBaseline: number | null;
+}
+
+const START_INSTANCES: Record<string, number> = {
+  'api-gateway-1': 2,
+  'user-1': 3,
+  'product-1': 3,
+  'cart-1': 2,
+  'order-1': 3,
+};
+
+const MISSIONS: Mission<MicroservicesMissionState>[] = [
+  {
+    id: 'traffic',
+    label: 'Start the traffic and watch requests flow from the gateway to the services.',
+    hint: 'Press Start.',
+    check: (state) => state.totalRequests > 0,
+  },
+  {
+    id: 'scale',
+    label: 'Scale a busy service out to more instances.',
+    hint: 'Pick a service and add instances.',
+    check: (state) =>
+      state.services.some((service) => service.instances > (START_INSTANCES[service.id] ?? 1)),
+  },
+  {
+    id: 'failure',
+    label: 'Take a service down and see which requests fail.',
+    hint: 'Mark a service as down while traffic runs.',
+    check: (state) =>
+      state.services.some((service) => service.status === 'down') && state.outageConfirmed,
+  },
+  {
+    id: 'recover',
+    label: 'Bring it back and watch the error rate fall.',
+    hint: 'Restore the service.',
+    check: (state) =>
+      state.outageConfirmed &&
+      state.services.every((service) => service.status === 'healthy') &&
+      state.recoverySuccessBaseline !== null &&
+      state.successfulRequests > state.recoverySuccessBaseline,
+  },
+];
+
+type MicroservicesTab = 'graph' | 'details';
+
+function statusTone(status: ServiceStatus): SimTone {
+  if (status === 'healthy') return 'success';
+  if (status === 'degraded') return 'warning';
+  return 'danger';
+}
+
 export default function MicroservicesSimulator() {
-  const resolvedTheme = useResolvedTheme();
   const [mounted, setMounted] = useState(false);
-  const isDark = resolvedTheme === 'dark';
+  const reducedMotion = useReducedMotion();
+  const [tab, setTab] = useState<MicroservicesTab>('graph');
+  const [dismissed, setDismissed] = useState(false);
 
   // Game state
   const [isRunning, setIsRunning] = useState(false);
@@ -95,18 +170,15 @@ export default function MicroservicesSimulator() {
   const [successfulRequests, setSuccessfulRequests] = useState(0);
   const [failedRequests, setFailedRequests] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [showMetrics, setShowMetrics] = useState(true);
-  
-  // Tutorial state
-  const [tutorialMode, setTutorialMode] = useState(false);
-  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
-  const [showWelcome, setShowWelcome] = useState(true);
   const [showAdvancedServices, setShowAdvancedServices] = useState(false);
+  const [outageConfirmed, setOutageConfirmed] = useState(false);
+  const [recoverySuccessBaseline, setRecoverySuccessBaseline] = useState<number | null>(null);
 
   const animationRef = useRef<number | undefined>(undefined);
   const lastCallTimeRef = useRef<number>(0);
   const lastMetricsUpdateRef = useRef<number>(0);
   const servicesRef = useRef<Service[]>([]);
+  const outageFailureBaselineRef = useRef<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -118,13 +190,14 @@ export default function MicroservicesSimulator() {
     servicesRef.current = services;
     if (selectedService) {
       const updated = services.find((s) => s.id === selectedService.id);
-      if (updated && (
-        updated.cpu !== selectedService.cpu ||
-        updated.memory !== selectedService.memory ||
-        updated.latency !== selectedService.latency ||
-        updated.instances !== selectedService.instances ||
-        updated.status !== selectedService.status
-      )) {
+      if (
+        updated &&
+        (updated.cpu !== selectedService.cpu ||
+          updated.memory !== selectedService.memory ||
+          updated.latency !== selectedService.latency ||
+          updated.instances !== selectedService.instances ||
+          updated.status !== selectedService.status)
+      ) {
         setSelectedService(updated);
       }
     }
@@ -215,182 +288,133 @@ export default function MicroservicesSimulator() {
     setSelectedService(null);
   };
 
-  const startTutorial = () => {
-    setShowWelcome(false);
-    setTutorialMode(true);
-    setTutorialStep('click-service');
-  };
-
-  const advanceTutorial = (currentStep: TutorialStep) => {
-    switch (currentStep) {
-      case 'click-service':
-        setTutorialStep('start-sim');
-        break;
-      case 'start-sim':
-        setTutorialStep('scale-service');
-        break;
-      case 'scale-service':
-        setTutorialStep('complete');
-        setTimeout(() => setTutorialMode(false), TUTORIAL_COMPLETE_DELAY_MS);
-        break;
-    }
-  };
-
-  const skipTutorial = () => {
-    setShowWelcome(false);
-    setTutorialMode(false);
-  };
-
-  // Handle ESC key to close welcome modal
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showWelcome) {
-        skipTutorial();
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [showWelcome]);
-
   const handleStart = () => {
-    if (tutorialMode && tutorialStep === 'start-sim') {
-      advanceTutorial('start-sim');
-    }
     setIsRunning(true);
     startSimulation();
   };
 
   const handlePause = () => {
     setIsRunning(false);
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
   };
 
   const handleReset = () => {
     setIsRunning(false);
-    setTutorialMode(false);
-    setTutorialStep('welcome');
-    setShowWelcome(false);
     setShowAdvancedServices(false);
     setTotalRequests(0);
     setSuccessfulRequests(0);
     setFailedRequests(0);
     setActiveCalls([]);
+    setSelectedService(null);
+    outageFailureBaselineRef.current = null;
+    setOutageConfirmed(false);
+    setRecoverySuccessBaseline(null);
     initializeServices();
-    if (animationRef.current) {
-      cancelAnimationFrame(animationRef.current);
-    }
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
   };
 
   const startSimulation = () => {
     const simulate = () => {
       if (!isRunning) return;
-
       const now = Date.now();
-      
-      // Simulate traffic between services
       if (now - lastCallTimeRef.current > REQUEST_INTERVAL_MS) {
         simulateServiceCall();
         lastCallTimeRef.current = now;
       }
-
-      // Update service metrics
       if (now - lastMetricsUpdateRef.current > METRICS_UPDATE_INTERVAL_MS) {
         setServices((prev) =>
           prev.map((service) => {
-            // CPU and latency follow the load on each instance: the same
-            // demand spread over more instances means less load on each.
-            const metrics = serviceMetrics(service.type, service.instances, service.status, Math.random() * 2 - 1);
+            const metrics = serviceMetrics(
+              service.type,
+              service.instances,
+              service.status,
+              Math.random() * 2 - 1
+            );
             return {
               ...service,
               cpu: metrics.cpu,
-              memory: Math.min(MEMORY_BASE_MAX, Math.max(MEMORY_BASE_MIN,
-                service.status === 'down' ? MEMORY_DOWN_MIN + Math.random() * MEMORY_DOWN_RANGE :
-                service.status === 'degraded' ? MEMORY_DEGRADED_MIN + Math.random() * MEMORY_DEGRADED_RANGE :
-                service.memory + (Math.random() - 0.5) * MEMORY_VARIATION
-              )),
+              memory: Math.min(
+                MEMORY_BASE_MAX,
+                Math.max(
+                  MEMORY_BASE_MIN,
+                  service.status === 'down'
+                    ? MEMORY_DOWN_MIN + Math.random() * MEMORY_DOWN_RANGE
+                    : service.status === 'degraded'
+                      ? MEMORY_DEGRADED_MIN + Math.random() * MEMORY_DEGRADED_RANGE
+                      : service.memory + (Math.random() - 0.5) * MEMORY_VARIATION
+                )
+              ),
               latency: metrics.latency,
             };
           })
         );
         lastMetricsUpdateRef.current = now;
       }
-
       animationRef.current = requestAnimationFrame(simulate);
     };
-
     simulate();
   };
 
   const simulateServiceCall = () => {
     const currentServices = servicesRef.current;
     if (currentServices.length < 2) return;
-
     const fromService = currentServices[Math.floor(Math.random() * currentServices.length)];
     const availableTargets = currentServices.filter((s) => s.id !== fromService.id);
     if (availableTargets.length === 0) return;
-
     const toService = availableTargets[Math.floor(Math.random() * availableTargets.length)];
-
-    // The target's health and its load per instance decide the success rate:
-    // an overloaded service starts timing out until you add instances.
     let successChance = callSuccessChance(toService.type, toService.instances, toService.status);
-
-    // Also factor in fromService health
     if (fromService.status === 'down') successChance *= HEALTH_MULTIPLIER_DOWN;
     else if (fromService.status === 'degraded') successChance *= HEALTH_MULTIPLIER_DEGRADED;
-
     const call: ServiceCall = {
       id: `call-${Date.now()}-${Math.random()}`,
       from: fromService.id,
       to: toService.id,
       success: Math.random() < successChance,
-      latency: Math.random() * (SERVICE_CALL_ANIMATION_MAX_MS - SERVICE_CALL_ANIMATION_MIN_MS) + SERVICE_CALL_ANIMATION_MIN_MS,
+      latency:
+        Math.random() * (SERVICE_CALL_ANIMATION_MAX_MS - SERVICE_CALL_ANIMATION_MIN_MS) +
+        SERVICE_CALL_ANIMATION_MIN_MS,
     };
-
     setActiveCalls((prev) => [...prev, call]);
     setTotalRequests((prev) => prev + 1);
-
-    if (call.success) {
-      setSuccessfulRequests((prev) => prev + 1);
-    } else {
+    if (call.success) setSuccessfulRequests((prev) => prev + 1);
+    else {
       setFailedRequests((prev) => prev + 1);
-    }
-
-    // Remove call after animation
-    setTimeout(() => {
-      setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
-    }, CALL_CLEANUP_DELAY_MS);
-  };
-
-  const handleServiceClick = (service: Service) => {
-    setSelectedService(service);
-    // Advance tutorial only if correct service is clicked
-    if (tutorialMode && tutorialStep === 'click-service') {
-      if (service.type === 'api-gateway') {
-        advanceTutorial('click-service');
+      if (
+        outageFailureBaselineRef.current !== null &&
+        servicesRef.current.some((service) => service.status === 'down')
+      ) {
+        setOutageConfirmed(true);
       }
     }
+    setTimeout(
+      () => setActiveCalls((prev) => prev.filter((c) => c.id !== call.id)),
+      CALL_CLEANUP_DELAY_MS
+    );
   };
+
+  const handleServiceClick = (service: Service) => setSelectedService(service);
 
   const scaleService = (serviceId: string, delta: number) => {
-    const service = services.find(s => s.id === serviceId);
-    if (tutorialMode && tutorialStep === 'scale-service' && delta > 0) {
-      if (service?.type === 'user') {
-        advanceTutorial('scale-service');
-      }
-    }
     setServices((prev) =>
       prev.map((s) =>
         s.id === serviceId
-          ? { ...s, instances: Math.max(MIN_INSTANCES, Math.min(MAX_INSTANCES, s.instances + delta)) }
+          ? {
+              ...s,
+              instances: Math.max(MIN_INSTANCES, Math.min(MAX_INSTANCES, s.instances + delta)),
+            }
           : s
       )
     );
   };
 
   const toggleServiceHealth = (serviceId: string) => {
+    const service = services.find((candidate) => candidate.id === serviceId);
+    if (service?.status === 'degraded') {
+      outageFailureBaselineRef.current = failedRequests;
+      setOutageConfirmed(false);
+      setRecoverySuccessBaseline(null);
+    }
+    if (service?.status === 'down') setRecoverySuccessBaseline(successfulRequests);
     setServices((prev) =>
       prev.map((s) => {
         if (s.id !== serviceId) return s;
@@ -401,556 +425,354 @@ export default function MicroservicesSimulator() {
     );
   };
 
-  const getStatusColor = (status: ServiceStatus) => {
-    switch (status) {
-      case 'healthy': return 'text-green-500';
-      case 'degraded': return 'text-yellow-500';
-      case 'down': return 'text-red-500';
-    }
-  };
-
-  const getStatusIcon = (status: ServiceStatus) => {
-    switch (status) {
-      case 'healthy': return <CheckCircle className="w-4 h-4" />;
-      case 'degraded': return <AlertTriangle className="w-4 h-4" />;
-      case 'down': return <XCircle className="w-4 h-4" />;
-    }
-  };
-
   useEffect(() => {
-    if (isRunning) {
-      startSimulation();
-    }
+    if (isRunning) startSimulation();
     return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, [isRunning]);
 
+  const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 100;
+  const missionState = useMemo(
+    () => ({
+      services,
+      totalRequests,
+      successfulRequests,
+      outageConfirmed,
+      recoverySuccessBaseline,
+    }),
+    [outageConfirmed, recoverySuccessBaseline, services, successfulRequests, totalRequests]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+
+  const startOver = () => {
+    handleReset();
+    missions.reset();
+    setDismissed(false);
+  };
+  const currentGoal = missions.current;
+  const statusMessage = isRunning
+    ? `${totalRequests} requests are moving between ${services.length} services.`
+    : 'Traffic is paused. Start it to send a request through the graph.';
+
   if (!mounted) return null;
 
-  const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 100;
+  const trafficButton = (phone = false) => (
+    <Button
+      type="button"
+      variant={isRunning ? 'outline' : 'default'}
+      className={cn('h-10 gap-2', !phone && 'lg:h-8', phone && 'flex-1')}
+      onClick={isRunning ? handlePause : handleStart}
+      aria-pressed={isRunning}
+    >
+      {isRunning ? (
+        <Pause className="h-4 w-4" aria-hidden="true" />
+      ) : (
+        <Play className="h-4 w-4" aria-hidden="true" />
+      )}
+      {isRunning ? 'Stop' : 'Start'}
+    </Button>
+  );
+
+  const graph = (
+    <section className="space-y-3 rounded-lg border bg-card p-3" aria-label="Service graph">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold">Request paths</h3>
+          <p className="text-xs text-muted-foreground">
+            The gateway accepts traffic, then services call one another.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 lg:h-8"
+          onClick={showAdvancedServices ? removeAdvancedServices : addAdvancedServices}
+        >
+          <Network className="h-4 w-4" aria-hidden="true" />
+          {showAdvancedServices ? 'Remove services' : 'Add services'}
+        </Button>
+      </div>
+      <svg
+        viewBox="0 0 390 276"
+        role="img"
+        aria-label="Microservices request graph"
+        className="mx-auto block w-full max-w-[390px]"
+      >
+        {services.map((from) =>
+          services
+            .filter((to) => to.id !== from.id)
+            .map((to) => {
+              const fromPosition = GRAPH_POSITIONS[from.type];
+              const toPosition = GRAPH_POSITIONS[to.type];
+              return (
+                <line
+                  key={`${from.id}-${to.id}`}
+                  x1={fromPosition.x}
+                  y1={fromPosition.y}
+                  x2={toPosition.x}
+                  y2={toPosition.y}
+                  className="stroke-border"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                />
+              );
+            })
+        )}
+        {activeCalls.map((call) => {
+          const from = services.find((service) => service.id === call.from);
+          const to = services.find((service) => service.id === call.to);
+          if (!from || !to) return null;
+          const fromPosition = GRAPH_POSITIONS[from.type];
+          const toPosition = GRAPH_POSITIONS[to.type];
+          return (
+            <motion.circle
+              key={call.id}
+              r="5"
+              className={call.success ? 'fill-correct' : 'fill-wrong'}
+              initial={{ cx: fromPosition.x, cy: fromPosition.y }}
+              animate={{ cx: toPosition.x, cy: toPosition.y }}
+              transition={{ duration: reducedMotion ? 0 : call.latency / 500, ease: 'linear' }}
+            />
+          );
+        })}
+        {services.map((service) => {
+          const position = GRAPH_POSITIONS[service.type];
+          const tone = SIM_TONE[statusTone(service.status)];
+          const category = SIM_CATEGORY[SERVICE_CATEGORY[service.type]];
+          return (
+            <g key={service.id} transform={`translate(${position.x} ${position.y})`}>
+              <rect
+                x="-60"
+                y="-28"
+                width="120"
+                height="56"
+                rx="8"
+                className={cn(category.svg, tone.border)}
+                strokeWidth="2"
+              />
+              <text y="-10" textAnchor="middle" className="fill-foreground text-xs font-semibold">
+                {SERVICE_TEMPLATES[service.type].name.replace(' Service', '')}
+              </text>
+              <text y="6" textAnchor="middle" className={cn('fill-current text-xs', tone.text)}>
+                {service.status}
+              </text>
+              <text y="21" textAnchor="middle" className="fill-muted-foreground text-xs">
+                {service.instances} {service.instances === 1 ? 'instance' : 'instances'}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </section>
+  );
+
+  const serviceControls = (
+    <section className="rounded-lg border bg-card p-3" aria-label="Service controls">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold">Service controls</h3>
+          <p className="text-xs text-muted-foreground">
+            Scale capacity or cycle a service through its health states.
+          </p>
+        </div>
+        <Server className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      </div>
+      <div className="mt-3 space-y-2">
+        {services.map((service) => {
+          const tone = SIM_TONE[statusTone(service.status)];
+          const isSelected = selectedService?.id === service.id;
+          return (
+            <div key={service.id} className={cn('rounded-md border p-2', tone.surface)}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{service.name}</p>
+                  <p className={cn('text-xs', tone.text)}>
+                    {service.status} · {service.instances} instances
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant={isSelected ? 'default' : 'outline'}
+                  className="h-10 shrink-0 text-xs lg:h-8"
+                  aria-pressed={isSelected}
+                  onClick={() => handleServiceClick(service)}
+                >
+                  Inspect
+                </Button>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 text-xs lg:h-8"
+                  onClick={() => scaleService(service.id, -1)}
+                  disabled={service.instances <= MIN_INSTANCES}
+                >
+                  <Minus className="h-4 w-4" aria-hidden="true" />
+                  Remove
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 text-xs lg:h-8"
+                  onClick={() => scaleService(service.id, 1)}
+                  disabled={service.instances >= MAX_INSTANCES}
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  Add instance
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 text-xs lg:h-8"
+                  aria-pressed={service.status === 'down'}
+                  onClick={() => toggleServiceHealth(service.id)}
+                >
+                  Cycle health
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const details = (
+    <div className="space-y-3">
+      <SimMissionList missions={missions.missions} />
+      <section className="rounded-lg border bg-card p-3" aria-label="Request metrics">
+        <div className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          <h3 className="text-sm font-semibold">Metrics</h3>
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="rounded-md bg-muted p-2">
+            <p className="font-mono text-lg font-semibold tabular-nums">{totalRequests}</p>
+            <p className="text-xs text-muted-foreground">Requests</p>
+          </div>
+          <div className={cn('rounded-md p-2', SIM_TONE.success.surface)}>
+            <p className="font-mono text-lg font-semibold tabular-nums">{successfulRequests}</p>
+            <p className="text-xs text-muted-foreground">Succeeded</p>
+          </div>
+          <div className={cn('rounded-md p-2', SIM_TONE.danger.surface)}>
+            <p className="font-mono text-lg font-semibold tabular-nums">{failedRequests}</p>
+            <p className="text-xs text-muted-foreground">Failed</p>
+          </div>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Success rate: {successRate.toFixed(1)}%
+        </p>
+      </section>
+      {selectedService && (
+        <section className="rounded-lg border bg-card p-3" aria-label="Selected service details">
+          <h3 className="text-sm font-semibold">{selectedService.name}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{selectedService.description}</p>
+          <div className="mt-2 grid grid-cols-3 gap-2 text-sm">
+            <span>CPU {selectedService.cpu.toFixed(0)}%</span>
+            <span>Memory {selectedService.memory.toFixed(0)}%</span>
+            <span>{selectedService.latency.toFixed(0)} ms</span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Load: {SERVICE_DEMAND[selectedService.type]} units on {selectedService.instances} ×{' '}
+            {CAPACITY_PER_INSTANCE} capacity per instance.
+          </p>
+        </section>
+      )}
+      <details className="rounded-lg border bg-card p-3">
+        <summary className="cursor-pointer text-sm font-medium">
+          How the original tutorial worked
+        </summary>
+        <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+          <p>
+            The API Gateway is the entry point for requests. Start traffic to watch calls move
+            between independent services.
+          </p>
+          <p>
+            Add instances to spread demand across more capacity. Cycle healthy to degraded to down
+            to model a failure, then cycle once more to restore it.
+          </p>
+          <p>
+            CPU, latency, memory, request outcomes, and the success rate update as traffic runs.
+          </p>
+        </div>
+      </details>
+    </div>
+  );
 
   return (
-    <div className="w-full mx-auto px-4">
-      {/* Welcome Modal */}
-      <AnimatePresence>
-        {showWelcome && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="max-w-lg mx-4"
-            >
-              <Card className="p-6">
-                <h2 className="flex items-center gap-2 text-2xl font-bold mb-4">
-                  <Boxes className="w-6 h-6" />
-                  Welcome to Microservices Simulator!
-                </h2>
-                <p className="mb-4 text-muted-foreground">
-                  Learn how modern applications are built using independent, scalable services.
-                  Each service can be deployed, scaled, and maintained separately.
-                </p>
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">🎯</div>
-                    <div>
-                      <div className="font-medium">Interactive Tutorial</div>
-                      <div className="text-sm text-muted-foreground">Step-by-step guided tour</div>
-                    </div>
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Microservices"
+          icon={Boxes}
+          lead={trafficButton()}
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={missions.complete ? 'Microservices explored' : 'Trace traffic between services'}
+          goal={
+            missions.complete ? (
+              'Missions done: keep experimenting with traffic, capacity, and recovery.'
+            ) : (
+              <>
+                {currentGoal?.label}{' '}
+                <span className="text-muted-foreground">{currentGoal?.hint}</span>
+              </>
+            )
+          }
+        />
+        <SimAnnouncer message={statusMessage} />
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Service recovery mapped"
+            summary="You sent traffic through the graph, added capacity, tested an outage, and restored service."
+            stats={[
+              { label: 'Requests', value: totalRequests, note: 'Calls traced through the graph' },
+              { label: 'Succeeded', value: successfulRequests, note: 'Requests that completed' },
+              {
+                label: 'Failed',
+                value: failedRequests,
+                note: 'Calls that failed',
+              },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            panels={[
+              {
+                id: 'graph',
+                label: 'Graph',
+                content: (
+                  <div className="space-y-3">
+                    {graph}
+                    {serviceControls}
                   </div>
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">🛠️</div>
-                    <div>
-                      <div className="font-medium">Hands-On Learning</div>
-                      <div className="text-sm text-muted-foreground">Scale services, simulate failures</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">📊</div>
-                    <div>
-                      <div className="font-medium">Real-Time Metrics</div>
-                      <div className="text-sm text-muted-foreground">Monitor performance and health</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Button onClick={startTutorial} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    Start Tutorial
-                  </Button>
-                  <Button onClick={skipTutorial} variant="outline" className="flex-1">
-                    Skip and Explore
-                  </Button>
-                </div>
-              </Card>
-            </motion.div>
-          </motion.div>
+                ),
+              },
+              { id: 'details', label: 'Details', content: details },
+            ]}
+            columns="lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.85fr)]"
+            tab={tab}
+            onTabChange={(nextTab) => {
+              if (nextTab === 'graph' || nextTab === 'details') setTab(nextTab);
+            }}
+            tabsLabel="Microservices panels"
+            minHeight="min-h-[24rem]"
+          />
         )}
-      </AnimatePresence>
-
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Boxes className="w-6 h-6" />
-                Microservices Architecture Simulator
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Design and deploy microservices. See communication patterns, handle failures, and scale independently.
-              </CardDescription>
-            </div>
-            <Badge variant="secondary" className="text-sm">
-              Interactive Learning
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {/* Controls */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              onClick={isRunning ? handlePause : handleStart}
-              className={cn(
-                'gap-2',
-                isRunning ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'
-              )}
-            >
-              {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {isRunning ? 'Pause' : 'Start'}
-            </Button>
-
-            <Button onClick={handleReset} variant="outline" className="gap-2">
-              <RotateCcw className="w-4 h-4" />
-              Reset
-          </Button>
-
-          <Button
-              onClick={() => setShowMetrics(!showMetrics)}
-              variant="outline"
-              size="sm"
-              className="ml-auto"
-            >
-              <Activity className="w-4 h-4 mr-2" />
-              {showMetrics ? 'Hide' : 'Show'} Metrics
-            </Button>
-          </div>
-
-          {/* Metrics Dashboard */}
-          {showMetrics && (
-            <div className="grid grid-cols-3 gap-3 p-4 rounded-lg bg-muted/30">
-              <div>
-                <div className="text-xs text-muted-foreground">Total Requests</div>
-                <div className="flex items-center gap-2">
-                  <div className="text-2xl font-bold">{totalRequests}</div>
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Success Rate</div>
-                <div className="flex items-center gap-2">
-                  <div className={cn('text-2xl font-bold', successRate >= 95 ? 'text-green-500' : successRate >= 80 ? 'text-yellow-500' : 'text-red-500')}>
-                    {successRate.toFixed(1)}%
-                  </div>
-                  <div className="text-xs">
-                    {successRate >= 95 ? '✅ Excellent' : successRate >= 80 ? '⚠️ Warning' : '❌ Critical'}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Successful / Failed</div>
-                <div className="flex items-center gap-2">
-                  <div className="text-xl font-bold text-green-500">{successfulRequests}</div>
-                  <div className="text-muted-foreground">/</div>
-                  <div className="text-xl font-bold text-red-500">{failedRequests}</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Main 2-Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Left: Services Canvas (2/3 width) */}
-            <div className="lg:col-span-2">
-          <div className="relative p-6 border rounded-lg bg-muted/20" style={{ minHeight: '600px' }}>
-            <div className="absolute inset-0">
-              {/* Service connections */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <defs>
-                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {services.map((from) =>
-                  services
-                    .filter((to) => to.id !== from.id)
-                    .map((to) => (
-                      <line
-                        key={`${from.id}-${to.id}`}
-                        x1={from.position.x + 60}
-                        y1={from.position.y + 40}
-                        x2={to.position.x + 60}
-                        y2={to.position.y + 40}
-                        stroke={isDark ? '#333' : '#ddd'}
-                        strokeWidth="1"
-                        strokeDasharray="4 4"
-                      />
-                    ))
-                )}
-
-                {/* Active calls animation */}
-                {activeCalls.map((call) => {
-                  const from = services.find((s) => s.id === call.from);
-                  const to = services.find((s) => s.id === call.to);
-                  if (!from || !to) return null;
-
-                  return (
-                    <motion.circle
-                      key={call.id}
-                      r="6"
-                      fill={call.success ? '#10b981' : '#ef4444'}
-                      filter={call.success ? undefined : 'url(#glow)'}
-                      initial={{ cx: from.position.x + 60, cy: from.position.y + 40 }}
-                      animate={{ cx: to.position.x + 60, cy: to.position.y + 40 }}
-                      transition={{ duration: call.latency / 500, ease: 'linear' }} // Faster, more engaging
-                    />
-                  );
-                })}
-              </svg>
-
-              {/* Services */}
-              {services.map((service) => (
-                <motion.div
-                  key={service.id}
-                  initial={{ scale: 1, boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)', opacity: 1 }}
-                  className="absolute cursor-pointer"
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`${service.name} - ${service.status} status`}
-                  style={{
-                    left: service.position.x,
-                    top: service.position.y,
-                  }}
-                  onClick={() => handleServiceClick(service)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleServiceClick(service);
-                    }
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                  animate={
-                    // Tutorial highlights (blue pulsing)
-                    tutorialMode && tutorialStep !== 'complete' && 
-                    ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
-                     (tutorialStep === 'scale-service' && service.type === 'user'))
-                      ? {
-                          scale: [1, 1.1, 1],
-                          boxShadow: [
-                            '0 0 0 0 rgba(59, 130, 246, 0)',
-                            '0 0 0 10px rgba(59, 130, 246, 0.3)',
-                            '0 0 0 0 rgba(59, 130, 246, 0)',
-                          ],
-                        }
-                    // Down status animation
-                    : service.status === 'down'
-                      ? {
-                          scale: [1, 0.95, 1],
-                          opacity: [1, 0.7, 1],
-                        }
-                    // Degraded status animation
-                    : service.status === 'degraded'
-                      ? {
-                          scale: [1, 1.02, 1],
-                          boxShadow: [
-                            '0 0 0 0 rgba(234, 179, 8, 0)',
-                            '0 0 0 6px rgba(234, 179, 8, 0.2)',
-                            '0 0 0 0 rgba(234, 179, 8, 0)',
-                          ],
-                        }
-                    // Default state (no animation)
-                    : {
-                        scale: 1,
-                        boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
-                        opacity: 1,
-                      }
-                  }
-                  transition={{
-                    duration: service.status === 'down' ? 1.5 : service.status === 'degraded' ? 1.8 : 2,
-                    repeat: (
-                      (tutorialMode && tutorialStep !== 'complete' && 
-                       ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
-                        (tutorialStep === 'scale-service' && service.type === 'user'))) ||
-                      service.status !== 'healthy'
-                    ) ? Infinity : 0,
-                    ease: 'easeInOut',
-                  }}
-                >
-                  <Card
-                    className={cn(
-                      'w-32 p-2 border-2 transition-all focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2',
-                      selectedService?.id === service.id && 'ring-2 ring-blue-500',
-                      service.status === 'healthy' && 'border-green-500/50',
-                      service.status === 'degraded' && 'border-yellow-500/50',
-                      service.status === 'down' && 'border-red-500/50'
-                    )}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-1">{SERVICE_TEMPLATES[service.type].icon}</div>
-                      <div className="text-xs font-medium truncate">{service.name}</div>
-                      <div className="flex items-center justify-center gap-1 mt-1">
-                        <span className={cn('text-xs', getStatusColor(service.status))}>
-                          {getStatusIcon(service.status)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">x{service.instances}</span>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-              
-              {/* Progressive Disclosure Button */}
-              {!tutorialMode && services.length >= 3 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute bottom-4 right-4"
-                >
-                  <Button
-                    onClick={showAdvancedServices ? removeAdvancedServices : addAdvancedServices}
-                    className={cn(
-                      'gap-2',
-                      showAdvancedServices 
-                        ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'
-                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                    )}
-                  >
-                    <Network className="w-4 h-4" />
-                    {showAdvancedServices ? 'Remove Extra Services' : 'Add More Services'}
-                  </Button>
-                </motion.div>
-              )}
-
-              {/* Floating Tutorial Card */}
-              <AnimatePresence>
-                {tutorialMode && tutorialStep !== 'complete' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className={cn(
-                      'absolute z-20 max-w-xs',
-                      tutorialStep === 'click-service' && 'left-60 top-48',
-                      tutorialStep === 'start-sim' && 'left-1/2 -translate-x-1/2 top-2',
-                      tutorialStep === 'scale-service' && 'left-[450px] top-24'
-                    )}
-                  >
-                    <Card className="border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/90 shadow-xl">
-                      <div className="p-4 space-y-3">
-                        {/* Progress Indicator */}
-                        <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="bg-blue-600 text-white text-xs">
-                            Step {tutorialStep === 'click-service' ? '1' : tutorialStep === 'start-sim' ? '2' : '3'} of 3
-                          </Badge>
-                          <Button
-                            onClick={skipTutorial}
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                          >
-                            Skip
-                          </Button>
-                        </div>
-
-                        {/* Tutorial Content */}
-                        <div className="space-y-2">
-                          {tutorialStep === 'click-service' && (
-                            <>
-                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">
-                                👆 Click the API Gateway
-                              </h4>
-                              <p className="text-xs text-blue-700 dark:text-blue-200">
-                                The API Gateway is the entry point for all requests. Click it to see its details and metrics.
-                              </p>
-                            </>
-                          )}
-                          {tutorialStep === 'start-sim' && (
-                            <>
-                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">
-                                ▶️ Start the Simulation
-                              </h4>
-                              <p className="text-xs text-blue-700 dark:text-blue-200">
-                                Press the green "Start" button above to watch requests flow between services in real-time.
-                              </p>
-                            </>
-                          )}
-                          {tutorialStep === 'scale-service' && (
-                            <>
-                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">
-                                ⬆️ Scale the User Service
-                              </h4>
-                              <p className="text-xs text-blue-700 dark:text-blue-200">
-                                Click the User Service, then press "Scale Up" to add more instances. It is overloaded, so watch its CPU, latency and the success rate improve as you add capacity.
-                              </p>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Visual Arrow Indicator */}
-                        {tutorialStep === 'click-service' && (
-                          <div className="absolute -left-8 top-6 text-4xl animate-bounce">
-                            ◀️
-                          </div>
-                        )}
-                        {tutorialStep === 'scale-service' && (
-                          <div className="absolute -left-8 top-6 text-4xl animate-bounce">
-                            ◀️
-                          </div>
-                        )}
-                      </div>
-                    </Card>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-            </div>
-
-            {/* Right: Service Details (1/3 width) */}
-            <div className="space-y-4">
-          {/* Service Details Panel */}
-          <AnimatePresence>
-            {selectedService && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <Card className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="flex items-center gap-2 text-lg font-semibold">
-                        <span className="text-2xl">{SERVICE_TEMPLATES[selectedService.type].icon}</span>
-                        {selectedService.name}
-                      </h3>
-                      {selectedService.description && (
-                        <p className="text-sm text-muted-foreground mt-1">{selectedService.description}</p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className={getStatusColor(selectedService.status)}>
-                          {selectedService.status}
-                        </Badge>
-                        <Badge variant="secondary">{selectedService.instances} instances</Badge>
-                      </div>
-                      {(() => {
-                        const demand = SERVICE_DEMAND[selectedService.type];
-                        const capacity = selectedService.instances * CAPACITY_PER_INSTANCE;
-                        const load = Math.round((demand / capacity) * 100);
-                        return (
-                          <p
-                            className={cn(
-                              'text-xs mt-2',
-                              load > 100 ? 'text-red-500' : load > 85 ? 'text-yellow-500' : 'text-muted-foreground'
-                            )}
-                          >
-                            Load: {demand} units on {selectedService.instances} x {CAPACITY_PER_INSTANCE} = {load}% of capacity
-                            {load > 85 ? '. Add instances to bring latency and errors down.' : '.'}
-                          </p>
-                        );
-                      })()}
-                    </div>
-                    <Button onClick={() => setSelectedService(null)} variant="ghost" size="sm">
-                      ×
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 mt-4">
-                    <div>
-                      <div className="text-xs text-muted-foreground">CPU Usage</div>
-                      <div className="text-xl font-bold">{selectedService.cpu.toFixed(0)}%</div>
-                      <div className="w-full h-2 mt-1 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full bg-blue-500 transition-all"
-                          style={{ width: `${selectedService.cpu}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground">Memory</div>
-                      <div className="text-xl font-bold">{selectedService.memory.toFixed(0)}%</div>
-                      <div className="w-full h-2 mt-1 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full bg-green-500 transition-all"
-                          style={{ width: `${selectedService.memory}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground">Latency</div>
-                      <div className="text-xl font-bold">{selectedService.latency.toFixed(0)}ms</div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2 mt-4">
-                    <Button
-                      onClick={() => scaleService(selectedService.id, 1)}
-                      variant="outline"
-                      size="sm"
-                      disabled={selectedService.instances >= 10}
-                    >
-                      Scale Up
-                    </Button>
-                    <Button
-                      onClick={() => scaleService(selectedService.id, -1)}
-                      variant="outline"
-                      size="sm"
-                      disabled={selectedService.instances <= 1}
-                    >
-                      Scale Down
-                    </Button>
-                    <Button
-                      onClick={() => toggleServiceHealth(selectedService.id)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Toggle Health
-                    </Button>
-                  </div>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-              {!selectedService && (
-                <Card className="p-4 bg-muted/20">
-                  <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold">
-                    <Info className="w-4 h-4" />
-                    How to Use
-                  </h3>
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li>• Click services to view metrics</li>
-                    <li>• Scale them up/down to handle load</li>
-                    <li>• Toggle health to simulate failures</li>
-                    <li>• Watch requests flow between services</li>
-                  </ul>
-                </Card>
-              )}
-            </div>
-          </div>
-
-        </CardContent>
-      </Card>
-    </div>
+        <SimPhoneBar>
+          {trafficButton(true)}
+          <SimResetButton onReset={startOver} />
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }
