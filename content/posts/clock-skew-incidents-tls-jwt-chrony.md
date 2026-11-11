@@ -59,7 +59,36 @@ The S3 limit and error name come from [AWS's request authentication documentatio
 
 Do not set a workstation's clock backward to test certificate behavior. OpenSSL's [`-attime` verification option](https://docs.openssl.org/3.0/man1/openssl-verification-options/) supplies the verification time instead. That isolates the test from package updates, log ordering, token expiry, and every other process on the machine.
 
-This run creates a local CA that began 30 days earlier and two leaf certificates issued at the run time. One leaf starts at issuance. The other has `notBefore` one hour earlier. The verifier clock is then simulated 10 minutes behind, and then 8 days ahead.
+This run creates a local CA that began 30 days earlier and two leaf certificates issued at the run time. One leaf starts at issuance. The other has `notBefore` one hour earlier. The verifier clock is then simulated 10 minutes behind, and then 8 days ahead. The fixtures come from this short script, which uses the Python `cryptography` package so it can set `notBefore` freely (`python3 mkcerts.py` writes `ca.pem`, `leaf-now.pem` and `leaf-backdated.pem`):
+
+```python
+# Build a demo CA (valid since 30 days ago) and two leaf certs issued "now":
+# leaf-now.pem has notBefore = issuance time, leaf-backdated.pem has notBefore = issuance time - 1 hour.
+import datetime as dt
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+now = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+def name(cn): return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
+ca_key = ec.generate_private_key(ec.SECP256R1())
+ca = (x509.CertificateBuilder().subject_name(name("Demo CA")).issuer_name(name("Demo CA"))
+      .public_key(ca_key.public_key()).serial_number(x509.random_serial_number())
+      .not_valid_before(now - dt.timedelta(days=30)).not_valid_after(now + dt.timedelta(days=365))
+      .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+      .sign(ca_key, hashes.SHA256()))
+open("ca.pem", "wb").write(ca.public_bytes(serialization.Encoding.PEM))
+for fname, back in (("leaf-now.pem", 0), ("leaf-backdated.pem", 3600)):
+    k = ec.generate_private_key(ec.SECP256R1())
+    c = (x509.CertificateBuilder().subject_name(name("api.example.com")).issuer_name(ca.subject)
+         .public_key(k.public_key()).serial_number(x509.random_serial_number())
+         .not_valid_before(now - dt.timedelta(seconds=back)).not_valid_after(now + dt.timedelta(days=7))
+         .add_extension(x509.SubjectAlternativeName([x509.DNSName("api.example.com")]), critical=False)
+         .sign(ca_key, hashes.SHA256()))
+    open(fname, "wb").write(c.public_bytes(serialization.Encoding.PEM))
+```
+
+Then verify with OpenSSL 3.0, passing `-attime` as a Unix timestamp:
 
 ```terminal
 {
@@ -146,6 +175,10 @@ Chrony normally slews a correction, which avoids a sudden jump but can take a lo
 # Step offsets over 1 second during the first three clock updates.
 makestep 1.0 3
 
+# Keep the kernel's synchronization flag (and the RTC) updated.
+# node_exporter's node_timex_sync_status depends on it.
+rtcsync
+
 # Replace these with separate, approved NTS-capable sources.
 server ntp-a.example.net iburst nts
 server ntp-b.example.net iburst nts
@@ -175,7 +208,7 @@ groups:
           summary: 'Node clock offset exceeds 50 ms'
 ```
 
-`node_timex_sync_status` depends on the kernel time synchronization flag. Node exporter notes that time daemons must maintain that flag correctly, so pair the alert with the daemon's own status and `chronyc tracking` during investigation.
+`node_timex_sync_status` depends on the kernel time synchronization flag. Node exporter's [time notes](https://github.com/prometheus/node_exporter/blob/master/docs/TIME.md) say every chrony version needs the `rtcsync` option to maintain that flag, so on chrony hosts the sync alert is only meaningful with `rtcsync` set. Pair the alert with the daemon's own status and `chronyc tracking` during investigation.
 
 ## Incident checklist
 
