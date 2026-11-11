@@ -59,7 +59,7 @@ The page rule is simple: wake someone only when waiting makes the outcome worse.
 | Human approval | The oldest approval has exceeded the response promise                                  | Approval volume trends higher                  |
 | Task outcome   | Failure rate crosses the service's error budget                                        | Evaluation score or latency gradually declines |
 
-The following names and thresholds are **examples owned by this runbook**, not Prometheus, OpenTelemetry, or vendor metric names. Pick thresholds from your own normal traffic and give every rule an owner. The counter functions use a range vector, and each alert has a `for:` duration so a short spike does not page by itself.
+The following names and thresholds are **examples owned by this runbook**, not Prometheus, OpenTelemetry, or vendor metric names. Pick thresholds from your own normal traffic and give every rule an owner. The counter functions use a range vector, and each alert has a `for:` duration. Note what `for:` does: it requires the expression to stay true across evaluations, so it filters flapping rate rules, but an event rule such as a single forbidden write stays true for as long as the event sits inside its range window. That is intended for the write and spend rules: one forbidden write is worth a page.
 
 ```yaml
 groups:
