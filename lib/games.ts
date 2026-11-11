@@ -34,6 +34,22 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'graphql-dataloader-lab',
+    type: 'simulator',
+    title: 'GraphQL N+1 and DataLoader Lab',
+    seoTitle: 'GraphQL N+1 and DataLoader Lab: Batch Resolvers and Protect Request Caches',
+    description:
+      'Trace nested GraphQL resolvers, count N+1 SQL queries, batch users and comments with DataLoader, and discover why a loader cache must stay inside one request.',
+    iconName: 'Database',
+    badgeText: 'New',
+    color: 'from-primary to-primary',
+    href: '/games/graphql-dataloader-lab',
+    tags: ['graphql', 'dataloader', 'n-plus-one', 'database', 'caching', 'api', 'interactive'],
+    isNew: true,
+    category: 'DevOps',
+    createdAt: '2026-11-11',
+  },
+  {
     id: 'email-auth-lab',
     type: 'simulator',
     title: 'Email Authentication Lab: SPF, DKIM and DMARC',

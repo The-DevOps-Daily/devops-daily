@@ -64,6 +64,7 @@ import WebhookDeliverySimulator from '@/components/games/webhook-delivery-simula
 import CdnEdgeCacheLab from '@/components/games/cdn-edge-cache-lab';
 import HttpVersionsLab from '@/components/games/http-versions-lab';
 import EmailAuthLab from '@/components/games/email-auth-lab';
+import GraphqlDataloaderLab from '@/components/games/graphql-dataloader-lab';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
@@ -131,6 +132,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'cdn-edge-cache-lab': CdnEdgeCacheLab,
   'http-versions-lab': HttpVersionsLab,
   'email-auth-lab': EmailAuthLab,
+  'graphql-dataloader-lab': GraphqlDataloaderLab,
 };
 
 export function getGameComponent(slug: string): ComponentType | undefined {
