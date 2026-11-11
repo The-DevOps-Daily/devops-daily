@@ -1,0 +1,295 @@
+{
+  "id": "networking-fundamentals-quiz",
+  "title": "Networking Fundamentals Quiz",
+  "description": "Follow a request across the network: DNS lookups, TCP and UDP, TLS, CDNs, load balancing, caching, VPC subnets and routes, and a service mesh. Scenario questions about the parts every DevOps engineer meets in production.",
+  "category": "Networking",
+  "icon": "Network",
+  "totalPoints": 230,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "22-26 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 8,
+      "advanced": 4
+    },
+    "createdDate": "2026-11-11"
+  },
+  "tags": ["networking", "dns", "tcp", "tls", "load-balancing", "caching", "aws", "service-mesh"],
+  "questions": [
+    {
+      "id": "dns-resolution-order",
+      "title": "Who Gets Asked First?",
+      "description": "When your laptop looks up a name nobody has asked for yet, in what order do the DNS servers get involved?",
+      "situation": "You type shop.example.com into a browser on a fresh laptop. Nothing is cached anywhere: not in the browser, not in the OS, not at your recursive resolver. A teammate asks you to sketch the path the lookup takes before the browser gets an IP address.",
+      "codeExample": "$ dig +trace shop.example.com\n.                  518400 IN NS a.root-servers.net.\ncom.               172800 IN NS a.gtld-servers.net.\nexample.com.       172800 IN NS ns1.example.com.\nshop.example.com.     300 IN A  203.0.113.20",
+      "options": [
+        "The laptop asks the root servers directly, then the .com servers, then the authoritative server for example.com",
+        "The laptop asks its recursive resolver, which asks a root server, then a .com TLD server, then the authoritative server for example.com",
+        "The recursive resolver asks the authoritative server first and only falls back to the root servers if that fails",
+        "The .com TLD server answers with the final IP address, so the authoritative server is only asked for mail records"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Your laptop runs a stub resolver that sends one query to a recursive resolver (your ISP, your company, or a public one such as 1.1.1.1). The recursive resolver does the walking: a root server refers it to the .com TLD servers, a .com server refers it to the name servers for example.com, and the authoritative server returns the A record. The resolver caches every answer for its TTL, which is why the next lookup is fast. The TLD server only knows who is authoritative, not the final address, and the laptop itself does not talk to the root.",
+      "hint": "Your laptop does very little of the work itself. Who does it hand the question to?"
+    },
+    {
+      "id": "tcp-three-way-handshake",
+      "title": "Opening a TCP Connection",
+      "description": "What happens on the wire before a client can send the first byte of an HTTP request over TCP?",
+      "situation": "You capture traffic while curl fetches a page over plain HTTP. Before the GET request appears in the capture, you see three small packets between the client and the server and want to name them.",
+      "codeExample": "$ sudo tcpdump -n -i eth0 port 80\n10:01:02.100 IP 10.0.0.5.51522 > 203.0.113.20.80: Flags [S], seq 1000\n10:01:02.131 IP 203.0.113.20.80 > 10.0.0.5.51522: Flags [S.], seq 7000, ack 1001\n10:01:02.131 IP 10.0.0.5.51522 > 203.0.113.20.80: Flags [.], ack 7001\n10:01:02.132 IP 10.0.0.5.51522 > 203.0.113.20.80: Flags [P.], GET / HTTP/1.1",
+      "options": [
+        "A three-way handshake: SYN from the client, SYN-ACK from the server, then ACK from the client",
+        "A DNS lookup, a TLS hello and a keep-alive probe, in that order",
+        "Two SYN packets from the client and one ACK from the server, so the server knows the client is real",
+        "A FIN from the server, an ACK from the client, then a reset to clear the old connection"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "TCP sets up a connection with a three-way handshake. The client sends SYN with its starting sequence number, the server answers with SYN-ACK (its own sequence number and an acknowledgment of the client's), and the client sends ACK. Only then does data flow, here the GET request. The handshake costs one round trip before any data, which is one reason connection reuse and HTTP keep-alive matter. FIN packets close a connection, and DNS and TLS are separate steps that do not appear as bare SYN and ACK flags.",
+      "hint": "Look at the flags: S, then S with a dot, then a dot."
+    },
+    {
+      "id": "tcp-vs-udp-choice",
+      "title": "Picking a Transport for Live Voice",
+      "description": "Which transport fits a live voice call best, and why?",
+      "situation": "Your team is building an in-app voice chat. A developer suggests TCP because \"it never loses anything\". On a lossy mobile network the prototype sounds choppy and falls further and further behind real time.",
+      "codeExample": "packet 41 lost, retransmitted after 220 ms\npackets 42-50 held back until 41 arrives\naudio buffer: 380 ms behind real time",
+      "options": [
+        "TCP, with a larger receive window so the retransmitted packets arrive sooner",
+        "TCP, but with Nagle's algorithm turned on so small audio packets are combined",
+        "UDP, because a late audio packet is useless: it is better to skip it than to wait and fall behind",
+        "UDP, because it encrypts the audio by default and TCP does not"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "TCP delivers every byte in order, so one lost packet holds back everything after it until the retransmission arrives. For a file download that is exactly right. For live audio it is not: by the time a retransmitted packet arrives, its moment has passed, and the stream falls behind. UDP sends each packet once with no handshake and no retransmits, so the app can play what arrives and conceal small gaps. Protocols such as RTP run on UDP for this reason. UDP does not encrypt anything by itself (that is DTLS or SRTP), and Nagle's algorithm adds delay rather than removing it.",
+      "hint": "Ask what a packet is worth if it arrives a quarter of a second late."
+    },
+    {
+      "id": "tcp-retransmission",
+      "title": "One Lost Segment",
+      "description": "One TCP segment is lost on the way. What happens to the segments sent after it?",
+      "situation": "A large download runs over flaky Wi-Fi. In the capture you see segments 1 to 5 arrive, segment 6 go missing, and segments 7 to 9 arrive. The receiver keeps acknowledging \"I am still waiting for segment 6\". Shortly after, segment 6 is sent again.",
+      "codeExample": "seg 5   ack 6\nseg 7   ack 6  (duplicate)\nseg 8   ack 6  (duplicate)\nseg 9   ack 6  (duplicate)\n-> fast retransmit of seg 6\nseg 6   ack 10",
+      "options": [
+        "Segments 7 to 9 are thrown away, and the sender has to resend everything from segment 6 onward",
+        "Segments 7 to 9 are handed to the application at once, and segment 6 is inserted later when it arrives",
+        "The connection is reset, because TCP cannot continue after a lost segment",
+        "The receiver keeps segments 7 to 9 in its buffer, and passes all of them to the application in order once segment 6 arrives"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "TCP numbers every byte and the receiver acknowledges the next byte it expects. When segment 6 is missing, every later segment produces a duplicate ACK for 6. Three duplicate ACKs trigger fast retransmit, so the sender resends segment 6 without waiting for the full retransmission timeout. Meanwhile the receiver holds 7 to 9 in its out-of-order buffer (selective acknowledgments, SACK, tell the sender exactly what arrived). Once 6 arrives, the receiver delivers 6 to 9 to the application in order and acknowledges 10. The application never sees a gap or a reordered stream.",
+      "hint": "TCP promises the application an in-order byte stream. Where do early arrivals wait?"
+    },
+    {
+      "id": "head-of-line-blocking",
+      "title": "Why One Lost Packet Stalls Every Request",
+      "description": "Why can one lost packet stall every request on an HTTP/2 connection, and what avoids it?",
+      "situation": "Your web app loads 40 assets over a single HTTP/2 connection. On a train with patchy signal, the page freezes for half a second at a time, and every asset stops at once, even ones that were nearly complete.",
+      "codeExample": "HTTP/2: 40 streams multiplexed over 1 TCP connection\nTCP segment carrying part of stream 7 lost\n-> streams 1-40 all wait for the retransmission",
+      "options": [
+        "HTTP/2 streams share one TCP connection, so a lost packet holds back data for all streams until it is resent; HTTP/3 runs over QUIC, which handles loss per stream",
+        "HTTP/2 sends assets one after another, so a slow asset blocks the rest; HTTP/1.1 runs them in parallel on one connection",
+        "HTTP/2 compresses headers, so one corrupted header breaks every stream; turning off HPACK fixes it",
+        "HTTP/2 needs a new TLS handshake for every stream, so a lost packet restarts all of them"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "HTTP/2 fixed head-of-line blocking at the HTTP layer by multiplexing many streams on one connection, but it still runs on TCP. TCP knows nothing about streams: it delivers one ordered byte stream, so a lost segment that belongs to stream 7 holds back bytes for every other stream until it is retransmitted. HTTP/3 runs over QUIC, which carries streams over UDP and recovers loss per stream, so a loss only delays the stream it belongs to. HTTP/2 does run streams in parallel, header compression does not make one stream break the others, and there is one TLS handshake per connection, not per stream.",
+      "hint": "TCP sees one byte stream. HTTP/2 sees forty."
+    },
+    {
+      "id": "dns-cname-apex",
+      "title": "A CNAME at the Root of a Domain",
+      "description": "Why does the DNS provider refuse a CNAME record for example.com itself?",
+      "situation": "You move your marketing site to a hosting platform that tells you to \"point your domain at sites.host.example with a CNAME\". It works for www.example.com, but the DNS provider rejects the same record for the bare example.com.",
+      "codeExample": "example.com.      IN SOA ns1.example.com. admin.example.com. ...\nexample.com.      IN NS  ns1.example.com.\nexample.com.      IN MX  10 mail.example.com.\nexample.com.      IN CNAME sites.host.example.   ; rejected\nwww.example.com.  IN CNAME sites.host.example.   ; accepted",
+      "options": [
+        "CNAME records only work for names with at least three labels, so example.com is too short",
+        "A CNAME cannot exist next to other records for the same name, and the zone apex always has SOA and NS records; use A/AAAA records or the provider's ALIAS (CNAME flattening) feature",
+        "The apex must point to an IPv6 address first; a CNAME is allowed once an AAAA record exists",
+        "The provider blocks it because a CNAME at the apex would make every subdomain follow it too"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The DNS rules say a name that has a CNAME may have no other records, because a CNAME means \"this name is really that other name\". The zone apex (example.com itself) must have SOA and NS records, and usually has MX and TXT records too, so a CNAME there is not allowed. Subdomains such as www have no such records, so a CNAME works there. Many providers offer an ALIAS, ANAME or CNAME flattening record that resolves the target on the provider's side and answers with A/AAAA records, which keeps the apex valid. Subdomains do not inherit a CNAME, and the number of labels does not matter.",
+      "hint": "Which records must exist at the top of every zone?"
+    },
+    {
+      "id": "tls13-round-trips",
+      "title": "How Many Round Trips Before Encrypted Data?",
+      "description": "How many network round trips does a new TLS 1.3 connection need for its handshake, compared with TLS 1.2?",
+      "situation": "Users in Sydney reach your API in Frankfurt with a 280 ms round trip. Profiling shows the first request on a new connection is slow, and someone asks how much moving from TLS 1.2 to TLS 1.3 would save.",
+      "codeExample": "TCP handshake          1 RTT\nTLS 1.2 full handshake 2 RTT\nTLS 1.3 full handshake 1 RTT\nfirst HTTP request     1 RTT",
+      "options": [
+        "TLS 1.3 needs two round trips and TLS 1.2 needs three, so it saves one",
+        "Both need two round trips; TLS 1.3 only changes the cipher suites",
+        "TLS 1.3 needs one round trip and TLS 1.2 needs two, so a new connection saves one full round trip",
+        "TLS 1.3 needs zero round trips for every connection, because the keys are sent in the first packet"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A full TLS 1.2 handshake takes two round trips: hello and certificate exchange, then the key exchange and Finished messages. TLS 1.3 sends the key share in the very first ClientHello, so the server can reply with its key share, certificate and Finished in one flight, and the client can send encrypted data after one round trip. On a 280 ms path that saves 280 ms on every new connection. TLS 1.3 also has 0-RTT resumption for clients that connected before, but it only applies to resumed sessions and the early data can be replayed, so it is not used for every connection.",
+      "hint": "TLS 1.3 sends its key share in the very first message."
+    },
+    {
+      "id": "cdn-cache-key",
+      "title": "A CDN That Never Hits",
+      "description": "Why is the cache hit ratio so low, and what fixes it?",
+      "situation": "You put a CDN in front of your product pages. A week later the hit ratio is 4% and the origin is as busy as before. The logs show the same pages requested thousands of times, each with different marketing parameters.",
+      "codeExample": "GET /shoes/runner?utm_source=news&utm_campaign=nov1   MISS\nGET /shoes/runner?utm_source=ads&utm_campaign=nov1b   MISS\nGET /shoes/runner?fbclid=AbC123xyz                     MISS\nGET /shoes/runner                                     HIT",
+      "options": [
+        "The CDN cache key includes the full query string, so every tracking parameter creates a separate cache entry; leave those parameters out of the cache key",
+        "The TTL is too short; raising it to a week would make every one of these requests a hit",
+        "The CDN is too far from users; adding more edge locations would raise the hit ratio",
+        "The origin sends HTTP/1.1 instead of HTTP/2, so the CDN cannot cache the responses"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A cache is a lookup by key. By default many CDNs use the whole URL, query string included, as the cache key. Tracking parameters such as utm_* and fbclid change the URL without changing the page, so each variant is a new key and a miss. Removing those parameters from the cache key (or normalizing them away at the edge) makes all these requests share one cached copy. A longer TTL does not help when every key is new, more edge locations split the traffic further, and the HTTP version to the origin does not stop caching.",
+      "hint": "Look at what is different between the URLs that miss."
+    },
+    {
+      "id": "lb-least-connections",
+      "title": "Mixed Request Durations",
+      "description": "Which load-balancing algorithm keeps the servers evenly busy here?",
+      "situation": "Your API has four identical servers behind a round-robin load balancer. Most requests take 50 ms, but report exports take up to 30 seconds. Every afternoon two servers sit at 100% CPU with long queues while the other two are nearly idle.",
+      "codeExample": "server  algorithm    open connections  cpu\napi-1   round robin  212               100%\napi-2   round robin   18                21%\napi-3   round robin  198                98%\napi-4   round robin   15                19%",
+      "options": [
+        "IP hash, so each client always reaches the same server",
+        "Round robin with more servers, so the slow requests are spread more thinly",
+        "Random selection, because it avoids the pattern round robin creates",
+        "Least connections, so each new request goes to the server with the fewest requests in progress"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Round robin hands out requests in turn and ignores how long each one takes. When some requests last 600 times longer than others, the servers that happened to get the slow ones pile up work while the others idle. Least connections looks at how many requests each server is handling right now and sends the next one to the least busy, which adapts to uneven durations. IP hash pins clients to servers (useful for affinity, not for balance), random has the same blind spot as round robin, and more servers only delays the problem.",
+      "hint": "Which algorithm looks at what each server is doing right now?"
+    },
+    {
+      "id": "cache-write-back-risk",
+      "title": "Writes That Go to the Cache First",
+      "description": "What is the main risk of a write-back (write-behind) cache?",
+      "situation": "To speed up a busy counter service, a teammate proposes that writes go to the cache only, and a background job flushes them to the database every 30 seconds. Reads become fast and the database load drops.",
+      "codeExample": "write path (write-back):\n  client -> cache (ack)          ~1 ms\n  cache -> database, every 30 s  batched\n\nwrite path (write-through):\n  client -> cache -> database (ack)  ~12 ms",
+      "options": [
+        "Reads may return data that is up to 30 seconds old",
+        "If the cache node fails before a flush, writes it already acknowledged are lost",
+        "The database fills up faster, because every write is stored twice",
+        "Clients must retry every write, because the cache rejects writes until the next flush"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Write-back acknowledges a write as soon as the cache has it and writes it to the database later, often in batches. That makes writes fast and cuts database load, but for up to one flush interval the only copy of acknowledged data lives in the cache. If that node crashes, those writes are gone. Write-through writes to the cache and the database before acknowledging, which is slower but safe. Reads through this cache are actually the freshest view (the cache has the newest writes), storage is not doubled in the database, and the cache accepts writes immediately.",
+      "hint": "Where is the only copy of a write during those 30 seconds?"
+    },
+    {
+      "id": "private-subnet-nat",
+      "title": "Updates for a Private Subnet",
+      "description": "Instances in a private subnet must download package updates from the internet without being reachable from it. What do you set up?",
+      "situation": "Your application servers run in a private subnet of an AWS VPC with no public IP addresses. They now need to reach the operating system's package mirrors on the internet, but nothing on the internet may open a connection to them.",
+      "codeExample": "VPC 10.0.0.0/16\n  public-a   10.0.1.0/24   route 0.0.0.0/0 -> igw-0abc\n  private-a  10.0.11.0/24  route 10.0.0.0/16 -> local   (no default route)\n\n$ sudo apt-get update\nErr:1 http://archive.ubuntu.com ... Connection timed out",
+      "options": [
+        "Attach a second internet gateway to the private subnet and give each instance a public IP",
+        "Add a route 0.0.0.0/0 -> igw-0abc to the private subnet and keep the instances without public IPs",
+        "Put a NAT gateway in the public subnet, and add a route 0.0.0.0/0 -> the NAT gateway to the private subnet's route table",
+        "Open outbound port 80 and 443 in the instances' security group; no route change is needed"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A private subnet has no route to an internet gateway. A NAT gateway placed in a public subnet (which does route to the internet gateway) lets instances start outbound connections: the private subnet's default route points at the NAT gateway, which translates their addresses to its own Elastic IP. Replies come back through the NAT gateway, but nothing on the internet can start a connection to the instances. A route straight to the internet gateway does not work for instances without public IPs, a VPC has one internet gateway, and security group rules cannot create a route that does not exist.",
+      "hint": "Something has to translate private addresses on the way out, and it must live where the internet gateway is reachable."
+    },
+    {
+      "id": "route-table-local",
+      "title": "Two Subnets That Cannot Talk",
+      "description": "Two instances in different subnets of the same VPC cannot connect. Where do you look first?",
+      "situation": "An app server in subnet 10.0.11.0/24 cannot reach the database in subnet 10.0.21.0/24 of the same VPC. A teammate wants to add a route between the two subnets.",
+      "codeExample": "$ nc -vz 10.0.21.15 5432\nnc: connect to 10.0.21.15 port 5432 (tcp) timed out\n\nRoute table rtb-private (both subnets):\n  10.0.0.0/16  local\n  0.0.0.0/0    nat-0def",
+      "options": [
+        "Add a route 10.0.21.0/24 -> local to the app subnet's route table",
+        "The security group on the database (and the network ACLs of both subnets), because the local route already connects every subnet in the VPC",
+        "A VPC peering connection between the two subnets",
+        "The NAT gateway, because traffic between subnets goes through it"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Every VPC route table has a local route for the VPC's whole address range, and it cannot be removed. It already carries traffic between any two subnets of the VPC, so a missing route is not the problem and a peering connection is for separate VPCs. Traffic inside the VPC never goes through the NAT gateway. A timeout between subnets almost always means a filter: the database's security group does not allow port 5432 from the app's security group or subnet, or a network ACL on either subnet blocks the traffic or its return ports.",
+      "hint": "Which route is in every VPC route table, whatever you do?"
+    },
+    {
+      "id": "mtu-black-hole",
+      "title": "Small Requests Work, Big Ones Hang",
+      "description": "Through a new site-to-site VPN, small requests work but large transfers hang forever. What is the likely cause and fix?",
+      "situation": "After you connect two offices with an IPsec tunnel, ping works, SSH logins work and small API calls work. But copying a file over SMB or downloading anything larger than a few kilobytes stalls and eventually times out.",
+      "codeExample": "$ ping -M do -s 1472 10.20.0.5\nping: local error: message too long, mtu=1400\n\nfirewall: drop icmp all\n\ntcp: SYN mss 1460, transfer stalls after the first full-size segment",
+      "options": [
+        "The tunnel lowers the MTU and the firewall drops the ICMP \"fragmentation needed\" messages, so path MTU discovery fails; allow those ICMP messages or clamp the TCP MSS on the tunnel",
+        "The VPN encrypts large packets more slowly, so they time out; raise the TCP timeout on both sides",
+        "DNS answers for the remote office are too large for UDP; switch the resolvers to TCP",
+        "The tunnel only supports UDP, so TCP transfers fail once they need more than one packet"
+      ],
+      "correctAnswer": 0,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Tunnels add headers, so the largest packet that fits through (the path MTU) shrinks, here to 1400 bytes. A sender with the do-not-fragment bit set relies on routers sending back ICMP \"fragmentation needed\" to learn the smaller size. If a firewall drops all ICMP, those messages never arrive: small packets pass, full-size segments vanish, and the transfer hangs. This is a path MTU black hole. Allow ICMP type 3 code 4 (and ICMPv6 Packet Too Big), or clamp the TCP MSS on the tunnel so segments are small enough from the start. Timeouts, DNS and the tunnel's protocol do not explain why only large transfers fail.",
+      "hint": "Ping with a large packet and the do-not-fragment bit set. What size gets through?"
+    },
+    {
+      "id": "scan-resistant-eviction",
+      "title": "A Nightly Job Empties the Cache",
+      "description": "Every morning the cache hit rate is terrible, after a nightly job read every product once. Which eviction policy helps?",
+      "situation": "Your product cache uses LRU eviction and holds 50,000 items. During the day the hit rate is 92%. A nightly export job reads all 400,000 products once, and each morning the hit rate drops to 30% for an hour while popular products are loaded again.",
+      "codeExample": "policy: LRU, capacity 50,000\n02:00  export job reads 400,000 products, once each\n07:00  hit rate 30%  (popular items were evicted)\n08:00  hit rate 92%",
+      "options": [
+        "A frequency-aware policy such as LFU or W-TinyLFU, so items read once by the job do not push out items used many times",
+        "FIFO, because it evicts the oldest items first and keeps the newest ones",
+        "A longer TTL on every item, so popular products stay in the cache overnight",
+        "Write-through caching, so the export job writes its results to the database instead of the cache"
+      ],
+      "correctAnswer": 0,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "LRU keeps whatever was used most recently. A scan that touches every item once makes the scanned items the most recent and evicts the popular ones, even though each scanned item will never be read again. Frequency-aware policies (LFU, or W-TinyLFU as used by Caffeine) only admit or keep items that are used often, so a one-pass scan cannot flush the hot set. Segmented LRU variants help for the same reason. FIFO is evicted by the scan just the same, TTLs do not stop eviction under memory pressure, and write-through is about writes, not reads.",
+      "hint": "The export reads each item once. Popular items are read many times."
+    },
+    {
+      "id": "mesh-strict-mtls",
+      "title": "A Service That Stopped Answering Old Callers",
+      "description": "After a service mesh switched to strict mutual TLS, an older workload can no longer call the payments service. Why?",
+      "situation": "Your team enabled strict mTLS for the payments namespace in Istio. Calls between meshed services still work, but a legacy batch job, deployed without the sidecar proxy, now gets \"connection reset by peer\" every time it calls payments.",
+      "codeExample": "apiVersion: security.istio.io/v1\nkind: PeerAuthentication\nmetadata:\n  name: default\n  namespace: payments\nspec:\n  mtls:\n    mode: STRICT\n\n# batch job pod: 1/1 containers (no istio-proxy)\ncurl: (56) Recv failure: Connection reset by peer",
+      "options": [
+        "The batch job's DNS cache still points at an old IP address for payments",
+        "Strict mode makes the payments sidecar accept only mTLS, and a pod without a sidecar sends plain text; inject the sidecar into the job (or use PERMISSIVE mode while migrating)",
+        "Strict mode blocks all traffic from outside the payments namespace, meshed or not",
+        "The payments service needs a new certificate from a public certificate authority before plain clients can connect"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "In a mesh, the sidecars do mutual TLS for the application: the client sidecar presents a workload certificate and encrypts the call, and the server sidecar checks it. With PeerAuthentication in STRICT mode, the server sidecar refuses anything that is not mTLS. A pod without a sidecar cannot do the mesh's mTLS, so it sends plain text and the connection is reset. Inject the sidecar into the job so it joins the mesh, or use PERMISSIVE mode (both mTLS and plain text accepted) until every caller is meshed. Meshed callers from other namespaces still work, DNS is not the issue, and the mesh uses its own CA, not a public one.",
+      "hint": "Which side of this call has no proxy to speak TLS for it?"
+    }
+  ]
+}
