@@ -1,22 +1,31 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
+  ArrowLeftRight,
   Play,
-  RotateCcw,
   CheckCircle,
   AlertTriangle,
   Clock,
-  Database,
   Zap,
-  ChevronRight,
   Copy,
   Check,
-  Info,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { MotionConfig, motion } from 'framer-motion';
+import {
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 type Scenario = 'user-profile' | 'user-with-posts' | 'user-posts-comments' | 'multiple-resources';
@@ -25,6 +34,7 @@ type Scenario = 'user-profile' | 'user-with-posts' | 'user-posts-comments' | 'mu
  * TIMING METHODOLOGY
  * Each HTTP request takes ~100ms (DNS + TCP/TLS + server processing).
  * REST: N requests = N × 100ms (sequential waterfall).
+ * Independent REST requests share one 100ms parallel batch.
  * GraphQL: 1 request + 15ms parsing = 115ms total.
  */
 const NETWORK_CONSTANTS = {
@@ -62,9 +72,7 @@ const SCENARIOS: Record<Scenario, ScenarioData> = {
     name: 'Simple Fetch',
     description: 'Get basic user profile information',
     rest: {
-      requests: [
-        { method: 'GET', endpoint: '/api/users/123', description: 'Fetch user' },
-      ],
+      requests: [{ method: 'GET', endpoint: '/api/users/123', description: 'Fetch user' }],
       totalPayloadSize: 2048,
       overfetchedFields: ['created_at', 'updated_at', 'last_login', 'settings', 'preferences'],
     },
@@ -99,11 +107,31 @@ const SCENARIOS: Record<Scenario, ScenarioData> = {
       requests: [
         { method: 'GET', endpoint: '/api/users/123', description: 'Fetch user' },
         { method: 'GET', endpoint: '/api/users/123/posts?limit=5', description: 'Fetch posts' },
-        { method: 'GET', endpoint: '/api/posts/1/comments?limit=3', description: 'Comments for post 1' },
-        { method: 'GET', endpoint: '/api/posts/2/comments?limit=3', description: 'Comments for post 2' },
-        { method: 'GET', endpoint: '/api/posts/3/comments?limit=3', description: 'Comments for post 3' },
-        { method: 'GET', endpoint: '/api/posts/4/comments?limit=3', description: 'Comments for post 4' },
-        { method: 'GET', endpoint: '/api/posts/5/comments?limit=3', description: 'Comments for post 5' },
+        {
+          method: 'GET',
+          endpoint: '/api/posts/1/comments?limit=3',
+          description: 'Comments for post 1',
+        },
+        {
+          method: 'GET',
+          endpoint: '/api/posts/2/comments?limit=3',
+          description: 'Comments for post 2',
+        },
+        {
+          method: 'GET',
+          endpoint: '/api/posts/3/comments?limit=3',
+          description: 'Comments for post 3',
+        },
+        {
+          method: 'GET',
+          endpoint: '/api/posts/4/comments?limit=3',
+          description: 'Comments for post 4',
+        },
+        {
+          method: 'GET',
+          endpoint: '/api/posts/5/comments?limit=3',
+          description: 'Comments for post 5',
+        },
       ],
       totalPayloadSize: 24576,
       overfetchedFields: ['user.*', 'post.*', 'comment.internal_id'],
@@ -141,6 +169,38 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / 1024).toFixed(1)} KB`;
 };
 
+type Tab = 'comparison' | 'details' | 'notes';
+
+interface MissionState {
+  scenario: Scenario;
+  restComplete: boolean;
+  graphqlComplete: boolean;
+}
+
+const MISSIONS: Mission<MissionState>[] = [
+  {
+    id: 'profile',
+    label: 'Compare one user profile over REST and GraphQL.',
+    hint: 'Keep Simple Fetch in the menu and press Run comparison.',
+    check: (state) =>
+      state.scenario === 'user-profile' && state.restComplete && state.graphqlComplete,
+  },
+  {
+    id: 'nested',
+    label: 'Load a user with posts and comments, and count the round trips.',
+    hint: 'Pick Related Data in the menu and press Run comparison: REST needs a request per level.',
+    check: (state) =>
+      state.scenario === 'user-posts-comments' && state.restComplete && state.graphqlComplete,
+  },
+  {
+    id: 'many',
+    label: 'Fetch several resources at once.',
+    hint: 'Pick Multiple Resources and press Run comparison: one GraphQL query, several REST calls.',
+    check: (state) =>
+      state.scenario === 'multiple-resources' && state.restComplete && state.graphqlComplete,
+  },
+];
+
 export default function RestVsGraphqlSimulator() {
   const [scenario, setScenario] = useState<Scenario>('user-profile');
   const [isRunning, setIsRunning] = useState(false);
@@ -151,8 +211,16 @@ export default function RestVsGraphqlSimulator() {
   const [copiedRest, setCopiedRest] = useState(false);
   const [copiedGraphql, setCopiedGraphql] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
+  const [tab, setTab] = useState<Tab>('comparison');
+  const [dismissed, setDismissed] = useState(false);
 
   const currentScenario = SCENARIOS[scenario];
+
+  const missionState = useMemo(
+    () => ({ scenario, restComplete, graphqlComplete }),
+    [graphqlComplete, restComplete, scenario]
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
   const reset = useCallback(() => {
     setIsRunning(false);
@@ -184,37 +252,52 @@ export default function RestVsGraphqlSimulator() {
       status: 'pending',
     });
 
-    for (let i = 0; i < restRequests.length; i++) {
-      await new Promise((resolve) => setTimeout(resolve, perRequestDelay));
-      setRestLogs((prev) =>
-        prev.map((log, idx) =>
-          idx === i
-            ? {
-                ...log,
-                status: 'success',
-                duration: perRequestDelay + Math.random() * 20,
-                responseSize: Math.floor(currentScenario.rest.totalPayloadSize / restRequests.length),
-              }
-            : log
-        )
-      );
-    }
-    setRestComplete(true);
+    const runRest = async () => {
+      const requestBatches =
+        scenario === 'multiple-resources'
+          ? [restRequests.map((_, index) => index)]
+          : scenario === 'user-posts-comments'
+            ? [[0], [1], restRequests.slice(2).map((_, index) => index + 2)]
+            : restRequests.map((_, index) => [index]);
 
-    const graphqlDuration = NETWORK_CONSTANTS.ROUND_TRIP_MS + NETWORK_CONSTANTS.GRAPHQL_PARSING_MS;
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    setGraphqlLog({
-      id: 'graphql-0',
-      method: 'POST',
-      endpoint: '/graphql',
-      status: 'success',
-      duration: graphqlDuration,
-      responseSize: currentScenario.graphql.totalPayloadSize,
-    });
-    setGraphqlComplete(true);
+      for (const batch of requestBatches) {
+        await new Promise((resolve) => setTimeout(resolve, perRequestDelay));
+        setRestLogs((prev) =>
+          prev.map((log, index) =>
+            batch.includes(index)
+              ? {
+                  ...log,
+                  status: 'success',
+                  duration: perRequestDelay,
+                  responseSize: Math.floor(
+                    currentScenario.rest.totalPayloadSize / restRequests.length
+                  ),
+                }
+              : log
+          )
+        );
+      }
+      setRestComplete(true);
+    };
 
+    const runGraphql = async () => {
+      const graphqlDuration =
+        NETWORK_CONSTANTS.ROUND_TRIP_MS + NETWORK_CONSTANTS.GRAPHQL_PARSING_MS;
+      await new Promise((resolve) => setTimeout(resolve, graphqlDuration));
+      setGraphqlLog({
+        id: 'graphql-0',
+        method: 'POST',
+        endpoint: '/graphql',
+        status: 'success',
+        duration: graphqlDuration,
+        responseSize: currentScenario.graphql.totalPayloadSize,
+      });
+      setGraphqlComplete(true);
+    };
+
+    await Promise.all([runRest(), runGraphql()]);
     setIsRunning(false);
-  }, [currentScenario, reset]);
+  }, [currentScenario, reset, scenario]);
 
   const handleScenarioChange = (newScenario: Scenario) => {
     setScenario(newScenario);
@@ -232,463 +315,369 @@ export default function RestVsGraphqlSimulator() {
     }
   };
 
-  const restTotalTime = restLogs.reduce((sum, log) => sum + (log.duration || 0), 0);
+  const startOver = () => {
+    reset();
+    missions.reset();
+    setDismissed(false);
+  };
+
+  const restTotalTime =
+    scenario === 'multiple-resources'
+      ? NETWORK_CONSTANTS.ROUND_TRIP_MS
+      : scenario === 'user-posts-comments'
+        ? 3 * NETWORK_CONSTANTS.ROUND_TRIP_MS
+        : currentScenario.rest.requests.length * NETWORK_CONSTANTS.ROUND_TRIP_MS;
   const graphqlTotalTime = graphqlLog?.duration || 0;
   const restTotalSize = currentScenario.rest.totalPayloadSize;
   const graphqlTotalSize = currentScenario.graphql.totalPayloadSize;
   const savings = Math.round(((restTotalSize - graphqlTotalSize) / restTotalSize) * 100);
+  const restRequestText = currentScenario.rest.requests
+    .map((request) => `${request.method} ${request.endpoint}`)
+    .join('\n');
+  const announcement = isRunning
+    ? `Running ${currentScenario.name}: REST and GraphQL requests are in flight.`
+    : restComplete && graphqlComplete
+      ? `${currentScenario.name} complete. Compare the two totals.`
+      : `${currentScenario.name} ready to run.`;
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6">
-      {/* Header with Controls */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="text-2xl">REST API vs GraphQL</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Compare data fetching approaches side-by-side
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={runSimulation} disabled={isRunning} size="sm">
-                <Play className="w-4 h-4 mr-2" />
-                Run Comparison
-              </Button>
-              <Button onClick={reset} variant="outline" size="sm">
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(SCENARIOS) as Scenario[]).map((key) => (
-              <Button
-                key={key}
-                variant={scenario === key ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleScenarioChange(key)}
-                className="text-xs"
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar className="mx-auto w-full max-w-6xl">
+        <SimBar
+          title="REST vs GraphQL"
+          icon={ArrowLeftRight}
+          lead={
+            <div className="flex min-w-0 items-center gap-2">
+              <label htmlFor="rest-graphql-scenario" className="sr-only">
+                Scenario
+              </label>
+              <select
+                id="rest-graphql-scenario"
+                value={scenario}
+                onChange={(event) => handleScenarioChange(event.target.value as Scenario)}
+                disabled={isRunning}
+                className="h-10 max-w-52 rounded-md border border-input bg-background px-2 text-sm lg:h-8"
               >
-                {SCENARIOS[key].name}
+                {(Object.keys(SCENARIOS) as Scenario[]).map((key) => (
+                  <option key={key} value={key}>
+                    {SCENARIOS[key].name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          }
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={currentScenario.name}
+          actions={
+            <Button
+              type="button"
+              size="sm"
+              className="h-10 lg:h-8"
+              onClick={runSimulation}
+              disabled={isRunning}
+            >
+              <Play className="h-4 w-4" aria-hidden="true" />
+              {isRunning ? 'Running' : 'Run comparison'}
+            </Button>
+          }
+          goal={
+            missions.complete ? (
+              'All three missions are done. Keep comparing the scenarios.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
+
+        <SimAnnouncer message={announcement} />
+
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="API Bazaar comparison complete"
+            summary="You compared a profile, a nested resource waterfall, and a parallel REST batch with one GraphQL query."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'REST round trips', value: currentScenario.rest.requests.length },
+              { label: 'GraphQL round trips', value: 1 },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
               </Button>
-            ))}
-          </div>
-          <p className="text-sm text-muted-foreground mt-3">
-            <strong>Scenario:</strong> {currentScenario.description}
-          </p>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-2"
+            minHeight="min-h-[25rem]"
+            tab={tab}
+            onTabChange={(next) => {
+              if (next === 'comparison' || next === 'details' || next === 'notes') setTab(next);
+            }}
+            tabsLabel="REST versus GraphQL panels"
+            panels={[
+              {
+                id: 'comparison',
+                label: 'Timelines',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <section className="rounded-lg border bg-card p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-sm font-semibold">{currentScenario.description}</h3>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {scenario === 'multiple-resources'
+                              ? 'The three REST GETs are independent, so they share one network round trip.'
+                              : scenario === 'user-posts-comments'
+                                ? 'User, posts, then the independent comment requests form three dependency levels.'
+                                : 'Each REST request waits for the preceding resource in this scenario.'}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-md bg-muted px-2 py-1 font-mono text-xs tabular-nums">
+                          {currentScenario.rest.requests.length}:1 requests
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="rounded-md border border-partial/40 bg-partial/10 p-2">
+                          <p className="text-xs font-medium text-partial-foreground">REST total</p>
+                          <p className="font-mono text-xl font-semibold tabular-nums">
+                            {restComplete ? `${restTotalTime}ms` : 'not run yet'}
+                          </p>
+                        </div>
+                        <div className="rounded-md border border-info/40 bg-info/10 p-2">
+                          <p className="text-xs font-medium text-info-foreground">GraphQL total</p>
+                          <p className="font-mono text-xl font-semibold tabular-nums">
+                            {graphqlComplete ? `${graphqlTotalTime}ms` : 'not run yet'}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
 
-          {/* Inline Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t">
-            <div className="p-3 rounded-lg bg-muted/30 text-center">
-              <div className="text-xs text-muted-foreground mb-1">HTTP Requests</div>
-              <div className="flex items-center justify-center gap-2">
-                <div>
-                  <div className="text-xl font-bold text-orange-500">
-                    {currentScenario.rest.requests.length}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">REST</div>
-                </div>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                <div>
-                  <div className="text-xl font-bold text-pink-500">1</div>
-                  <div className="text-[10px] text-muted-foreground">GraphQL</div>
-                </div>
-              </div>
-            </div>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <Card className="border-partial/40">
+                        <CardHeader className="p-3 pb-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="text-sm">REST API</CardTitle>
+                            <span className="text-xs text-muted-foreground">
+                              {currentScenario.rest.requests.length} request(s)
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 p-3 pt-0">
+                          {currentScenario.rest.requests.map((request, index) => {
+                            const log = restLogs[index];
+                            return (
+                              <motion.div
+                                key={request.endpoint}
+                                initial={{ opacity: 0, x: -12 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className={cn(
+                                  'flex items-center gap-2 rounded-md border p-2 font-mono text-xs',
+                                  log?.status === 'success'
+                                    ? 'border-correct/40 bg-correct/10'
+                                    : log?.status === 'pending'
+                                      ? 'border-partial/40 bg-partial/10'
+                                      : 'border-border bg-muted/50'
+                                )}
+                              >
+                                <span className="w-9 shrink-0 font-semibold text-partial-foreground">
+                                  {request.method}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">{request.endpoint}</span>
+                                {log?.status === 'success' && (
+                                  <CheckCircle
+                                    className="h-4 w-4 shrink-0 text-correct-foreground"
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                {log?.status === 'pending' && (
+                                  <Clock
+                                    className="h-4 w-4 shrink-0 text-partial-foreground motion-safe:animate-spin"
+                                    aria-hidden="true"
+                                  />
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                          {currentScenario.rest.problem && (
+                            <div className="flex gap-2 rounded-md border border-partial/40 bg-partial/10 p-2 text-xs text-partial-foreground">
+                              <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                              {currentScenario.rest.problem}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
 
-            <div className="p-3 rounded-lg bg-muted/30 text-center">
-              <div className="text-xs text-muted-foreground mb-1">Payload</div>
-              <div className="flex items-center justify-center gap-2">
-                <div>
-                  <div className="text-xl font-bold text-orange-500">{formatBytes(restTotalSize)}</div>
-                  <div className="text-[10px] text-muted-foreground">REST</div>
-                </div>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                <div>
-                  <div className="text-xl font-bold text-pink-500">{formatBytes(graphqlTotalSize)}</div>
-                  <div className="text-[10px] text-muted-foreground">GraphQL</div>
-                </div>
-              </div>
-            </div>
+                      <Card className="border-info/40">
+                        <CardHeader className="p-3 pb-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="text-sm">GraphQL</CardTitle>
+                            <span className="text-xs text-muted-foreground">1 request</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 p-3 pt-0">
+                          <motion.div
+                            initial={{ opacity: 0, x: 12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className={cn(
+                              'flex items-center gap-2 rounded-md border p-2 font-mono text-xs',
+                              graphqlLog?.status === 'success'
+                                ? 'border-correct/40 bg-correct/10'
+                                : graphqlLog?.status === 'pending'
+                                  ? 'border-info/40 bg-info/10'
+                                  : 'border-border bg-muted/50'
+                            )}
+                          >
+                            <span className="w-9 shrink-0 font-semibold text-info-foreground">
+                              POST
+                            </span>
+                            <span className="flex-1">/graphql</span>
+                            {graphqlLog?.status === 'success' && (
+                              <CheckCircle
+                                className="h-4 w-4 shrink-0 text-correct-foreground"
+                                aria-hidden="true"
+                              />
+                            )}
+                            {graphqlLog?.status === 'pending' && (
+                              <Clock
+                                className="h-4 w-4 shrink-0 text-info-foreground motion-safe:animate-spin"
+                                aria-hidden="true"
+                              />
+                            )}
+                          </motion.div>
+                          <div className="flex gap-2 rounded-md border border-correct/40 bg-correct/10 p-2 text-xs text-correct-foreground">
+                            <Zap className="h-4 w-4 shrink-0" aria-hidden="true" />
+                            One request selects only the fields this view needs.
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <SimMissionList missions={missions.missions} />
+                    <section className="rounded-lg border bg-card p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold">REST requests and response</h3>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-10 w-10 p-0 lg:h-8 lg:w-8"
+                          aria-label="Copy REST requests"
+                          onClick={() => copyToClipboard(restRequestText, 'rest')}
+                        >
+                          {copiedRest ? (
+                            <Check className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <Copy className="h-4 w-4" aria-hidden="true" />
+                          )}
+                        </Button>
+                      </div>
+                      <pre className="mt-2 overflow-x-auto rounded-md bg-muted/50 p-2 text-xs">
+                        <code>{restRequestText}</code>
+                      </pre>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Response payload: {formatBytes(restTotalSize)}. Extra fields include{' '}
+                        {currentScenario.rest.overfetchedFields.join(', ')}.
+                      </p>
+                    </section>
+                    <section className="rounded-lg border bg-card p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold">GraphQL query and response</h3>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-10 w-10 p-0 lg:h-8 lg:w-8"
+                          aria-label="Copy GraphQL query"
+                          onClick={() => copyToClipboard(currentScenario.graphql.query, 'graphql')}
+                        >
+                          {copiedGraphql ? (
+                            <Check className="h-4 w-4" aria-hidden="true" />
+                          ) : (
+                            <Copy className="h-4 w-4" aria-hidden="true" />
+                          )}
+                        </Button>
+                      </div>
+                      <pre className="mt-2 overflow-x-auto rounded-md bg-muted/50 p-2 text-xs">
+                        <code>{currentScenario.graphql.query}</code>
+                      </pre>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Response payload: {formatBytes(graphqlTotalSize)}. Selected fields:{' '}
+                        {currentScenario.graphql.exactFields.join(', ')}.
+                      </p>
+                    </section>
+                  </>
+                ),
+              },
+              {
+                id: 'notes',
+                label: 'How it works',
+                className: 'space-y-2',
+                content: (
+                  <details
+                    open={showExplanation}
+                    onToggle={(event) => setShowExplanation(event.currentTarget.open)}
+                    className="rounded-lg border bg-card p-3"
+                  >
+                    <summary className="cursor-pointer text-sm font-semibold">
+                      Timing and trade-offs
+                    </summary>
+                    <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+                      <p>
+                        The model gives each network round trip {NETWORK_CONSTANTS.ROUND_TRIP_MS}{' '}
+                        ms. Related REST resources form a waterfall; independent GETs can run in
+                        parallel. GraphQL is one round trip plus{' '}
+                        {NETWORK_CONSTANTS.GRAPHQL_PARSING_MS} ms of simplified server work.
+                      </p>
+                      <p>
+                        REST can over-fetch complete resources or under-fetch related data. GraphQL
+                        lets a client select fields, but server-side resolvers still need batching
+                        to avoid their own N+1 lookups.
+                      </p>
+                      <p>
+                        REST GET endpoints work naturally with standard HTTP caching. GraphQL
+                        caching can be effective too, but usually needs query-aware cache keys and
+                        policies. For this scenario, the selected GraphQL response is {savings}%
+                        smaller.
+                      </p>
+                    </div>
+                  </details>
+                ),
+              },
+            ]}
+          />
+        )}
 
-            <div className="p-3 rounded-lg bg-muted/30 text-center">
-              <div className="text-xs text-muted-foreground mb-1">Time</div>
-              <div className="flex items-center justify-center gap-2">
-                <div>
-                  <div className="text-xl font-bold text-orange-500">
-                    {restComplete ? `${Math.round(restTotalTime)}ms` : '-'}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">REST</div>
-                </div>
-                <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                <div>
-                  <div className="text-xl font-bold text-pink-500">
-                    {graphqlComplete ? `${Math.round(graphqlTotalTime)}ms` : '-'}
-                  </div>
-                  <div className="text-[10px] text-muted-foreground">GraphQL</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-lg bg-green-500/10 text-center border border-green-500/20">
-              <div className="text-xs text-muted-foreground mb-1">Bandwidth Saved</div>
-              <div className="text-2xl font-bold text-green-500">{savings}%</div>
-              <div className="text-[10px] text-green-600 dark:text-green-400 mt-1">less data downloaded<br/>compared to REST</div>
-            </div>
-          </div>
-
-          {/* Collapsible explanation hint */}
-          <button
-            onClick={() => setShowExplanation(!showExplanation)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-3 transition-colors"
+        <SimPhoneBar>
+          <Button
+            type="button"
+            className="h-10 flex-1"
+            onClick={runSimulation}
+            disabled={isRunning}
           >
-            <Info className="w-3 h-3" />
-            {showExplanation ? 'Hide' : 'How are these numbers calculated?'}
-          </button>
-
-          {showExplanation && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-3 p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 text-xs text-muted-foreground"
-            >
-              <strong className="text-blue-600 dark:text-blue-400">Timing:</strong> Each HTTP request takes ~100ms
-              (DNS + TCP/TLS handshake + server processing). REST makes sequential requests, so 5 requests = 500ms.
-              GraphQL bundles everything into 1 request + 15ms parsing = 115ms.
-              <br />
-              <strong className="text-blue-600 dark:text-blue-400 mt-1 inline-block">Payload:</strong> REST returns full objects with all fields.
-              GraphQL returns only the fields you request, reducing bandwidth 2-8x.
-            </motion.div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Side-by-side Comparison - THE MAIN SIMULATOR */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* REST Side */}
-        <Card className="border-orange-500/30">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                REST API
-              </CardTitle>
-              <span className="text-xs text-muted-foreground">
-                {currentScenario.rest.requests.length} request(s)
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <AnimatePresence>
-                {currentScenario.rest.requests.map((req, idx) => {
-                  const log = restLogs[idx];
-                  return (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className={cn(
-                        'flex items-center gap-2 p-2 rounded-md text-xs font-mono',
-                        log?.status === 'success'
-                          ? 'bg-green-500/10 border border-green-500/30'
-                          : log?.status === 'pending'
-                          ? 'bg-yellow-500/10 border border-yellow-500/30 animate-pulse'
-                          : 'bg-muted/50 border border-border'
-                      )}
-                    >
-                      <span className="text-orange-500 font-semibold w-10">{req.method}</span>
-                      <span className="flex-1 truncate">{req.endpoint}</span>
-                      {log?.status === 'success' && (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      )}
-                      {log?.status === 'pending' && (
-                        <Clock className="w-4 h-4 text-yellow-500 animate-spin" />
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-
-            {currentScenario.rest.problem && (
-              <div className="flex items-start gap-2 p-3 rounded-md bg-orange-500/10 border border-orange-500/30">
-                <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                <span className="text-xs text-orange-600 dark:text-orange-400">
-                  {currentScenario.rest.problem}
-                </span>
-              </div>
-            )}
-
-            <div className="space-y-1">
-              <span className="text-xs font-medium text-muted-foreground">Over-fetched fields:</span>
-              <div className="flex flex-wrap gap-1">
-                {currentScenario.rest.overfetchedFields.map((field) => (
-                  <span
-                    key={field}
-                    className="px-2 py-0.5 rounded text-xs bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
-                  >
-                    {field}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-6 w-6 p-0"
-                onClick={() =>
-                  copyToClipboard(
-                    currentScenario.rest.requests.map((r) => `${r.method} ${r.endpoint}`).join('\n'),
-                    'rest'
-                  )
-                }
-              >
-                {copiedRest ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              </Button>
-              <pre className="p-3 rounded-md bg-muted/50 text-xs overflow-x-auto">
-                <code>
-                  {currentScenario.rest.requests.map((r) => `${r.method} ${r.endpoint}`).join('\n')}
-                </code>
-              </pre>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* GraphQL Side */}
-        <Card className="border-pink-500/30">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-pink-500" />
-                GraphQL
-              </CardTitle>
-              <span className="text-xs text-muted-foreground">1 request</span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className={cn(
-                'flex items-center gap-2 p-2 rounded-md text-xs font-mono',
-                graphqlLog?.status === 'success'
-                  ? 'bg-green-500/10 border border-green-500/30'
-                  : graphqlLog?.status === 'pending'
-                  ? 'bg-yellow-500/10 border border-yellow-500/30 animate-pulse'
-                  : 'bg-muted/50 border border-border'
-              )}
-            >
-              <span className="text-pink-500 font-semibold w-10">POST</span>
-              <span className="flex-1">/graphql</span>
-              {graphqlLog?.status === 'success' && (
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              )}
-              {graphqlLog?.status === 'pending' && (
-                <Clock className="w-4 h-4 text-yellow-500 animate-spin" />
-              )}
-            </motion.div>
-
-            <div className="flex items-start gap-2 p-3 rounded-md bg-green-500/10 border border-green-500/30">
-              <Zap className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-              <span className="text-xs text-green-600 dark:text-green-400">
-                Single request fetches exactly what you need
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-xs font-medium text-muted-foreground">Requested fields (exact):</span>
-              <div className="flex flex-wrap gap-1">
-                {currentScenario.graphql.exactFields.map((field) => (
-                  <span
-                    key={field}
-                    className="px-2 py-0.5 rounded text-xs bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"
-                  >
-                    {field}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 right-2 h-6 w-6 p-0"
-                onClick={() => copyToClipboard(currentScenario.graphql.query, 'graphql')}
-              >
-                {copiedGraphql ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              </Button>
-              <pre className="p-3 rounded-md bg-muted/50 text-xs overflow-x-auto">
-                <code className="text-pink-600 dark:text-pink-400">
-                  {currentScenario.graphql.query}
-                </code>
-              </pre>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Educational Content - AFTER the simulator */}
-      <Card className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 border-blue-500/20">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Database className="w-5 h-5 text-blue-500" />
-            Understanding the Comparison
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-3 rounded-lg bg-muted/30 border">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-orange-500" />
-                <span className="font-medium text-sm">Network Round-Trip</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Each HTTP request takes ~{NETWORK_CONSTANTS.ROUND_TRIP_MS}ms for DNS lookup,
-                TCP/TLS handshake, and server processing.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg bg-muted/30 border">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-orange-500" />
-                <span className="font-medium text-sm">REST Waterfall</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                REST requires <strong>sequential</strong> requests. For nested data, request 2
-                can&apos;t start until request 1 finishes.
-              </p>
-            </div>
-
-            <div className="p-3 rounded-lg bg-muted/30 border">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-4 h-4 text-pink-500" />
-                <span className="font-medium text-sm">GraphQL Batching</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                GraphQL bundles everything into <strong>one request</strong>. The server resolves
-                all data in a single round-trip.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Pros/Cons */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500" />
-              REST API
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
-                ✅ Advantages
-              </h4>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• Simple and well-understood</li>
-                <li>• Great HTTP caching with standard headers</li>
-                <li>• Easy to debug with browser tools</li>
-                <li>• Stateless architecture</li>
-                <li>• Works well for simple CRUD operations</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
-                ❌ Disadvantages
-              </h4>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• Over-fetching: Getting more data than needed</li>
-                <li>• Under-fetching: Multiple requests for related data</li>
-                <li>• N+1 problem with nested resources</li>
-                <li>• Versioning challenges (v1, v2, etc.)</li>
-                <li>• No built-in type system</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-pink-500" />
-              GraphQL
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">
-                ✅ Advantages
-              </h4>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• Fetch exactly what you need, nothing more</li>
-                <li>• Single request for complex nested data</li>
-                <li>• Strong type system with schema</li>
-                <li>• Self-documenting via introspection</li>
-                <li>• No versioning needed - evolve schema</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">
-                ❌ Disadvantages
-              </h4>
-              <ul className="text-xs space-y-1 text-muted-foreground">
-                <li>• Caching is more complex</li>
-                <li>• Query complexity attacks possible</li>
-                <li>• Steeper learning curve</li>
-                <li>• All requests are POST (harder to cache)</li>
-                <li>• Overkill for simple APIs</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* When to Use Each */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">💡 When to Use Each</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-4 rounded-lg bg-orange-500/5 border border-orange-500/20">
-              <h4 className="font-semibold text-orange-600 dark:text-orange-400 mb-2">
-                Use REST when:
-              </h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Building simple CRUD APIs</li>
-                <li>• Caching is critical (CDN, browser)</li>
-                <li>• Team is familiar with REST</li>
-                <li>• Public APIs with many consumers</li>
-                <li>• File uploads/downloads</li>
-              </ul>
-            </div>
-            <div className="p-4 rounded-lg bg-pink-500/5 border border-pink-500/20">
-              <h4 className="font-semibold text-pink-600 dark:text-pink-400 mb-2">
-                Use GraphQL when:
-              </h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Mobile apps need bandwidth efficiency</li>
-                <li>• Complex UIs with nested data</li>
-                <li>• Rapidly evolving frontend requirements</li>
-                <li>• Multiple clients with different needs</li>
-                <li>• Real-time subscriptions needed</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            <Play className="h-4 w-4" aria-hidden="true" />
+            {isRunning ? 'Running' : 'Run comparison'}
+          </Button>
+          <Button type="button" variant="outline" className="h-10" onClick={startOver}>
+            Reset
+          </Button>
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }
