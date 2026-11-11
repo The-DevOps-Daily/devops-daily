@@ -1,22 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
+import { Activity, Clock3, FastForward, RefreshCw, Send, Webhook } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
-  Activity,
-  ArrowRight,
-  Braces,
-  CheckCircle2,
-  Clock3,
-  FastForward,
-  Inbox,
-  RefreshCw,
-  RotateCcw,
-  Send,
-  Server,
-  ShieldCheck,
-  Webhook,
-  XCircle,
-} from 'lucide-react';
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+  type SimTone,
+} from '@/components/games/sim';
 import {
   MAX_ATTEMPTS,
   SAMPLE_EVENTS,
@@ -75,10 +76,10 @@ interface Delivery {
   dedup?: DedupDecision;
 }
 
-const RESULT_STYLES: Record<Attempt['result'], string> = {
-  delivered: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  retrying: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  exhausted: 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+const RESULT_TONES: Record<Attempt['result'], SimTone> = {
+  delivered: 'success',
+  retrying: 'warning',
+  exhausted: 'danger',
 };
 
 const RESULT_LABELS: Record<Attempt['result'], string> = {
@@ -88,72 +89,54 @@ const RESULT_LABELS: Record<Attempt['result'], string> = {
 };
 
 const FLOW_TONES = {
-  neutral: 'border-border bg-background text-muted-foreground',
-  active: 'border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300',
-  success: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
-  warning: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  danger: 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
+  neutral: 'fill-muted stroke-border',
+  active: 'fill-primary/10 stroke-primary',
+  success: 'fill-correct/10 stroke-correct',
+  warning: 'fill-partial/10 stroke-partial',
+  danger: 'fill-wrong/10 stroke-wrong',
 };
 
-function StatusPill({ attempt }: { attempt: Attempt }) {
-  return (
-    <span
-      className={`inline-flex shrink-0 items-center rounded-md border px-2 py-1 text-xs font-medium ${RESULT_STYLES[attempt.result]}`}
-    >
-      {attempt.status === null ? 'Timeout' : attempt.status} · {RESULT_LABELS[attempt.result]}
-    </span>
-  );
-}
+type WebhookMissionState = Pick<
+  { deliveries: Delivery[]; tamper: Tamper; verification: VerifyResult | null },
+  'deliveries' | 'tamper' | 'verification'
+>;
 
-function FlowNode({
-  icon: Icon,
-  label,
-  value,
-  tone = 'neutral',
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
-  tone?: keyof typeof FLOW_TONES;
-}) {
-  return (
-    <div className={`min-w-0 flex-1 rounded-md border p-3 ${FLOW_TONES[tone]}`}>
-      <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4 shrink-0" />
-        <span className="text-[10px] font-semibold uppercase">{label}</span>
-      </div>
-      <p className="mt-2 truncate text-xs font-semibold text-foreground" title={value}>
-        {value}
-      </p>
-    </div>
-  );
-}
+const WEBHOOK_MISSIONS: Mission<WebhookMissionState>[] = [
+  {
+    id: 'deliver',
+    label: 'Deliver an event to a healthy endpoint.',
+    hint: 'Pick 200 OK in the endpoint menu and press Send event.',
+    check: ({ deliveries }) =>
+      deliveries.some((delivery) => delivery.attempts[0]?.result === 'delivered'),
+  },
+  {
+    id: 'retry',
+    label: 'Ride out a flaky endpoint with retries and backoff.',
+    hint: 'Pick Intermittent in the endpoint menu and press Send event.',
+    check: ({ deliveries }) =>
+      deliveries.some((delivery) =>
+        delivery.attempts
+          .slice(0, delivery.revealed)
+          .some((attempt, index) => index > 0 && attempt.result === 'delivered')
+      ),
+  },
+  {
+    id: 'tamper',
+    label: 'Tamper with a delivery and watch the signature check reject it.',
+    hint: 'Open Verify signature and pick Edit body, Wrong secret or Replay later.',
+    check: ({ tamper, verification }) => tamper !== 'none' && verification?.valid === false,
+  },
+  {
+    id: 'dedupe',
+    label: 'Send the same event twice and see the receiver skip the duplicate.',
+    hint: 'After a delivery, press Redeliver same message.',
+    check: ({ deliveries }) =>
+      deliveries.some((delivery) => delivery.dedup?.outcome === 'duplicate_ignored'),
+  },
+];
 
-function FlowArrow({ animate = false, delay = 0 }: { animate?: boolean; delay?: number }) {
-  return (
-    <div className="relative flex h-5 shrink-0 items-center justify-center sm:w-6">
-      <ArrowRight
-        aria-hidden="true"
-        className={`h-4 w-4 rotate-90 sm:rotate-0 ${
-          animate ? 'text-primary' : 'text-muted-foreground/60'
-        }`}
-      />
-      {animate && (
-        <>
-          <span
-            aria-hidden="true"
-            className="webhook-packet-y absolute h-1.5 w-1.5 rounded-full bg-primary sm:hidden"
-            style={{ animationDelay: `${delay}ms` }}
-          />
-          <span
-            aria-hidden="true"
-            className="webhook-packet-x absolute hidden h-1.5 w-1.5 rounded-full bg-primary sm:block"
-            style={{ animationDelay: `${delay}ms` }}
-          />
-        </>
-      )}
-    </div>
-  );
+function shortEvent(eventType: string): string {
+  return eventType.length > 16 ? `${eventType.slice(0, 15)}…` : eventType;
 }
 
 export default function WebhookDeliverySimulator() {
@@ -165,6 +148,8 @@ export default function WebhookDeliverySimulator() {
   const [tamper, setTamper] = useState<Tamper>('none');
   const [signatureHeader, setSignatureHeader] = useState('');
   const [verification, setVerification] = useState<VerifyResult | null>(null);
+  const [tab, setTab] = useState('delivery');
+  const [dismissed, setDismissed] = useState(false);
 
   const seenRef = useRef<Set<string>>(new Set());
   const timersRef = useRef<number[]>([]);
@@ -365,7 +350,7 @@ export default function WebhookDeliverySimulator() {
           : 'neutral';
 
   const receiverValue = !active
-    ? 'Waiting for a delivery'
+    ? 'Waiting'
     : deliveryReachedReceiver
       ? active.dedup?.outcome === 'duplicate_ignored'
         ? 'Duplicate ignored'
@@ -391,535 +376,569 @@ export default function WebhookDeliverySimulator() {
   const deliveryStatusTone = !active
     ? 'bg-muted-foreground'
     : revealing
-      ? 'bg-sky-500'
+      ? 'bg-primary'
       : lastVisibleAttempt?.result === 'delivered'
-        ? 'bg-emerald-500'
-        : 'bg-rose-500';
+        ? 'bg-correct'
+        : 'bg-wrong';
   const flowAnimationKey = active ? `${active.key}-${active.revealed}` : 'idle';
+  const missionState = useMemo(
+    () => ({ deliveries, tamper, verification }),
+    [deliveries, tamper, verification]
+  );
+  const { reset: resetMissions, ...missions } = useMissions(WEBHOOK_MISSIONS, missionState);
+  const startOver = useCallback(() => {
+    reset();
+    resetMissions();
+    setDismissed(false);
+    setTab('delivery');
+  }, [reset, resetMissions]);
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-card">
-      <div className="flex flex-col gap-3 border-b border-border bg-muted/20 p-4 lg:flex-row lg:items-end">
-        <label className="min-w-0 flex-1">
-          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">Event</span>
-          <select
-            value={eventIndex}
-            onChange={(event) => setEventIndex(Number(event.target.value))}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-xs outline-none focus:border-primary"
-          >
-            {SAMPLE_EVENTS.map((event, index) => (
-              <option key={event.eventType} value={index}>
-                {event.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="min-w-0 flex-[1.35]">
-          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
-            Endpoint response
-          </span>
-          <select
-            value={behavior}
-            onChange={(event) => setBehavior(event.target.value as EndpointBehavior)}
-            className="h-10 w-full rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-primary"
-          >
-            {BEHAVIORS.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.label} - {item.hint}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => send()}
-            className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 lg:flex-none"
-          >
-            <Send className="h-4 w-4" />
-            Send event
-          </button>
-          {revealing && (
-            <button
-              type="button"
-              onClick={skipAhead}
-              title="Reveal all attempts"
-              aria-label="Reveal all attempts"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted"
-            >
-              <FastForward className="h-4 w-4" />
-            </button>
-          )}
-          {active && (
-            <button
-              type="button"
-              onClick={reset}
-              title="Reset simulator"
-              aria-label="Reset simulator"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <section className="border-b border-border p-4" aria-label="Webhook delivery path">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold">Delivery path</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Follow one message from your app to the receiver.
-            </p>
-          </div>
-          <div className="min-w-0 text-right">
-            <div className="flex items-center justify-end gap-1.5 text-[11px] font-medium">
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${deliveryStatusTone} ${
-                  revealing ? 'motion-safe:animate-pulse' : ''
-                }`}
-              />
-              {deliveryStatus}
-            </div>
-            <div className="mt-0.5 max-w-64 truncate font-mono text-[10px] text-muted-foreground">
-              {active?.messageId ?? 'Choose an event and endpoint response'}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-          <FlowNode
-            icon={Braces}
-            label="Your app"
-            value={active?.event.eventType ?? SAMPLE_EVENTS[eventIndex].eventType}
-            tone={active ? 'active' : 'neutral'}
-          />
-          <FlowArrow key={`${flowAnimationKey}-1`} animate={Boolean(active)} />
-          <FlowNode
-            icon={Inbox}
-            label="Delivery queue"
-            value={
-              currentAttempt
-                ? currentAttempt.result === 'retrying'
-                  ? selectedRetryDelay !== null
-                    ? `Next attempt in ${formatDelay(selectedRetryDelay)}`
-                    : 'Retry scheduled'
-                  : `Attempt ${currentAttempt.attempt} complete`
-                : 'Durable message'
-            }
-            tone={currentAttempt?.result === 'retrying' ? 'warning' : active ? 'active' : 'neutral'}
-          />
-          <FlowArrow key={`${flowAnimationKey}-2`} animate={Boolean(active)} delay={140} />
-          <FlowNode
-            icon={ShieldCheck}
-            label="Signed request"
-            value={active ? 'HMAC-SHA256 attached' : 'ID + time + body'}
-            tone={active ? 'active' : 'neutral'}
-          />
-          <FlowArrow key={`${flowAnimationKey}-3`} animate={Boolean(active)} delay={280} />
-          <FlowNode
-            icon={Server}
-            label="Customer endpoint"
-            value={
-              currentAttempt
-                ? currentAttempt.status === null
-                  ? 'Timed out'
-                  : `Responded ${currentAttempt.status}`
-                : selectedBehavior.label
-            }
-            tone={endpointTone}
-          />
-          <FlowArrow
-            key={`${flowAnimationKey}-4`}
-            animate={currentAttempt?.result === 'delivered'}
-            delay={420}
-          />
-          <FlowNode
-            icon={Webhook}
-            label="Receiver"
-            value={receiverValue}
-            tone={
-              deliveryReachedReceiver
-                ? active?.dedup?.outcome === 'duplicate_ignored'
-                  ? 'warning'
-                  : 'success'
-                : 'neutral'
-            }
-          />
-        </div>
-      </section>
-
-      <section className="border-b border-border p-4" aria-label="Delivery attempts">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Activity className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-semibold">Retry schedule</h2>
-            {timeWarpDelay !== null && (
-              <span
-                key={`${active?.key}-${active?.revealed}`}
-                aria-live="polite"
-                className="relative inline-flex overflow-hidden rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-1 font-mono text-[10px] font-medium text-sky-700 dark:text-sky-300"
-              >
-                <span className="relative z-10 inline-flex items-center gap-1.5">
-                  <FastForward className="h-3 w-3" />
-                  Fast-forwarding {formatDelay(timeWarpDelay)}
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="webhook-time-warp absolute inset-x-0 bottom-0 h-px bg-sky-500"
-                />
-              </span>
-            )}
-          </div>
-          {active && (
-            <div className="flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
-              <span>{stats.messages} msg</span>
-              <span>{stats.attempts} attempts</span>
-              <span>{stats.delivered} delivered</span>
-              {stats.duplicatesIgnored > 0 && <span>{stats.duplicatesIgnored} deduped</span>}
-            </div>
-          )}
-        </div>
-
-        <div
-          className="overflow-x-auto pb-1"
-          tabIndex={0}
-          role="region"
-          aria-label="Delivery attempts"
-        >
-          <div className="relative min-w-[640px]">
-            <ol className="relative grid grid-cols-8 gap-2" aria-live="polite">
-              {Array.from({ length: MAX_ATTEMPTS }, (_, index) => {
-                const attempt = active?.attempts[index];
-                const isRevealed = Boolean(attempt && index < active!.revealed);
-                const isSelected = Boolean(active && isRevealed && index === currentAttemptIndex);
-                const isUnused = Boolean(active && !attempt);
-
-                return (
-                  <li key={index}>
-                    <button
-                      type="button"
-                      disabled={!isRevealed}
-                      onClick={() => setSelectedAttemptIndex(index)}
-                      ref={(node) => {
-                        attemptRefs.current[index] = node;
-                      }}
-                      className={`relative z-10 w-full rounded-md border px-2 py-2 text-left transition-colors ${
-                        isSelected
-                          ? attempt
-                            ? RESULT_STYLES[attempt.result]
-                            : 'border-primary bg-primary/10'
-                          : isRevealed
-                            ? 'border-border bg-background hover:border-primary/40'
-                            : 'border-border bg-muted text-muted-foreground'
-                      } ${isUnused ? 'opacity-40' : ''}`}
-                    >
-                      <span className="block text-[10px] font-semibold uppercase">
-                        <span className="sr-only">Attempt </span>A{index + 1}
-                      </span>
-                      <span className="mt-1 block truncate font-mono text-[10px]">
-                        {attempt
-                          ? formatDelay(attempt.atSeconds)
-                          : active
-                            ? 'not needed'
-                            : index === 0
-                              ? 'now'
-                              : 'waiting'}
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        </div>
-
-        {!active && (
-          <div className="mt-4 flex items-center gap-3 rounded-md border border-dashed border-border px-4 py-3">
-            <Clock3 className="h-5 w-5 shrink-0 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">
-              Start with <strong className="text-foreground">Intermittent</strong> to watch two
-              failures recover on the third attempt.
-            </p>
-          </div>
-        )}
-
-        {currentAttempt && (
-          <div className="mt-4 grid min-w-0 gap-4 border-t border-border pt-4 md:grid-cols-[1.5fr_1fr]">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusPill attempt={currentAttempt} />
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  t + {formatDelay(currentAttempt.atSeconds)} · {currentAttempt.durationMs}ms
-                </span>
-                {revealing && selectedAttemptIndex !== null && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedAttemptIndex(null)}
-                    className="text-xs font-medium text-primary hover:underline"
-                  >
-                    Follow latest
-                  </button>
-                )}
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {currentAttempt.explanation}
-              </p>
-              {deliveryReachedReceiver && active?.dedup && (
-                <div
-                  className={`mt-3 flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
-                    active.dedup.outcome === 'duplicate_ignored'
-                      ? 'border-amber-500/30 bg-amber-500/5'
-                      : 'border-emerald-500/30 bg-emerald-500/5'
-                  }`}
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Webhook delivery"
+          icon={Webhook}
+          lead={
+            <>
+              <label className="min-w-32 flex-1">
+                <span className="sr-only">Event</span>
+                <select
+                  aria-label="Event"
+                  value={eventIndex}
+                  onChange={(event) => setEventIndex(Number(event.target.value))}
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 font-mono text-xs outline-none focus:border-primary lg:h-8"
                 >
-                  {active.dedup.outcome === 'duplicate_ignored' ? (
-                    <RefreshCw className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                  ) : (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                  )}
-                  <div>
-                    <p className="font-medium">
-                      {active.dedup.outcome === 'duplicate_ignored'
-                        ? 'Receiver ignored the duplicate'
-                        : 'Receiver processed this message once'}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Keyed by the stable message ID, then acknowledged with 200.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+                  {SAMPLE_EVENTS.map((event, index) => (
+                    <option key={event.eventType} value={index}>
+                      {event.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="min-w-36 flex-[1.25]">
+                <span className="sr-only">Endpoint response</span>
+                <select
+                  aria-label="Endpoint response"
+                  value={behavior}
+                  onChange={(event) => setBehavior(event.target.value as EndpointBehavior)}
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-xs outline-none focus:border-primary lg:h-8"
+                >
+                  {BEHAVIORS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label} - {item.hint}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button type="button" className="h-10 lg:h-8" onClick={() => send()}>
+                <Send className="h-4 w-4" aria-hidden="true" />
+                Send event
+              </Button>
+            </>
+          }
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={missions.complete ? 'Webhook delivery practice complete' : deliveryStatus}
+          goal={
+            missions.complete ? (
+              'Try another delivery path whenever you like.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
+        <SimAnnouncer
+          message={
+            missions.complete
+              ? 'All webhook delivery missions are complete.'
+              : `${deliveryStatus}. ${missions.current?.label ?? ''}`
+          }
+        />
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Webhook delivery missions complete"
+            summary="You signed requests, recovered from a flaky endpoint, rejected tampering, and ignored a duplicate."
+            stats={[
+              { label: 'Events sent', value: stats.messages },
+              { label: 'Attempts seen', value: stats.attempts },
+              { label: 'Duplicates skipped', value: stats.duplicatesIgnored },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]"
+            tab={tab}
+            onTabChange={setTab}
+            tabsLabel="Webhook simulator panels"
+            panels={[
+              {
+                id: 'delivery',
+                label: 'Delivery',
+                content: (
+                  <section
+                    className="space-y-2 rounded-lg border bg-card p-3"
+                    aria-label="Webhook delivery"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h2 className="text-sm font-semibold">Delivery path</h2>
+                        <p className="text-xs text-muted-foreground">
+                          One signed event travels from sender to receiver.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span
+                          aria-hidden="true"
+                          className={`h-2 w-2 rounded-full ${deliveryStatusTone} ${
+                            revealing ? 'motion-safe:animate-pulse' : ''
+                          }`}
+                        />
+                        {deliveryStatus}
+                      </div>
+                    </div>
 
-            <div className="min-w-0">
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">Endpoint response</p>
-              <pre className="max-h-28 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-[11px] leading-relaxed">
-                {currentAttempt.responseBody}
-              </pre>
-            </div>
-          </div>
-        )}
-      </section>
+                    <svg
+                      key={flowAnimationKey}
+                      viewBox="0 0 390 126"
+                      role="img"
+                      aria-label={`Delivery path: sender, network, and receiver. ${receiverValue}.`}
+                      className="mx-auto block w-full max-w-[390px] rounded-md border bg-muted/20"
+                    >
+                      <path
+                        d="M116 63H140M250 63H274"
+                        className="stroke-muted-foreground"
+                        strokeWidth="2"
+                      />
+                      <path d="M132 58l8 5-8 5M266 58l8 5-8 5" className="fill-muted-foreground" />
+                      <rect
+                        x="6"
+                        y="31"
+                        width="110"
+                        height="64"
+                        rx="8"
+                        className="fill-primary/10 stroke-primary"
+                      />
+                      <rect
+                        x="140"
+                        y="31"
+                        width="110"
+                        height="64"
+                        rx="8"
+                        className={FLOW_TONES[endpointTone]}
+                      />
+                      <rect
+                        x="274"
+                        y="31"
+                        width="110"
+                        height="64"
+                        rx="8"
+                        className={
+                          deliveryReachedReceiver
+                            ? active?.dedup?.outcome === 'duplicate_ignored'
+                              ? 'fill-partial/10 stroke-partial'
+                              : 'fill-correct/10 stroke-correct'
+                            : 'fill-muted stroke-border'
+                        }
+                      />
+                      <text
+                        x="61"
+                        y="55"
+                        textAnchor="middle"
+                        className="fill-foreground text-xs font-semibold"
+                      >
+                        Sender
+                      </text>
+                      <text
+                        x="61"
+                        y="74"
+                        textAnchor="middle"
+                        className="fill-muted-foreground text-xs"
+                      >
+                        {shortEvent(active?.event.eventType ?? SAMPLE_EVENTS[eventIndex].eventType)}
+                      </text>
+                      <text
+                        x="195"
+                        y="55"
+                        textAnchor="middle"
+                        className="fill-foreground text-xs font-semibold"
+                      >
+                        Signed network
+                      </text>
+                      <text
+                        x="195"
+                        y="74"
+                        textAnchor="middle"
+                        className="fill-muted-foreground text-xs"
+                      >
+                        {currentAttempt
+                          ? `Attempt ${currentAttempt.attempt}`
+                          : selectedBehavior.label}
+                      </text>
+                      <text
+                        x="329"
+                        y="55"
+                        textAnchor="middle"
+                        className="fill-foreground text-xs font-semibold"
+                      >
+                        Receiver
+                      </text>
+                      <text
+                        x="329"
+                        y="74"
+                        textAnchor="middle"
+                        className="fill-muted-foreground text-xs"
+                      >
+                        {receiverValue}
+                      </text>
+                      {active && <circle cx="128" cy="63" r="4" className="fill-primary" />}
+                    </svg>
 
-      {active && (
-        <section className="grid min-w-0 lg:grid-cols-[1fr_2fr]" aria-label="Request inspector">
-          <div className="border-b border-border p-4 lg:border-b-0 lg:border-r">
-            <h2 className="text-sm font-semibold">Inspect the delivery</h2>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              The same request can be inspected as bytes on the wire or tested against signature
-              failures.
-            </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>{stats.messages} events</span>
+                      <span>{stats.attempts} attempts</span>
+                      <span>{stats.delivered} delivered</span>
+                      {stats.duplicatesIgnored > 0 && (
+                        <span>{stats.duplicatesIgnored} deduped</span>
+                      )}
+                    </div>
 
-            <div className="mt-4 grid grid-cols-2 rounded-md border border-border bg-muted/30 p-1">
-              <button
-                type="button"
-                onClick={() => setInspectorTab('request')}
-                aria-pressed={inspectorTab === 'request'}
-                className={`rounded-sm px-3 py-2 text-xs font-medium ${
-                  inspectorTab === 'request'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                Request
-              </button>
-              <button
-                type="button"
-                onClick={() => setInspectorTab('signature')}
-                aria-pressed={inspectorTab === 'signature'}
-                className={`rounded-sm px-3 py-2 text-xs font-medium ${
-                  inspectorTab === 'signature'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                Verify signature
-              </button>
-            </div>
+                    <div className="space-y-2" aria-label="Delivery attempts">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                          <h3 className="text-sm font-semibold">Retry schedule</h3>
+                        </div>
+                        {timeWarpDelay !== null && (
+                          <span
+                            className={`rounded-md border px-2 py-1 text-xs ${SIM_TONE.info.surface}`}
+                          >
+                            Fast-forwarding {formatDelay(timeWarpDelay)}
+                          </span>
+                        )}
+                        {revealing && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-10 lg:h-8"
+                            onClick={skipAhead}
+                          >
+                            <FastForward className="h-4 w-4" aria-hidden="true" />
+                            Reveal all attempts
+                          </Button>
+                        )}
+                      </div>
 
-            {deliveryReachedReceiver && active.dedup && !active.isRedelivery && (
-              <button
-                type="button"
-                onClick={() =>
-                  send({ reuseMessageId: active.messageId, behaviorOverride: 'success' })
-                }
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-semibold hover:bg-muted"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Redeliver same message
-              </button>
-            )}
-          </div>
+                      <div className="space-y-2 md:hidden">
+                        {Array.from({ length: MAX_ATTEMPTS }, (_, index) => {
+                          const attempt = active?.attempts[index];
+                          const isRevealed = Boolean(attempt && index < active!.revealed);
+                          const isSelected = Boolean(
+                            active && isRevealed && index === currentAttemptIndex
+                          );
+                          const tone = attempt ? SIM_TONE[RESULT_TONES[attempt.result]] : null;
+                          return (
+                            <button
+                              key={index}
+                              type="button"
+                              disabled={!isRevealed}
+                              onClick={() => setSelectedAttemptIndex(index)}
+                              ref={(node) => {
+                                attemptRefs.current[index] = node;
+                              }}
+                              className={`flex min-h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-left text-xs ${
+                                isSelected && tone
+                                  ? `${tone.surface} ${tone.text}`
+                                  : isRevealed
+                                    ? 'border-border bg-background hover:border-primary/40'
+                                    : 'border-border bg-muted text-muted-foreground'
+                              }`}
+                            >
+                              <span className="font-semibold">Attempt {index + 1}</span>
+                              <span className="font-mono">
+                                {attempt
+                                  ? `${formatDelay(attempt.atSeconds)} · ${RESULT_LABELS[attempt.result]}`
+                                  : active
+                                    ? 'not needed'
+                                    : index === 0
+                                      ? 'now'
+                                      : 'waiting'}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
 
-          <div className="min-w-0 p-4">
-            {inspectorTab === 'request' ? (
-              <div className="grid min-w-0 gap-3 md:grid-cols-[1.1fr_1fr]">
-                <div className="min-w-0">
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">Headers</p>
-                  <pre className="max-h-52 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-[11px] leading-relaxed">
-                    {`POST /webhooks/billing HTTP/1.1
+                      <div className="hidden overflow-x-auto md:block">
+                        <table className="w-full text-left text-xs">
+                          <thead className="text-muted-foreground">
+                            <tr className="border-b">
+                              <th className="px-2 py-2 font-medium">Attempt</th>
+                              <th className="px-2 py-2 font-medium">At</th>
+                              <th className="px-2 py-2 font-medium">Response</th>
+                              <th className="px-2 py-2 font-medium">Outcome</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Array.from({ length: MAX_ATTEMPTS }, (_, index) => {
+                              const attempt = active?.attempts[index];
+                              const isRevealed = Boolean(attempt && index < active!.revealed);
+                              const isSelected = Boolean(
+                                active && isRevealed && index === currentAttemptIndex
+                              );
+                              const tone = attempt ? SIM_TONE[RESULT_TONES[attempt.result]] : null;
+                              return (
+                                <tr
+                                  key={index}
+                                  className={
+                                    isSelected && tone ? `${tone.surface} ${tone.text}` : 'border-b'
+                                  }
+                                >
+                                  <td className="px-2 py-2">{index + 1}</td>
+                                  <td className="px-2 py-2 font-mono">
+                                    {attempt ? formatDelay(attempt.atSeconds) : 'none'}
+                                  </td>
+                                  <td className="px-2 py-2">
+                                    {attempt?.status ?? (attempt ? 'Timeout' : 'none')}
+                                  </td>
+                                  <td className="px-2 py-2">
+                                    {isRevealed ? (
+                                      <button
+                                        type="button"
+                                        className="min-h-10 rounded-md px-2 text-left hover:bg-muted"
+                                        onClick={() => setSelectedAttemptIndex(index)}
+                                      >
+                                        {attempt ? RESULT_LABELS[attempt.result] : 'none'}
+                                      </button>
+                                    ) : (
+                                      'Waiting'
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {!active && (
+                      <div className="flex items-center gap-3 rounded-md border border-dashed border-border px-3 py-2">
+                        <Clock3
+                          className="h-5 w-5 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          Choose a response, then send an event to see the durable retry schedule.
+                        </p>
+                      </div>
+                    )}
+
+                    {currentAttempt && (
+                      <div className="grid gap-3 border-t pt-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`rounded-md border px-2 py-1 text-xs font-medium ${SIM_TONE[RESULT_TONES[currentAttempt.result]].surface} ${SIM_TONE[RESULT_TONES[currentAttempt.result]].text}`}
+                          >
+                            {currentAttempt.status === null ? 'Timeout' : currentAttempt.status} ·{' '}
+                            {RESULT_LABELS[currentAttempt.result]}
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            t + {formatDelay(currentAttempt.atSeconds)} ·{' '}
+                            {currentAttempt.durationMs}ms
+                          </span>
+                          {revealing && selectedAttemptIndex !== null && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-10 lg:h-8"
+                              onClick={() => setSelectedAttemptIndex(null)}
+                            >
+                              Follow latest
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {currentAttempt.explanation}
+                        </p>
+                        {selectedRetryDelay !== null && (
+                          <p className="text-xs text-muted-foreground">
+                            Next retry begins after {formatDelay(selectedRetryDelay)}.
+                          </p>
+                        )}
+                        {deliveryReachedReceiver && active?.dedup && (
+                          <div
+                            className={`rounded-md border px-3 py-2 text-sm ${active.dedup.outcome === 'duplicate_ignored' ? SIM_TONE.warning.surface : SIM_TONE.success.surface}`}
+                          >
+                            {active.dedup.outcome === 'duplicate_ignored'
+                              ? 'Receiver ignored this duplicate by message ID.'
+                              : 'Receiver processed this message once.'}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                content: (
+                  <section
+                    className="space-y-3 rounded-lg border bg-card p-3"
+                    aria-label="Webhook details"
+                  >
+                    <div>
+                      <h2 className="text-sm font-semibold">Inspect and practice</h2>
+                      <p className="text-xs text-muted-foreground">
+                        Review the raw request, test verification, and track each mission.
+                      </p>
+                    </div>
+                    <SimMissionList missions={missions.missions} />
+                    {active ? (
+                      <>
+                        <div className="grid grid-cols-2 rounded-md border bg-muted/30 p-1">
+                          <Button
+                            type="button"
+                            variant={inspectorTab === 'request' ? 'secondary' : 'ghost'}
+                            className="h-10 text-xs"
+                            aria-pressed={inspectorTab === 'request'}
+                            onClick={() => setInspectorTab('request')}
+                          >
+                            Request
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={inspectorTab === 'signature' ? 'secondary' : 'ghost'}
+                            className="h-10 text-xs"
+                            aria-pressed={inspectorTab === 'signature'}
+                            onClick={() => setInspectorTab('signature')}
+                          >
+                            Verify signature
+                          </Button>
+                        </div>
+                        {deliveryReachedReceiver && active.dedup && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-10 w-full"
+                            onClick={() =>
+                              send({
+                                reuseMessageId: active.messageId,
+                                behaviorOverride: 'success',
+                              })
+                            }
+                          >
+                            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                            Redeliver same message
+                          </Button>
+                        )}
+                        {inspectorTab === 'request' ? (
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Request and signature
+                            </p>
+                            <pre className="max-h-52 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed">{`POST /webhooks/billing HTTP/1.1
 content-type: application/json
 svix-id: ${active.messageId}
 svix-timestamp: ${active.timestamp}
-svix-signature: ${signatureHeader || 'computing...'}`}
-                  </pre>
-                </div>
-                <div className="min-w-0">
-                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                    Raw body {tamper === 'body' && '(edited after signing)'}
-                  </p>
-                  <pre className="max-h-52 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-[11px] leading-relaxed">
-                    {presentedBody}
-                  </pre>
-                </div>
-              </div>
-            ) : (
-              <div className="min-w-0">
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {TAMPERS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setTamper(item.id)}
-                      aria-pressed={tamper === item.id}
-                      className={`rounded-md border px-2 py-2 text-xs font-medium transition-colors ${
-                        tamper === item.id
-                          ? 'border-primary/50 bg-primary/10'
-                          : 'border-border bg-background hover:bg-muted'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
+svix-signature: ${signatureHeader || 'computing...'}
 
-                <div className="mt-3 grid min-w-0 gap-3 md:grid-cols-[1.3fr_1fr]">
-                  <div className="min-w-0">
-                    <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                      Signed content
-                    </p>
-                    <pre className="max-h-32 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-[11px] leading-relaxed">
-                      {buildSignedContent(active.messageId, active.timestamp, presentedBody)}
-                    </pre>
-                  </div>
-
-                  {verification && (
-                    <div
-                      className={`rounded-md border p-3 ${
-                        verification.valid
-                          ? 'border-emerald-500/40 bg-emerald-500/10'
-                          : 'border-rose-500/40 bg-rose-500/10'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {verification.valid ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+${presentedBody}`}</pre>
+                          </div>
                         ) : (
-                          <XCircle className="h-4 w-4 text-rose-600" />
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-2">
+                              {TAMPERS.map((item) => (
+                                <Button
+                                  key={item.id}
+                                  type="button"
+                                  variant={tamper === item.id ? 'secondary' : 'outline'}
+                                  className="h-10 text-xs"
+                                  aria-pressed={tamper === item.id}
+                                  onClick={() => setTamper(item.id)}
+                                >
+                                  {item.label}
+                                </Button>
+                              ))}
+                            </div>
+                            <pre className="max-h-28 overflow-auto rounded-md bg-muted/50 p-3 font-mono text-xs leading-relaxed">
+                              {buildSignedContent(
+                                active.messageId,
+                                active.timestamp,
+                                presentedBody
+                              )}
+                            </pre>
+                            {verification && (
+                              <div
+                                className={`rounded-md border p-3 text-sm ${verification.valid ? SIM_TONE.success.surface : SIM_TONE.danger.surface}`}
+                              >
+                                <p className="font-semibold">
+                                  {verification.valid
+                                    ? 'Signature valid'
+                                    : `Rejected: ${verification.failure?.replace(/_/g, ' ')}`}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {verification.detail}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         )}
-                        <p className="text-sm font-semibold">
-                          {verification.valid
-                            ? 'Signature valid'
-                            : `Rejected: ${verification.failure?.replace(/_/g, ' ')}`}
-                        </p>
-                      </div>
-                      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                        {verification.detail}
+                      </>
+                    ) : (
+                      <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+                        Send an event to inspect its signed request.
                       </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                    )}
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-medium">
+                        How webhook delivery stays safe
+                      </summary>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        The sender signs the timestamp and raw body with HMAC-SHA256. Receivers
+                        reject old timestamps, compare signatures in constant time, and dedupe
+                        stable event IDs because delivery is at least once.
+                      </p>
+                    </details>
+                  </section>
+                ),
+              },
+            ]}
+          />
+        )}
+        {!(missions.complete && !dismissed) && (
+          <SimPhoneBar>
+            <Button type="button" className="h-10 flex-1" onClick={() => send()}>
+              <Send className="h-4 w-4" aria-hidden="true" />
+              Send event
+            </Button>
+            {revealing && (
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10"
+                onClick={skipAhead}
+                aria-label="Reveal all attempts"
+              >
+                <FastForward className="h-4 w-4" aria-hidden="true" />
+              </Button>
             )}
-          </div>
-        </section>
-      )}
-
-      {deliveries.length > 1 && (
-        <details className="border-t border-border">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-medium hover:bg-muted/30">
-            Recent deliveries ({deliveries.length})
-          </summary>
-          <div className="divide-y divide-border border-t border-border">
-            {deliveries.map((delivery) => {
-              const visibleAttempt = delivery.attempts[Math.max(0, delivery.revealed - 1)];
-              return (
-                <div
-                  key={delivery.key}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-xs"
-                >
-                  <span className="max-w-48 truncate font-mono text-muted-foreground">
-                    {delivery.messageId}
-                  </span>
-                  <span className="font-mono">{delivery.event.eventType}</span>
-                  <StatusPill attempt={visibleAttempt} />
-                  {delivery.dedup?.outcome === 'duplicate_ignored' && (
-                    <span className="text-amber-700 dark:text-amber-300">Duplicate ignored</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </details>
-      )}
-
-      <style jsx global>{`
-        @keyframes webhook-packet-x {
-          from {
-            opacity: 0;
-            transform: translateX(-9px);
-          }
-          25% {
-            opacity: 1;
-          }
-          to {
-            opacity: 0;
-            transform: translateX(9px);
-          }
-        }
-        @keyframes webhook-packet-y {
-          from {
-            opacity: 0;
-            transform: translateY(-9px);
-          }
-          25% {
-            opacity: 1;
-          }
-          to {
-            opacity: 0;
-            transform: translateY(9px);
-          }
-        }
-        .webhook-packet-x {
-          animation: webhook-packet-x 520ms ease-out both;
-        }
-        .webhook-packet-y {
-          animation: webhook-packet-y 520ms ease-out both;
-        }
-        @keyframes webhook-time-warp {
-          from {
-            transform: scaleX(0);
-          }
-          to {
-            transform: scaleX(1);
-          }
-        }
-        .webhook-time-warp {
-          animation: webhook-time-warp 700ms linear both;
-          transform-origin: left;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .webhook-packet-x,
-          .webhook-packet-y,
-          .webhook-time-warp {
-            animation: none;
-            opacity: 0;
-          }
-        }
-      `}</style>
-    </div>
+          </SimPhoneBar>
+        )}
+      </SimFrame>
+    </MotionConfig>
   );
 }
