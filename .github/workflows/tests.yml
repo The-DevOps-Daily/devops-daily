@@ -56,7 +56,9 @@ jobs:
         run: pnpm test
 
       - name: Install browser for smoke tests
-        run: pnpm exec playwright install --with-deps chromium
+        # GitHub's Ubuntu images already ship Chromium's system libraries, so when
+        # the apt mirrors are unreachable we fall back to installing only the browser.
+        run: pnpm exec playwright install --with-deps chromium || pnpm exec playwright install chromium
 
       - name: Run browser smoke tests
         run: pnpm test:e2e
