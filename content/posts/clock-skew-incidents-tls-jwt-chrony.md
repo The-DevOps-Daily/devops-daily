@@ -39,7 +39,7 @@ This post maps the time check behind each failure, shows safe reproductions with
 - Shell access to a Linux host or VM.
 - Permission to inspect the active time service. Correcting time needs an approved change path because a clock step can surprise applications.
 - `chrony` installed if you use the chrony commands and configuration below.
-- OpenSSL and Python with PyJWT if you want to repeat the two local demonstrations.
+- OpenSSL, Python with `cryptography` for the TLS fixture, and PyJWT for the JWT demo.
 
 ## The time window behind the error
 
@@ -97,8 +97,8 @@ Then verify with OpenSSL 3.0, passing `-attime` as a Unix timestamp:
   "steps": [
     { "cmd": "openssl x509 -in leaf-now.pem -noout -startdate", "output": "notBefore=Nov 11 13:33:26 2026 GMT" },
     { "cmd": "openssl x509 -in leaf-backdated.pem -noout -startdate", "output": "notBefore=Nov 11 12:33:26 2026 GMT" },
-    { "cmd": "openssl verify -CAfile ca.pem -attime 1794403407 leaf-now.pem          # verifier clock 10 min behind", "output": "CN = api.example.com\nerror 9 at 0 depth lookup: certificate is not yet valid\nerror leaf-now.pem: verification failed" },
-    { "cmd": "openssl verify -CAfile ca.pem -attime 1794403407 leaf-backdated.pem    # same clock, notBefore 1 h earlier", "output": "leaf-backdated.pem: OK" },
+    { "cmd": "openssl verify -CAfile ca.pem -attime $(( $(date +%s) - 600 )) leaf-now.pem          # verifier clock 10 min behind", "output": "CN = api.example.com\nerror 9 at 0 depth lookup: certificate is not yet valid\nerror leaf-now.pem: verification failed" },
+    { "cmd": "openssl verify -CAfile ca.pem -attime $(( $(date +%s) - 600 )) leaf-backdated.pem    # same clock, notBefore 1 h earlier", "output": "leaf-backdated.pem: OK" },
     { "cmd": "openssl verify -CAfile ca.pem -attime $(( $(date +%s) + 8*86400 )) leaf-now.pem   # verifier clock 8 days ahead", "output": "CN = api.example.com\nerror 10 at 0 depth lookup: certificate has expired\nerror leaf-now.pem: verification failed" }
   ]
 }
@@ -171,7 +171,7 @@ The common failure modes are mundane:
 Chrony normally slews a correction, which avoids a sudden jump but can take a long time for a large offset. Its [`makestep threshold limit` directive](https://chrony-project.org/doc/latest/chrony.conf.html) controls when it may jump instead. A useful boot-time policy is:
 
 ```text
-# /etc/chrony.conf
+# Add to chronyd's active configuration file
 # Step offsets over 1 second during the first three clock updates.
 makestep 1.0 3
 
@@ -184,7 +184,7 @@ server ntp-a.example.net iburst nts
 server ntp-b.example.net iburst nts
 ```
 
-The `nts` option enables Network Time Security, and chrony documents it as available since chrony 4.0. If a host is currently wrong and the operational impact of a jump has been assessed, `chronyc makestep` immediately applies the remaining correction. Chrony's manual warns that time jumps can seriously affect some software. Confirm the source state first, make the correction in the approved window, then re-run `chronyc tracking`.
+When the sources support NTS and `chronyd` was built with NTS support, the `nts` option enables Network Time Security; support was added in chrony 4.0. If a host is currently wrong and the operational impact of a jump has been assessed, `chronyc makestep` immediately applies the remaining correction. Chrony's manual warns that time jumps can seriously affect some software. Confirm the source state first, make the correction in the approved window, then re-run `chronyc tracking`.
 
 For Prometheus, node_exporter's timex collector exposes `node_timex_offset_seconds` and `node_timex_sync_status`. Its [source](https://github.com/prometheus/node_exporter/blob/master/collector/timex.go) defines the former as offset between the local and reference clocks and the latter as `1` for synchronized and `0` for unsynchronized. Start with a rule that catches loss of sync or a sustained offset, then tune the threshold to the most time-sensitive system you operate:
 
