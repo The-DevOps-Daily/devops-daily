@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Globe,
   Server,
   Database,
-  Clock,
   ArrowRight,
   Play,
   RotateCcw,
@@ -17,9 +15,22 @@ import {
   Zap,
   HardDrive,
   Wifi,
-  Keyboard,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import {
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -254,11 +265,62 @@ function generateSteps(
   return steps;
 }
 
+interface DnsMissionState {
+  domain: string;
+  recordType: RecordType;
+  steps: DnsStep[];
+  isComplete: boolean;
+}
+
+const MISSIONS: Mission<DnsMissionState>[] = [
+  {
+    id: 'full-lookup',
+    label: 'Resolve a name from scratch: resolver, root, TLD, then the authoritative server.',
+    hint: 'Pick a domain nobody looked up yet and run the lookup to the end.',
+    check: (state) =>
+      state.isComplete &&
+      ['root', 'tld', 'authoritative'].every((location) =>
+        state.steps.some((step) => step.location === location)
+      ),
+  },
+  {
+    id: 'cache-hit',
+    label: 'Look up the same name again and watch a cache answer.',
+    hint: 'The second lookup never leaves your machine or the resolver.',
+    check: (state) =>
+      state.isComplete &&
+      state.steps.some((step) => step.cacheHit) &&
+      !state.steps.some((step) => step.location === 'root'),
+  },
+  {
+    id: 'mx',
+    label: "Find where a domain's mail goes: look up an MX record.",
+    hint: 'Pick MX as the record type.',
+    check: (state) =>
+      state.isComplete &&
+      state.recordType === 'MX' &&
+      Boolean(DNS_DATABASE[state.domain]?.[state.recordType]),
+  },
+];
+
+const LOCATION_CATEGORY: Record<DnsStep['location'], keyof typeof SIM_CATEGORY> = {
+  browser: 'primary',
+  os: 'neutral',
+  resolver: 'sky',
+  root: 'violet',
+  tld: 'sky',
+  authoritative: 'emerald',
+};
+
+type Tab = 'path' | 'details';
+
 // ============================================================================
 // COMPONENT
 // ============================================================================
 
 export default function DnsSimulator() {
+  const [tab, setTab] = useState<Tab>('path');
+  const [dismissed, setDismissed] = useState(false);
   const [domain, setDomain] = useState('example.com');
   const [recordType, setRecordType] = useState<RecordType>('A');
   const [browserCache, setBrowserCache] = useState<Map<string, CacheEntry>>(new Map());
@@ -269,6 +331,12 @@ export default function DnsSimulator() {
   const [isRunning, setIsRunning] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [stats, setStats] = useState({ queries: 0, cacheHits: 0, totalTime: 0 });
+
+  const missionState = useMemo(
+    () => ({ domain, recordType, steps, isComplete }),
+    [domain, recordType, steps, isComplete]
+  );
+  const missions = useMissions(MISSIONS, missionState);
 
   const runLookup = useCallback(() => {
     const newSteps = generateSteps(domain, recordType, browserCache, osCache, resolverCache);
@@ -303,7 +371,8 @@ export default function DnsSimulator() {
     else if (answeredBy === 'resolver') entry = resolverCache.get(cacheKey);
     else {
       const record = DNS_DATABASE[domain]?.[recordType];
-      if (record) entry = { value: record.value, ttl: record.ttl, expiresAt: now + record.ttl * 1000 };
+      if (record)
+        entry = { value: record.value, ttl: record.ttl, expiresAt: now + record.ttl * 1000 };
     }
     if (!entry) return;
     const fresh = entry;
@@ -352,448 +421,430 @@ export default function DnsSimulator() {
     }
   };
 
-  // Keyboard navigation. Re-subscribed on every render so the handler always
-  // sees the current caches and actions, never a stale closure.
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      // Space to start lookup
-      if (e.key === ' ' && !isRunning && currentStepIndex === -1) {
-        e.preventDefault();
-        runLookup();
-        return;
-      }
-
-      // Arrow keys for step navigation
-      if (e.key === 'ArrowRight' && isRunning && currentStepIndex < steps.length) {
-        e.preventDefault();
-        handleStepForward();
-      }
-      if (e.key === 'ArrowLeft' && isRunning && currentStepIndex > 0) {
-        e.preventDefault();
-        handleStepBack();
-      }
-
-      // R to reset
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        handleReset();
-      }
-
-      // Escape to reset
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleReset();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  });
-
   const record = DNS_DATABASE[domain]?.[recordType];
   const currentStep = steps[currentStepIndex];
   const totalSteps = steps.length;
 
+  const startOver = () => {
+    handleReset();
+    missions.reset();
+    setDismissed(false);
+  };
+  const announcement = currentStep
+    ? `${currentStep.title}: ${currentStep.cacheHit ? 'cache answered' : 'query in progress'}.`
+    : isComplete
+      ? 'DNS lookup complete.'
+      : 'Choose a record type and run a DNS lookup.';
+
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-4">
-      {/* Header */}
-      <Card>
-        <CardHeader className="pb-2 sm:pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Globe className="h-5 w-5 text-blue-500" />
-            DNS Resolution Simulator
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            Watch step-by-step how your browser resolves domain names to IP addresses
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Configuration */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base">Domain</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-1.5">
-              {SAMPLE_DOMAINS.map((d) => (
-                <Button
-                  key={d}
-                  variant={domain === d ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setDomain(d)}
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="DNS Simulator"
+          icon={Globe}
+          lead={
+            <>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                Domain
+                <select
+                  aria-label="Domain"
+                  value={domain}
+                  onChange={(event) => setDomain(event.target.value)}
                   disabled={isRunning}
-                  className="text-xs sm:text-sm"
+                  className="h-10 rounded-md border border-input bg-background px-2 text-sm text-foreground lg:h-8"
                 >
-                  {d}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base">Record Type</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-1.5">
-              {RECORD_TYPES.map((rt) => (
-                <Button
-                  key={rt.type}
-                  variant={recordType === rt.type ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setRecordType(rt.type)}
+                  {SAMPLE_DOMAINS.map((sampleDomain) => (
+                    <option key={sampleDomain} value={sampleDomain}>
+                      {sampleDomain}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                Record type
+                <select
+                  aria-label="Record type"
+                  value={recordType}
+                  onChange={(event) => setRecordType(event.target.value as RecordType)}
                   disabled={isRunning}
-                  className="text-xs sm:text-sm"
+                  className="h-10 rounded-md border border-input bg-background px-2 text-sm text-foreground lg:h-8"
                 >
-                  <span>{rt.label}</span>
-                  <span className="ml-1 hidden text-[10px] opacity-70 sm:inline">
-                    ({rt.description})
-                  </span>
+                  {RECORD_TYPES.map((type) => (
+                    <option key={type.type} value={type.type}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          }
+          tools={<SimResetButton onReset={startOver} />}
+          steps={steps.map((step, index) => ({
+            title: step.shortTitle,
+            status:
+              isComplete || index < currentStepIndex
+                ? 'done'
+                : index === currentStepIndex
+                  ? 'started'
+                  : 'todo',
+          }))}
+          current={Math.max(0, Math.min(currentStepIndex, totalSteps - 1))}
+          onStep={(index) => {
+            if (isRunning && index <= currentStepIndex) setCurrentStepIndex(index);
+          }}
+          stepsLabel="DNS lookup steps"
+          progress={{ current: missions.done, total: missions.total }}
+          heading={
+            isComplete
+              ? `Lookup complete: ${recordType} ${domain}`
+              : currentStep
+                ? currentStep.title
+                : `Ready: ${recordType} ${domain}`
+          }
+          actions={
+            <div className="hidden items-center gap-1.5 lg:flex">
+              {!isRunning && !isComplete && (
+                <Button type="button" className="h-8" onClick={runLookup}>
+                  <Play className="h-4 w-4" aria-hidden="true" />
+                  Run lookup
                 </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Controls */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {!isRunning && !isComplete && (
-              <Button onClick={runLookup} className="flex-1 sm:flex-none">
-                <Play className="mr-2 h-4 w-4" />
-                Start Lookup
-              </Button>
-            )}
-
-            {isRunning && currentStepIndex < steps.length && (
-              <>
-                <Button
-                  onClick={handleStepForward}
-                  className="flex-1 sm:flex-none"
-                >
-                  <ChevronRight className="mr-2 h-4 w-4" />
-                  Next Step
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleStepBack}
-                  disabled={currentStepIndex <= 0}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-
-            {isComplete && (
-              <Button onClick={runLookup} variant="outline" className="flex-1 sm:flex-none">
-                <Play className="mr-2 h-4 w-4" />
-                Run Again
-              </Button>
-            )}
-
-            <Button variant="outline" size="icon" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-
-            <div className="hidden text-sm text-muted-foreground sm:block">
-              Query:{' '}
-              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                {recordType} {domain}
-              </code>
-            </div>
-
-            <div className="ml-auto hidden items-center gap-1.5 text-xs text-muted-foreground lg:flex">
-              <Keyboard className="h-3 w-3" />
-              <span>
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Space</kbd> start,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">→</kbd> next,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">←</kbd> back,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">R</kbd> reset
-              </span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Progress indicator */}
-      {steps.length > 0 && (
-        <Card>
-          <CardContent className="py-3">
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="font-medium">
-                Step {Math.min(currentStepIndex + 1, totalSteps)} of {totalSteps}
-              </span>
-              {isComplete && (
-                <span className="flex items-center gap-1 text-green-600">
-                  <CheckCircle className="h-3 w-3" /> Complete
-                </span>
               )}
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${Math.min(((currentStepIndex + 1) / totalSteps) * 100, 100)}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* DNS Hierarchy Visualization */}
-      <Card>
-        <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Server className="h-4 w-4 text-cyan-500" />
-            DNS Resolution Path
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
-          <div className="-mx-1 flex items-center justify-between gap-1 overflow-x-auto py-3 sm:mx-0 sm:justify-around sm:gap-4 sm:py-4">
-            {Object.entries(LOCATIONS_INFO).map(([key, info], idx) => {
-              const Icon = info.icon;
-              const stepForNode = steps.find((s) => s.location === key);
-              const stepIdx = steps.findIndex((s) => s.location === key);
-              const isActive = stepIdx === currentStepIndex && isRunning;
-              const isPast = stepIdx >= 0 && stepIdx < currentStepIndex;
-              const isHit = stepForNode?.cacheHit;
-
-              return (
-                <React.Fragment key={key}>
-                  <motion.div
-                    className={cn(
-                      'flex min-w-[44px] flex-col items-center rounded-lg p-1.5 transition-all sm:min-w-[80px] sm:p-3',
-                      isActive && 'bg-blue-500/20 ring-2 ring-blue-500',
-                      isPast && isHit && 'bg-green-500/10',
-                      isPast && !isHit && 'bg-muted'
-                    )}
-                    animate={isActive ? { scale: [1, 1.05, 1] } : {}}
-                    transition={{ duration: 1.5, repeat: isActive ? Infinity : 0 }}
+              {isRunning && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-8"
+                    onClick={handleStepBack}
+                    disabled={currentStepIndex <= 0}
                   >
-                    <Icon
-                      className={cn(
-                        'h-5 w-5 sm:h-7 sm:w-7',
-                        isActive && info.color,
-                        isPast && isHit && 'text-green-500',
-                        isPast && !isHit && 'text-muted-foreground',
-                        !isActive && !isPast && 'text-muted-foreground/50'
-                      )}
-                    />
-                    <span className="mt-1 text-center text-[8px] font-medium leading-tight sm:mt-1.5 sm:text-xs">
-                      {info.name}
-                    </span>
-                    {isPast && isHit && <CheckCircle className="mt-0.5 h-3 w-3 text-green-500 sm:mt-1 sm:h-3.5 sm:w-3.5" />}
-                  </motion.div>
-                  {idx < 5 && (
-                    <ArrowRight className="h-3 w-3 flex-shrink-0 text-muted-foreground/40 sm:h-5 sm:w-5" />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Current Step Explanation - The main focus */}
-      <AnimatePresence mode="wait">
-        {currentStep && currentStepIndex < steps.length && (
-          <motion.div
-            key={currentStep.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Card
-              className={cn(
-                'border-2',
-                currentStep.cacheHit
-                  ? 'border-green-500/50 bg-green-500/5'
-                  : 'border-blue-500/50 bg-blue-500/5'
-              )}
-            >
-              <CardContent className="py-4">
-                <div className="flex items-start gap-3">
-                  {currentStep.cacheHit ? (
-                    <Zap className="mt-0.5 h-6 w-6 flex-shrink-0 text-green-500" />
-                  ) : (
-                    <ArrowRight className="mt-0.5 h-6 w-6 flex-shrink-0 text-blue-500" />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base font-semibold sm:text-lg">{currentStep.title}</span>
-                      <span className="text-xs text-muted-foreground">~{currentStep.latency}ms</span>
-                    </div>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                      {currentStep.explanation}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Completion Card */}
-      <AnimatePresence>
-        {isComplete && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="border-2 border-green-500/50 bg-green-500/5">
-              <CardContent className="pt-4">
-                <div className="text-center">
-                  <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
-                  <h3 className="mt-2 text-xl font-bold">DNS Lookup Complete!</h3>
-                  <p className="mt-1 text-muted-foreground">
-                    {record ? (
-                      <>
-                        <span className="font-medium text-foreground">{domain}</span> resolves to{' '}
-                        <code className="rounded bg-slate-100 px-2 py-1 text-sm dark:bg-slate-800">
-                          {record.value}
-                        </code>
-                      </>
-                    ) : (
-                      'No record found'
-                    )}
-                  </p>
-                  <div className="mt-4 flex justify-center gap-4 text-sm">
-                    <span>
-                      Total time:{' '}
-                      <strong>{steps.reduce((sum, s) => sum + s.latency, 0)}ms</strong>
-                    </span>
-                    {record && (
-                      <span>
-                        TTL: <strong>{record.ttl}s</strong>
-                      </span>
-                    )}
-                  </div>
-                  <Button onClick={handleNewLookup} variant="outline" className="mt-4">
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    New Lookup
+                    <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    Prev
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  <Button type="button" className="h-8" onClick={handleStepForward}>
+                    <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    Step
+                  </Button>
+                </>
+              )}
+              {isComplete && (
+                <Button type="button" variant="outline" className="h-8" onClick={handleNewLookup}>
+                  <RotateCcw className="h-4 w-4" aria-hidden="true" />
+                  New lookup
+                </Button>
+              )}
+            </div>
+          }
+          goal={
+            missions.complete ? (
+              'All three missions are complete. Keep exploring DNS records and caches.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
 
-      {/* Cache Status */}
-      {(browserCache.size > 0 || osCache.size > 0 || resolverCache.size > 0) && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex flex-wrap items-center gap-2 text-sm sm:text-base">
-              <Database className="h-4 w-4 text-purple-500" />
-              DNS Caches
-              <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
-                (run the same query again to see a cache hit, or flush a layer to see the next one answer)
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-2 text-xs text-muted-foreground sm:hidden">
-              Run the same query again to see a cache hit, or flush a layer to see the next one answer.
-            </p>
-            <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm">
-              {[
-                { name: 'Browser', cache: browserCache, flush: setBrowserCache },
-                { name: 'OS', cache: osCache, flush: setOsCache },
-                { name: 'Resolver', cache: resolverCache, flush: setResolverCache },
-              ].map(({ name, cache, flush }) => (
-                <div key={name} className="rounded-lg border bg-muted/30 p-1.5 sm:p-2">
-                  <div className="mb-1 flex items-center justify-between gap-1 text-[10px] font-medium sm:text-xs">
-                    <span>{name}</span>
-                    <button
-                      type="button"
-                      onClick={() => flush(new Map())}
-                      disabled={isRunning || cache.size === 0}
-                      className="rounded px-1 text-[10px] font-normal text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-40"
-                    >
-                      Flush
-                    </button>
-                  </div>
-                  {cache.size === 0 ? (
-                    <span className="text-[10px] text-muted-foreground sm:text-xs">Empty</span>
-                  ) : (
-                    Array.from(cache.entries()).map(([key, entry]) => (
-                      <div key={key} className="truncate text-[10px] text-muted-foreground sm:text-xs">
-                        {key.split(':')[0]}
+        <SimAnnouncer message={announcement} />
+
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="DNS missions complete"
+            summary="You traced a fresh DNS lookup through the hierarchy, saw a cached reply, and found a mail server with an MX record."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Lookups', value: stats.queries },
+              { label: 'Cache hits', value: stats.cacheHits },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1.45fr)_minmax(17rem,0.8fr)]"
+            minHeight="min-h-[24rem]"
+            tab={tab}
+            onTabChange={(next) => {
+              if (next === 'path' || next === 'details') setTab(next);
+            }}
+            tabsLabel="DNS simulator panels"
+            panels={[
+              {
+                id: 'path',
+                label: 'Resolution path',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <section className="rounded-lg border bg-card p-3">
+                      <div className="mb-3 flex items-center justify-between gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-semibold">
+                          <Server className="h-4 w-4 text-primary" aria-hidden="true" />
+                          Resolution path
+                        </h3>
+                        {steps.length > 0 && (
+                          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                            Step {Math.min(currentStepIndex + 1, totalSteps)}/{totalSteps}
+                          </span>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                        {Object.entries(LOCATIONS_INFO).map(([key, info]) => {
+                          const location = key as DnsStep['location'];
+                          const Icon = info.icon;
+                          const stepForNode = steps.find((step) => step.location === location);
+                          const stepIdx = steps.findIndex((step) => step.location === location);
+                          const isActive = stepIdx === currentStepIndex && isRunning;
+                          const isPast = stepIdx >= 0 && stepIdx < currentStepIndex;
+                          const isHit = stepForNode?.cacheHit;
+                          const category = SIM_CATEGORY[LOCATION_CATEGORY[location]];
 
-      {/* Stats */}
-      {stats.queries > 0 && (
-        <Card>
-          <CardContent className="p-3 sm:pt-4">
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-lg font-bold sm:text-2xl">{stats.queries}</div>
-                <div className="text-xs text-muted-foreground">Queries</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold text-green-500 sm:text-2xl">{stats.cacheHits}</div>
-                <div className="text-xs text-muted-foreground">Cache Hits</div>
-              </div>
-              <div>
-                <div className="text-lg font-bold sm:text-2xl">{stats.totalTime}ms</div>
-                <div className="text-xs text-muted-foreground">Total Time</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                          return (
+                            <motion.div
+                              key={location}
+                              className={cn(
+                                'flex min-w-0 flex-col items-center rounded-lg border p-2 text-center',
+                                category.fill,
+                                category.border,
+                                isActive && cn(SIM_TONE.info.surface, 'ring-2 ring-primary'),
+                                isPast && isHit && SIM_TONE.success.surface,
+                                isPast && !isHit && 'bg-muted'
+                              )}
+                              animate={isActive ? { scale: 1.03 } : { scale: 1 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Icon
+                                className={cn(
+                                  'h-5 w-5',
+                                  isHit ? SIM_TONE.success.iconClass : 'text-foreground',
+                                  !isActive && !isPast && 'text-muted-foreground'
+                                )}
+                                aria-hidden="true"
+                              />
+                              <span className="mt-1 text-xs font-medium leading-tight">
+                                {info.name}
+                              </span>
+                              {isHit && (
+                                <span className="mt-1 flex items-center gap-1 text-xs text-correct-foreground">
+                                  <CheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                                  Cache hit
+                                </span>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </section>
 
-      {/* Educational Footer */}
-      <Card>
-        <CardContent className="p-3 sm:pt-4">
-          <h3 className="mb-2 text-sm font-semibold sm:mb-3 sm:text-base">💡 Key Takeaways</h3>
-          <ul className="space-y-1.5 text-xs text-muted-foreground sm:space-y-2 sm:text-sm">
-            <li>
-              <strong className="text-foreground">DNS is hierarchical:</strong> Your query travels
-              through multiple levels (browser → OS → resolver → root → TLD → authoritative).
-            </li>
-            <li>
-              <strong className="text-foreground">Caching speeds things up:</strong> Each level can
-              cache results. A cache hit avoids the full lookup chain.
-            </li>
-            <li>
-              <strong className="text-foreground">TTL controls freshness:</strong> Records expire
-              after their TTL. Lower TTL = fresher data, but more lookups. Browsers often keep it for
-              less: Chrome holds an answer from the OS resolver for one minute.
-            </li>
-          </ul>
-        </CardContent>
-      </Card>
-    </div>
+                    <AnimatePresence mode="wait">
+                      {currentStep && currentStepIndex < steps.length && (
+                        <motion.section
+                          key={currentStep.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -8 }}
+                          transition={{ duration: 0.2 }}
+                          className={cn(
+                            'rounded-lg border p-3',
+                            currentStep.cacheHit ? SIM_TONE.success.surface : SIM_TONE.info.surface
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            {currentStep.cacheHit ? (
+                              <Zap
+                                className={cn(
+                                  'mt-0.5 h-5 w-5 shrink-0',
+                                  SIM_TONE.success.iconClass
+                                )}
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <ArrowRight
+                                className={cn('mt-0.5 h-5 w-5 shrink-0', SIM_TONE.info.iconClass)}
+                                aria-hidden="true"
+                              />
+                            )}
+                            <div>
+                              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <h3 className="text-sm font-semibold">{currentStep.title}</h3>
+                                <span className="font-mono text-xs text-muted-foreground">
+                                  ~{currentStep.latency}ms
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {currentStep.explanation}
+                              </p>
+                            </div>
+                          </div>
+                        </motion.section>
+                      )}
+                    </AnimatePresence>
+
+                    {isComplete && (
+                      <section className="rounded-lg border bg-card p-3">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle
+                            className={cn('mt-0.5 h-5 w-5 shrink-0', SIM_TONE.success.iconClass)}
+                            aria-hidden="true"
+                          />
+                          <div>
+                            <h3 className="text-sm font-semibold">Lookup complete</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {record ? `${domain} returned ${record.value}.` : 'No record found.'}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+                    )}
+                  </>
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <SimMissionList missions={missions.missions} />
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold">
+                        <Database className="h-4 w-4 text-primary" aria-hidden="true" />
+                        DNS caches
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Run the same query again to see the closest cache answer.
+                      </p>
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        {[
+                          { name: 'Browser', cache: browserCache, flush: setBrowserCache },
+                          { name: 'OS', cache: osCache, flush: setOsCache },
+                          { name: 'Resolver', cache: resolverCache, flush: setResolverCache },
+                        ].map(({ name, cache, flush }) => (
+                          <div key={name} className="min-w-0 rounded-md border bg-muted/50 p-2">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-medium">{name}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => flush(new Map())}
+                                disabled={isRunning || cache.size === 0}
+                                className="h-10 justify-start px-1 text-xs lg:h-8"
+                              >
+                                Flush
+                              </Button>
+                            </div>
+                            {cache.size === 0 ? (
+                              <span className="text-xs text-muted-foreground">Empty</span>
+                            ) : (
+                              Array.from(cache.entries()).map(([key]) => (
+                                <div key={key} className="truncate text-xs text-muted-foreground">
+                                  {key}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="text-sm font-semibold">Lookup stats</h3>
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                        <div>
+                          <div className="font-mono text-lg font-semibold tabular-nums">
+                            {stats.queries}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Queries</div>
+                        </div>
+                        <div>
+                          <div className="font-mono text-lg font-semibold tabular-nums text-correct-foreground">
+                            {stats.cacheHits}
+                          </div>
+                          <div className="text-xs text-muted-foreground">Cache hits</div>
+                        </div>
+                        <div>
+                          <div className="font-mono text-lg font-semibold tabular-nums">
+                            {stats.totalTime}ms
+                          </div>
+                          <div className="text-xs text-muted-foreground">Elapsed</div>
+                        </div>
+                      </div>
+                    </section>
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="text-sm font-semibold">Record reference</h3>
+                      <dl className="mt-2 space-y-1.5 text-sm">
+                        {RECORD_TYPES.map((type) => (
+                          <div
+                            key={type.type}
+                            className="flex items-baseline justify-between gap-2"
+                          >
+                            <dt className="font-mono font-medium">{type.label}</dt>
+                            <dd className="text-xs text-muted-foreground">{type.description}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </section>
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-medium">
+                        How DNS resolution works
+                      </summary>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        A browser checks its own cache, the operating system, and a resolver first.
+                        On a miss, the resolver asks root and TLD servers for a referral before
+                        asking the authoritative server. TTLs control how long each answer is kept.
+                      </p>
+                    </details>
+                  </>
+                ),
+              },
+            ]}
+          />
+        )}
+
+        <SimPhoneBar>
+          {!isRunning && !isComplete && (
+            <Button type="button" className="h-10 flex-1" onClick={runLookup}>
+              <Play className="h-4 w-4" aria-hidden="true" />
+              Run lookup
+            </Button>
+          )}
+          {isRunning && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10"
+                onClick={handleStepBack}
+                disabled={currentStepIndex <= 0}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                Prev
+              </Button>
+              <Button type="button" className="h-10 flex-1" onClick={handleStepForward}>
+                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                Step
+              </Button>
+            </>
+          )}
+          {isComplete && (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 flex-1"
+              onClick={handleNewLookup}
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              New lookup
+            </Button>
+          )}
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }
