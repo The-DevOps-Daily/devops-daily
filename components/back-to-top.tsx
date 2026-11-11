@@ -11,7 +11,8 @@ export function BackToTop() {
   const aboveBottomBar =
     /^\/guides\/[^/]+\/[^/]+/.test(pathname) ||
     /^\/books\/devops-survival-guide\/?$/.test(pathname);
-  // On phones the button covers the On-Call game's answer buttons.
+  // On phones the button covers the On-Call game's answer buttons. Below lg it is also
+  // hidden whenever a simulator's fixed phone bar is on the page (see the class list).
   const hidden = /^\/games\/on-call\/?$/.test(pathname);
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function BackToTop() {
       aria-label="Back to top"
       className={`
        fixed ${aboveBottomBar ? 'bottom-20 lg:bottom-8' : 'bottom-8'} right-8 z-50
+       [body:has([data-sim-phone-bar])_&]:hidden lg:[body:has([data-sim-phone-bar])_&]:block
        p-3 rounded-full
        bg-primary text-primary-foreground
        shadow-lg hover:shadow-xl
