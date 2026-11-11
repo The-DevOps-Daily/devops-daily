@@ -57,7 +57,7 @@ kubectl -n app exec deploy/api -- cat /etc/resolv.conf
 
 Kubernetes explains its choice in the [service debugging guide](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/): `ndots:5` is high enough for the DNS names Kubernetes generates. That is the compatibility goal. It lets names such as `service.namespace.svc` participate in search-path resolution, rather than treating any dotted name as immediately external.
 
-The important glibc rule comes from [resolv.conf(5)](https://www.man7.org/linux/man-pages/man5/resolv.conf.5.html): a name with fewer dots than `ndots` is tried against each search suffix in order. At `ndots:5`, `api.example.com` has two dots, so it is below the threshold. With three suffixes, the resolver asks for three search-expanded names before its final absolute lookup. A common dual-stack resolver asks for both A and AAAA, which doubles four candidate names into eight DNS requests.
+The important glibc rule comes from [resolv.conf(5)](https://www.man7.org/linux/man-pages/man5/resolv.conf.5.html): a name with fewer dots than `ndots` is tried against each search suffix in order. At `ndots:5`, `api.example.com` has two dots, so it is below the threshold. With three suffixes, the resolver asks for three search-expanded names before its final absolute lookup. When the application asks for both IPv4 and IPv6 addresses, glibc sends an A and an AAAA question for each candidate, which doubles four candidate names into eight DNS requests. With `AI_ADDRCONFIG` set by the caller on a host without an IPv6 address, glibc skips AAAA, so an IPv4-only setup can see half the count.
 
 ```diagram
 {
@@ -74,7 +74,7 @@ The resolver is not proving that the external domain is broken. It is asking whe
 
 ## The measurement: eight, ten, and two
 
-We ran this test on 2026-11-11 on Debian 12 with glibc 2.36. A small UDP DNS stub listened on `127.0.0.2:53`, logged every question, returned addresses only for `api.example.com` and `my-svc.other-ns.svc.cluster.local`, and returned NXDOMAIN for everything else. Each run bind-mounted a Pod-style `resolv.conf` and `hosts: files dns` `nsswitch.conf` over `/etc` in `unshare -rm`, then called `getent ahosts <name>`. That exercises the glibc resolver path used by many Linux applications.
+We ran this test on 2026-11-11 on Debian 12 with glibc 2.36. A small UDP DNS stub listened on `127.0.0.2:53`, logged every question, returned addresses only for `api.example.com` and `my-svc.other-ns.svc.cluster.local`, and returned NXDOMAIN for everything else. Each run bind-mounted a Pod-style `resolv.conf` and `hosts: files dns` `nsswitch.conf` over `/etc` in `unshare -rm`, then called `getent ahosts <name>`. That exercises the glibc resolver path used by many Linux applications. `getent ahosts` sets `AI_ADDRCONFIG`, and our test host had an IPv6 address, so every candidate got an A and an AAAA question; on an IPv4-only host, newer glibc versions offer `getent --no-addrconfig ahosts` to see the same pairs.
 
 ```chart
 {
@@ -100,7 +100,7 @@ We ran this test on 2026-11-11 on Debian 12 with glibc 2.36. A small UDP DNS stu
 }
 ```
 
-Here are two runs from that log. The `(exit 0)` lines from the capture are intentionally omitted because they reported `head`, not `getent`.
+Here are two of the runs. `getent` prints the address the application would get; the stub's log, cleared before each run, shows every question the resolver sent to get there.
 
 ```terminal
 {
@@ -108,14 +108,32 @@ Here are two runs from that log. The `(exit 0)` lines from the capture are inten
   "prompt": "$",
   "steps": [
     {
-      "comment": "ndots:5, three Kubernetes search suffixes",
-      "cmd": "getent ahosts api.example.com",
-      "output": "192.0.2.10      STREAM api.example.com\nA    api.example.com.default.svc.cluster.local. -> NXDOMAIN\nAAAA api.example.com.default.svc.cluster.local. -> NXDOMAIN\nA    api.example.com.svc.cluster.local. -> NXDOMAIN\nAAAA api.example.com.svc.cluster.local. -> NXDOMAIN\nA    api.example.com.cluster.local. -> NXDOMAIN\nAAAA api.example.com.cluster.local. -> NXDOMAIN\nA    api.example.com. -> NOERROR\nAAAA api.example.com. -> NOERROR\nqueries: 8"
+      "comment": "ndots:5, three Kubernetes search suffixes"
     },
     {
-      "comment": "the trailing dot makes the name absolute",
-      "cmd": "getent ahosts api.example.com.",
-      "output": "192.0.2.10      STREAM api.example.com\nA    api.example.com. -> NOERROR\nAAAA api.example.com. -> NOERROR\nqueries: 2"
+      "cmd": "getent ahosts api.example.com | head -n 1",
+      "output": "192.0.2.10      STREAM api.example.com"
+    },
+    {
+      "comment": "what the stub saw: 8 questions"
+    },
+    {
+      "cmd": "cut -d' ' -f2- q.log",
+      "output": "A    api.example.com.default.svc.cluster.local. -> NXDOMAIN\nAAAA api.example.com.default.svc.cluster.local. -> NXDOMAIN\nA    api.example.com.svc.cluster.local. -> NXDOMAIN\nAAAA api.example.com.svc.cluster.local. -> NXDOMAIN\nA    api.example.com.cluster.local. -> NXDOMAIN\nAAAA api.example.com.cluster.local. -> NXDOMAIN\nA    api.example.com. -> NOERROR\nAAAA api.example.com. -> NOERROR"
+    },
+    {
+      "comment": "the trailing dot makes the name absolute"
+    },
+    {
+      "cmd": "getent ahosts api.example.com. | head -n 1",
+      "output": "192.0.2.10      STREAM api.example.com"
+    },
+    {
+      "comment": "what the stub saw: 2 questions"
+    },
+    {
+      "cmd": "cut -d' ' -f2- q.log",
+      "output": "A    api.example.com. -> NOERROR\nAAAA api.example.com. -> NOERROR"
     }
   ]
 }
@@ -127,7 +145,7 @@ The four-suffix case adds `eu-west-1.compute.internal` and produces two more NXD
 
 Run the stub as root on a Linux host with Python 3 (it binds port 53). The test also needs a Pod-style `resolv.conf` and an `nsswitch.conf` containing `hosts: files dns`; `attempts:1 timeout:1` only keep a failed run short:
 
-````text
+```text
 # resolv-5.conf
 nameserver 127.0.0.2
 search default.svc.cluster.local svc.cluster.local cluster.local
@@ -135,7 +153,9 @@ options ndots:5 attempts:1 timeout:1
 
 # nsswitch.conf
 hosts: files dns
-``` The stub is deliberately tiny so its log is the evidence, not a timing benchmark.
+```
+
+The stub is deliberately tiny so its log is the evidence, not a timing benchmark.
 
 ```python
 # stub.py, run with: sudo python3 stub.py 127.0.0.2 q.log
@@ -173,16 +193,18 @@ while True:
     sock.sendto(header + question + record, peer)
     with open(sys.argv[2] if len(sys.argv) > 2 else "/dev/stdout", "a") as log:
         log.write(f"{time.time():.3f} {types.get(qtype, qtype):<4} {name} -> {'NOERROR' if hit else 'NXDOMAIN'}\n")
-````
+```
 
 ```bash
-# In a second shell. No root needed: -r maps you to root inside a new user
-# namespace, and -m gives that shell a private mount table.
+# In a second shell. No host root is needed where unprivileged user
+# namespaces are enabled: -r maps you to root inside a new user namespace,
+# and -m gives that shell a private mount table.
 unshare -rm sh -c '
   mount --bind "$PWD/resolv-5.conf" /etc/resolv.conf
   mount --bind "$PWD/nsswitch.conf" /etc/nsswitch.conf
-  getent ahosts api.example.com
+  getent ahosts api.example.com | head -n 1
 '
+cut -d" " -f2- q.log   # the stub's log: one line per question
 ```
 
 Do not copy this mounting pattern onto a node that is serving workloads. It is a disposable namespace experiment. In a cluster, inspect the effective configuration first and measure the real workload separately.
@@ -283,7 +305,7 @@ sum(rate(coredns_dns_responses_total{rcode="NXDOMAIN"}[5m]))
 
 Keep the query `type`, `zone`, `server`, and response `rcode` labels in your dashboard when narrowing the investigation. They identify the traffic class more quickly than a cluster-wide total. For a brief diagnostic window, you can also add the CoreDNS [`log` plugin](https://coredns.io/plugins/log/) to the relevant server block, collect a small sample, and remove it. CoreDNS warns that logging on busy servers has a performance cost. Query logs can also expose names, so treat them as incident-scoped instrumentation.
 
-If resolver counters say the problem is upstream of CoreDNS, capture packets from an approved privileged debug environment on the node, for example with [`kubectl debug node/<node>`](https://kubernetes.io/docs/tasks/debug/debug-cluster/kubectl-node-debug/), and filter UDP and TCP port 53. Check your cluster's security policy before doing this. The goal is to distinguish client-to-CoreDNS repeats from CoreDNS-to-upstream forwarding, not to leave packet capture running.
+If resolver counters say the problem is upstream of CoreDNS, capture packets from an approved privileged debug environment on the node, for example with [`kubectl debug node/NODE -it --image=IMAGE`](https://kubernetes.io/docs/tasks/debug/debug-cluster/kubectl-node-debug/) using an approved image that ships `tcpdump`, and filter UDP and TCP port 53. Check your cluster's security policy before doing this. The goal is to distinguish client-to-CoreDNS repeats from CoreDNS-to-upstream forwarding, not to leave packet capture running.
 
 For a refresher on what happens after a resolver cache miss, the [DNS Resolution Simulator](/games/dns-simulator) lets you step through browser, OS, and resolver caches, then root, TLD, and authoritative servers, and rerun a lookup to see a cache hit. For the Kubernetes naming side, see [Service Located in Another Namespace](/posts/service-located-in-another-namespace).
 
