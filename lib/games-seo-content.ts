@@ -20,6 +20,46 @@ export interface SimulatorExplainerContent {
 }
 
 const explainers: Record<string, SimulatorExplainerContent> = {
+  'email-auth-lab': {
+    summary:
+      'Email authentication combines three DNS-backed checks that answer different questions. In this lab, SPF checks the MAIL FROM domain against the IP that connects to the receiver. DKIM checks a signature from its d= domain by fetching the selector key, and it fails when a mailing list changes a signed Subject or the body. DMARC starts from the visible Header From domain and passes when SPF or DKIM passes and aligns with that domain. You publish records for shop.example, choose whether the ESP signs as esp.example or shop.example, and send the same message on direct, forwarded and mailing-list paths. The forwarder keeps the message unchanged but does not use SRS, so SPF fails while aligned DKIM can survive. The list changes the Subject and body, which breaks the original DKIM signature. Its From rewrite makes lists.example visible instead, where aligned list SPF can pass DMARC. You also compare relaxed and strict alignment, monitoring and enforcement policies, pct behavior, and SPF permerror when more than 10 DNS-querying mechanisms are evaluated. The result cards show every checked domain, alignment result, policy and receiver disposition.',
+    teaches: [
+      'SPF MAIL FROM validation',
+      'DKIM selectors and signed content',
+      'DMARC alignment',
+      'Forwarding and mailing lists',
+      'DMARC policy enforcement',
+    ],
+    level: 'Intermediate',
+    tryThis: [
+      'Turn on "Use custom MAIL FROM bounce.shop.example", choose "v=spf1 include:_spf.esp.example -all" in SPF TXT and press "Send Direct" to see SPF pass aligned with shop.example.',
+      'Choose "d=shop.example", turn on "Publish s1._domainkey.shop.example", and press "Send Forwarded" to see aligned DKIM survive.',
+      'Choose "v=DMARC1; p=reject", turn on "List rewrites From and sets Reply-To", then press "Send Mailing list".',
+    ],
+    faq: [
+      {
+        question: 'What identity does SPF authenticate in this lab?',
+        answer:
+          'SPF checks the MAIL FROM domain against the IP that connects to the receiver. The lab deliberately leaves the optional HELO identity out, so its result is easier to compare across the three paths.',
+      },
+      {
+        question: 'Why can forwarded mail pass DMARC when SPF fails?',
+        answer:
+          'A forwarder without SRS connects from an IP not authorized by the original sender, so SPF fails. Plain forwarding does not alter a valid DKIM signature, and an aligned DKIM pass is enough for DMARC to pass.',
+      },
+      {
+        question: 'Why does a mailing list rewrite From?',
+        answer:
+          'Adding a list tag to Subject and a footer to the body breaks the original DKIM signature. Rewriting From to the list domain lets the receiver evaluate lists.example instead, where the list MAIL FROM and sending IP align for SPF and DMARC.',
+      },
+      {
+        question: 'What does DMARC pct change?',
+        answer:
+          'RFC 7489 applies the requested failure policy to that percentage of failing mail; the remainder gets the next less strict policy. The lab uses a fixed representative bucket so the displayed result is repeatable, and notes that newer DMARCbis removes pct.',
+      },
+    ],
+  },
+
   'http-versions-lab': {
     summary:
       'HTTP/1.1, HTTP/2 and HTTP/3 move the same bytes, but they differ in how many connections they open, how many round trips they spend before the first request, and what one lost packet costs. This lab loads the same page, one HTML document and twelve assets, over each version on a 20 Mbit/s link and draws every request in a waterfall. HTTP/1.1 sends one request at a time per connection, so the browser opens up to six connections to the origin and the other requests wait in line, each paying a full round trip. HTTP/2 multiplexes every request as a stream over one TCP connection, so all assets are requested at once. Both need two round trips before the first request: one for the TCP handshake and one for TLS 1.3. HTTP/3 runs over QUIC, which combines the transport and TLS 1.3 handshakes into one round trip. Raise the round-trip time from 20 to 250 ms and the gap grows, because for a small page latency matters more than bandwidth. Turn on packet loss and the difference becomes visible: TCP delivers bytes in order, so on HTTP/2 every stream still receiving waits for the resent packet, while QUIC holds back only the stream that lost it. The model is deliberately simple and leaves out DNS, congestion control and 0-RTT resumption.',

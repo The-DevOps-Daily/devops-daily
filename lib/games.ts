@@ -34,6 +34,22 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'email-auth-lab',
+    type: 'simulator',
+    title: 'Email Authentication Lab: SPF, DKIM and DMARC',
+    seoTitle: 'Email Authentication Lab: SPF, DKIM and DMARC Delivery Paths',
+    description:
+      'Publish SPF, DKIM and DMARC records, send mail directly and through a forwarder or mailing list, and inspect the receiver’s authentication verdict, alignment and disposition.',
+    iconName: 'Mail',
+    badgeText: 'New',
+    color: 'from-primary to-primary',
+    href: '/games/email-auth-lab',
+    tags: ['email', 'spf', 'dkim', 'dmarc', 'dns', 'mail delivery', 'networking', 'interactive'],
+    isNew: true,
+    category: 'Networking',
+    createdAt: '2026-11-11',
+  },
+  {
     id: 'http-versions-lab',
     type: 'simulator',
     title: 'HTTP/1.1 vs HTTP/2 vs HTTP/3 Lab',
