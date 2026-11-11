@@ -67,6 +67,25 @@ test('representative article and simulator routes render', async ({ page }) => {
   ).toBeVisible();
 });
 
+test('a terminal lab fills a tall window down to a small gap', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the lab fills the window on lg screens only');
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto('/games/kubernetes-terminal-simulator');
+
+  // Scroll the game to the top of the window, as a player does, then measure
+  // the room left under the terminal's input.
+  const gapUnderInput = () =>
+    page.evaluate(() => {
+      const frame = document.querySelector('[data-sim-frame]');
+      const form = document.querySelector('input[aria-label="Terminal command"]')?.closest('form');
+      if (!frame || !form) return Number.NaN;
+      window.scrollTo(0, frame.getBoundingClientRect().top + window.scrollY - 12);
+      return Math.round(window.innerHeight - form.getBoundingClientRect().bottom);
+    });
+  await expect.poll(gapUnderInput).toBeLessThanOrEqual(60);
+  expect(await gapUnderInput()).toBeGreaterThanOrEqual(0);
+});
+
 // axe-core rules for WCAG 2.0, 2.1 and 2.2 at levels A and AA.
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'];
 

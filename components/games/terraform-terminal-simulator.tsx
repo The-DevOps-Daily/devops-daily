@@ -21,9 +21,9 @@ import {
 import { cn } from '@/lib/utils';
 
 // The file editor sits above the terminal, so both share the lab's height (as in the git lab).
-const EDITOR_HEIGHT = 'h-40 lg:h-[clamp(9rem,calc(50dvh-13rem),12rem)]';
-const TERMINAL_HEIGHT =
-  'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-[clamp(12rem,calc(50dvh-8rem),24rem)]';
+const EDITOR_HEIGHT = 'h-40 lg:h-[clamp(9rem,calc(var(--sim-fill-h)*0.4-2.5rem),24rem)]';
+// On lg the editor takes about 40% of the lab and the terminal the rest.
+const TERMINAL_HEIGHT = 'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-auto lg:flex-1';
 
 type FileName = 'main.tf' | 'variables.tf' | 'outputs.tf';
 
@@ -1018,11 +1018,12 @@ export default function TerraformTerminalSimulator() {
           />
         ) : (
           <SimLabLayout
+            minHeight="lg:min-h-[28rem]"
             terminal={
-              <div className="space-y-2">
+              <div className="space-y-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
                 <section
                   aria-label="Terraform files"
-                  className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground"
+                  className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground lg:shrink-0"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-terminal-border bg-terminal-bar px-2 py-1.5">
                     <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label="Files">
