@@ -111,6 +111,9 @@ Here are two of the runs. `getent` prints the address the application would get;
       "comment": "ndots:5, three Kubernetes search suffixes"
     },
     {
+      "cmd": ": > q.log"
+    },
+    {
       "cmd": "getent ahosts api.example.com | head -n 1",
       "output": "192.0.2.10      STREAM api.example.com"
     },
@@ -123,6 +126,9 @@ Here are two of the runs. `getent` prints the address the application would get;
     },
     {
       "comment": "the trailing dot makes the name absolute"
+    },
+    {
+      "cmd": ": > q.log"
     },
     {
       "cmd": "getent ahosts api.example.com. | head -n 1",
@@ -199,6 +205,7 @@ while True:
 # In a second shell. No host root is needed where unprivileged user
 # namespaces are enabled: -r maps you to root inside a new user namespace,
 # and -m gives that shell a private mount table.
+: > q.log   # clear the stub's log before each run
 unshare -rm sh -c '
   mount --bind "$PWD/resolv-5.conf" /etc/resolv.conf
   mount --bind "$PWD/nsswitch.conf" /etc/nsswitch.conf
@@ -299,7 +306,9 @@ At the resolver, use the CoreDNS Prometheus plugin's documented counters. [`core
 
 ```promql
 sum(rate(coredns_dns_requests_total[5m]))
+```
 
+```promql
 sum(rate(coredns_dns_responses_total{rcode="NXDOMAIN"}[5m]))
 ```
 
