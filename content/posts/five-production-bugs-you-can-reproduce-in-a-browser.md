@@ -92,7 +92,7 @@ curl -sI https://app.example.com | grep -i '^alt-svc:'
 curl -V
 ```
 
-The first two commands print the negotiated version, such as `2` or `3`. Use `--http3-only` for the check: plain `--http3` falls back to an earlier version when QUIC cannot be set up, which hides the answer you are looking for. The `Alt-Svc` header can advertise an `h3` alternative service. The HTTP/3 command only works when the installed curl was compiled with HTTP/3 support, which `curl -V` reports. Test on representative networks as well as a clean office connection: protocol choice is a latency and loss question, not a permanent leaderboard.
+The first two commands print the negotiated version, such as `2` or `3`. Use `--http3-only` for the check: plain `--http3` falls back to an earlier version when QUIC cannot be set up, which hides the answer you are looking for. The `Alt-Svc` header can advertise an `h3` alternative service. Before running either command, check `curl -V`: its Features line must list `HTTP2` for the first and `HTTP3` for the second, and `--http3-only` needs curl 7.88.0 or later. Test on representative networks as well as a clean office connection: protocol choice is a latency and loss question, not a permanent leaderboard.
 
 ```diagram
 {
@@ -133,7 +133,7 @@ dig +short TXT selector._domainkey.example.com
 dig +short TXT _dmarc.example.com
 ```
 
-Then open the delivered message source and locate an `Authentication-Results` header. Its useful shape names the evaluated identities and results, for example `spf=pass smtp.mailfrom=...`, `dkim=pass header.d=...`, and `dmarc=pass header.from=...`. Confirm the domain in `header.from` aligns with either the SPF MAIL FROM domain or the DKIM `d=` domain. The earlier [DMARCbis guide](/posts/dmarcbis-what-changed-new-dmarc) covers the record migration in more detail: DMARCbis replaced RFC 7489 and removed its `pct` tag.
+Then open the delivered message source and locate the `Authentication-Results` header added by your receiving provider, not an untrusted copy from upstream ([RFC 8601](https://www.rfc-editor.org/rfc/rfc8601) explains why the header needs a trust check). Its useful shape names the evaluated identities and results, for example `spf=pass smtp.mailfrom=...`, `dkim=pass header.d=...`, and `dmarc=pass header.from=...`. Confirm the domain in `header.from` aligns with either the SPF MAIL FROM domain or the DKIM `d=` domain. The earlier [DMARCbis guide](/posts/dmarcbis-what-changed-new-dmarc) covers the record migration in more detail: DMARCbis replaced RFC 7489 and removed its `pct` tag.
 
 :::tip
 **[Reproduce it in the Email Authentication Lab](/games/email-auth-lab)**
