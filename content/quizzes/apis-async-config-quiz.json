@@ -1,0 +1,295 @@
+{
+  "id": "apis-async-config-quiz",
+  "title": "APIs, Async and Config Quiz",
+  "description": "Trace common production problems across REST and GraphQL, JavaScript promises, YAML configuration, and the PostgreSQL wire protocol. Scenario questions about the details that make integrations reliable.",
+  "category": "API Design",
+  "icon": "Code",
+  "totalPoints": 230,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "22-26 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 8,
+      "advanced": 4
+    },
+    "createdDate": "2026-11-11"
+  },
+  "tags": ["api-design", "graphql", "javascript", "yaml", "postgresql"],
+  "questions": [
+    {
+      "id": "rest-overfetching",
+      "title": "A Screen That Needs Two Fields",
+      "description": "How can GraphQL avoid downloading most of a large REST response?",
+      "situation": "A mobile product card needs only a product name and current price. Its REST endpoint returns a large product object with reviews, images, inventory by warehouse, supplier data, and descriptions. On a slow connection, the extra response is noticeable.",
+      "codeExample": "GET /api/products/42\n\n{\n  \"id\": 42,\n  \"name\": \"Trail shoe\",\n  \"price\": 89,\n  \"reviews\": [ ... ],\n  \"warehouseInventory\": { ... },\n  \"supplier\": { ... }\n}\n\n# The screen renders: name, price",
+      "options": [
+        "Add every optional REST field to an HTTP header, so the body contains only the two visible values",
+        "Have the mobile app filter the full REST response after it arrives, so no server work is needed",
+        "Use a GraphQL query that selects `name` and `price`, so the client asks for the fields it needs",
+        "Move the product object into a cookie, so the browser downloads it only on the first request"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "GraphQL lets a client describe the fields it wants, so this screen can request just `name` and `price`. That addresses overfetching at the API boundary, though the server should also fetch efficiently behind the resolver. Filtering in the app still transfers the large object. HTTP headers and cookies are not a field-selection mechanism and would make caching and request size worse, not better.",
+      "hint": "Think about which side of the connection knows exactly what the screen will render."
+    },
+    {
+      "id": "graphql-n-plus-one",
+      "title": "Fifty Posts, Fifty Author Lookups",
+      "description": "How do you stop a GraphQL resolver from turning one list into 51 database queries?",
+      "situation": "The home page asks for 50 posts and each post's author. The posts resolver runs one query, but the author resolver runs one query for every post. The database trace shows 51 queries before the response is sent.",
+      "codeExample": "query Home {\n  posts(limit: 50) {\n    title\n    author { name }\n  }\n}\n\nSELECT * FROM posts LIMIT 50;\nSELECT * FROM users WHERE id = 17;\nSELECT * FROM users WHERE id = 42;\n# ...48 more author queries",
+      "options": [
+        "Cache the whole GraphQL response for a day, so author changes cannot cause more queries",
+        "Create a DataLoader for the request that batches author IDs into one lookup and memoizes repeated IDs",
+        "Run each author resolver in a separate database transaction, so the 50 reads cannot block one another",
+        "Put the author name directly in the GraphQL query string, so the server skips the author resolver"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "This is the N+1 query problem: one query fetches posts, then each nested resolver fetches an author. A per-request DataLoader gathers loads in the same event-loop turn into a batch such as `WHERE id IN (...)`, and its request-local cache avoids fetching an author twice. A long shared cache can serve stale or unauthorized data and does not fix the query pattern. Extra transactions add overhead, and a GraphQL query names fields, not database values.",
+      "hint": "The nested resolver receives many IDs before the response is returned. Can those reads be combined?"
+    },
+    {
+      "id": "graphql-http-caching",
+      "title": "Why the CDN Ignores the API",
+      "description": "Why are REST GET responses straightforward for a CDN to cache while many GraphQL requests are not?",
+      "situation": "Your CDN has a useful hit rate for `GET /products/42`, but it passes every GraphQL request through to the origin. The GraphQL client sends POST requests to `/graphql`, even for public read-only operations.",
+      "codeExample": "GET /products/42\nCache-Control: public, max-age=300\n\nPOST /graphql\n{\"query\":\"query Product { product(id: 42) { name price } }\"}\n\n# Persisted query as a GET\nGET /graphql?extensions[persistedQuery][sha256Hash]=abc123",
+      "options": [
+        "CDNs can cache REST only because JSON is invalid in a POST body, while GraphQL always requires XML",
+        "GraphQL responses cannot be cached because their schema changes whenever a client selects a field",
+        "A CDN always treats a GraphQL POST as equivalent to a REST GET when both return status 200",
+        "REST uses cacheable GET URLs; GraphQL often POSTs to one URL, unless persisted queries go out as GET"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "HTTP caches have well understood GET cache keys, and a REST resource usually has its own GET URL. GraphQL often sends operation text in a POST body to one endpoint, which default shared caches do not treat like a reusable GET response. Persisted queries replace known operation text with a stable hash, so a read operation can be sent as GET and cached with the right cache headers and cache key. GraphQL does not forbid caching, JSON works in POST bodies, and a 200 status alone does not make a response cacheable.",
+      "hint": "Compare the method and cache key a shared HTTP cache sees in each request."
+    },
+    {
+      "id": "microtask-order",
+      "title": "One Timer and One Promise",
+      "description": "What order does this JavaScript print?",
+      "situation": "A teammate adds a promise callback beside an existing zero-delay timer and is surprised by the log order. You need to explain it before they base sequencing logic on the timer.",
+      "codeExample": "console.log('A');\nsetTimeout(() => console.log('B'), 0);\nPromise.resolve().then(() => console.log('C'));\nconsole.log('D');",
+      "options": [
+        "A, D, C, B: synchronous code runs first, then the promise microtask, then the next timer task",
+        "A, B, C, D: the zero-delay timer interrupts as soon as it is scheduled",
+        "A, C, B, D: an already-resolved promise runs before later synchronous statements",
+        "A, D, B, C: timers always run before promise callbacks after the stack is empty"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "The current synchronous script prints A and D before it finishes. The `then` callback is then run from the microtask queue before the event loop takes the next task, so C comes before the zero-delay timer's B. A timer is not an interrupt and zero delay means eligible on a later task, not immediate. An already settled promise still schedules its callback asynchronously, so it cannot run before D.",
+      "hint": "First finish the current script. Then ask which queue promises use."
+    },
+    {
+      "id": "promise-all-vs-allsettled",
+      "title": "Keep Going or Fail Fast",
+      "description": "Which promise helper fits a batch where every outcome must be reported?",
+      "situation": "A maintenance job checks four external services. You want the final report to include every success and failure, even if the first service rejects early. Another engineer suggests `Promise.all`.",
+      "codeExample": "const checks = [checkApi(), checkQueue(), checkDb(), checkSearch()];\n\nconst results = await Promise.allSettled(checks);\n// results can contain fulfilled values and rejected reasons",
+      "options": [
+        "Use `Promise.race`, because it returns the last service to settle and leaves the others running",
+        "Use `Promise.allSettled`, because it waits for every promise and records each fulfilled or rejected outcome",
+        "Use `Promise.all`, because it waits for every rejection before it decides whether to reject",
+        "Use a `for` loop with `await`, because it turns every rejection into a fulfilled result automatically"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "`Promise.allSettled` fulfills after every input promise has settled and returns an entry for each outcome. `Promise.all` rejects as soon as one input rejects, although the other operations can continue running, so it does not give this report through its returned value. `Promise.race` settles on the first result, not the last. Awaiting sequentially does not convert a rejection to a result unless you catch it yourself.",
+      "hint": "Do you need the first failure immediately, or a complete scorecard after all checks finish?"
+    },
+    {
+      "id": "await-in-loop",
+      "title": "Twenty Independent Requests",
+      "description": "Why is this importer slower than it needs to be?",
+      "situation": "An import endpoint fetches details for 20 independent customer IDs. It takes about 20 seconds when each remote request takes one second, despite the remote API allowing several requests at once.",
+      "codeExample": "for (const id of customerIds) {\n  const customer = await fetchCustomer(id);\n  save(customer);\n}\n\n// customerIds has 20 independent IDs",
+      "options": [
+        "Keep the loop, because `await` automatically starts the next fetch before the current one settles",
+        "Replace `await` with `setTimeout`, because timers make every network request nonblocking",
+        "Start the independent requests together with `Promise.all`, and use a concurrency limit for a much larger list",
+        "Wrap each iteration in `new Promise`, because a promise constructor makes a loop parallel by itself"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The `await` inside this loop waits for one fetch before starting the next, so independent work runs sequentially. Mapping the IDs to promises and awaiting `Promise.all` starts those operations together and waits for their results. For a very large list, use a bounded concurrency pool so the client, remote API, and database are not overwhelmed. Timers do not create useful request concurrency here, and constructing promises around the same sequential loop changes nothing by itself.",
+      "hint": "At what point does the second `fetchCustomer` call begin in the code shown?"
+    },
+    {
+      "id": "unhandled-rejection-crash",
+      "title": "The Rejection Nobody Observed",
+      "description": "Why did this Node.js worker exit after a failed background operation?",
+      "situation": "A queue worker starts an upload but neither awaits it nor attaches a rejection handler. A network failure follows. In a current Node.js deployment, the process exits instead of merely printing the warning the team remembers from an older service.",
+      "codeExample": "function processJob(job) {\n  uploadArchive(job.path);\n  markComplete(job.id);\n}\n\n// uploadArchive() returns a promise that later rejects",
+      "options": [
+        "Node retries every rejected promise once, then exits only when the retry also rejects",
+        "A rejected promise is always ignored unless code explicitly calls `process.exit(1)`",
+        "The event loop blocks forever waiting for an unhandled rejection to become fulfilled",
+        "Since Node.js 15, an unhandled rejection is thrown as an uncaught exception by default"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Node.js changed the default unhandled-rejection mode to `throw` in version 15. In that mode it emits `unhandledRejection`, and if no handler handles it, raises the rejection as an uncaught exception, which normally ends the process. Await the upload in a `try` and `catch`, return its promise to a caller that handles it, or deliberately attach `.catch()`. Node does not retry rejected promises automatically, nor does an unhandled rejection silently wait or require an explicit `process.exit` call to be serious.",
+      "hint": "Look at what the code does with the promise returned by `uploadArchive`."
+    },
+    {
+      "id": "yaml-norway-problem",
+      "title": "When Norway Becomes False",
+      "description": "Why did a configuration value change type after parsing?",
+      "situation": "A deployment manifest contains a country code and a few feature flags. One older YAML parser sends a boolean where the application expects the string `NO`, and a migration to a different parser changes the result again.",
+      "codeExample": "country: NO\nlegacyFlag: yes\nfeature: on\notherFeature: off\n\n# YAML 1.1 type resolution:\n# NO, yes, on, and off can be booleans",
+      "options": [
+        "Quote values like `NO`, or use a YAML 1.2 parser that reads only true and false as booleans",
+        "Use tabs before every value, because YAML treats an indented scalar as a string",
+        "Put a colon after `NO`, because a trailing colon forces YAML to preserve its original type",
+        "Convert the file to JSON, because JSON parses every unquoted word as a boolean"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Under YAML 1.1 boolean resolution, unquoted `NO`, `yes`, `on`, and `off` can become booleans. Quote data that must remain text, or use a YAML 1.2 parser with the core schema, where the boolean spellings are true and false with the documented case variants. Tabs do not force a type and are not valid indentation. A colon changes YAML structure, not scalar typing, and JSON requires strings to be quoted rather than making arbitrary words booleans.",
+      "hint": "This is about a parser deciding what an unquoted plain scalar means."
+    },
+    {
+      "id": "yaml-literal-vs-folded",
+      "title": "A Script That Lost Its Lines",
+      "description": "Which YAML block style preserves the separate commands in a shell script?",
+      "situation": "A CI job reads a multi-line shell script from YAML. Someone changes the block marker to make the file look tidier, and the runner receives one long command instead of several lines.",
+      "codeExample": "# Candidate A\nscript: |\n  set -e\n  npm ci\n  npm test\n\n# Candidate B\nscript: >\n  set -e\n  npm ci\n  npm test",
+      "options": [
+        "Use `>`, because it keeps every line break and removes only indentation",
+        "Use a plain scalar, because plain scalars are always split at each newline",
+        "Use `|`, because literal block scalars preserve line breaks while `>` folds ordinary line breaks into spaces",
+        "Use double quotes, because quoted YAML automatically converts every space into a newline"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The literal block marker `|` keeps the script's line breaks, which is what separate shell commands need. The folded marker `>` normally turns a single line break between non-empty, equally indented lines into a space, which is useful for prose but would join these commands. Plain and quoted multi-line scalars also have folding rules, not automatic command splitting. Indentation is structural and is not what selects literal versus folded content.",
+      "hint": "One marker is called literal. What should happen to the newlines in a command sequence?"
+    },
+    {
+      "id": "yaml-tabs",
+      "title": "The Invisible Indentation Error",
+      "description": "Why does this otherwise simple YAML file fail to parse?",
+      "situation": "A release pipeline starts failing immediately after a small config edit. The diff looks aligned in one editor, but the parser reports a malformed indentation error on the second line.",
+      "codeExample": "deploy:\n\timage: registry.example.com/api:42\n  replicas: 3\n\n# The visible whitespace before image is one tab",
+      "options": [
+        "YAML requires every nesting level to use a different number of tab characters",
+        "Tabs are not allowed for indentation; replace the tab with spaces at the same nesting level",
+        "The colon in the image name is invalid YAML and must be escaped with a backslash",
+        "The parser needs a blank line before every nested mapping to recognize it"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "YAML block indentation is made of spaces. Tabs must not be used for indentation because their width varies between tools, so replace the tab before `image` with the same number of spaces used by its sibling. The colon in `registry.example.com/api:42` is valid without a following space. Blank lines do not create nesting, and mixing tab widths is not a supported workaround.",
+      "hint": "Inspect the actual whitespace character before `image`, not just how it looks."
+    },
+    {
+      "id": "yaml-anchors-merge",
+      "title": "One Base Config, Two Services",
+      "description": "How can this YAML reuse a common mapping without copying it?",
+      "situation": "Two services share the same image pull policy, resource limits, and logging settings. You want one common block, with each service able to add or override a few values.",
+      "codeExample": "defaults: &defaults\n  imagePullPolicy: IfNotPresent\n  resources:\n    limits:\n      memory: 512Mi\n\napi:\n  <<: *defaults\n  replicas: 3",
+      "options": [
+        "`&defaults` serializes the mapping to JSON, and `*defaults` imports it from another file",
+        "`<<` starts a YAML comment, so the API service ignores the values below it",
+        "The alias copies a mapping only when it appears in a sequence, so this needs a leading dash",
+        "`&` sets an anchor, `*` reuses it, and `<<` merges it in (a YAML 1.1 type, not part of YAML 1.2)"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "An anchor labels a node and an alias refers to that node. The `<<` merge key is the YAML 1.1 merge type that many practical parsers support, so it brings the anchored mapping's keys into `api`, where local keys can add or override values. It is not a cross-file import or comment syntax, and aliases work in mappings as well as sequences. YAML 1.2 removed the special merge key from its specification, so check the parser and target system before relying on it.",
+      "hint": "The three unusual symbols have three different jobs: name a node, refer to it, and combine mapping keys."
+    },
+    {
+      "id": "pg-startup-auth",
+      "title": "The First PostgreSQL Messages",
+      "description": "What happens before a PostgreSQL client can issue SQL?",
+      "situation": "You are debugging a new PostgreSQL driver and capture the start of a connection. You need to identify the normal order before the driver is ready to send a query.",
+      "codeExample": "client -> server: StartupMessage(user=app, database=shop)\nserver -> client: AuthenticationSASL\nclient -> server: SASL response messages\nserver -> client: ParameterStatus, BackendKeyData, ReadyForQuery",
+      "options": [
+        "The client sends a Query message first, then the server asks for authentication only if that SQL fails",
+        "StartupMessage, then the server's authentication request, then status data and ReadyForQuery",
+        "The server sends ReadyForQuery before authentication, so the client can authenticate with a prepared statement",
+        "The client starts with Bind and Execute, then receives its database user name from the server"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A frontend begins with StartupMessage, including its user and database. The server consults its configuration and sends the applicable authentication request. After a successful exchange, it can send ParameterStatus and BackendKeyData, then ReadyForQuery, which means SQL can begin. PostgreSQL 14 made `scram-sha-256` the default password-encryption setting for new installations, but the actual authentication method is selected by `pg_hba.conf`, so SCRAM is not forced for every connection. Query, Bind, and Execute belong after startup.",
+      "hint": "Before SQL, the server must know who is connecting and whether that client may connect."
+    },
+    {
+      "id": "pg-simple-vs-extended",
+      "title": "One Query Message or Four Steps",
+      "description": "Which PostgreSQL wire protocol should a driver use for bound parameters?",
+      "situation": "A driver must execute `SELECT * FROM orders WHERE customer_id = $1` with a user-provided value. A teammate says all PostgreSQL queries are just strings in one Query message.",
+      "codeExample": "# Simple query protocol\nQuery(\"SELECT * FROM orders WHERE customer_id = 42\")\n\n# Extended query protocol\nParse(\"SELECT * FROM orders WHERE customer_id = $1\")\nBind(values: [42])\nExecute\nSync",
+      "options": [
+        "Use the extended protocol: Parse, Bind, Execute, and Sync separate SQL parsing, parameter values, execution, and recovery to a ready state",
+        "Use the simple protocol because its Query message accepts a binary array of bind parameters after the SQL text",
+        "Use the COPY protocol because it is the only PostgreSQL protocol that accepts `$1` placeholders",
+        "Use a CancelRequest because it makes a prepared statement persistent for the next client"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The simple query protocol sends one textual Query message for the server to parse and execute; it has no separate protocol-level bind parameters. The extended protocol uses Parse to create a prepared statement, Bind to provide parameter values and create a portal, Execute to run it, and Sync to return to a known ready state after a cycle or error. COPY transfers data, not ordinary parameter binding, and CancelRequest stops work rather than preparing it.",
+      "hint": "Which flow has a message whose name is literally about supplying parameter values?"
+    },
+    {
+      "id": "pgbouncer-prepared-statements",
+      "title": "The Prepared Statement That Vanished",
+      "description": "Why did a named prepared statement fail through transaction-pooled PgBouncer, and what changed?",
+      "situation": "An application uses named prepared statements through PgBouncer in transaction pooling mode. Historically, an execution sometimes failed after a transaction because the next transaction was assigned a different server connection.",
+      "codeExample": "pool_mode = transaction\nmax_prepared_statements = 0\n\nclient transaction 1 -> server connection A\nPREPARE find_order AS SELECT ...\n\nclient transaction 2 -> server connection B\nEXECUTE find_order(42)  -- statement may not exist on B",
+      "options": [
+        "Transaction pooling always keeps one server connection per client, so named statements could not fail this way",
+        "Prepared statements are stored in the PostgreSQL database, so a new server connection always sees the same name",
+        "The next transaction may get another server connection; PgBouncer 1.21 added support for this",
+        "The fix is to set `max_prepared_statements = 0`, which makes PgBouncer copy every statement to all servers"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Transaction pooling returns a server connection to the pool at the end of each transaction, so the next transaction can land on a backend where a named prepared statement does not exist. PgBouncer 1.21.0 added tracking that can prepare statements on the linked server connection as needed in this mode, but it must be enabled with a nonzero `max_prepared_statements`. Server-side prepared statements are connection-local, not database-global. Setting the option to zero disables this support rather than enabling it.",
+      "hint": "Ask where a server-side prepared statement lives, then ask whether transaction pooling preserves that server connection."
+    },
+    {
+      "id": "pg-cancel-request",
+      "title": "Stopping a Long Query",
+      "description": "How does a PostgreSQL client cancel a query that is already running?",
+      "situation": "An admin console needs a Cancel button for a report query that can run for minutes. The original database connection is busy waiting for the result, but the driver saved the key data received when it connected.",
+      "codeExample": "# Saved during startup\nBackendKeyData: pid=8412, secret=917234\n\n# Cancellation path\nopen new connection to PostgreSQL\nsend CancelRequest(pid=8412, secret=917234)\nserver closes the new connection",
+      "options": [
+        "Send `ROLLBACK` on the busy query connection, because PostgreSQL reads cancellation commands while executing SQL",
+        "Close the original connection and reconnect, because PostgreSQL has no protocol-level cancellation mechanism",
+        "Send a Query message with `CANCEL 8412`, because process IDs are enough to authorize a cancel",
+        "Send a CancelRequest on a new connection with the process ID and secret key from startup"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "A cancel is deliberately sent on a new connection, because the server does not continuously read normal input from a backend while it is processing a query. The client sends CancelRequest instead of StartupMessage, containing the PID and secret key from BackendKeyData; the server then closes that new connection. The secret key prevents a PID alone from authorizing cancellation. Closing the original connection also stops its work but is a much less controlled way to cancel, and `ROLLBACK` cannot be delivered as a normal query while the backend is busy.",
+      "hint": "The connection running the query is not available to carry another normal command."
+    }
+  ]
+}
