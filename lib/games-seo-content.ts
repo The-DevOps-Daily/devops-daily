@@ -20,6 +20,41 @@ export interface SimulatorExplainerContent {
 }
 
 const explainers: Record<string, SimulatorExplainerContent> = {
+  'graphql-dataloader-lab': {
+    summary:
+      'GraphQL makes a nested response look like one request, but each field resolver can still issue database work. This lab follows Query.posts(first: 10) for a blog with ten posts, three comments per post, and six users. With post authors only, naive resolvers send one posts query and one user query for every post, for eleven queries. Add comments and each comment author, and the same pattern becomes fifty-one queries. The execution trace groups resolver work by level: all post author resolvers call load in one tick, comments resolve at the next level, and comment authors run only after comments resolve. Turn on the User DataLoader to coalesce same-tick user keys into one ordered batch, with duplicate keys loaded once through its cache. Turn on the Comments DataLoader too and the whole nested page uses four queries in this model. Finally, run as Ada, share loaders across requests, then run as Bo. The shared user cache returns Ada’s cached object, including the email visible when Ada loaded it. Switch back to Per request and Bo receives null for Ada’s email. The model leaves out awaits between loads, which would split DataLoader batches.',
+    teaches: [
+      'GraphQL N+1 queries',
+      'Resolver execution levels',
+      'DataLoader batching',
+      'DataLoader cache lifetime',
+      'Request-scoped privacy',
+    ],
+    level: 'Intermediate',
+    tryThis: [
+      'Leave Post authors on, keep both DataLoader controls off, and press Run query to count the posts-and-authors N+1 work.',
+      'Turn on Comments and Comment authors, then press Run query before and after enabling Use User DataLoader and Use Comments DataLoader.',
+      'Choose Shared by all requests, run as Ada, switch Viewer: Ada to Viewer: Bo, press Run query, then choose Per request and run it again.',
+    ],
+    faq: [
+      {
+        question: 'Why does a nested GraphQL query create an N+1 problem?',
+        answer:
+          'The posts resolver gets the first result set, then each Post.author resolver can independently ask for its user. With ten posts, that is one posts query plus ten user queries when resolvers are naive. Nested comments add another resolver level and more repeated lookups.',
+      },
+      {
+        question: 'What does DataLoader batch in this lab?',
+        answer:
+          'A DataLoader collects load calls made in one event-loop tick and invokes its batch function once with the keys. The users batch emits one IN query for unique uncached user IDs, while the comments batch emits one IN query for post IDs. Its batch function must return values in the same order and length as the requested keys.',
+      },
+      {
+        question: 'Why must a DataLoader be created for each request?',
+        answer:
+          'Its cache memoizes values for the lifetime of that loader. Reusing one loader for two viewers lets the second request receive an object built for the first viewer, which can bypass viewer-specific field rules. A fresh loader per request keeps the cache and its authorization context separate.',
+      },
+    ],
+  },
+
   'email-auth-lab': {
     summary:
       'Email authentication combines three DNS-backed checks that answer different questions. In this lab, SPF checks the MAIL FROM domain against the IP that connects to the receiver. DKIM checks a signature from its d= domain by fetching the selector key, and it fails when a mailing list changes a signed Subject or the body. DMARC starts from the visible Header From domain and passes when SPF or DKIM passes and aligns with that domain. You publish records for shop.example, choose whether the ESP signs as esp.example or shop.example, and send the same message on direct, forwarded and mailing-list paths. The forwarder keeps the message unchanged but does not use SRS, so SPF fails while aligned DKIM can survive. The list changes the Subject and body, which breaks the original DKIM signature. Its From rewrite makes lists.example visible instead, where aligned list SPF can pass DMARC. You also compare relaxed and strict alignment, monitoring and enforcement policies, pct behavior, and SPF permerror when more than 10 DNS-querying mechanisms are evaluated. The result cards show every checked domain, alignment result, policy and receiver disposition.',
