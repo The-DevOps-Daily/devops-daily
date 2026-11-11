@@ -681,7 +681,8 @@ export default function DDoSSimulator() {
       <div
         role="img"
         aria-label={`Attack field: ${particles.length} requests in flight, server at ${Math.round(serverHealth)}% health`}
-        className="relative h-[clamp(14rem,calc(100dvh-24rem),26rem)] overflow-hidden rounded-md border bg-muted/30"
+        // On lg the field fills the stage (--sim-fill-h) less the health bar and legend.
+        className="relative h-[clamp(14rem,calc(100dvh-24rem),26rem)] overflow-hidden rounded-md border bg-muted/30 lg:h-[max(14rem,calc(var(--sim-fill-h)-6rem))]"
       >
         <div
           className="pointer-events-none absolute inset-0 text-border opacity-30"

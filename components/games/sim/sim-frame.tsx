@@ -4,9 +4,9 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
   type Ref,
 } from 'react';
@@ -28,10 +28,18 @@ import { cn } from '@/lib/utils';
  * game's short title only in an embed, where there is no shell.
  */
 
-const FrameContext = createContext<{ barHeight: number; setBarHeight: (h: number) => void }>({
-  barHeight: 0,
-  setBarHeight: () => {},
-});
+/** SimBar reports its height here, for --sim-bar-h. */
+const FrameContext = createContext<(height: number) => void>(() => {});
+
+/**
+ * --sim-fill-h, the height a stage or lab gets on lg: the window under the
+ * sticky bar, less what sits above the game and 24px of room under it.
+ * Above the game: the site header while it is in view (it scrolls away on a
+ * game page), then --sim-embed-top, the embed route's top padding, or 12px of
+ * room on a game page. 8px is the gap under the bar.
+ */
+const SIM_FILL_HEIGHT =
+  'calc(100dvh - max(var(--site-header-h, 0px), var(--site-header-visible, 0px)) - var(--sim-embed-top, 12px) - var(--sim-bar-h) - 8px - 24px)';
 
 export function SimFrame({
   children,
@@ -44,12 +52,14 @@ export function SimFrame({
   className?: string;
 }) {
   const [barHeight, setBarHeight] = useState(104);
-  const value = useMemo(() => ({ barHeight, setBarHeight }), [barHeight]);
   return (
-    <FrameContext.Provider value={value}>
+    <FrameContext.Provider value={setBarHeight}>
       <div
         data-sim-frame=""
         className={cn('space-y-2', phoneBar ? 'pb-20 lg:pb-0' : 'pb-4 lg:pb-0', className)}
+        style={
+          { '--sim-bar-h': `${barHeight}px`, '--sim-fill-h': SIM_FILL_HEIGHT } as CSSProperties
+        }
       >
         {children}
       </div>
@@ -126,7 +136,7 @@ export function SimBar({
   children,
 }: SimBarProps) {
   const { embedded } = useEmbed();
-  const { setBarHeight } = useContext(FrameContext);
+  const setBarHeight = useContext(FrameContext);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -375,19 +385,16 @@ export function SimStage({
   /** Panel ids in tab order, when the tabs differ from the column order. */
   tabOrder?: string[];
 }) {
-  const { barHeight } = useContext(FrameContext);
   const tabs = tabOrder ? tabOrder.flatMap((id) => panels.filter((p) => p.id === id)) : panels;
   return (
     <>
       <div
-        className={cn('hidden grid-rows-[minmax(0,1fr)] gap-2.5 lg:grid', minHeight, columns)}
-        // As tall as the content, at most the screen under the sticky bar and any part
-        // of the site header still in view. 28px: the gap under the bar, the frame's
-        // gap under the stage and 12px of room when the game top is just in view.
-        // --sim-embed-pad is the embed route's own padding, 0 on the game page.
-        style={{
-          maxHeight: `calc(100dvh - max(var(--site-header-h, 0px), var(--site-header-visible, 0px)) - var(--sim-embed-pad, 0px) - ${barHeight + 28}px)`,
-        }}
+        // As tall as the content, at most the screen under the sticky bar (--sim-fill-h).
+        className={cn(
+          'hidden max-h-[var(--sim-fill-h)] grid-rows-[minmax(0,1fr)] gap-2.5 lg:grid',
+          minHeight,
+          columns
+        )}
       >
         {panels.map((p) =>
           p.scroll === false ? (

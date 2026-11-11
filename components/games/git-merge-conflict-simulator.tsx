@@ -59,9 +59,9 @@ const LAB_LESSONS: SimLabLesson[] = LESSONS.map((l) => ({
   commands: l.steps,
 }));
 
-const EDITOR_HEIGHT = 'h-44 lg:h-[clamp(9rem,calc(50dvh-13rem),16rem)]';
-const TERMINAL_HEIGHT =
-  'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-[clamp(12rem,calc(50dvh-8rem),24rem)]';
+const EDITOR_HEIGHT = 'h-44 lg:h-[clamp(9rem,calc(var(--sim-fill-h)*0.4-2.5rem),24rem)]';
+// On lg the editor takes about 40% of the lab and the terminal the rest.
+const TERMINAL_HEIGHT = 'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-auto lg:flex-1';
 
 const STATUS_STYLE: Record<FileStatus, { label: string; className: string }> = {
   unmerged: {
@@ -394,11 +394,12 @@ export default function GitMergeConflictSimulator() {
         />
       ) : (
         <SimLabLayout
+          minHeight="lg:min-h-[28rem]"
           terminal={
-            <div className="space-y-2">
+            <div className="space-y-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
               <section
                 aria-label="Editor"
-                className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground"
+                className="overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground lg:shrink-0"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-terminal-border bg-terminal-bar px-2 py-1.5">
                   <div className="flex min-w-0 flex-wrap gap-1" role="group" aria-label="Files">
