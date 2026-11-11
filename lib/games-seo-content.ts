@@ -33,9 +33,9 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     ],
     level: 'Intermediate',
     tryThis: [
-      'Press "Asset ×2 in Singapore": the first request misses and goes to the Frankfurt origin, the second is a HIT served by the edge.',
-      'Send the page to every edge, press Deploy, then send it again: with max-age=60 the edges serve the old page until you advance the clock past 60 seconds or press "Purge page".',
-      'Change /api/cart from "private, max-age=60" to "max-age=60", send cart traffic to every edge and open Edge entries to see a shared cache storing a private cart.',
+      'With Asset selected, press Send traffic: at every edge the first visitor misses and goes to the Frankfurt origin, and the second gets a HIT from the edge.',
+      'Pick /index.html, press Send traffic, Deploy and Send traffic again: with max-age=60 the edges serve the old page until you press Wait 61 s or Purge /index.html.',
+      'Change /api/cart from "private, max-age=60" to "max-age=60", send /api/cart traffic and watch the cart appear under Cached here at every edge: a shared cache storing a private page.',
     ],
     faq: [
       {

@@ -27,17 +27,6 @@ async function click(label: string, exact = true) {
   await act(async () => button.click());
 }
 
-async function select(label: string, value: string) {
-  const field = container.querySelector(`select[aria-label="${label}"]`);
-  if (!(field instanceof HTMLSelectElement)) throw new Error(`no select ${label}`);
-  const setValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')?.set;
-  if (!setValue) throw new Error('no select setter');
-  await act(async () => {
-    setValue.call(field, value);
-    field.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-}
-
 beforeEach(() => {
   vi.useFakeTimers();
   completions = 0;
@@ -77,21 +66,38 @@ describe('CDN Edge Cache Lab', () => {
     expect(container.textContent).toContain('Goal:');
     expect(container.textContent).toContain('Get a cache HIT at the Singapore edge.');
 
-    await click('Asset ×2 in Singapore');
-    await click('Page ×2 at every edge');
-    await click('Deploy v2');
-    await click('Page ×2 at every edge');
+    await click('Send traffic');
+    expect(container.textContent).toContain('1/6');
 
-    await select('/index.html Cache-Control', 'no-cache');
-    await click('Purge page');
-    await click('Page ×2 at every edge');
-    await click('Deploy v3');
-    await click('Page ×2 at every edge');
-    await click('Asset ×2 in Singapore');
-    await click('Page ×2 at every edge');
-    await click('Cart ×2 at every edge');
-    await click('Ignore utm_ parameters off');
-    await click('UTM page batch');
+    await click('/index.html');
+    await click('Send traffic');
+    await click('Deploy v2');
+    await click('Send traffic');
+    expect(container.textContent).toContain('HIT v1');
+    expect(container.textContent).toContain('2/6');
+
+    await click('Purge /index.html');
+    await click('Send traffic');
+    await click('Asset');
+    await click('Send traffic');
+    expect(container.textContent).toContain('3/6');
+
+    await click('/index.html');
+    await click('Wait 61 s');
+    await click('Send traffic');
+    expect(container.textContent).toContain('4/6');
+
+    await click('/api/cart');
+    await click('Send traffic');
+    expect(container.textContent).toContain('BYPASS');
+    expect(container.textContent).toContain('5/6');
+
+    await click('Asset');
+    await click('utm_ links off');
+    await click('Send traffic');
+    expect(container.textContent).toContain('7 keys');
+    await click('Ignore utm_ in cache key off');
+    await click('Send traffic');
 
     expect(container.textContent).toContain('Edge cache lab complete');
     expect(completions).toBe(1);
