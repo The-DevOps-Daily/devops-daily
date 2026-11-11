@@ -57,7 +57,7 @@ The descriptor can outlive the name because it refers through an open file descr
 
 ## Reproduce the mismatch, then find the holder
 
-Here is a real run on Linux 6.12 with lsof 4.95.0. A Python process opened a log for append, wrote 200 MiB on `/dev/shm`, and kept descriptor 3 open. The lsof warnings from an unprivileged invocation are trimmed below. The numbers are not a capacity benchmark, `/dev/shm` was chosen so this test could not fill a real filesystem.
+Here is a real run on Linux 6.12 with lsof 4.95.0 as packaged by Debian 12. A Python process opened a log for append, wrote 200 MiB on `/dev/shm`, and kept descriptor 3 open. The lsof warnings from an unprivileged invocation are trimmed below. The numbers are not a capacity benchmark, `/dev/shm` was chosen so this test could not fill a real filesystem.
 
 ```terminal
 {
@@ -131,10 +131,12 @@ If the filesystem is full and a controlled restart or reopen is unavailable, tru
 sudo sh -c ': > /proc/1586127/fd/3'
 ```
 
-That is what released the 200 MiB in the demo while Python kept running and descriptor 3 remained open. It also destroys the unrecovered log content. Copy it to a filesystem with space first if it might be needed:
+That is what released the 200 MiB in the demo while Python kept running and descriptor 3 remained open. It also destroys the unrecovered log content. Copy it out first if it might be needed, to a different filesystem with confirmed free space. `/var/tmp` usually sits on the same full `/var`, so it is the wrong target:
 
 ```bash
-sudo cp /proc/1586127/fd/3 /var/tmp/recovered-app.log
+# /mnt/recovery: a separately mounted volume with room for the file
+df -h /mnt/recovery
+sudo cp -- /proc/1586127/fd/3 /mnt/recovery/recovered-app.log
 ```
 
 Truncation changes the file size but not the open file description's seek offset. [ftruncate(3p)](https://man7.org/linux/man-pages/man3/ftruncate.3p.html) says the seek pointer is not modified. A writer that does not use `O_APPEND` can therefore write again at its old offset, extending the file and leaving a zero-filled hole before the new data. That is a reason to treat truncation as an emergency measure, then repair the application's logging setup.
@@ -183,7 +185,7 @@ Docker Engine on servers still defaults to `json-file` with no rotation; we meas
 SystemMaxUse=1G
 ```
 
-`SystemMaxUse=` limits persistent journals under `/var/log/journal`. The current systemd documentation says the default maximum is 10% of the filesystem, capped at 4G, and only archived files are removed to reduce usage. `journalctl --vacuum-size=500M` removes oldest archived journal files until their usage falls below that target. [journald.conf(5)](https://www.freedesktop.org/software/systemd/man/255/journald.conf.html) and [journalctl(1)](https://www.freedesktop.org/software/systemd/man/latest/journalctl) document those limits and the active-file caveat.
+`SystemMaxUse=` limits persistent journals under `/var/log/journal`. The current systemd documentation says the default maximum is 10% of the filesystem, capped at 4G, and only archived files are removed to reduce usage. `journalctl --vacuum-size=500M` removes oldest archived journal files until their usage falls below that target. [journald.conf(5)](https://www.freedesktop.org/software/systemd/man/latest/journald.conf.html) and [journalctl(1)](https://www.freedesktop.org/software/systemd/man/latest/journalctl) document those limits and the active-file caveat.
 
 Alert before a page becomes a disk-full outage. node_exporter exposes `node_filesystem_avail_bytes` as space available to non-root users, and its node-mixin uses `predict_linear` for a run-out forecast. [The collector source](https://github.com/prometheus/node_exporter/blob/master/collector/filesystem_common.go) and [the maintained alert rule](https://github.com/prometheus/node_exporter/blob/master/docs/node-mixin/alerts/alerts.libsonnet) show both names.
 
@@ -235,10 +237,11 @@ A deleted file held open by a container process still consumes storage on the no
 
 ```bash
 # containerd/CRI-O nodes: host PID of the container's main process
-pid=$(sudo crictl inspect <container-id> | jq -r '.info.pid')
+container_id='replace-with-container-id'
+pid=$(sudo crictl inspect "$container_id" | jq -r '.info.pid')
 
 # Link targets are shown as paths inside the container
-sudo find /proc/$pid/fd -lname '*(deleted)' -printf '%p -> %l\n'
+sudo find "/proc/$pid/fd" -lname '*(deleted)' -printf '%p -> %l\n'
 ```
 
 The paths in the link targets are relative to the container's mount namespace, so `/app/logs/app.log (deleted)` is the container's view. [Linux namespace documentation](https://man7.org/linux/man-pages/man7/namespaces.7.html) explains why the same file has different paths from the node and from the container.
