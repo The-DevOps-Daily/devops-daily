@@ -79,7 +79,10 @@ test('a terminal lab fills a tall window down to a small gap', async ({ page, is
       const frame = document.querySelector('[data-sim-frame]');
       const form = document.querySelector('input[aria-label="Terminal command"]')?.closest('form');
       if (!frame || !form) return Number.NaN;
-      window.scrollTo(0, frame.getBoundingClientRect().top + window.scrollY - 12);
+      // Instant: the site scrolls smoothly, and the measure must follow the scroll.
+      const top = frame.getBoundingClientRect().top + window.scrollY - 12;
+      window.scrollTo({ top, behavior: 'instant' });
+      if (Math.abs(frame.getBoundingClientRect().top - 12) > 2) return Number.NaN;
       return Math.round(window.innerHeight - form.getBoundingClientRect().bottom);
     });
   // Polled until hydration: before it, the bar height is a default and the gap can be off.
