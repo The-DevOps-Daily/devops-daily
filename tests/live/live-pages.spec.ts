@@ -40,6 +40,8 @@ const ignoredConsoleErrors = [
   /go\.devops-daily\.com/i,
   // Repo cards call GitHub's API without a token; shared runner IPs hit its rate limit.
   /api\.github\.com/i,
+  // The newsletter form's Turnstile widget logs noise when it challenges datacenter IPs.
+  /challenges\.cloudflare\.com/i,
 ];
 
 // Analytics, ads and our sponsor beacon are blocked so these checks never count

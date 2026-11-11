@@ -126,7 +126,7 @@ export default async function NewsDigestPage({
                   )}
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-bold mb-4">{digest.title}</h1>
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 break-words">{digest.title}</h1>
 
                 {digest.excerpt && (
                   <p className="text-xl text-muted-foreground">{digest.excerpt}</p>

@@ -174,7 +174,7 @@ export default async function GuidePartPage({
               <article className="flex-1 min-w-0 prose">
                 {currentPart && (
                   <header className="mb-8">
-                    <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
+                    <h1 className="text-3xl font-bold tracking-tight break-words md:text-4xl">
                       {currentPart.title}
                     </h1>
                     {currentPart.description && (
