@@ -34,6 +34,22 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'cdn-edge-cache-lab',
+    type: 'simulator',
+    title: 'CDN Edge Cache Lab',
+    seoTitle: 'CDN Edge Cache Lab: HTTP Caching, Purges and Revalidation',
+    description:
+      'Set HTTP cache headers, send traffic through Frankfurt, Virginia and Singapore CDN edges, deploy, purge and inspect shared-cache hits, misses and 304 revalidation.',
+    iconName: 'Cloud',
+    badgeText: 'New',
+    color: 'from-sky-500 to-cyan-600',
+    href: '/games/cdn-edge-cache-lab',
+    tags: ['cdn', 'http caching', 'cache-control', 'networking', 'web performance', 'interactive'],
+    isNew: true,
+    category: 'Networking',
+    createdAt: '2026-11-11',
+  },
+  {
     id: 'on-call',
     type: 'game',
     title: 'On-Call: The Daily Incident',

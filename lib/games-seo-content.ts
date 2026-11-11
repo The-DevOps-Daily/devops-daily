@@ -20,6 +20,47 @@ export interface SimulatorExplainerContent {
 }
 
 const explainers: Record<string, SimulatorExplainerContent> = {
+  'cdn-edge-cache-lab': {
+    summary:
+      'A content delivery network keeps copies of responses in edge caches close to visitors, so most requests never travel to the origin. This lab puts an origin in Frankfurt behind three edges, in Frankfurt, Virginia and Singapore, and lets you set the Cache-Control header for a page, a versioned asset and a shopping cart API. Send traffic and each edge reports a HIT, a MISS, a 304 revalidation or a BYPASS, with the hit ratio, the number of origin requests and an approximate latency per city. The rules follow RFC 9111. A shared cache must not store a response marked private or no-store. no-cache lets the edge store a response but makes it check with the origin before every reuse, and the origin can answer 304 Not Modified instead of sending the body again. s-maxage overrides max-age in shared caches, and stale-while-revalidate from RFC 5861 lets an edge serve a stale copy while it fetches a fresh one. Deploy a new version and you see why a long max-age on HTML keeps visitors on the old page until it expires or you purge it, while a fingerprinted asset can be cached for a year. The cache key is the method plus the full URL, so tracking parameters such as utm_source split one file into many cache entries unless the key ignores them.',
+    teaches: [
+      'HTTP caching with Cache-Control',
+      'CDN edges as shared caches',
+      'Revalidation and 304 Not Modified',
+      'stale-while-revalidate',
+      'Cache purges and versioned assets',
+      'Cache keys and Vary',
+    ],
+    level: 'Intermediate',
+    tryThis: [
+      'Press "Asset ×2 in Singapore": the first request misses and goes to the Frankfurt origin, the second is a HIT served by the edge.',
+      'Send the page to every edge, press Deploy, then send it again: with max-age=60 the edges serve the old page until you advance the clock past 60 seconds or press "Purge page".',
+      'Change /api/cart from "private, max-age=60" to "max-age=60", send cart traffic to every edge and open Edge entries to see a shared cache storing a private cart.',
+    ],
+    faq: [
+      {
+        question: 'What is the difference between no-cache and no-store?',
+        answer:
+          'no-store tells a cache not to keep the response at all. no-cache lets a cache store it, but the cache must revalidate with the origin before each reuse, usually by sending the ETag in If-None-Match. A 304 Not Modified reply lets it serve the stored copy without downloading the body again.',
+      },
+      {
+        question: 'What does s-maxage do?',
+        answer:
+          'It sets the freshness lifetime for shared caches such as CDNs and proxies, and overrides max-age there. Browsers ignore it, so s-maxage=300, max-age=0 lets an edge serve its copy for five minutes while browsers revalidate on every use.',
+      },
+      {
+        question: 'How do you make a deploy show up at once behind a CDN?',
+        answer:
+          'Purge the changed HTML from the edges after the deploy, or serve HTML with no-cache so edges revalidate it on every request. Give static assets fingerprinted file names with a long max-age and immutable: a new deploy changes the HTML, which then points to new asset URLs.',
+      },
+      {
+        question: 'What is stale-while-revalidate?',
+        answer:
+          'A Cache-Control extension from RFC 5861. With max-age=60, stale-while-revalidate=120 a cache serves the response as fresh for 60 seconds, and for up to 120 seconds after that it can still serve the stale copy at once while it fetches a fresh one in the background.',
+      },
+    ],
+  },
+
   'preview-environment-simulator': {
     summary:
       'A preview environment is a short-lived copy of your application that exists for one pull request. This simulator follows that copy through its whole life: a label on the pull request triggers a webhook, CI builds and pushes an image, an Argo CD ApplicationSet notices the labeled pull request and creates a namespace, and the environment gets data, DNS and TLS before reviewers see a private URL. When the pull request closes, the same flow runs in reverse and removes the review URL, the workloads, their dependencies and the namespace. With "Practice a failure" turned on, it injects a failure teams actually hit, one per pull request: a missing branch override, an unavailable preview secret, a deployed revision that drifted, a namespace quota that rejects the pods, a certificate stuck on the wrong DNS zone or a readiness gate failing on a migration, and asks you to pick a fix. Some of the offered fixes make the symptom disappear while creating a new risk, like copying a production secret or turning off a health gate. The point is to see why a preview environment is a GitOps workflow with guardrails, not just a deploy script with a random URL.',
