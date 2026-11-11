@@ -34,6 +34,22 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'idempotency-retry-lab',
+    type: 'simulator',
+    title: 'Idempotency and Retry Lab',
+    seoTitle: 'Idempotency and Retry Lab: Prevent Duplicate Charges and Retry Safely',
+    description:
+      'Lose payment responses, replay idempotent requests, compare backoff with full jitter during an outage, and move exhausted jobs to a dead-letter queue.',
+    iconName: 'Webhook',
+    badgeText: 'New',
+    color: 'from-primary to-primary',
+    href: '/games/idempotency-retry-lab',
+    tags: ['idempotency', 'retries', 'payments', 'backoff', 'dead-letter queue', 'interactive'],
+    isNew: true,
+    category: 'DevOps',
+    createdAt: '2026-11-11',
+  },
+  {
     id: 'graphql-dataloader-lab',
     type: 'simulator',
     title: 'GraphQL N+1 and DataLoader Lab',
