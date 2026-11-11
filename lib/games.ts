@@ -34,6 +34,31 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'http-versions-lab',
+    type: 'simulator',
+    title: 'HTTP/1.1 vs HTTP/2 vs HTTP/3 Lab',
+    seoTitle: 'HTTP/1.1 vs HTTP/2 vs HTTP/3 Lab: Connections, Streams and Loss',
+    description:
+      'Load one page over HTTP/1.1, HTTP/2, and HTTP/3. Compare connection setup, multiplexed streams, TCP head-of-line blocking, and QUIC loss recovery in a request waterfall.',
+    iconName: 'Network',
+    badgeText: 'New',
+    color: 'from-primary to-primary',
+    href: '/games/http-versions-lab',
+    tags: [
+      'http',
+      'http/2',
+      'http/3',
+      'quic',
+      'tcp',
+      'networking',
+      'web performance',
+      'interactive',
+    ],
+    isNew: true,
+    category: 'Networking',
+    createdAt: '2026-11-11',
+  },
+  {
     id: 'cdn-edge-cache-lab',
     type: 'simulator',
     title: 'CDN Edge Cache Lab',
