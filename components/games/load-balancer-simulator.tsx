@@ -1,10 +1,24 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw, Users, Server, XCircle, Keyboard } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Play, Pause, Users, Server, XCircle, Network } from 'lucide-react';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import {
+  SIM_CATEGORY,
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
+import { cn } from '@/lib/utils';
 
 type AlgorithmType = 'round-robin' | 'least-connections' | 'ip-hash' | 'random';
 
@@ -24,14 +38,7 @@ interface RequestPacket {
   retryCount?: number;
 }
 
-// Distinct colors for each server - makes it crystal clear where requests go
-const SERVER_COLORS = [
-  { bg: 'bg-emerald-500', hex: '#10b981', dimHex: '#6ee7b7' },
-  { bg: 'bg-amber-500', hex: '#f59e0b', dimHex: '#fcd34d' },
-  { bg: 'bg-rose-500', hex: '#f43f5e', dimHex: '#fda4af' },
-];
-
-const OFFLINE_COLOR = { bg: 'bg-gray-400', hex: '#9ca3af', dimHex: '#d1d5db' };
+const SERVER_CATEGORIES = [SIM_CATEGORY.primary, SIM_CATEGORY.sky, SIM_CATEGORY.violet];
 
 const ALGORITHMS: Record<AlgorithmType, { name: string; description: string }> = {
   'round-robin': {
@@ -87,7 +94,42 @@ function ipHashServer(ip: string, isUp: (id: number) => boolean): number | null 
   return null;
 }
 
+interface LoadBalancerMissionState {
+  handledByAlgorithm: Record<AlgorithmType, number>;
+  hasOfflineServer: boolean;
+  handledWhileServerDown: boolean;
+}
+
+const MISSIONS: Mission<LoadBalancerMissionState>[] = [
+  {
+    id: 'round-robin',
+    label: 'Send traffic with round robin and watch the servers take turns.',
+    hint: 'Press Start: each server gets the next request in line.',
+    check: (state) => state.handledByAlgorithm['round-robin'] >= 2,
+  },
+  {
+    id: 'least-connections',
+    label: 'Switch to least connections and keep the traffic flowing.',
+    hint: 'New requests go to the server with the fewest in progress.',
+    check: (state) => state.handledByAlgorithm['least-connections'] >= 2,
+  },
+  {
+    id: 'ip-hash',
+    label: 'Try IP hash: the same client always reaches the same server.',
+    hint: "Pick IP hash and watch one client's requests.",
+    check: (state) => state.handledByAlgorithm['ip-hash'] >= 2,
+  },
+  {
+    id: 'failover',
+    label: 'Take a server down and see where its traffic goes.',
+    hint: 'Mark a server as down while traffic runs.',
+    check: (state) => state.hasOfflineServer && state.handledWhileServerDown,
+  },
+];
+
 export default function LoadBalancerSimulator() {
+  const [tab, setTab] = useState<'traffic' | 'details'>('traffic');
+  const [dismissed, setDismissed] = useState(false);
   const [algorithm, setAlgorithm] = useState<AlgorithmType>('round-robin');
   const [isRunning, setIsRunning] = useState(false);
   const [trafficRate, setTrafficRate] = useState(600);
@@ -106,6 +148,13 @@ export default function LoadBalancerSimulator() {
   const [failedRequests, setFailedRequests] = useState(0);
   const [crashedRequests, setCrashedRequests] = useState(0);
   const [retriedRequests, setRetriedRequests] = useState(0);
+  const [handledByAlgorithm, setHandledByAlgorithm] = useState<Record<AlgorithmType, number>>({
+    'round-robin': 0,
+    'least-connections': 0,
+    'ip-hash': 0,
+    random: 0,
+  });
+  const [handledWhileServerDown, setHandledWhileServerDown] = useState(false);
 
   // Simulated clients for IP Hash, each in a different /24 so they spread across servers
   const clients = useMemo(
@@ -133,10 +182,18 @@ export default function LoadBalancerSimulator() {
 
   const healthyServers = useMemo(() => servers.filter((s) => s.healthy), [servers]);
 
+  const missionState = useMemo(
+    () => ({
+      handledByAlgorithm,
+      hasOfflineServer: servers.some((server) => !server.healthy),
+      handledWhileServerDown,
+    }),
+    [handledByAlgorithm, servers, handledWhileServerDown]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+
   const toggleServerHealth = useCallback((serverId: number) => {
-    setServers((prev) =>
-      prev.map((s) => (s.id === serverId ? { ...s, healthy: !s.healthy } : s))
-    );
+    setServers((prev) => prev.map((s) => (s.id === serverId ? { ...s, healthy: !s.healthy } : s)));
   }, []);
 
   const getTargetServer = useCallback((): number | null => {
@@ -187,6 +244,7 @@ export default function LoadBalancerSimulator() {
 
   const sendRequest = useCallback(() => {
     const targetServer = getTargetServer();
+    const requestAlgorithm = algorithm;
     const packetId = `req-${Date.now()}-${Math.random()}`;
     // Reset bumps the generation, so steps of requests sent before it do nothing
     const generation = generationRef.current;
@@ -243,9 +301,7 @@ export default function LoadBalancerSimulator() {
           );
           setCrashedRequests((prev) => prev + 1);
           setServers((prev) =>
-            prev.map((s) =>
-              s.id === serverId ? { ...s, active: Math.max(0, s.active - 1) } : s
-            )
+            prev.map((s) => (s.id === serverId ? { ...s, active: Math.max(0, s.active - 1) } : s))
           );
 
           // Show crash animation, then retry or fail
@@ -283,12 +339,22 @@ export default function LoadBalancerSimulator() {
                 : s
             )
           );
+          setHandledByAlgorithm((prev) => ({
+            ...prev,
+            [requestAlgorithm]: prev[requestAlgorithm] + 1,
+          }));
+          if (
+            serversRef.current.some((server) => !server.healthy) &&
+            serversRef.current.find((server) => server.id === serverId)?.healthy
+          ) {
+            setHandledWhileServerDown(true);
+          }
         }
       }, 950);
     };
 
     sendPacket(targetServer);
-  }, [getTargetServer, failureRate, enableRetry]);
+  }, [getTargetServer, failureRate, enableRetry, algorithm]);
 
   useEffect(() => {
     serversRef.current = servers;
@@ -314,348 +380,352 @@ export default function LoadBalancerSimulator() {
     setFailedRequests(0);
     setCrashedRequests(0);
     setRetriedRequests(0);
+    setHandledByAlgorithm({
+      'round-robin': 0,
+      'least-connections': 0,
+      'ip-hash': 0,
+      random: 0,
+    });
+    setHandledWhileServerDown(false);
   };
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      // Space to toggle start/stop
-      if (e.key === ' ') {
-        e.preventDefault();
-        setIsRunning((prev) => !prev);
-      }
-
-      // R to reset
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        reset();
-      }
-
-      // 1-4 to select algorithm
-      const algos: AlgorithmType[] = ['round-robin', 'least-connections', 'ip-hash', 'random'];
-      const num = parseInt(e.key);
-      if (num >= 1 && num <= 4) {
-        e.preventDefault();
-        setAlgorithm(algos[num - 1]);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const totalRequests = servers.reduce((sum, s) => sum + s.requests, 0);
 
   // Pre-compute server Y positions for consistent line/dot placement
   const serverYPositions = [20, 50, 80]; // top, middle, bottom as percentages
 
-  return (
-    <div className="w-full max-w-4xl mx-auto">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center justify-between">
-            <span>Load Balancer Simulator</span>
-            <div className="flex flex-col items-end text-xs font-normal text-muted-foreground">
-              <span>{totalRequests} successful</span>
-              {(crashedRequests > 0 || failedRequests > 0 || retriedRequests > 0) && (
-                <span className="text-xs">
-                  {crashedRequests > 0 && `${crashedRequests} crashed`}
-                  {retriedRequests > 0 && ` • ${retriedRequests} retried`}
-                  {failedRequests > 0 && ` • ${failedRequests} failed`}
-                </span>
-              )}
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Controls */}
-          <div className="flex flex-wrap gap-2 items-center justify-between">
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setIsRunning(!isRunning)}
-                variant={isRunning ? 'destructive' : 'default'}
-                size="sm"
-              >
-                {isRunning ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                {isRunning ? 'Stop' : 'Start'}
-              </Button>
-              <Button onClick={reset} variant="outline" size="sm">
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
-            </div>
+  const startOver = () => {
+    reset();
+    missions.reset();
+    setDismissed(false);
+  };
+  const announcement = isRunning
+    ? `${ALGORITHMS[algorithm].name} is routing traffic to ${healthyServers.length} healthy servers.`
+    : 'Traffic is paused. Choose an algorithm, then start the load balancer.';
 
-            <div className="flex gap-1">
+  return (
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Load Balancer Simulator"
+          icon={Network}
+          lead={
+            <div className="flex flex-wrap items-center gap-1" role="group" aria-label="Algorithm">
               {(Object.keys(ALGORITHMS) as AlgorithmType[]).map((algo) => (
                 <Button
                   key={algo}
-                  onClick={() => setAlgorithm(algo)}
+                  type="button"
                   variant={algorithm === algo ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs"
+                  className="h-10 px-2 text-xs lg:h-8"
+                  aria-pressed={algorithm === algo}
+                  onClick={() => setAlgorithm(algo)}
                 >
                   {ALGORITHMS[algo].name}
                 </Button>
               ))}
             </div>
+          }
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={
+            isRunning
+              ? `${ALGORITHMS[algorithm].name} is routing traffic`
+              : 'Ready to route traffic'
+          }
+          actions={
+            <Button
+              type="button"
+              className="hidden h-8 lg:flex"
+              variant={isRunning ? 'outline' : 'default'}
+              onClick={() => setIsRunning(!isRunning)}
+            >
+              {isRunning ? (
+                <Pause className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <Play className="h-4 w-4" aria-hidden="true" />
+              )}
+              {isRunning ? 'Stop' : 'Start'}
+            </Button>
+          }
+          goal={
+            missions.complete ? (
+              'All four missions are complete. Keep exploring load-balancing behavior.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
 
-            <div className="flex flex-wrap gap-1">
-              {TRAFFIC_RATES.map((rate) => (
-                <Button
-                  key={rate.value}
-                  onClick={() => setTrafficRate(rate.value)}
-                  variant={trafficRate === rate.value ? 'secondary' : 'ghost'}
-                  size="sm"
-                  className="text-xs"
-                >
-                  {rate.label}
-                </Button>
-              ))}
-            </div>
-          </div>
+        <SimAnnouncer message={announcement} />
 
-          {/* Failure Rate Controls */}
-          <div className="flex flex-wrap gap-2 items-center justify-between">
-            <div className="text-sm font-medium">Server Failure Simulation:</div>
-            <div className="flex gap-1">
-              {FAILURE_RATES.map((rate) => (
-                <Button
-                  key={rate.value}
-                  onClick={() => setFailureRate(rate.value)}
-                  variant={failureRate === rate.value ? 'default' : 'outline'}
-                  size="sm"
-                  className="text-xs"
-                >
-                  {rate.label}
-                </Button>
-              ))}
-            </div>
-            {failureRate > 0 && (
-              <Button
-                onClick={() => setEnableRetry(!enableRetry)}
-                variant={enableRetry ? 'secondary' : 'ghost'}
-                size="sm"
-                className="text-xs"
-              >
-                Retry: {enableRetry ? 'On' : 'Off'}
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Load balancing missions complete"
+            summary="You compared three routing algorithms and kept traffic moving after a server went down."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Successful', value: totalRequests },
+              { label: 'Retries', value: retriedRequests },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
               </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1.35fr)_minmax(17rem,0.8fr)]"
+            minHeight="min-h-[22rem]"
+            tab={tab}
+            onTabChange={(next) => {
+              if (next === 'traffic' || next === 'details') setTab(next);
+            }}
+            tabsLabel="Load balancer panels"
+            panels={[
+              {
+                id: 'traffic',
+                label: 'Traffic',
+                className: 'space-y-2',
+                content: (
+                  <section className="rounded-lg border bg-card p-3">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-sm font-semibold">Traffic flow</h3>
+                        <p className="text-xs text-muted-foreground">
+                          {ALGORITHMS[algorithm].description}
+                        </p>
+                      </div>
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {packets.length} in flight
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] gap-3">
+                      <div className="flex min-w-0 flex-col justify-center gap-2">
+                        <div
+                          className={cn(
+                            'rounded-lg border p-3 text-center',
+                            SIM_CATEGORY.emerald.fill,
+                            SIM_CATEGORY.emerald.border
+                          )}
+                        >
+                          <Users className="mx-auto h-6 w-6" aria-hidden="true" />
+                          <p className="mt-1 text-xs font-semibold">Clients</p>
+                        </div>
+                        <div
+                          className={cn(
+                            'rounded-lg border p-3 text-center',
+                            SIM_CATEGORY.primary.fill,
+                            SIM_CATEGORY.primary.border
+                          )}
+                        >
+                          <Network className="mx-auto h-6 w-6" aria-hidden="true" />
+                          <p className="mt-1 text-xs font-semibold">Load balancer</p>
+                          <p className="text-xs text-muted-foreground">
+                            {ALGORITHMS[algorithm].name}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 content-center gap-2">
+                        {servers.map((server, idx) => {
+                          const category = SERVER_CATEGORIES[idx];
+                          const active = activeServerLines.has(server.id);
+                          return (
+                            <Button
+                              key={server.id}
+                              type="button"
+                              variant="outline"
+                              className={cn(
+                                'h-auto min-h-20 flex-col gap-1 whitespace-normal p-2 text-center',
+                                server.healthy
+                                  ? [category.fill, category.border]
+                                  : SIM_TONE.danger.surface,
+                                serverYPositions[idx] === 50 && 'col-span-2',
+                                active && server.healthy && 'ring-2 ring-primary',
+                                !server.healthy && 'opacity-70'
+                              )}
+                              aria-label={`${server.name}: ${server.healthy ? 'online' : 'down'}`}
+                              aria-pressed={!server.healthy}
+                              onClick={() => toggleServerHealth(server.id)}
+                            >
+                              {server.healthy ? (
+                                <Server className="h-5 w-5" aria-hidden="true" />
+                              ) : (
+                                <XCircle
+                                  className={cn('h-5 w-5', SIM_TONE.danger.iconClass)}
+                                  aria-hidden="true"
+                                />
+                              )}
+                              <span className="text-xs font-semibold">{server.name}</span>
+                              <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                                {server.requests} handled
+                              </span>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="mt-3 min-h-8 rounded-md border bg-muted/50 px-2 py-1.5">
+                      <AnimatePresence initial={false}>
+                        {packets.slice(-4).map((packet) => {
+                          const category =
+                            SERVER_CATEGORIES[Math.max(0, packet.targetServer - 1)] ??
+                            SIM_CATEGORY.neutral;
+                          return (
+                            <motion.span
+                              key={packet.id}
+                              initial={{ opacity: 0, x: -12 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 12 }}
+                              transition={{ duration: 0.2 }}
+                              className={cn(
+                                'mr-1 inline-flex rounded-full border px-2 py-0.5 text-xs',
+                                category.fill,
+                                category.border
+                              )}
+                            >
+                              {packet.phase === 'crashed' || packet.phase === 'failed'
+                                ? 'Request failed'
+                                : `Request to server ${packet.targetServer}`}
+                            </motion.span>
+                          );
+                        })}
+                      </AnimatePresence>
+                      {packets.length === 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          No requests in flight.
+                        </span>
+                      )}
+                    </div>
+                  </section>
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Details',
+                className: 'space-y-2',
+                content: (
+                  <>
+                    <SimMissionList missions={missions.missions} />
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="text-sm font-semibold">Traffic controls</h3>
+                      <fieldset className="mt-2">
+                        <legend className="text-xs font-medium text-muted-foreground">
+                          Traffic rate
+                        </legend>
+                        <div className="mt-1 grid grid-cols-2 gap-1">
+                          {TRAFFIC_RATES.map((rate) => (
+                            <Button
+                              key={rate.value}
+                              type="button"
+                              variant={trafficRate === rate.value ? 'secondary' : 'outline'}
+                              className="h-10 text-xs lg:h-8"
+                              aria-pressed={trafficRate === rate.value}
+                              onClick={() => setTrafficRate(rate.value)}
+                            >
+                              {rate.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <fieldset className="mt-3">
+                        <legend className="text-xs font-medium text-muted-foreground">
+                          Failure rate
+                        </legend>
+                        <div className="mt-1 grid grid-cols-2 gap-1">
+                          {FAILURE_RATES.map((rate) => (
+                            <Button
+                              key={rate.value}
+                              type="button"
+                              variant={failureRate === rate.value ? 'secondary' : 'outline'}
+                              className="h-10 text-xs lg:h-8"
+                              aria-pressed={failureRate === rate.value}
+                              onClick={() => setFailureRate(rate.value)}
+                            >
+                              {rate.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </fieldset>
+                      {failureRate > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="mt-2 h-10 w-full text-xs lg:h-8"
+                          aria-pressed={enableRetry}
+                          onClick={() => setEnableRetry(!enableRetry)}
+                        >
+                          Retry: {enableRetry ? 'On' : 'Off'}
+                        </Button>
+                      )}
+                    </section>
+                    <section className="rounded-lg border bg-card p-3">
+                      <h3 className="text-sm font-semibold">Request counters</h3>
+                      <dl className="mt-2 grid grid-cols-2 gap-2 text-center">
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <dt className="text-xs text-muted-foreground">Successful</dt>
+                          <dd className="font-mono text-lg font-semibold tabular-nums">
+                            {totalRequests}
+                          </dd>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <dt className="text-xs text-muted-foreground">Active</dt>
+                          <dd className="font-mono text-lg font-semibold tabular-nums">
+                            {servers.reduce((sum, server) => sum + server.active, 0)}
+                          </dd>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <dt className="text-xs text-muted-foreground">Crashed</dt>
+                          <dd className="font-mono text-lg font-semibold tabular-nums">
+                            {crashedRequests}
+                          </dd>
+                        </div>
+                        <div className="rounded-md bg-muted/50 p-2">
+                          <dt className="text-xs text-muted-foreground">Failed</dt>
+                          <dd className="font-mono text-lg font-semibold tabular-nums">
+                            {failedRequests}
+                          </dd>
+                        </div>
+                      </dl>
+                    </section>
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-medium">
+                        How load balancing works
+                      </summary>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Round robin rotates through healthy servers. Least connections favors the
+                        one with the fewest active requests. IP hash keeps a client on a consistent
+                        healthy server; taking one down routes later traffic to a fallback.
+                      </p>
+                    </details>
+                  </>
+                ),
+              },
+            ]}
+          />
+        )}
+
+        <SimPhoneBar>
+          <Button
+            type="button"
+            className="h-10 flex-1"
+            variant={isRunning ? 'outline' : 'default'}
+            onClick={() => setIsRunning(!isRunning)}
+          >
+            {isRunning ? (
+              <Pause className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Play className="h-4 w-4" aria-hidden="true" />
             )}
-          </div>
-
-          {/* Algorithm Description */}
-          <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-            <span className="font-medium">{ALGORITHMS[algorithm].name}:</span>{' '}
-            {ALGORITHMS[algorithm].description}
-            <span className="block mt-1 text-xs opacity-75">
-              💡 Click servers to toggle offline • {failureRate > 0 ? `Simulating ${(failureRate * 100).toFixed(0)}% crash rate after accepting requests` : 'No crash simulation'}
-            </span>
-          </div>
-
-          {/* Visualization */}
-          <div className="relative h-72 bg-muted/30 rounded-md border overflow-hidden">
-            {/* Connection Lines */}
-            <svg className="absolute inset-0 w-full h-full">
-              {/* Users to Load Balancer */}
-              <line
-                x1="18%"
-                y1="50%"
-                x2="42%"
-                y2="50%"
-                stroke="#3b82f6"
-                strokeWidth="3"
-                strokeDasharray="8 4"
-              />
-              {/* Load Balancer to each Server - colored lines that light up */}
-              {serverYPositions.map((y, idx) => {
-                const isActive = activeServerLines.has(idx + 1);
-                const server = servers[idx];
-                const lineColor = server.healthy
-                  ? (isActive ? SERVER_COLORS[idx].hex : SERVER_COLORS[idx].dimHex)
-                  : OFFLINE_COLOR.dimHex;
-                return (
-                  <line
-                    key={y}
-                    x1="58%"
-                    y1="50%"
-                    x2="82%"
-                    y2={`${y}%`}
-                    stroke={lineColor}
-                    strokeWidth={isActive && server.healthy ? 5 : 3}
-                    strokeDasharray={isActive && server.healthy ? '0' : '8 4'}
-                    style={{ transition: 'stroke 0.15s, stroke-width 0.15s' }}
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Users (Left) */}
-            <div className="absolute left-[8%] top-1/2 -translate-y-1/2 z-10 text-center">
-              <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center shadow-lg mx-auto border-4 border-white dark:border-slate-700">
-                <Users className="h-10 w-10 text-white" />
-              </div>
-              <div className="mt-2 text-sm font-semibold">Users</div>
-            </div>
-
-            {/* Load Balancer (Center) */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
-              <div className="w-24 h-24 rounded-xl bg-purple-600 flex items-center justify-center shadow-xl mx-auto border-4 border-white dark:border-slate-700">
-                <span className="text-white text-sm font-bold text-center leading-tight">Load<br/>Balancer</span>
-              </div>
-              <div className="mt-2 text-xs font-medium text-muted-foreground">{ALGORITHMS[algorithm].name}</div>
-            </div>
-
-            {/* Servers (Right) - positioned to match serverYPositions */}
-            <div className="absolute right-[8%] top-0 bottom-0 w-24 z-10">
-              {servers.map((server, idx) => (
-                <div
-                  key={server.id}
-                  className="absolute text-center cursor-pointer group"
-                  style={{ top: `${serverYPositions[idx]}%`, transform: 'translateY(-50%)', left: 0, right: 0 }}
-                  onClick={() => toggleServerHealth(server.id)}
-                  title={`Click to ${server.healthy ? 'take offline' : 'bring online'}`}
-                >
-                  <div
-                    className={`w-20 h-20 rounded-xl flex items-center justify-center shadow-lg mx-auto border-4 transition-all
-                      ${server.healthy ? SERVER_COLORS[idx].bg : OFFLINE_COLOR.bg}
-                      ${server.healthy ? 'border-white dark:border-slate-700' : 'border-red-400'}
-                      ${activeServerLines.has(server.id) && server.healthy ? 'scale-110' : ''}
-                      ${!server.healthy ? 'opacity-60' : ''}
-                      group-hover:ring-2 group-hover:ring-offset-2 group-hover:ring-purple-400`}
-                  >
-                    {server.healthy ? (
-                      <Server className="h-9 w-9 text-white" />
-                    ) : (
-                      <XCircle className="h-9 w-9 text-white" />
-                    )}
-                  </div>
-                  <div className={`mt-1 text-xs font-semibold ${!server.healthy ? 'text-red-500' : ''}`}>
-                    {server.name}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Animated Packets - Follow the colored lines */}
-            <AnimatePresence>
-              {packets.map((packet) => {
-                const serverIdx = packet.targetServer - 1;
-                const serverY = serverYPositions[serverIdx] || 50;
-                const dotColor = serverIdx >= 0 && serverIdx < 3 ? SERVER_COLORS[serverIdx].hex : '#ef4444';
-
-                if (packet.phase === 'to-lb') {
-                  // Blue dot: Users → Load Balancer
-                  return (
-                    <motion.div
-                      key={packet.id}
-                      initial={{ left: '18%', top: '50%' }}
-                      animate={{ left: '50%', top: '50%' }}
-                      transition={{ duration: 0.35, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full bg-blue-500 shadow-lg z-20 border-2 border-white"
-                      style={{ transform: 'translate(-50%, -50%)' }}
-                    />
-                  );
-                } else if (packet.phase === 'failed') {
-                  // Red dot bouncing back: failed request
-                  return (
-                    <motion.div
-                      key={packet.id}
-                      initial={{ left: '50%', top: '50%' }}
-                      animate={{ left: '18%', top: '50%' }}
-                      transition={{ duration: 0.35, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full bg-red-500 shadow-lg z-20 border-2 border-white"
-                      style={{ transform: 'translate(-50%, -50%)' }}
-                    />
-                  );
-                } else if (packet.phase === 'exit-lb') {
-                  // Colored dot: exit LB horizontally to line start point (58%)
-                  return (
-                    <motion.div
-                      key={packet.id}
-                      initial={{ left: '50%', top: '50%' }}
-                      animate={{ left: '58%', top: '50%' }}
-                      transition={{ duration: 0.1, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
-                      style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
-                    />
-                  );
-                } else if (packet.phase === 'crashed') {
-                  // Red X on server: crashed after accepting request
-                  return (
-                    <motion.div
-                      key={packet.id}
-                      initial={{ left: '82%', top: `${serverY}%`, scale: 1 }}
-                      animate={{ scale: [1, 1.5, 0] }}
-                      transition={{ duration: 0.5 }}
-                      className="absolute z-30 border-2 border-white rounded-full bg-white"
-                      style={{ transform: 'translate(-50%, -50%)' }}
-                    >
-                      <XCircle className="h-6 w-6 text-red-500" />
-                    </motion.div>
-                  );
-                } else {
-                  // Colored dot: follow angled line from 58% to server
-                  return (
-                    <motion.div
-                      key={packet.id}
-                      initial={{ left: '58%', top: '50%' }}
-                      animate={{ left: '82%', top: `${serverY}%` }}
-                      transition={{ duration: 0.5, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
-                      style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
-                    />
-                  );
-                }
-              })}
-            </AnimatePresence>
-          </div>
-
-          {/* Stats - Color coded to match servers */}
-          <div className="grid grid-cols-3 gap-4">
-            {servers.map((server, idx) => (
-              <div
-                key={server.id}
-                className={`rounded-lg p-4 text-center border-2 transition-all ${!server.healthy ? 'opacity-50' : ''}`}
-                style={{
-                  borderColor: server.healthy ? SERVER_COLORS[idx].hex : OFFLINE_COLOR.hex,
-                  backgroundColor: server.healthy ? SERVER_COLORS[idx].dimHex : OFFLINE_COLOR.dimHex,
-                }}
-              >
-                <div
-                  className="text-sm font-semibold"
-                  style={{ color: server.healthy ? SERVER_COLORS[idx].hex : OFFLINE_COLOR.hex }}
-                >
-                  {server.name} {!server.healthy && '(Offline)'}
-                </div>
-                <div
-                  className="text-3xl font-bold"
-                  style={{ color: server.healthy ? SERVER_COLORS[idx].hex : OFFLINE_COLOR.hex }}
-                >
-                  {server.requests}
-                </div>
-                <div className="text-xs text-muted-foreground">requests handled</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Keyboard shortcuts hint */}
-          <div className="hidden sm:flex items-center justify-center gap-2 text-xs opacity-70 pt-2">
-            <Keyboard className="h-3 w-3" />
-            <span>Space start/stop · 1-4 algorithm · R reset</span>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            {isRunning ? 'Stop' : 'Start'}
+          </Button>
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
   );
 }

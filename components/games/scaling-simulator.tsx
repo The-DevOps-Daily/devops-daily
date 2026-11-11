@@ -1,31 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Play,
-  Pause,
-  RotateCcw,
-  Server,
-  Cpu,
-  HardDrive,
-  Zap,
-  DollarSign,
-  Users,
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  TrendingUp,
-  TrendingDown,
-  Plus,
-  Minus,
-  Settings,
-  Info,
-} from 'lucide-react';
+  SIM_TONE,
+  SimAnnouncer,
+  SimBar,
+  SimComplete,
+  SimFeedback,
+  SimFrame,
+  SimMissionList,
+  SimPhoneBar,
+  SimResetButton,
+  SimStage,
+  useMissions,
+  type Mission,
+} from '@/components/games/sim';
+import { Play, Pause, Server, TrendingUp, Plus, Minus } from 'lucide-react';
 
 // Types
 interface ServerInstance {
@@ -159,6 +154,33 @@ const calculateResponseTime = (load: number): number => {
   return 260 + (load - 1) * 1000;
 };
 
+type ScalingMissionState = {
+  servers: ServerInstance[];
+  hasLoadBalancer: boolean;
+  gameResult: 'playing' | 'won' | 'lost';
+};
+
+const MISSIONS: Mission<ScalingMissionState>[] = [
+  {
+    id: 'scale-up',
+    label: 'Scale up: give a server more CPU or RAM.',
+    hint: 'Vertical scaling makes one machine bigger.',
+    check: ({ servers }) => servers.some((server) => server.cpuCores > 2 || server.ramGB > 4),
+  },
+  {
+    id: 'scale-out',
+    label: 'Scale out: add a server behind a load balancer.',
+    hint: 'Horizontal scaling adds machines.',
+    check: ({ servers, hasLoadBalancer }) => servers.length >= 2 && hasLoadBalancer,
+  },
+  {
+    id: 'win',
+    label: 'Get through a traffic scenario without going over budget.',
+    hint: 'Watch the cost line as the rush comes in.',
+    check: ({ gameResult }) => gameResult === 'won',
+  },
+];
+
 export default function ScalingSimulator() {
   // State
   const [scenario, setScenario] = useState<Scenario>(SCENARIOS[0]);
@@ -187,9 +209,10 @@ export default function ScalingSimulator() {
   const [peakCost, setPeakCost] = useState(0);
   const [trafficHistory, setTrafficHistory] = useState<number[]>([]);
   const [responseTimeHistory, setResponseTimeHistory] = useState<number[]>([]);
-  const [showEducation, setShowEducation] = useState(false);
   const [activeTab, setActiveTab] = useState('vertical');
   const [gameResult, setGameResult] = useState<'playing' | 'won' | 'lost'>('playing');
+  const [dismissed, setDismissed] = useState(false);
+  const [tab, setTab] = useState<'rack' | 'charts' | 'details'>('rack');
   const scaleUpTimer = useRef<number | null>(null);
   const scaleDownTimer = useRef<number | null>(null);
 
@@ -241,9 +264,7 @@ export default function ScalingSimulator() {
   const removeServer = useCallback(
     (serverId: string) => {
       if (servers.length <= 1) return;
-      setServers((prev) =>
-        prev.map((s) => (s.id === serverId ? { ...s, status: 'stopping' } : s))
-      );
+      setServers((prev) => prev.map((s) => (s.id === serverId ? { ...s, status: 'stopping' } : s)));
       setTimeout(() => {
         setServers((prev) => prev.filter((s) => s.id !== serverId));
       }, 2000 / speed);
@@ -255,14 +276,10 @@ export default function ScalingSimulator() {
   const upgradeServer = useCallback(
     (serverId: string, upgrade: Partial<ServerInstance>) => {
       // Vertical scaling requires downtime
-      setServers((prev) =>
-        prev.map((s) => (s.id === serverId ? { ...s, status: 'stopping' } : s))
-      );
+      setServers((prev) => prev.map((s) => (s.id === serverId ? { ...s, status: 'stopping' } : s)));
       setTimeout(() => {
         setServers((prev) =>
-          prev.map((s) =>
-            s.id === serverId ? { ...s, ...upgrade, status: 'starting' } : s
-          )
+          prev.map((s) => (s.id === serverId ? { ...s, ...upgrade, status: 'starting' } : s))
         );
       }, 1500 / speed);
       setTimeout(() => {
@@ -380,19 +397,28 @@ export default function ScalingSimulator() {
         // Scale up to meet minimum instances requirement
         if (healthyServers.length < scalingConfig.minInstances) {
           if (!scaleUpTimer.current) {
-            scaleUpTimer.current = window.setTimeout(() => {
-              addServer();
-              scaleUpTimer.current = null;
-            }, (scalingConfig.scaleUpDelay * 1000) / speed);
+            scaleUpTimer.current = window.setTimeout(
+              () => {
+                addServer();
+                scaleUpTimer.current = null;
+              },
+              (scalingConfig.scaleUpDelay * 1000) / speed
+            );
           }
         }
         // Scale up based on CPU threshold
-        else if (avgCpuUsage > scalingConfig.cpuThreshold && healthyServers.length < scalingConfig.maxInstances) {
+        else if (
+          avgCpuUsage > scalingConfig.cpuThreshold &&
+          healthyServers.length < scalingConfig.maxInstances
+        ) {
           if (!scaleUpTimer.current) {
-            scaleUpTimer.current = window.setTimeout(() => {
-              addServer();
-              scaleUpTimer.current = null;
-            }, (scalingConfig.scaleUpDelay * 1000) / speed);
+            scaleUpTimer.current = window.setTimeout(
+              () => {
+                addServer();
+                scaleUpTimer.current = null;
+              },
+              (scalingConfig.scaleUpDelay * 1000) / speed
+            );
           }
         } else if (scaleUpTimer.current) {
           clearTimeout(scaleUpTimer.current);
@@ -404,11 +430,14 @@ export default function ScalingSimulator() {
           healthyServers.length > scalingConfig.minInstances
         ) {
           if (!scaleDownTimer.current) {
-            scaleDownTimer.current = window.setTimeout(() => {
-              const serverToRemove = healthyServers[healthyServers.length - 1];
-              if (serverToRemove) removeServer(serverToRemove.id);
-              scaleDownTimer.current = null;
-            }, (scalingConfig.scaleDownDelay * 1000) / speed);
+            scaleDownTimer.current = window.setTimeout(
+              () => {
+                const serverToRemove = healthyServers[healthyServers.length - 1];
+                if (serverToRemove) removeServer(serverToRemove.id);
+                scaleDownTimer.current = null;
+              },
+              (scalingConfig.scaleDownDelay * 1000) / speed
+            );
           }
         } else if (scaleDownTimer.current) {
           clearTimeout(scaleDownTimer.current);
@@ -418,16 +447,29 @@ export default function ScalingSimulator() {
     }, 1000 / speed);
 
     return () => clearInterval(interval);
-  }, [isRunning, time, scenario, servers, hasLoadBalancer, scalingConfig, speed, addServer, removeServer, metrics, totalCost, peakCost]);
+  }, [
+    isRunning,
+    time,
+    scenario,
+    servers,
+    hasLoadBalancer,
+    scalingConfig,
+    speed,
+    addServer,
+    removeServer,
+    metrics,
+    totalCost,
+    peakCost,
+  ]);
 
   // Immediately scale to minInstances when auto-scaling is enabled
   useEffect(() => {
     if (!scalingConfig.autoScalingEnabled || !hasLoadBalancer) return;
-    
+
     const healthyServers = servers.filter(
       (s) => s.status === 'healthy' || s.status === 'overloaded' || s.status === 'starting'
     );
-    
+
     // Scale up if below minimum
     if (healthyServers.length < scalingConfig.minInstances) {
       const timer = setTimeout(() => {
@@ -435,7 +477,14 @@ export default function ScalingSimulator() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [scalingConfig.autoScalingEnabled, scalingConfig.minInstances, hasLoadBalancer, servers, addServer, removeServer]);
+  }, [
+    scalingConfig.autoScalingEnabled,
+    scalingConfig.minInstances,
+    hasLoadBalancer,
+    servers,
+    addServer,
+    removeServer,
+  ]);
 
   // Reset game
   const reset = useCallback(() => {
@@ -465,775 +514,640 @@ export default function ScalingSimulator() {
     setPeakCost(0);
     // Add initial server after reset
     setTimeout(() => {
-      setServers([{
-        id: `server-${Date.now()}`,
-        cpuCores: 2,
-        ramGB: 4,
-        diskType: 'SSD',
-        networkGbps: 1,
-        currentLoad: 0,
-        requestsHandled: 0,
-        status: 'healthy',
-        startTime: 0,
-      }]);
+      setServers([
+        {
+          id: `server-${Date.now()}`,
+          cpuCores: 2,
+          ramGB: 4,
+          diskType: 'SSD',
+          networkGbps: 1,
+          currentLoad: 0,
+          requestsHandled: 0,
+          status: 'healthy',
+          startTime: 0,
+        },
+      ]);
     }, 0);
   }, []);
 
   const currentCost = totalCost();
   const budgetUsed = (currentCost / scenario.budget) * 100;
+  const missionState = useMemo(
+    () => ({ servers, hasLoadBalancer, gameResult }),
+    [servers, hasLoadBalancer, gameResult]
+  );
+  const missions = useMissions(MISSIONS, missionState);
+
+  const startOver = () => {
+    reset();
+    missions.reset();
+    setDismissed(false);
+  };
 
   return (
-    <div className="space-y-6">
-      <Card className="max-w-7xl mx-auto">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Horizontal vs Vertical Scaling Simulator
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Learn scaling strategies by managing traffic under real-world conditions
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowEducation(!showEducation)}
-            >
-              <Info className="h-4 w-4 mr-1" />
-              {showEducation ? 'Hide' : 'Show'} Guide
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Educational Panel */}
-          {showEducation && (
-            <div className="grid gap-4 md:grid-cols-2 p-4 bg-muted/30 rounded-lg">
-              <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-blue-500" />
-                  Vertical Scaling (Scale Up)
-                </h3>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>✓ Increase resources on existing server</li>
-                  <li>✓ Simple, no architecture changes</li>
-                  <li>✓ No data sync issues</li>
-                  <li>✗ Hard limits (biggest machine)</li>
-                  <li>✗ Single point of failure</li>
-                  <li>✗ Downtime during upgrades</li>
-                </ul>
-              </div>
-              <div className="space-y-2">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Server className="h-4 w-4 text-green-500" />
-                  Horizontal Scaling (Scale Out)
-                </h3>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>✓ Add more servers</li>
-                  <li>✓ Nearly unlimited scaling</li>
-                  <li>✓ No single point of failure</li>
-                  <li>✓ Zero-downtime scaling</li>
-                  <li>✗ Requires load balancer</li>
-                  <li>✗ More complex architecture</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* Scenario Selection */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Scenario:</span>
-              <div className="flex gap-2 flex-wrap">
-                {SCENARIOS.map((s) => (
-                  <Button
-                    key={s.id}
-                    variant={scenario.id === s.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      setScenario(s);
-                      reset();
-                    }}
-                    disabled={isRunning}
-                  >
-                    <Badge
-                      variant="secondary"
-                      className={`mr-2 text-xs ${
-                        s.difficulty === 'Easy'
-                          ? 'bg-green-500/20 text-green-600'
-                          : s.difficulty === 'Medium'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : s.difficulty === 'Hard'
-                              ? 'bg-orange-500/20 text-orange-600'
-                              : 'bg-red-500/20 text-red-600'
-                      }`}
-                    >
-                      {s.difficulty}
-                    </Badge>
-                    {s.name}
-                  </Button>
+    <MotionConfig reducedMotion="user">
+      <SimFrame phoneBar>
+        <SimBar
+          title="Scaling Simulator"
+          icon={TrendingUp}
+          lead={
+            <label className="flex items-center gap-2 text-sm font-medium">
+              Scenario
+              <select
+                aria-label="Scenario"
+                value={scenario.id}
+                disabled={isRunning}
+                onChange={(event) => {
+                  const nextScenario = SCENARIOS.find((item) => item.id === event.target.value);
+                  if (!nextScenario) return;
+                  setScenario(nextScenario);
+                  reset();
+                  missions.reset();
+                  setDismissed(false);
+                }}
+                className="h-10 min-w-0 rounded-md border bg-background px-2 text-sm lg:h-8"
+              >
+                {SCENARIOS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}: {item.difficulty}
+                  </option>
                 ))}
-              </div>
-            </div>
-          </div>
+              </select>
+            </label>
+          }
+          tools={<SimResetButton onReset={startOver} />}
+          progress={{ current: missions.done, total: missions.total }}
+          heading={isRunning ? 'Traffic rush in progress' : 'Build the service for the rush'}
+          actions={
+            <RunControls
+              isRunning={isRunning}
+              gameResult={gameResult}
+              speed={speed}
+              onSpeed={setSpeed}
+              onToggle={() => setIsRunning(!isRunning)}
+              onReset={startOver}
+            />
+          }
+          meta={
+            <Badge variant="secondary" className="font-mono tabular-nums">
+              {time}s / {scenario.duration}s
+            </Badge>
+          }
+          goal={
+            missions.complete ? (
+              'All three done. Keep tuning the service.'
+            ) : (
+              <>
+                {missions.current?.label}{' '}
+                <span className="text-muted-foreground">{missions.current?.hint}</span>
+              </>
+            )
+          }
+        />
+        <SimAnnouncer
+          message={`${servers.length} server${servers.length === 1 ? '' : 's'}, ${metrics.currentRPS} requests per second, and ${Math.round(budgetUsed)} percent of budget in use.`}
+        />
 
-          {/* Controls */}
-          <div className="flex flex-wrap items-center gap-4">
-            <Button
-              onClick={() => setIsRunning(!isRunning)}
-              variant={isRunning ? 'destructive' : 'default'}
-              size="sm"
-              disabled={gameResult !== 'playing'}
-            >
-              {isRunning ? (
-                <Pause className="h-4 w-4 mr-1" />
-              ) : (
-                <Play className="h-4 w-4 mr-1" />
-              )}
-              {isRunning ? 'Pause' : 'Start'}
-            </Button>
-            <Button onClick={reset} variant="outline" size="sm">
-              <RotateCcw className="h-4 w-4 mr-1" /> Reset
-            </Button>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">Speed:</span>
-              {[1, 2, 5, 10].map((s) => (
-                <Button
-                  key={s}
-                  variant={speed === s ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSpeed(s)}
-                >
-                  {s}x
-                </Button>
-              ))}
-            </div>
-            <div className="ml-auto flex items-center gap-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Time: </span>
-                <span className="font-mono">
-                  {time}s / {scenario.duration}s
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Game Result */}
-          {gameResult !== 'playing' && (
-            <div
-              className={`p-4 rounded-lg border ${
-                gameResult === 'won'
-                  ? 'bg-green-500/10 border-green-500/30'
-                  : 'bg-red-500/10 border-red-500/30'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {gameResult === 'won' ? (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
-                )}
-                <span className="font-semibold">
-                  {gameResult === 'won' ? 'Success!' : 'Challenge Failed'}
-                </span>
-              </div>
-              <p className="text-sm mt-2 text-muted-foreground">
-                {gameResult === 'won'
-                  ? `You kept ${metrics.uptime.toFixed(1)}% uptime at ${metrics.avgResponseTime}ms average response time, and spending peaked at $${peakCost} of your $${scenario.budget} budget`
-                  : `Uptime: ${metrics.uptime.toFixed(1)}% (target: 95%) | Avg response: ${metrics.avgResponseTime}ms (target: ${scenario.targetResponseTime}ms or less) | Peak cost: $${peakCost}/$${scenario.budget}`}
-              </p>
-            </div>
-          )}
-
-          {/* Main Dashboard */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="p-4 rounded-lg bg-muted/30">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                Current Traffic
-              </div>
-              <div className="text-2xl font-bold">{metrics.currentRPS} req/s</div>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/30">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Activity className="h-4 w-4" />
-                Avg Response Time
-              </div>
-              <div
-                className={`text-2xl font-bold ${
-                  metrics.avgResponseTime > scenario.targetResponseTime
-                    ? 'text-red-500'
-                    : 'text-green-500'
-                }`}
-              >
-                {metrics.avgResponseTime}ms
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Target: {'<'}{scenario.targetResponseTime}ms
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/30">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <CheckCircle className="h-4 w-4" />
-                Uptime
-              </div>
-              <div
-                className={`text-2xl font-bold ${
-                  metrics.uptime < 95 ? 'text-red-500' : 'text-green-500'
-                }`}
-              >
-                {metrics.uptime.toFixed(1)}%
-              </div>
-              <div className="text-xs text-muted-foreground">Target: {'>'}95%</div>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/30">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <DollarSign className="h-4 w-4" />
-                Monthly Cost
-              </div>
-              <div
-                className={`text-2xl font-bold ${
-                  currentCost > scenario.budget ? 'text-red-500' : 'text-green-500'
-                }`}
-              >
-                ${currentCost}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Budget: ${scenario.budget}
-                {peakCost > 0 && ` (peak this run: $${peakCost})`}
-              </div>
-            </div>
-          </div>
-
-          {/* Budget Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Budget Usage</span>
-              <span
-                className={budgetUsed > 100 ? 'text-red-500' : ''}
-              >
-                ${currentCost} / ${scenario.budget}
-              </span>
-            </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all ${
-                  budgetUsed > 100
-                    ? 'bg-red-500'
-                    : budgetUsed > 80
-                      ? 'bg-yellow-500'
-                      : 'bg-green-500'
-                }`}
-                style={{ width: `${Math.min(budgetUsed, 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Scaling Controls */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="vertical">Vertical Scaling</TabsTrigger>
-              <TabsTrigger value="horizontal">Horizontal Scaling</TabsTrigger>
-              <TabsTrigger value="auto">Auto-Scaling</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="vertical" className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Upgrade individual server specs. Note: each upgrade takes the server down for
-                about 3 simulated seconds.
-              </p>
-
-              {/* Pricing Reference */}
-              <div className="p-4 rounded-lg bg-muted/30 border">
-                <h4 className="font-medium flex items-center gap-2 mb-3">
-                  <DollarSign className="h-4 w-4" />
-                  Pricing Reference (Monthly)
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <div className="text-muted-foreground mb-1 flex items-center gap-1">
-                      <Cpu className="h-3 w-3" /> CPU Cores
-                    </div>
-                    <div className="space-y-0.5 font-mono text-xs">
-                      <div className="flex justify-between"><span>2 cores</span><span>$15</span></div>
-                      <div className="flex justify-between"><span>4 cores</span><span>$30</span></div>
-                      <div className="flex justify-between"><span>8 cores</span><span>$60</span></div>
-                      <div className="flex justify-between"><span>16 cores</span><span>$120</span></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-1 flex items-center gap-1">
-                      <Zap className="h-3 w-3" /> RAM
-                    </div>
-                    <div className="space-y-0.5 font-mono text-xs">
-                      <div className="flex justify-between"><span>4 GB</span><span>$10</span></div>
-                      <div className="flex justify-between"><span>8 GB</span><span>$20</span></div>
-                      <div className="flex justify-between"><span>16 GB</span><span>$40</span></div>
-                      <div className="flex justify-between"><span>32 GB</span><span>$80</span></div>
-                      <div className="flex justify-between"><span>64 GB</span><span>$160</span></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-1 flex items-center gap-1">
-                      <HardDrive className="h-3 w-3" /> Disk Type
-                    </div>
-                    <div className="space-y-0.5 font-mono text-xs">
-                      <div className="flex justify-between"><span>HDD</span><span>$5</span></div>
-                      <div className="flex justify-between"><span>SSD</span><span>$15</span></div>
-                      <div className="flex justify-between"><span>NVMe</span><span>$30</span></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground mb-1 flex items-center gap-1">
-                      <Activity className="h-3 w-3" /> Network
-                    </div>
-                    <div className="space-y-0.5 font-mono text-xs">
-                      <div className="flex justify-between"><span>1 Gbps</span><span>$0</span></div>
-                      <div className="flex justify-between"><span>10 Gbps</span><span>$25</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {servers.map((server, index) => (
-                <div
-                  key={server.id}
-                  className="p-4 rounded-lg border bg-card space-y-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Server className="h-4 w-4" />
-                      <span className="font-medium">Server {index + 1}</span>
-                      <Badge
-                        variant="secondary"
-                        className={`${
-                          server.status === 'healthy'
-                            ? 'bg-green-500/20 text-green-600'
-                            : server.status === 'overloaded'
-                              ? 'bg-red-500/20 text-red-600'
-                              : 'bg-yellow-500/20 text-yellow-600'
-                        }`}
-                      >
-                        {server.status}
-                      </Badge>
-                    </div>
-                    <span className="text-sm text-muted-foreground">
-                      ${calculateServerCost(server)}/mo
-                    </span>
-                  </div>
-
-                  {/* Load Bar */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span>Load</span>
-                      <span>{Math.round(server.currentLoad * 100)}%</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all ${
-                          server.currentLoad > 1
-                            ? 'bg-red-500'
-                            : server.currentLoad > 0.8
-                              ? 'bg-yellow-500'
-                              : 'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(server.currentLoad * 100, 100)}%` }}
+        {missions.complete && !dismissed ? (
+          <SimComplete
+            title="Scaling missions complete"
+            summary="You made a server bigger, put more machines behind a load balancer, and completed a traffic rush within budget."
+            stats={[
+              { label: 'Missions', value: `${missions.done}/${missions.total}` },
+              { label: 'Peak cost', value: `$${peakCost}` },
+              { label: 'Uptime', value: `${metrics.uptime.toFixed(1)}%` },
+            ]}
+            actions={
+              <Button type="button" variant="outline" onClick={() => setDismissed(true)}>
+                Keep exploring
+              </Button>
+            }
+            onPlayAgain={startOver}
+            playAgainLabel="Start over"
+          />
+        ) : (
+          <SimStage
+            columns="lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1fr)]"
+            minHeight="min-h-[26rem]"
+            tab={tab}
+            onTabChange={(next) => {
+              if (next === 'rack' || next === 'charts' || next === 'details') setTab(next);
+            }}
+            tabsLabel="Scaling simulator panels"
+            panels={[
+              {
+                id: 'rack',
+                label: 'Server rack',
+                content: (
+                  <div className="space-y-2">
+                    {gameResult === 'lost' && (
+                      <SimFeedback tone="danger" label="Challenge failed">
+                        <p>
+                          Uptime: {metrics.uptime.toFixed(1)}% · Average response:{' '}
+                          {metrics.avgResponseTime}ms · Peak cost: ${peakCost}/${scenario.budget}
+                        </p>
+                      </SimFeedback>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Metric label="Traffic" value={`${metrics.currentRPS} req/s`} />
+                      <Metric
+                        label="Response"
+                        value={`${metrics.avgResponseTime}ms`}
+                        tone={
+                          metrics.avgResponseTime > scenario.targetResponseTime
+                            ? 'danger'
+                            : 'success'
+                        }
+                      />
+                      <Metric
+                        label="Uptime"
+                        value={`${metrics.uptime.toFixed(1)}%`}
+                        tone={metrics.uptime < 95 ? 'danger' : 'success'}
+                      />
+                      <Metric
+                        label="Monthly cost"
+                        value={`$${currentCost}`}
+                        tone={currentCost > scenario.budget ? 'danger' : 'success'}
                       />
                     </div>
-                  </div>
-
-                  {/* Upgrade Options */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Cpu className="h-3 w-3" /> CPU Cores
-                      </label>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={server.cpuCores <= 2 || isRunning}
-                          onClick={() =>
-                            upgradeServer(server.id, {
-                              cpuCores: server.cpuCores / 2,
-                            })
-                          }
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center font-mono">{server.cpuCores}</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={server.cpuCores >= 16 || isRunning}
-                          onClick={() =>
-                            upgradeServer(server.id, {
-                              cpuCores: server.cpuCores * 2,
-                            })
-                          }
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
+                    <div className="rounded-lg border bg-card p-3">
+                      <div className="flex justify-between gap-2 text-sm">
+                        <span className="font-medium">Budget usage</span>
+                        <span>
+                          ${currentCost} / ${scenario.budget}
+                        </span>
+                      </div>
+                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full transition-[width] ${budgetUsed > 100 ? SIM_TONE.danger.fill : SIM_TONE.success.fill}`}
+                          style={{ width: `${Math.min(budgetUsed, 100)}%` }}
+                        />
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Zap className="h-3 w-3" /> RAM (GB)
-                      </label>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={server.ramGB <= 4 || isRunning}
-                          onClick={() =>
-                            upgradeServer(server.id, { ramGB: server.ramGB / 2 })
-                          }
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-8 text-center font-mono">{server.ramGB}</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={server.ramGB >= 64 || isRunning}
-                          onClick={() =>
-                            upgradeServer(server.id, { ramGB: server.ramGB * 2 })
-                          }
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
+                    <div className="rounded-lg border bg-card p-3">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold">Live server rack</h3>
+                        <Badge variant="secondary">
+                          {hasLoadBalancer ? 'Load balancer active' : 'No load balancer'}
+                        </Badge>
                       </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground flex items-center gap-1">
-                        <HardDrive className="h-3 w-3" /> Disk
-                      </label>
-                      <div className="flex gap-1 mt-1">
-                        {(['HDD', 'SSD', 'NVMe'] as const).map((disk) => (
-                          <Button
-                            key={disk}
-                            size="sm"
-                            variant={server.diskType === disk ? 'default' : 'outline'}
-                            disabled={isRunning}
-                            onClick={() => upgradeServer(server.id, { diskType: disk })}
-                          >
-                            {disk}
-                          </Button>
+                      <div className="space-y-2">
+                        {servers.map((server, index) => (
+                          <div key={server.id} className="rounded-md border bg-muted/30 p-2">
+                            <div className="flex justify-between gap-2 text-sm font-medium">
+                              <span className="flex items-center gap-2">
+                                <Server className="h-4 w-4 text-primary" aria-hidden="true" />
+                                Server {index + 1}
+                              </span>
+                              <span>{server.status}</span>
+                            </div>
+                            <div className="mt-1 grid grid-cols-3 gap-1 text-xs text-muted-foreground">
+                              <span>{server.cpuCores} CPU</span>
+                              <span>{server.ramGB} GB RAM</span>
+                              <span>{calculateServerCapacity(server)} req/s</span>
+                            </div>
+                          </div>
                         ))}
                       </div>
                     </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">Capacity</label>
-                      <div className="font-mono text-lg">
-                        {calculateServerCapacity(server)} req/s
-                      </div>
+                  </div>
+                ),
+              },
+              {
+                id: 'charts',
+                label: 'Live charts',
+                content: (
+                  <div className="space-y-2">
+                    <Chart
+                      title="Traffic pattern"
+                      values={trafficHistory}
+                      ceiling={5000}
+                      empty="Start the simulation to see traffic."
+                    />
+                    <Chart
+                      title="Response time"
+                      values={responseTimeHistory}
+                      ceiling={Math.max(scenario.targetResponseTime * 2, 400)}
+                      empty="Response times appear with the first tick."
+                      tone={
+                        responseTimeHistory.some((value) => value > scenario.targetResponseTime)
+                          ? 'danger'
+                          : 'success'
+                      }
+                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Metric
+                        label="Total requests"
+                        value={metrics.totalRequests.toLocaleString()}
+                      />
+                      <Metric
+                        label="Successful"
+                        value={metrics.successfulRequests.toLocaleString()}
+                      />
+                      <Metric label="Failed" value={metrics.failedRequests.toLocaleString()} />
+                      <Metric
+                        label="Healthy servers"
+                        value={`${servers.filter((server) => server.status === 'healthy').length} / ${servers.length}`}
+                      />
                     </div>
                   </div>
-                </div>
-              ))}
-            </TabsContent>
-
-            <TabsContent value="horizontal" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Add or remove servers. Requires a load balancer for traffic distribution.
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={hasLoadBalancer ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setHasLoadBalancer(!hasLoadBalancer)}
-                  >
-                    {hasLoadBalancer ? 'LB Active' : 'Add Load Balancer'}
-                    <Badge variant="secondary" className="ml-2">
-                      +${PRICING.loadBalancer}/mo
-                    </Badge>
-                  </Button>
-                </div>
-              </div>
-
-              {!hasLoadBalancer && servers.length > 1 && (
-                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-sm">
-                  <AlertTriangle className="h-4 w-4 inline mr-2 text-yellow-500" />
-                  Without a load balancer, all traffic goes to the first server!
-                </div>
-              )}
-
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {servers.map((server, index) => (
-                  <div
-                    key={server.id}
-                    className={`p-4 rounded-lg border transition-colors ${
-                      server.status === 'healthy'
-                        ? 'border-green-500/30 bg-green-500/5'
-                        : server.status === 'overloaded'
-                          ? 'border-red-500/30 bg-red-500/5'
-                          : 'border-yellow-500/30 bg-yellow-500/5'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4" />
-                        <span className="font-medium">Server {index + 1}</span>
-                      </div>
-                      {servers.length > 1 && (
+                ),
+              },
+              {
+                id: 'details',
+                label: 'Scaling controls',
+                content: (
+                  <div className="space-y-2">
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                      <TabsList className="grid h-auto w-full grid-cols-3">
+                        <TabsTrigger
+                          value="vertical"
+                          className="h-10 text-xs"
+                          onClick={() => setActiveTab('vertical')}
+                        >
+                          Vertical
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="horizontal"
+                          className="h-10 text-xs"
+                          onClick={() => setActiveTab('horizontal')}
+                        >
+                          Horizontal
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="auto"
+                          className="h-10 text-xs"
+                          onClick={() => setActiveTab('auto')}
+                        >
+                          Autoscaling
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="vertical" className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Upgrade one machine. Changes take it through a short restart.
+                        </p>
+                        {servers.map((server, index) => (
+                          <div key={server.id} className="space-y-3 rounded-lg border bg-card p-3">
+                            <div className="flex justify-between gap-2">
+                              <h3 className="font-medium">Server {index + 1}</h3>
+                              <span className="text-sm text-muted-foreground">
+                                ${calculateServerCost(server)}/mo
+                              </span>
+                            </div>
+                            <Adjuster
+                              label="CPU cores"
+                              value={server.cpuCores}
+                              down={`Decrease CPU for Server ${index + 1}`}
+                              up={`Increase CPU for Server ${index + 1}`}
+                              disableDown={server.cpuCores <= 2 || isRunning}
+                              disableUp={server.cpuCores >= 16 || isRunning}
+                              onDown={() =>
+                                upgradeServer(server.id, { cpuCores: server.cpuCores / 2 })
+                              }
+                              onUp={() =>
+                                upgradeServer(server.id, { cpuCores: server.cpuCores * 2 })
+                              }
+                            />
+                            <Adjuster
+                              label="RAM (GB)"
+                              value={server.ramGB}
+                              down={`Decrease RAM for Server ${index + 1}`}
+                              up={`Increase RAM for Server ${index + 1}`}
+                              disableDown={server.ramGB <= 4 || isRunning}
+                              disableUp={server.ramGB >= 64 || isRunning}
+                              onDown={() => upgradeServer(server.id, { ramGB: server.ramGB / 2 })}
+                              onUp={() => upgradeServer(server.id, { ramGB: server.ramGB * 2 })}
+                            />
+                          </div>
+                        ))}
+                      </TabsContent>
+                      <TabsContent value="horizontal" className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                          Add machines and distribute requests through a load balancer.
+                        </p>
                         <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => removeServer(server.id)}
+                          type="button"
+                          variant={hasLoadBalancer ? 'default' : 'outline'}
+                          className="h-10 w-full"
+                          aria-pressed={hasLoadBalancer}
+                          onClick={() => setHasLoadBalancer(!hasLoadBalancer)}
                         >
-                          <Minus className="h-4 w-4" />
+                          {hasLoadBalancer ? 'Load balancer active' : 'Add load balancer'} · $
+                          {PRICING.loadBalancer}/mo
                         </Button>
-                      )}
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status</span>
-                        <Badge
-                          variant="secondary"
-                          className={`${
-                            server.status === 'healthy'
-                              ? 'bg-green-500/20 text-green-600'
-                              : server.status === 'overloaded'
-                                ? 'bg-red-500/20 text-red-600'
-                                : 'bg-yellow-500/20 text-yellow-600'
-                          }`}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-10 w-full"
+                          onClick={addServer}
+                          disabled={servers.length >= scalingConfig.maxInstances}
                         >
-                          {server.status}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Load</span>
-                        <span>{Math.round(server.currentLoad * 100)}%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Requests</span>
-                        <span>{server.requestsHandled.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Capacity</span>
-                        <span>{calculateServerCapacity(server)} req/s</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              <Button
-                variant="outline"
-                className="h-full min-h-[150px] border-dashed"
-                onClick={addServer}
-                 disabled={servers.length >= scalingConfig.maxInstances}
-              >
-                <Plus className="h-6 w-6 mr-2" />
-                Add Server
-                <Badge variant="secondary" className="ml-2">
-                   {servers.length >= scalingConfig.maxInstances
-                     ? `Max ${scalingConfig.maxInstances}`
-                     : `+$${NEW_SERVER_COST}/mo`}
-                </Badge>
-              </Button>
-                {servers.length > 1 && (
-                  <Button
-                    variant="outline"
-                    className="h-full min-h-[150px] border-dashed border-red-500/50 hover:bg-red-500/10"
-                    onClick={() => removeServer(servers[servers.length - 1].id)}
-                  >
-                    <Minus className="h-6 w-6 mr-2" />
-                    Remove Server
-                    <Badge variant="secondary" className="ml-2 bg-red-500/20 text-red-600">
-                      -${calculateServerCost(servers[servers.length - 1])}/mo
-                    </Badge>
-                  </Button>
-                )}
-             </div>
-           </TabsContent>
-
-            <TabsContent value="auto" className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  Configure automatic scaling based on CPU threshold.
-                </p>
-                <Button
-                  variant={scalingConfig.autoScalingEnabled ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() =>
-                    setScalingConfig((prev) => ({
-                      ...prev,
-                      autoScalingEnabled: !prev.autoScalingEnabled,
-                    }))
-                  }
-                  disabled={!hasLoadBalancer}
-                >
-                  {scalingConfig.autoScalingEnabled ? 'Enabled' : 'Enable Auto-Scaling'}
-                  <Badge variant="secondary" className="ml-2">
-                    +${PRICING.autoScaling}/mo
-                  </Badge>
-                </Button>
-              </div>
-
-              {!hasLoadBalancer && (
-                <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-sm">
-                  <AlertTriangle className="h-4 w-4 inline mr-2 text-yellow-500" />
-                  Auto-scaling requires a load balancer to be enabled first.
-                </div>
-              )}
-
-              {hasLoadBalancer && (
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-medium">CPU Threshold (%)</label>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Scale up when CPU exceeds this threshold
-                      </p>
-                      <div className="flex items-center gap-4">
-                        <Slider
-                          value={[scalingConfig.cpuThreshold]}
-                          onValueChange={([value]) =>
-                            setScalingConfig((prev) => ({ ...prev, cpuThreshold: value }))
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                          Add server · +${NEW_SERVER_COST}/mo
+                        </Button>
+                        {servers.length > 1 &&
+                          servers.map((server, index) => (
+                            <Button
+                              key={server.id}
+                              type="button"
+                              variant="outline"
+                              className="h-10 w-full justify-between"
+                              onClick={() => removeServer(server.id)}
+                            >
+                              Remove Server {index + 1}
+                              <Minus className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                          ))}
+                      </TabsContent>
+                      <TabsContent value="auto" className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          Set CPU thresholds and instance bounds for automatic changes.
+                        </p>
+                        <Button
+                          type="button"
+                          variant={scalingConfig.autoScalingEnabled ? 'default' : 'outline'}
+                          className="h-10 w-full"
+                          aria-pressed={scalingConfig.autoScalingEnabled}
+                          onClick={() =>
+                            setScalingConfig((prev) => ({
+                              ...prev,
+                              autoScalingEnabled: !prev.autoScalingEnabled,
+                            }))
                           }
-                          min={50}
-                          max={90}
-                          step={5}
-                          className="flex-1"
-                        />
-                        <span className="w-12 text-right font-mono">
-                          {scalingConfig.cpuThreshold}%
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Min Instances</label>
-                      <div className="flex items-center gap-4">
-                        <Slider
-                          value={[scalingConfig.minInstances]}
-                          onValueChange={([value]) =>
-                            setScalingConfig((prev) => ({ ...prev, minInstances: value }))
-                          }
-                          min={1}
-                          max={5}
-                          step={1}
-                          className="flex-1"
-                        />
-                        <span className="w-12 text-right font-mono">
-                          {scalingConfig.minInstances}
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium">Max Instances</label>
-                      <div className="flex items-center gap-4">
-                        <Slider
-                          value={[scalingConfig.maxInstances]}
-                          onValueChange={([value]) =>
-                            setScalingConfig((prev) => ({ ...prev, maxInstances: value }))
-                          }
-                          min={2}
-                          max={20}
-                          step={1}
-                          className="flex-1"
-                        />
-                        <span className="w-12 text-right font-mono">
-                          {scalingConfig.maxInstances}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/30 space-y-2">
-                    <h4 className="font-medium flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Current Configuration
-                    </h4>
-                    <div className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Status</span>
-                        <Badge
-                          variant="secondary"
-                          className={
-                            scalingConfig.autoScalingEnabled
-                              ? 'bg-green-500/20 text-green-600'
-                              : 'bg-gray-500/20 text-gray-600'
-                          }
+                          disabled={!hasLoadBalancer}
                         >
-                          {scalingConfig.autoScalingEnabled ? 'Active' : 'Disabled'}
-                        </Badge>
+                          {scalingConfig.autoScalingEnabled
+                            ? 'Autoscaling enabled'
+                            : 'Enable autoscaling'}{' '}
+                          · +${PRICING.autoScaling}/mo
+                        </Button>
+                        {!hasLoadBalancer && (
+                          <SimFeedback tone="warning" label="Load balancer required">
+                            <p>Enable it in Horizontal scaling before turning on autoscaling.</p>
+                          </SimFeedback>
+                        )}
+                        <div className="space-y-3 rounded-lg border bg-card p-3">
+                          <Range
+                            label="CPU threshold"
+                            value={scalingConfig.cpuThreshold}
+                            min={50}
+                            max={90}
+                            step={5}
+                            suffix="%"
+                            onChange={(value) =>
+                              setScalingConfig((prev) => ({ ...prev, cpuThreshold: value }))
+                            }
+                          />
+                          <Range
+                            label="Min instances"
+                            value={scalingConfig.minInstances}
+                            min={1}
+                            max={5}
+                            step={1}
+                            onChange={(value) =>
+                              setScalingConfig((prev) => ({ ...prev, minInstances: value }))
+                            }
+                          />
+                          <Range
+                            label="Max instances"
+                            value={scalingConfig.maxInstances}
+                            min={2}
+                            max={20}
+                            step={1}
+                            onChange={(value) =>
+                              setScalingConfig((prev) => ({ ...prev, maxInstances: value }))
+                            }
+                          />
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                    <SimMissionList missions={missions.missions} />
+                    <details className="rounded-lg border bg-card p-3">
+                      <summary className="cursor-pointer text-sm font-semibold">
+                        Scaling guide
+                      </summary>
+                      <div className="mt-2 space-y-2 text-sm text-muted-foreground">
+                        <p>
+                          Vertical scaling increases CPU or RAM on one server, but upgrades briefly
+                          take that machine out of service.
+                        </p>
+                        <p>
+                          Horizontal scaling adds servers. A load balancer turns that larger rack
+                          into shared capacity and better resilience.
+                        </p>
+                        <p>
+                          Autoscaling follows the configured CPU threshold. Cost is measured at its
+                          peak, so shrinking at the end does not erase spending.
+                        </p>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Scale Up Trigger</span>
-                        <span>CPU {'>'} {scalingConfig.cpuThreshold}%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Scale Down Trigger</span>
-                        <span>CPU {'<'} {scalingConfig.cpuThreshold / 2}%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Instance Range</span>
-                        <span>
-                          {scalingConfig.minInstances} - {scalingConfig.maxInstances}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Current Instances</span>
-                        <span>{servers.length}</span>
-                      </div>
-                    </div>
+                    </details>
                   </div>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                ),
+              },
+            ]}
+          />
+        )}
+        <SimPhoneBar>
+          <RunControls
+            isRunning={isRunning}
+            gameResult={gameResult}
+            speed={speed}
+            onSpeed={setSpeed}
+            onToggle={() => setIsRunning(!isRunning)}
+            onReset={startOver}
+          />
+        </SimPhoneBar>
+      </SimFrame>
+    </MotionConfig>
+  );
+}
 
-          {/* Traffic Visualization */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Traffic Pattern (Last 60s)</h3>
-            <div className="h-24 bg-muted/30 rounded-lg p-2 flex items-end gap-[2px]">
-              {trafficHistory.map((traffic, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-blue-500 rounded-t transition-all"
-                  style={{
-                    height: `${Math.min((traffic / 5000) * 100, 100)}%`,
-                    minHeight: '2px',
-                  }}
-                />
-              ))}
-              {trafficHistory.length === 0 && (
-                <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
-                  Start simulation to see traffic
-                </div>
-              )}
-            </div>
-          </div>
+function RunControls({
+  isRunning,
+  gameResult,
+  speed,
+  onSpeed,
+  onToggle,
+  onReset,
+}: {
+  isRunning: boolean;
+  gameResult: 'playing' | 'won' | 'lost';
+  speed: number;
+  onSpeed: (speed: number) => void;
+  onToggle: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <>
+      <Button
+        type="button"
+        variant={isRunning ? 'destructive' : 'default'}
+        className="h-10 flex-1 lg:h-8"
+        onClick={onToggle}
+        disabled={gameResult !== 'playing'}
+      >
+        {isRunning ? (
+          <Pause className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Play className="h-4 w-4" aria-hidden="true" />
+        )}
+        {isRunning ? 'Pause' : 'Start'}
+      </Button>
+      <Button type="button" variant="outline" className="h-10 flex-1 lg:h-8" onClick={onReset}>
+        Reset
+      </Button>
+      <div className="hidden items-center gap-1 lg:flex" role="group" aria-label="Speed">
+        {[1, 2, 5, 10].map((item) => (
+          <Button
+            key={item}
+            type="button"
+            variant={speed === item ? 'default' : 'outline'}
+            className="h-8 min-w-8 px-2"
+            aria-pressed={speed === item}
+            onClick={() => onSpeed(item)}
+          >
+            {item}x
+          </Button>
+        ))}
+      </div>
+    </>
+  );
+}
 
-          {/* Stats Summary */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div className="p-3 rounded-lg bg-muted/30">
-              <div className="text-muted-foreground">Total Requests</div>
-              <div className="text-xl font-bold">
-                {metrics.totalRequests.toLocaleString()}
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30">
-              <div className="text-muted-foreground">Successful</div>
-              <div className="text-xl font-bold text-green-500">
-                {metrics.successfulRequests.toLocaleString()}
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30">
-              <div className="text-muted-foreground">Failed</div>
-              <div className="text-xl font-bold text-red-500">
-                {metrics.failedRequests.toLocaleString()}
-              </div>
-            </div>
-            <div className="p-3 rounded-lg bg-muted/30">
-              <div className="text-muted-foreground">Active Servers</div>
-              <div className="text-xl font-bold">
-                {servers.filter((s) => s.status === 'healthy').length} / {servers.length}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: 'success' | 'danger';
+}) {
+  return (
+    <div className={`rounded-lg border bg-card p-2 ${tone ? SIM_TONE[tone].surface : ''}`}>
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="font-mono text-lg font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function Chart({
+  title,
+  values,
+  ceiling,
+  empty,
+  tone = 'info',
+}: {
+  title: string;
+  values: number[];
+  ceiling: number;
+  empty: string;
+  tone?: 'success' | 'danger' | 'info';
+}) {
+  return (
+    <div className="rounded-lg border bg-card p-3">
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <div className="mt-3 flex h-28 items-end gap-px rounded-md bg-muted p-2">
+        {values.length > 0 ? (
+          values.map((value, index) => (
+            <div
+              key={index}
+              className={`min-w-px flex-1 rounded-t ${SIM_TONE[tone].fill}`}
+              style={{ height: `${Math.max((value / ceiling) * 100, 2)}%` }}
+            />
+          ))
+        ) : (
+          <p className="m-auto text-sm text-muted-foreground">{empty}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Adjuster({
+  label,
+  value,
+  down,
+  up,
+  disableDown,
+  disableUp,
+  onDown,
+  onUp,
+}: {
+  label: string;
+  value: number;
+  down: string;
+  up: string;
+  disableDown: boolean;
+  disableUp: boolean;
+  onDown: () => void;
+  onUp: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-10 w-10 p-0 lg:h-8 lg:w-8"
+          aria-label={down}
+          disabled={disableDown}
+          onClick={onDown}
+        >
+          <Minus className="h-4 w-4" aria-hidden="true" />
+        </Button>
+        <span className="w-10 text-center font-mono text-sm">{value}</span>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-10 w-10 p-0 lg:h-8 lg:w-8"
+          aria-label={up}
+          disabled={disableUp}
+          onClick={onUp}
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function Range({
+  label,
+  value,
+  min,
+  max,
+  step,
+  suffix = '',
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  suffix?: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-2 flex justify-between gap-2">
+        <label className="text-sm font-medium">{label}</label>
+        <span className="font-mono text-sm">
+          {value}
+          {suffix}
+        </span>
+      </div>
+      <Slider
+        value={[value]}
+        onValueChange={([next]) => onChange(next)}
+        min={min}
+        max={max}
+        step={step}
+      />
     </div>
   );
 }
