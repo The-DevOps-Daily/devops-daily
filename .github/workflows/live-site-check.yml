@@ -1,0 +1,90 @@
+name: Live site check
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Seed for a repeatable page sample
+        required: false
+        type: string
+      sample:
+        description: Number of non-sponsored pages to sample
+        required: false
+        type: string
+
+concurrency:
+  group: live-site-check
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  live-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LIVE_CHECK_SEED: ${{ inputs.seed || '' }}
+      LIVE_CHECK_SAMPLE: ${{ inputs.sample || '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install browser for live checks
+        run: pnpm exec playwright install --with-deps chromium || pnpm exec playwright install chromium
+
+      - name: Pick live pages
+        run: |
+          pnpm exec tsx scripts/live-check/pick-pages.ts "$RUNNER_TEMP/live-check-pages.json"
+          node --input-type=module -e "import { readFile } from 'node:fs/promises'; const pages = JSON.parse(await readFile(process.argv[1], 'utf8')); console.log('LIVE_CHECK_SEED=' + pages.seed); console.log('LIVE_CHECK_PAGES=' + process.argv[1]);" "$RUNNER_TEMP/live-check-pages.json" >> "$GITHUB_ENV"
+
+      - name: Run live site checks
+        run: pnpm exec playwright test -c playwright.live.config.ts
+
+      - name: Upload live check results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: live-site-check-results
+          path: test-results
+          retention-days: 7
+
+      - name: Summarize failures
+        id: failures
+        if: failure()
+        run: |
+          pnpm exec tsx scripts/live-check/report-failures.ts test-results/live-report.json \
+            --discord-payload "$RUNNER_TEMP/discord-payload.json" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Alert Discord
+        if: failure() && steps.failures.outputs.failed != '0'
+        env:
+          DISCORD_ALERT_WEBHOOK: ${{ secrets.DISCORD_ALERT_WEBHOOK }}
+          LIVE_CHECK_SCREENSHOTS: ${{ steps.failures.outputs.screenshots }}
+        run: |
+          if [ -z "$DISCORD_ALERT_WEBHOOK" ]; then echo "No DISCORD_ALERT_WEBHOOK secret, skipping alert"; exit 0; fi
+          args=(--fail-with-body --silent --show-error --max-time 30 --form "payload_json=<$RUNNER_TEMP/discord-payload.json")
+          index=0
+          while IFS= read -r screenshot; do
+            if [ -n "$screenshot" ] && [ -f "$screenshot" ]; then
+              args+=(--form "files[$index]=@$screenshot")
+              index=$((index + 1))
+            fi
+          done <<< "$LIVE_CHECK_SCREENSHOTS"
+          curl "${args[@]}" "$DISCORD_ALERT_WEBHOOK"

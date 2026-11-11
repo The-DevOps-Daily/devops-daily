@@ -21,6 +21,7 @@ import { truncateMetaDescription } from '@/lib/meta-description';
 import { detailPageMetadata } from '@/lib/metadata-utils';
 
 import type { Metadata } from 'next';
+import { hasAffiliateLinks as postHasAffiliateLinks } from '@/lib/affiliate-links';
 
 // Disable dynamic params for static export
 export const dynamicParams = false;
@@ -75,22 +76,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   const relatedPosts = await getRelatedPosts(post.slug, post.category?.slug || '', 6);
 
-  // Check if post content contains affiliate links
-  const affiliatePatterns = [
-    'm.do.co', // DigitalOcean referral
-    'amzn.to', // Amazon short links
-    'amazon.com/.*tag=', // Amazon affiliate tags
-    '[?&]ref=devops-daily', // Partner referral links
-    // Sponsors' own tracked short links. These carry no ref= param, so
-    // without an entry here a post could lose its disclosure banner purely
-    // by switching to the link the sponsor asked us to use.
-    'link\\.svix\\.com',
-    // Our own click tracker, which all sponsor placements link through.
-    'go\\.devops-daily\\.com',
-  ];
-  const hasAffiliateLinks = affiliatePatterns.some((pattern) =>
-    new RegExp(pattern).test(post.content)
-  );
+  const hasAffiliateLinks = postHasAffiliateLinks(post.content);
 
   // Split related posts for main section and sidebar
   const mainRelatedPosts = relatedPosts.slice(0, 3);
