@@ -511,6 +511,7 @@ export default function CdnEdgeCacheLab() {
           )}
           onStep={() => setTab('details')}
           stepNoun="Mission"
+          stepsLabel="Missions"
           progress={{ current: missions.done, total: missions.total }}
           tools={<SimResetButton onReset={startOver} />}
           goal={

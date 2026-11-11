@@ -160,6 +160,10 @@ export function SimBar({
           {lead}
           {pills && (
             <nav className="flex flex-wrap items-center gap-1" aria-label={stepsLabel}>
+              {/* Named on screen, so step pills never read as the mission count. */}
+              <span aria-hidden="true" className="mr-1 text-xs text-muted-foreground">
+                {stepsLabel}
+              </span>
               {steps.map((step, i) => (
                 <button
                   key={i}
