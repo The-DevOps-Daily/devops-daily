@@ -37,7 +37,7 @@ This post gives you a per-Region inventory, a billing-data path, a cost model, a
 ## Prerequisites
 
 - AWS CLI v2 credentials able to call RDS, EC2, EKS, and Cost Explorer in the intended accounts.
-- Billing permission for `ce:GetCostAndUsage`. Cost Explorer is an account-level billing view, so use the payer or delegated billing account when appropriate.
+- Billing permission for `ce:GetCostAndUsage`. For organization-wide results, run it from the AWS Organizations management account or a role there; member accounts see only their own [Cost Explorer data](https://docs.aws.amazon.com/cost-management/latest/userguide/ce-access.html).
 - A current RDS pricing view for each Region you operate in. Rates and support calendars are Region and date sensitive.
 - An upgrade test environment and an application owner before changing an engine version or lifecycle setting.
 
@@ -86,7 +86,7 @@ The [support-date API guide](https://docs.aws.amazon.com/AmazonRDS/latest/UserGu
 
 ## Find the charge in Cost Explorer
 
-First discover the usage-type values in _your_ bill. AWS does not document a stable, universal `ExtendedSupport` usage-type string, so do not hard-code an unverified filter. This query groups all RDS usage by usage type, then `jq` narrows the returned group names locally:
+First discover the usage-type values in _your_ bill, and do not hard-code a filter before you have seen the returned values. This query groups all RDS usage by usage type, then `jq` narrows the returned group names locally:
 
 ```bash
 aws ce get-cost-and-usage \
@@ -119,7 +119,7 @@ Inspect the result before adding a Cost Category, budget, CUR query, or saved Co
     {
       "label": "Terraform",
       "lang": "hcl",
-      "code": "resource \"aws_db_instance\" \"app\" {\n  identifier               = \"app-mysql\"\n  engine                   = \"mysql\"\n  engine_version           = \"8.4\"\n  instance_class           = \"db.r6g.large\"\n  engine_lifecycle_support = \"open-source-rds-extended-support-disabled\"\n}"
+      "code": "resource \"aws_db_instance\" \"app\" {\n  identifier               = \"app-mysql\"\n  engine                   = \"mysql\"\n  engine_version           = \"8.4\"\n  instance_class           = \"db.r6g.large\"\n  username                    = \"appadmin\"\n  manage_master_user_password = true\n  engine_lifecycle_support    = \"open-source-rds-extended-support-disabled\"\n}"
     }
   ]
 }
@@ -200,12 +200,17 @@ aws rds create-db-instance \
   --engine-version 8.4 \
   --db-instance-class db.r6g.large \
   --allocated-storage 100 \
+  --master-username appadmin \
+  --manage-master-user-password \
+  --no-publicly-accessible \
+  --db-subnet-group-name app-private \
+  --vpc-security-group-ids sg-0123456789abcdef0 \
   --engine-lifecycle-support open-source-rds-extended-support-disabled \
   --no-cli-pager
 ```
 
 After a support boundary has passed, that setting makes a new instance creation fail rather than enroll it. Before the boundary, a disabled instance is automatically upgraded on or shortly after the end of standard support. The [RDS lifecycle documentation](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support-creating-db-instance.html) defines both behaviors.
 
-Terraform exposes the equivalent `engine_lifecycle_support` argument on [`aws_db_instance`](https://github.com/hashicorp/terraform-provider-aws/blob/main/website/docs/r/db_instance.html.markdown) and [`aws_rds_cluster`](https://github.com/hashicorp/terraform-provider-aws/blob/main/website/docs/r/rds_cluster.html.markdown). Make it explicit in modules, then add a policy check that rejects the enabled value where the organization expects an upgrade instead. The site's [Terraform best-practices guide](/posts/terraform-best-practices) has useful patterns for keeping that module input visible in review. We could not find an AWS Config managed rule or IAM/SCP condition key that directly evaluates this RDS lifecycle setting, so use a tested custom Config rule or Terraform policy only after verifying it in your account.
+Terraform exposes the equivalent `engine_lifecycle_support` argument on [`aws_db_instance`](https://github.com/hashicorp/terraform-provider-aws/blob/main/website/docs/r/db_instance.html.markdown) and [`aws_rds_cluster`](https://github.com/hashicorp/terraform-provider-aws/blob/main/website/docs/r/rds_cluster.html.markdown). Make it explicit in modules, then add a policy check that rejects the enabled value where the organization expects an upgrade instead. The site's [Terraform best-practices guide](/posts/terraform-best-practices) has useful patterns for keeping that module input visible in review. For enforcement outside Terraform, use a custom AWS Config rule that you have tested in your own account.
 
 The decision record should have three fields: the affected version, the monthly Extended Support addition, and either a named upgrade date or an approved end date for paid support. That turns an automatic charge into a time-bounded engineering choice. If you need a rehearsal pattern for the release itself, the site's [blue-green deployment guide](/posts/deployment-strategies-guide) is a useful companion.
