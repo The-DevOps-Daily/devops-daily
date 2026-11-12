@@ -63,7 +63,7 @@ export function NewsletterNudge({
     <section
       aria-label="Newsletter"
       className={cn(
-        'relative rounded-lg border border-primary/30 bg-primary/[0.04] p-4',
+        'not-prose relative rounded-lg border border-primary/30 bg-primary/[0.04] p-4',
         className
       )}
     >
