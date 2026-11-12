@@ -1,6 +1,9 @@
 'use client';
 
-import { Circle, CircleCheck } from 'lucide-react';
+import { useState } from 'react';
+import { Circle, CircleCheck, MapPin } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SimHintButton } from '@/components/games/sim/sim-frame';
 import type { MissionView } from '@/components/games/sim/use-missions';
 import { cn } from '@/lib/utils';
 
@@ -52,5 +55,53 @@ export function SimMissionList({
         })}
       </ol>
     </section>
+  );
+}
+
+/**
+ * Help for the current mission, as a row under the goal line: a button that
+ * opens the place the mission happens, and "Show me how" with its exact steps.
+ */
+export function SimMissionHelp({
+  mission,
+  onGo,
+  goLabel = 'Take me there',
+}: {
+  mission: MissionView | null;
+  /** Leave undefined when the player is already in the right place. */
+  onGo?: () => void;
+  goLabel?: string;
+}) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const steps = mission?.steps ?? [];
+  if (!mission || mission.done || (!onGo && steps.length === 0)) return null;
+  // Keyed by mission, so the steps close when the next mission starts.
+  const open = openId === mission.id;
+  return (
+    <div className="space-y-1">
+      <div className="flex flex-wrap items-center gap-1">
+        {onGo && (
+          <Button type="button" variant="outline" size="sm" className="h-10 lg:h-8" onClick={onGo}>
+            <MapPin className="h-4 w-4" aria-hidden="true" />
+            {goLabel}
+          </Button>
+        )}
+        {steps.length > 0 && (
+          <SimHintButton onClick={() => setOpenId(open ? null : mission.id)} pressed={open}>
+            {open ? 'Hide the steps' : 'Show me how'}
+          </SimHintButton>
+        )}
+      </div>
+      {open && (
+        <ol
+          aria-label="Steps"
+          className="list-decimal space-y-0.5 rounded-md border border-hint/30 bg-hint/5 py-1.5 pl-8 pr-3 text-sm"
+        >
+          {steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }
