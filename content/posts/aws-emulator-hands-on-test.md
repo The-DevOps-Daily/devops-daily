@@ -1,12 +1,12 @@
 ---
 title: 'We Tested AWS Emulator: It Blocks More Than Its Docs Say, and Less Than AWS Does'
-excerpt: 'AWS Emulator passed all 40 of our workflow checks and caught two IAM mistakes in our own test code. It also let a user with no policies assume an admin role, ignored permissions boundaries and session policies, and its JavaScript SQS defaults sent a request to real AWS. Here is what we measured on a throwaway droplet.'
+excerpt: 'AWS Emulator passed all 40 of our workflow checks and caught two IAM mistakes in our own test code. It also let a user with no policies assume an admin role, ignored permissions boundaries and session policies, and with the default JavaScript SDK settings, one SQS request went to real AWS. Here is what we measured on a throwaway droplet.'
 category:
   name: 'AWS'
   slug: 'aws'
 date: '2026-11-12'
-publishedAt: '2026-11-12T12:00:00Z'
-updatedAt: '2026-11-12T12:00:00Z'
+publishedAt: '2026-11-12T09:00:00Z'
+updatedAt: '2026-11-12T09:00:00Z'
 readingTime: '22 min read'
 author:
   name: 'DevOps Daily Team'
@@ -396,7 +396,7 @@ Those numbers do not contradict our 40 of 40. The evaluation suite is written to
 - **One machine, one version.** Everything ran on v1.0.322 on one 4 vCPU droplet. With 12 releases in 5 days, some of these results may already be different.
 - **Default configurations only** for Moto and Floci. Both can do more permission checking if you turn it on.
 - **Python zip functions only** for the Lambda sandbox. Container images and other runtimes may behave differently.
-- **We did not verify the "200+ services" claim** one by one. We counted 436 service crates and 437 model files, and we exercised 11 services.
+- **We did not verify the "200+ services" claim** one by one. We counted 436 service crates and 437 model files, and we exercised at least 11 services.
 - **We could not observe the merge gate** or the security agents. We can only say that their output is not in the public repo.
 
 ## Using it safely
