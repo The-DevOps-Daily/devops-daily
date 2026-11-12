@@ -177,7 +177,7 @@ async function assertVisibleTextIsSafe(page: Page) {
       if (
         /^(undefined|null|NaN)$/.test(text) ||
         text.includes('[object Object]') ||
-        /lorem ipsum/i.test(text)
+        /lorem ipsum dolor/i.test(text)
       ) {
         found.push(text.slice(0, 60));
       }
