@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { SimFeedback } from '@/components/games/sim/sim-feedback';
 import { revealTop } from '@/components/games/sim/sim-frame';
 import { useSimGame } from '@/components/games/sim/sim-game';
+import { NewsletterNudge } from '@/components/newsletter/newsletter-nudge';
 import { useEmbed } from '@/lib/games/embed-context';
 import { signalGameComplete } from '@/lib/games/game-complete';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,8 @@ export interface SimCompleteProps {
   children?: ReactNode;
   /** Move focus to the heading when the card first shows. */
   autoFocus?: boolean;
+  /** The newsletter box under the buttons; null hides it. Never shown in an embed. */
+  newsletter?: 'sim_complete' | 'quiz_complete' | null;
 }
 
 const TONE_ICON: Record<
@@ -90,6 +93,7 @@ export function SimComplete({
   actions,
   children,
   autoFocus = true,
+  newsletter = 'sim_complete',
 }: SimCompleteProps) {
   const game = useSimGame();
   const { embedded, inOpsville } = useEmbed();
@@ -200,6 +204,18 @@ export function SimComplete({
           </Button>
         )}
       </div>
+
+      {newsletter && !embedded && tone !== 'danger' && (
+        <NewsletterNudge
+          location={newsletter}
+          title={
+            newsletter === 'quiz_complete'
+              ? 'Want more quizzes like this?'
+              : 'Liked this simulator?'
+          }
+          text="Get new simulators, quizzes and the week's best DevOps posts in one email every Monday. Free, and you can unsubscribe anytime."
+        />
+      )}
     </section>
   );
 }
