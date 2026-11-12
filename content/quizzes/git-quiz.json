@@ -4,7 +4,7 @@
   "description": "Test your Git command knowledge with real-world scenarios covering commits, branching, merging, rebasing, remotes, and recovering from common mistakes.",
   "category": "Git",
   "icon": "GitBranch",
-  "totalPoints": 115,
+  "totalPoints": 125,
   "theme": {
     "primaryColor": "orange",
     "gradientFrom": "from-orange-500",
@@ -15,7 +15,7 @@
     "difficultyLevels": {
       "beginner": 3,
       "intermediate": 3,
-      "advanced": 2
+      "advanced": 3
     },
     "createdDate": "2024-05-01"
   },
@@ -279,6 +279,22 @@
       "hint": "You need to create a branch to capture your commits, then integrate them properly.",
       "difficulty": "advanced",
       "points": 20
+    },
+    {
+      "id": "git-restore-staged",
+      "title": "Unstaging Files with Git Restore",
+      "description": "Which modern Git command unstages a file from the index while keeping working directory modifications intact?",
+      "options": [
+        "git restore --staged <file>",
+        "git revert --soft <file>",
+        "git clean -df <file>",
+        "git branch --unstage <file>"
+      ],
+      "correctAnswer": 0,
+      "explanation": "git restore --staged <file> removes the specified file from the staging area (index) without altering the modifications in your working directory. It was introduced in Git 2.23 as a dedicated, safer alternative to git reset HEAD <file>.",
+      "hint": "Think of the dedicated command added in Git 2.23 specifically to restore working tree files or the index.",
+      "difficulty": "beginner",
+      "points": 10
     }
   ]
 }
