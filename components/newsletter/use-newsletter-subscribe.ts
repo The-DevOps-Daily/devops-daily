@@ -26,7 +26,27 @@ const FRIENDLY_ERROR = 'Could not subscribe right now. Please try again in a min
  * stays on devops-daily.com after submitting.
  */
 /** Where a signup form sits, sent with the GA4 `newsletter_signup` event. */
-export type SignupLocation = 'footer' | 'homepage' | 'book_popup' | 'book_page';
+export type SignupLocation =
+  | 'footer'
+  | 'homepage'
+  | 'book_popup'
+  | 'book_page'
+  | 'post_end'
+  | 'sim_complete'
+  | 'quiz_complete';
+
+const SUBSCRIBED_KEY = 'dd-newsletter-subscribed';
+
+/** True once this browser signed up through any form, so nudges stay away. */
+export function hasSubscribed(): boolean {
+  try {
+    return Boolean(
+      localStorage.getItem(SUBSCRIBED_KEY) || localStorage.getItem('book-promo-subscribed')
+    );
+  } catch {
+    return false;
+  }
+}
 
 export function useNewsletterSubscribe(location: SignupLocation) {
   const [status, setStatus] = useState<SubscribeStatus>('idle');
@@ -66,6 +86,11 @@ export function useNewsletterSubscribe(location: SignupLocation) {
         throw new Error(apiError || FRIENDLY_ERROR);
       }
       setStatus('ok');
+      try {
+        localStorage.setItem(SUBSCRIBED_KEY, '1');
+      } catch {
+        // Private mode: the nudges may show again, nothing else breaks.
+      }
       // A named GA4 event, so signups can be counted per landing page and
       // marked as a key event. It counts accepted form submissions, before the
       // double opt-in confirmation email is clicked.

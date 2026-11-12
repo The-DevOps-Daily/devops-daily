@@ -1,6 +1,7 @@
 import { PostContent } from '@/components/post-content';
 import { PostHeader } from '@/components/post-header';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { NewsletterNudge } from '@/components/newsletter/newsletter-nudge';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { OptimizedImage } from '@/components/optimized-image';
 import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/posts';
@@ -152,6 +153,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 </div>
               )}
               <PostContent content={post.content} />
+
+              <NewsletterNudge
+                location="post_end"
+                title="Enjoyed this post?"
+                text="Get the week's best DevOps posts, new simulators and tools in one email every Monday. Free, and you can unsubscribe anytime."
+                className="mt-10"
+              />
 
               {relatedSimulators.length > 0 && (
                 <RelatedSimulators
