@@ -152,7 +152,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   />
                 </div>
               )}
-              <PostContent content={post.content} />
+              <PostContent
+                content={post.content}
+                sponsored={!!post.sponsorCampaign && post.sponsorCampaign !== 'house'}
+              />
 
               <NewsletterNudge
                 location="post_end"
