@@ -449,7 +449,7 @@ Things to know before you use that address:
 
 - **It works from a Linux Docker host.** On Docker Desktop (macOS and Windows), the containers run inside a VM, and their IPs are not reachable from your Mac or PC. Publish a port instead.
 - **It changes.** A container gets a new address when it is recreated, and often after a restart. Do not put it in config files.
-- **Other machines cannot use it.** The address belongs to a bridge network on the host. Since Docker Engine 28, Docker also blocks direct access from other hosts to container ports that are not published.
+- **Other machines cannot use it.** The address belongs to a bridge network on the host, and by default Docker does not let other hosts reach container addresses directly. They can only reach ports published on the host's addresses.
 - **Other containers on the same network can use it**, but a name is better: on a user-defined network, Docker's DNS resolves container names and Compose service names.
 
 ```bash

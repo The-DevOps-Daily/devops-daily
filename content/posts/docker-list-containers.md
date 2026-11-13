@@ -41,7 +41,7 @@ None of these commands remove named volumes. Your data in volumes stays until yo
 
 ## Prerequisites
 
-- Docker Engine or Docker Desktop. The output below comes from Docker Engine 28 and 29, and the column layout differs a little between versions.
+- Docker Engine or Docker Desktop. The recorded output below comes from Docker Engine 28.0.4. Engine 29 shows a different default layout for `docker image ls`.
 - Permission to run `docker`.
 
 ## How Do I List Docker Containers?

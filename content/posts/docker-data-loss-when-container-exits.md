@@ -27,7 +27,7 @@ This post explains when data disappears, how to choose between a named volume an
 ## TLDR
 
 - Stopping a container keeps its data. Removing it (`docker rm`, `docker compose down`, a redeploy) deletes the writable layer.
-- Put data in a **named volume**: `docker run -v pgdata:/var/lib/postgresql postgres:18`. The volume stays when the container goes.
+- Put data in a **named volume**: `docker run -e POSTGRES_PASSWORD=change-me -v pgdata:/var/lib/postgresql postgres:18`. The volume stays when the container goes.
 - Use a **bind mount** to share a host directory: `docker run -v "$(pwd)/data":/app/data myapp`. Good for source code and config files in development.
 - You cannot add a mount to an existing container. Create a new container with the mount, and copy the old data first.
 - `docker volume prune` removes only anonymous volumes. Named volumes go only with `docker volume rm`, `docker volume prune --all` or `docker compose down -v`.
