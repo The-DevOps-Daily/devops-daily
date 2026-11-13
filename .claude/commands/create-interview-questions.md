@@ -50,15 +50,15 @@ Create new interview questions for DevOps Daily on the topic: $ARGUMENTS
 - `tier` indicates the seniority level this question targets
 - `difficulty` is about the question complexity, `tier` is about who gets asked
 
-## Cover image
+## Where it shows and the redirect
 
-Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+Questions have no page or cover of their own. Each one is a section on its topic page, `/interview-questions/topic/<topic-slug>#<slug>`, where the topic comes from `category`. After you add a question or change its `category`, run:
 
 ```bash
-npx tsx scripts/generate-content-og.ts --only=interview/<slug>
+npx tsx scripts/interview-redirects.ts
 ```
 
-It writes `public/images/interview-questions/<slug>-og.jpg` (1200x630 JPEG). Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
+It writes the question's `/interview-questions/<tier>/<slug>` redirect to `public/_redirects`. `tests/interview-redirects.test.ts` fails if a question has no redirect. Do not generate a cover for a question.
 
 ## Checklist
 

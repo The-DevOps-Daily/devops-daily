@@ -23,15 +23,16 @@ formatting checks.
 
 Every cover comes from `scripts/generate-content-og.ts`, which writes the light
 1200x630 JPEG card. This applies to posts, guides, exercises, news, advent days,
-quizzes, games and simulators, checklists, interview questions, comparisons,
-flashcards, tools and challenges. Generate one cover with:
+quizzes, games and simulators, checklists, comparisons, flashcards, tools and
+challenges. Interview questions have no covers: they are sections on their
+topic page. Generate one cover with:
 
 ```bash
 npx tsx scripts/generate-content-og.ts --only=<type>/<slug>
 ```
 
 `<type>` is singular: `post`, `guide`, `exercise`, `news`, `advent`, `quiz`,
-`game`, `checklist`, `interview`, `comparison`, `flashcard`, `tool` or
+`game`, `checklist`, `comparison`, `flashcard`, `tool` or
 `challenge`. Add `--force` to replace an existing cover. Commit the new `.jpg`;
 if it replaced a PNG, also commit the PNG removal and the new `public/_redirects`
 line.
