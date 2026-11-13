@@ -27,11 +27,11 @@ import {
   Award,
   HelpCircle,
 } from 'lucide-react';
-import type { Comparison } from '@/lib/comparison-types';
+import type { Comparison, ComparisonSummary } from '@/lib/comparison-types';
 
 interface ComparisonPageClientProps {
   comparison: Comparison;
-  allComparisons: Comparison[];
+  allComparisons: ComparisonSummary[];
 }
 
 export function ComparisonPageClient({ comparison, allComparisons }: ComparisonPageClientProps) {
