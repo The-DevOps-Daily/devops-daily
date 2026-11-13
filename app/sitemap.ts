@@ -246,14 +246,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Newsletter routes
-  const newsletterRoutes = newsletters.map((n) => ({
-    url: `${baseUrl}/newsletters/${n.slug}`,
-    ...withLastModified(n.date),
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }));
-
   // Advent of DevOps routes
   const adventRoutes = adventDays.map((day) => ({
     url: `${baseUrl}/advent-of-devops/${day.slug}`,
@@ -357,7 +349,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...postgresAdventRoutes,
     ...hacktoberfestRoutes,
     ...comparisonRoutes,
-    ...newsletterRoutes,
     ...toolRoutes,
     ...contentPages,
   ];
