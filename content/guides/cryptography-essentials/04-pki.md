@@ -683,5 +683,5 @@ This is the end of the guide. To keep practicing, step through the [SSL/TLS Hand
 - [Zero Trust Architecture](/guides/security-principles/04-zero-trust)
 - [Let's Encrypt Goes to 64-Day Certificates: When Does Your ACME Client Actually Renew?](/posts/lets-encrypt-64-day-certificates-renewal-check)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)
-- [Interview questions: Security Architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview questions: Security Architecture and DevSecOps](/interview-questions/topic/security#security-architecture)
 - [HashiCorp Vault Secrets Management Quiz](/quizzes/vault-secrets-management-quiz)

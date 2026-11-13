@@ -263,4 +263,4 @@ Next: [Load Balancing and Auto Scaling](/guides/introduction-to-aws/07-load-bala
 
 - The full [Introduction to PostgreSQL guide](/guides/introduction-to-postgres)
 - [How to Apply SQL Scripts to RDS Databases With Terraform](/posts/terraform-apply-sql-scripts-rds)
-- [Database Backup and Recovery interview questions](/interview-questions/mid/database-backup-recovery)
+- [Database Backup and Recovery interview questions](/interview-questions/topic/infrastructure#database-backup-recovery)

@@ -501,5 +501,5 @@ Next: [Command Line Arguments](/guides/introduction-to-bash/08-command-line-argu
 - [Which shebang should a Bash script use?](/posts/preferred-bash-shebang)
 - [Get the directory of a Bash script](/posts/get-directory-bash-script-location)
 - [What is the difference between sh and Bash?](/posts/difference-between-sh-and-bash)
-- Interview questions: [Linux file permissions](/interview-questions/junior/linux-file-permissions)
+- Interview questions: [Linux file permissions](/interview-questions/topic/linux#linux-file-permissions)
 - Quiz: [Linux command line quiz](/quizzes/linux-quiz)

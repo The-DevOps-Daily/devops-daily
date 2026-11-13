@@ -456,4 +456,4 @@ The app needs a database. Next, give Postgres storage that survives container re
 - [How to Force Docker for a Clean Build of an Image](/posts/force-docker-clean-build)
 - [How Can I Inspect the File System of a Failed Docker Build?](/posts/inspect-filesystem-of-failed-docker-build)
 - Exercise: [Docker Multi-Stage Build Optimization](/exercises/docker-multi-stage-build)
-- Interview question: [Dockerfile best practices](/interview-questions/junior/dockerfile-best-practices)
+- Interview question: [Dockerfile best practices](/interview-questions/topic/docker#dockerfile-best-practices)

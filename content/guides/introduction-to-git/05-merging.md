@@ -460,7 +460,7 @@ Both end with the same files. They differ in the history they leave behind:
 | Safe on shared branches | Yes                                            | No: only on branches only you use                         |
 | Good for                | Integrating finished work into `main`          | Updating your own branch before review, tidying commits   |
 
-A common combination: rebase your own branch onto the latest `main` while you work on it (`git fetch`, then `git rebase origin/main`; [Part 6](/guides/introduction-to-git/06-remote-repositories) sets up `origin`), and let the team's pull request merge method decide how it lands. [Rebase vs merge](/interview-questions/junior/git-rebase-vs-merge) is also a classic interview question.
+A common combination: rebase your own branch onto the latest `main` while you work on it (`git fetch`, then `git rebase origin/main`; [Part 6](/guides/introduction-to-git/06-remote-repositories) sets up `origin`), and let the team's pull request merge method decide how it lands. [Rebase vs merge](/interview-questions/topic/git#git-rebase-vs-merge) is also a classic interview question.
 
 ## Merge Strategy Options
 

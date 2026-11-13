@@ -193,5 +193,5 @@ Next, [install Docker](/guides/introduction-to-docker/02-docker-installation) on
 - [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine)
 - [Docker Image vs Container: Key Differences](/posts/docker-image-vs-container)
 - Simulator: [Docker under the hood](/games/docker-under-the-hood-simulator)
-- Interview question: [Docker container basics](/interview-questions/junior/docker-basics)
+- Interview question: [Docker container basics](/interview-questions/topic/docker#docker-basics)
 - Flashcards: [Docker Essentials](/flashcards/docker-essentials)

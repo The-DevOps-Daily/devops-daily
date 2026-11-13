@@ -350,6 +350,6 @@ Next, [Part 8](/guides/networking-fundamentals/08-network-monitoring-and-trouble
 ## Keep Learning
 
 - [AWS VPC simulator](/games/aws-vpc-simulator)
-- Interview questions: [AWS VPC networking fundamentals](/interview-questions/junior/aws-vpc-networking)
+- Interview questions: [AWS VPC networking fundamentals](/interview-questions/topic/aws#aws-vpc-networking)
 - Exercise: [build an AWS VPC with Terraform](/exercises/terraform-aws-vpc)
 - [VPC networking](/guides/introduction-to-aws/05-vpc-networking) in the Introduction to AWS guide

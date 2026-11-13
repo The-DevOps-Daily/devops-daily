@@ -387,6 +387,6 @@ Next, [Part 3](/guides/networking-fundamentals/03-dns-and-domain-management) tur
 ## Keep Learning
 
 - Simulators: [binary and bytes](/games/binary-byte-simulator), [AWS VPC](/games/aws-vpc-simulator)
-- Interview questions: [AWS VPC networking fundamentals](/interview-questions/junior/aws-vpc-networking)
+- Interview questions: [AWS VPC networking fundamentals](/interview-questions/topic/aws#aws-vpc-networking)
 - [How to get your local IP address](/posts/how-to-get-local-ip-address) and [list every IP address in a local network](/posts/how-to-get-a-list-of-all-valid-ip-addresses-in-a-local-network)
 - [Linux networking commands](/guides/introduction-to-linux/08-networking) in the Introduction to Linux guide

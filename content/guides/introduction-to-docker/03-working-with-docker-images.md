@@ -403,4 +403,4 @@ Next, run containers from these images in [Run Your First Docker Container](/gui
 - [Fix "No Space Left on Device" in Docker](/posts/docker-image-storage-locations#h2-fixing-no-space-left-on-device)
 - [Why Your Base Image Has 1,684 CVEs](/posts/why-your-base-image-has-1684-cves)
 - [Harbor vs Docker Hub](/comparisons/harbor-vs-docker-hub)
-- Interview question: [Docker image layers and caching](/interview-questions/mid/docker-layers-caching)
+- Interview question: [Docker image layers and caching](/interview-questions/topic/docker#docker-layers-caching)

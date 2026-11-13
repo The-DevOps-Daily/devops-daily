@@ -203,18 +203,7 @@ async function collectItems(): Promise<CoverItem[]> {
       ogSuffix: true,
     });
   }
-  for (const question of await readJsonDirectory('content/interview-questions')) {
-    items.push({
-      type: 'interview',
-      slug: required(question.slug || question.id, 'interview slug'),
-      title: required(question.title, 'interview title'),
-      category: question.category || 'DevOps',
-      topicCategory: question.category,
-      tags: question.tags,
-      directory: 'interview-questions',
-      ogSuffix: true,
-    });
-  }
+  // Interview questions have no cover: they render on their topic page.
   for (const comparison of await readJsonDirectory('content/comparisons')) {
     items.push({
       type: 'comparison',

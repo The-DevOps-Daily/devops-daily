@@ -688,4 +688,4 @@ Next: [Bash Variables](/guides/introduction-to-bash/04-bash-variables), with par
 - [Check if a file does not exist](/posts/check-file-not-exist-bash)
 - [List directories with their sizes](/posts/using-ls-list-directories-sizes)
 - [How cat <<EOF works](/posts/how-cat-eof-works-in-bash)
-- Interview questions: [Linux file permissions](/interview-questions/junior/linux-file-permissions)
+- Interview questions: [Linux file permissions](/interview-questions/topic/linux#linux-file-permissions)

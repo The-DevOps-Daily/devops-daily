@@ -413,5 +413,5 @@ That completes the guide. You built a network from namespaces, addressed and sub
 - Simulators: [service mesh](/games/service-mesh-simulator), [microservices](/games/microservices-simulator)
 - Istio: [traffic management quiz](/quizzes/istio-traffic-management-quiz), [flashcards](/flashcards/istio-traffic-management), [checklist](/checklists/istio-traffic-management)
 - eBPF: [network observability quiz](/quizzes/ebpf-network-observability-quiz) and [flashcards](/flashcards/ebpf-network-observability)
-- Interview questions: [service mesh concepts](/interview-questions/mid/service-mesh-concepts)
+- Interview questions: [service mesh concepts](/interview-questions/topic/kubernetes#service-mesh-concepts)
 - The [Security Principles](/guides/security-principles) guide for least privilege and defence in depth

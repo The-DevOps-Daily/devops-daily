@@ -692,5 +692,5 @@ For the ticket shop, a reasonable order is: SSO with passkeys for staff and admi
 - [CI/CD Pipeline Hardening: A Practical Guide](/posts/cicd-pipeline-hardening-guide)
 - [Istio Traffic Management: Routing, Retries and Circuit Breaking](/posts/istio-traffic-management-routing-retries-circuit-breaking)
 - [We Took Down Our Mesh VPN Control Plane. Here Is What Kept Working](/posts/mesh-vpn-control-plane-outage-what-keeps-working)
-- [Interview questions: zero trust architecture](/interview-questions/senior/zero-trust-architecture)
+- [Interview questions: zero trust architecture](/interview-questions/topic/security#zero-trust-architecture)
 - Back to the [Security Principles overview](/guides/security-principles)

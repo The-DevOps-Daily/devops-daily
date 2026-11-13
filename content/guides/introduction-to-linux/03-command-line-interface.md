@@ -652,4 +652,4 @@ Next: [Linux File System Hierarchy](/guides/introduction-to-linux/04-file-system
 - [Linux Command Line Quiz](/quizzes/linux-quiz)
 - [What does 2>&1 mean?](/posts/what-does-2-and-1-mean-linux-bash)
 - [Find files containing specific text](/posts/find-files-containing-specific-text-linux)
-- Interview questions: [using grep for text search](/interview-questions/junior/linux-grep-text-search)
+- Interview questions: [using grep for text search](/interview-questions/topic/linux#linux-grep-text-search)

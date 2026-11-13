@@ -284,4 +284,4 @@ Next, [Part 3](/guides/finops-for-devops-engineers/03-tools) covers the tools th
 - [Why Your Kafka Bill Is Mostly Network](/posts/why-your-kafka-bill-is-mostly-network)
 - [Your Logs Cost More Than the Service That Emits Them](/posts/your-logs-cost-more-than-the-service)
 - [Cloud Cost Allocation Tags Quiz](/quizzes/cloud-cost-allocation-tags-quiz)
-- [Interview questions: Essential Tags for Multi-Cloud Cost Allocation](/interview-questions/mid/essential-cloud-cost-tags)
+- [Interview questions: Essential Tags for Multi-Cloud Cost Allocation](/interview-questions/topic/finops#essential-cloud-cost-tags)

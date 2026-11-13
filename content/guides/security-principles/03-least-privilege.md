@@ -654,4 +654,4 @@ The job ID comes from the first command's output. Last-accessed data counts atte
 - [hostNetwork Is Still a Footgun: What CVE-2026-32193 Teaches Every Cluster](/posts/hostnetwork-footgun-cve-2026-32193)
 - [AWS Security Checklist](/checklists/aws-security) and [Kubernetes Security Checklist](/checklists/kubernetes-security)
 - [Flashcards: Pod Security Standards in Kubernetes](/flashcards/pod-security-standards-kubernetes)
-- [Interview questions: Cloud IAM basics](/interview-questions/junior/cloud-iam-basics)
+- [Interview questions: Cloud IAM basics](/interview-questions/topic/cloud#cloud-iam-basics)

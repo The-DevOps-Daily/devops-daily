@@ -236,4 +236,4 @@ Next, [Part 2](/guides/finops-for-devops-engineers/02-challenges) looks at where
 - [What Is FinOps? A Beginner's Guide to Cloud Cost Management](/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management)
 - [Why Most FinOps Initiatives Fail (and What Actually Works)](/posts/why-finops-initiatives-fail)
 - [Your Cloud Bill Is an Organizational Problem, Not a Technical One](/posts/cloud-bill-organizational-problem)
-- [Interview questions: FinOps and Cloud Cost Management](/interview-questions/senior/finops-cost-management)
+- [Interview questions: FinOps and Cloud Cost Management](/interview-questions/topic/cloud#finops-cost-management)

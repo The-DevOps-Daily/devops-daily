@@ -467,7 +467,7 @@ pod "client" deleted from demo namespace
 
 ## Keep Learning
 
-- [Kubernetes pod lifecycle interview questions](/interview-questions/mid/kubernetes-pod-lifecycle)
+- [Kubernetes pod lifecycle interview questions](/interview-questions/topic/kubernetes#kubernetes-pod-lifecycle)
 - [How to list all containers in a pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
 - [How to keep a container running on Kubernetes](/posts/how-can-i-keep-a-container-running-on-kubernetes)
 - [Difference between a pod and a Deployment](/posts/difference-between-pod-and-deployment)

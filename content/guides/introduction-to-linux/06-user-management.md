@@ -401,7 +401,7 @@ Copy the public key to a server:
 ssh-copy-id -i ~/.ssh/id_ed25519.pub alice@203.0.113.10
 ```
 
-`ssh-copy-id` appends the key to `~/.ssh/authorized_keys` on the server and fixes the permissions. Without it, append the contents of the `.pub` file to that file yourself and make sure `~/.ssh` is `700` and `authorized_keys` is `600`, both owned by the user. Then log in with `ssh alice@203.0.113.10`. The [SSH basics interview questions](/interview-questions/junior/ssh-basics) go through the most common problems.
+`ssh-copy-id` appends the key to `~/.ssh/authorized_keys` on the server and fixes the permissions. Without it, append the contents of the `.pub` file to that file yourself and make sure `~/.ssh` is `700` and `authorized_keys` is `600`, both owned by the user. Then log in with `ssh alice@203.0.113.10`. The [SSH basics interview questions](/interview-questions/topic/linux#ssh-basics) go through the most common problems.
 
 ## Accounts for Services
 
@@ -484,7 +484,7 @@ Next: [Process Management](/guides/introduction-to-linux/07-process-management),
 
 ## Keep Learning
 
-- Interview questions: [SSH basics and key authentication](/interview-questions/junior/ssh-basics)
+- Interview questions: [SSH basics and key authentication](/interview-questions/topic/linux#ssh-basics)
 - [SSH Hardening Checklist](/checklists/ssh-hardening)
 - Exercise: [Securing your Linux server: essential first steps](/exercises/linux-server-security)
 - [OpenSSH 10.6: domain usernames and compression](/posts/openssh-10-6-domain-usernames-and-compression)

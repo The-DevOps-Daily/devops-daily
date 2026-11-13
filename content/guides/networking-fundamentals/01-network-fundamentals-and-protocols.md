@@ -476,6 +476,6 @@ Next, [Part 2](/guides/networking-fundamentals/02-ip-addressing-and-subnetting) 
 ## Keep Learning
 
 - Simulators: [a packet's journey](/games/packet-journey), [TCP vs UDP](/games/tcp-vs-udp), [the TLS handshake](/games/ssl-tls-handshake)
-- Interview questions: [TCP/IP fundamentals](/interview-questions/junior/tcp-ip-basics), [HTTP methods and status codes](/interview-questions/junior/http-basics)
+- Interview questions: [TCP/IP fundamentals](/interview-questions/topic/networking#tcp-ip-basics), [HTTP methods and status codes](/interview-questions/topic/networking#http-basics)
 - [Network & Security Fundamentals quiz](/quizzes/network-security-quiz)
 - [How to find which process listens on a port in Windows](/posts/find-process-listening-on-port-windows) and [on macOS](/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x)

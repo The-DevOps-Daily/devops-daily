@@ -461,4 +461,4 @@ In [Part 3](/guides/sast-tools/03-semgrep), you scan the same app with Semgrep a
 - [Security Gates guide](/guides/security-gates), for policies across several scanners
 - [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup)
 - [Introduction to Docker](/guides/introduction-to-docker), for the Compose setup
-- [Interview question: CI/CD pipeline design](/interview-questions/mid/cicd-pipeline-design)
+- [Interview question: CI/CD pipeline design](/interview-questions/topic/cicd#cicd-pipeline-design)

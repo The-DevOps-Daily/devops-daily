@@ -643,5 +643,5 @@ That completes the guide. You can now write, test and run Terraform the way prod
 - [Terraform Infrastructure as Code Best Practices](/posts/terraform-best-practices)
 - [How to Retrieve a Secret in Terraform from AWS Secret Manager](/posts/retrieve-secret-terraform-aws-secret-manager)
 - [SOC 2 Evidence From GitHub and Terraform](/posts/soc2-evidence-from-github-and-terraform)
-- [Interview question: Infrastructure as Code patterns](/interview-questions/mid/infrastructure-as-code-patterns)
+- [Interview question: Infrastructure as Code patterns](/interview-questions/topic/infrastructure#infrastructure-as-code-patterns)
 - [OpenTofu 1.13 Re-Encodes base64gzip and Drops WinRM](/posts/opentofu-1-13-upgrade-base64gzip-winrm)

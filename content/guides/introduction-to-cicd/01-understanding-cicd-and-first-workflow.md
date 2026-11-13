@@ -217,5 +217,5 @@ In [Part 2](/guides/introduction-to-cicd/02-workflow-anatomy-and-core-concepts) 
 
 - [CI/CD Fundamentals Quiz](/quizzes/cicd-fundamentals-quiz)
 - [CI/CD Concepts flashcards](/flashcards/cicd-concepts)
-- [Interview question: CI/CD pipeline stages](/interview-questions/junior/cicd-pipeline-stages)
+- [Interview question: CI/CD pipeline stages](/interview-questions/topic/cicd#cicd-pipeline-stages)
 - [Jenkins vs GitHub Actions](/comparisons/jenkins-vs-github-actions)

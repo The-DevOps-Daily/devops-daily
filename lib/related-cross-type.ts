@@ -20,6 +20,7 @@ import { getAllFlashCardSets } from './flashcard-loader';
 import { getAllExercises } from './exercises';
 import { getAllQuizzes } from './quiz-loader';
 import { interviewQuestions } from '@/content/interview-questions';
+import { getInterviewQuestionHref } from './interview-utils';
 
 export type CrossContentType =
   | 'post'
@@ -134,7 +135,7 @@ async function loadAllCrossContent(): Promise<CrossContentItem[]> {
       type: 'interview-question',
       title: iq.title,
       description: iq.question || '',
-      href: `/interview-questions/${iq.tier}/${iq.slug}`,
+      href: getInterviewQuestionHref(iq),
       category: iq.category,
       tags: iq.tags || [],
       meta: iq.tier,
@@ -160,6 +161,8 @@ export interface RelatedAcrossTypesOptions {
    * (so the section spans multiple types instead of three quizzes).
    */
   maxPerType?: number;
+  /** Content types to leave out, e.g. the page's own type when it already lists them. */
+  excludeTypes?: CrossContentType[];
 }
 
 interface ScoredItem {
@@ -176,7 +179,7 @@ interface ScoredItem {
 export async function getRelatedAcrossTypes(
   options: RelatedAcrossTypesOptions,
 ): Promise<CrossContentItem[]> {
-  const { current, limit = 3, maxPerType = 1 } = options;
+  const { current, limit = 3, maxPerType = 1, excludeTypes = [] } = options;
   const all = await loadAllCrossContent();
   const currentTags = (current.tags ?? []).map((t) => t.toLowerCase());
   const currentCategory = current.category;
@@ -185,7 +188,8 @@ export async function getRelatedAcrossTypes(
   // Exclude the current item by (type, id). Two items can share an id across
   // types (e.g. a post slug == a quiz id) so we must compare both fields.
   const candidates = all.filter(
-    (item) => !(item.type === current.type && item.id === current.id),
+    (item) =>
+      !(item.type === current.type && item.id === current.id) && !excludeTypes.includes(item.type)
   );
 
   const scored: ScoredItem[] = candidates.map((item) => {

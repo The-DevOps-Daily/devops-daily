@@ -741,4 +741,4 @@ Next, [Vulnerability Gates](/guides/security-gates/02-vulnerability-gates) appli
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)
 - [Implementing Pod Security Standards in Kubernetes](/flashcards/pod-security-standards-kubernetes) (flashcards)
 - [Docker Security Best Practices](/posts/docker-security-best-practices)
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

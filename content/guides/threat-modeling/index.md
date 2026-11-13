@@ -169,4 +169,4 @@ Start with [Part 1: STRIDE](/guides/threat-modeling/01-stride).
 - [SAST guide](/guides/sast-tools), to find the code-level bugs behind many threats
 - [Security Gates guide](/guides/security-gates), to enforce decisions in CI/CD
 - [Security-Focused Code Reviews](/posts/security-focused-code-reviews)
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

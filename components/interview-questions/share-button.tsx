@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Link2, Share2 } from 'lucide-react';
 
 interface ShareButtonProps {
   /** Question title, used in the share text. */
   title: string;
+  /** Element id to link to, so the shared URL opens at this question. */
+  anchor?: string;
 }
 
 // X's brand glyph (lucide dropped the twitter bird).
@@ -17,10 +19,19 @@ function XGlyph({ className }: { className?: string }) {
   );
 }
 
-export function ShareButton({ title }: ShareButtonProps) {
+export function ShareButton({ title, anchor }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
+  const [url, setUrl] = useState('');
 
-  const url = typeof window !== 'undefined' ? window.location.href : '';
+  // Read the URL after hydration so the share links do not keep the empty server value.
+  useEffect(() => {
+    setUrl(
+      anchor
+        ? `${window.location.origin}${window.location.pathname}#${anchor}`
+        : window.location.href
+    );
+  }, [anchor]);
+
   const text = `Can you answer this DevOps interview question? "${title}"`;
 
   const copy = async () => {

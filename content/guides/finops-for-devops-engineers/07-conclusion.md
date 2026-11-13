@@ -128,4 +128,4 @@ https://github.com/The-DevOps-Daily/guide-finops-demo-2026-10-27
 - [Free Egress Has Fine Print: S3 vs R2, B2, Wasabi and More](/posts/object-storage-free-egress-fine-print)
 - [How We Reduced Our AWS Bill by 73% While Actually Improving Performance](/posts/aws-cost-optimization)
 - [Cloud Cost Optimization Quiz](/quizzes/cloud-cost-optimization-quiz)
-- [Interview questions: Cloud Cost Optimization](/interview-questions/senior/cloud-cost-optimization)
+- [Interview questions: Cloud Cost Optimization](/interview-questions/topic/cloud#cloud-cost-optimization)

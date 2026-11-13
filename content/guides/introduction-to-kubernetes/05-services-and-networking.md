@@ -734,7 +734,7 @@ Remove the test Services, the canary and the client, and put the route back to 1
 ## Keep Learning
 
 - [Ingress vs LoadBalancer in Kubernetes](/posts/ingress-vs-load-balancer-kubernetes)
-- [Kubernetes services and networking interview questions](/interview-questions/mid/kubernetes-services-networking)
+- [Kubernetes services and networking interview questions](/interview-questions/topic/kubernetes#kubernetes-services-networking)
 - [Kubernetes networking simulator](/games/kubernetes-networking-cni-simulator) and [DNS simulator](/games/dns-simulator)
 
 Next, in [Part 6](/guides/introduction-to-kubernetes/06-configmaps-and-secrets), you configure podinfo without rebuilding its image and give it a TLS certificate.
