@@ -369,5 +369,15 @@
     "API Platforms",
     "Messaging",
     "Observability"
+  ],
+  "relatedLinks": [
+    {
+      "label": "What It Actually Takes to Deliver a Webhook in Production",
+      "href": "/posts/reliable-webhook-delivery-retries-signatures-idempotency"
+    },
+    {
+      "label": "Stop Building Webhook Retries Yourself",
+      "href": "/posts/stop-building-webhook-retries-yourself"
+    }
   ]
 }

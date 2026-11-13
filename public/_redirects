@@ -228,6 +228,8 @@
 /tags/autoscaling /tags/scalability 301
 /tags/aws-sdk /tags/aws 301
 /tags/azure /categories/cloud 301
+/tags/backup /tags/databases 301
+/tags/bind-mounts /tags/docker 301
 /tags/branch /tags/git 301
 /tags/branch-management /tags/git 301
 /tags/branches /tags/git 301
@@ -240,6 +242,7 @@
 /tags/cilium /tags/kubernetes 301
 /tags/claude-code /tags/ai 301
 /tags/clone /tags/git 301
+/tags/cloning /tags/git 301
 /tags/cloud-architecture /tags/architecture 301
 /tags/cloud-computing /categories/cloud 301
 /tags/cloud-cost /tags/finops 301
@@ -250,6 +253,7 @@
 /tags/cloudformation /tags/infrastructure-as-code 301
 /tags/clustermesh /tags/kubernetes 301
 /tags/cncf /tags/cloud-native 301
+/tags/code-review /tags/git 301
 /tags/commit-history /tags/git 301
 /tags/commit-messages /tags/git 301
 /tags/commits /tags/git 301
@@ -274,7 +278,10 @@
 /tags/dynamic-secrets /tags/security 301
 /tags/ecs /tags/aws 301
 /tags/encryption /tags/security 301
+/tags/engineering-culture /tags/devops 301
+/tags/environment-variables /tags/bash 301
 /tags/error-budgets /tags/sre 301
+/tags/error-fixing /tags/troubleshooting 301
 /tags/error-handling /tags/troubleshooting 301
 /tags/escalation /tags/sre 301
 /tags/fargate /tags/aws 301
@@ -297,6 +304,7 @@
 /tags/iam /tags/aws 301
 /tags/icmp /tags/networking 301
 /tags/idp /tags/platform-engineering 301
+/tags/image-name /tags/docker 301
 /tags/inference /tags/ai 301
 /tags/ingress /tags/kubernetes 301
 /tags/interactive-scripts /tags/shell-scripting 301
@@ -313,6 +321,7 @@
 /tags/managed-database /tags/databases 301
 /tags/merge /tags/git 301
 /tags/metrics /tags/monitoring 301
+/tags/migration /tags/devops 301
 /tags/minikube /tags/kubernetes 301
 /tags/modules /tags/terraform 301
 /tags/multi-cloud /categories/cloud 301
@@ -347,6 +356,7 @@
 /tags/pypi /tags/python 301
 /tags/quality-gates /tags/devsecops 301
 /tags/rce /tags/security 301
+/tags/recovery /tags/git 301
 /tags/recursive-search /tags/linux 301
 /tags/remote /tags/git 301
 /tags/remote-branches /tags/git 301
@@ -363,13 +373,16 @@
 /tags/semgrep /tags/devsecops 301
 /tags/services /tags/kubernetes 301
 /tags/shai-hulud /tags/supply-chain 301
+/tags/shell /tags/bash 301
 /tags/shell-aliases /tags/bash 301
 /tags/slos /tags/sre 301
+/tags/smb /tags/networking 301
 /tags/smtp /tags/email 301
 /tags/splunk /tags/observability 301
 /tags/sql /tags/databases 301
 /tags/sso /tags/security 301
 /tags/stash /tags/git 301
+/tags/state-management /tags/terraform 301
 /tags/statefulsets /tags/kubernetes 301
 /tags/strings /tags/bash 301
 /tags/submodules /tags/git 301

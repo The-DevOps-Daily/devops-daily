@@ -238,6 +238,30 @@ Example, a Docker-on-a-Pi infra diagram:
 
 Keep diagrams to a handful of nodes so they stay readable, and validate the JSON before finishing (a quick `node -e` JSON.parse over each ` ```diagram ` block). For a sprawling topology that needs auto-routing, a plain image is still the better choice.
 
+## Internal links
+
+Google finds and ranks pages through links from other pages on the site. A page that no other page links to is often never crawled. In November 2026, 44 of our 57 comparisons had no link from any post, and Google did not know some of them. So every post links to the related pages we already have, and at least one existing page links to the new post.
+
+Before finishing a post:
+
+1. **Find the related pages.** Search for the tools, vendors and topic of the post:
+
+   ```bash
+   grep -ril '<tool>' content/comparisons content/guides content/quizzes content/checklists \
+     content/exercises content/flashcards content/interview-questions lib/games.ts | head -20
+   grep -ril '<tool>' content/posts | head -20
+   ```
+
+   Look at comparisons (`/comparisons/<slug>`), guides and their chapters, simulators and games (`/games/<slug>`), quizzes, checklists, exercises, flashcards, interview topic pages (`/interview-questions/topic/<topic>`) and other posts about the same tool.
+
+2. **Link 3 to 6 of them inline**, where each one helps the reader at that point in the text. For example, in a section about choosing a webhook service: "see the [Svix vs Hookdeck comparison](/comparisons/svix-vs-hookdeck)". Use anchor text that says what the page is, not "click here" or "this post". Do not add a list of links at the end; the page already shows related content.
+
+3. **Always link the comparison** when the post is about one of its tools, and the simulator when the post teaches commands that the simulator lets the reader practice.
+
+4. **Link back to the new post** from the strongest related existing page, where it fits naturally: a post, a guide chapter, or the `relatedLinks` array of a comparison JSON (`{ "label", "href" }` items). Prefer pages without a paid `sponsorCampaign`.
+
+5. **Check the links.** `npx tsx scripts/check-internal-links.ts` must report 0 broken links.
+
 ## Cover image
 
 Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
@@ -270,3 +294,4 @@ Before finishing, verify:
 - [ ] Content is practical with real examples
 - [ ] Reading time estimate is reasonable
 - [ ] Slug is kebab-case and descriptive
+- [ ] 3 to 6 inline links to related pages (comparisons, simulators, guides, quizzes, posts), at least one existing page links back, and the link checker reports 0 broken links
