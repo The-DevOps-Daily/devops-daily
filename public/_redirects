@@ -673,6 +673,15 @@
 /posts/how-to-find-available-port /posts/how-to-free-up-tcp-port 301
 /posts/network-usage-top-htop-on-linux /posts/increasing-the-maximum-number-of-tcp-ip-connections-in-linux 301
 
+# Guide chapter paths without their guide folder (seen as 404s in Search Console, Nov 2026)
+/guides/01-policy-as-code /guides/security-gates/01-policy-as-code 301
+/guides/04-cicd-integration /guides/security-gates/04-cicd-integration 301
+/guides/04-cicd /guides/security-gates/04-cicd-integration 301
+/guides/01-sbom /posts/software-supply-chain-security 301
+/guides/02-sigstore /posts/software-supply-chain-security 301
+/guides/02-snyk /posts/software-supply-chain-security 301
+/guides/03-dependabot /posts/software-supply-chain-security 301
+
 # Single interview question pages merged into their topic pages (Nov 2026)
 /interview-questions/junior/argocd-bootstrapping-self-management /interview-questions/topic/gitops#argocd-bootstrapping-self-management 301
 /interview-questions/junior/argocd-multi-env-repo-structure /interview-questions/topic/gitops#argocd-multi-env-repo-structure 301
