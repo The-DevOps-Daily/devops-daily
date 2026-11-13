@@ -599,7 +599,7 @@ You have taken one application from a Dockerfile to production. Go back to the [
 
 ## Keep Learning
 
-- [Docker Compose vs Kubernetes: Understanding the Key Differences](/posts/docker-compose-vs-kubernetes-differences)
+- [Docker Compose vs Kubernetes: Understanding the Key Differences](/posts/how-docker-works-under-the-hood#h2-do-you-need-kubernetes-or-is-docker-compose-enough)
 - [Docker Swarm vs Kubernetes](/comparisons/docker-swarm-vs-kubernetes)
 - [GitOps: Deploy Docker Containers with GitHub Actions and ArgoCD](/posts/gitops-deploy-docker-containers-github-actions-argocd)
 - [containerd 1.7 Reaches End of Life: What Breaks on 2.x](/posts/containerd-1-7-end-of-life-what-breaks-on-2x)

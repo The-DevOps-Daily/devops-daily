@@ -1,13 +1,13 @@
 ---
 title: 'How to Rebuild, Restart and Upgrade a Docker Compose Container'
-excerpt: 'restart, up -d, up --build and --force-recreate each apply a different kind of change, and only one of them rebuilds your image. Tested on Compose 5.6: which command picks up code, config and image changes, how to upgrade without losing data, how to get a shell in a running or crashed service, and a Compose 2.38 quirk that can leave old code running.'
+excerpt: 'restart, up -d, up --build and --force-recreate each apply a different kind of change, and only one of them rebuilds your image. Tested on Compose 5.6: which command picks up which change, how to start only some services, wait for a healthy database, upgrade without losing data, get a shell in a crashed service, and what changed from docker-compose v1.'
 category:
   name: 'Docker'
   slug: 'docker'
 date: '2024-12-05'
 publishedAt: '2024-12-05T09:00:00Z'
-updatedAt: '2026-10-12T09:00:00Z'
-readingTime: '12 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -38,7 +38,9 @@ This post shows which command picks up which change, then covers restarting one 
 
 `restart` never applies changes from `compose.yaml` or a new image. `docker compose down` keeps volumes, and `down -v` deletes the named volumes declared in the file (not external ones) and anonymous volumes.
 
-Compose 2.38.2 with its default bake builder sometimes kept the old container after `up -d --build` in our tests. That was the version on the GitHub `ubuntu-24.04` runner we used on 12 October 2026. See [the last section](#h2-compose-238-when-build-does-not-replace-the-container) if `docker compose version` prints 2.38.2.
+Compose 2.38.2 with its default bake builder sometimes kept the old container after `up -d --build` in our tests. That was the version on the GitHub `ubuntu-24.04` runner we used on 12 October 2026. See [the Compose 2.38 section](#h2-compose-238-when-build-does-not-replace-the-container) if `docker compose version` prints 2.38.2.
+
+To start only some services, name them: `docker compose up -d db web`. To make a service wait until a database is ready, use `depends_on` with `condition: service_healthy` and a health check, as shown [below](#h2-how-do-i-make-one-service-wait-for-another).
 
 ## Prerequisites
 
@@ -209,7 +211,7 @@ It is the wrong tool for changes in `compose.yaml`. Docker's [`compose restart` 
 }
 ```
 
-`restart` kept the old value. `up -d` saw the changed environment, recreated `web` and left `cache` running. For one service, `docker compose up -d web` does the same, and `docker compose stop web` with `docker compose start web` behaves like `restart`. To start only some services in the first place, see [docker compose up for certain containers](/posts/docker-compose-up-only-certain-containers).
+`restart` kept the old value. `up -d` saw the changed environment, recreated `web` and left `cache` running. For one service, `docker compose up -d web` does the same, and `docker compose stop web` with `docker compose start web` behaves like `restart`. To start only some services in the first place, see [start only some services](#h2-how-do-i-start-only-some-services-with-docker-compose).
 
 ## Force a new container, or leave dependencies alone
 
@@ -284,6 +286,88 @@ That is useful when a fix needs a clean writable layer, for example after someon
   ]
 }
 ```
+
+## How do I start only some services with Docker Compose?
+
+Name the services after `up`. Compose starts them and the services they list under `depends_on`, and leaves the rest alone:
+
+```bash
+docker compose up -d db web         # db and web, plus their dependencies
+docker compose up -d --no-deps web  # web only
+docker compose logs -f web db       # logs of just these two
+docker compose stop worker          # stop one service
+docker compose rm -sf worker        # stop and remove its container
+```
+
+`docker compose up` without names starts every service, except those in a profile. Profiles are the clean way to keep optional services, such as admin tools or batch jobs, in the same file:
+
+```yaml
+services:
+  web:
+    build: .
+  db:
+    image: postgres:18
+  adminer:
+    image: adminer
+    profiles: [debug]
+  worker:
+    build: ./worker
+    profiles: [jobs]
+```
+
+- `docker compose up -d` starts `web` and `db` only.
+- `docker compose --profile debug up -d` also starts `adminer`. `COMPOSE_PROFILES=debug,jobs` in the environment or in `.env` does the same for several profiles.
+- `docker compose up -d worker` starts `worker` even without its profile, because you named it.
+
+## How do I make one service wait for another?
+
+Give the dependency a health check, and wait for it with `condition: service_healthy`. A plain `depends_on: [db]` only waits until the `db` container has started, not until Postgres accepts connections:
+
+```yaml
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: change-me
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  migrate:
+    image: myorg/app:1.4
+    command: ['./migrate', 'up']
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: myorg/app:1.4
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true # restart web when Compose restarts db
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
+```
+
+| Condition                        | Compose starts the service when the dependency... |
+| -------------------------------- | ------------------------------------------------- |
+| `service_started` (the default)  | has started                                       |
+| `service_healthy`                | reports `healthy` from its health check           |
+| `service_completed_successfully` | has run and exited with code 0, like `migrate`    |
+
+- `restart: true` (Compose 2.17 and later) restarts `web` when a Compose command restarts `db`. `required: false` (2.20 and later) turns a missing dependency into a warning.
+- `docker compose up -d --wait` returns only when the services run and are healthy, which is useful in CI before the tests start.
+- The health check command must exist in the image. `pg_isready` is in the `postgres` image, but `curl` is missing from many slim images. Use the app's own check, or a tool the image has.
+- `depends_on` only orders the start. If the database restarts later, the app must reconnect by itself, so keep retry logic in the app. Wait scripts such as `wait-for-it.sh` are no longer needed for start order.
 
 ## How do I upgrade a container after its image changed?
 
@@ -674,6 +758,24 @@ docker inspect -f '{{.Image}}' "$(docker compose ps -q web)"
 docker image inspect -f '{{.Id}}' shop-web
 ```
 
+## What is the difference between docker compose and docker-compose?
+
+`docker compose`, with a space, is the current Compose: a Go plugin of the Docker CLI. It started as Compose v2, and its current major version is v5, which Docker describes as functionally identical to v2. `docker-compose`, with a hyphen, is the original Python tool, Compose v1. Its last release was 1.29.2 in May 2021, it gets no updates, and Docker Desktop removed it in 4.23 (September 2023).
+
+```bash
+docker compose version     # Docker Compose version v5.7.1 (or v2.x on older hosts)
+docker-compose version     # v1 prints "docker-compose version 1.29.2, build ..."
+```
+
+A `docker-compose` command on your system is not always v1. Some installs provide the v2 or v5 binary under that name for old scripts, and `docker-compose version` then prints the same `Docker Compose version v...` line. If it prints 1.x, migrate. On Linux, install the plugin with the `docker-compose-plugin` package from Docker's repository. Docker Desktop includes it.
+
+What changes when you move from v1:
+
+- **Container names** use hyphens: `shop-web-1` instead of `shop_web_1`. Scripts that call `docker logs shop_web_1` need the new name, or better, `docker compose logs web`.
+- **The `version:` key** at the top of the file is obsolete. Compose ignores it and prints a warning. Delete it.
+- **The file name.** Compose looks for `compose.yaml` first, then `docker-compose.yml` and the other old names, so existing files keep working.
+- **Builds** go through BuildKit, and in v5 through Docker Bake. See the [section above](#h2-compose-238-when-build-does-not-replace-the-container) for one version where that changed the result of `up --build`.
+
 ## Best practices
 
 - Pick the command by what changed: code needs `--build`, config needs `up -d`, a stuck process needs `restart`.
@@ -692,7 +794,8 @@ The-DevOps-Daily/post-command-checks
 
 - [Docker Compose: always recreate containers](/posts/docker-compose-always-recreate-containers)
 - [How to force a clean Docker build](/posts/force-docker-clean-build)
-- [Docker Compose environment variables](/posts/docker-compose-environment-variables)
-- [Why a Docker container exits immediately](/posts/why-docker-container-exits-immediately)
+- [Environment variables in Docker and Compose](/posts/docker-compose-environment-variables)
+- [Why a Docker container exits immediately](/posts/difference-run-cmd-dockerfile#h2-why-does-my-docker-container-exit-immediately)
+- [Ports vs expose in Compose](/posts/forward-host-port-to-docker-container#h2-what-is-the-difference-between-ports-and-expose-in-docker-compose)
 - [Docker terminal simulator](/games/docker-terminal-simulator): practice the commands in the browser
 - [Introduction to Docker](/guides/introduction-to-docker)

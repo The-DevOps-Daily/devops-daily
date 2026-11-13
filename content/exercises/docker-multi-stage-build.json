@@ -121,7 +121,7 @@
     },
     {
       "title": "Docker Security Best Practices",
-      "url": "/posts/docker-security-best-practices",
+      "url": "/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers",
       "type": "tutorial"
     }
   ],

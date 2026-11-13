@@ -120,7 +120,7 @@ The installer registers a Windows service that starts at boot. It does not add `
 
 ### Using Docker
 
-Docker is the fastest way to get a disposable PostgreSQL for development. The official `postgres` image takes its first-run settings from environment variables: `POSTGRES_PASSWORD` (required), `POSTGRES_USER` (default `postgres`) and `POSTGRES_DB` (default: the user name). With `-p 5432:5432`, `psql` on the host reaches the server at `localhost` ([connect to PostgreSQL in a container from outside](/posts/connecting-to-postgresql-in-a-docker-container-from-outside)).
+Docker is the fastest way to get a disposable PostgreSQL for development. The official `postgres` image takes its first-run settings from environment variables: `POSTGRES_PASSWORD` (required), `POSTGRES_USER` (default `postgres`) and `POSTGRES_DB` (default: the user name). With `-p 5432:5432`, `psql` on the host reaches the server at `localhost` ([connect to PostgreSQL in a container from outside](/posts/forward-host-port-to-docker-container#h2-how-do-i-connect-to-postgresql-in-a-docker-container-from-the-host)).
 
 :::warning
 From PostgreSQL 18, the official image stores data in `/var/lib/postgresql/18/docker` and declares the volume at `/var/lib/postgresql`. Mount your volume at `/var/lib/postgresql`, as shown above. The old `-v pgdata:/var/lib/postgresql/data` mount from tutorials for version 17 and older makes the 18 image exit with an error. If a volume does not cover the data directory, your data lives in the container's writable layer and is gone when you remove the container.

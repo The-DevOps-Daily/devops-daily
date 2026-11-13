@@ -468,8 +468,8 @@ pod "client" deleted from demo namespace
 ## Keep Learning
 
 - [Kubernetes pod lifecycle interview questions](/interview-questions/topic/kubernetes#kubernetes-pod-lifecycle)
-- [How to list all containers in a pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
-- [How to keep a container running on Kubernetes](/posts/how-can-i-keep-a-container-running-on-kubernetes)
+- [How to list all containers in a pod](/posts/how-to-restart-container-within-pod#h2-how-do-i-list-all-containers-in-a-kubernetes-pod)
+- [How to keep a container running on Kubernetes](/posts/how-to-restart-container-within-pod#h2-how-can-i-keep-a-container-running-on-kubernetes)
 - [Difference between a pod and a Deployment](/posts/difference-between-pod-and-deployment)
 
 Next, in [Part 4](/guides/introduction-to-kubernetes/04-deployments-and-replicasets), a Deployment runs three copies of podinfo and replaces them safely during updates.

@@ -102,7 +102,7 @@ Try the commands from this guide in your browser with the [Docker Terminal simul
 
 ## Keep Learning
 
-- [How I Finally Understood Docker and Kubernetes](/posts/how-i-finally-understood-docker-and-kubernetes)
+- [How I Finally Understood Docker and Kubernetes](/posts/how-docker-works-under-the-hood#h2-do-you-need-kubernetes-or-is-docker-compose-enough)
 - [Docker Security Hardening Checklist](/checklists/docker-security)
 - [Podman vs Docker](/comparisons/podman-vs-docker)
 - Next guide: [Introduction to Kubernetes](/guides/introduction-to-kubernetes)

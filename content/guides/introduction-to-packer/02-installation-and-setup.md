@@ -428,7 +428,7 @@ export DIGITALOCEAN_TOKEN="dop_v1_..."
 
 ### Docker
 
-The `docker` builder runs the `docker` command line, so you need Docker on the machine that runs Packer: Docker Engine on Linux (install it from Docker's apt or dnf repository, as in the [Docker install docs](https://docs.docker.com/engine/install/)) or Docker Desktop on macOS and Windows. On Linux, add yourself to the `docker` group (`sudo usermod -aG docker $USER`, then log out and back in) or run Packer with `sudo`. If `docker` still says permission denied, see [how to fix it](/posts/fix-docker-permission-denied-error).
+The `docker` builder runs the `docker` command line, so you need Docker on the machine that runs Packer: Docker Engine on Linux (install it from Docker's apt or dnf repository, as in the [Docker install docs](https://docs.docker.com/engine/install/)) or Docker Desktop on macOS and Windows. On Linux, add yourself to the `docker` group (`sudo usermod -aG docker $USER`, then log out and back in) or run Packer with `sudo`. If `docker` still says permission denied, see [how to fix it](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-fix-permission-denied-on-the-docker-socket).
 
 Check with `docker version` before you build. Without Docker, the build fails at the first step:
 

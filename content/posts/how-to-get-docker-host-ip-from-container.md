@@ -124,7 +124,7 @@ Accessing the Docker host from inside a container is easy with the right approac
 
 ## Related Resources
 
-- [Get Docker Container IP from Host](/posts/how-to-get-docker-container-ip-from-host): reverse direction
+- [Get Docker Container IP from Host](/posts/forward-host-port-to-docker-container#h2-how-do-i-get-a-docker-containers-ip-address-from-the-host): reverse direction
 - [Docker Access Host Port](/posts/docker-access-host-port): host access patterns
 - [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker): host networking
 - [Introduction to Docker: Networking](/guides/introduction-to-docker): networking guide

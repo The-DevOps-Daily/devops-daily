@@ -129,7 +129,7 @@ Try `kubectl` in your browser with the [Kubernetes terminal simulator](/games/ku
 
 ## Keep Learning
 
-- [How I Finally Understood Docker and Kubernetes](/posts/how-i-finally-understood-docker-and-kubernetes)
+- [How I Finally Understood Docker and Kubernetes](/posts/how-docker-works-under-the-hood#h2-do-you-need-kubernetes-or-is-docker-compose-enough)
 - [Docker Swarm vs Kubernetes](/comparisons/docker-swarm-vs-kubernetes) and [Helm vs Kustomize](/comparisons/helm-vs-kustomize)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)
 - [Container orchestration interview questions](/interview-questions/topic/kubernetes#container-orchestration-basics)

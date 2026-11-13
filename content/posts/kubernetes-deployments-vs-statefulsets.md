@@ -142,7 +142,7 @@ As your workloads grow, understanding these patterns will help you design more r
 ## Related Resources
 
 - [Why Does a Pod Get Recreated When Deleted?](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
-- [Kubernetes Persistent Storage](/posts/docker-persistent-storage-databases)
+- [Kubernetes Persistent Storage](/posts/docker-data-loss-when-container-exits#h2-how-do-i-store-a-databases-data-in-docker)
 - [Introduction to Kubernetes: Deployments and ReplicaSets](/guides/introduction-to-kubernetes)
 - [Kubernetes Quiz](/quizzes/kubernetes-quiz)
 - [DevOps Survival Guide](/books/devops-survival-guide)

@@ -33,7 +33,7 @@ systemd─┬─cron
         └─systemd-resolve
 ```
 
-Inside a container, PID 1 is usually the application itself or a small init program, not systemd. When that process exits, the container stops, which is [why some containers exit right away](/posts/why-docker-container-exits-immediately).
+Inside a container, PID 1 is usually the application itself or a small init program, not systemd. When that process exits, the container stops, which is [why some containers exit right away](/posts/difference-run-cmd-dockerfile#h2-why-does-my-docker-container-exit-immediately).
 
 ## See What Is Running
 

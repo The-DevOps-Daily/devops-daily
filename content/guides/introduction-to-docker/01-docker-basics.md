@@ -113,7 +113,7 @@ When you run `docker run nginx:1.30`, the CLI asks dockerd to create a container
 
 An **image** is a read-only template for containers. It has three parts:
 
-- **Layers**: compressed archives of files. Each layer adds, changes or deletes files compared to the layers below it. A container sees all layers merged into one filesystem, plus a thin writable layer on top that disappears when you remove the container ([how to look inside it](/posts/exploring-docker-container-file-system)).
+- **Layers**: compressed archives of files. Each layer adds, changes or deletes files compared to the layers below it. A container sees all layers merged into one filesystem, plus a thin writable layer on top that disappears when you remove the container ([how to look inside it](/posts/how-to-access-docker-container-shell#h2-how-do-i-explore-a-containers-file-system)).
 - **A config**: the default command, environment variables, working directory, user and exposed ports.
 - **A manifest**: the list of layers and the config, each identified by its SHA-256 **digest**.
 
@@ -173,7 +173,7 @@ A **registry** stores and serves images. **Docker Hub** is the default: when you
 
 ## Common Misconceptions
 
-- **"A container is a lightweight VM."** It is a process. There is no guest kernel and no boot. If the main process exits, the container stops ([why a container exits right away](/posts/why-docker-container-exits-immediately)).
+- **"A container is a lightweight VM."** It is a process. There is no guest kernel and no boot. If the main process exits, the container stops ([why a container exits right away](/posts/difference-run-cmd-dockerfile#h2-why-does-my-docker-container-exit-immediately)).
 - **"Data in a container is safe."** Files written to the container's writable layer are deleted with the container. Use volumes for anything you want to keep ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
 - **"`latest` means newest."** `latest` is only a tag name that the publisher chooses to move. It can be old, and it changes without warning. Use explicit versions ([Part 3](/guides/introduction-to-docker/03-working-with-docker-images)).
 - **"Containers are secure by default."** They are isolated, but a container that runs as root with extra privileges can harm the host. Isolation is something you configure ([Part 9](/guides/introduction-to-docker/09-docker-best-practices)).
@@ -190,8 +190,8 @@ Next, [install Docker](/guides/introduction-to-docker/02-docker-installation) on
 ## Keep Learning
 
 - [How Docker Really Works, From docker run to the Kernel](/posts/how-docker-works-under-the-hood)
-- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine)
-- [Docker Image vs Container: Key Differences](/posts/docker-image-vs-container)
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-works-under-the-hood#h2-how-is-a-container-different-from-a-virtual-machine)
+- [Docker Image vs Container: Key Differences](/posts/how-docker-works-under-the-hood#h2-docker-image-vs-container-what-is-the-difference)
 - Simulator: [Docker under the hood](/games/docker-under-the-hood-simulator)
 - Interview question: [Docker container basics](/interview-questions/topic/docker#docker-basics)
 - Flashcards: [Docker Essentials](/flashcards/docker-essentials)

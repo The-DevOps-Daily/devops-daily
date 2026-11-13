@@ -142,6 +142,6 @@ You can expand on this by using Kubernetes Init Containers for pre-start tasks, 
 ## Related Resources
 
 - [Get YAML for Deployed Services](/posts/get-yaml-for-deployed-kubernetes-services)
-- [How to Keep a Container Running](/posts/how-can-i-keep-a-container-running-on-kubernetes)
+- [How to Keep a Container Running](/posts/how-to-restart-container-within-pod#h2-how-can-i-keep-a-container-running-on-kubernetes)
 - [Introduction to Kubernetes: Pods](/guides/introduction-to-kubernetes)
 - [Kubernetes Quiz](/quizzes/kubernetes-quiz)

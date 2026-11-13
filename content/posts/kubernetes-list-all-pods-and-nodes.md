@@ -78,7 +78,7 @@ Try combining these commands with label selectors or JSONPath queries for more a
 
 ## Related Resources
 
-- [How to List All Containers in a Pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
+- [How to List All Containers in a Pod](/posts/how-to-restart-container-within-pod#h2-how-do-i-list-all-containers-in-a-kubernetes-pod)
 - [5-Minute Cluster Health Check](/posts/5-minute-kubernetes-cluster-health-check)
 - [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)

@@ -86,7 +86,7 @@ To always get fresh containers from the latest images, combine `docker-compose p
 ## Related Resources
 
 - [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): manage config across environments
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): container networking fundamentals
-- [Delete All Local Docker Images](/posts/remove-old-unused-docker-images#h2-delete-all-local-docker-images): clean up stale images
+- [Docker Compose: Ports vs Expose](/posts/forward-host-port-to-docker-container#h2-what-is-the-difference-between-ports-and-expose-in-docker-compose): container networking fundamentals
+- [Delete All Local Docker Images](/posts/docker-list-containers#h2-delete-all-local-docker-images): clean up stale images
 - [Introduction to Docker Guide](/guides/introduction-to-docker): full Docker learning path
 - [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on build optimization

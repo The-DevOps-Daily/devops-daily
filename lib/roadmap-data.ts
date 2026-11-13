@@ -363,9 +363,9 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Images and Dockerfiles', 'Volumes', 'Compose', 'Multi-stage builds'],
         resources: [
           guide('introduction-to-docker'),
-          post('docker-image-vs-container'),
-          post('dockerfile-copy-vs-add-commands'),
-          post('docker-mount-host-directory'),
+          post('how-docker-works-under-the-hood'),
+          post('difference-run-cmd-dockerfile'),
+          post('docker-data-loss-when-container-exits'),
           sim('docker-terminal-simulator'),
           sim('docker-under-the-hood-simulator'),
           lab('docker-server-deployment'),
@@ -389,8 +389,7 @@ export const roadmapStages: RoadmapStage[] = [
           'Network policies',
         ],
         resources: [
-          post('docker-compose-ports-vs-expose'),
-          post('communication-multiple-docker-compose'),
+          post('forward-host-port-to-docker-container'),
           post('connect-to-host-localhost-from-docker'),
           sim('kubernetes-networking-cni-simulator'),
           sim('load-balancer-simulator'),
@@ -449,7 +448,6 @@ export const roadmapStages: RoadmapStage[] = [
           'No secrets in layers',
         ],
         resources: [
-          post('docker-security-best-practices'),
           post('docker-image-optimization-best-practices'),
           post('why-your-base-image-has-1684-cves'),
           sim('docker-escape'),
