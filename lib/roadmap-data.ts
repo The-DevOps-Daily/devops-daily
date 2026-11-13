@@ -501,7 +501,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Workflows and jobs', 'Runners', 'Secrets', 'Caching'],
         resources: [
           guide('introduction-to-cicd'),
-          post('github-actions-fast'),
           post('github-actions-bill-keeps-growing'),
           lab('ci-cd-github-actions'),
           quiz('github-actions-quiz'),
@@ -639,7 +638,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['IAM', 'EC2 and S3', 'VPC networking', 'Lambda'],
         resources: [
           guide('introduction-to-aws'),
-          post('assumerole-service-ec2'),
           sim('aws-vpc-simulator'),
           lab('terraform-aws-vpc'),
           quiz('aws-quiz'),
@@ -676,7 +674,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Cost allocation tags', 'Right-sizing', 'Reserved and spot', 'Data transfer'],
         resources: [
           guide('finops-for-devops-engineers'),
-          post('what-is-finops-a-beginners-guide-to-cloud-cost-management'),
           post('how-to-set-up-aws-cost-explorer-and-budgets-for-teams'),
           quiz('cloud-cost-optimization-quiz'),
           cards('cloud-cost-allocation-tags'),

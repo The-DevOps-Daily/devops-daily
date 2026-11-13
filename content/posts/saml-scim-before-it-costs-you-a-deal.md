@@ -23,7 +23,7 @@ tags:
   - DevOps
 ---
 
-The request never arrives early. It arrives in a security questionnaire, two weeks before a contract is meant to be signed, phrased as a single line: *does your product support SAML SSO and SCIM provisioning?*
+The request never arrives early. It arrives in a security questionnaire, two weeks before a contract is meant to be signed, phrased as a single line: _does your product support SAML SSO and SCIM provisioning?_
 
 If the answer is no, one of two things happens. You say "it's on the roadmap" and watch the deal slip a quarter, or somebody promises a date and the work lands on you with a deadline attached and no design time. Both are avoidable, because the expensive part of this work is not the protocol. It is a data model change, and you can make that change long before anyone asks.
 
@@ -210,11 +210,11 @@ Every one of these must pass:
 
 **The signature is valid, against the certificate you configured for this connection.** Not against a certificate embedded in the response. That sounds obvious written down, and it has been shipped more than once.
 
-**Something is actually signed.** Either the Response or the Assertion must be signed, and you must check *which*. If only the Response is signed and you read attributes from an unsigned Assertion inside it, an attacker rewrites the assertion freely.
+**Something is actually signed.** Either the Response or the Assertion must be signed, and you must check _which_. If only the Response is signed and you read attributes from an unsigned Assertion inside it, an attacker rewrites the assertion freely.
 
 **The thing you read is the thing that was signed.** This is the failure mode behind the 2018 CVE cluster, and it deserves its own section below.
 
-**`Audience` matches your SP Entity ID.** Without this, an assertion the customer's IdP issued for a *different* vendor can be replayed at you. Both are legitimate assertions from a trusted IdP; only the audience distinguishes them.
+**`Audience` matches your SP Entity ID.** Without this, an assertion the customer's IdP issued for a _different_ vendor can be replayed at you. Both are legitimate assertions from a trusted IdP; only the audience distinguishes them.
 
 **`Destination` and `Recipient` match your ACS URL.**
 
@@ -225,7 +225,7 @@ Every one of these must pass:
 **The assertion ID has not been seen before.** Belt and braces on replay, and cheap: a table of consumed IDs with a TTL matching your skew window.
 
 :::warning
-Do not write your own SAML implementation. Use a maintained library, and read its documentation for which of the checks above it performs and which it expects you to perform. Several libraries validate the signature and leave audience and time-window checks to the caller. A library that returns you a parsed assertion is not the same as a library that returned you a *trusted* assertion.
+Do not write your own SAML implementation. Use a maintained library, and read its documentation for which of the checks above it performs and which it expects you to perform. Several libraries validate the signature and leave audience and time-window checks to the caller. A library that returns you a parsed assertion is not the same as a library that returned you a _trusted_ assertion.
 :::
 
 ## The comment that logged in as someone else
@@ -244,7 +244,7 @@ The signature still verifies, because the bytes covered by the signature are unc
 
 This affected [multiple independent libraries simultaneously](https://www.kb.cert.org/vuls/id/475445): OneLogin's python-saml (CVE-2017-11427) and ruby-saml (CVE-2017-11428), Clever's saml2-js (CVE-2017-11429), OmniAuth-SAML (CVE-2017-11430), Shibboleth (CVE-2018-0489), and Duo's own Network Gateway (CVE-2018-7340).
 
-The lesson is not "patch those CVEs", they are long fixed. It is that the gap between *what was signed* and *what you read* is a real and non-obvious attack surface, and it is the reason to stay on a maintained library rather than assembling XML handling yourself.
+The lesson is not "patch those CVEs", they are long fixed. It is that the gap between _what was signed_ and _what you read_ is a real and non-obvious attack surface, and it is the reason to stay on a maintained library rather than assembling XML handling yourself.
 
 :::note
 If you want to see the general shape of a redirect-based auth handshake before wiring up SAML, our [OAuth and OIDC flow simulator](/games/oauth-oidc-flow-simulator) steps through the equivalent exchange interactively. The protocols differ in encoding, but the state, redirect and replay concerns map closely.
@@ -298,9 +298,7 @@ Updates arrive as `PATCH` with SCIM's own operation format, which resembles JSON
 ```json
 {
   "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
-  "Operations": [
-    { "op": "replace", "path": "active", "value": false }
-  ]
+  "Operations": [{ "op": "replace", "path": "active", "value": false }]
 }
 ```
 
@@ -343,7 +341,7 @@ Test deprovisioning end to end, with a real session open. Log in as a test user 
 
 The IdP will send group membership, either as a SAML attribute or through SCIM's `/Groups` endpoint. The obvious move is to map groups straight onto your permissions. Resist slightly.
 
-Map IdP groups to *your* roles through an explicit, per-connection mapping table that the customer's admin configures in your UI:
+Map IdP groups to _your_ roles through an explicit, per-connection mapping table that the customer's admin configures in your UI:
 
 ```sql
 CREATE TABLE group_role_mappings (
@@ -354,7 +352,7 @@ CREATE TABLE group_role_mappings (
 );
 ```
 
-Three reasons this indirection earns its keep. Customers name groups for their own org chart, not your permission model, and those names change. A rename in Okta should not silently strip everyone's access. And when a customer disputes what someone could see, you want a record of the mapping *you* applied rather than an inference from directory state that has since changed.
+Three reasons this indirection earns its keep. Customers name groups for their own org chart, not your permission model, and those names change. A rename in Okta should not silently strip everyone's access. And when a customer disputes what someone could see, you want a record of the mapping _you_ applied rather than an inference from directory state that has since changed.
 
 Keep one guardrail: never let a group sync remove the last administrator of an organisation. Every product that skips this eventually locks a customer out of their own account on a Friday afternoon.
 
@@ -383,7 +381,7 @@ If you buy, [WorkOS](https://workos.com), [Clerk](https://clerk.com) and [Stytch
 
 The honest decision rule is about where your engineering time is scarce. If you have one enterprise customer and a solid auth codebase, doing SAML yourself with a maintained library is a reasonable few weeks and you keep the flexibility. If you expect ten more customers on five different IdPs, the per-connection support burden is the cost that grows, and that is precisely what a vendor absorbs.
 
-What is not a reason to buy: thinking SAML is too hard to understand. It is verbose, not deep. What *is* a reason to buy: not wanting to own signature validation correctness. Reread the comment truncation section and decide honestly which side of that you want to be on.
+What is not a reason to buy: thinking SAML is too hard to understand. It is verbose, not deep. What _is_ a reason to buy: not wanting to own signature validation correctness. Reread the comment truncation section and decide honestly which side of that you want to be on.
 
 ## Testing it
 
@@ -411,4 +409,4 @@ Things worth an explicit test case, because they are the ones that break in prod
 
 The pattern to take away is that the protocol work is bounded and well documented, while the model change underneath it is neither. Build the organisation, connection and revocation pieces while nobody is waiting on them. Then when the questionnaire arrives, the honest answer is a date rather than a quarter.
 
-For more on the identity side, we wrote about [the Ory ecosystem for identity and SSO on Kubernetes](/posts/ory-ecosystem-identity-auth-kubernetes), and there is a [pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) covering the secrets and supply chain half of the same security questionnaire.
+For more on the identity side, we wrote about [the Ory ecosystem for identity and SSO on Kubernetes](/posts/ory-ecosystem-identity-auth-kubernetes), and there is a [pipeline hardening guide](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) covering the secrets and supply chain half of the same security questionnaire.

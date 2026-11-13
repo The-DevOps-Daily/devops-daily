@@ -242,7 +242,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 15,
         resources: [
           part('introduction-to-cicd', '07-advanced-workflows-and-automation'),
-          post('github-actions-fast'),
+          part('introduction-to-cicd', '08-monitoring-debugging-and-optimization'),
           lab('ci-cd-github-actions'),
           quiz('github-actions-quiz'),
           checklist('cicd-pipeline-setup'),
@@ -294,7 +294,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 10,
         resources: [
           guide('introduction-to-aws'),
-          post('what-is-finops-a-beginners-guide-to-cloud-cost-management'),
+          part('finops-for-devops-engineers', '01-principles'),
           quiz('aws-quiz'),
           cards('aws-essentials'),
         ],

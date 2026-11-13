@@ -85,9 +85,9 @@ machine = [sum(s for _, s in v) for v in groups.values()] # you are billed
 
 200 completed runs from 30 July to 6 August 2026 on this site's repo, which resolved to 73 trigger events. Median two workflows per trigger, occasionally seven.
 
-| Measure | Median | p90 |
-| --- | --- | --- |
-| Wall clock per trigger | 2.5 min | 2.9 min |
+| Measure                     | Median  | p90     |
+| --------------------------- | ------- | ------- |
+| Wall clock per trigger      | 2.5 min | 2.9 min |
 | Machine minutes per trigger | 4.5 min | 9.2 min |
 
 ```chart
@@ -113,13 +113,13 @@ At the median we pay for 1.84 times what a developer experiences. At p90 that st
 
 Per workflow:
 
-| Workflow | Runs | Median | p90 |
-| --- | --- | --- | --- |
-| Build Test | 79 | 1.9 min | 2.2 min |
-| Tests | 78 | 2.5 min | 2.8 min |
-| Check Links | 15 | 1.9 min | 2.0 min |
-| IndexNow Submission | 15 | 0.4 min | 0.5 min |
-| Docker Validation | 5 | 0.4 min | 0.4 min |
+| Workflow            | Runs | Median  | p90     |
+| ------------------- | ---- | ------- | ------- |
+| Build Test          | 79   | 1.9 min | 2.2 min |
+| Tests               | 78   | 2.5 min | 2.8 min |
+| Check Links         | 15   | 1.9 min | 2.0 min |
+| IndexNow Submission | 15   | 0.4 min | 0.5 min |
+| Docker Validation   | 5    | 0.4 min | 0.4 min |
 
 :::note
 I should be straight about this: our CI is not slow. Two minutes median, no queueing, on a static site with a modest test suite. I am not going to pretend otherwise to make a better headline. The reason to publish the numbers is that they show the method working, and they give you a small-repo reference point to compare against.
@@ -151,7 +151,7 @@ That is a healthy ratio, and it is worth measuring because an unhealthy one is i
 
 Our numbers are small, so this section is from experience rather than from the data above. In rough order of how often it is the answer:
 
-**The cache is not being hit.** Not missing, *not hit*. Someone configured caching, it restores a key that no longer matches, and every build silently does a cold install. Check the cache-hit line in the logs rather than trusting that the step exists.
+**The cache is not being hit.** Not missing, _not hit_. Someone configured caching, it restores a key that no longer matches, and every build silently does a cold install. Check the cache-hit line in the logs rather than trusting that the step exists.
 
 **Docker layers rebuild from scratch.** A `COPY . .` before `RUN npm ci` invalidates every layer below it on any file change. Copy the lockfile, install, then copy the source.
 
@@ -235,4 +235,4 @@ print(f"cost         ${st.median(machine)/60*RATE:.3f}/merge, "
 
 The method transfers even when the numbers do not. Run it on your repo, and if your machine-to-wall ratio is worse than 2x, you now know something about your pipeline that you did not know this morning.
 
-For more on getting CI to tell you what went wrong, we wrote about [triaging CI logs automatically](/posts/ci-log-triage-digitalocean-inference), and there is a [pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) covering the security side.
+For more on getting CI to tell you what went wrong, we wrote about [triaging CI logs automatically](/posts/ci-log-triage-digitalocean-inference), and there is a [pipeline hardening guide](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) covering the security side.

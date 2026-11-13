@@ -689,7 +689,7 @@ For the ticket shop, a reasonable order is: SSO with passkeys for staff and admi
 - [Mutual TLS in the Cryptography Essentials guide](/guides/cryptography-essentials/03-tls-ssl#h2-mutual-tls-mtls)
 - [Mutual TLS in the Networking Fundamentals guide](/guides/networking-fundamentals/04-network-security-and-firewalls-basics#h2-above-the-packets-mutual-tls)
 - [Software integrity failures in the OWASP Top 10 guide](/guides/owasp-top-10/08-software-integrity-failures)
-- [CI/CD Pipeline Hardening: A Practical Guide](/posts/cicd-pipeline-hardening-guide)
+- [CI/CD pipeline hardening: runners, egress, OIDC and pinning](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline)
 - [Istio Traffic Management: Routing, Retries and Circuit Breaking](/posts/istio-traffic-management-routing-retries-circuit-breaking)
 - [We Took Down Our Mesh VPN Control Plane. Here Is What Kept Working](/posts/mesh-vpn-control-plane-outage-what-keeps-working)
 - [Interview questions: zero trust architecture](/interview-questions/topic/security#zero-trust-architecture)

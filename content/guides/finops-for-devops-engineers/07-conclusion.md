@@ -126,6 +126,6 @@ https://github.com/The-DevOps-Daily/guide-finops-demo-2026-10-27
 
 - [Knowing What Your AI Feature Costs Before Finance Does](/posts/ai-feature-cost-before-finance-does)
 - [Free Egress Has Fine Print: S3 vs R2, B2, Wasabi and More](/posts/object-storage-free-egress-fine-print)
-- [How We Reduced Our AWS Bill by 73% While Actually Improving Performance](/posts/aws-cost-optimization)
+- [How Do I Lower an AWS Bill Without Making the App Slower?](/guides/introduction-to-aws/10-cost-management#h3-how-do-i-lower-an-aws-bill-without-making-the-app-slower)
 - [Cloud Cost Optimization Quiz](/quizzes/cloud-cost-optimization-quiz)
 - [Interview questions: Cloud Cost Optimization](/interview-questions/topic/cloud#cloud-cost-optimization)

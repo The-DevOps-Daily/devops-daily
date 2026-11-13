@@ -15,9 +15,6 @@
 /images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.svg /images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.jpg 301
 /images/posts/antv-npm-shai-hulud-wave-may-2026.svg /images/posts/antv-npm-shai-hulud-wave-may-2026.jpg 301
 /images/posts/argocd-cve-2026-42880-serversidediff-secret-leak.svg /images/posts/argocd-cve-2026-42880-serversidediff-secret-leak.jpg 301
-/images/posts/assumerole-service-ec2.svg /images/posts/assumerole-service-ec2.jpg 301
-/images/posts/aws-asg-launch-templates-vs-configurations.svg /images/posts/aws-asg-launch-templates-vs-configurations.jpg 301
-/images/posts/aws-cost-optimization.svg /images/posts/aws-cost-optimization.jpg 301
 /images/posts/aws-use1-az4-thermal-event-single-az-lessons.svg /images/posts/aws-use1-az4-thermal-event-single-az-lessons.jpg 301
 /images/posts/bash-loop-through-file-content.svg /images/posts/bash-loop-through-file-content.jpg 301
 /images/posts/best-claude-code-plugins-devops-2026.svg /images/posts/best-claude-code-plugins-devops-2026.jpg 301
@@ -35,7 +32,6 @@
 /images/posts/copy-command-output-to-clipboard.svg /images/posts/copy-command-output-to-clipboard.jpg 301
 /images/posts/copy-fail-cve-2026-31431-linux-container-escape.svg /images/posts/copy-fail-cve-2026-31431-linux-container-escape.jpg 301
 /images/posts/copy-with-docker-exclusion.svg /images/posts/copy-with-docker-exclusion.jpg 301
-/images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.svg /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.jpg 301
 /images/posts/deployment-strategies-guide.svg /images/posts/deployment-strategies-guide.jpg 301
 /images/posts/designing-automation-with-failure-in-mind.svg /images/posts/designing-automation-with-failure-in-mind.jpg 301
 /images/posts/designing-rate-limiting-for-apis.svg /images/posts/designing-rate-limiting-for-apis.jpg 301
@@ -62,7 +58,6 @@
 /images/posts/get-current-branch-name-git.svg /images/posts/get-current-branch-name-git.jpg 301
 /images/posts/get-logs-from-all-pods-replication-controller.svg /images/posts/get-logs-from-all-pods-replication-controller.jpg 301
 /images/posts/git-ignore-file-mode-changes.svg /images/posts/git-ignore-file-mode-changes.jpg 301
-/images/posts/github-actions-fast.svg /images/posts/github-actions-fast.jpg 301
 /images/posts/github-cve-2026-3854-git-push-rce.svg /images/posts/github-cve-2026-3854-git-push-rce.jpg 301
 /images/posts/gitops-argocd-repository-structure-multi-environment.svg /images/posts/gitops-argocd-repository-structure-multi-environment.jpg 301
 /images/posts/gitops-deploy-docker-containers-github-actions-argocd.svg /images/posts/gitops-deploy-docker-containers-github-actions-argocd.jpg 301
@@ -107,7 +102,6 @@
 /images/posts/node-ipc-dns-exfil-supply-chain-may-2026.svg /images/posts/node-ipc-dns-exfil-supply-chain-may-2026.jpg 301
 /images/posts/node-postgres-sslmode-silently-ignores-ssl-options.svg /images/posts/node-postgres-sslmode-silently-ignores-ssl-options.jpg 301
 /images/posts/npm-v12-install-scripts-audit.svg /images/posts/npm-v12-install-scripts-audit.jpg 301
-/images/posts/nuke-all-aws-resources.svg /images/posts/nuke-all-aws-resources.jpg 301
 /images/posts/on-call-rotation-escalation-policy-guide.svg /images/posts/on-call-rotation-escalation-policy-guide.jpg 301
 /images/posts/opentelemetry-graduated-what-to-retire-this-quarter.svg /images/posts/opentelemetry-graduated-what-to-retire-this-quarter.jpg 301
 /images/posts/opentofu-1-12-destroy-false-state-surgery.svg /images/posts/opentofu-1-12-destroy-false-state-surgery.jpg 301
@@ -125,6 +119,7 @@
 /images/posts/shai-hulud-hades-pypi-wave-june-2026.svg /images/posts/shai-hulud-hades-pypi-wave-june-2026.jpg 301
 /images/posts/should-terraform-lock-be-in-your-gitignore.svg /images/posts/should-terraform-lock-be-in-your-gitignore.jpg 301
 /images/posts/slos-slis-error-budgets-practical-guide.svg /images/posts/slos-slis-error-budgets-practical-guide.jpg 301
+/images/posts/software-supply-chain-security.svg /images/posts/software-supply-chain-security.jpg 301
 /images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.svg /images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.jpg 301
 /images/posts/specify-private-ssh-key-for-git-commands.svg /images/posts/specify-private-ssh-key-for-git-commands.jpg 301
 /images/posts/ssh-could-not-resolve-hostname-error.svg /images/posts/ssh-could-not-resolve-hostname-error.jpg 301
@@ -133,7 +128,6 @@
 /images/posts/tanstack-npm-worm-dead-mans-switch.svg /images/posts/tanstack-npm-worm-dead-mans-switch.jpg 301
 /images/posts/terraform-best-practices.svg /images/posts/terraform-best-practices.jpg 301
 /images/posts/terraform-referencing-for-each-resources.svg /images/posts/terraform-referencing-for-each-resources.jpg 301
-/images/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2.svg /images/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2.jpg 301
 /images/posts/top-github-devops-learning-repos-2026.svg /images/posts/top-github-devops-learning-repos-2026.jpg 301
 /images/posts/trigger-kubernetes-scheduled-job-manually.svg /images/posts/trigger-kubernetes-scheduled-job-manually.jpg 301
 /images/posts/udp-vs-tcp-performance-comparison.svg /images/posts/udp-vs-tcp-performance-comparison.jpg 301
@@ -143,7 +137,6 @@
 /images/posts/view-file-change-history-git.svg /images/posts/view-file-change-history-git.jpg 301
 /images/posts/what-do-pty-and-tty-mean.svg /images/posts/what-do-pty-and-tty-mean.jpg 301
 /images/posts/what-does-2-and-1-mean-linux-bash.svg /images/posts/what-does-2-and-1-mean-linux-bash.jpg 301
-/images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.svg /images/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management.jpg 301
 /images/posts/when-kubernetes-is-wrong-default.svg /images/posts/when-kubernetes-is-wrong-default.jpg 301
 /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.svg /images/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x.jpg 301
 /images/posts/why-does-kubernetes-pod-get-recreated-when-deleted.svg /images/posts/why-does-kubernetes-pod-get-recreated-when-deleted.jpg 301
@@ -163,11 +156,11 @@
 /images/guides/dast-integration.png /images/posts/dast-integration-guide.jpg 301
 /images/guides/dast-integration.svg /images/posts/dast-integration-guide.jpg 301
 /images/guides/dependency-scanning.png /images/posts/dependency-scanning-guide.jpg 301
-/images/guides/pipeline-hardening.png /images/posts/cicd-pipeline-hardening-guide.jpg 301
+/images/guides/pipeline-hardening.png /images/posts/software-supply-chain-security.jpg 301
 /images/guides/pre-commit-hooks.png /images/posts/pre-commit-hooks-security-guide.jpg 301
 /images/guides/pre-commit-hooks.svg /images/posts/pre-commit-hooks-security-guide.jpg 301
 /images/guides/secrets-management.png /images/posts/secrets-management-guide.jpg 301
-/images/guides/secure-coding-practices.svg /images/posts/secure-coding-practices-guide.jpg 301
+/images/guides/secure-coding-practices.svg /images/posts/security-focused-code-reviews.jpg 301
 # Old dark covers removed (Nov 2026)
 /images/advent/index.png /images/advent/advent-of-devops-2026.jpg 301
 /images/checklists/checklists-og.png /images/pages/checklists.jpg 301
@@ -301,6 +294,7 @@
 /tags/heroku /categories/cloud 301
 /tags/hetzner /categories/cloud 301
 /tags/high-availability /tags/reliability 301
+/tags/iam /tags/aws 301
 /tags/icmp /tags/networking 301
 /tags/idp /tags/platform-engineering 301
 /tags/inference /tags/ai 301
@@ -337,7 +331,7 @@
 /tags/pkill /tags/linux 301
 /tags/pod-security /tags/kubernetes 301
 /tags/pods /tags/kubernetes 301
-/tags/policies /tags/iam 301
+/tags/policies /tags/aws 301
 /tags/port-forwarding /tags/networking 301
 /tags/port-mapping /tags/networking 301
 /tags/ports /tags/networking 301
@@ -402,10 +396,10 @@
 /guides/code-review-security /posts/security-focused-code-reviews 301
 /guides/dast-integration /posts/dast-integration-guide 301
 /guides/dependency-scanning /posts/dependency-scanning-guide 301
-/guides/pipeline-hardening /posts/cicd-pipeline-hardening-guide 301
+/guides/pipeline-hardening /posts/software-supply-chain-security 301
 /guides/pre-commit-hooks /posts/pre-commit-hooks-security-guide 301
 /guides/secrets-management /posts/secrets-management-guide 301
-/guides/secure-coding-practices /posts/secure-coding-practices-guide 301
+/guides/secure-coding-practices /posts/security-focused-code-reviews 301
 /guides/supply-chain-security /posts/software-supply-chain-security 301
 
 # Duplicate posts merged into the fuller version (Aug 2026)
@@ -720,6 +714,18 @@
 /posts/when-is-it-appropriate-to-use-udp-instead-of-tcp /posts/udp-vs-tcp-performance-comparison 301
 /posts/which-postgresql-version-am-i-running /guides/introduction-to-postgres/02-installation-and-setup 301
 
+# AWS, security and FinOps posts merged (2026-11)
+/posts/assumerole-service-ec2 /guides/introduction-to-aws/02-iam-security 301
+/posts/aws-asg-launch-templates-vs-configurations /guides/introduction-to-aws/07-load-balancing 301
+/posts/aws-cost-optimization /guides/introduction-to-aws/10-cost-management 301
+/posts/cicd-pipeline-hardening-guide /posts/software-supply-chain-security 301
+/posts/correct-way-to-attach-aws-managed-policies-to-a-role /guides/introduction-to-aws/02-iam-security 301
+/posts/github-actions-fast /guides/introduction-to-cicd/08-monitoring-debugging-and-optimization 301
+/posts/nuke-all-aws-resources /guides/introduction-to-aws/10-cost-management 301
+/posts/secure-coding-practices-guide /posts/security-focused-code-reviews 301
+/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2 /guides/introduction-to-aws/09-lambda-serverless 301
+/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management /guides/finops-for-devops-engineers/01-principles 301
+
 # Single interview question pages merged into their topic pages (Nov 2026)
 /interview-questions/junior/argocd-bootstrapping-self-management /interview-questions/topic/gitops#argocd-bootstrapping-self-management 301
 /interview-questions/junior/argocd-multi-env-repo-structure /interview-questions/topic/gitops#argocd-multi-env-repo-structure 301
@@ -839,10 +845,10 @@
 /guides/code-review-security/* /posts/security-focused-code-reviews 301
 /guides/dast-integration/* /posts/dast-integration-guide 301
 /guides/dependency-scanning/* /posts/dependency-scanning-guide 301
-/guides/pipeline-hardening/* /posts/cicd-pipeline-hardening-guide 301
+/guides/pipeline-hardening/* /posts/software-supply-chain-security 301
 /guides/pre-commit-hooks/* /posts/pre-commit-hooks-security-guide 301
 /guides/secrets-management/* /posts/secrets-management-guide 301
-/guides/secure-coding-practices/* /posts/secure-coding-practices-guide 301
+/guides/secure-coding-practices/* /posts/security-focused-code-reviews 301
 /guides/supply-chain-security/* /posts/software-supply-chain-security 301
 
 # Old OG image URLs: these folders hold no .png files (and guides/news no .svg files),

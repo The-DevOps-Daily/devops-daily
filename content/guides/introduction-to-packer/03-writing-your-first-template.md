@@ -406,6 +406,6 @@ In [Part 4](/guides/introduction-to-packer/04-builders-and-platforms), you confi
 ## Keep Learning
 
 - [Introduction to AWS: EC2 servers](/guides/introduction-to-aws/03-ec2-servers), for instances, AMIs and security groups
-- [AWS ASG Launch Templates vs Launch Configurations](/posts/aws-asg-launch-templates-vs-configurations), to use your AMI in an autoscaling group
+- [Launch templates vs launch configurations](/guides/introduction-to-aws/07-load-balancing#h3-what-is-the-difference-between-a-launch-template-and-a-launch-configuration), to use your AMI in an Auto Scaling group
 - [AWS Security Checklist](/checklists/aws-security)
 - [AWS Cloud Services Quiz](/quizzes/aws-quiz)
