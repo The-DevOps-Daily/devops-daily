@@ -136,10 +136,11 @@ Placeholders support the shell's default and error forms:
 Two different orders apply. For **placeholders** in the Compose file, a variable in your shell overrides the same variable in `.env`. For the **environment inside the container**, Compose uses this order, highest first:
 
 1. `docker compose run -e NAME=value` on the command line.
-2. `environment` or `env_file` entries whose value is a placeholder, filled in from the shell or `.env`.
-3. Plain values under `environment`.
-4. Values from `env_file`.
-5. `ENV` in the image's Dockerfile.
+2. Values under `environment`.
+3. Values from `env_file`.
+4. `ENV` in the image's Dockerfile.
+
+A value written as `${VAR}` in `environment` or in an `env_file` is filled in first, from the shell or `.env`, and then takes part in this order like any other value.
 
 So `environment: { LOG_LEVEL: warn }` beats `LOG_LEVEL=debug` in an `env_file`, and both beat the image's `ENV LOG_LEVEL=info`. Unlike `docker run --env-file`, Compose `env_file` files support quotes and `${VAR}` placeholders.
 
@@ -158,7 +159,7 @@ ENV APP_VERSION=${APP_VERSION} \
     PYTHONUNBUFFERED=1
 ```
 
-Keep comments on their own lines. In `ENV` and `ARG`, a `#` after the value is not a comment, and the build fails.
+Keep comments on their own lines. In `ENV` and `ARG`, a `#` after the value is not a comment: depending on the instruction, it becomes part of the value, more arguments, or a syntax error.
 
 Use `ENV` for defaults that the app needs, and override them at run time with `-e` or Compose. Use `ARG` for values that only the build needs, such as a version to download. [Multiple build arguments](/posts/docker-build-with-multiple-build-args) covers `ARG` in detail. Values of both end up in the image metadata or history, so neither is a place for passwords.
 

@@ -88,7 +88,7 @@ To avoid the error in scripts, remove the old container first (`docker rm -f web
 docker rm web                    # one stopped container
 docker rm -f web                 # stop it first if it runs
 docker container prune           # every stopped container, after a prompt
-docker container prune -f --filter "until=24h"   # stopped for more than 24 hours, no prompt
+docker container prune -f --filter "until=24h"   # stopped ones created over 24 hours ago, no prompt
 ```
 
 `docker rm` deletes the container's writable layer. Named volumes stay, and so do anonymous volumes unless you add `-v` (`docker rm -v web`). For one-off containers, `docker run --rm` removes the container as soon as it exits, so nothing piles up.

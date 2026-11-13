@@ -219,7 +219,7 @@ The common causes:
 - **A shell image with no terminal.** `docker run ubuntu` starts `bash`, which reads an empty input and exits. Run it interactively with `docker run -it ubuntu bash`.
 - **The file is missing or not executable.** Docker prints `exec: "/app/start.sh": stat /app/start.sh: no such file or directory` (exit code 127), or a permission error (126). Add `RUN chmod +x /app/start.sh`, or `COPY --chmod=755`.
 - **The script has Windows line endings.** The log says `exec /app/start.sh: no such file or directory` although the file exists: the kernel looks for an interpreter called `/bin/sh\r`. Convert the file with `dos2unix` or set `* text=auto eol=lf` in `.gitattributes`.
-- **The image is for another CPU.** `exec format error` means, for example, an `amd64` image on an `arm64` host. Build for the right platform with `docker buildx build --platform linux/arm64`.
+- **The image is for another CPU.** `exec format error` means, for example, an `amd64` image on an `arm64` host. Build for the right platform with `docker buildx build --platform linux/arm64 -t myapp --load .`.
 
 To look around in an image whose command fails, start a shell instead of the command: `docker run --rm -it --entrypoint sh myapp`. [How to access a container's shell](/posts/how-to-access-docker-container-shell) covers this and stopped containers. To keep a debug container alive on purpose, use `CMD ["sleep", "infinity"]`, never in production.
 
@@ -232,6 +232,9 @@ FROM ubuntu:24.04
 RUN apt-get update \
     && apt-get install -y --no-install-recommends cron curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# The job itself, from the build context
+COPY --chmod=755 backup.sh /usr/local/bin/backup.sh
 
 # Files in /etc/cron.d have a user field ("root") and need a final newline
 COPY backup-cron /etc/cron.d/backup-cron

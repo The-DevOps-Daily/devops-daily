@@ -51,7 +51,7 @@ kubectl rollout restart deployment/web -n shop
 kubectl rollout status deployment/web -n shop
 ```
 
-It works for `deployment`, `statefulset` and `daemonset`. It adds an annotation with the current time to the pod template, so the controller rolls out new pods with the normal update strategy and no downtime if you have several replicas.
+It works for `deployment`, `statefulset` and `daemonset`. It adds an annotation with the current time to the pod template, so the controller replaces the pods with its update strategy. A Deployment with `RollingUpdate`, several replicas and a readiness probe stays available. `Recreate` stops all pods first, and a StatefulSet or DaemonSet with `OnDelete` waits until you delete the pods yourself.
 
 **Replace one pod.** Delete it, and its controller (ReplicaSet, StatefulSet or DaemonSet) creates a new one:
 
@@ -59,7 +59,7 @@ It works for `deployment`, `statefulset` and `daemonset`. It adds an annotation 
 kubectl delete pod web-7d4b9c-x2kqz -n shop
 ```
 
-All containers of the pod start again, in a new pod with a new name. A **bare pod**, one that no controller manages, is not recreated. Check `kubectl get pod <name> -o jsonpath='{.metadata.ownerReferences[*].kind}'` first: an empty result means a bare pod, and you have to apply its manifest again.
+All containers start again in a replacement pod. A ReplicaSet or DaemonSet gives it a new name, and a StatefulSet keeps the same name and ordinal. A **bare pod**, one that no controller manages, is not recreated. Check `kubectl get pod <name> -o jsonpath='{.metadata.ownerReferences[*].kind}'` first: an empty result means a bare pod, and you have to apply its manifest again.
 
 **Restart only one container in place.** Make that container's main process exit. The kubelet then restarts the container in the same pod, according to the pod's `restartPolicy` (`Always`, the default, or `OnFailure`):
 
@@ -138,7 +138,7 @@ kubectl logs web-7d4b9c-x2kqz -c app --previous   # the log of the container tha
 | `Completed`, 0                  | The command finished                          | Run a long-running process, or use a Job             |
 | Liveness probe failed in Events | The probe killed it                           | Check the probe path, port and `initialDelaySeconds` |
 
-Two settings cause many of these restarts. A memory **limit** below what the app needs gets the container killed, while a **request** only affects where the pod is scheduled. A liveness probe that checks a dependency, such as the database, restarts healthy containers whenever that dependency is slow. Keep liveness probes about the process itself, and use readiness probes for "can serve traffic". For work that should finish, use a Job or CronJob instead of keeping a container alive.
+Two settings cause many of these restarts. A memory **limit** below what the app needs gets the container killed, while a **request** decides where the pod is scheduled and how early it is evicted under memory pressure, but is not a cap. A liveness probe that checks a dependency, such as the database, restarts healthy containers whenever that dependency is slow. Keep liveness probes about the process itself, and use readiness probes for "can serve traffic". For work that should finish, use a Job or CronJob instead of keeping a container alive.
 
 ## How Do I Use Local Docker Images With Minikube?
 

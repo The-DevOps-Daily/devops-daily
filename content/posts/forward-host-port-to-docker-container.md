@@ -276,10 +276,10 @@ services:
     image: postgres:18
     environment:
       POSTGRES_PASSWORD: change-me
-    # no ports: the database is reachable only from containers on this network
+    # no ports: other hosts cannot reach the database, containers on this network can
 ```
 
-Here the proxy forwards to `http://api:8000` and the API connects to `db:5432`, by service name. Nothing except the proxy is reachable from outside. That is the layout to aim for: publish the entry point, keep the rest internal.
+With an nginx config that sends requests to `http://api:8000` (a `location` block with `proxy_pass`, mounted into the proxy), the proxy reaches the API and the API connects to `db:5432`, both by service name. Nothing except the proxy is reachable from other machines. On a Linux host, the host itself can still reach container addresses directly. That is the layout to aim for: publish the entry point, keep the rest internal.
 
 ### What Is the Difference Between EXPOSE and --publish?
 

@@ -227,10 +227,12 @@ Edits inside a container are for debugging. They are gone when the container is 
 Use `docker cp`. It works in both directions and on stopped containers too:
 
 ```bash
-docker cp web:/var/log/nginx/error.log ./error.log    # container to host
+docker cp web:/etc/nginx/nginx.conf ./nginx.conf       # container to host
 docker cp ./index.html web:/usr/share/nginx/html/     # host to container
 docker cp crashed-app:/app/logs ./crash-logs          # from a stopped container
 ```
+
+Some files are not what they seem. In the `nginx` image, `/var/log/nginx/access.log` and `error.log` are symlinks to stdout and stderr, so `docker cp` gets a link, not the log. Save what the container printed with `docker logs web > web.log 2>&1` instead.
 
 For directories, the path you give decides what you get:
 

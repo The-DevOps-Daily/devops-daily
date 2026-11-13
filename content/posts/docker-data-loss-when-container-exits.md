@@ -62,11 +62,11 @@ Many database images declare a `VOLUME` in their Dockerfile. If you do not mount
 
 ## Volumes, Bind Mounts and tmpfs: Which Should I Use?
 
-| Type         | Example                         | Where the data is                  | Use it for                                         |
-| ------------ | ------------------------------- | ---------------------------------- | -------------------------------------------------- |
-| Named volume | `-v pgdata:/var/lib/postgresql` | Managed by Docker                  | Databases, uploads, anything that must stay        |
-| Bind mount   | `-v "$(pwd)/src":/app/src`      | A directory you choose on the host | Source code and config in development              |
-| tmpfs        | `--tmpfs /tmp`                  | Memory only                        | Scratch files and secrets that must not touch disk |
+| Type         | Example                         | Where the data is                  | Use it for                                                 |
+| ------------ | ------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
+| Named volume | `-v pgdata:/var/lib/postgresql` | Managed by Docker                  | Databases, uploads, anything that must stay                |
+| Bind mount   | `-v "$(pwd)/src":/app/src`      | A directory you choose on the host | Source code and config in development                      |
+| tmpfs        | `--tmpfs /tmp`                  | Memory only                        | Scratch files that must not stay after the container stops |
 
 Named volumes work the same on Linux, macOS and Windows, and on Docker Desktop they are faster than bind mounts because they stay inside Docker's VM. Bind mounts give you the files directly on the host, with the host's permissions. [Introduction to Docker: Volumes](/guides/introduction-to-docker/06-working-with-docker-volumes) covers all three in depth.
 
@@ -175,7 +175,7 @@ The `postgres:18` change trips up many people. The 18 image keeps its data in `/
 Rules that keep database data safe:
 
 - **One data directory, one container.** Two database containers on the same volume corrupt it.
-- **Stop it cleanly.** `docker stop` sends SIGTERM and waits 10 seconds before SIGKILL. A large database may need longer: `docker stop -t 60 db`, or `stop_grace_period: 1m` in Compose.
+- **Stop it cleanly.** `docker stop` sends the image's stop signal (SIGINT for `postgres`, which selects a fast shutdown) and waits 10 seconds before SIGKILL. A large database may need longer: `docker stop -t 60 db`, or `stop_grace_period: 1m` in Compose.
 - **Bind mounts need the right owner.** The Debian-based `postgres` and `mysql` images run as UID 999, and `postgres:*-alpine` as UID 70. A host directory must belong to that UID.
 - **Do not publish the port to the world.** Use `-p 127.0.0.1:5432:5432` for local tools, see [connect to Postgres from outside](/posts/forward-host-port-to-docker-container#h2-how-do-i-connect-to-postgresql-in-a-docker-container-from-the-host).
 - **Back up with the database's own tool.** A dump is consistent while the database runs, a copy of its files is not.

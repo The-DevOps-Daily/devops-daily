@@ -413,7 +413,7 @@ The runtime is the same in both. On a Kubernetes node, the kubelet talks to cont
 Pick Kubernetes when you have these problems:
 
 - Your services must run on more than one server, and survive the loss of one.
-- You deploy often and need rolling updates and automatic rollback.
+- You deploy often and need rolling updates, with `kubectl rollout undo` to go back (automatic rollback needs extra tooling such as Argo Rollouts or Flagger).
 - Load changes a lot and you want autoscaling.
 - Several teams share the same platform.
 

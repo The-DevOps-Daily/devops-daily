@@ -307,6 +307,8 @@ services:
     build: .
   db:
     image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: change-me
   adminer:
     image: adminer
     profiles: [debug]
