@@ -467,7 +467,7 @@ The key is to treat right-sizing as an ongoing process. As your applications evo
 
 ## Related Resources
 
-- [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
+- [Checking pod CPU and memory usage](/posts/5-minute-kubernetes-cluster-health-check#h2-how-do-i-check-the-cpu-and-memory-usage-of-a-pod)
 - [Kubernetes HPA Lab Exercise](/exercises/kubernetes-hpa-lab)
 - [Introduction to Kubernetes: Resource Management](/guides/introduction-to-kubernetes)
 - [FinOps for DevOps Engineers: where cloud cost comes from, Kubernetes requests included](/guides/finops-for-devops-engineers/02-challenges)

@@ -208,7 +208,7 @@ kind's config from Part 2 maps port 30080 of the control plane container to your
 
 ### LoadBalancer
 
-On a cloud cluster, a `LoadBalancer` Service makes the cloud controller manager create a load balancer and write its address into the Service. On DigitalOcean Kubernetes that is a DigitalOcean Load Balancer, configured with `service.beta.kubernetes.io/do-loadbalancer-*` annotations and billed while it exists. On kind nothing creates one, so the address stays `<pending>` ([why a LoadBalancer stays pending](/posts/kubernetes-service-external-ip-pending)):
+On a cloud cluster, a `LoadBalancer` Service makes the cloud controller manager create a load balancer and write its address into the Service. On DigitalOcean Kubernetes that is a DigitalOcean Load Balancer, configured with `service.beta.kubernetes.io/do-loadbalancer-*` annotations and billed while it exists. On kind nothing creates one, so the address stays `<pending>` ([why a LoadBalancer stays pending](/posts/ingress-vs-load-balancer-kubernetes#h2-why-does-my-loadbalancer-service-show-external-ip-pending)):
 
 ```yaml
 apiVersion: v1

@@ -407,8 +407,8 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Pods and Deployments', 'Services and Ingress', 'Scheduling', 'Autoscaling'],
         resources: [
           guide('introduction-to-kubernetes'),
-          post('difference-between-pod-and-deployment'),
-          post('kubernetes-deployments-vs-statefulsets'),
+          post('why-does-kubernetes-pod-get-recreated-when-deleted'),
+          post('ingress-vs-load-balancer-kubernetes'),
           post('kubernetes-concepts-junior-to-mid-level'),
           sim('kubernetes-terminal-simulator'),
           sim('k8s-scheduler'),

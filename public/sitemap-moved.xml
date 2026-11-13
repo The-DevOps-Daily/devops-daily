@@ -136,6 +136,8 @@
   <url><loc>https://devops-daily.com/posts/check-if-variable-set-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/check-string-contains-substring-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/check-string-contains-substring-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/checking-kubernetes-pod-cpu-and-memory-utilization</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/clean-up-replicasets-when-updating-deployments</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/clone-all-remote-branches-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/close-specific-port-linux</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/command-line-for-looking-at-specific-port</loc><lastmod>2026-11-13</lastmod></url>
@@ -161,6 +163,7 @@
   <url><loc>https://devops-daily.com/posts/designing-rate-limiting-for-apislog-in</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/devops-mistakes-2025</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/difference-between-cmd-and-entrypoint-in-dockerfiles</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/difference-between-pod-and-deployment</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/difference-between-port-and-socket</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/difference-between-sh-and-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/difference-between-targetport-and-port-in-kubernetes-service-definition</loc><lastmod>2026-11-13</lastmod></url>
@@ -210,6 +213,7 @@
   <url><loc>https://devops-daily.com/posts/finding-local-ip-addresses-using-pythons-stdlib</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/fix-docker-permission-denied-error</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/fix-echo-newline-bash-literal-n</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/force-kubernetes-repull-image</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/format-date-yyyy-mm-dd-in-shell-script</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-current-time-seconds-since-epoch-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-current-working-directory-terraform</loc><lastmod>2026-11-13</lastmod></url>
@@ -217,6 +221,7 @@
   <url><loc>https://devops-daily.com/posts/get-environment-variable-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-full-path-of-file</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-object-from-list-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/get-yaml-for-deployed-kubernetes-services</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/git-add-a-vs-git-add-dot</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/git-cherry-pick-commit</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/grep-continuous-stream</loc><lastmod>2026-11-13</lastmod></url>
@@ -227,12 +232,15 @@
   <url><loc>https://devops-daily.com/posts/how-do-i-run-a-command-on-an-already-existing-docker-container</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-do-you-do-simple-string-concatenation-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-docker-differs-from-a-virtual-machine</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-does-kubectl-port-forward-create-a-connection</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-i-finally-understood-docker-and-kubernetes</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-add-a-volume-to-an-existing-docker-container</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-attach-detach-docker-process</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-clear-docker-container-logs-properly</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-copy-files-from-kubernetes-pods-to-local-system</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-create-an-ssh-key-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-decode-a-kubernetes-secret</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-delete-all-resources-from-kubernetes-one-time</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-discard-unstaged-changes-in-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-find-available-port</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-for-each-through-a-list-objects-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
@@ -244,8 +252,12 @@
   <url><loc>https://devops-daily.com/posts/how-to-remove-local-untracked-files-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-resolve-git-merge-conflicts</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-run-cron-job-in-docker</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-sign-in-kubernetes-dashboard</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-split-terraform-file</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-stash-changes-in-git</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-update-kubernetes-secret-from-file</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-use-sudo-in-docker-container</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/i-would-like-to-run-terraform-only-for-a-specific-resource</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/if-else-elsif-conditional-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
@@ -258,8 +270,14 @@
   <url><loc>https://devops-daily.com/posts/ios-ci-m1-to-m4</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kill-process-running-on-port-linux</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kill-processes-by-partial-name</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/kubectl-get-events-only-for-pod</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/kubectl-logs-continuously</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kubernetes-1-37-feature-freeze-whats-locked-in)</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/kubernetes-deployments-vs-statefulsets</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/kubernetes-how-to-make-deployment-to-update-image</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/kubernetes-list-all-pods-and-nodes</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kubernetes-pods-crashloopbackoff-no-logs</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/kubernetes-service-external-ip-pending</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/load-input-data-from-file</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/local-docker-images-minikube</loc><lastmod>2026-11-13</lastmod></url>
@@ -274,10 +292,12 @@
   <url><loc>https://devops-daily.com/posts/organize-terraform-modules-multiple-environments</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/pass-environment-variables-docker-containers</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/pipe-clipboard-bash-script</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/postgres-k8s</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/preferred-bash-shebang</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/prompt-yes-no-cancel-input-linux-shell-script</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/ps-command-not-working-docker</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/push-docker-image-private-repo</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/real-world-k8s</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/recursively-count-files-in-linux-directory</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/redirect-all-output-to-file-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/redirect-output-to-file-and-stdout</loc><lastmod>2026-11-13</lastmod></url>
@@ -291,12 +311,14 @@
   <url><loc>https://devops-daily.com/posts/remove-symlink-to-directory</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/resource-as-variable-in-module</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/resource-type-attribute-access</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/restart-pods-when-configmap-updates-in-kubernetes</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/restart-single-container-docker-compose</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/retrieve-secret-terraform-aws-secret-manager</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/set-variable-command-output-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/should-i-commit-tfstate-files-to-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/split-string-delimiter-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/start-stopped-docker-container-different-command</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/switch-namespace-in-kubernetes</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-add-ssh-key-gcp-instance</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-api-gateway-stage-not-deploying</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-azure-state-file-different-subscription</loc><lastmod>2026-11-13</lastmod></url>

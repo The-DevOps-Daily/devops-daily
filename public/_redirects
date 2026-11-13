@@ -27,10 +27,8 @@
 /images/posts/capturing-mobile-phone-traffic-on-wireshark.svg /images/posts/capturing-mobile-phone-traffic-on-wireshark.jpg 301
 /images/posts/change-echo-output-color-linux.svg /images/posts/change-echo-output-color-linux.jpg 301
 /images/posts/check-directory-exists-bash-script.svg /images/posts/check-directory-exists-bash-script.jpg 301
-/images/posts/checking-kubernetes-pod-cpu-and-memory-utilization.svg /images/posts/checking-kubernetes-pod-cpu-and-memory-utilization.jpg 301
 /images/posts/cilium-1-19-clustermesh-policy-flip.svg /images/posts/cilium-1-19-clustermesh-policy-flip.jpg 301
 /images/posts/claude-code-agents-commands-skills-plugins-explained.svg /images/posts/claude-code-agents-commands-skills-plugins-explained.jpg 301
-/images/posts/clean-up-replicasets-when-updating-deployments.svg /images/posts/clean-up-replicasets-when-updating-deployments.jpg 301
 /images/posts/cli-vs-mcp-when-to-use-each.svg /images/posts/cli-vs-mcp-when-to-use-each.jpg 301
 /images/posts/close-vs-shutdown-socket.svg /images/posts/close-vs-shutdown-socket.jpg 301
 /images/posts/cloud-cost-allocation-tags-aws-gcp-azure.svg /images/posts/cloud-cost-allocation-tags-aws-gcp-azure.jpg 301
@@ -49,7 +47,6 @@
 /images/posts/detect-network-connection-type-android.svg /images/posts/detect-network-connection-type-android.jpg 301
 /images/posts/devops-vs-sysadmin-vs-sre.svg /images/posts/devops-vs-sysadmin-vs-sre.jpg 301
 /images/posts/difference-between-git-pull-and-git-fetch.svg /images/posts/difference-between-git-pull-and-git-fetch.jpg 301
-/images/posts/difference-between-pod-and-deployment.svg /images/posts/difference-between-pod-and-deployment.jpg 301
 /images/posts/difference-run-cmd-dockerfile.svg /images/posts/difference-run-cmd-dockerfile.jpg 301
 /images/posts/digitalocean-serverless-inference-first-call.svg /images/posts/digitalocean-serverless-inference-first-call.jpg 301
 /images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.svg /images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.jpg 301
@@ -69,11 +66,9 @@
 /images/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception.svg /images/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception.jpg 301
 /images/posts/fix-pods-stuck-terminating-kubernetes.svg /images/posts/fix-pods-stuck-terminating-kubernetes.jpg 301
 /images/posts/force-docker-clean-build.svg /images/posts/force-docker-clean-build.jpg 301
-/images/posts/force-kubernetes-repull-image.svg /images/posts/force-kubernetes-repull-image.jpg 301
 /images/posts/forward-host-port-to-docker-container.svg /images/posts/forward-host-port-to-docker-container.jpg 301
 /images/posts/get-current-branch-name-git.svg /images/posts/get-current-branch-name-git.jpg 301
 /images/posts/get-logs-from-all-pods-replication-controller.svg /images/posts/get-logs-from-all-pods-replication-controller.jpg 301
-/images/posts/get-yaml-for-deployed-kubernetes-services.svg /images/posts/get-yaml-for-deployed-kubernetes-services.jpg 301
 /images/posts/git-ignore-file-mode-changes.svg /images/posts/git-ignore-file-mode-changes.jpg 301
 /images/posts/git-refusing-merge-unrelated-histories.svg /images/posts/git-refusing-merge-unrelated-histories.jpg 301
 /images/posts/github-actions-fast.svg /images/posts/github-actions-fast.jpg 301
@@ -91,15 +86,12 @@
 /images/posts/how-cat-eof-works-in-bash.svg /images/posts/how-cat-eof-works-in-bash.jpg 301
 /images/posts/how-do-i-get-flask-to-run-on-port-80.svg /images/posts/how-do-i-get-flask-to-run-on-port-80.jpg 301
 /images/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository.svg /images/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository.jpg 301
-/images/posts/how-does-kubectl-port-forward-create-a-connection.svg /images/posts/how-does-kubectl-port-forward-create-a-connection.jpg 301
 /images/posts/how-to-access-docker-container-shell.svg /images/posts/how-to-access-docker-container-shell.jpg 301
 /images/posts/how-to-artificially-create-connection-timeout-error.svg /images/posts/how-to-artificially-create-connection-timeout-error.jpg 301
 /images/posts/how-to-change-uri-url-for-remote-git-repository.svg /images/posts/how-to-change-uri-url-for-remote-git-repository.jpg 301
 /images/posts/how-to-checkout-remote-git-branch.svg /images/posts/how-to-checkout-remote-git-branch.jpg 301
 /images/posts/how-to-cherry-pick-commits-in-git.svg /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
 /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.svg /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.jpg 301
-/images/posts/how-to-copy-files-from-kubernetes-pods-to-local-system.svg /images/posts/how-to-copy-files-from-kubernetes-pods-to-local-system.jpg 301
-/images/posts/how-to-delete-all-resources-from-kubernetes-one-time.svg /images/posts/how-to-delete-all-resources-from-kubernetes-one-time.jpg 301
 /images/posts/how-to-delete-git-branch-locally-and-remotely.svg /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
 /images/posts/how-to-force-git-pull-overwrite-local-files.svg /images/posts/how-to-force-git-pull-overwrite-local-files.jpg 301
 /images/posts/how-to-free-up-tcp-port.svg /images/posts/how-to-free-up-tcp-port.jpg 301
@@ -114,13 +106,9 @@
 /images/posts/how-to-reset-revert-file-to-specific-revision.svg /images/posts/how-to-reset-revert-file-to-specific-revision.jpg 301
 /images/posts/how-to-restart-container-within-pod.svg /images/posts/how-to-restart-container-within-pod.jpg 301
 /images/posts/how-to-safely-revert-repository-to-previous-commit.svg /images/posts/how-to-safely-revert-repository-to-previous-commit.jpg 301
-/images/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes.svg /images/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes.jpg 301
-/images/posts/how-to-sign-in-kubernetes-dashboard.svg /images/posts/how-to-sign-in-kubernetes-dashboard.jpg 301
-/images/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube.svg /images/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube.jpg 301
 /images/posts/how-to-symlink-files-linux.svg /images/posts/how-to-symlink-files-linux.jpg 301
 /images/posts/how-to-undo-git-add-before-commit.svg /images/posts/how-to-undo-git-add-before-commit.jpg 301
 /images/posts/how-to-undo-recent-local-commits-in-git.svg /images/posts/how-to-undo-recent-local-commits-in-git.jpg 301
-/images/posts/how-to-update-kubernetes-secret-from-file.svg /images/posts/how-to-update-kubernetes-secret-from-file.jpg 301
 /images/posts/how-to-view-git-commit-history.svg /images/posts/how-to-view-git-commit-history.jpg 301
 /images/posts/ingress-nginx-eol-gateway-api-migration.svg /images/posts/ingress-nginx-eol-gateway-api-migration.jpg 301
 /images/posts/ingress-vs-load-balancer-kubernetes.svg /images/posts/ingress-vs-load-balancer-kubernetes.jpg 301
@@ -128,15 +116,9 @@
 /images/posts/istio-traffic-management-routing-retries-circuit-breaking.svg /images/posts/istio-traffic-management-routing-retries-circuit-breaking.jpg 301
 /images/posts/karpenter-spot-storm-fallback-gap.svg /images/posts/karpenter-spot-storm-fallback-gap.jpg 301
 /images/posts/kubectl-apply-vs-create-differences.svg /images/posts/kubectl-apply-vs-create-differences.jpg 301
-/images/posts/kubectl-get-events-only-for-pod.svg /images/posts/kubectl-get-events-only-for-pod.jpg 301
-/images/posts/kubectl-logs-continuously.svg /images/posts/kubectl-logs-continuously.jpg 301
 /images/posts/kubernetes-1-36-user-namespaces-pod-resize.svg /images/posts/kubernetes-1-36-user-namespaces-pod-resize.jpg 301
 /images/posts/kubernetes-1-37-feature-freeze-whats-locked-in.svg /images/posts/kubernetes-1-37-feature-freeze-whats-locked-in.jpg 301
 /images/posts/kubernetes-api-get-pods-on-specific-nodes.svg /images/posts/kubernetes-api-get-pods-on-specific-nodes.jpg 301
-/images/posts/kubernetes-deployments-vs-statefulsets.svg /images/posts/kubernetes-deployments-vs-statefulsets.jpg 301
-/images/posts/kubernetes-how-to-make-deployment-to-update-image.svg /images/posts/kubernetes-how-to-make-deployment-to-update-image.jpg 301
-/images/posts/kubernetes-list-all-pods-and-nodes.svg /images/posts/kubernetes-list-all-pods-and-nodes.jpg 301
-/images/posts/kubernetes-service-external-ip-pending.svg /images/posts/kubernetes-service-external-ip-pending.jpg 301
 /images/posts/listing-all-resources-in-a-namespace.svg /images/posts/listing-all-resources-in-a-namespace.jpg 301
 /images/posts/mcp-design-flaw-rce-supply-chain-risk.svg /images/posts/mcp-design-flaw-rce-supply-chain-risk.jpg 301
 /images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.svg /images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.jpg 301
@@ -160,13 +142,10 @@
 /images/posts/ory-ecosystem-identity-auth-kubernetes.svg /images/posts/ory-ecosystem-identity-auth-kubernetes.jpg 301
 /images/posts/parse-command-line-arguments-bash.svg /images/posts/parse-command-line-arguments-bash.jpg 301
 /images/posts/permanently-set-path-on-linux-unix.svg /images/posts/permanently-set-path-on-linux-unix.jpg 301
-/images/posts/postgres-k8s.svg /images/posts/postgres-k8s.jpg 301
 /images/posts/postinstall-hidden-in-package-json-php-supply-chain-may-2026.svg /images/posts/postinstall-hidden-in-package-json-php-supply-chain-may-2026.jpg 301
 /images/posts/python-open-does-not-create-file.svg /images/posts/python-open-does-not-create-file.jpg 301
 /images/posts/react2shell-cve-2025-55182-nextjs-breach.svg /images/posts/react2shell-cve-2025-55182-nextjs-breach.jpg 301
-/images/posts/real-world-k8s.svg /images/posts/real-world-k8s.jpg 301
 /images/posts/rebuild-docker-container-compose.svg /images/posts/rebuild-docker-container-compose.jpg 301
-/images/posts/restart-pods-when-configmap-updates-in-kubernetes.svg /images/posts/restart-pods-when-configmap-updates-in-kubernetes.jpg 301
 /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.svg /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.jpg 301
 /images/posts/running-first-chaos-engineering-experiment-litmus.svg /images/posts/running-first-chaos-engineering-experiment-litmus.jpg 301
 /images/posts/see-differences-between-branches-git.svg /images/posts/see-differences-between-branches-git.jpg 301
@@ -180,7 +159,6 @@
 /images/posts/specify-private-ssh-key-for-git-commands.svg /images/posts/specify-private-ssh-key-for-git-commands.jpg 301
 /images/posts/ssh-could-not-resolve-hostname-error.svg /images/posts/ssh-could-not-resolve-hostname-error.jpg 301
 /images/posts/stash-single-file-git.svg /images/posts/stash-single-file-git.jpg 301
-/images/posts/switch-namespace-in-kubernetes.svg /images/posts/switch-namespace-in-kubernetes.jpg 301
 /images/posts/sync-forked-repository-github.svg /images/posts/sync-forked-repository-github.jpg 301
 /images/posts/tanstack-npm-worm-dead-mans-switch.svg /images/posts/tanstack-npm-worm-dead-mans-switch.jpg 301
 /images/posts/terraform-best-practices.svg /images/posts/terraform-best-practices.jpg 301
@@ -690,6 +668,30 @@
 /posts/terraform-variables-not-allowed-error-plan /posts/terraform-variables-loops-and-outputs 301
 /posts/upgrade-terraform-to-specific-version /posts/should-terraform-lock-be-in-your-gitignore 301
 /posts/use-terraform-to-set-up-a-lambda-function-triggered-by-a-scheduled-event-source /posts/terraform-cloudwatch-log-subscription-lambda 301
+
+# Kubernetes posts merged (2026-11)
+/posts/checking-kubernetes-pod-cpu-and-memory-utilization /posts/5-minute-kubernetes-cluster-health-check 301
+/posts/clean-up-replicasets-when-updating-deployments /posts/why-does-kubernetes-pod-get-recreated-when-deleted 301
+/posts/difference-between-pod-and-deployment /posts/why-does-kubernetes-pod-get-recreated-when-deleted 301
+/posts/force-kubernetes-repull-image /posts/why-does-kubernetes-pod-get-recreated-when-deleted 301
+/posts/get-yaml-for-deployed-kubernetes-services /posts/kubectl-apply-vs-create-differences 301
+/posts/how-does-kubectl-port-forward-create-a-connection /posts/ingress-vs-load-balancer-kubernetes 301
+/posts/how-to-copy-files-from-kubernetes-pods-to-local-system /posts/get-logs-from-all-pods-replication-controller 301
+/posts/how-to-delete-all-resources-from-kubernetes-one-time /posts/fix-pods-stuck-terminating-kubernetes 301
+/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes /posts/how-to-restart-container-within-pod 301
+/posts/how-to-sign-in-kubernetes-dashboard /posts/how-to-manage-multiple-environments-in-kubernetes 301
+/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube /posts/how-to-manage-multiple-environments-in-kubernetes 301
+/posts/how-to-update-kubernetes-secret-from-file /posts/how-to-restart-container-within-pod 301
+/posts/kubectl-get-events-only-for-pod /posts/get-logs-from-all-pods-replication-controller 301
+/posts/kubectl-logs-continuously /posts/get-logs-from-all-pods-replication-controller 301
+/posts/kubernetes-deployments-vs-statefulsets /posts/why-does-kubernetes-pod-get-recreated-when-deleted 301
+/posts/kubernetes-how-to-make-deployment-to-update-image /posts/why-does-kubernetes-pod-get-recreated-when-deleted 301
+/posts/kubernetes-list-all-pods-and-nodes /posts/kubernetes-api-get-pods-on-specific-nodes 301
+/posts/kubernetes-service-external-ip-pending /posts/ingress-vs-load-balancer-kubernetes 301
+/posts/postgres-k8s /posts/when-kubernetes-is-wrong-default 301
+/posts/real-world-k8s /posts/kubernetes-concepts-junior-to-mid-level 301
+/posts/restart-pods-when-configmap-updates-in-kubernetes /posts/how-to-restart-container-within-pod 301
+/posts/switch-namespace-in-kubernetes /posts/how-to-manage-multiple-environments-in-kubernetes 301
 
 # Single interview question pages merged into their topic pages (Nov 2026)
 /interview-questions/junior/argocd-bootstrapping-self-management /interview-questions/topic/gitops#argocd-bootstrapping-self-management 301

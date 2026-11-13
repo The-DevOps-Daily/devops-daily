@@ -259,7 +259,7 @@ Every namespaced command runs in the current context's namespace, which is `defa
 }
 ```
 
-For a single command, `-n <namespace>` overrides the default and `-A` (`--all-namespaces`) lists objects in every namespace. More on this in [how to switch namespaces in Kubernetes](/posts/switch-namespace-in-kubernetes).
+For a single command, `-n <namespace>` overrides the default and `-A` (`--all-namespaces`) lists objects in every namespace. More on this in [how to switch namespaces in Kubernetes](/posts/how-to-manage-multiple-environments-in-kubernetes#h2-how-do-i-switch-namespace-in-kubernetes).
 
 ## Stopping and Deleting the Cluster
 
@@ -375,8 +375,8 @@ For production, run three control plane nodes behind a load balancer (`kubeadm i
 
 ## Keep Learning
 
-- [How to switch kubectl between clusters](/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube)
-- [List all pods and nodes in a cluster](/posts/kubernetes-list-all-pods-and-nodes)
+- [How to switch kubectl between clusters](/posts/how-to-manage-multiple-environments-in-kubernetes#h2-how-do-i-switch-kubectl-between-clusters-such-as-gke-and-minikube)
+- [List all pods and nodes in a cluster](/posts/kubernetes-api-get-pods-on-specific-nodes#h2-how-do-i-list-all-pods-and-their-nodes)
 - [A 5-minute Kubernetes cluster health check](/posts/5-minute-kubernetes-cluster-health-check)
 
 Next, in [Part 3](/guides/introduction-to-kubernetes/03-pods-and-containers-in-kubernetes), you run your first pod on this cluster.
