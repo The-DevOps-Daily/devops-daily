@@ -205,7 +205,7 @@ index 10%:  $30 ingest +  30 x $2.50 = $105 per month
 
 **Strengths:** 100 GB of free ingest a month, OTLP support and no per-host charges.
 
-**The catch:** on the free tier, going over 100 GB means "data ingest will cease and you will lose access to the platform" until you upgrade to a paid edition or the next month starts. New Relic says it warns you first, but it is still a bad surprise during an incident, which is exactly when log volume spikes.
+**The catch:** on the free tier, going over 100 GB means "data ingest will cease and you will lose access to the platform" until you upgrade to a paid edition or the next month starts. New Relic says it warns you first, but it is still a bad surprise during an incident, which is exactly when log volume spikes. For a wider look at the two vendors, see [New Relic vs Datadog](/comparisons/new-relic-vs-datadog).
 
 ## 9. Dash0
 
@@ -259,7 +259,7 @@ index 10%:  $30 ingest +  30 x $2.50 = $105 per month
 
 **300 GB of logs:** not computed. The page shows only the lowest volume tier ("as low as"), not the rate at 300 GB.
 
-**Strengths:** it indexes the text of every log line, so full-text searches over long time ranges stay fast. Loki can also search log content, but it scans the chunks instead of using an index. Self-managed and hosted options exist.
+**Strengths:** it indexes the text of every log line, so full-text searches over long time ranges stay fast. Loki can also search log content, but it scans the chunks instead of using an index. Self-managed and hosted options exist. The [ELK Stack vs Loki + Grafana comparison](/comparisons/elk-stack-vs-loki-grafana) goes deeper into that trade-off.
 
 **The catch:** the page shows only "as low as" rates, so you need the calculator for a real number.
 
@@ -273,7 +273,7 @@ index 10%:  $30 ingest +  30 x $2.50 = $105 per month
 
 **Strengths:** full control, no per-GB pricing, and every piece speaks OpenTelemetry: Prometheus has an OTLP receiver (off by default, `--web.enable-otlp-receiver`), Loki accepts OTLP at `/otlp`, and Tempo takes OTLP natively.
 
-**The catch:** four systems to deploy, upgrade, scale and back up. If nobody owns them, they rot.
+**The catch:** four systems to deploy, upgrade, scale and back up. If nobody owns them, they rot. For the metrics part of this decision, see [Prometheus vs Datadog](/comparisons/prometheus-vs-datadog).
 
 ## How to switch without a big-bang migration
 

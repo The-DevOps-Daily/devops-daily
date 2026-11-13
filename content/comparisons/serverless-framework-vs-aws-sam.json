@@ -223,5 +223,19 @@
     "toolBScore": 4.1,
     "recommendation": "Choose the Serverless Framework if you need multi-cloud support or rely heavily on plugins. Choose AWS SAM if you are all-in on AWS, want native CloudFormation integration, and value fast iterative deployment with SAM Accelerate."
   },
-  "relatedTags": ["Serverless Framework", "AWS SAM", "Serverless", "Lambda", "CloudFormation", "DevOps"]
+  "relatedTags": ["Serverless Framework", "AWS SAM", "Serverless", "Lambda", "CloudFormation", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Lambda: Serverless Functions",
+      "href": "/guides/introduction-to-aws/09-lambda-serverless"
+    },
+    {
+      "label": "How to Configure CloudWatch Logs Subscription Filter to Lambda With Terraform",
+      "href": "/posts/terraform-cloudwatch-log-subscription-lambda"
+    },
+    {
+      "label": "We Tested AWS Emulator: It Blocks More Than Its Docs Say, and Less Than AWS Does",
+      "href": "/posts/aws-emulator-hands-on-test"
+    }
+  ]
 }

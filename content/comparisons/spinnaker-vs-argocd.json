@@ -229,5 +229,23 @@
     "toolBScore": 4.4,
     "recommendation": "Choose Spinnaker if you need multi-cloud deployments and complex pipeline orchestration. Choose Argo CD if you are a Kubernetes shop that wants lightweight, Git-driven continuous delivery."
   },
-  "relatedTags": ["Spinnaker", "Argo CD", "Continuous Delivery", "Kubernetes", "GitOps", "DevOps"]
+  "relatedTags": ["Spinnaker", "Argo CD", "Continuous Delivery", "Kubernetes", "GitOps", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Deployment Strategies: Blue-Green vs Canary vs Rolling",
+      "href": "/posts/deployment-strategies-guide"
+    },
+    {
+      "label": "Introduction to ArgoCD: Getting Started with GitOps",
+      "href": "/posts/introduction-to-argocd"
+    },
+    {
+      "label": "Deployment Strategies Simulator",
+      "href": "/games/deployment-strategies"
+    },
+    {
+      "label": "Progressive Delivery with Feature Flags Checklist",
+      "href": "/checklists/progressive-delivery-feature-flags"
+    }
+  ]
 }

@@ -189,7 +189,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 
 **Wrong choice:** Try to manage this with VMs and shell scripts. The complexity outgrows the tooling.
 
-**Right choice:** Kubernetes (GKE/EKS) with service mesh (Istio or Linkerd), GitOps (ArgoCD or Flux), centralized observability (Datadog or Grafana stack).
+**Right choice:** Kubernetes (GKE/EKS) with service mesh (Istio or Linkerd), GitOps ([ArgoCD or Flux](/comparisons/argocd-vs-flux)), centralized observability (Datadog or Grafana stack).
 
 **Why:** The workload characteristics justify orchestration complexity:
 
@@ -221,7 +221,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 
 - **Inference API:** Managed platform (Render, Modal, or Replicate) handles scaling and serving
 - **Training jobs:** Orchestrate with Airflow on VMs or use managed ML platforms (SageMaker, Vertex AI)
-- **Data pipelines:** Dedicated compute instances or serverless (Lambda, Cloud Functions)
+- **Data pipelines:** Dedicated compute instances or serverless ([Lambda, Cloud Functions](/comparisons/aws-lambda-vs-google-cloud-functions))
 
 **Why:** Kubernetes GPU support is notoriously finicky. Node autoscaling with GPUs takes 5-10 minutes. Managed ML platforms handle this complexity.
 

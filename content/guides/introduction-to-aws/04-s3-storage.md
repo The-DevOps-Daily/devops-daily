@@ -237,7 +237,7 @@ S3 charges for:
 - **retrieval**, per GB, for the IA and Glacier classes;
 - **data transfer out** to the internet. The first 100 GB a month, aggregated across all AWS services, is free (per the [S3 pricing page](https://aws.amazon.com/s3/pricing/), checked 23 October 2026). Transfer into S3, and from S3 to CloudFront or to EC2 in the same Region, is free.
 
-Use the [S3 pricing page](https://aws.amazon.com/s3/pricing/) or the [AWS Pricing Calculator](https://calculator.aws/) for the current rates in your Region. A learning bucket with a few hundred MB costs cents a month. Servers in a private subnet that reach S3 through a NAT gateway pay NAT data processing on every GB; Part 5 shows the free gateway endpoint that avoids it.
+Use the [S3 pricing page](https://aws.amazon.com/s3/pricing/) or the [AWS Pricing Calculator](https://calculator.aws/) for the current rates in your Region. A learning bucket with a few hundred MB costs cents a month. Servers in a private subnet that reach S3 through a NAT gateway pay NAT data processing on every GB; Part 5 shows the free gateway endpoint that avoids it. To compare S3 with the storage services of the other large clouds, see [S3 vs GCS vs Azure Blob Storage](/comparisons/s3-vs-gcs-vs-azure-blob).
 
 ## Common Mistakes
 

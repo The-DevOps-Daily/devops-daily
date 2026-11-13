@@ -316,7 +316,7 @@ MySQL strengths:
 - simple setup of basic replication;
 - some large companies run very large MySQL fleets and share their tooling.
 
-For a new project without a specific reason to use MySQL, PostgreSQL is a safe default.
+For a new project without a specific reason to use MySQL, PostgreSQL is a safe default. The [PostgreSQL vs MySQL comparison](/comparisons/postgresql-vs-mysql) goes through the differences feature by feature.
 
 ### PostgreSQL vs MongoDB (NoSQL)
 
@@ -465,7 +465,7 @@ A few building blocks combine into almost every query:
 - `JOIN` combines tables;
 - `GROUP BY` summarizes them.
 
-The core of SQL is the same across relational databases, so what you learn here transfers to MySQL, SQL Server or SQLite, with differences in data types and extra features.
+The core of SQL is the same across relational databases, so what you learn here transfers to MySQL, SQL Server or SQLite, with differences in data types and extra features. The [SQLite vs PostgreSQL comparison](/comparisons/sqlite-vs-postgresql) shows where an embedded database differs from a server.
 
 ## Understanding How Data Flows
 

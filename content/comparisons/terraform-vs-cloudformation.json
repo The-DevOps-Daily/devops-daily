@@ -314,5 +314,23 @@
     "AWS",
     "Infrastructure",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Introduction to Terraform",
+      "href": "/guides/introduction-to-terraform"
+    },
+    {
+      "label": "Infrastructure as Code: A Beginner's Guide to IaC Fundamentals",
+      "href": "/posts/infrastructure-as-code-fundamentals"
+    },
+    {
+      "label": "Terraform Basics Simulator",
+      "href": "/games/terraform-terminal-simulator"
+    },
+    {
+      "label": "Terraform Fundamentals Quiz",
+      "href": "/quizzes/terraform-quiz"
+    }
   ]
 }

@@ -229,5 +229,23 @@
     "toolBScore": 4.0,
     "recommendation": "Choose Terraform if your team is ops-heavy and needs maximum ecosystem support. Choose Pulumi if your team is dev-heavy and values programming language features and native testing."
   },
-  "relatedTags": ["Terraform", "Pulumi", "IaC", "Infrastructure", "Cloud", "DevOps"]
+  "relatedTags": ["Terraform", "Pulumi", "IaC", "Infrastructure", "Cloud", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Introduction to Terraform",
+      "href": "/guides/introduction-to-terraform"
+    },
+    {
+      "label": "Infrastructure as Code: A Beginner's Guide to IaC Fundamentals",
+      "href": "/posts/infrastructure-as-code-fundamentals"
+    },
+    {
+      "label": "Terraform Basics Simulator",
+      "href": "/games/terraform-terminal-simulator"
+    },
+    {
+      "label": "AWS VPC with Terraform",
+      "href": "/exercises/terraform-aws-vpc"
+    }
+  ]
 }

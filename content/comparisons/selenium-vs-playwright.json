@@ -230,5 +230,19 @@
     "toolBScore": 4.5,
     "recommendation": "Choose Playwright for new projects and teams that want less flakiness, faster debugging, and built-in parallel execution. Choose Selenium if you have an existing suite, need Ruby/Kotlin support, or require Appium for mobile testing."
   },
-  "relatedTags": ["Selenium", "Playwright", "Testing", "E2E", "Browser Automation", "QA"]
+  "relatedTags": ["Selenium", "Playwright", "Testing", "E2E", "Browser Automation", "QA"],
+  "relatedLinks": [
+    {
+      "label": "Build and Test an Application",
+      "href": "/guides/introduction-to-cicd/03-building-and-testing-applications"
+    },
+    {
+      "label": "Caching Dependencies and Sharing Artifacts",
+      "href": "/guides/introduction-to-cicd/04-working-with-artifacts-and-dependencies"
+    },
+    {
+      "label": "CI/CD Pipeline Setup Checklist",
+      "href": "/checklists/cicd-pipeline-setup"
+    }
+  ]
 }

@@ -229,7 +229,7 @@ Three retries fired, zero succeeded. That tells you retries are configured corre
 
 Retries multiply load. If your service does 1000 RPS and every call retries 3 times on failure, a 50% failure rate means 2500 RPS hitting the downstream. That's how outages get worse instead of better.
 
-Istio doesn't have a global retry budget like Linkerd does. The mitigation is: keep `attempts` low (2 or 3, not 10), use `perTryTimeout` aggressively, and pair retries with circuit breaking so a sick host gets ejected before retries hammer it.
+Istio doesn't have a global retry budget like Linkerd does. The mitigation is: keep `attempts` low (2 or 3, not 10), use `perTryTimeout` aggressively, and pair retries with circuit breaking so a sick host gets ejected before retries hammer it. Retry budgets are one of several differences between the two meshes; the [Istio vs Linkerd comparison](/comparisons/istio-vs-linkerd) covers the rest.
 
 ## Circuit Breaking with Outlier Detection
 

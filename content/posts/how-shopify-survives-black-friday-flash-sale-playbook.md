@@ -324,7 +324,7 @@ k6 reports this as `dropped_iterations`, and our summary script flagged it. The 
 ## What this does not show
 
 - **Scale.** A few hundred requests a second on one small machine, with k6 and the server sharing four cores. The direction of each result should hold; the absolute numbers do not transfer.
-- **Hot-row contention.** SQLite serializes writes, so the single-row conditional `UPDATE` never fought for a row lock the way it would in MySQL or Postgres. Shopify says that design "couldn't handle the contention" at its scale. The demo shows that reserving before payment is necessary, not that one row is enough.
+- **Hot-row contention.** SQLite serializes writes, so the single-row conditional `UPDATE` never fought for a row lock the way it would in MySQL or Postgres (the [SQLite vs MySQL comparison](/comparisons/sqlite-vs-mysql) covers write concurrency). Shopify says that design "couldn't handle the contention" at its scale. The demo shows that reserving before payment is necessary, not that one row is enough.
 - **The cost of a held request.** Node.js holds a waiting connection cheaply. In a thread-per-request server, the queue and deadline variants would look worse.
 - **A fair waiting room.** Ours is the lottery Shopify replaced. A timestamp-ordered queue should change who gets served and narrow the spread of waits; we did not build one.
 - **Real payment latency.** The stand-in and the predictor use a uniform 100 to 400 ms with no long tail. Real providers have tails, which make every queue worse.

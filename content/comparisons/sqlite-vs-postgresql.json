@@ -235,5 +235,23 @@
     "toolBScore": 4.5,
     "recommendation": "Pick SQLite when operational simplicity, single-host read performance, or embeddability drive your decision. Pick PostgreSQL when concurrent writes, advanced data types, or the extension ecosystem (pgvector, PostGIS, TimescaleDB) are central to your app."
   },
-  "relatedTags": ["SQLite", "PostgreSQL", "Databases", "SQL", "RDBMS", "DevOps"]
+  "relatedTags": ["SQLite", "PostgreSQL", "Databases", "SQL", "RDBMS", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Introduction to PostgreSQL",
+      "href": "/guides/introduction-to-postgres"
+    },
+    {
+      "label": "PostgreSQL Terminal Simulator",
+      "href": "/games/postgres-terminal-simulator"
+    },
+    {
+      "label": "Moving Authorization Out of Your App Code: If-Statements vs Cerbos vs SpiceDB, Measured",
+      "href": "/posts/authorization-if-statements-vs-cerbos-vs-spicedb"
+    },
+    {
+      "label": "Database Indexing Simulator",
+      "href": "/games/db-indexing-simulator"
+    }
+  ]
 }

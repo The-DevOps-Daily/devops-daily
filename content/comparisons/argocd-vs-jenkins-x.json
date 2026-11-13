@@ -314,5 +314,23 @@
     "Kubernetes",
     "CI/CD",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Introduction to ArgoCD: Getting Started with GitOps",
+      "href": "/posts/introduction-to-argocd"
+    },
+    {
+      "label": "GitOps Workflow Simulator",
+      "href": "/games/gitops-workflow"
+    },
+    {
+      "label": "GitOps with ArgoCD - Automated Kubernetes Deployments",
+      "href": "/exercises/gitops-argocd-deployment"
+    },
+    {
+      "label": "GitOps with Argo CD: Multi-Environment Repository Structure Quiz",
+      "href": "/quizzes/argocd-multi-environment-quiz"
+    }
   ]
 }

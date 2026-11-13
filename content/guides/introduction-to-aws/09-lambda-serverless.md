@@ -181,7 +181,7 @@ aws lambda invoke \
   response.json
 ```
 
-Connecting the bucket from the CLI takes two more steps: `aws lambda add-permission` (so S3 may invoke the function) and `aws s3api put-bucket-notification-configuration`. The console does both for you. In real projects, describe functions, roles and triggers with AWS SAM, the CDK or Terraform.
+Connecting the bucket from the CLI takes two more steps: `aws lambda add-permission` (so S3 may invoke the function) and `aws s3api put-bucket-notification-configuration`. The console does both for you. In real projects, describe functions, roles and triggers with AWS SAM, the CDK or Terraform. The [Serverless Framework vs AWS SAM comparison](/comparisons/serverless-framework-vs-aws-sam) helps you choose a deployment framework.
 
 :::warning
 Never let a function write to the same bucket and prefix that triggers it. A function that saves a thumbnail into `uploads/` triggers itself again, and again. Write results to a different prefix (`thumbnails/`) or bucket, and filter the trigger by prefix.

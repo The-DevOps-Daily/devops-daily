@@ -238,7 +238,7 @@ Infrastructure should scale with actual needs, not theoretical future problems. 
 
 **Infrastructure approach**:
 - **Deployment**: Managed platform (Heroku, DigitalOcean App Platform, Railway)
-- **Database**: Managed PostgreSQL or MySQL
+- **Database**: Managed [PostgreSQL or MySQL](/comparisons/postgresql-vs-mysql)
 - **Caching**: Managed Redis
 - **Monitoring**: Application logs + basic metrics (Datadog, New Relic, or Prometheus)
 - **CI/CD**: GitHub Actions or GitLab CI with simple deploy scripts

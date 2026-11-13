@@ -366,7 +366,7 @@ docker run -d --name web-forward --network mynet -p 8080:8080 \
 
 Containers on the default `bridge` network have no DNS names. Use the target's IP there (see [find a container's IP](#h2-how-do-i-get-a-docker-containers-ip-address-from-the-host)), or connect the target to a user-defined network first with `docker network connect mynet web`. You cannot publish a port on a container that uses `--network container:web`: Docker rejects port publishing in that network mode, so the proxy needs its own network namespace as above. Remove the proxy when you have recreated the container properly.
 
-A reverse proxy such as nginx, Caddy or Traefik in front of your containers is the long-term version of this idea: one published port, and routes to containers on internal networks.
+A reverse proxy such as nginx, Caddy or Traefik in front of your containers is the long-term version of this idea: one published port, and routes to containers on internal networks. The [Nginx vs Traefik comparison](/comparisons/nginx-vs-traefik) helps you choose between two common ones.
 
 ## How Do I Connect to PostgreSQL in a Docker Container From the Host?
 

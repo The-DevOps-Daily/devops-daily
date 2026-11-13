@@ -760,4 +760,4 @@ Next: [Collaboration Workflows](/guides/introduction-to-git/07-collaboration), w
 - [Reset a local branch to match the remote](/posts/how-to-reset-local-branch-to-match-remote-head)
 - [Force git pull to overwrite local files](/posts/how-to-reset-local-branch-to-match-remote-head#h2-how-do-i-force-git-pull-to-overwrite-local-files)
 - [Fix "src refspec master does not match any"](/posts/how-to-push-new-local-branch-to-remote-and-track#h2-how-do-i-fix-src-refspec-master-does-not-match-any)
-- Compare hosting services: [GitHub vs GitLab](/comparisons/github-vs-gitlab), [Bitbucket vs GitHub](/comparisons/bitbucket-vs-github)
+- Compare hosting services: [GitHub vs GitLab](/comparisons/github-vs-gitlab), [Bitbucket vs GitHub](/comparisons/bitbucket-vs-github) and [Bitbucket vs GitLab](/comparisons/bitbucket-vs-gitlab)

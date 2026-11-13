@@ -251,4 +251,4 @@ Mostly in the payload. It is untrusted input reaching a privileged interpreter, 
 Usually not at first. It is a distributed system, and it brings coordination overhead, partial-failure handling and token cost. Start with one agent and narrow tools, and split only when a single loop is demonstrably the bottleneck.
 
 **Where does MCP fit if we already have CLIs?**
-MCP standardises capability exposure across clients, and a CLI is often cheaper in tokens and already known to the model. [Our comparison](/posts/cli-vs-mcp-when-to-use-each) goes through the tradeoff properly; in practice most teams end up running both.
+MCP standardises capability exposure across clients, and a CLI is often cheaper in tokens and already known to the model. [Our comparison](/posts/cli-vs-mcp-when-to-use-each) goes through the tradeoff properly, and the [CLI vs MCP feature comparison](/comparisons/cli-vs-mcp) puts the two side by side; in practice most teams end up running both.

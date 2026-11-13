@@ -47,7 +47,7 @@ Read Cloudflare's current documentation and that sentence no longer holds:
 
 > For compatibility dates of `2026-08-04` or later, Workers enables both `nodejs_compat` and `nodejs_compat_v2` by default.
 
-The supported list is long and boring in the best way: Buffer, Crypto, Events, Path, Process, Stream, URL, Zlib, the file system module, HTTP and HTTPS. If your objection to edge compute was that you would have to rewrite your imports, that objection has been paid off while you were not looking.
+The supported list is long and boring in the best way: Buffer, Crypto, Events, Path, Process, Stream, URL, Zlib, the file system module, HTTP and HTTPS. If your objection to edge compute was that you would have to rewrite your imports, that objection has been paid off while you were not looking. Bun made the same bet on the server, and most npm packages run on it unchanged; the [Bun vs Node.js comparison](/comparisons/bun-vs-nodejs) shows where the two runtimes still differ.
 
 **The list that matters now is the other one.** These are importable and do not work:
 
@@ -175,7 +175,7 @@ The word "edge" is doing too much work in most of this market. It is more useful
 
 **[Cloudflare Workers](https://developers.cloudflare.com/workers/)** is the reference implementation of "no process": V8 isolates, no machine to think about, the limits above. **[Deno Deploy](https://deno.com/deploy)** takes the same isolate model and starts from a Web-standard API surface rather than arriving at it.
 
-**[Vercel](https://vercel.com)** is the useful case to study because it offers both, and makes you choose per function. That choice is exactly the trade in this post, exposed as a config line.
+**[Vercel](https://vercel.com)** is the useful case to study because it offers both, and makes you choose per function. That choice is exactly the trade in this post, exposed as a config line. For static sites and front ends, the [Vercel vs Netlify vs Cloudflare Pages comparison](/comparisons/vercel-vs-netlify-vs-cloudflare-pages) compares it with the two closest alternatives.
 
 **[Fly.io](https://fly.io)**, **[Railway](https://railway.app)** and **[Render](https://render.com)** are the other answer, and they are not edge runtimes pretending to be simpler. They give you the process back, in a container, in a region you pick, and they compete on making that pleasant rather than on removing it. Fly's machines can stop when idle and start on a request, which is a middle position worth understanding: you keep the process model and pay a real start-up cost when you have been quiet.
 

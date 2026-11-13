@@ -229,5 +229,19 @@
     "toolBScore": 4.0,
     "recommendation": "Choose AWS Lambda if you are in the AWS ecosystem and need maximum integration breadth and community support. Choose Google Cloud Functions if you are on Google Cloud, need longer timeouts, or want the concurrency-per-instance model to reduce cold starts."
   },
-  "relatedTags": ["AWS Lambda", "Google Cloud Functions", "Serverless", "FaaS", "Cloud", "DevOps"]
+  "relatedTags": ["AWS Lambda", "Google Cloud Functions", "Serverless", "FaaS", "Cloud", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Lambda: Serverless Functions",
+      "href": "/guides/introduction-to-aws/09-lambda-serverless"
+    },
+    {
+      "label": "Where Your Code Runs When There Is No Region",
+      "href": "/posts/edge-runtime-no-long-lived-process"
+    },
+    {
+      "label": "AWS Cloud Services Quiz",
+      "href": "/quizzes/aws-quiz"
+    }
+  ]
 }

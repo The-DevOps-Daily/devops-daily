@@ -356,7 +356,7 @@ sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
 sudo kubeadm join CONTROL_PLANE_IP:6443 --token TOKEN --discovery-token-ca-cert-hash sha256:HASH
 ```
 
-For production, run three control plane nodes behind a load balancer (`kubeadm init --control-plane-endpoint`), back up etcd with `etcdctl snapshot save`, and plan for upgrades: Kubernetes supports each minor version for about 14 months, and you upgrade one minor version at a time, control plane first, then the nodes. Kubespray automates kubeadm with Ansible, and Talos Linux and k3s are lighter alternatives.
+For production, run three control plane nodes behind a load balancer (`kubeadm init --control-plane-endpoint`), back up etcd with `etcdctl snapshot save`, and plan for upgrades: Kubernetes supports each minor version for about 14 months, and you upgrade one minor version at a time, control plane first, then the nodes. Kubespray automates kubeadm with Ansible, and Talos Linux and k3s are lighter alternatives. Rancher and OpenShift go further and install and manage whole clusters for you; the [Rancher vs OpenShift comparison](/comparisons/rancher-vs-openshift) compares the two.
 
 ## Common Mistakes
 

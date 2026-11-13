@@ -66,7 +66,7 @@ Warm up concepts in the browser before you open the terminal. The [Kubernetes ne
 
 ## Build a practice cluster that can fail interestingly
 
-You need a cluster where NetworkPolicy and encryption actually have an effect. `kind` can start without its default CNI, and Cilium can then supply policy enforcement and WireGuard encryption. The [kind configuration reference](https://kind.sigs.k8s.io/docs/user/configuration/) documents both `disableDefaultCNI` and `podSubnet`; Cilium documents the encryption settings below.
+You need a cluster where NetworkPolicy and encryption actually have an effect. `kind` can start without its default CNI, and Cilium can then supply policy enforcement and WireGuard encryption. The [kind configuration reference](https://kind.sigs.k8s.io/docs/user/configuration/) documents both `disableDefaultCNI` and `podSubnet`; Cilium documents the encryption settings below. To compare Cilium with the other common policy-enforcing CNI, see [Cilium vs Calico](/comparisons/cilium-vs-calico).
 
 ```yaml
 # ckne-kind.yaml

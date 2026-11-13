@@ -293,5 +293,19 @@
       "question": "Does Bitbucket still support Mercurial?",
       "answer": "No. Atlassian dropped Mercurial support from Bitbucket Cloud in 2020. All repositories must use Git. This was a painful change for teams that had chosen Bitbucket specifically for Mercurial support, but Git has become the industry standard and Atlassian decided to focus entirely on it."
     }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Git Remotes: Push, Fetch, Pull and Tracking Branches",
+      "href": "/guides/introduction-to-git/06-remote-repositories"
+    },
+    {
+      "label": "Git Workflows: Pull Requests, GitHub Flow, Gitflow",
+      "href": "/guides/introduction-to-git/07-collaboration"
+    },
+    {
+      "label": "Git Merge Conflict Simulator",
+      "href": "/games/git-merge-conflict-simulator"
+    }
   ]
 }

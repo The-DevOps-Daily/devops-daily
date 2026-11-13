@@ -225,5 +225,23 @@
     "toolBScore": 4.4,
     "recommendation": "Choose OpenTofu if you want open governance, an MPL license, or built-in state encryption and the newer CLI features. Choose Terraform if you rely on HCP Terraform, need commercial support, or want the largest ecosystem and hiring pool. Either way, test on a staging workspace and run plan before you apply."
   },
-  "relatedTags": ["Terraform", "OpenTofu", "IaC", "Infrastructure", "Cloud", "DevOps"]
+  "relatedTags": ["Terraform", "OpenTofu", "IaC", "Infrastructure", "Cloud", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "OpenTofu in 2026: Should You Switch from Terraform (and What It Actually Costs You)",
+      "href": "/posts/opentofu-2026-switch-from-terraform"
+    },
+    {
+      "label": "OpenTofu 1.13 Re-Encodes base64gzip and Drops WinRM. We Upgraded the Same State to See What Breaks",
+      "href": "/posts/opentofu-1-13-upgrade-base64gzip-winrm"
+    },
+    {
+      "label": "Introduction to Terraform",
+      "href": "/guides/introduction-to-terraform"
+    },
+    {
+      "label": "Terraform State Puzzle",
+      "href": "/games/terraform-puzzle"
+    }
+  ]
 }
