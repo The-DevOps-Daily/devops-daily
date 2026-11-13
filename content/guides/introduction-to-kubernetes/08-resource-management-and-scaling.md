@@ -801,7 +801,7 @@ Its PersistentVolume is a directory on the drained node (`didn't match Persisten
 ## Keep Learning
 
 - [Right-sizing Kubernetes resources with VPA and Karpenter](/posts/right-sizing-kubernetes-resources-vpa-karpenter)
-- [Checking pod CPU and memory utilization](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
+- [Checking pod CPU and memory utilization](/posts/5-minute-kubernetes-cluster-health-check#h2-how-do-i-check-the-cpu-and-memory-usage-of-a-pod)
 - [Kubernetes HPA lab](/exercises/kubernetes-hpa-lab)
 - [Kubernetes scheduler simulator](/games/k8s-scheduler)
 

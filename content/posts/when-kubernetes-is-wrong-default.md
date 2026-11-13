@@ -1,18 +1,18 @@
 ---
-title: "When Kubernetes Is the Wrong Default"
+title: 'When Kubernetes Is the Wrong Default'
 excerpt: "Most teams adopt Kubernetes too early. Here's a pragmatic framework for deciding between managed platforms, VMs, and Kubernetes based on your team size and workload characteristics."
 category:
-  name: "DevOps"
-  slug: "devops"
-coverImage: "/images/posts/when-kubernetes-is-wrong-default.jpg"
-ogImage: "/images/posts/when-kubernetes-is-wrong-default.jpg"
-date: "2026-03-05"
-publishedAt: "2026-03-05T10:00:00Z"
-updatedAt: "2026-03-05T10:00:00Z"
-readingTime: "11 min read"
+  name: 'DevOps'
+  slug: 'devops'
+coverImage: '/images/posts/when-kubernetes-is-wrong-default.jpg'
+ogImage: '/images/posts/when-kubernetes-is-wrong-default.jpg'
+date: '2026-03-05'
+publishedAt: '2026-03-05T10:00:00Z'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '14 min read'
 author:
-  name: "DevOps Daily Team"
-  slug: "devops-daily-team"
+  name: 'DevOps Daily Team'
+  slug: 'devops-daily-team'
 tags:
   - Kubernetes
   - Infrastructure
@@ -23,7 +23,7 @@ tags:
 
 ## TLDR
 
-Kubernetes has become the default infrastructure choice for new projects, but it's often the wrong decision for teams under 30 engineers. This guide provides a decision framework based on team size, workload characteristics, and operational maturity. Most teams would ship faster with managed platforms like Heroku, Render, or DigitalOcean App Platform. VMs work better for stateful workloads and legacy applications. Kubernetes makes sense when you need multi-region deployment, complex networking, or have dedicated platform engineers.
+Kubernetes has become the default infrastructure choice for new projects, but it's often the wrong decision for teams under 30 engineers. This guide provides a decision framework based on team size, workload characteristics, and operational maturity. Most teams would ship faster with managed platforms like Heroku, Render, or DigitalOcean App Platform. VMs work better for stateful workloads and legacy applications, and a managed database is usually a better default than Postgres in the cluster. Kubernetes makes sense when you need multi-region deployment, complex networking, or have dedicated platform engineers.
 
 ---
 
@@ -74,6 +74,7 @@ The math is simple: if Kubernetes requires 1.5 full-time engineers to operate, t
 Infrastructure should match workload shape, not resume trends:
 
 **Managed platforms win for:**
+
 - Web applications with stateless HTTP servers
 - APIs serving JSON over HTTPS
 - Background job processors (Sidekiq, Celery, etc.)
@@ -81,6 +82,7 @@ Infrastructure should match workload shape, not resume trends:
 - Standard databases (Postgres, MySQL, Redis)
 
 **VMs work better for:**
+
 - Stateful applications with local disk requirements
 - Legacy applications built for bare metal/VMs
 - Applications requiring specific kernel versions or system libraries
@@ -88,6 +90,7 @@ Infrastructure should match workload shape, not resume trends:
 - Applications sensitive to network overhead
 
 **Kubernetes justified for:**
+
 - Multi-region active-active deployments
 - Complex service mesh requirements (mTLS, advanced routing)
 - Applications requiring sophisticated autoscaling (HPA + VPA + custom metrics)
@@ -111,6 +114,7 @@ That 3-month difference is **25% of a year**. For early-stage companies, that's 
 Be honest about where your team is:
 
 **Signals you're NOT ready for Kubernetes:**
+
 - No one on the team has operated Kubernetes in production
 - You don't have CI/CD pipelines for current infrastructure
 - Deployments require manual steps
@@ -118,6 +122,7 @@ Be honest about where your team is:
 - Your monitoring consists of "check if the website is up"
 
 **Signals you MIGHT be ready:**
+
 - Someone has battle-tested Kubernetes experience (>1 year production operations)
 - You have observability stacks deployed (metrics, logs, traces)
 - Deployments are automated and reproducible
@@ -131,6 +136,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 ### Scenario A: 8-Person Startup, Series A, Building SaaS Product
 
 **Workload:**
+
 - Next.js frontend
 - Node.js API backend
 - PostgreSQL database
@@ -150,6 +156,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 ### Scenario B: 15-Person Team, High-Traffic API, Predictable Load
 
 **Workload:**
+
 - Python FastAPI serving 50K requests/minute
 - Heavy CPU/memory usage (data processing)
 - PostgreSQL with read replicas
@@ -160,6 +167,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 **Right choice:** VMs behind a load balancer. Use Terraform to provision 6-8 compute instances, Ansible for configuration, systemd for process management. HAProxy or cloud load balancer in front.
 
 **Cost comparison:**
+
 - Kubernetes path: $800/month compute + $150 EKS control plane + 60 engineer-hours/month = **~$8,000/month total cost**
 - VM path: $800/month compute + 8 engineer-hours/month = **~$1,600/month total cost**
 
@@ -172,6 +180,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 ### Scenario C: 40-Person Team, Microservices, Multi-Region
 
 **Workload:**
+
 - 15 microservices with independent release cycles
 - Multi-region deployment (US, EU, APAC)
 - Complex routing requirements (canary deployments, A/B tests)
@@ -183,12 +192,14 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 **Right choice:** Kubernetes (GKE/EKS) with service mesh (Istio or Linkerd), GitOps (ArgoCD or Flux), centralized observability (Datadog or Grafana stack).
 
 **Why:** The workload characteristics justify orchestration complexity:
+
 - Multi-region needs sophisticated traffic management
 - Independent release cycles benefit from container isolation
 - Service mesh solves authentication and observability at scale
 - Team size supports dedicated platform investment
 
 **Cost:** 2 full-time platform engineers + $3-5K/month cloud costs. This is **justified** because:
+
 - 15 microservices × 3 regions = 45 deployment targets would be unmaintainable with VMs
 - Platform team enables 38 product engineers to ship independently
 - ROI is clear: platform unlocks velocity, not just "best practices"
@@ -198,6 +209,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 ### Scenario D: 20-Person Team, ML/GPU Workloads, Batch Processing
 
 **Workload:**
+
 - Training jobs requiring GPU instances
 - Inference API with variable traffic
 - Data processing pipelines (Spark, Airflow)
@@ -206,6 +218,7 @@ Kubernetes won't teach you operational maturity. It will **expose** every gap in
 **Wrong choice:** Force everything into Kubernetes because "that's what the industry uses for ML."
 
 **Better choice:** Hybrid approach:
+
 - **Inference API:** Managed platform (Render, Modal, or Replicate) handles scaling and serving
 - **Training jobs:** Orchestrate with Airflow on VMs or use managed ML platforms (SageMaker, Vertex AI)
 - **Data pipelines:** Dedicated compute instances or serverless (Lambda, Cloud Functions)
@@ -223,6 +236,7 @@ Beyond the obvious learning curve, Kubernetes imposes ongoing costs:
 ### 1. Cognitive Load on Every Engineer
 
 Kubernetes creates a second API layer every engineer must understand:
+
 - Deployments vs StatefulSets vs DaemonSets
 - Services vs Ingress vs Gateway API
 - ConfigMaps vs Secrets vs External Secrets Operator
@@ -236,12 +250,14 @@ Each of these concepts requires training, documentation, and ongoing support. At
 Simple changes get complicated:
 
 **Managed platform:**
+
 ```bash
 git push origin main
 # Done. Deployed in 3 minutes.
 ```
 
 **Kubernetes:**
+
 ```bash
 # Update Dockerfile
 # Update Kubernetes manifests or Helm values
@@ -269,6 +285,7 @@ Incidents that take 15 minutes with simpler infrastructure take **2-4 hours in K
 ### 4. Maintenance Burden
 
 Kubernetes clusters require ongoing maintenance:
+
 - Control plane upgrades (quarterly)
 - Node OS patching (monthly)
 - Add-on updates (cert-manager, ingress controllers, monitoring agents)
@@ -283,11 +300,13 @@ Estimate **40-60 engineer-hours/month** for a production cluster. That's **30% o
 If you decide Kubernetes is in your future, don't jump straight there:
 
 **Phase 1: Managed Platform (0-15 engineers)**
+
 - Ship product
 - Learn operational basics (monitoring, logging, deployments)
 - Validate product-market fit
 
 **Phase 2: VMs with Automation (15-30 engineers)**
+
 - Terraform for infrastructure
 - Ansible or similar for configuration
 - Containerize applications (Docker Compose or similar)
@@ -295,12 +314,14 @@ If you decide Kubernetes is in your future, don't jump straight there:
 - Practice incident response
 
 **Phase 3: Hybrid Approach (30-50 engineers)**
+
 - Move stateless workloads to managed Kubernetes (GKE Autopilot, EKS Fargate)
 - Keep databases and stateful apps on VMs or managed services
 - Hire someone with production Kubernetes experience
 - Invest in platform tooling slowly
 
 **Phase 4: Full Kubernetes (50+ engineers)**
+
 - Dedicated platform team
 - GitOps workflows (ArgoCD/Flux)
 - Service mesh if workload justifies it
@@ -334,6 +355,42 @@ If you have 2+ full-time engineers whose job is to build internal platforms, Kub
 
 If you don't have 3+ of these signals, **simpler infrastructure will ship product faster**.
 
+## Should You Run Postgres on Kubernetes?
+
+Usually not as your first choice. If your cloud offers a managed Postgres service, use it, and keep the applications in Kubernetes. Run Postgres in the cluster when you have a clear reason, and then use an operator, not a StatefulSet that you wrote yourself. Good reasons are an on-premises platform without a managed option, many small databases (one for each customer or preview environment), or a cost at scale that a team with database skills can beat.
+
+A plain StatefulSet gives a database a stable name and keeps its volume when the pod is replaced, within the limits of the storage: a zonal or local disk limits where the new pod can run. It does not give you any of these:
+
+- **Failover.** If the node of `db-0` fails, the StatefulSet does not start a new `db-0` until the old pod is confirmed gone. Without a replica that takes over, the database is down until someone acts. [What If the Node Is Down?](/posts/fix-pods-stuck-terminating-kubernetes#h2-what-if-the-node-is-down) shows the steps.
+- **Replication.** Two replicas in a StatefulSet are two separate databases, unless something configures streaming replication between them.
+- **Backups and point-in-time recovery.** A volume snapshot of a running database may not be consistent. You need base backups plus WAL archiving to durable storage outside the cluster, such as object storage, and a restore that you have tested.
+- **Major version upgrades.** A new image tag does not run `pg_upgrade`. A Postgres 18 image cannot start on a Postgres 17 data directory.
+
+A Postgres **operator** adds these. [CloudNativePG](https://cloudnative-pg.io/) is a CNCF project. Crunchy Data PGO, the Zalando postgres-operator and StackGres are other options. With CloudNativePG, a three-instance cluster with automatic failover is a short manifest:
+
+```yaml
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: app-db
+spec:
+  instances: 3 # one primary and two streaming replicas
+  storage:
+    size: 20Gi
+```
+
+The operator creates the `app-db-rw` Service, which always points to the current primary, `app-db-ro` for the replicas, `app-db-r` for any instance, and a Secret with the app's credentials. You still have to configure backups to object storage, monitor the cluster, and practice a restore.
+
+| Option                                                | You operate                                       | Good fit                                          |
+| ----------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------- |
+| Managed service (RDS, Cloud SQL, Azure, DigitalOcean) | Schema, queries, sizing                           | Most teams, most production databases             |
+| Operator in the cluster                               | The operator, storage, backups, upgrades, on-call | Platform teams, on-premises, many small databases |
+| Plain StatefulSet                                     | Everything above, written and tested by you       | Development and test databases that you can lose  |
+
+If you run Postgres in the cluster, three settings matter most. Use the `ReadWriteOncePod` access mode (stable since Kubernetes 1.29) so that only one pod can ever mount the volume. Give the database pods the `Guaranteed` QoS class, with requests equal to limits. And pick a StorageClass for its IOPS, with `allowVolumeExpansion: true`. [The Anatomy of Kubernetes Persistent Storage](/posts/anatomy-of-kubernetes-persistent-storage) explains the storage side in detail.
+
+When the database runs outside the cluster, put its host name and credentials in a Secret, and let the app read them. A Service of type `ExternalName` gives the database an in-cluster name, but it is only a DNS alias. A client that checks the server's TLS certificate (`sslmode=verify-full`) compares it with the name it connected to, and `postgres.shop.svc.cluster.local` does not match the provider's certificate. Use the provider's real host name for TLS connections.
+
 ## Key Takeaways
 
 1. **Team size predicts infrastructure capacity**: Below 30 engineers, Kubernetes diverts too much capacity from product work.
@@ -352,10 +409,10 @@ The goal isn't to avoid Kubernetes forever. It's to **adopt complexity when it s
 
 Most teams ship faster, learn more, and build better products by starting simple. You can always add complexity later. You can't easily remove it once you're locked in.
 
-
 ## Related Resources
 
 - [Right-Sizing Kubernetes Resources](/posts/right-sizing-kubernetes-resources-vpa-karpenter)
-- [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets)
+- [Kubernetes Deployments vs StatefulSets](/posts/why-does-kubernetes-pod-get-recreated-when-deleted#h2-deployments-vs-statefulsets-which-one-do-you-need)
+- [Kubernetes vs Docker Swarm](/comparisons/docker-swarm-vs-kubernetes) and [ECS vs EKS](/comparisons/ecs-vs-eks)
 - [Introduction to Kubernetes: Best Practices](/guides/introduction-to-kubernetes)
 - [DevOps Survival Guide](/books/devops-survival-guide)

@@ -581,7 +581,7 @@ Metrics tell you that requests are slow; a trace tells you where one request spe
 
 ## Keep Learning
 
-- [How to follow logs continuously](/posts/kubectl-logs-continuously)
+- [How to follow logs continuously](/posts/get-logs-from-all-pods-replication-controller#h2-how-do-i-stream-kubectl-logs-continuously)
 - [Fix pods stuck in Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
 - [Prometheus and Grafana monitoring exercise](/exercises/prometheus-grafana-monitoring)
 - [Prometheus vs Datadog](/comparisons/prometheus-vs-datadog) and the [monitoring and observability quiz](/quizzes/monitoring-observability-quiz)

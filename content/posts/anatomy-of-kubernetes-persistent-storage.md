@@ -177,7 +177,7 @@ Now the second half, which is less known and more alarming. Access modes on a PV
 Read that again. `ReadOnlyMany` does not make a volume read-only. The access mode is matching metadata used when pairing claims with volumes, not a lock applied to the storage. If you want a hard guarantee that exactly one pod can write, `ReadWriteOncePod` is the only mode that provides one, it is CSI-only, and it [graduated to stable in Kubernetes v1.29](https://kubernetes.io/blog/2023/12/18/read-write-once-pod-access-mode-ga/).
 
 :::warning
-If you run a database on Kubernetes and rely on `ReadWriteOnce` to prevent two writers, you are relying on the scheduler's node placement, not on a guarantee. Use `ReadWriteOncePod`, and read [Why Running Postgres on Kubernetes Is Still a Bad Idea](/posts/postgres-k8s) before you decide the whole arrangement is worth it.
+If you run a database on Kubernetes and rely on `ReadWriteOnce` to prevent two writers, you are relying on the scheduler's node placement, not on a guarantee. Use `ReadWriteOncePod`, and read [Should You Run Postgres on Kubernetes?](/posts/when-kubernetes-is-wrong-default#h2-should-you-run-postgres-on-kubernetes) before you decide the whole arrangement is worth it.
 :::
 
 ## The reclaim policy decides whether you keep your data
@@ -298,7 +298,7 @@ Since shrinking is impossible, over-provisioning a volume is a decision you cann
 
 ## StatefulSets: the claims outlive the workload
 
-Deployments and StatefulSets treat storage completely differently, which is most of the reason StatefulSets exist. If that distinction is still fuzzy, [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets) covers it directly.
+Deployments and StatefulSets treat storage completely differently, which is most of the reason StatefulSets exist. If that distinction is still fuzzy, [Deployments vs StatefulSets](/posts/why-does-kubernetes-pod-get-recreated-when-deleted#h2-deployments-vs-statefulsets-which-one-do-you-need) covers it directly.
 
 A StatefulSet's `volumeClaimTemplates` generate one claim per replica, named `<template-name>-<statefulset-name>-<ordinal>`. A template called `www` in a StatefulSet called `web` produces `www-web-0`, `www-web-1`, `www-web-2`. That naming is the mechanism behind stable identity: when `web-1` is rescheduled, it is reattached to `www-web-1` and gets its own data back rather than a fresh disk.
 
@@ -390,7 +390,7 @@ The half that decides whether you keep your data is the lifecycle, and it comes 
 - Expansion grows and never shrinks, and hand-editing PV capacity silently disables it
 - StatefulSet claims survive scale-down and deletion unless `persistentVolumeClaimRetentionPolicy` says otherwise
 
-For the wider operational picture around these objects, [Real-World Kubernetes Deployments](/posts/real-world-k8s) covers the neighbouring concerns: probes, resource limits and disruption budgets.
+For the wider operational picture around these objects, [From Concepts to a Production Workload](/posts/kubernetes-concepts-junior-to-mid-level#h2-from-concepts-to-a-production-workload) covers the neighbouring concerns: probes, resource limits and disruption budgets.
 
 ## FAQ
 
