@@ -6,7 +6,7 @@
   "category": "CI/CD",
   "tags": ["GitHub Actions", "Bitrise", "CI/CD", "macOS", "iOS", "Runners", "DevOps"],
   "createdDate": "2026-10-26T09:00:00Z",
-  "updatedDate": "2026-11-06T09:00:00Z",
+  "updatedDate": "2026-11-13T09:00:00Z",
   "estimatedReadTime": "12 min read",
   "sponsorCampaign": "bitrise",
   "introduction": "This is not a choice between two CI systems. Bitrise Build Hub keeps GitHub Actions as the orchestrator. Your workflows, triggers, secrets and logs stay on GitHub. Build Hub only supplies the machines: you install a GitHub App, create a machine pool, and change runs-on for the jobs you want to move. So the real question is where each job should run.\n\nThe answer depends mostly on the operating system. On macOS, the gap is large. GitHub's standard macOS runner is a 3 vCPU M1 with 7 GB of RAM at $0.062 a minute, and its biggest Apple silicon runner is a 5 vCPU M2 Pro at $0.102. Build Hub's smallest Mac is a 5 vCPU M4 with 14 GB at $0.03 a minute from the plan budget. Per vCPU, that is under a third of GitHub's price, on newer hardware.\n\nWe measured this on a real app. Over 17 runs, the Wikipedia iOS app's build and unit tests took a median 5.6 minutes per job on a Build Hub M4 Large and 15.4 minutes on GitHub's standard macOS runner, 2.7 times faster. Billed per started minute at list price, with Build Hub's machine start-up counted, that is $0.21 against $0.99 a job, about a fifth of the cost.\n\nOn Linux, the prices are close. Build Hub charges $0.003125 per vCPU minute on every self-serve size, and GitHub charges about $0.003 for its x64 runners and less for arm64. Build Hub's smallest Linux machine has 4 vCPU, so a short lint job costs more there than on a 2-core GitHub runner. Linux jobs only get cheaper on Build Hub if they finish much faster, and that depends on the job. On the Thunderbird Android app, the 16 vCPU Linux XLarge ran the build and the unit tests about twice as fast as GitHub's 4 vCPU runner. It costs four times as much per minute, so each Linux job cost about twice as much: on Linux, what you buy is time.\n\nFor a mobile team, the two results add up. We ran one pull request pipeline, the iOS build and tests plus the Android build and the Android tests, started together. With a Linux pool that can run two machines at once, it finished in a median 18.5 minutes on Build Hub over seven runs, against 43.6 minutes on GitHub over 17 runs. At list price a pipeline run cost about the same: a median $1.77 on Build Hub against $1.79 on GitHub, over 17 runs each, and the ranges overlap. The Macs save money and the 16 vCPU Linux machines cost more per minute, so the two roughly cancel out. Set the pool maximum to at least the number of Linux jobs that start together. In our first ten runs the Linux pool maximum was 1, so the second Android job waited a median 15 minutes for the first, and the pipeline took a median 35 minutes. Part of the later drop came from faster Android builds, not only from the setting.\n\nThe billing models also differ. GitHub bills each job per minute, rounded up, against included usage. Build Hub sells a monthly tier, and the tier fee becomes your compute budget. Build Hub bills per started minute, and the billed time includes the machine's start-up. The tier also sets how many Macs can run at the same time.\n\nThis page compares the two on hardware, price, concurrency, images, caching, security and setup. Prices are list prices from each vendor's pricing page, checked on 18 October 2026. Bitrise provided the Build Hub workspace for our tests, and the workflows and every run are public in the benchmark repository.",
@@ -18,6 +18,7 @@
     "color": "#7a0bc0",
     "pros": [
       "M4 Macs from $0.03 a minute (5 vCPU, 14 GB), under a third of GitHub's macOS price per vCPU",
+      "Linux machines from 2 vCPU and 8 GB (2Small) at $0.00625 a minute, so linters and unit tests can run from the same budget",
       "Up to 10 vCPU and 28 GB of RAM per Mac on self-serve plans, against 5 vCPU and 14 GB on GitHub",
       "Workflows stay in GitHub Actions: switching a job is a runs-on change after the GitHub App and machine pool are set up",
       "Mobile build stacks with Xcode, Android SDK, Flutter and React Native, and Bitrise states that new Xcode versions arrive within 24 hours of release",
@@ -27,7 +28,7 @@
     ],
     "cons": [
       "Linux costs about the same per vCPU as GitHub's 2 and 4-core runners",
-      "The smallest Linux machine is 4 vCPU, so light jobs cost more than on a 1 or 2-core GitHub runner",
+      "No 1 vCPU Linux machine: for the smallest jobs, such as labelers, GitHub's ubuntu-slim at $0.002 a minute is cheaper",
       "No Windows, no Linux arm64 and no GPU machines",
       "When the monthly budget is used up, jobs stop running on Build Hub unless you turn on pay-as-you-go, which costs twice the standard rate per minute",
       "Low tiers cap how many Macs run at once (2 M4 Large machines on Basic Tier 1)",
@@ -147,7 +148,7 @@
       "name": "Linux price",
       "category": "Cost",
       "toolA": {
-        "value": "$0.003125 per vCPU minute; smallest machine 4 vCPU at $0.0125/min",
+        "value": "$0.003125 per vCPU minute; smallest machine 2 vCPU, 8 GB (2Small) at $0.00625/min",
         "rating": "neutral"
       },
       "toolB": {
@@ -266,7 +267,7 @@
     {
       "scenario": "A backend team runs only Linux jobs: tests, Docker builds and linters",
       "recommendation": "toolB",
-      "explanation": "Build Hub's Linux price per vCPU is about the same as GitHub's, and its smallest machine has 4 vCPU. Unless your heavy jobs finish much faster on Build Hub's AMD EPYC machines, you will not save money. Measure a few heavy jobs on both before you move them."
+      "explanation": "Build Hub's Linux price per vCPU is about the same as GitHub's. Its smallest machine, the 2Small (2 vCPU, 8 GB), costs $0.00625 a minute, close to GitHub's $0.006 for a 2-core runner. Unless your heavy jobs finish much faster on Build Hub's AMD EPYC machines, you will not save money. Measure a few heavy jobs on both before you move them."
     },
     {
       "scenario": "An open source project with public repositories",
@@ -349,10 +350,10 @@
     }
   ],
   "verdict": {
-    "summary": "Treat Build Hub as a place to send some of your GitHub Actions jobs, not as a full switch. For macOS it is the stronger choice: newer M4 hardware, up to 28 GB of RAM on self-serve plans, and in our test an iOS build and test job that ran 2.7 times faster for about a fifth of the price. For Linux, Build Hub's 16 vCPU machine finished our Android build and tests in about half the time, but GitHub's own runners cost less per job, have smaller sizes for light jobs, and cover Windows, arm64 and GPU. Because runs-on is set per job, the setup that saves the most is usually a mix: macOS on Build Hub, heavy Linux jobs on Build Hub when waiting time matters, and light Linux jobs on GitHub.",
+    "summary": "Treat Build Hub as a place to send some of your GitHub Actions jobs, not as a full switch. For macOS it is the stronger choice: newer M4 hardware, up to 28 GB of RAM on self-serve plans, and in our test an iOS build and test job that ran 2.7 times faster for about a fifth of the price. For Linux, Build Hub's 16 vCPU machine finished our Android build and tests in about half the time, but GitHub's own runners cost less per job in our test, have a 1 vCPU option for the lightest jobs, and cover Windows, arm64 and GPU. Because runs-on is set per job, the setup that saves the most is usually a mix: macOS on Build Hub, heavy Linux jobs on Build Hub when waiting time matters, and light Linux jobs on either side, because Build Hub's 2 vCPU 2Small and GitHub's 2-core runner cost about the same.",
     "toolAScore": 4.2,
     "toolBScore": 4,
-    "recommendation": "Choose Bitrise Build Hub for iOS and other macOS jobs, and for mobile teams that build Android and iOS together. Keep GitHub-hosted runners for Linux, Windows and public repositories, and for light jobs where a 1 or 2-core runner is enough."
+    "recommendation": "Choose Bitrise Build Hub for iOS and other macOS jobs, and for mobile teams that build Android and iOS together. Keep GitHub-hosted runners for Linux, Windows and public repositories, and for the lightest jobs, where GitHub's 1 vCPU ubuntu-slim is enough."
   },
   "relatedTags": ["GitHub Actions", "CI/CD", "macOS", "iOS", "Bitrise", "DevOps"]
 }
