@@ -4,12 +4,12 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Scale } from 'lucide-react';
-import type { Comparison } from '@/lib/comparison-types';
+import type { ComparisonSummary } from '@/lib/comparison-types';
 import { toolText, toolVars } from './tool-style';
 
 interface RelatedContentProps {
   currentSlug: string;
-  comparisons: Comparison[];
+  comparisons: ComparisonSummary[];
 }
 
 export function RelatedContent({ currentSlug, comparisons }: RelatedContentProps) {
