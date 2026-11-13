@@ -98,7 +98,7 @@ You do not need to know Python. You read a little of it in Part 10, and nothing 
 
 ## Practice Hands-On
 
-Test yourself with the [Ansible quiz](/quizzes/ansible-quiz) and the [Ansible Basics flashcards](/flashcards/ansible-basics), then build a complete web server setup in the [Ansible web server automation exercise](/exercises/ansible-web-server-automation). The [Configuration Management Basics](/interview-questions/junior/configuration-management-basics) interview questions check the concepts.
+Test yourself with the [Ansible quiz](/quizzes/ansible-quiz) and the [Ansible Basics flashcards](/flashcards/ansible-basics), then build a complete web server setup in the [Ansible web server automation exercise](/exercises/ansible-web-server-automation). The [Configuration Management Basics](/interview-questions/topic/infrastructure#configuration-management-basics) interview questions check the concepts.
 
 ## Keep Learning
 

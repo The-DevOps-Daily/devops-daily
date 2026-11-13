@@ -91,4 +91,4 @@ Its GitHub Actions workflow runs every Linux and Kubernetes command in this guid
 - [OWASP Top 10](/guides/owasp-top-10): the application-level failures these principles prevent
 - [Networking Fundamentals](/guides/networking-fundamentals): firewalls, segmentation and cloud networks in depth
 - [Security Gates](/guides/security-gates): enforcing these rules in CI/CD
-- [Interview questions: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview questions: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

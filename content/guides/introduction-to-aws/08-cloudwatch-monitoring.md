@@ -291,4 +291,4 @@ Next: [Lambda: Serverless Functions](/guides/introduction-to-aws/09-lambda-serve
 
 - [Your Logs Cost More Than the Service That Emits Them](/posts/your-logs-cost-more-than-the-service)
 - [How to Configure CloudWatch Logs Subscription Filter to Lambda With Terraform](/posts/terraform-cloudwatch-log-subscription-lambda)
-- [Monitoring Golden Signals interview questions](/interview-questions/junior/monitoring-golden-signals)
+- [Monitoring Golden Signals interview questions](/interview-questions/topic/monitoring#monitoring-golden-signals)

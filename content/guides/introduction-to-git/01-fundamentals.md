@@ -337,4 +337,4 @@ Next: [Creating and Managing Repositories](/guides/introduction-to-git/02-reposi
 
 - [Git Concepts simulator](/games/git-concepts-simulator): see commits, branches and merges as a graph in your browser.
 - [Git Fundamentals flashcards](/flashcards/git-fundamentals)
-- Interview questions: [Git staging and committing](/interview-questions/junior/git-basics)
+- Interview questions: [Git staging and committing](/interview-questions/topic/git#git-basics)

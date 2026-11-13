@@ -310,4 +310,4 @@ In [Part 2](/guides/sast-tools/02-sonarqube), you set up SonarQube and scan `not
 - [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide)
 - [Security-Focused Code Reviews](/posts/security-focused-code-reviews), for the bugs SAST cannot see
 - [Injection in the OWASP Top 10 guide](/guides/owasp-top-10/03-injection)
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

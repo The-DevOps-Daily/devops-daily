@@ -600,4 +600,4 @@ After these exercises, check that you can:
 - [Kubernetes security checklist](/checklists/kubernetes-security), for Exercise 6
 - [Pod Security Standards flashcards](/flashcards/pod-security-standards-kubernetes)
 - [The MCP Design Flaw That Exposes 150M Downloads to RCE](/posts/mcp-design-flaw-rce-supply-chain-risk), threat modeling for agent tools
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

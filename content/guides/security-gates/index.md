@@ -158,4 +158,4 @@ For a true emergency, keep a separate break-glass deployment workflow that runs 
 - [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
 - [Pre-commit Hooks for Security: Stop Secrets Before They Hit Your Repository](/posts/pre-commit-hooks-security-guide)
 - [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup)
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

@@ -711,6 +711,6 @@ You now have the foundation that every other DevOps tool builds on. Good next st
 
 - [SSH Hardening Checklist](/checklists/ssh-hardening)
 - Exercise: [Securing your Linux server](/exercises/linux-server-security)
-- Interview questions: [Linux system logs](/interview-questions/junior/linux-system-logs)
+- Interview questions: [Linux system logs](/interview-questions/topic/linux#linux-system-logs)
 - [Linux Command Line Quiz](/quizzes/linux-quiz) and [Linux Fundamentals flashcards](/flashcards/linux-fundamentals)
 - [Let's Encrypt 64-day certificates: check your renewal](/posts/lets-encrypt-64-day-certificates-renewal-check)

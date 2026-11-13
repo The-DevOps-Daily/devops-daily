@@ -385,6 +385,6 @@ Next: [Advanced Git Techniques](/guides/introduction-to-git/10-advanced-techniqu
 ## Keep Learning
 
 - [Git Command Quiz](/quizzes/git-quiz)
-- [Git Workflow Strategies interview questions](/interview-questions/junior/git-workflow-strategies)
+- [Git Workflow Strategies interview questions](/interview-questions/topic/git#git-workflow-strategies)
 - [How to make Git ignore file mode changes](/posts/git-ignore-file-mode-changes)
 - [Set the editor for commit messages](/posts/set-git-editor-commit-messages)

@@ -632,6 +632,6 @@ Next: [Package Management](/guides/introduction-to-linux/05-package-management),
 
 - [Change permissions for a folder, its subfolders and files](/posts/change-permissions-folder-subfolders-files-linux)
 - [List directories with their sizes](/posts/using-ls-list-directories-sizes)
-- Interview questions: [Linux file permissions](/interview-questions/junior/linux-file-permissions)
+- Interview questions: [Linux file permissions](/interview-questions/topic/linux#linux-file-permissions)
 - Practice octal permissions in the [binary simulator](/games/binary-byte-simulator)
 - [Linux Fundamentals flashcards](/flashcards/linux-fundamentals)

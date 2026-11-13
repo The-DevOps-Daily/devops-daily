@@ -632,4 +632,4 @@ You now have the complete set: [policy as code](/guides/security-gates/01-policy
 - [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
 - [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security)
 - [GitHub Actions Workflows Quiz](/quizzes/github-actions-quiz) and [Complete CI/CD Pipeline with GitHub Actions](/exercises/ci-cd-github-actions) (exercise)
-- [Interview question: CI/CD pipeline design](/interview-questions/mid/cicd-pipeline-design)
+- [Interview question: CI/CD pipeline design](/interview-questions/topic/cicd#cicd-pipeline-design)

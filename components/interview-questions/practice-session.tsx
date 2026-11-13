@@ -8,6 +8,7 @@ import { QuestionPractice } from './question-practice';
 import { tagToSlug } from '@/lib/tag-utils';
 import {
   getInterviewProgress,
+  getInterviewQuestionHref,
   type InterviewQuestion,
   type ExperienceTier,
   type Difficulty,
@@ -214,13 +215,13 @@ export function PracticeSession({ questions }: PracticeSessionProps) {
         </Button>
       </div>
 
-      {/* Permalink to the current question, for sharing */}
+      {/* Permalink to the current question on its topic page, for sharing */}
       <div className="mt-4 text-center">
         <Link
-          href={`/interview-questions/${current.tier}/${current.slug}`}
+          href={getInterviewQuestionHref(current)}
           className="text-xs font-mono text-muted-foreground hover:text-primary"
         >
-          open this question&apos;s page →
+          open this question on its topic page →
         </Link>
       </div>
     </div>

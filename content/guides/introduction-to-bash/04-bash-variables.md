@@ -782,4 +782,4 @@ Next: [Control Structures](/guides/introduction-to-bash/05-control-structures), 
 
 - [Set a variable to the output of a command](/guides/introduction-to-bash/09-bash-tools#h2-command-substitution)
 - [Iterate over a range of numbers](/posts/bash-iterate-number-range-variables)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics)

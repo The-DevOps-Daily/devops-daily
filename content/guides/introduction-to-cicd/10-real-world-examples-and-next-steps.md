@@ -372,6 +372,6 @@ Go back to the [overview](/guides/introduction-to-cicd) for the list of what cha
 ## Keep Learning
 
 - [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup) and [Production Deployment Checklist](/checklists/production-deployment)
-- [Interview question: CI/CD pipeline design](/interview-questions/mid/cicd-pipeline-design)
+- [Interview question: CI/CD pipeline design](/interview-questions/topic/cicd#cicd-pipeline-design)
 - [CI/CD Stack Generator](/games/cicd-stack-generator)
 - [GitHub Actions Workflows Quiz](/quizzes/github-actions-quiz)

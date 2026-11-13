@@ -622,4 +622,4 @@ Next: [Script Permissions and Execution](/guides/introduction-to-bash/07-script-
 - [Get the directory of a Bash script](/posts/get-directory-bash-script-location)
 - [Create an alias that takes parameters](/posts/create-bash-alias-that-takes-parameters) (spoiler: use a function)
 - [Echo to standard error](/posts/echo-to-stderr-in-bash)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics)

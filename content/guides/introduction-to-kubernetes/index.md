@@ -132,6 +132,6 @@ Try `kubectl` in your browser with the [Kubernetes terminal simulator](/games/ku
 - [How I Finally Understood Docker and Kubernetes](/posts/how-i-finally-understood-docker-and-kubernetes)
 - [Docker Swarm vs Kubernetes](/comparisons/docker-swarm-vs-kubernetes) and [Helm vs Kustomize](/comparisons/helm-vs-kustomize)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security)
-- [Container orchestration interview questions](/interview-questions/junior/container-orchestration-basics)
+- [Container orchestration interview questions](/interview-questions/topic/kubernetes#container-orchestration-basics)
 
 Start with [Part 1: Kubernetes Architecture](/guides/introduction-to-kubernetes/01-kubernetes-architecture-and-components), or go straight to [setting up a cluster](/guides/introduction-to-kubernetes/02-setting-up-a-kubernetes-cluster) if you know the concepts.

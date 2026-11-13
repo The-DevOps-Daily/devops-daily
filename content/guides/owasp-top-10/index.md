@@ -150,4 +150,4 @@ The Top 10 is a starting point, not a standard. OWASP itself says so: it is a li
 - [SAST Tools guide](/guides/sast-tools): Semgrep, CodeQL and SonarQube in depth
 - [Security Gates guide](/guides/security-gates): turning scanner results into pipeline decisions
 - [Threat Modeling guide](/guides/threat-modeling): STRIDE, attack trees and design reviews
-- [Interview questions: Security Architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview questions: Security Architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

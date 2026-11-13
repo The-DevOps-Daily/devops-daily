@@ -544,5 +544,5 @@ Next: [Networking in Linux](/guides/introduction-to-linux/08-networking), where 
 
 - [Measure the actual memory usage of a process](/posts/measure-actual-memory-usage-of-process)
 - Exercise: [Linux performance tuning and troubleshooting](/exercises/linux-performance-troubleshooting)
-- Interview questions: [Linux process debugging](/interview-questions/senior/linux-process-debugging)
+- Interview questions: [Linux process debugging](/interview-questions/topic/linux#linux-process-debugging)
 - See what happens when processes multiply: [fork bomb simulator](/games/fork-bomb-simulator)

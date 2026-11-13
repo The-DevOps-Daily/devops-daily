@@ -424,5 +424,5 @@ In [Part 6](/guides/introduction-to-ansible/06-handlers-and-notifications) you c
 
 ## Keep Learning
 
-- [YAML and JSON Basics](/interview-questions/junior/yaml-json-basics), interview questions
+- [YAML and JSON Basics](/interview-questions/topic/devops#yaml-json-basics), interview questions
 - [Ansible Basics flashcards](/flashcards/ansible-basics)

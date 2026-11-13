@@ -75,7 +75,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     requiredFields: ['title', 'question'],
     descriptionFields: ['question'],
     slugField: 'slug',
-    skipOgImage: true, // Interview questions are displayed on tier pages, not individual pages
+    skipOgImage: true, // Interview questions are shown on their topic page, not on pages of their own
   },
   advent: {
     dir: 'content/advent-of-devops',

@@ -290,4 +290,4 @@ Next: [S3: Cloud Object Storage](/guides/introduction-to-aws/04-s3-storage), whe
 
 - Exercise: [Creating and Connecting to Your First Linux Server](/exercises/cloud-server-setup)
 - [What Does AssumeRole: Service: ec2 Do?](/posts/assumerole-service-ec2)
-- [SSH basics interview questions](/interview-questions/junior/ssh-basics)
+- [SSH basics interview questions](/interview-questions/topic/linux#ssh-basics)

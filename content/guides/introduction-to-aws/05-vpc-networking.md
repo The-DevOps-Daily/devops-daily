@@ -306,4 +306,4 @@ Next: [RDS: Managed Databases](/guides/introduction-to-aws/06-rds-databases), wh
 
 - Try it in the browser: [AWS VPC simulator](/games/aws-vpc-simulator)
 - Exercise: [AWS VPC with Terraform](/exercises/terraform-aws-vpc)
-- [AWS VPC Networking Fundamentals interview questions](/interview-questions/junior/aws-vpc-networking)
+- [AWS VPC Networking Fundamentals interview questions](/interview-questions/topic/aws#aws-vpc-networking)

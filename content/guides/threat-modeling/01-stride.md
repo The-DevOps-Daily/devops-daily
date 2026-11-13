@@ -457,4 +457,4 @@ In [Part 2](/guides/threat-modeling/02-dread), you score these threats with DREA
 - [Insecure design in the OWASP Top 10 guide](/guides/owasp-top-10/04-insecure-design)
 - [Broken access control in the OWASP Top 10 guide](/guides/owasp-top-10/01-broken-access-control), for more on I1 and E1
 - [The CIA triad](/guides/security-principles/01-cia-triad), the properties behind the STRIDE categories
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

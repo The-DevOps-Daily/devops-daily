@@ -503,6 +503,6 @@ Next: [User and Group Management](/guides/introduction-to-linux/06-user-manageme
 
 ## Keep Learning
 
-- Interview questions: [Linux package management](/interview-questions/junior/linux-package-management)
+- Interview questions: [Linux package management](/interview-questions/topic/linux#linux-package-management)
 - [Introduction to Docker](/guides/introduction-to-docker), which starts from the Docker repository you added above
 - [Linux Command Line Quiz](/quizzes/linux-quiz)

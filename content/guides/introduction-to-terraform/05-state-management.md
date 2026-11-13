@@ -500,5 +500,5 @@ In [Part 6](/guides/introduction-to-terraform/06-variables-and-outputs) you make
 - [Terraform State: Remove, Move and Migrate Resources, and Set Up a Remote Backend](/posts/terraform-state-remove-move-migrate-backend)
 - [Who Owns the State File, and Other Questions That Decide Your Week](/posts/who-owns-the-terraform-state-file)
 - [How to Fix Terraform Import "Index Value Required" Error for String Keys](/posts/terraform-import-index-value-required-error)
-- [Interview question: Terraform state management](/interview-questions/mid/terraform-state-management)
+- [Interview question: Terraform state management](/interview-questions/topic/terraform#terraform-state-management)
 - [Terraform puzzle game](/games/terraform-puzzle)

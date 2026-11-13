@@ -604,4 +604,4 @@ You have taken one application from a Dockerfile to production. Go back to the [
 - [GitOps: Deploy Docker Containers with GitHub Actions and ArgoCD](/posts/gitops-deploy-docker-containers-github-actions-argocd)
 - [containerd 1.7 Reaches End of Life: What Breaks on 2.x](/posts/containerd-1-7-end-of-life-what-breaks-on-2x)
 - Guide: [Introduction to Kubernetes](/guides/introduction-to-kubernetes)
-- Interview question: [Container orchestration basics](/interview-questions/junior/container-orchestration-basics)
+- Interview question: [Container orchestration basics](/interview-questions/topic/kubernetes#container-orchestration-basics)

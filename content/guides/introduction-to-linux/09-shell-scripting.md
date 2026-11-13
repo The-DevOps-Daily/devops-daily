@@ -873,4 +873,4 @@ Next: [Linux System Administration Basics](/guides/introduction-to-linux/10-syst
 - [Introduction to Bash guide](/guides/introduction-to-bash), which goes deeper into each topic
 - [Check if a variable is set in Bash](/posts/check-if-variable-set-bash)
 - [Loop through an array of strings in Bash](/posts/loop-through-array-strings-bash)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals)

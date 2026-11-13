@@ -887,5 +887,5 @@ That completes the guide. You can now read any Bash script and see what each lin
 - [Introduction to Git](/guides/introduction-to-git): keep your scripts and their tests under version control.
 - [Introduction to CI/CD](/guides/introduction-to-cicd): run checks like the workflow above on every change.
 - Practise in the browser with the [Linux Terminal simulator](/games/linux-terminal), and test yourself with the [Linux command line quiz](/quizzes/linux-quiz) and the [Linux fundamentals flashcards](/flashcards/linux-fundamentals).
-- Interview preparation: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals).
+- Interview preparation: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals).
 - [What does set -e mean in a Bash script?](/posts/what-does-set-e-mean-in-bash-script)

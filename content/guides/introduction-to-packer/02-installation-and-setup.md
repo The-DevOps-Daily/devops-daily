@@ -520,5 +520,5 @@ In [Part 3](/guides/introduction-to-packer/03-writing-your-first-template), you 
 ## Keep Learning
 
 - [Introduction to AWS: IAM and security](/guides/introduction-to-aws/02-iam-security), for the IAM users, roles and policies Packer needs
-- [Interview question: cloud IAM basics](/interview-questions/junior/cloud-iam-basics)
+- [Interview question: cloud IAM basics](/interview-questions/topic/cloud#cloud-iam-basics)
 - [Introduction to Docker](/guides/introduction-to-docker), if you plan to use the Docker builder

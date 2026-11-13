@@ -41,7 +41,7 @@ The way you deploy your application matters just as much as what you deploy. Dif
 Try it in the simulator: the [Deployment Strategies Simulator](/games/deployment-strategies) routes traffic with each strategy and lets you roll back a bad release.
 :::
 
-For a head-to-head on the two most common choices, see [blue-green vs canary deployments](/comparisons/blue-green-vs-canary-deployments). To decouple releasing a feature from deploying it, see [progressive delivery with feature flags](/posts/how-to-implement-progressive-delivery-with-feature-flags), and to practice explaining a rollback plan in an interview, try [this rollback strategy question](/interview-questions/senior/progressive-delivery-rollback-strategy).
+For a head-to-head on the two most common choices, see [blue-green vs canary deployments](/comparisons/blue-green-vs-canary-deployments). To decouple releasing a feature from deploying it, see [progressive delivery with feature flags](/posts/how-to-implement-progressive-delivery-with-feature-flags), and to practice explaining a rollback plan in an interview, try [this rollback strategy question](/interview-questions/topic/cicd#progressive-delivery-rollback-strategy).
 
 ## Why Deployment Strategy Matters
 

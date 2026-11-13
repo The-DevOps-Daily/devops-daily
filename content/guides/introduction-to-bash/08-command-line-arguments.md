@@ -617,4 +617,4 @@ Next: [Bash Text Processing](/guides/introduction-to-bash/09-bash-tools), where 
 - [Check if an input argument exists](/posts/check-existence-of-input-argument-in-bash-shell-script)
 - [Prompt for yes, no or cancel](/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script)
 - [Create an alias that takes parameters](/posts/create-bash-alias-that-takes-parameters)
-- Interview questions: [Shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)
+- Interview questions: [Shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals)

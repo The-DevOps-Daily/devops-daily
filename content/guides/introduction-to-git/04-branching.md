@@ -385,6 +385,6 @@ Next: [Merging and Resolving Conflicts](/guides/introduction-to-git/05-merging),
 
 ## Keep Learning
 
-- [Git Branching Strategies interview questions](/interview-questions/junior/git-branching-strategies)
+- [Git Branching Strategies interview questions](/interview-questions/topic/git#git-branching-strategies)
 - [How to stash changes in Git](/posts/stash-single-file-git#h2-stash-all-changes-and-get-them-back)
 - [Check out a remote branch](/posts/how-to-checkout-remote-git-branch)
