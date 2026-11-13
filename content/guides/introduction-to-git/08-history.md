@@ -214,7 +214,7 @@ The range can be line numbers (`-L 9,12:file`), a regular expression and an offs
 }
 ```
 
-`<commit>:<path>` names a file as it was in that commit, and `<commit>^` is that commit's parent: the last version before the deletion. To bring an old version back into your working tree, use `git restore --source=<commit> -- <path>` ([reset or revert a file to a specific revision](/posts/how-to-reset-revert-file-to-specific-revision), [find and restore a deleted file](/posts/find-restore-deleted-file-git)). `git show --stat <commit>` or `git show --name-only <commit>` lists the files a commit changed ([more ways](/posts/list-files-in-commit-git)).
+`<commit>:<path>` names a file as it was in that commit, and `<commit>^` is that commit's parent: the last version before the deletion. To bring an old version back into your working tree, use `git restore --source=<commit> -- <path>` ([reset or revert a file to a specific revision](/posts/find-restore-deleted-file-git#h2-how-do-i-reset-or-revert-a-file-to-a-specific-revision), [find and restore a deleted file](/posts/find-restore-deleted-file-git)). `git show --stat <commit>` or `git show --name-only <commit>` lists the files a commit changed ([more ways](/posts/list-files-in-commit-git)).
 
 ## Compare Commits and Branches
 
@@ -451,7 +451,7 @@ The bad commit is on `main` and pushed, so you must not rewrite it. `git revert`
 }
 ```
 
-`git reset --hard` is the one command in this part that destroys work that was never committed. Before using it, run `git status` and `git stash` anything you might want. Reset only commits you have not pushed; for pushed commits, revert. [Undo the most recent local commits](/posts/how-to-undo-recent-local-commits-in-git), [reset to a previous commit](/posts/how-to-reset-git-to-previous-commit) and [delete a commit from a branch](/posts/delete-commit-from-branch) go through more cases.
+`git reset --hard` is the one command in this part that destroys work that was never committed. Before using it, run `git status` and `git stash` anything you might want. Reset only commits you have not pushed; for pushed commits, revert. [Undo the most recent local commits](/posts/delete-commit-from-branch#h2-how-do-i-undo-the-last-commit-but-keep-my-changes), [reset to a previous commit](/posts/delete-commit-from-branch#h2-how-do-i-reset-my-branch-to-a-previous-commit) and [delete a commit from a branch](/posts/delete-commit-from-branch) go through more cases on one page.
 
 ### The reflog: Git's undo history
 
@@ -619,7 +619,7 @@ The branch is ready. Merge it and push:
 }
 ```
 
-To change the author of commits, see [change the author of the last commit](/posts/change-author-multiple-commits-git#h2-change-the-author-of-only-the-last-commit) and [of multiple commits](/posts/change-author-multiple-commits-git).
+To change the author of commits, see [change the author of the last commit](/posts/how-do-i-squash-my-last-n-commits-together#h2-how-do-i-change-the-author-of-the-last-commit) and [of multiple commits](/posts/how-do-i-squash-my-last-n-commits-together#h2-how-do-i-change-the-author-of-many-commits).
 
 ### Which commits can you still rewrite?
 
@@ -778,6 +778,6 @@ Next: [Git Best Practices](/guides/introduction-to-git/09-best-practices), with 
 
 ## Keep Learning
 
-- [Revert a repository to a previous commit safely](/posts/how-to-safely-revert-repository-to-previous-commit)
-- [How to view Git commit history](/posts/how-to-view-git-commit-history)
+- [Revert a repository to a previous commit safely](/posts/delete-commit-from-branch#h2-how-do-i-revert-the-repository-to-a-previous-commit-without-rewriting-history)
+- [How to view Git commit history](/posts/view-file-change-history-git#h2-how-do-i-view-the-commit-history-of-the-whole-repository)
 - [You cannot rotate a secret you cannot find](/posts/you-cannot-rotate-a-secret-you-cannot-find)

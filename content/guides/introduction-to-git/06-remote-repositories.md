@@ -89,7 +89,7 @@ On a hosting service, only the URL changes:
 }
 ```
 
-If you created the repository on the platform with a README, it has a commit your local repository does not have, and your first push is rejected. Create it empty, or fetch and merge that commit first ([unrelated histories](/posts/git-refusing-merge-unrelated-histories)).
+If you created the repository on the platform with a README, it has a commit your local repository does not have, and your first push is rejected. Create it empty, or fetch and merge that commit first ([unrelated histories](/posts/undo-git-merge-not-pushed#h2-how-do-i-fix-refusing-to-merge-unrelated-histories)).
 
 ## Push
 
@@ -151,7 +151,7 @@ The remote name and the branch name are two separate arguments. Git 2.56 recogni
 }
 ```
 
-`git push origin v0.2.0` pushes one tag. `git push --follow-tags` pushes the annotated tags that point at the commits you are pushing, and `git config --global push.followTags true` makes that the default. [How to push a tag](/posts/push-git-tag-to-remote) and [how to delete a remote tag](/posts/how-can-i-delete-a-remote-tag) have the details.
+`git push origin v0.2.0` pushes one tag. `git push --follow-tags` pushes the annotated tags that point at the commits you are pushing, and `git config --global push.followTags true` makes that the default. [How to push a tag](/posts/how-can-i-delete-a-remote-tag#h2-how-do-i-push-a-git-tag-to-a-remote) and [how to delete a remote tag](/posts/how-can-i-delete-a-remote-tag) have the details.
 
 ## A Teammate Clones and Pushes
 
@@ -275,7 +275,7 @@ Set your preference once, globally, and override it per command when needed:
 | `git config --global pull.rebase false` | Merges, creating a merge commit when the branches diverged                    | `--rebase`              |
 | `git config --global pull.ff only`      | Only fast-forwards; refuses when your branch and the remote one have diverged | `--rebase` or `--no-ff` |
 
-`pull.rebase true` is a good default for day-to-day work: your unpublished commits move on top of what others pushed, and the history stays linear. Add `rebase.autoStash true` so a pull also works with uncommitted changes (Git stashes and re-applies them). `pull.ff only` is the strictest choice: nothing happens without your decision. Whatever you pick, the rules from [Part 5](/guides/introduction-to-git/05-merging#h2-merge-or-rebase) apply: never rebase commits that others have already pulled. [The difference between git pull and git fetch](/posts/difference-between-git-pull-and-git-fetch) goes deeper.
+`pull.rebase true` is a good default for day-to-day work: your unpublished commits move on top of what others pushed, and the history stays linear. Add `rebase.autoStash true` so a pull also works with uncommitted changes (Git stashes and re-applies them). `pull.ff only` is the strictest choice: nothing happens without your decision. Whatever you pick, the rules from [Part 5](/guides/introduction-to-git/05-merging#h2-merge-or-rebase) apply: never rebase commits that others have already pulled. [The difference between git pull and git fetch](/posts/git-fetch-remote-branch#h2-what-is-the-difference-between-git-pull-and-git-fetch) goes deeper.
 
 This guide uses `pull.rebase true` and `rebase.autoStash true` from here on:
 
@@ -365,7 +365,7 @@ Sam fetches and starts working on the same branch. `git switch` with the name of
 }
 ```
 
-`git branch -vv` shows each branch's upstream in brackets, plus `ahead N` and `behind N` counts when they differ (as of the last fetch). [Fetch a remote branch and check it out](/posts/git-fetch-remote-branch), [check out a remote branch](/posts/how-to-checkout-remote-git-branch) and [make an existing branch track a remote branch](/posts/make-git-branch-track-remote) cover the variations, such as `git branch -u origin/main` to set an upstream later.
+`git branch -vv` shows each branch's upstream in brackets, plus `ahead N` and `behind N` counts when they differ (as of the last fetch). [Fetch a remote branch and check it out](/posts/git-fetch-remote-branch#h2-how-do-i-check-out-a-remote-branch) and [make an existing branch track a remote branch](/posts/make-git-branch-track-remote) cover the variations, such as `git branch -u origin/main` to set an upstream later.
 
 ### A Local Branch for Every Remote Branch
 
@@ -530,7 +530,7 @@ Sam still has `origin/docs/runbook` and a local `docs/runbook`. A normal fetch d
 }
 ```
 
-`[origin/docs/runbook: gone]` marks a branch whose upstream was deleted, usually because its pull request was merged. Set `git config --global fetch.prune true` to prune on every fetch. [Delete a branch locally and remotely](/posts/how-to-delete-git-branch-locally-and-remotely) has more examples. (Git 2.56 also added `git branch --delete-merged <upstream>`, which deletes local branches whose upstream is, for example, `origin/main` and whose work is already in it. It is meant for setups where topic branches track the main branch; with the usual one-upstream-per-branch setup above, look for `: gone]` instead.)
+`[origin/docs/runbook: gone]` marks a branch whose upstream was deleted, usually because its pull request was merged. Set `git config --global fetch.prune true` to prune on every fetch. [Delete a branch locally and remotely](/posts/how-to-push-new-local-branch-to-remote-and-track#h2-how-do-i-delete-a-git-branch-locally-and-remotely) has more examples. (Git 2.56 also added `git branch --delete-merged <upstream>`, which deletes local branches whose upstream is, for example, `origin/main` and whose work is already in it. It is meant for setups where topic branches track the main branch; with the usual one-upstream-per-branch setup above, look for `: gone]` instead.)
 
 ## Inspect and Change Remotes
 
@@ -548,14 +548,14 @@ Sam still has `origin/docs/runbook` and a local `docs/runbook`. A normal fetch d
 }
 ```
 
-| Command                               | Does                                                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `git remote -v`                       | List remotes with their URLs                                                                                 |
-| `git remote add <name> <url>`         | Add another remote, for example `upstream` for a fork                                                        |
-| `git remote set-url origin <new-url>` | Change a URL, for example from HTTPS to SSH ([more](/posts/how-to-change-uri-url-for-remote-git-repository)) |
-| `git remote rename <old> <new>`       | Rename a remote and its remote-tracking branches                                                             |
-| `git remote remove <name>`            | Remove a remote and its remote-tracking branches                                                             |
-| `git ls-remote origin`                | List the branches and tags on the remote without fetching                                                    |
+| Command                               | Does                                                                                                                                             |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `git remote -v`                       | List remotes with their URLs                                                                                                                     |
+| `git remote add <name> <url>`         | Add another remote, for example `upstream` for a fork                                                                                            |
+| `git remote set-url origin <new-url>` | Change a URL, for example from HTTPS to SSH ([more](/posts/specify-private-ssh-key-for-git-commands#h2-how-do-i-change-the-url-of-a-git-remote)) |
+| `git remote rename <old> <new>`       | Rename a remote and its remote-tracking branches                                                                                                 |
+| `git remote remove <name>`            | Remove a remote and its remote-tracking branches                                                                                                 |
+| `git ls-remote origin`                | List the branches and tags on the remote without fetching                                                                                        |
 
 ## A Read-Only Server with git daemon
 
@@ -758,6 +758,6 @@ Next: [Collaboration Workflows](/guides/introduction-to-git/07-collaboration), w
 
 - [Push a new local branch and track it](/posts/how-to-push-new-local-branch-to-remote-and-track)
 - [Reset a local branch to match the remote](/posts/how-to-reset-local-branch-to-match-remote-head)
-- [Force git pull to overwrite local files](/posts/how-to-force-git-pull-overwrite-local-files)
-- [Fix "src refspec master does not match any"](/posts/fix-src-refspec-master-does-not-match-any)
+- [Force git pull to overwrite local files](/posts/how-to-reset-local-branch-to-match-remote-head#h2-how-do-i-force-git-pull-to-overwrite-local-files)
+- [Fix "src refspec master does not match any"](/posts/how-to-push-new-local-branch-to-remote-and-track#h2-how-do-i-fix-src-refspec-master-does-not-match-any)
 - Compare hosting services: [GitHub vs GitLab](/comparisons/github-vs-gitlab), [Bitbucket vs GitHub](/comparisons/bitbucket-vs-github)

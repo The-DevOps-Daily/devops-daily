@@ -186,8 +186,8 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Commits and branches', 'Merges and conflicts', 'Pull requests', 'Rebase'],
         resources: [
           guide('introduction-to-git'),
-          post('how-do-i-resolve-merge-conflicts-in-a-git-repository'),
-          post('difference-between-git-pull-and-git-fetch'),
+          post('undo-git-merge-not-pushed'),
+          post('git-fetch-remote-branch'),
           post('delete-commit-from-branch'),
           sim('git-concepts-simulator'),
           sim('git-merge-conflict-simulator'),

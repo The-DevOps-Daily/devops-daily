@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2025-01-28'
 publishedAt: '2025-01-28T11:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -43,7 +43,7 @@ git log src/app.js
 
 This displays commit information for every change to the file:
 
-```
+```text
 commit a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
 Author: Jane Developer <jane@example.com>
 Date:   Mon Jan 15 14:30:00 2024 -0500
@@ -82,7 +82,7 @@ git log --patch src/app.js
 
 This shows each commit followed by the exact changes:
 
-```
+```text
 commit a1b2c3d
 Author: Jane Developer <jane@example.com>
 Date:   Mon Jan 15 14:30:00 2024
@@ -121,7 +121,7 @@ git log --follow -p src/app.js
 
 Without `--follow`, Git stops at the rename. With it, you see the file's entire history even if it had different names:
 
-```
+```text
 commit xyz789 (renamed from old-app.js)
 commit abc456 (working as old-app.js)
 commit def123 (working as old-app.js)
@@ -152,7 +152,7 @@ git blame src/app.js
 
 Output looks like this:
 
-```
+```text
 a1b2c3d4 (Jane Developer 2024-01-15 14:30:00 +0000  1) const express = require('express');
 a1b2c3d4 (Jane Developer 2024-01-15 14:30:00 +0000  2) const app = express();
 e4f5g6h7 (John Smith    2024-01-12 09:15:00 +0000  3)
@@ -162,6 +162,7 @@ a1b2c3d4 (Jane Developer 2024-01-15 14:30:00 +0000  6) // Authentication middlew
 ```
 
 Each line shows:
+
 - Commit hash
 - Author name
 - Date
@@ -195,7 +196,7 @@ git diff HEAD~3 HEAD -- src/app.js
 
 This shows all changes to the file between those two points:
 
-```
+```text
 diff --git a/src/app.js b/src/app.js
 index abc123..def456 100644
 --- a/src/app.js
@@ -237,7 +238,7 @@ git show HEAD~3:src/app.js
 git show feature-branch:src/app.js
 ```
 
-This displays the entire file content as it existed at that point, not the changes made to it. To put that version back in your working tree, see [reset or revert a file to a specific revision](/posts/how-to-reset-revert-file-to-specific-revision).
+This displays the entire file content as it existed at that point, not the changes made to it. To put that version back in your working tree, see [reset or revert a file to a specific revision](/posts/find-restore-deleted-file-git#h2-how-do-i-reset-or-revert-a-file-to-a-specific-revision).
 
 ## Viewing History with Graph Visualization
 
@@ -358,6 +359,63 @@ git log main..feature-branch src/app.js
 
 This helps understand what changes are coming in a merge or pull request.
 
+## How Do I View the Commit History of the Whole Repository?
+
+Run `git log` without a path. These forms cover most needs:
+
+```bash
+git log --oneline -20                    # the last 20 commits, one line each
+git log --oneline --graph --all          # every branch as a graph
+git log --stat -5                        # which files each commit changed
+git log -p -3                            # the diffs of the last 3 commits (merge commits show no diff)
+```
+
+`--oneline` prints the short hash and the first line of the message. Branch and tag names appear next to the commits in a terminal; `--decorate` forces them on. `--graph --all` draws the branches and merges. The [Git concepts simulator](/games/git-concepts-simulator) draws the same graph in your browser while you type commands.
+
+### Filter the history
+
+Each filter narrows the list, and you can combine them:
+
+```bash
+git log --since="2 weeks ago" --until="yesterday"   # by date
+git log --author="jane" -i                           # by author name or email, case-insensitive
+git log --grep="payment" -i                          # by words in the commit message
+git log -S "calculateTotal"                          # by code: commits that added or removed this string
+git log -G "timeout[[:space:]]*=" -p                 # by code, as a regular expression, with the diff
+git log --no-merges                                  # leave out merge commits
+git log --first-parent main                          # only the commits made or merged on main
+```
+
+`--grep` searches the commit messages, and `-S` and `-G` search the changes. `--author` matches a part of the name or the email, and it takes a regular expression, so `--author='jane\|sam'` finds both.
+
+### Compare branches and releases
+
+```bash
+git log main..feature --oneline          # commits on feature that main does not have
+git log feature..main --oneline          # commits on main that feature does not have
+git log v1.2.0..v1.3.0 --oneline --no-merges        # what changed between two tags
+git log "$(git describe --tags --abbrev=0)"..HEAD   # commits since the last tag
+```
+
+[Git diff between two branches](/posts/see-differences-between-branches-git) explains two-dot and three-dot ranges.
+
+### Choose your own format
+
+```bash
+git log --format='%h %ad %an %s' --date=short
+```
+
+Common placeholders: `%h` short hash, `%H` full hash, `%an` and `%ae` author name and email, `%ad` author date (`%ar` relative), `%s` subject. Save a favorite as an alias:
+
+```bash
+git config --global alias.lg "log --graph --oneline --decorate --all"
+git lg
+```
+
+`git shortlog -sn HEAD` counts commits per author. Keep the `HEAD`: without a revision, and when no terminal is attached, `git shortlog` reads a log from stdin and waits.
+
+The [history chapter of the Git guide](/guides/introduction-to-git/08-history#h2-read-the-log-your-way) shows these commands with real output, plus `git bisect` to find the commit that broke something.
+
 ## Using GUI Tools for Visual History
 
 Many GUI tools provide visual file history:
@@ -403,3 +461,12 @@ git log --follow --all --stat -p src/app.js
 ```
 
 Now you know how to view the complete change history of a file in Git. The combination of `log`, `blame`, and `diff` commands gives you full visibility into how any file evolved, who changed it, and what those changes were.
+
+## Related Resources
+
+- [Introduction to Git: Log, Blame, Bisect, Revert and Reflog](/guides/introduction-to-git/08-history)
+- [Find and restore a deleted file, or reset a file to an old version](/posts/find-restore-deleted-file-git)
+- [List all files in a Git commit](/posts/list-files-in-commit-git)
+- [Git Bisect for Your Data](/posts/git-bisect-for-your-data)
+- [Git concepts simulator](/games/git-concepts-simulator)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz) and [Git Fundamentals flashcards](/flashcards/git-fundamentals)

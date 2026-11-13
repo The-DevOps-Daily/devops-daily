@@ -46,7 +46,6 @@
 /images/posts/designing-rate-limiting-for-apis.svg /images/posts/designing-rate-limiting-for-apis.jpg 301
 /images/posts/detect-network-connection-type-android.svg /images/posts/detect-network-connection-type-android.jpg 301
 /images/posts/devops-vs-sysadmin-vs-sre.svg /images/posts/devops-vs-sysadmin-vs-sre.jpg 301
-/images/posts/difference-between-git-pull-and-git-fetch.svg /images/posts/difference-between-git-pull-and-git-fetch.jpg 301
 /images/posts/difference-run-cmd-dockerfile.svg /images/posts/difference-run-cmd-dockerfile.jpg 301
 /images/posts/digitalocean-serverless-inference-first-call.svg /images/posts/digitalocean-serverless-inference-first-call.jpg 301
 /images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.svg /images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.jpg 301
@@ -70,7 +69,6 @@
 /images/posts/get-current-branch-name-git.svg /images/posts/get-current-branch-name-git.jpg 301
 /images/posts/get-logs-from-all-pods-replication-controller.svg /images/posts/get-logs-from-all-pods-replication-controller.jpg 301
 /images/posts/git-ignore-file-mode-changes.svg /images/posts/git-ignore-file-mode-changes.jpg 301
-/images/posts/git-refusing-merge-unrelated-histories.svg /images/posts/git-refusing-merge-unrelated-histories.jpg 301
 /images/posts/github-actions-fast.svg /images/posts/github-actions-fast.jpg 301
 /images/posts/github-cve-2026-3854-git-push-rce.svg /images/posts/github-cve-2026-3854-git-push-rce.jpg 301
 /images/posts/gitops-argocd-repository-structure-multi-environment.svg /images/posts/gitops-argocd-repository-structure-multi-environment.jpg 301
@@ -85,31 +83,18 @@
 /images/posts/how-can-i-debug-imagepullbackoff.svg /images/posts/how-can-i-debug-imagepullbackoff.jpg 301
 /images/posts/how-cat-eof-works-in-bash.svg /images/posts/how-cat-eof-works-in-bash.jpg 301
 /images/posts/how-do-i-get-flask-to-run-on-port-80.svg /images/posts/how-do-i-get-flask-to-run-on-port-80.jpg 301
-/images/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository.svg /images/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository.jpg 301
 /images/posts/how-to-access-docker-container-shell.svg /images/posts/how-to-access-docker-container-shell.jpg 301
 /images/posts/how-to-artificially-create-connection-timeout-error.svg /images/posts/how-to-artificially-create-connection-timeout-error.jpg 301
-/images/posts/how-to-change-uri-url-for-remote-git-repository.svg /images/posts/how-to-change-uri-url-for-remote-git-repository.jpg 301
-/images/posts/how-to-checkout-remote-git-branch.svg /images/posts/how-to-checkout-remote-git-branch.jpg 301
-/images/posts/how-to-cherry-pick-commits-in-git.svg /images/posts/how-to-cherry-pick-commits-in-git.jpg 301
 /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.svg /images/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line.jpg 301
-/images/posts/how-to-delete-git-branch-locally-and-remotely.svg /images/posts/how-to-delete-git-branch-locally-and-remotely.jpg 301
-/images/posts/how-to-force-git-pull-overwrite-local-files.svg /images/posts/how-to-force-git-pull-overwrite-local-files.jpg 301
 /images/posts/how-to-free-up-tcp-port.svg /images/posts/how-to-free-up-tcp-port.jpg 301
 /images/posts/how-to-get-docker-host-ip-from-container.svg /images/posts/how-to-get-docker-host-ip-from-container.jpg 301
 /images/posts/how-to-get-local-ip-address.svg /images/posts/how-to-get-local-ip-address.jpg 301
 /images/posts/how-to-implement-progressive-delivery-with-feature-flags.svg /images/posts/how-to-implement-progressive-delivery-with-feature-flags.jpg 301
 /images/posts/how-to-manage-multiple-environments-in-kubernetes.svg /images/posts/how-to-manage-multiple-environments-in-kubernetes.jpg 301
 /images/posts/how-to-push-new-local-branch-to-remote-and-track.svg /images/posts/how-to-push-new-local-branch-to-remote-and-track.jpg 301
-/images/posts/how-to-rename-local-git-branch.svg /images/posts/how-to-rename-local-git-branch.jpg 301
-/images/posts/how-to-reset-git-to-previous-commit.svg /images/posts/how-to-reset-git-to-previous-commit.jpg 301
 /images/posts/how-to-reset-local-branch-to-match-remote-head.svg /images/posts/how-to-reset-local-branch-to-match-remote-head.jpg 301
-/images/posts/how-to-reset-revert-file-to-specific-revision.svg /images/posts/how-to-reset-revert-file-to-specific-revision.jpg 301
 /images/posts/how-to-restart-container-within-pod.svg /images/posts/how-to-restart-container-within-pod.jpg 301
-/images/posts/how-to-safely-revert-repository-to-previous-commit.svg /images/posts/how-to-safely-revert-repository-to-previous-commit.jpg 301
 /images/posts/how-to-symlink-files-linux.svg /images/posts/how-to-symlink-files-linux.jpg 301
-/images/posts/how-to-undo-git-add-before-commit.svg /images/posts/how-to-undo-git-add-before-commit.jpg 301
-/images/posts/how-to-undo-recent-local-commits-in-git.svg /images/posts/how-to-undo-recent-local-commits-in-git.jpg 301
-/images/posts/how-to-view-git-commit-history.svg /images/posts/how-to-view-git-commit-history.jpg 301
 /images/posts/ingress-nginx-eol-gateway-api-migration.svg /images/posts/ingress-nginx-eol-gateway-api-migration.jpg 301
 /images/posts/ingress-vs-load-balancer-kubernetes.svg /images/posts/ingress-vs-load-balancer-kubernetes.jpg 301
 /images/posts/is-valkey-ready-to-replace-redis-2026.svg /images/posts/is-valkey-ready-to-replace-redis-2026.jpg 301
@@ -269,6 +254,7 @@
 /tags/aws-sdk /tags/aws 301
 /tags/azure /categories/cloud 301
 /tags/branch /tags/git 301
+/tags/branch-management /tags/git 301
 /tags/branches /tags/git 301
 /tags/budgets /tags/finops 301
 /tags/buildkit /tags/docker 301
@@ -304,6 +290,7 @@
 /tags/database-migrations /tags/databases 301
 /tags/deliverability /tags/email 301
 /tags/deployment-strategies /tags/cicd 301
+/tags/development /tags/devops 301
 /tags/distributed-tracing /tags/observability 301
 /tags/docker-exec /tags/docker 301
 /tags/docker-networking /tags/docker 301
@@ -368,6 +355,7 @@
 /tags/policies /tags/iam 301
 /tags/port-forwarding /tags/networking 301
 /tags/port-mapping /tags/networking 301
+/tags/ports /tags/networking 301
 /tags/pre-commit /tags/git 301
 /tags/pricing /tags/finops 301
 /tags/privilege-escalation /tags/security 301
@@ -436,7 +424,7 @@
 /posts/what-does-set-e-mean-in-bash /posts/what-does-set-e-mean-in-bash-script 301
 /posts/local-docker-images-minikube /posts/how-to-restart-container-within-pod 301
 /posts/docker-cannot-connect-daemon /posts/cannot-connect-to-docker-daemon 301
-/posts/how-to-resolve-git-merge-conflicts /posts/how-do-i-resolve-merge-conflicts-in-a-git-repository 301
+/posts/how-to-resolve-git-merge-conflicts /posts/undo-git-merge-not-pushed 301
 /posts/prompt-yes-no-cancel-input-linux-shell-script /posts/prompt-for-yes-no-cancel-input-in-linux-shell-script 301
 /posts/redirect-output-to-file-and-stdout-bash /posts/what-does-2-and-1-mean-linux-bash 301
 # Thin Terraform expression posts consolidated into one guide (Aug 2026)
@@ -496,7 +484,7 @@
 /posts/git-add-a-vs-git-add-dot /guides/introduction-to-git/03-tracking-changes 301
 /posts/clone-all-remote-branches-git /guides/introduction-to-git/06-remote-repositories 301
 /posts/move-uncommitted-work-to-new-branch /posts/move-most-recent-commits-to-new-branch-git 301
-/posts/git-cherry-pick-commit /posts/how-to-cherry-pick-commits-in-git 301
+/posts/git-cherry-pick-commit /posts/move-most-recent-commits-to-new-branch-git 301
 /posts/create-copy-directory-unix-linux /posts/force-cp-overwrite-without-confirmation 301
 /posts/looping-through-file-content-bash /guides/introduction-to-linux/09-shell-scripting 301
 /posts/compare-two-directory-trees-by-content /guides/introduction-to-linux/10-system-administration 301
@@ -511,7 +499,7 @@
 /posts/why-your-ci-pipeline-is-slower /posts/what-does-one-merge-cost-in-ci 301
 /posts/devops-mistakes-2025 /posts/what-is-devops 301
 # Dead short posts merged into stronger pages (Nov 2026, consolidation batch 2)
-/posts/change-commit-author-single /posts/change-author-multiple-commits-git 301
+/posts/change-commit-author-single /posts/how-do-i-squash-my-last-n-commits-together 301
 /posts/how-to-make-git-forget-tracked-file-in-gitignore /posts/remove-file-from-git-keep-local 301
 /posts/how-to-stash-changes-in-git /posts/stash-single-file-git 301
 /posts/how-to-modify-existing-unpushed-commit-messages /guides/introduction-to-git/08-history 301
@@ -692,6 +680,30 @@
 /posts/real-world-k8s /posts/kubernetes-concepts-junior-to-mid-level 301
 /posts/restart-pods-when-configmap-updates-in-kubernetes /posts/how-to-restart-container-within-pod 301
 /posts/switch-namespace-in-kubernetes /posts/how-to-manage-multiple-environments-in-kubernetes 301
+
+# Git posts merged (2026-11)
+/posts/abort-merge-conflict-git /posts/undo-git-merge-not-pushed 301
+/posts/change-author-multiple-commits-git /posts/how-do-i-squash-my-last-n-commits-together 301
+/posts/commit-part-of-file-git /posts/remove-file-from-git-keep-local 301
+/posts/create-remote-git-branch /posts/how-to-push-new-local-branch-to-remote-and-track 301
+/posts/difference-between-git-pull-and-git-fetch /posts/git-fetch-remote-branch 301
+/posts/fix-src-refspec-master-does-not-match-any /posts/how-to-push-new-local-branch-to-remote-and-track 301
+/posts/git-refusing-merge-unrelated-histories /posts/undo-git-merge-not-pushed 301
+/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository /posts/undo-git-merge-not-pushed 301
+/posts/how-to-change-uri-url-for-remote-git-repository /posts/specify-private-ssh-key-for-git-commands 301
+/posts/how-to-checkout-remote-git-branch /posts/git-fetch-remote-branch 301
+/posts/how-to-cherry-pick-commits-in-git /posts/move-most-recent-commits-to-new-branch-git 301
+/posts/how-to-delete-git-branch-locally-and-remotely /posts/how-to-push-new-local-branch-to-remote-and-track 301
+/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from /posts/specify-private-ssh-key-for-git-commands 301
+/posts/how-to-force-git-pull-overwrite-local-files /posts/how-to-reset-local-branch-to-match-remote-head 301
+/posts/how-to-rename-local-git-branch /posts/how-to-push-new-local-branch-to-remote-and-track 301
+/posts/how-to-reset-git-to-previous-commit /posts/delete-commit-from-branch 301
+/posts/how-to-reset-revert-file-to-specific-revision /posts/find-restore-deleted-file-git 301
+/posts/how-to-safely-revert-repository-to-previous-commit /posts/delete-commit-from-branch 301
+/posts/how-to-undo-git-add-before-commit /posts/remove-file-from-git-keep-local 301
+/posts/how-to-undo-recent-local-commits-in-git /posts/delete-commit-from-branch 301
+/posts/how-to-view-git-commit-history /posts/view-file-change-history-git 301
+/posts/push-git-tag-to-remote /posts/how-can-i-delete-a-remote-tag 301
 
 # Single interview question pages merged into their topic pages (Nov 2026)
 /interview-questions/junior/argocd-bootstrapping-self-management /interview-questions/topic/gitops#argocd-bootstrapping-self-management 301

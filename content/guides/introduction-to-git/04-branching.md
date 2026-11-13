@@ -328,11 +328,11 @@ To try an idea quickly, start a branch, commit, and see how deleting works:
 }
 ```
 
-- `git branch -m old new` renames a branch (`-m new` renames the current one). [Renaming a branch that is already pushed](/posts/how-to-rename-local-git-branch) needs one more step on the remote.
+- `git branch -m old new` renames a branch (`-m new` renames the current one). [Renaming a branch that is already pushed](/posts/how-to-push-new-local-branch-to-remote-and-track#h2-how-do-i-rename-a-git-branch) needs one more step on the remote.
 - `git branch -d` deletes a branch only if its commits are merged: into its upstream if it has one ([Part 6](/guides/introduction-to-git/06-remote-repositories#h2-tracking-branches)), otherwise into your current branch. That check has saved a lot of work.
 - `git branch -D` deletes it anyway. The commits are not gone yet: Git printed the hash (`was ...`), and the reflog has it too, so you can recreate the branch with `git branch experiment/search <hash>` ([Part 8](/guides/introduction-to-git/08-history#h2-undo-commits-reset-revert-and-the-reflog)).
 
-Deleting a branch on the remote is a separate command ([Part 6](/guides/introduction-to-git/06-remote-repositories#h2-delete-remote-branches); [delete a branch locally and remotely](/posts/how-to-delete-git-branch-locally-and-remotely)).
+Deleting a branch on the remote is a separate command ([Part 6](/guides/introduction-to-git/06-remote-repositories#h2-delete-remote-branches); [delete a branch locally and remotely](/posts/how-to-push-new-local-branch-to-remote-and-track#h2-how-do-i-delete-a-git-branch-locally-and-remotely)).
 
 ## Name Branches So Others Understand Them
 
@@ -387,4 +387,4 @@ Next: [Merging and Resolving Conflicts](/guides/introduction-to-git/05-merging),
 
 - [Git Branching Strategies interview questions](/interview-questions/topic/git#git-branching-strategies)
 - [How to stash changes in Git](/posts/stash-single-file-git#h2-stash-all-changes-and-get-them-back)
-- [Check out a remote branch](/posts/how-to-checkout-remote-git-branch)
+- [Check out a remote branch](/posts/git-fetch-remote-branch#h2-how-do-i-check-out-a-remote-branch)
