@@ -246,7 +246,7 @@ WHERE code = $2 AND redeemed_by_order IS NULL
 RETURNING id;
 ```
 
-If no row comes back, the code was already used. Other mitigations for tampering: TLS on every flow, including DF5 to DF8 inside the private network, and signed container images and protected branches so code cannot be changed on its way to production (the [CI/CD pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) covers that path).
+If no row comes back, the code was already used. Other mitigations for tampering: TLS on every flow, including DF5 to DF8 inside the private network, and signed container images and protected branches so code cannot be changed on its way to production (the [CI/CD pipeline hardening guide](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) covers that path).
 
 ## Repudiation
 

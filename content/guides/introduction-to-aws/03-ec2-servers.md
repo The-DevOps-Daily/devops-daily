@@ -289,5 +289,5 @@ Next: [S3: Cloud Object Storage](/guides/introduction-to-aws/04-s3-storage), whe
 ## Keep Learning
 
 - Exercise: [Creating and Connecting to Your First Linux Server](/exercises/cloud-server-setup)
-- [What Does AssumeRole: Service: ec2 Do?](/posts/assumerole-service-ec2)
+- [What Does AssumeRole With Service: ec2.amazonaws.com Do?](/guides/introduction-to-aws/02-iam-security#h3-what-does-assumerole-with-service-ec2amazonawscom-do)
 - [SSH basics interview questions](/interview-questions/topic/linux#ssh-basics)

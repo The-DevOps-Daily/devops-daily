@@ -191,35 +191,35 @@ Create `.github/dependabot.yml` to keep all dependencies current, not just vulne
 ```yaml
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: 'weekly'
+      day: 'monday'
     open-pull-requests-limit: 10
     groups:
       eslint:
         patterns:
-          - "eslint*"
-          - "@typescript-eslint/*"
+          - 'eslint*'
+          - '@typescript-eslint/*'
       testing:
         patterns:
-          - "jest*"
-          - "@testing-library/*"
+          - 'jest*'
+          - '@testing-library/*'
       minor-and-patch:
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
 
-  - package-ecosystem: "docker"
-    directory: "/"
+  - package-ecosystem: 'docker'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
 ```
 
 Grouping related updates is important. Without it, Dependabot will open a separate PR for every single package update, and your team will drown in notifications.
@@ -334,11 +334,11 @@ Trivy covers npm, pip, Bundler, Cargo, Go, Maven, Gradle, Composer, and more. It
 Be pragmatic with your CI policies:
 
 | Severity | PR Checks | Main Branch | Production |
-|----------|-----------|-------------|------------|
-| Critical | Block | Block | Block |
-| High | Warn | Block | Block |
-| Medium | Warn | Warn | Block |
-| Low | Info | Info | Warn |
+| -------- | --------- | ----------- | ---------- |
+| Critical | Block     | Block       | Block      |
+| High     | Warn      | Block       | Block      |
+| Medium   | Warn      | Warn        | Block      |
+| Low      | Info      | Info        | Warn       |
 
 Blocking every medium vulnerability will frustrate developers and lead to ignored warnings. Set a high bar for what breaks the build, and track everything else in your security backlog.
 
@@ -356,7 +356,7 @@ Your dependencies are your responsibility, even the ones you did not choose dire
 
 - [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security) - Generate SBOMs from your dependency tree and verify that nothing was injected between build and deploy
 - [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Complement your dependency scans with runtime testing that finds vulnerabilities in how your app actually behaves
-- [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide) - Even with clean dependencies, your own code can introduce injection flaws and broken auth
+- [Secure Coding Practices Every Change Should Follow](/posts/security-focused-code-reviews#h2-which-secure-coding-practices-should-every-change-follow) - Even with clean dependencies, your own code can introduce injection flaws and broken auth
 
 For a deeper look at choosing and configuring static analysis tools, see our guide on [SAST tools](/guides/sast-tools).
 

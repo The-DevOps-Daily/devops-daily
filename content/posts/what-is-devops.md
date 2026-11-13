@@ -114,6 +114,7 @@ Instead of throwing code over a wall, teams work together continuously:
 Imagine two restaurants:
 
 ### Restaurant A (Traditional Approach)
+
 - The chef creates recipes in isolation
 - Recipes are handed to kitchen staff who've never seen them
 - When dishes fail, chef blames staff, staff blames chef
@@ -121,6 +122,7 @@ Imagine two restaurants:
 - Customers wait forever for their food
 
 ### Restaurant B (DevOps Approach)
+
 - Chef and kitchen staff develop recipes together
 - Everyone understands the full process from ingredient to plate
 - Problems are solved as a team
@@ -196,14 +198,14 @@ If something breaks, the whole team fixes it. There's no "not my job" mentality.
 
 You'll hear these names mentioned a lot in DevOps conversations:
 
-| Category | Popular Tools | What They Do |
-|----------|--------------|---------------|
-| Version Control | Git, GitHub | Track code changes |
-| CI/CD | Jenkins, GitHub Actions | Automate testing and deployment |
-| Containers | Docker, Kubernetes | Package and run applications consistently |
-| Infrastructure | Terraform, Ansible | Set up servers with code |
-| Monitoring | Prometheus, Grafana | Watch system health |
-| Cloud | AWS, Azure, GCP | Run applications on the internet |
+| Category        | Popular Tools           | What They Do                              |
+| --------------- | ----------------------- | ----------------------------------------- |
+| Version Control | Git, GitHub             | Track code changes                        |
+| CI/CD           | Jenkins, GitHub Actions | Automate testing and deployment           |
+| Containers      | Docker, Kubernetes      | Package and run applications consistently |
+| Infrastructure  | Terraform, Ansible      | Set up servers with code                  |
+| Monitoring      | Prometheus, Grafana     | Watch system health                       |
+| Cloud           | AWS, Azure, GCP         | Run applications on the internet          |
 
 **Don't feel overwhelmed!** You don't need to know all these tools to understand DevOps. The tools are just ways to implement DevOps practices.
 
@@ -211,15 +213,15 @@ You'll hear these names mentioned a lot in DevOps conversations:
 
 ## DevOps vs. Traditional IT: A Comparison
 
-| Aspect | Traditional IT | DevOps |
-|--------|---------------|--------|
-| Release frequency | Monthly or yearly | Daily or hourly |
-| Team structure | Separate silos | Cross-functional teams |
-| Failure response | Blame someone | Learn and improve |
-| Testing | End of development | Throughout development |
-| Infrastructure | Manual setup | Automated with code |
-| Feedback | Slow (months) | Fast (hours or days) |
-| Risk tolerance | Avoid all risk | Manage risk through small changes |
+| Aspect            | Traditional IT     | DevOps                            |
+| ----------------- | ------------------ | --------------------------------- |
+| Release frequency | Monthly or yearly  | Daily or hourly                   |
+| Team structure    | Separate silos     | Cross-functional teams            |
+| Failure response  | Blame someone      | Learn and improve                 |
+| Testing           | End of development | Throughout development            |
+| Infrastructure    | Manual setup       | Automated with code               |
+| Feedback          | Slow (months)      | Fast (hours or days)              |
+| Risk tolerance    | Avoid all risk     | Manage risk through small changes |
 
 ---
 
@@ -266,7 +268,7 @@ Teams that start with DevOps tend to make the same few mistakes. Each one has a 
 - **Secrets in code or in plain `.env` files.** They end up in Git history, in logs and in screenshots. Use a secrets manager or encrypted files, and rotate any secret that leaked. See the [secrets management guide](/posts/secrets-management-guide).
 - **No way back.** A deploy breaks production and nobody knows how to return to the last good version. Keep the previous release ready, practice the rollback, and consider blue-green or canary [deployment strategies](/posts/deployment-strategies-guide).
 - **Monitoring after the first outage.** Add metrics, logs and alerts on what users feel (errors, latency) when you launch, not after the first incident. The [monitoring and observability checklist](/checklists/monitoring-observability) is a starting point.
-- **Pipelines with more power than they need.** A CI job that can deploy anything is a target. Give each pipeline only the permissions it uses, and scan dependencies and images in it. The [CI/CD pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) goes step by step.
+- **Pipelines with more power than they need.** A CI job that can deploy anything is a target. Give each pipeline only the permissions it uses, and scan dependencies and images in it. The [CI/CD pipeline hardening guide](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) goes step by step.
 - **Knowledge in one person's head.** "Ask Alex" stops working when Alex is on holiday. Write short runbooks as you build things, and after an incident, write down what happened and what changes.
 - **Too many tools.** Twenty tools that do not talk to each other create more alerts and more work than they save. Add a tool when it solves a problem you have, and remove the ones nobody uses.
 
@@ -277,21 +279,25 @@ Teams that start with DevOps tend to make the same few mistakes. Each one has a 
 If you're interested in learning more or starting a career in DevOps, here's a suggested path:
 
 ### Step 1: Learn the Basics
+
 - Understand how software is built and deployed
 - Learn basic command line/terminal skills
 - Get familiar with version control (Git)
 
 ### Step 2: Explore Core Concepts
+
 - Try setting up a simple CI/CD pipeline
 - Learn about containers with Docker
 - Understand cloud computing basics
 
 ### Step 3: Practice, Practice, Practice
+
 - Build personal projects
 - Contribute to open source
 - Set up your own home lab
 
 ### Step 4: Never Stop Learning
+
 - DevOps is constantly evolving
 - Join communities and forums
 - Follow industry blogs and podcasts

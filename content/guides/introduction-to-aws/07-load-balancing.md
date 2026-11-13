@@ -135,9 +135,74 @@ systemctl enable --now httpd
 
 The `photo-app-web` security group must allow HTTP 80 **from the `photo-app-alb` security group**, as planned in Part 5.
 
-:::note
-**Launch configurations**, the older way to describe ASG instances, are deprecated. Accounts created on or after 1 October 2024 cannot create them at all, and new instance types are not added to them. Use launch templates. The post [AWS ASG Launch Templates vs Launch Configurations](/posts/aws-asg-launch-templates-vs-configurations) covers migrating old groups.
-:::
+### What Is the Difference Between a Launch Template and a Launch Configuration?
+
+Both tell an Auto Scaling group how to launch instances, but only launch templates are still developed: use a launch template. Launch configurations are legacy. They get no instance types released since 1 January 2023, accounts created on or after 1 June 2023 cannot create them in the console, and accounts created on or after 1 October 2024 cannot create them at all, with any tool. Older accounts can still run groups that use them, which is why you still find them in existing infrastructure.
+
+| Feature                                                           | Launch configuration                     | Launch template                                                 |
+| ----------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| Changes                                                           | Immutable: create a new one for a change | Versions; a group uses `$Latest`, `$Default` or a fixed version |
+| Instance types released since 2023                                | No                                       | Yes                                                             |
+| Several instance types, Spot and On-Demand in one group           | No                                       | Yes, with a mixed instances policy                              |
+| Spot Instances                                                    | Yes, one maximum price for all instances | Yes, with allocation strategies across types                    |
+| AMI ID from a Systems Manager parameter                           | No                                       | Yes                                                             |
+| T2 Unlimited, Capacity Reservations, Dedicated Hosts, io2 volumes | No                                       | Yes                                                             |
+| Placement group                                                   | No; set it on the Auto Scaling group     | Yes, but a placement group on the Auto Scaling group wins       |
+
+To move an existing group, copy the configuration in the console (**EC2**, **Launch configurations**, **Copy to launch template**; the copy feature is console-only), then point the group at the template and replace the running instances:
+
+```bash
+aws autoscaling update-auto-scaling-group \
+  --auto-scaling-group-name photo-app-web \
+  --launch-template LaunchTemplateName=photo-app-web,Version='$Latest'
+
+# Running instances keep the old settings until they are replaced
+aws autoscaling start-instance-refresh --auto-scaling-group-name photo-app-web
+```
+
+In Terraform, replace `aws_launch_configuration` with `aws_launch_template`. The `instance_refresh` block replaces instances in batches whenever the template changes:
+
+```hcl
+resource "aws_launch_template" "web" {
+  name_prefix            = "photo-app-web-"
+  image_id               = data.aws_ami.al2023_arm64.id # the AMI lookup from Part 2
+  instance_type          = "t4g.micro"
+  vpc_security_group_ids = [aws_security_group.web.id]
+  user_data              = filebase64("${path.module}/user-data.sh")
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.web.name
+  }
+
+  metadata_options {
+    http_tokens = "required" # IMDSv2 only
+  }
+}
+
+resource "aws_autoscaling_group" "web" {
+  name                      = "photo-app-web"
+  min_size                  = 2
+  max_size                  = 4
+  vpc_zone_identifier       = [aws_subnet.app_a.id, aws_subnet.app_b.id]
+  target_group_arns         = [aws_lb_target_group.web.arn]
+  health_check_type         = "ELB"
+  health_check_grace_period = 120
+
+  launch_template {
+    id      = aws_launch_template.web.id
+    version = aws_launch_template.web.latest_version
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
+  }
+}
+```
+
+The [AWS VPC simulator](/games/aws-vpc-simulator) shows how the private app subnets in `vpc_zone_identifier` reach the internet, and the [AWS Well-Architected checklist](/checklists/aws-well-architected) covers the rest of a production group.
 
 ## Step 2: The Target Group and Load Balancer
 

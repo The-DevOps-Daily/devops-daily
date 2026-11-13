@@ -14,6 +14,20 @@ The FinOps Foundation, part of the Linux Foundation, maintains the FinOps Framew
 - About 80 MB of free disk space for the sample data and DuckDB.
 - No cloud account is needed for this part.
 
+## What Is FinOps?
+
+FinOps is how engineering, finance and product teams manage cloud and other technology spending together: everyone sees the same cost data within a day, the team that creates a resource owns its cost, and decisions weigh cost against what the spending earns. The FinOps Foundation defines it as "an operational framework and cultural practice which maximizes the business value of technology, enables timely data-driven decision making, and creates financial accountability through collaboration between engineering, finance, and business teams".
+
+### Why Does Cloud Spending Need Its Own Practice?
+
+Because the cloud moved the buying decision from a quarterly purchase to every engineer with access. In a data center, the company bought servers once, planned capacity for three to five years, and finance approved the money before anyone spent it. In the cloud:
+
+- **Anyone can spend, at any time.** A Terraform apply, a test cluster or a GPU instance left running over a weekend is a purchase, and nobody approves it first.
+- **The bill comes after the money is gone.** Costs accrue per second or per hour, and a monthly invoice shows a mistake weeks after it started.
+- **The same workload can cost very different amounts.** Instance type, Region, storage class, data transfer paths and discounts change the price of the same work.
+
+Annual budgets and quarterly reviews cannot keep up with that. FinOps moves cost data to the teams that make these decisions, adds alerts that fire within a day, and gives a central team the work that is cheaper to do once, such as buying commitments. The rest of this part turns that into principles, phases and roles.
+
 ## The Six Principles
 
 The framework rests on six principles. Each one has a direct meaning for a DevOps team:
@@ -233,7 +247,8 @@ Next, [Part 2](/guides/finops-for-devops-engineers/02-challenges) looks at where
 
 ## Keep Learning
 
-- [What Is FinOps? A Beginner's Guide to Cloud Cost Management](/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management)
+- [FinOps and cloud cost management interview questions](/interview-questions/topic/cloud#finops-cost-management)
 - [Why Most FinOps Initiatives Fail (and What Actually Works)](/posts/why-finops-initiatives-fail)
 - [Your Cloud Bill Is an Organizational Problem, Not a Technical One](/posts/cloud-bill-organizational-problem)
-- [Interview questions: FinOps and Cloud Cost Management](/interview-questions/topic/cloud#finops-cost-management)
+- [Cloud cost allocation tags flashcards](/flashcards/cloud-cost-allocation-tags)
+- [Cloud cost optimization quiz](/quizzes/cloud-cost-optimization-quiz)

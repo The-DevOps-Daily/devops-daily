@@ -56,14 +56,14 @@ Before diving into tools, understand the principles that make secrets management
 
 Not every secret is the same. Here is how rotation frequency and storage should differ:
 
-| Secret Type | Rotation | Storage | Notes |
-|-------------|----------|---------|-------|
-| API Keys | 90 days | Vault/Cloud SM | Keep multiple active keys for rotation |
-| Database Creds | Dynamic | Vault | Generate per-session when possible |
-| TLS Certificates | 90 days | Vault PKI | Automate with ACME or Vault |
-| SSH Keys | 1 year | Vault SSH | Consider signed certificates instead |
-| Encryption Keys | 1-2 years | HSM/KMS | Never export, rotate with re-encryption |
-| OAuth Tokens | Per session | Memory only | Use refresh tokens, short-lived access |
+| Secret Type      | Rotation    | Storage        | Notes                                   |
+| ---------------- | ----------- | -------------- | --------------------------------------- |
+| API Keys         | 90 days     | Vault/Cloud SM | Keep multiple active keys for rotation  |
+| Database Creds   | Dynamic     | Vault          | Generate per-session when possible      |
+| TLS Certificates | 90 days     | Vault PKI      | Automate with ACME or Vault             |
+| SSH Keys         | 1 year      | Vault SSH      | Consider signed certificates instead    |
+| Encryption Keys  | 1-2 years   | HSM/KMS        | Never export, rotate with re-encryption |
+| OAuth Tokens     | Per session | Memory only    | Use refresh tokens, short-lived access  |
 
 ## HashiCorp Vault
 
@@ -354,14 +354,14 @@ Tools like gitleaks, truffleHog, and GitHub's built-in Secret Scanning catch cre
 
 ## Which Tool Should You Choose?
 
-| Factor | Vault | AWS Secrets Manager | Azure Key Vault |
-|--------|-------|---------------------|-----------------|
-| Dynamic secrets | Excellent | Limited | Limited |
-| Multi-cloud | Yes | AWS only | Azure-focused |
-| Self-hosted | Yes | No | No |
-| PKI/Certificates | Built-in | Via ACM | Built-in |
-| Learning curve | Steep | Low | Low |
-| Cost | Free (OSS) | Per-secret/API call | Per-operation |
+| Factor           | Vault      | AWS Secrets Manager | Azure Key Vault |
+| ---------------- | ---------- | ------------------- | --------------- |
+| Dynamic secrets  | Excellent  | Limited             | Limited         |
+| Multi-cloud      | Yes        | AWS only            | Azure-focused   |
+| Self-hosted      | Yes        | No                  | No              |
+| PKI/Certificates | Built-in   | Via ACM             | Built-in        |
+| Learning curve   | Steep      | Low                 | Low             |
+| Cost             | Free (OSS) | Per-secret/API call | Per-operation   |
 
 Pick Vault if you run multi-cloud or need dynamic secrets. Pick AWS Secrets Manager if you are all-in on AWS and want the simplest integration. Pick Azure Key Vault if you live in the Microsoft ecosystem.
 
@@ -371,8 +371,8 @@ Whichever tool you choose, the principles stay the same: least privilege, short-
 
 ## Related Security Posts
 
-- [CI/CD Pipeline Hardening](/posts/cicd-pipeline-hardening-guide) - Use OIDC and ephemeral runners so your pipelines never store long-lived credentials in the first place
+- [CI/CD Pipeline Hardening](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) - Use OIDC and ephemeral runners so your pipelines never store long-lived credentials in the first place
 - [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide) - Catch AWS keys, database passwords, and API tokens before they get committed to Git history
-- [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security) - Pair proper secrets management with artifact signing to secure every step from build to deploy
+- [Software Supply Chain Security: CI/CD Pipeline Hardening, SBOMs, Sigstore and SLSA](/posts/software-supply-chain-security) - Pair proper secrets management with artifact signing to secure every step from build to deploy
 
 For where a secret should live, and why one committed to Git stays there after you delete it, see [The CIA Triad](/guides/security-principles/01-cia-triad#h2-confidentiality), part 1 of our Security Principles guide.

@@ -227,7 +227,63 @@ The `REPORT` line is your bill and your performance data in one: `Init Duration`
 - **Secrets** (API keys, database passwords) belong in Secrets Manager or Parameter Store, read at init time and cached, not in environment variables in plain text.
 - **Memory** also sets CPU. A CPU-bound function often gets faster and no more expensive with more memory, because it runs for less time; measure with the `REPORT` lines.
 - **Reserved concurrency** caps how many copies run at once, which protects a small database behind the function. For relational databases, use **RDS Proxy** so hundreds of functions do not open hundreds of connections.
-- **VPC access**: attach the function to private subnets only if it must reach private resources such as RDS. It then needs a NAT gateway or VPC endpoints to reach the internet and other AWS services.
+- **VPC access**: attach the function to private subnets only if it must reach private resources such as RDS. It then needs a NAT gateway or VPC endpoints to reach the internet and other AWS services, and its execution role needs the permissions described below.
+
+### Why Does Lambda Say the Execution Role Cannot Call DescribeNetworkInterfaces?
+
+Because you attached the function to a VPC, and its **execution role** may not manage network interfaces. To reach your subnets, Lambda creates elastic network interfaces in them, and it does that with the function's own role. When you create or update a function with a VPC configuration, Lambda checks the role first and rejects the change with an error such as `The provided execution role does not have permissions to call CreateNetworkInterface on EC2`, or the same message for `DescribeNetworkInterfaces`. The message says "EC2", but nothing is wrong with an instance: the role to fix is the function's execution role.
+
+The fix is the AWS managed policy for this case. Note the `service-role/` path in its ARN:
+
+```bash
+aws iam attach-role-policy \
+  --role-name process-upload-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+
+aws lambda update-function-configuration \
+  --function-name process-upload \
+  --vpc-config SubnetIds=subnet-0aaaaaaaaaaaaaaaa,subnet-0bbbbbbbbbbbbbbbb,SecurityGroupIds=sg-0cccccccccccccccc
+```
+
+`AWSLambdaVPCAccessExecutionRole` allows writing to CloudWatch Logs and six EC2 actions. If you write your own policy instead, it needs the same six actions, and the [Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html) says to allow them on all resources:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeSubnets",
+        "ec2:DeleteNetworkInterface",
+        "ec2:AssignPrivateIpAddresses",
+        "ec2:UnassignPrivateIpAddresses"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+Replacing `"Resource": "*"` with network interface ARNs, which older answers suggest, brings the error back. To control which VPCs and subnets functions may use, restrict the people and pipelines that deploy them instead: `lambda:CreateFunction` and `lambda:UpdateFunctionConfiguration` support the condition keys `lambda:VpcIds`, `lambda:SubnetIds` and `lambda:SecurityGroupIds`. The deployer also needs `ec2:DescribeVpcs`, `ec2:DescribeSubnets`, `ec2:DescribeSecurityGroups` and `ec2:GetSecurityGroupsForVpc` for the VPC settings. The function's own code gets the six EC2 permissions too; the Lambda documentation shows a deny statement with the `lambda:SourceFunctionArn` condition that takes them away from the code but not from Lambda.
+
+To check a role without deploying anything, ask the IAM policy simulator:
+
+```bash
+aws iam simulate-principal-policy \
+  --policy-source-arn arn:aws:iam::111122223333:role/process-upload-role \
+  --action-names ec2:CreateNetworkInterface ec2:DescribeNetworkInterfaces ec2:DeleteNetworkInterface \
+  --query 'EvaluationResults[].[EvalActionName,EvalDecision]' --output text
+```
+
+Each action should show `allowed`; `implicitDeny` means no policy allows it. Two more things cause the same error:
+
+- **Infrastructure as code that is too fast.** Terraform can create the function before the policy attachment exists. Add `depends_on = [aws_iam_role_policy_attachment.vpc_access]` to the `aws_lambda_function`, so the role has its permissions first.
+- **Removing the policy too early.** Lambda also uses these permissions to delete its network interfaces when you remove the VPC configuration, which can take up to 20 minutes. Detach the policy, or delete the role, only after that; otherwise the interfaces stay behind and you delete them by hand.
+
+A function in a private subnet has no internet access and no public IP address. It reaches AWS services through a NAT gateway or VPC endpoints, as [Part 5](/guides/introduction-to-aws/05-vpc-networking) explains; the [AWS VPC simulator](/games/aws-vpc-simulator) lets you try the routing.
 
 ## Cold Starts
 
@@ -278,4 +334,4 @@ Next: [Managing Your AWS Costs](/guides/introduction-to-aws/10-cost-management),
 
 - [AWS Lambda cold start optimization flashcards](/flashcards/aws-lambda-cold-start-optimization)
 - [Use Terraform to set up a Lambda function triggered by a scheduled event source](/posts/terraform-cloudwatch-log-subscription-lambda#h2-how-do-i-run-a-lambda-function-on-a-schedule-with-terraform)
-- [The provided execution role does not have permissions to call DescribeNetworkInterfaces on EC2](/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2)
+- [AWS Lambda vs Google Cloud Functions](/comparisons/aws-lambda-vs-google-cloud-functions)
