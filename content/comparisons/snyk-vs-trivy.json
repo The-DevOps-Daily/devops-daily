@@ -315,5 +315,23 @@
     "Vulnerability Scanning",
     "DevSecOps",
     "Container Security"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Dependency Scanning: Finding Vulnerabilities Before Attackers Do",
+      "href": "/posts/dependency-scanning-guide"
+    },
+    {
+      "label": "Vulnerability Gates: Block Exploited CVEs in CI/CD",
+      "href": "/guides/security-gates/02-vulnerability-gates"
+    },
+    {
+      "label": "Why Your Base Image Has 1,684 CVEs",
+      "href": "/posts/why-your-base-image-has-1684-cves"
+    },
+    {
+      "label": "Docker Security Hardening Checklist",
+      "href": "/checklists/docker-security"
+    }
   ]
 }

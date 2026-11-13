@@ -229,5 +229,19 @@
     "toolBScore": 4.0,
     "recommendation": "Choose Go for Kubernetes-adjacent tools, internal CLIs, and projects where team velocity matters most. Choose Rust for performance-critical utilities, security-sensitive tooling, and edge deployments where binary size and memory usage are constrained."
   },
-  "relatedTags": ["Go", "Rust", "DevOps", "CLI Tools", "Kubernetes", "Infrastructure"]
+  "relatedTags": ["Go", "Rust", "DevOps", "CLI Tools", "Kubernetes", "Infrastructure"],
+  "relatedLinks": [
+    {
+      "label": "Go Is Not Just for CLIs. It Runs the Cloud Native Control Plane",
+      "href": "/posts/go-runs-the-cloud-native-control-plane"
+    },
+    {
+      "label": "Ubuntu 26.10 Moves cp, mv and rm to Rust. We Ran 162 Shell Commands Through GNU and uutils to See What Changes",
+      "href": "/posts/ubuntu-26-10-rust-coreutils-what-changes"
+    },
+    {
+      "label": "Understanding Kubernetes Operators: A Deep Dive with a Practical Example",
+      "href": "/posts/write-simple-kubernetes-operator"
+    }
+  ]
 }

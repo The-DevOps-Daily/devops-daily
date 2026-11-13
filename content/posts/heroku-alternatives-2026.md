@@ -165,6 +165,8 @@ Heroku's move to maintenance mode marks the end of an era. The platform that pio
 
 Whatever you choose, the good news is that in 2026, there are more options than ever for deploying applications without managing infrastructure.
 
+If you decide that a plain server suits you better than a platform, the [DigitalOcean vs AWS Lightsail comparison](/comparisons/digitalocean-vs-aws-lightsail) compares two simple ways to get one.
+
 ---
 
 *Did we miss your favorite Heroku alternative? Let us know on [X/Twitter](https://x.com/thedevopsdaily)!*

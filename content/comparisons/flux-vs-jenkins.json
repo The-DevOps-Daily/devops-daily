@@ -229,5 +229,23 @@
     "toolBScore": 3.7,
     "recommendation": "Choose Flux if you are a Kubernetes shop that wants pull-based GitOps with drift correction. Choose Jenkins if you need a full CI/CD server for diverse deployment targets. Consider using both together for the strongest workflow."
   },
-  "relatedTags": ["Flux", "Jenkins", "GitOps", "CI/CD", "Kubernetes", "DevOps"]
+  "relatedTags": ["Flux", "Jenkins", "GitOps", "CI/CD", "Kubernetes", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "GitOps: Deploy Docker Containers with GitHub Actions and ArgoCD",
+      "href": "/posts/gitops-deploy-docker-containers-github-actions-argocd"
+    },
+    {
+      "label": "GitOps Workflow Simulator",
+      "href": "/games/gitops-workflow"
+    },
+    {
+      "label": "Jenkins CI/CD Pipeline Quiz",
+      "href": "/quizzes/jenkins-quiz"
+    },
+    {
+      "label": "GitOps Implementation Checklist",
+      "href": "/checklists/gitops-implementation"
+    }
+  ]
 }

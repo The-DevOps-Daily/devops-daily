@@ -118,7 +118,7 @@ kubectl get --raw='/readyz?verbose' | grep -E 'etcd|check'
 readyz check passed
 ```
 
-Run etcd with an odd number of members (3 or 5) so it keeps a majority when one fails, and back it up. On a managed service the provider does both.
+Run etcd with an odd number of members (3 or 5) so it keeps a majority when one fails, and back it up. On a managed service the provider does both. Outside Kubernetes, Consul is a common alternative for configuration and service discovery; the [Consul vs etcd comparison](/comparisons/consul-vs-etcd) shows how the two differ.
 
 ### kube-scheduler
 

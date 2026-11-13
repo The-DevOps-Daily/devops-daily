@@ -224,5 +224,19 @@
     "toolBScore": 4.4,
     "recommendation": "Choose Valkey if you self-host, want a permissive license, or want to lower managed cache costs. Choose Redis if you need its built-in modules (vector, search, JSON) or rely on Redis Enterprise features and ecosystem. Both speak the same protocol, so migrating later is straightforward if your priorities change."
   },
-  "relatedTags": ["Valkey", "Redis", "Caching", "Database", "Open Source", "DevOps"]
+  "relatedTags": ["Valkey", "Redis", "Caching", "Database", "Open Source", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Is Valkey Ready to Replace Redis in 2026?",
+      "href": "/posts/is-valkey-ready-to-replace-redis-2026"
+    },
+    {
+      "label": "Caching Strategies Simulator",
+      "href": "/games/caching-simulator"
+    },
+    {
+      "label": "Redis Caching Strategies for Scalable Applications",
+      "href": "/exercises/redis-caching-strategies"
+    }
+  ]
 }

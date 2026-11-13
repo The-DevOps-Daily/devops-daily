@@ -301,5 +301,23 @@
     "GitOps",
     "Containers",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Helm Charts and Kubernetes Package Management",
+      "href": "/exercises/helm-kubernetes-packaging"
+    },
+    {
+      "label": "Helm Charts & Package Management Quiz",
+      "href": "/quizzes/helm-charts-quiz"
+    },
+    {
+      "label": "How to Publish a Helm Chart",
+      "href": "/posts/how-to-publish-helm-chart"
+    },
+    {
+      "label": "Kubernetes ConfigMaps and Secrets: Configure Apps Without Rebuilds",
+      "href": "/guides/introduction-to-kubernetes/06-configmaps-and-secrets"
+    }
   ]
 }

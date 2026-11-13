@@ -313,5 +313,19 @@
     "Container Platforms",
     "SUSE",
     "Red Hat"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Set Up a Kubernetes Cluster with kind, minikube or a Cloud Service",
+      "href": "/guides/introduction-to-kubernetes/02-setting-up-a-kubernetes-cluster"
+    },
+    {
+      "label": "When Kubernetes Is the Wrong Default",
+      "href": "/posts/when-kubernetes-is-wrong-default"
+    },
+    {
+      "label": "Kubernetes Security Checklist",
+      "href": "/checklists/kubernetes-security"
+    }
   ]
 }

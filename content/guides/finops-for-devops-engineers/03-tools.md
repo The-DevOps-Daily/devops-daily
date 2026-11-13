@@ -146,6 +146,8 @@ A Kubernetes bill shows nodes. To know what each team's workloads cost, a tool h
 - **[OpenCost](https://opencost.io/)**, an open source CNCF project (incubating since October 2024). It allocates costs by cluster, node, namespace, controller, pod and label, prices nodes from the AWS, Azure or Google Cloud billing APIs (or from your own prices on premises) and compares requests with usage. Recent releases can run without Prometheus, using a built-in collector.
 - **IBM Kubecost**, the commercial product OpenCost came from (IBM acquired Kubecost in 2024). Kubecost 3.0, released in October 2025, replaced its Prometheus dependency with a lighter agent.
 
+The [Infracost vs Kubecost comparison](/comparisons/infracost-vs-kubecost) shows how a cost estimate before a change and cost allocation after it fit together.
+
 This run installs OpenCost on a local kind cluster with two example workloads from the companion repository: `checkout-api` requests 500m CPU and 512 MiB per replica and sits idle, and `report-builder` requests 100m CPU but runs a busy loop with a 400m limit.
 
 ```yaml

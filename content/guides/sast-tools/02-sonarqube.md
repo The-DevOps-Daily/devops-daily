@@ -6,7 +6,7 @@ order: 2
 
 **TLDR**: SonarQube runs as a server (SonarQube Server or the free Community Build) or as a service (SonarQube Cloud). A scanner in your pipeline analyses the code and sends the results to it, and a **quality gate** decides whether the change passes. The free Community Build has the pattern-based security rules but no **taint analysis**, so it does not report injection flaws like SQL or command injection, and it only analyses the main branch. For pull request checks and injection detection you need Developer edition or higher, or SonarQube Cloud (its Free plan includes injection detection). Fail the pipeline with `sonar.qualitygate.wait=true`.
 
-SonarQube started as a code quality tool and still is one: it reports bugs, maintainability problems, duplication and test coverage next to security issues, in one dashboard per project. That makes it a good fit when you want one place for "is this change good enough to merge", with security as one part of the answer.
+SonarQube started as a code quality tool and still is one: it reports bugs, maintainability problems, duplication and test coverage next to security issues, in one dashboard per project. That makes it a good fit when you want one place for "is this change good enough to merge", with security as one part of the answer. If code quality is your main goal, the [SonarQube vs CodeClimate comparison](/comparisons/sonarqube-vs-codeclimate) compares it with a hosted alternative.
 
 In this part you choose an edition, run SonarQube locally with Docker Compose, scan the `notes-api` app from [Part 1](/guides/sast-tools/01-sast-fundamentals#h2-the-sample-app-used-in-this-guide), and fail a CI pipeline when the quality gate fails.
 

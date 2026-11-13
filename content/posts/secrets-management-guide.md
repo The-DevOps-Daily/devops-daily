@@ -363,7 +363,7 @@ Tools like gitleaks, truffleHog, and GitHub's built-in Secret Scanning catch cre
 | Learning curve   | Steep      | Low                 | Low             |
 | Cost             | Free (OSS) | Per-secret/API call | Per-operation   |
 
-Pick Vault if you run multi-cloud or need dynamic secrets. Pick AWS Secrets Manager if you are all-in on AWS and want the simplest integration. Pick Azure Key Vault if you live in the Microsoft ecosystem.
+Pick Vault if you run multi-cloud or need dynamic secrets. Pick AWS Secrets Manager if you are all-in on AWS and want the simplest integration. Pick Azure Key Vault if you live in the Microsoft ecosystem. For a deeper look at the first two, see the [HashiCorp Vault vs AWS Secrets Manager comparison](/comparisons/vault-vs-aws-secrets-manager).
 
 Whichever tool you choose, the principles stay the same: least privilege, short-lived credentials, audit everything, and automate rotation. Start with one tool, get your most critical secrets managed properly, and expand from there. The worst secrets management strategy is no strategy at all.
 

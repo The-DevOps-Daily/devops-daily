@@ -315,5 +315,23 @@
     "Elasticsearch",
     "Logging",
     "Log Management"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Kubernetes Monitoring, Logging and Troubleshooting",
+      "href": "/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes"
+    },
+    {
+      "label": "Your Logs Cost More Than the Service That Emits Them",
+      "href": "/posts/your-logs-cost-more-than-the-service"
+    },
+    {
+      "label": "Log Aggregation Pipeline Simulator",
+      "href": "/games/log-aggregation-pipeline-simulator"
+    },
+    {
+      "label": "Datadog Alternatives in 2026: 12 Tools, Their Real Prices, and What 300 GB of Logs Costs on Each",
+      "href": "/posts/datadog-alternatives-2026-real-prices"
+    }
   ]
 }

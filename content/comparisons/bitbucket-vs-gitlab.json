@@ -291,5 +291,19 @@
       "question": "Does Bitbucket have a container registry?",
       "answer": "No. Bitbucket does not include a built-in container registry or package registry. Teams using Bitbucket typically push images to Docker Hub, Amazon ECR, Google Artifact Registry, or JFrog Artifactory. GitLab includes both a container registry and a package registry per project, tightly integrated with CI/CD pipelines. This is one of GitLab's clearest advantages for teams doing container-based development."
     }
+  ],
+  "relatedLinks": [
+    {
+      "label": "Git Remotes: Push, Fetch, Pull and Tracking Branches",
+      "href": "/guides/introduction-to-git/06-remote-repositories"
+    },
+    {
+      "label": "Git Workflows: Pull Requests, GitHub Flow, Gitflow",
+      "href": "/guides/introduction-to-git/07-collaboration"
+    },
+    {
+      "label": "Git Command Quiz",
+      "href": "/quizzes/git-quiz"
+    }
   ]
 }

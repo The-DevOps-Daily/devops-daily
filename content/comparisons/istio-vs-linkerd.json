@@ -229,5 +229,23 @@
     "toolBScore": 4.0,
     "recommendation": "Choose Istio if you need advanced traffic routing, WASM extensibility, or multi-cluster federation. Choose Linkerd if you value simplicity, low resource overhead, and want a mesh that just works without a dedicated mesh team."
   },
-  "relatedTags": ["Istio", "Linkerd", "Service Mesh", "Kubernetes", "Envoy", "Networking"]
+  "relatedTags": ["Istio", "Linkerd", "Service Mesh", "Kubernetes", "Envoy", "Networking"],
+  "relatedLinks": [
+    {
+      "label": "Istio Traffic Management: Routing, Retries, and Circuit Breaking",
+      "href": "/posts/istio-traffic-management-routing-retries-circuit-breaking"
+    },
+    {
+      "label": "Service Mesh Traffic Simulator",
+      "href": "/games/service-mesh-simulator"
+    },
+    {
+      "label": "Istio Traffic Management Quiz",
+      "href": "/quizzes/istio-traffic-management-quiz"
+    },
+    {
+      "label": "Advanced Networking: WireGuard, Service Mesh, eBPF, HTTP/3",
+      "href": "/guides/networking-fundamentals/10-network-concepts"
+    }
+  ]
 }

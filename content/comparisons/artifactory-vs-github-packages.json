@@ -228,5 +228,19 @@
     "toolBScore": 3.8,
     "recommendation": "Choose Artifactory if you need universal format support, remote proxying, or self-hosted deployments. Choose GitHub Packages if you want tight GitHub integration, simple setup, and your needs are limited to containers, npm, Maven, or NuGet."
   },
-  "relatedTags": ["Artifactory", "GitHub Packages", "Artifacts", "Package Management", "DevOps", "CI/CD"]
+  "relatedTags": ["Artifactory", "GitHub Packages", "Artifacts", "Package Management", "DevOps", "CI/CD"],
+  "relatedLinks": [
+    {
+      "label": "Caching Dependencies and Sharing Artifacts",
+      "href": "/guides/introduction-to-cicd/04-working-with-artifacts-and-dependencies"
+    },
+    {
+      "label": "How to Publish a Helm Chart",
+      "href": "/posts/how-to-publish-helm-chart"
+    },
+    {
+      "label": "Software Supply Chain Security: CI/CD Pipeline Hardening, SBOMs, Sigstore and SLSA",
+      "href": "/posts/software-supply-chain-security"
+    }
+  ]
 }

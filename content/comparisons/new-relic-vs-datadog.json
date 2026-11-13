@@ -315,5 +315,19 @@
     "Observability",
     "Monitoring",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Datadog Alternatives in 2026: 12 Tools, Their Real Prices, and What 300 GB of Logs Costs on Each",
+      "href": "/posts/datadog-alternatives-2026-real-prices"
+    },
+    {
+      "label": "OpenTelemetry Just Graduated: What to Retire from Your Stack This Quarter",
+      "href": "/posts/opentelemetry-graduated-what-to-retire-this-quarter"
+    },
+    {
+      "label": "Monitoring & Observability Checklist",
+      "href": "/checklists/monitoring-observability"
+    }
   ]
 }

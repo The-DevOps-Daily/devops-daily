@@ -229,5 +229,19 @@
     "toolBScore": 4.3,
     "recommendation": "Choose DynamoDB for AWS-native serverless workloads with well-defined access patterns. Choose MongoDB when you need rich queries, aggregation, full-text search, or cloud portability."
   },
-  "relatedTags": ["DynamoDB", "MongoDB", "NoSQL", "Databases", "AWS", "DevOps"]
+  "relatedTags": ["DynamoDB", "MongoDB", "NoSQL", "Databases", "AWS", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "How to Design a Multi-Region Active-Active Architecture on AWS",
+      "href": "/posts/multi-region-active-active-aws"
+    },
+    {
+      "label": "MongoDB Terminal Simulator",
+      "href": "/games/mongodb-terminal-simulator"
+    },
+    {
+      "label": "Database Replication, Sharding & Scaling",
+      "href": "/games/database-replication-sharding-scaling"
+    }
+  ]
 }

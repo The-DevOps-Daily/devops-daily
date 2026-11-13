@@ -227,5 +227,23 @@
     "toolBScore": 4.2,
     "recommendation": "Start with blue-green if you are implementing zero-downtime deployments for the first time - it is easier to get right. Move to canary when you have mature monitoring, a service mesh or traffic-splitting layer, and services with enough traffic to make gradual rollouts statistically meaningful."
   },
-  "relatedTags": ["Blue-Green", "Canary", "Deployments", "DevOps", "SRE", "Continuous Delivery"]
+  "relatedTags": ["Blue-Green", "Canary", "Deployments", "DevOps", "SRE", "Continuous Delivery"],
+  "relatedLinks": [
+    {
+      "label": "Deployment Strategies: Blue-Green vs Canary vs Rolling",
+      "href": "/posts/deployment-strategies-guide"
+    },
+    {
+      "label": "Deployment Strategies Simulator",
+      "href": "/games/deployment-strategies"
+    },
+    {
+      "label": "Deployments, Environments and Rollbacks",
+      "href": "/guides/introduction-to-cicd/06-deployment-strategies-and-environments"
+    },
+    {
+      "label": "Progressive Delivery with Feature Flags Checklist",
+      "href": "/checklists/progressive-delivery-feature-flags"
+    }
+  ]
 }

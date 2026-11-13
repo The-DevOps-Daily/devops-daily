@@ -287,5 +287,19 @@
     "toolBScore": 3.9,
     "recommendation": "Choose Neon when Postgres is the primary thing you need from the platform: serverless apps, ephemeral CI environments, agent-driven test loops, RAG workloads with bursty traffic, or migrations away from RDS where you don't want to inherit a coupled BaaS stack. Choose Supabase when the auth/storage/realtime/auto-API bundle is the real value proposition, like internal tools, mobile-first products, and v1 launches where saving on integration time matters more than fine-grained control over each layer."
   },
-  "relatedTags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"]
+  "relatedTags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Neon vs Supabase Free Tiers: We Benchmarked Both So You Don't Have To",
+      "href": "/posts/neon-vs-supabase-free-tier-benchmarks"
+    },
+    {
+      "label": "Neon vs Supabase in Production: We Benchmarked the Operations That Page You at 3am",
+      "href": "/posts/neon-vs-supabase-operational-benchmarks"
+    },
+    {
+      "label": "Neon vs Supabase Pricing: What the Same App Costs From Launch to Scale",
+      "href": "/posts/neon-vs-supabase-scaling-costs"
+    }
+  ]
 }

@@ -20,6 +20,14 @@
     {
       "href": "/guides/introduction-to-cicd",
       "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    },
+    {
+      "href": "/guides/security-gates/04-cicd-integration",
+      "label": "Security Gates in CI/CD: GitHub Actions and GitLab CI"
+    },
+    {
+      "href": "/quizzes/github-actions-quiz",
+      "label": "GitHub Actions Workflows Quiz"
     }
   ],
   "toolA": {

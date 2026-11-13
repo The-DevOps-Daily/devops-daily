@@ -231,7 +231,7 @@ git fetch origin pull/123/head:pr-123
 git switch pr-123
 ```
 
-With the GitHub CLI, `gh pr checkout 123` does both. GitLab uses `refs/merge-requests/<number>/head` for merge requests.
+With the GitHub CLI, `gh pr checkout 123` does both. GitLab uses `refs/merge-requests/<number>/head` for merge requests. The [GitHub vs GitLab comparison](/comparisons/github-vs-gitlab) covers the other differences between the two hosts.
 
 ## Fetching with Different Remote
 

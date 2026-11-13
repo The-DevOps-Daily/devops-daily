@@ -222,5 +222,19 @@
     "toolBScore": 3.8,
     "recommendation": "Choose SonarQube if you need deep analysis, security scanning, and enterprise-scale language support. Choose CodeClimate if you want a lighter, developer-friendly tool with engineering velocity tracking and simpler setup."
   },
-  "relatedTags": ["SonarQube", "CodeClimate", "Code Quality", "Static Analysis", "Security", "DevOps"]
+  "relatedTags": ["SonarQube", "CodeClimate", "Code Quality", "Static Analysis", "Security", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "SonarQube SAST: Setup, Security Rules and Quality Gates",
+      "href": "/guides/sast-tools/02-sonarqube"
+    },
+    {
+      "label": "Static Application Security Testing (SAST)",
+      "href": "/guides/sast-tools"
+    },
+    {
+      "label": "Semgrep Tutorial: Custom Rules, Taint Mode and CI/CD",
+      "href": "/guides/sast-tools/03-semgrep"
+    }
+  ]
 }

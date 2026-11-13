@@ -327,7 +327,7 @@ trivy fs --scanners vuln .       # Vulnerabilities only
 trivy fs --format json -o results.json .
 ```
 
-Trivy covers npm, pip, Bundler, Cargo, Go, Maven, Gradle, Composer, and more. It also scans container images and IaC files.
+Trivy covers npm, pip, Bundler, Cargo, Go, Maven, Gradle, Composer, and more. It also scans container images and IaC files. For how it compares with Snyk, see [Snyk vs Trivy](/comparisons/snyk-vs-trivy).
 
 ## When to Block Builds
 

@@ -217,6 +217,8 @@ Here is a practical guide for common DevOps scenarios:
 | One-off script automation | ✅ | | Lower overhead, faster |
 | Long agent session (50+ calls) | | ✅ | Connection reuse, amortized schema cost |
 
+The [CLI vs MCP comparison](/comparisons/cli-vs-mcp) scores the two approaches feature by feature.
+
 ## The Real Answer: Use Both 🤝
 
 In practice, most production setups will use both. Here is a pattern that works well:

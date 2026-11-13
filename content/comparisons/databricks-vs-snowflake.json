@@ -259,5 +259,19 @@
     "toolBScore": 4.2,
     "recommendation": "Choose Databricks when data engineering and ML are the core of the work: Spark estates, large-scale transformation, model training and serving, open Iceberg strategies, or agentic apps that want Lakebase's serverless Postgres branching. Choose Snowflake when SQL analytics is the center of gravity: concurrent BI at scale, SQL-first teams without platform engineers, cross-cloud DR requirements, data sharing and monetization, or embedded AI over governed data via Cortex. If you genuinely sit in the middle, the tiebreakers are who operates it (platform team = Databricks, lean team = Snowflake) and where the bill's failure mode hurts less."
   },
-  "relatedTags": ["Databricks", "Snowflake", "Data Engineering", "Lakehouse", "Postgres", "Iceberg"]
+  "relatedTags": ["Databricks", "Snowflake", "Data Engineering", "Lakehouse", "Postgres", "Iceberg"],
+  "relatedLinks": [
+    {
+      "label": "WAL as the Source of Truth: What Lakebase Storage on S3 Means for You",
+      "href": "/posts/wal-as-the-source-of-truth-lakebase-storage-s3"
+    },
+    {
+      "label": "Getting a Row Change Out of Postgres Without Dual-Writing",
+      "href": "/posts/postgres-cdc-without-dual-writing"
+    },
+    {
+      "label": "6 Apache Kafka Use Cases, and When You Do Not Need Kafka",
+      "href": "/posts/kafka-use-cases"
+    }
+  ]
 }

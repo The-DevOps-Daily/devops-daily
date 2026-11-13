@@ -281,7 +281,7 @@ Karpenter will now monitor unschedulable pods and provision appropriately-sized 
 
 ## Monitoring Cost Impact
 
-To validate your optimizations, you need visibility into resource costs. Kubecost provides detailed insights into how much each workload costs and how much capacity you're wasting.
+To validate your optimizations, you need visibility into resource costs. Kubecost provides detailed insights into how much each workload costs and how much capacity you're wasting. It shows what is running now; Infracost shows the cost of an infrastructure change before you apply it. The [Infracost vs Kubecost comparison](/comparisons/infracost-vs-kubecost) explains how the two fit together.
 
 Install Kubecost in your cluster:
 
