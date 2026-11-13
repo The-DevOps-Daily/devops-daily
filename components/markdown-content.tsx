@@ -10,9 +10,11 @@ import { HeadingWrapper } from '@/components/heading-with-anchor';
 interface MarkdownContentProps {
   content: string;
   className?: string;
+  /** A post a sponsor paid for: its outside links get rel="sponsored". */
+  sponsored?: boolean;
 }
 
-export function MarkdownContent({ content, className }: MarkdownContentProps) {
+export function MarkdownContent({ content, className, sponsored = false }: MarkdownContentProps) {
   return (
     <HeadingWrapper>
       <CodeBlockWrapper>
@@ -21,7 +23,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             <TabsBlockWrapper>
               <DiagramBlockWrapper>
                 <GithubEmbedWrapper>
-                  <MarkdownHtml html={parseMarkdown(content)} className={className} />
+                  <MarkdownHtml html={parseMarkdown(content, sponsored)} className={className} />
                 </GithubEmbedWrapper>
               </DiagramBlockWrapper>
             </TabsBlockWrapper>
