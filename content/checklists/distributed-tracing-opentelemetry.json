@@ -1,7 +1,7 @@
 {
   "id": "distributed-tracing-opentelemetry",
   "slug": "distributed-tracing-opentelemetry",
-  "title": "Distributed Tracing with OpenTelemetry: From Instrumentation to Visualization",
+  "title": "OpenTelemetry Distributed Tracing Checklist",
   "description": "A practical checklist for adding OpenTelemetry tracing to your services, shipping spans through the Collector, and turning that data into something you can actually debug with.",
   "category": "Observability",
   "difficulty": "intermediate",
