@@ -609,6 +609,59 @@
 /posts/terraform-add-ssh-key-gcp-instance /guides/introduction-to-terraform/10-best-practices-and-production-patterns 301
 # Content covers moved from PNG to JPEG (Oct 2026)
 
+# Docker posts merged (2026-11)
+/posts/docker-assign-port-mapping /posts/forward-host-port-to-docker-container 301
+/posts/expose-port-on-live-docker-container /posts/forward-host-port-to-docker-container 301
+/posts/docker-compose-ports-vs-expose /posts/forward-host-port-to-docker-container 301
+/posts/how-to-get-docker-container-ip-from-host /posts/forward-host-port-to-docker-container 301
+/posts/connecting-to-postgresql-in-a-docker-container-from-outside /posts/forward-host-port-to-docker-container 301
+/posts/communication-multiple-docker-compose /posts/forward-host-port-to-docker-container 301
+/posts/docker-mount-host-directory /posts/docker-data-loss-when-container-exits 301
+/posts/how-to-add-a-volume-to-an-existing-docker-container /posts/docker-data-loss-when-container-exits 301
+/posts/docker-persistent-storage-databases /posts/docker-data-loss-when-container-exits 301
+/posts/how-do-i-run-a-command-on-an-already-existing-docker-container /posts/how-to-access-docker-container-shell 301
+/posts/docker-alpine-use-bash /posts/how-to-access-docker-container-shell 301
+/posts/how-to-use-sudo-in-docker-container /posts/how-to-access-docker-container-shell 301
+/posts/docker-edit-file-in-container /posts/how-to-access-docker-container-shell 301
+/posts/exploring-docker-container-file-system /posts/how-to-access-docker-container-shell 301
+/posts/copy-files-from-docker-container-to-host /posts/how-to-access-docker-container-shell 301
+/posts/ps-command-not-working-docker /posts/how-to-access-docker-container-shell 301
+/posts/docker-ubuntu-ping-not-found /posts/how-to-access-docker-container-shell 301
+/posts/start-stopped-docker-container-different-command /posts/how-to-access-docker-container-shell 301
+/posts/difference-between-cmd-and-entrypoint-in-dockerfiles /posts/difference-run-cmd-dockerfile 301
+/posts/comment-in-dockerfile /posts/difference-run-cmd-dockerfile 301
+/posts/how-to-run-cron-job-in-docker /posts/difference-run-cmd-dockerfile 301
+/posts/why-docker-container-exits-immediately /posts/difference-run-cmd-dockerfile 301
+/posts/dockerfile-copy-vs-add-commands /posts/difference-run-cmd-dockerfile 301
+/posts/docker-include-files-outside-build-context /posts/force-docker-clean-build 301
+/posts/docker-build-requires-1-argument /posts/force-docker-clean-build 301
+/posts/inspect-filesystem-of-failed-docker-build /posts/force-docker-clean-build 301
+/posts/using-ssh-keys-in-docker-container /posts/force-docker-clean-build 301
+/posts/docker-compose-up-only-certain-containers /posts/rebuild-docker-container-compose 301
+/posts/docker-compose-vs-docker-compose /posts/rebuild-docker-container-compose 301
+/posts/docker-compose-wait-container /posts/rebuild-docker-container-compose 301
+/posts/pass-environment-variables-docker-containers /posts/docker-compose-environment-variables 301
+/posts/dockerfile-update-path /posts/docker-compose-environment-variables 301
+/posts/docker-name-already-in-use /posts/docker-list-containers 301
+/posts/remove-old-docker-containers /posts/docker-list-containers 301
+/posts/docker-remove-image /posts/docker-list-containers 301
+/posts/remove-old-unused-docker-images /posts/docker-list-containers 301
+/posts/docker-image-storage-locations /posts/docker-list-containers 301
+/posts/docker-cant-connect-to-docker-daemon /posts/cannot-connect-to-docker-daemon 301
+/posts/fix-docker-permission-denied-error /posts/cannot-connect-to-docker-daemon 301
+/posts/docker-push-denied-access /posts/cannot-connect-to-docker-daemon 301
+/posts/docker-security-best-practices /posts/cannot-connect-to-docker-daemon 301
+/posts/docker-image-vs-container /posts/how-docker-works-under-the-hood 301
+/posts/how-docker-differs-from-a-virtual-machine /posts/how-docker-works-under-the-hood 301
+/posts/docker-runtime-performance-cost /posts/how-docker-works-under-the-hood 301
+/posts/docker-run-image-as-container /posts/how-docker-works-under-the-hood 301
+/posts/docker-run-vs-docker-start /posts/how-docker-works-under-the-hood 301
+/posts/docker-compose-vs-kubernetes-differences /posts/how-docker-works-under-the-hood 301
+/posts/how-i-finally-understood-docker-and-kubernetes /posts/how-docker-works-under-the-hood 301
+/posts/how-can-i-keep-a-container-running-on-kubernetes /posts/how-to-restart-container-within-pod 301
+/posts/how-to-list-all-containers-in-kubernetes-pod /posts/how-to-restart-container-within-pod 301
+/posts/use-local-docker-images-minikube /posts/how-to-restart-container-within-pod 301
+
 # Single interview question pages merged into their topic pages (Nov 2026)
 /interview-questions/junior/argocd-bootstrapping-self-management /interview-questions/topic/gitops#argocd-bootstrapping-self-management 301
 /interview-questions/junior/argocd-multi-env-repo-structure /interview-questions/topic/gitops#argocd-multi-env-repo-structure 301
@@ -720,59 +773,6 @@
 /interview-questions/senior/system-design-autocomplete /interview-questions/topic/system-design#system-design-autocomplete 301
 /interview-questions/senior/system-design-reliability /interview-questions/topic/architecture#system-design-reliability 301
 /interview-questions/senior/zero-trust-architecture /interview-questions/topic/security#zero-trust-architecture 301
-
-# Docker posts merged (2026-11)
-/posts/docker-assign-port-mapping /posts/forward-host-port-to-docker-container 301
-/posts/expose-port-on-live-docker-container /posts/forward-host-port-to-docker-container 301
-/posts/docker-compose-ports-vs-expose /posts/forward-host-port-to-docker-container 301
-/posts/how-to-get-docker-container-ip-from-host /posts/forward-host-port-to-docker-container 301
-/posts/connecting-to-postgresql-in-a-docker-container-from-outside /posts/forward-host-port-to-docker-container 301
-/posts/communication-multiple-docker-compose /posts/forward-host-port-to-docker-container 301
-/posts/docker-mount-host-directory /posts/docker-data-loss-when-container-exits 301
-/posts/how-to-add-a-volume-to-an-existing-docker-container /posts/docker-data-loss-when-container-exits 301
-/posts/docker-persistent-storage-databases /posts/docker-data-loss-when-container-exits 301
-/posts/how-do-i-run-a-command-on-an-already-existing-docker-container /posts/how-to-access-docker-container-shell 301
-/posts/docker-alpine-use-bash /posts/how-to-access-docker-container-shell 301
-/posts/how-to-use-sudo-in-docker-container /posts/how-to-access-docker-container-shell 301
-/posts/docker-edit-file-in-container /posts/how-to-access-docker-container-shell 301
-/posts/exploring-docker-container-file-system /posts/how-to-access-docker-container-shell 301
-/posts/copy-files-from-docker-container-to-host /posts/how-to-access-docker-container-shell 301
-/posts/ps-command-not-working-docker /posts/how-to-access-docker-container-shell 301
-/posts/docker-ubuntu-ping-not-found /posts/how-to-access-docker-container-shell 301
-/posts/start-stopped-docker-container-different-command /posts/how-to-access-docker-container-shell 301
-/posts/difference-between-cmd-and-entrypoint-in-dockerfiles /posts/difference-run-cmd-dockerfile 301
-/posts/comment-in-dockerfile /posts/difference-run-cmd-dockerfile 301
-/posts/how-to-run-cron-job-in-docker /posts/difference-run-cmd-dockerfile 301
-/posts/why-docker-container-exits-immediately /posts/difference-run-cmd-dockerfile 301
-/posts/dockerfile-copy-vs-add-commands /posts/difference-run-cmd-dockerfile 301
-/posts/docker-include-files-outside-build-context /posts/force-docker-clean-build 301
-/posts/docker-build-requires-1-argument /posts/force-docker-clean-build 301
-/posts/inspect-filesystem-of-failed-docker-build /posts/force-docker-clean-build 301
-/posts/using-ssh-keys-in-docker-container /posts/force-docker-clean-build 301
-/posts/docker-compose-up-only-certain-containers /posts/rebuild-docker-container-compose 301
-/posts/docker-compose-vs-docker-compose /posts/rebuild-docker-container-compose 301
-/posts/docker-compose-wait-container /posts/rebuild-docker-container-compose 301
-/posts/pass-environment-variables-docker-containers /posts/docker-compose-environment-variables 301
-/posts/dockerfile-update-path /posts/docker-compose-environment-variables 301
-/posts/docker-name-already-in-use /posts/docker-list-containers 301
-/posts/remove-old-docker-containers /posts/docker-list-containers 301
-/posts/docker-remove-image /posts/docker-list-containers 301
-/posts/remove-old-unused-docker-images /posts/docker-list-containers 301
-/posts/docker-image-storage-locations /posts/docker-list-containers 301
-/posts/docker-cant-connect-to-docker-daemon /posts/cannot-connect-to-docker-daemon 301
-/posts/fix-docker-permission-denied-error /posts/cannot-connect-to-docker-daemon 301
-/posts/docker-push-denied-access /posts/cannot-connect-to-docker-daemon 301
-/posts/docker-security-best-practices /posts/cannot-connect-to-docker-daemon 301
-/posts/docker-image-vs-container /posts/how-docker-works-under-the-hood 301
-/posts/how-docker-differs-from-a-virtual-machine /posts/how-docker-works-under-the-hood 301
-/posts/docker-runtime-performance-cost /posts/how-docker-works-under-the-hood 301
-/posts/docker-run-image-as-container /posts/how-docker-works-under-the-hood 301
-/posts/docker-run-vs-docker-start /posts/how-docker-works-under-the-hood 301
-/posts/docker-compose-vs-kubernetes-differences /posts/how-docker-works-under-the-hood 301
-/posts/how-i-finally-understood-docker-and-kubernetes /posts/how-docker-works-under-the-hood 301
-/posts/how-can-i-keep-a-container-running-on-kubernetes /posts/how-to-restart-container-within-pod 301
-/posts/how-to-list-all-containers-in-kubernetes-pod /posts/how-to-restart-container-within-pod 301
-/posts/use-local-docker-images-minikube /posts/how-to-restart-container-within-pod 301
 
 # Dynamic redirects (splats and placeholders) stay at the end of this file.
 # Cloudflare applies static redirects only when they come before the first
