@@ -412,7 +412,7 @@ done
 }
 ```
 
-Related: [check if a file does not exist](/posts/check-file-not-exist-bash) and [get a file name's extension](/guides/introduction-to-bash/04-bash-variables#h2-parameter-expansion-for-strings).
+Related: [check if a file does not exist](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-file-does-not-exist-in-bash) and [get a file name's extension](/guides/introduction-to-bash/04-bash-variables#h2-parameter-expansion-for-strings).
 
 ## Read Files
 
@@ -685,7 +685,7 @@ Next: [Bash Variables](/guides/introduction-to-bash/04-bash-variables), with par
 ## Keep Learning
 
 - [Loop through the lines of a file](/posts/bash-loop-through-file-content)
-- [Check if a file does not exist](/posts/check-file-not-exist-bash)
+- [Check if a file does not exist](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-file-does-not-exist-in-bash)
 - [List directories with their sizes](/posts/using-ls-list-directories-sizes)
 - [How cat <<EOF works](/posts/how-cat-eof-works-in-bash)
 - Interview questions: [Linux file permissions](/interview-questions/topic/linux#linux-file-permissions)

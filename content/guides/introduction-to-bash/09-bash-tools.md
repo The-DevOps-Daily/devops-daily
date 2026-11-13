@@ -74,7 +74,7 @@ Bash's `echo` treated `-n` as an option and printed nothing, and dash's `echo` i
 }
 ```
 
-Rules of thumb: `printf '%s\n' "$var"` to print a variable, a format string in single quotes, and never a variable as the format (`printf "$var"` misbehaves when the value contains `%`). To write to standard error, add `>&2` ([echo to stderr](/posts/echo-to-stderr-in-bash)).
+Rules of thumb: `printf '%s\n' "$var"` to print a variable, a format string in single quotes, and never a variable as the format (`printf "$var"` misbehaves when the value contains `%`). To write to standard error, add `>&2` ([echo to stderr](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-echo-to-stderr-in-bash)).
 
 ## Here Documents and Here Strings
 
@@ -577,7 +577,7 @@ The `sed` only hides today's date. The equivalents on macOS:
 }
 ```
 
-Use UTC (`-u`, or `TZ=UTC`) for timestamps in logs and file names: they sort correctly and do not jump at daylight saving changes. See [format a date as YYYY-MM-DD](/posts/get-current-date-time-and-custom-commands#h2-format-the-date-as-yyyy-mm-dd-in-a-script) and [the current time in seconds since the epoch](/posts/get-current-time-seconds-since-epoch-bash).
+Use UTC (`-u`, or `TZ=UTC`) for timestamps in logs and file names: they sort correctly and do not jump at daylight saving changes. See [format a date as YYYY-MM-DD](/posts/get-current-date-time-and-custom-commands#h2-format-the-date-as-yyyy-mm-dd-in-a-script) and [the current time in seconds since the epoch](/posts/get-current-date-time-and-custom-commands#h2-how-do-i-get-the-current-time-in-seconds-since-the-epoch-in-bash).
 
 ## Common Mistakes
 
@@ -604,6 +604,6 @@ Next: [Bash Best Practices](/guides/introduction-to-bash/10-bash-best-practices)
 ## Keep Learning
 
 - [How cat <<EOF works in Bash](/posts/how-cat-eof-works-in-bash)
-- [Send output to a file and to the screen](/posts/redirect-all-output-to-file-bash#h2-seeing-output-and-saving-it)
+- [Send output to a file and to the screen](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-send-output-to-a-file-and-the-screen-at-the-same-time)
 - [Sleep for milliseconds](/posts/sleep-for-milliseconds)
 - Interview questions: [grep and text search](/interview-questions/topic/linux#linux-grep-text-search)

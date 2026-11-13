@@ -195,7 +195,7 @@ On Linux, everything after the interpreter is passed as **one** argument, so `en
 }
 ```
 
-Even when it works, an option on the shebang line is ignored when someone runs `bash script.sh`. Put `set -euo pipefail` inside the script instead ([Part 10](/guides/introduction-to-bash/10-bash-best-practices)). [Which shebang should a Bash script use?](/posts/preferred-bash-shebang) compares the options in more detail.
+Even when it works, an option on the shebang line is ignored when someone runs `bash script.sh`. Put `set -euo pipefail` inside the script instead ([Part 10](/guides/introduction-to-bash/10-bash-best-practices)). [Which shebang should a Bash script use?](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-preferred-bash-shebang) compares the options in more detail.
 
 ### A Script Without a Shebang
 
@@ -498,8 +498,8 @@ Next: [Command Line Arguments](/guides/introduction-to-bash/08-command-line-argu
 
 ## Keep Learning
 
-- [Which shebang should a Bash script use?](/posts/preferred-bash-shebang)
-- [Get the directory of a Bash script](/posts/get-directory-bash-script-location)
-- [What is the difference between sh and Bash?](/posts/difference-between-sh-and-bash)
+- [Which shebang should a Bash script use?](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-preferred-bash-shebang)
+- [Get the directory of a Bash script](/posts/what-does-set-e-mean-in-bash-script#h2-how-do-i-get-the-directory-where-a-bash-script-is-located)
+- [What is the difference between sh and Bash?](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-difference-between-sh-and-bash)
 - Interview questions: [Linux file permissions](/interview-questions/topic/linux#linux-file-permissions)
 - Quiz: [Linux command line quiz](/quizzes/linux-quiz)

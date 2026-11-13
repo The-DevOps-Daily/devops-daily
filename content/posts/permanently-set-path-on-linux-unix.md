@@ -1,13 +1,13 @@
 ---
 title: 'How to Permanently Set $PATH on Linux and Unix'
-excerpt: "Learn how to permanently modify your PATH environment variable on Linux and Unix systems so your custom directories persist across shell sessions and reboots."
+excerpt: 'Learn how to permanently modify your PATH environment variable on Linux and Unix systems so your custom directories persist across shell sessions and reboots, then reload .bashrc, export or delete variables, and write aliases that take parameters.'
 category:
   name: 'Linux'
   slug: 'linux'
 date: '2024-10-30'
 publishedAt: '2024-10-30T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -17,6 +17,8 @@ tags:
   - Bash
   - Shell
   - Configuration
+  - export
+  - Aliases
 ---
 
 You install a program to a custom directory like `/opt/myapp/bin`, add it to your PATH for the current session, and everything works. Then you log out, log back in, and the path is gone. How do you make it stick?
@@ -226,11 +228,7 @@ Add your export statement:
 export PATH="$PATH:/opt/company-tools/bin"
 ```
 
-Make it executable:
-
-```bash
-sudo chmod +x /etc/profile.d/custom-path.sh
-```
+The file needs the `.sh` extension and must be readable. It does not need execute permission, because login shells read it with `.` (source) and do not run it as a program.
 
 This approach is cleaner because it keeps your customization separate from system files.
 
@@ -385,6 +383,131 @@ export PATH="/usr/local/bin:/usr/bin:/bin"
 # Rest of your script
 ```
 
+## How Do I Reload .bashrc Without Logging Out?
+
+Run `source ~/.bashrc`, or the short POSIX form `. ~/.bashrc`. The shell reads the file again in the current session, so new aliases, functions and PATH entries are available at once:
+
+```bash
+source ~/.bashrc
+```
+
+Only the terminal where you run it changes. Other open terminals keep their old settings until you reload them too or open new ones.
+
+Sourcing runs the file again. It does not undo anything, so keep three effects in mind:
+
+- An alias, function or variable that you deleted from the file still exists in the session. Remove it with `unalias name`, `unset -f name` or `unset NAME`.
+- A line such as `export PATH="$PATH:$HOME/bin"` adds the directory again each time you source the file. Guard the line so it adds the directory only once:
+
+  ```bash
+  case ":$PATH:" in
+      *":$HOME/bin:"*) ;;                       # already in PATH
+      *) export PATH="$PATH:$HOME/bin" ;;
+  esac
+  ```
+
+- Settings in `~/.profile` or `~/.bash_profile` do not change, because `source ~/.bashrc` reads only that one file.
+
+For a clean start, replace the shell with a new one:
+
+```bash
+exec bash       # a new interactive shell that reads ~/.bashrc
+exec bash -l    # a login shell that also reads ~/.bash_profile or ~/.profile
+```
+
+`exec` writes the command history of the session to `~/.bash_history` first, so you keep it. You lose the variables you did not export, the functions and the aliases you defined by hand in the old shell.
+
+If sourcing prints an error, check the file without running it:
+
+```bash
+bash -n ~/.bashrc     # no output means no syntax errors
+```
+
+## What Is the Difference Between a Variable With and Without export?
+
+A variable without `export` is a **shell variable**: only the current shell can read it. `export` marks it as an **environment variable**, and the shell then passes a copy to every program it starts:
+
+```bash
+LOCAL_VAR="only here"
+export SHARED_VAR="also in child processes"
+
+bash -c 'echo "LOCAL_VAR=[$LOCAL_VAR] SHARED_VAR=[$SHARED_VAR]"'
+# LOCAL_VAR=[] SHARED_VAR=[also in child processes]
+```
+
+Export what other programs must read, such as `PATH`, `EDITOR`, `DATABASE_URL` or `AWS_PROFILE`. Keep loop counters and temporary values unexported. Rules that help with exports:
+
+- `VAR=value command` sets the variable only for that one command, without changing the shell: `TZ=UTC date`.
+- `declare -p VAR` shows `declare -x VAR=...` for an exported variable and `declare -- VAR=...` for a shell variable. `printenv VAR` prints only exported variables.
+- A child process gets a copy. It can change or export variables, but the change never reaches the parent shell. That is why `./set-env.sh` has no effect on your terminal, and `source ./set-env.sh` does.
+- Bash cannot export arrays. `export servers` on an array sets the attribute, but child processes do not get the array. Pass a delimited string instead.
+- `export -f myfunc` exports a function to child Bash processes.
+
+To load a `.env` file and export every variable in it, turn on `allexport` while you source it:
+
+```bash
+set -a          # export every variable that is assigned from now on
+source .env
+set +a
+```
+
+This runs the file as shell code, so use it only for files you trust.
+
+## How Do I Delete an Exported Environment Variable?
+
+Use `unset`. It removes the variable from the shell, and programs started after that do not get it:
+
+```bash
+export API_KEY="abc123"
+unset API_KEY
+printenv API_KEY || echo "API_KEY is gone"
+```
+
+`unset` takes several names at once (`unset API_KEY DB_URL TOKEN`), and it succeeds even when the variable does not exist, so you do not need to check first. Other cases:
+
+```bash
+export -n API_KEY                # keep the value as a shell variable, stop exporting it
+env -u API_KEY ./run-tests.sh    # run one command without the variable
+(unset API_KEY; ./run-tests.sh)  # the same, in a subshell
+env -i bash --norc               # a shell that starts with an empty environment
+```
+
+With `env -i`, Bash gets no variables at all. It sets a built-in default `PATH`, which can include `.` (the current directory), so use this only for tests.
+
+`unset` changes only the current shell and the programs it starts later. Programs that already run keep their copy. If the variable comes back in each new terminal, a startup file sets it: find the line with `grep -n API_KEY ~/.bashrc ~/.profile ~/.bash_profile /etc/environment /etc/profile.d/*.sh`, remove it, and open a new terminal.
+
+Variable names can contain only letters, digits and underscores, and cannot start with a digit. `export "MY-API-KEY=value"` fails with `not a valid identifier`, and `unset` cannot remove such a name either. A program can still start Bash with an environment entry that has a hyphen, and Bash passes it on to child processes. Use `env -u MY-API-KEY command` to leave it out.
+
+## How Do I Create a Bash Alias That Takes Parameters?
+
+You cannot: an alias is text replacement, and Bash adds the arguments at the end of the replaced text. Write a function instead. It takes parameters as `$1`, `$2` and `"$@"`:
+
+```bash
+# in ~/.bashrc
+mkcd() {
+    mkdir -p -- "$1" && cd -- "$1"
+}
+
+search() {
+    grep -rn --exclude-dir=.git -- "$1" "${2:-.}"
+}
+```
+
+Then `mkcd ~/projects/new-app` creates the directory and changes into it, and `search TODO src` searches `src` for `TODO`.
+
+An alias with `$1` in it does not do what it seems to do. Bash expands `$1` when you use the alias, to the first positional parameter of your shell, which is usually empty. Your argument still goes at the end:
+
+```bash
+alias search='grep -r $1 .'
+search pattern
+# runs: grep -r  . pattern    ($1 is empty, "pattern" is added at the end)
+```
+
+That is also why an alias still works for arguments at the end, such as `alias ll='ls -lh'` and `ll /var/log`. Use a function as soon as the argument has to go anywhere else.
+
+If an alias and a function have the same name, the alias wins and the function definition fails with `syntax error near unexpected token '('`. Run `unalias name` before you define the function, or rename one of them. `type name` shows what a name is.
+
+Put aliases and functions in `~/.bashrc`. On Debian and Ubuntu, the default `~/.bashrc` also loads `~/.bash_aliases` if it exists, which keeps them in a separate file. Reload with `source ~/.bashrc` after you change them, as described above.
+
 ## Best Practices
 
 Keep these guidelines in mind when modifying PATH:
@@ -398,3 +521,10 @@ Keep these guidelines in mind when modifying PATH:
 - Put frequently-used directories earlier in the PATH for faster lookups
 
 Permanently setting PATH is straightforward once you know which file to edit for your shell and system. Whether you're adding personal script directories, custom application binaries, or system-wide tools, the key is understanding the difference between user-level and system-level configuration, and knowing how to test your changes.
+
+## Related Resources
+
+- [What is Bash?](/guides/introduction-to-bash/01-what-is-bash): which startup files Bash reads for login and non-login shells
+- [Introduction to Linux: User Management](/guides/introduction-to-linux/06-user-management#h2-login-files-and-the-user-environment): login files and the user environment
+- [How to get the current date and time in Linux](/posts/get-current-date-time-and-custom-commands): aliases and functions for date formats
+- [Learn Linux interactive tutorial](/games/linux-terminal) and [Linux fundamentals flashcards](/flashcards/linux-fundamentals)

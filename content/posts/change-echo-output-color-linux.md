@@ -1,13 +1,13 @@
 ---
-title: 'How to Change the Output Color of Echo in Linux'
-excerpt: 'Learn how to add colors to your echo output in Linux and Bash scripts using ANSI escape codes, tput commands, and color variables for better terminal display.'
+title: 'How to Change the Output Color of Echo and Fix Newlines in Bash'
+excerpt: 'Print colored text in a Linux terminal with ANSI escape codes or tput, turn colors off when output is not a terminal, and fix echo when it prints a literal \n instead of a new line.'
 category:
   name: 'Linux'
   slug: 'linux'
 date: '2024-08-14'
 publishedAt: '2024-08-14T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -16,390 +16,182 @@ tags:
   - Bash
   - Terminal
   - Colors
-  - Echo
+  - echo
+  - printf
 ---
 
-Adding colors to your terminal output makes scripts more readable, helps highlight important information, and improves the overall user experience. Whether you're creating status messages, error alerts, or interactive prompts, colored output can make your scripts more professional and user-friendly.
+Colors make the important lines of a script easy to see: red for an error, green for a passed check, yellow for a warning. A terminal changes the color when it receives an **ANSI escape sequence**, a short control code that starts with the escape character. The same escape rules explain the second common problem with `echo`: it prints `\n` as two characters instead of a new line.
 
-This guide covers multiple methods to colorize your echo output, from basic ANSI escape codes to advanced color management techniques.
+This post shows how to print colors with `echo`, `printf` and `tput`, how to keep color codes out of log files, and how to print newlines that work the same in every shell.
 
-## Using ANSI Escape Codes
+## TLDR
 
-ANSI escape codes are special sequences that control text formatting in terminals. The basic syntax is `\e[COLORm` or `\033[COLORm`:
+| Task                                  | Command                                      |
+| ------------------------------------- | -------------------------------------------- |
+| Print red text                        | `printf '\e[31m%s\e[0m\n' "Error"`           |
+| Same with echo (Bash)                 | `echo -e "\e[31mError\e[0m"`                 |
+| Portable colors from terminfo         | `echo "$(tput setaf 2)OK$(tput sgr0)"`       |
+| Colors only when output is a terminal | `[ -t 1 ] && RED=$'\e[31m' RESET=$'\e[0m'`   |
+| Print a newline inside a string       | `printf 'line one\nline two\n'`              |
+| Store real newlines in a variable     | `msg=$'line one\nline two'` (Bash, zsh, ksh) |
+
+## Prerequisites
+
+- A terminal on Linux, macOS or WSL. Almost every modern terminal emulator supports ANSI colors.
+- Bash for the `$'...'` and `echo -e` examples. The `printf` examples also work in `sh`.
+
+## How Do I Change the Output Color of echo?
+
+Put an escape sequence before the text and a reset sequence after it. The sequence is the escape character, `[`, one or more numbers separated by `;`, and `m`:
 
 ```bash
-# Basic color examples
-echo -e "\e[31mThis is red text\e[0m"
-echo -e "\e[32mThis is green text\e[0m"
-echo -e "\e[33mThis is yellow text\e[0m"
-echo -e "\e[34mThis is blue text\e[0m"
-echo -e "\e[35mThis is magenta text\e[0m"
-echo -e "\e[36mThis is cyan text\e[0m"
-echo -e "\e[37mThis is white text\e[0m"
+echo -e "\e[31mThis text is red\e[0m"
+echo -e "\e[1;32mThis text is bold and green\e[0m"
+printf '\033[41;37m%s\033[0m\n' "White text on a red background"
 ```
 
-The `-e` flag enables interpretation of backslash escapes, and `\e[0m` resets the color back to default.
+`\e` and `\033` both mean the escape character. `\033` (octal 33) works in more `printf` implementations, so use it in scripts that must run outside Bash. `-e` tells the Bash `echo` builtin to interpret backslash sequences. Always end with `\e[0m`. Without the reset, the color stays on for the rest of the terminal output, including your prompt.
 
-## Standard Color Codes
+The numbers are standard SGR codes:
 
-Here are the standard ANSI color codes:
+| Code         | Effect                                                            |
+| ------------ | ----------------------------------------------------------------- |
+| `0`          | Reset all attributes                                              |
+| `1`          | Bold (many terminals also make the color brighter)                |
+| `2`          | Dim                                                               |
+| `4`          | Underline                                                         |
+| `7`          | Reverse foreground and background                                 |
+| `30`-`37`    | Foreground: black, red, green, yellow, blue, magenta, cyan, white |
+| `40`-`47`    | Background in the same color order                                |
+| `90`-`97`    | Bright foreground colors                                          |
+| `100`-`107`  | Bright background colors                                          |
+| `38;5;N`     | Foreground from the 256-color palette, `N` from 0 to 255          |
+| `38;2;R;G;B` | 24-bit "true color" foreground, if the terminal supports it       |
+
+The 8 base colors depend on the terminal theme, so "red" can look different in two terminals. The 256-color codes select an entry in the terminal's palette, which the theme can also change for the first 16 entries. The 24-bit codes give the exact RGB value:
 
 ```bash
-# Foreground colors (text)
-BLACK='\e[30m'
-RED='\e[31m'
-GREEN='\e[32m'
-YELLOW='\e[33m'
-BLUE='\e[34m'
-MAGENTA='\e[35m'
-CYAN='\e[36m'
-WHITE='\e[37m'
-
-# Background colors
-BG_BLACK='\e[40m'
-BG_RED='\e[41m'
-BG_GREEN='\e[42m'
-BG_YELLOW='\e[43m'
-BG_BLUE='\e[44m'
-BG_MAGENTA='\e[45m'
-BG_CYAN='\e[46m'
-BG_WHITE='\e[47m'
-
-# Reset color
-RESET='\e[0m'
-
-# Example usage
-echo -e "${RED}Error:${RESET} Something went wrong"
-echo -e "${GREEN}Success:${RESET} Operation completed"
-echo -e "${YELLOW}Warning:${RESET} Check your configuration"
+printf '\e[38;5;208m%s\e[0m\n' "orange from the 256-color palette"
+printf '\e[38;2;255;100;0m%s\e[0m\n' "orange as 24-bit RGB"
 ```
 
-## Bright and Bold Colors
+### Store Colors in Variables
 
-You can make colors brighter or add bold formatting:
+Define the colors once with `$'...'` quoting. Bash then stores the real escape character in the variable, not the text `\e`, so the variable works with plain `echo`, with `printf '%s'` and in here documents:
 
 ```bash
-# Bright colors (high intensity)
-BRIGHT_RED='\e[91m'
-BRIGHT_GREEN='\e[92m'
-BRIGHT_YELLOW='\e[93m'
-BRIGHT_BLUE='\e[94m'
-BRIGHT_MAGENTA='\e[95m'
-BRIGHT_CYAN='\e[96m'
-BRIGHT_WHITE='\e[97m'
+RED=$'\e[31m'
+GREEN=$'\e[32m'
+YELLOW=$'\e[33m'
+BOLD=$'\e[1m'
+RESET=$'\e[0m'
 
-# Bold colors
-BOLD_RED='\e[1;31m'
-BOLD_GREEN='\e[1;32m'
-BOLD_YELLOW='\e[1;33m'
-BOLD_BLUE='\e[1;34m'
-
-# Examples
-echo -e "${BRIGHT_RED}Bright red text${RESET}"
-echo -e "${BOLD_GREEN}Bold green text${RESET}"
+echo "${GREEN}OK${RESET} database is reachable"
+echo "${YELLOW}WARN${RESET} disk is 85% full"
+printf '%s\n' "${BOLD}${RED}FAIL${RESET} backup did not finish"
 ```
 
-## Using tput for Portable Colors
+If you define the variables as `RED='\e[31m'` instead, they contain a backslash and an `e`. They then only work with `echo -e` or inside the `printf` format string, which is a common source of output like `\e[31mFAIL`.
 
-The `tput` command provides a more portable way to set colors that works across different terminal types:
+### Use tput Instead of Raw Codes
+
+`tput` reads the terminal's capabilities from the terminfo database and prints the right sequence for the current `$TERM`:
 
 ```bash
-# Using tput for colors
 red=$(tput setaf 1)
 green=$(tput setaf 2)
-yellow=$(tput setaf 3)
-blue=$(tput setaf 4)
-magenta=$(tput setaf 5)
-cyan=$(tput setaf 6)
-white=$(tput setaf 7)
+bold=$(tput bold)
 reset=$(tput sgr0)
 
-# Bold colors
-bold=$(tput bold)
-bold_red=${bold}$(tput setaf 1)
-bold_green=${bold}$(tput setaf 2)
-
-# Examples
-echo "${red}This is red text${reset}"
-echo "${bold_green}This is bold green text${reset}"
+echo "${bold}${red}Error:${reset} file not found"
+echo "Colors this terminal supports: $(tput colors)"
 ```
 
-## Creating a Color Library
+`setaf N` sets the foreground (`setab N` the background), with the same color order as the table above: 0 black, 1 red, 2 green, 3 yellow, 4 blue, 5 magenta, 6 cyan, 7 white. `sgr0` resets everything. `tput` fails with an error when `$TERM` is not set, which happens in some cron jobs and CI runners, so guard the calls if the script runs there.
 
-Here's a color library for your scripts:
+### Turn Colors Off When Output Is Not a Terminal
+
+Escape codes are noise in a log file, in `grep` output or in a CI log that does not render them. Use colors only when the output goes to a terminal, and respect the `NO_COLOR` convention, which tells programs to print no colors when that variable is set:
 
 ```bash
-#!/bin/bash
+if [[ -t 1 && -z ${NO_COLOR-} ]]; then
+    RED=$'\e[31m' GREEN=$'\e[32m' RESET=$'\e[0m'
+else
+    RED='' GREEN='' RESET=''
+fi
 
-# Color library using ANSI codes
-declare -A COLORS=(
-    # Regular colors
-    [black]='\e[30m'
-    [red]='\e[31m'
-    [green]='\e[32m'
-    [yellow]='\e[33m'
-    [blue]='\e[34m'
-    [magenta]='\e[35m'
-    [cyan]='\e[36m'
-    [white]='\e[37m'
-
-    # Bright colors
-    [bright_black]='\e[90m'
-    [bright_red]='\e[91m'
-    [bright_green]='\e[92m'
-    [bright_yellow]='\e[93m'
-    [bright_blue]='\e[94m'
-    [bright_magenta]='\e[95m'
-    [bright_cyan]='\e[96m'
-    [bright_white]='\e[97m'
-
-    # Background colors
-    [bg_black]='\e[40m'
-    [bg_red]='\e[41m'
-    [bg_green]='\e[42m'
-    [bg_yellow]='\e[43m'
-    [bg_blue]='\e[44m'
-    [bg_magenta]='\e[45m'
-    [bg_cyan]='\e[46m'
-    [bg_white]='\e[47m'
-
-    # Text formatting
-    [bold]='\e[1m'
-    [dim]='\e[2m'
-    [underline]='\e[4m'
-    [blink]='\e[5m'
-    [reverse]='\e[7m'
-    [strikethrough]='\e[9m'
-
-    # Reset
-    [reset]='\e[0m'
-)
-
-# Function to print colored text
-print_color() {
-    local color="$1"
-    local text="$2"
-    echo -e "${COLORS[$color]}${text}${COLORS[reset]}"
-}
-
-# Usage examples
-print_color "red" "This is red text"
-print_color "bold" "This is bold text"
-print_color "bg_yellow" "This has a yellow background"
+echo "${GREEN}OK${RESET} all checks passed"
 ```
 
-## Status Message Functions
+`[ -t 1 ]` is true when file descriptor 1 (stdout) is a terminal. For messages that you write to stderr, test `[ -t 2 ]` instead ([how to echo to stderr](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-echo-to-stderr-in-bash)). Do not rely on color alone to carry meaning: keep a word such as `OK`, `WARN` or `FAIL` in the text, for people who read the log without colors or cannot tell the colors apart.
 
-Create reusable functions for common status messages:
+## Why Does echo Print a Literal \n Instead of a New Line?
+
+Because the Bash `echo` builtin does not interpret backslash sequences unless you pass `-e`:
 
 ```bash
-#!/bin/bash
+echo "first line\nsecond line"
+# first line\nsecond line
 
-# Color definitions
-RED='\e[31m'
-GREEN='\e[32m'
-YELLOW='\e[33m'
-BLUE='\e[34m'
-MAGENTA='\e[35m'
-CYAN='\e[36m'
-BOLD='\e[1m'
-RESET='\e[0m'
-
-# Status message functions
-success() {
-    echo -e "${GREEN}✓${RESET} ${BOLD}SUCCESS:${RESET} $1"
-}
-
-error() {
-    echo -e "${RED}✗${RESET} ${BOLD}ERROR:${RESET} $1" >&2
-}
-
-warning() {
-    echo -e "${YELLOW}⚠${RESET} ${BOLD}WARNING:${RESET} $1"
-}
-
-info() {
-    echo -e "${BLUE}ℹ${RESET} ${BOLD}INFO:${RESET} $1"
-}
-
-debug() {
-    echo -e "${MAGENTA}🐛${RESET} ${BOLD}DEBUG:${RESET} $1"
-}
-
-# Usage examples
-success "Database connection established"
-error "Failed to connect to server"
-warning "Configuration file not found, using defaults"
-info "Processing 1000 records"
-debug "Variable value: $HOME"
+echo -e "first line\nsecond line"
+# first line
+# second line
 ```
 
-## Progress Indicators with Colors
-
-Create colorful progress indicators:
+The behavior of `echo` is not the same in every shell. Bash needs `-e` (or `shopt -s xpg_echo`). The `echo` in dash, which is `/bin/sh` on Debian and Ubuntu, always interprets `\n` and does not know `-e`, so it prints the `-e` as text:
 
 ```bash
-#!/bin/bash
-
-# Progress bar with colors
-show_progress() {
-    local current="$1"
-    local total="$2"
-    local task_name="$3"
-
-    local percentage=$((current * 100 / total))
-    local completed=$((percentage / 2))  # Scale to 50 chars
-    local remaining=$((50 - completed))
-
-    # Color based on progress
-    local color
-    if [ $percentage -lt 33 ]; then
-        color='\e[31m'  # Red
-    elif [ $percentage -lt 66 ]; then
-        color='\e[33m'  # Yellow
-    else
-        color='\e[32m'  # Green
-    fi
-
-    printf "\r${task_name}: ["
-    printf "${color}%*s" $completed | tr ' ' '█'
-    printf '\e[0m%*s' $remaining | tr ' ' '░'
-    printf "] %d%%" $percentage
-}
-
-# Example usage
-for i in {1..100}; do
-    show_progress $i 100 "Processing files"
-    sleep 0.1
-done
-echo  # New line after completion
+sh -c 'echo -e "a\nb"'
+# -e a
+# b
 ```
 
-## Interactive Menus with Colors
+A script that uses `echo -e` therefore prints different output under `bash` and under `sh`. That is the reason to stop using `echo` for anything with backslashes or options.
 
-Create colorful interactive menus:
+### Use printf for Newlines
+
+`printf` interprets `\n` in its format string in every shell, so its output does not depend on the shell:
 
 ```bash
-#!/bin/bash
-
-show_menu() {
-    clear
-    echo -e "\e[1;36m"
-    echo "╔═══════════════════════════════════╗"
-    echo "║           MAIN MENU               ║"
-    echo "╚═══════════════════════════════════╝"
-    echo -e "\e[0m"
-
-    echo -e "\e[32m1)\e[0m Install packages"
-    echo -e "\e[33m2)\e[0m Update system"
-    echo -e "\e[34m3)\e[0m Show system info"
-    echo -e "\e[35m4)\e[0m View logs"
-    echo -e "\e[31m5)\e[0m Exit"
-    echo
-    echo -e "\e[1mPlease select an option:\e[0m "
-}
-
-# Menu handling
-while true; do
-    show_menu
-    read -r choice
-
-    case $choice in
-        1) echo -e "\e[32mInstalling packages...\e[0m" ;;
-        2) echo -e "\e[33mUpdating system...\e[0m" ;;
-        3) echo -e "\e[34mShowing system info...\e[0m" ;;
-        4) echo -e "\e[35mViewing logs...\e[0m" ;;
-        5) echo -e "\e[31mGoodbye!\e[0m"; exit 0 ;;
-        *) echo -e "\e[31mInvalid option. Please try again.\e[0m" ;;
-    esac
-
-    echo -e "\nPress Enter to continue..."
-    read
-done
+printf 'first line\nsecond line\n'
+printf '%s\n' "line one" "line two" "line three"    # the format repeats for each argument
+printf 'Name: %s\nAge: %d\n' "Alice" 30
+printf '%-10s %5s\n' "service" "port" "nginx" 443 "postgres" 5432
 ```
 
-## Conditional Coloring
+Two rules keep `printf` safe:
 
-Add colors based on conditions:
+- Put the text that comes from variables in the arguments, not in the format string: `printf '%s\n' "$msg"`, not `printf "$msg\n"`. A `%` in the value breaks the second form.
+- `printf` does not add a newline at the end. Put `\n` in the format.
+
+If a variable contains backslash sequences that you want interpreted, use `%b` for that argument: `printf '%b\n' "$text"`.
+
+### Store Real Newlines With $'...'
+
+In Bash, zsh and ksh, `$'...'` quoting turns `\n`, `\t` and `\e` into the real characters when the string is created:
 
 ```bash
-#!/bin/bash
-
-check_service_status() {
-    local service="$1"
-
-    if systemctl is-active --quiet "$service"; then
-        echo -e "${service}: ${GREEN}RUNNING${RESET}"
-    elif systemctl is-enabled --quiet "$service"; then
-        echo -e "${service}: ${YELLOW}STOPPED${RESET} (enabled)"
-    else
-        echo -e "${service}: ${RED}DISABLED${RESET}"
-    fi
-}
-
-# Check multiple services
-services=("nginx" "apache2" "mysql" "postgresql")
-echo -e "${BOLD}Service Status:${RESET}"
-for service in "${services[@]}"; do
-    check_service_status "$service"
-done
+message=$'Deploy failed:\n- check the logs\n- roll back'
+echo "$message"
 ```
 
-## Color Detection and Fallback
+The variable then contains real newlines, so plain `echo "$message"` prints three lines. dash does not support `$'...'` in the version that Debian 12 and Ubuntu 24.04 ship, so keep this syntax in Bash scripts.
 
-Detect if the terminal supports colors:
+### Use a Here Document for Blocks of Text
+
+For a usage message or a config template, a here document is easier to read than a string full of `\n`:
 
 ```bash
-#!/bin/bash
-
-# Check if terminal supports colors
-setup_colors() {
-    if [[ -t 1 ]] && command -v tput > /dev/null 2>&1; then
-        local colors=$(tput colors 2>/dev/null || echo 0)
-        if [[ $colors -ge 8 ]]; then
-            # Terminal supports colors
-            RED='\e[31m'
-            GREEN='\e[32m'
-            YELLOW='\e[33m'
-            BLUE='\e[34m'
-            BOLD='\e[1m'
-            RESET='\e[0m'
-        else
-            # No color support
-            RED=''
-            GREEN=''
-            YELLOW=''
-            BLUE=''
-            BOLD=''
-            RESET=''
-        fi
-    else
-        # Output is redirected or tput unavailable
-        RED=''
-        GREEN=''
-        YELLOW=''
-        BLUE=''
-        BOLD=''
-        RESET=''
-    fi
-}
-
-# Initialize colors
-setup_colors
-
-# Usage (works with or without color support)
-echo -e "${GREEN}This will be green if supported${RESET}"
-echo -e "${RED}This will be red if supported${RESET}"
+cat <<EOF
+Usage: $(basename "$0") [-v] FILE
+  -v   verbose output
+EOF
 ```
 
-## Best Practices
+[How cat << EOF works in Bash](/posts/how-cat-eof-works-in-bash) covers quoting, indentation and writing here documents to files.
 
-1. **Always reset colors** after colored text to avoid affecting subsequent output
-2. **Use the `-e` flag** with echo to enable escape sequence interpretation
-3. **Test on different terminals** to ensure compatibility
-4. **Provide fallbacks** for terminals that don't support colors
-5. **Use semantic functions** like `success()`, `error()` for consistency
-6. **Consider accessibility** - don't rely solely on color to convey information
-7. **Store colors in variables** for easy maintenance and consistency
+## Related Resources
 
-Adding colors to your terminal output enhances the user experience and makes your scripts more professional. Whether you use ANSI escape codes, tput commands, or create color libraries, these techniques will help you create more engaging and informative command-line applications.
+- [What does 2>&1 mean?](/posts/what-does-2-and-1-mean-linux-bash): send messages to stderr and output to files
+- [Introduction to Bash: Bash Tools](/guides/introduction-to-bash/09-bash-tools): `printf`, `read` and other builtins
+- [Learn Linux interactive tutorial](/games/linux-terminal): practice basic commands in a browser terminal
