@@ -1,7 +1,7 @@
 {
   "id": "litmus-chaos-engineering-experiment",
   "slug": "litmus-chaos-engineering-experiment",
-  "title": "Running Your First Chaos Engineering Experiment with Litmus",
+  "title": "Litmus Chaos Experiment Checklist: Your First Run",
   "description": "How to install Litmus on Kubernetes and run a controlled failure experiment from a written hypothesis to a verdict you can act on, without breaking production by accident.",
   "category": "Chaos Engineering",
   "difficulty": "beginner",

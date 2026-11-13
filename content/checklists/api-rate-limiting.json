@@ -1,7 +1,7 @@
 {
   "id": "api-rate-limiting",
   "slug": "api-rate-limiting",
-  "title": "Designing Rate Limiting for APIs: Algorithms, Patterns, and Implementation",
+  "title": "API Rate Limiting Checklist: Algorithms, Limits and Rollout",
   "description": "Pick the right rate limiting algorithm for your traffic shape, build it on shared atomic state, and ship it with the response headers, failure modes, and monitoring that keep both your API and your clients working.",
   "category": "API Design",
   "difficulty": "intermediate",

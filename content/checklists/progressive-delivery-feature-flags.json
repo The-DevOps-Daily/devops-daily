@@ -1,7 +1,7 @@
 {
   "id": "progressive-delivery-feature-flags",
   "slug": "progressive-delivery-feature-flags",
-  "title": "How to Implement Progressive Delivery with Feature Flags",
+  "title": "Progressive Delivery with Feature Flags Checklist",
   "description": "A step-by-step checklist for implementing progressive delivery using feature flags, canary releases, and gradual rollouts so you can ship to production without breaking things.",
   "category": "CI/CD",
   "difficulty": "intermediate",
