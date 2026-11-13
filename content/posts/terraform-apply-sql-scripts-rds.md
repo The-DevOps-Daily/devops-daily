@@ -1,13 +1,13 @@
 ---
-title: 'How to Apply SQL Scripts to RDS Databases With Terraform'
-excerpt: "Learn different approaches for running SQL scripts and migrations against RDS databases during Terraform deployment, including provisioners, external tools, and dedicated migration resources."
+title: 'How to Apply SQL Scripts to RDS and Read Secrets With Terraform'
+excerpt: 'Terraform has no SQL resource. Compare the three ways to run SQL against RDS (local-exec, a database provider, a migration tool), and learn how to read secrets from AWS Secrets Manager without storing them in the Terraform state.'
 category:
   name: 'Terraform'
   slug: 'terraform'
 date: '2025-01-05'
 publishedAt: '2025-01-05T13:30:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '9 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -16,625 +16,284 @@ tags:
   - AWS
   - RDS
   - Database
-  - SQL
+  - Secrets Management
   - DevOps
 ---
 
-Terraform creates and manages RDS instances, but it doesn't have built-in resources for running SQL scripts inside those databases. You need to use external tools or provisioners to execute SQL statements, create tables, set up users, or run migrations after the database is created.
+Terraform creates the RDS instance, but a new database is empty. It still needs schemas, users and grants, and somebody has to decide where the passwords for all of that come from. Terraform has no resource that runs SQL, and the obvious ways to read a password from Secrets Manager put it in the state file in plain text.
 
-The challenge is orchestrating the SQL execution at the right time in the Terraform lifecycle, handling credentials securely, and ensuring idempotency so scripts don't fail on repeated runs.
+This post compares the three practical ways to run SQL against RDS from a Terraform workflow, and then shows how to read a secret from AWS Secrets Manager, including the newer ephemeral resources that keep the value out of the state.
 
-**TLDR:** Terraform doesn't natively run SQL scripts against databases. Use the `null_resource` with a `local-exec` provisioner to run SQL via command-line tools like `psql` or `mysql`. For better idempotency and state management, use the community `postgresql` or `mysql` Terraform providers which can create databases, users, and execute SQL. Alternatively, use database migration tools like Flyway or Liquibase triggered by Terraform, or Lambda functions that run migrations as part of deployment.
+## TLDR
 
-## Understanding the Problem
+| Question                                    | Short answer                                                                                              |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Can Terraform run a SQL script?             | Not by itself. Use `terraform_data` with `local-exec`, a database provider, or a migration tool           |
+| Which option should I use?                  | A database provider for users and grants, a migration tool for schema changes                             |
+| How do I read a secret?                     | `data "aws_secretsmanager_secret_version"`, plus `jsondecode()` for JSON secrets                          |
+| Is the secret stored in state?              | Yes with the data source. No with the `ephemeral` resource of the same name (Terraform 1.10 and later)    |
+| How do I give RDS a password without state? | `manage_master_user_password = true`, or `password_wo` from an ephemeral value (Terraform 1.11 and later) |
 
-Terraform is great at creating infrastructure but isn't designed for application-level configuration. An RDS instance needs more than just to exist - it often needs:
+## Prerequisites
 
-- Initial database schemas
-- Tables and indexes
-- Database users and permissions
-- Seed data or migrations
-- Stored procedures and functions
+- Terraform 1.4 or later for `terraform_data`, 1.10 or later for ephemeral resources, and 1.11 or later for write-only arguments.
+- The AWS provider 6.x.
+- For `local-exec`, the `psql` or `mysql` client on the machine that runs Terraform, and a network path from that machine to the database.
 
-While Terraform can create the RDS instance, you need additional tooling to populate it.
+## How Do I Apply SQL Scripts to an RDS Database With Terraform?
 
-## Method 1: Using null_resource With local-exec
+Terraform manages infrastructure through provider APIs, and the RDS API cannot run SQL. You have three options:
 
-The simplest approach uses a `null_resource` with a `local-exec` provisioner to run SQL scripts:
+| Option                             | Good for                                 | Watch out for                                                   |
+| ---------------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| `terraform_data` with `local-exec` | A one-time bootstrap script              | Needs network access to the database from the Terraform machine |
+| A database provider                | Databases, roles and grants as resources | The provider needs the database to exist before it can plan     |
+| A migration tool after the apply   | Schema changes over time                 | One more step in the pipeline                                   |
+
+### Option 1: Run psql From terraform_data
+
+`terraform_data` (built into Terraform 1.4 and later, and the replacement for `null_resource`) runs a provisioner after the database exists. `triggers_replace` makes it run again when the script changes:
 
 ```hcl
-resource "aws_db_instance" "main" {
-  identifier        = "myapp-db"
-  engine            = "postgres"
-  engine_version    = "15.3"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-
-  db_name  = "appdb"
-  username = "dbadmin"
-  password = var.db_password
-
-  publicly_accessible = false
-  skip_final_snapshot = true
+variable "db_admin_password" {
+  type      = string
+  sensitive = true
+  ephemeral = true # Terraform 1.10+: never written to the plan or state
 }
 
-# Wait for database to be ready and run SQL
-resource "null_resource" "db_setup" {
-  depends_on = [aws_db_instance.main]
+resource "aws_db_instance" "main" {
+  identifier          = "app-db"
+  engine              = "postgres"
+  engine_version      = "17" # a major version; RDS picks the default minor version
+  instance_class      = "db.t4g.micro"
+  allocated_storage   = 20
+  db_name             = "app"
+  username            = "dbadmin"
+  password_wo         = var.db_admin_password
+  password_wo_version = 1
+  publicly_accessible = false
+  skip_final_snapshot = true
+  # db_subnet_group_name and vpc_security_group_ids omitted here
+}
 
-  triggers = {
-    # Re-run if the SQL file changes
-    sql_hash = filemd5("${path.module}/init.sql")
-  }
+resource "terraform_data" "db_bootstrap" {
+  triggers_replace = filesha256("${path.module}/sql/bootstrap.sql")
 
   provisioner "local-exec" {
-    command = <<-EOT
-      psql "postgresql://${aws_db_instance.main.username}:${var.db_password}@${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}" \
-        -f ${path.module}/init.sql
-    EOT
+    command = "psql -v ON_ERROR_STOP=1 -f ${path.module}/sql/bootstrap.sql"
+
+    environment = {
+      PGHOST     = aws_db_instance.main.address
+      PGPORT     = aws_db_instance.main.port
+      PGDATABASE = aws_db_instance.main.db_name
+      PGUSER     = aws_db_instance.main.username
+      PGPASSWORD = var.db_admin_password
+      PGSSLMODE  = "require"
+    }
   }
 }
 ```
 
-The SQL file might contain:
+Details that matter:
+
+- **Pass the password in `environment`, not in `command`.** A password in the command line shows up in the process list. Because the variable is sensitive, Terraform also hides the provisioner output: `(output suppressed due to sensitive, ephemeral value in config)`. Set the value from your CI secret store as `TF_VAR_db_admin_password`.
+- **Use `address` and `port` separately.** `endpoint` is `address:port`, which is not a valid host name.
+- **`ON_ERROR_STOP=1` makes psql exit with an error** when a statement fails. Without it, psql runs the rest of the file and reports success, and Terraform marks the bootstrap as done.
+- **No sleep is needed.** `aws_db_instance` finishes only when the instance is available.
+- **The script must be safe to run twice,** because a change to the file runs it again:
 
 ```sql
--- init.sql
-CREATE TABLE IF NOT EXISTS users (
-  id SERIAL PRIMARY KEY,
-  username VARCHAR(100) NOT NULL UNIQUE,
-  email VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- sql/bootstrap.sql
+CREATE SCHEMA IF NOT EXISTS app;
+
+CREATE TABLE IF NOT EXISTS app.users (
+  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  email      text NOT NULL UNIQUE,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-
--- Create a read-only user
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'readonly') THEN
-    CREATE USER readonly WITH PASSWORD 'changeme';
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_readonly') THEN
+    CREATE ROLE app_readonly NOLOGIN;
   END IF;
 END
 $$;
 
-GRANT CONNECT ON DATABASE appdb TO readonly;
-GRANT USAGE ON SCHEMA public TO readonly;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly;
+GRANT USAGE ON SCHEMA app TO app_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA app TO app_readonly;
 ```
 
-The `CREATE TABLE IF NOT EXISTS` and conditional user creation make the script idempotent.
+Keep passwords out of SQL files in Git. The script creates a role without a login, and the login users get their passwords from a separate step.
 
-## Method 2: Using the PostgreSQL Provider
+The provisioner runs on the machine that runs Terraform. For a private database, that is a CI runner inside the VPC, or a port forward through a bastion or AWS Systems Manager. If neither is possible, run the SQL from a Lambda function inside the VPC and call it with the `aws_lambda_invocation` resource, which invokes the function during the apply and again when its `triggers` change.
 
-The community PostgreSQL provider offers Terraform-native database management:
+### Option 2: Manage Roles and Grants With a Database Provider
+
+For users, databases and grants, a provider is better than a script: each object is a resource in the state, Terraform shows changes in the plan, and removing a block removes the object. For PostgreSQL, the common one is `cyrilgdn/postgresql`:
 
 ```hcl
 terraform {
   required_providers {
     postgresql = {
       source  = "cyrilgdn/postgresql"
-      version = "~> 1.21"
+      version = "~> 1.25"
     }
   }
 }
 
-resource "aws_db_instance" "main" {
-  identifier        = "myapp-db"
-  engine            = "postgres"
-  engine_version    = "15.3"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-
-  db_name  = "appdb"
-  username = "dbadmin"
-  password = var.db_password
-
-  publicly_accessible = false
-  skip_final_snapshot = true
-}
-
-# Configure the PostgreSQL provider
 provider "postgresql" {
-  host     = aws_db_instance.main.address
-  port     = aws_db_instance.main.port
-  username = aws_db_instance.main.username
-  password = var.db_password
-  database = aws_db_instance.main.db_name
-
-  sslmode = "require"
+  host      = var.db_host
+  port      = 5432
+  database  = "app"
+  username  = "dbadmin"
+  password  = var.db_admin_password
+  sslmode   = "require"
+  superuser = false # the RDS master user is not a PostgreSQL superuser
 }
 
-# Create additional database
-resource "postgresql_database" "app_reporting" {
-  name = "app_reporting"
-}
-
-# Create users
-resource "postgresql_role" "readonly" {
-  name     = "readonly"
-  login    = true
-  password = var.readonly_password
-}
-
-resource "postgresql_role" "app_user" {
+resource "postgresql_role" "app" {
   name     = "app_user"
   login    = true
-  password = var.app_password
+  password = var.app_db_password
 }
 
-# Grant permissions
-resource "postgresql_grant" "readonly_tables" {
-  database    = aws_db_instance.main.db_name
-  role        = postgresql_role.readonly.name
-  schema      = "public"
+resource "postgresql_grant" "app_tables" {
+  database    = "app"
+  role        = postgresql_role.app.name
+  schema      = "app"
   object_type = "table"
-  privileges  = ["SELECT"]
-}
-
-# Execute arbitrary SQL
-resource "postgresql_schema" "app" {
-  name = "app"
-}
-
-# For complex schema, use postgresql_database or create via script
-resource "null_resource" "schema_setup" {
-  depends_on = [postgresql_database.app_reporting]
-
-  triggers = {
-    schema_version = filemd5("${path.module}/schema.sql")
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      psql "postgresql://${aws_db_instance.main.username}:${var.db_password}@${aws_db_instance.main.endpoint}/${postgresql_database.app_reporting.name}" \
-        -f ${path.module}/schema.sql
-    EOT
-  }
+  privileges  = ["SELECT", "INSERT", "UPDATE", "DELETE"]
 }
 ```
 
-This provider is more idempotent than raw SQL execution and tracks state properly.
+Two things to know:
 
-## Method 3: Using MySQL Provider
+- **Put this in a separate root folder**, applied after the folder that creates the RDS instance. A provider that is configured with attributes of a resource from the same configuration cannot connect at plan time when that resource does not exist yet, and Terraform's documentation advises against that pattern.
+- **Set `superuser = false` on RDS.** The provider otherwise uses commands that only a real superuser may run.
 
-For MySQL/MariaDB RDS instances:
+`password` on `postgresql_role` is stored in the state. Mark the variable `sensitive`, and restrict who can read the state. For MySQL and MariaDB, the `petoju/mysql` provider has the same kind of resources (`mysql_user`, `mysql_grant`, `mysql_database`).
 
-```hcl
-terraform {
-  required_providers {
-    mysql = {
-      source  = "petoju/mysql"
-      version = "~> 3.0"
-    }
-  }
-}
+### Option 3: Run Migrations After the Apply
 
-resource "aws_db_instance" "main" {
-  identifier        = "myapp-mysql"
-  engine            = "mysql"
-  engine_version    = "8.0"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-
-  db_name  = "appdb"
-  username = "admin"
-  password = var.db_password
-
-  publicly_accessible = false
-  skip_final_snapshot = true
-}
-
-provider "mysql" {
-  endpoint = aws_db_instance.main.endpoint
-  username = aws_db_instance.main.username
-  password = var.db_password
-}
-
-# Create database
-resource "mysql_database" "app" {
-  name = "application"
-}
-
-# Create users
-resource "mysql_user" "app_user" {
-  user               = "appuser"
-  host               = "%"
-  plaintext_password = var.app_password
-}
-
-# Grant privileges
-resource "mysql_grant" "app_user" {
-  user       = mysql_user.app_user.user
-  host       = mysql_user.app_user.host
-  database   = mysql_database.app.name
-  privileges = ["SELECT", "INSERT", "UPDATE", "DELETE"]
-}
-
-# Run initialization SQL
-resource "null_resource" "init_schema" {
-  depends_on = [mysql_database.app]
-
-  triggers = {
-    schema_version = filemd5("${path.module}/init.sql")
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      mysql -h${aws_db_instance.main.address} \
-        -u${aws_db_instance.main.username} \
-        -p${var.db_password} \
-        ${mysql_database.app.name} < ${path.module}/init.sql
-    EOT
-  }
-}
-```
-
-## Method 4: Using a Bastion Host
-
-When RDS isn't publicly accessible, run SQL through a bastion:
-
-```hcl
-resource "aws_instance" "bastion" {
-  ami           = var.bastion_ami
-  instance_type = "t3.micro"
-  subnet_id     = aws_subnet.public.id
-
-  vpc_security_group_ids = [aws_security_group.bastion.id]
-
-  # Install PostgreSQL client
-  user_data = <<-EOF
-    #!/bin/bash
-    yum install -y postgresql15
-  EOF
-
-  tags = {
-    Name = "bastion"
-  }
-}
-
-resource "aws_db_instance" "main" {
-  identifier             = "myapp-db"
-  engine                 = "postgres"
-  instance_class         = "db.t3.micro"
-  allocated_storage      = 20
-  db_name                = "appdb"
-  username               = "dbadmin"
-  password               = var.db_password
-  db_subnet_group_name   = aws_db_subnet_group.main.name
-  vpc_security_group_ids = [aws_security_group.rds.id]
-  publicly_accessible    = false
-  skip_final_snapshot    = true
-}
-
-# Run SQL via bastion
-resource "null_resource" "db_setup" {
-  depends_on = [aws_db_instance.main, aws_instance.bastion]
-
-  connection {
-    type        = "ssh"
-    host        = aws_instance.bastion.public_ip
-    user        = "ec2-user"
-    private_key = file(var.ssh_private_key_path)
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/init.sql"
-    destination = "/tmp/init.sql"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "PGPASSWORD=${var.db_password} psql -h ${aws_db_instance.main.address} -U ${aws_db_instance.main.username} -d ${aws_db_instance.main.db_name} -f /tmp/init.sql"
-    ]
-  }
-}
-```
-
-This connects to the bastion, copies the SQL file, and executes it against the private RDS instance.
-
-## Method 5: Using Lambda for Database Initialization
-
-Deploy a Lambda function that runs migrations:
-
-```hcl
-# Lambda function for database initialization
-resource "aws_lambda_function" "db_init" {
-  filename         = "lambda_function.zip"
-  function_name    = "db-init"
-  role            = aws_iam_role.lambda.arn
-  handler         = "index.handler"
-  runtime         = "python3.11"
-  timeout         = 300
-  source_code_hash = filebase64sha256("lambda_function.zip")
-
-  vpc_config {
-    subnet_ids         = aws_subnet.private[*].id
-    security_group_ids = [aws_security_group.lambda.id]
-  }
-
-  environment {
-    variables = {
-      DB_HOST     = aws_db_instance.main.address
-      DB_PORT     = aws_db_instance.main.port
-      DB_NAME     = aws_db_instance.main.db_name
-      DB_USER     = aws_db_instance.main.username
-      DB_PASSWORD = var.db_password
-    }
-  }
-}
-
-# Trigger the Lambda after RDS is created
-resource "null_resource" "invoke_db_init" {
-  depends_on = [aws_lambda_function.db_init, aws_db_instance.main]
-
-  triggers = {
-    lambda_version = aws_lambda_function.db_init.version
-    sql_hash       = filemd5("${path.module}/migrations/init.sql")
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      aws lambda invoke \
-        --function-name ${aws_lambda_function.db_init.function_name} \
-        --payload '{"action": "initialize"}' \
-        response.json
-    EOT
-  }
-}
-```
-
-The Lambda function code:
-
-```python
-# lambda_function.py
-import os
-import psycopg2
-
-def handler(event, context):
-    conn = psycopg2.connect(
-        host=os.environ['DB_HOST'],
-        port=os.environ['DB_PORT'],
-        database=os.environ['DB_NAME'],
-        user=os.environ['DB_USER'],
-        password=os.environ['DB_PASSWORD']
-    )
-
-    cursor = conn.cursor()
-
-    # Read and execute SQL
-    with open('init.sql', 'r') as f:
-        sql = f.read()
-        cursor.execute(sql)
-
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return {'statusCode': 200, 'body': 'Database initialized'}
-```
-
-## Method 6: Using Flyway for Migrations
-
-Integrate Flyway for versioned migrations:
-
-```hcl
-resource "aws_db_instance" "main" {
-  identifier        = "myapp-db"
-  engine            = "postgres"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-  db_name           = "appdb"
-  username          = "dbadmin"
-  password          = var.db_password
-  skip_final_snapshot = true
-}
-
-# Run Flyway migrations
-resource "null_resource" "flyway_migrate" {
-  depends_on = [aws_db_instance.main]
-
-  triggers = {
-    # Re-run when any migration file changes
-    migrations_hash = sha256(join("", [
-      for f in fileset("${path.module}/migrations", "*.sql") :
-      filemd5("${path.module}/migrations/${f}")
-    ]))
-  }
-
-  provisioner "local-exec" {
-    command = <<-EOT
-      flyway \
-        -url=jdbc:postgresql://${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name} \
-        -user=${aws_db_instance.main.username} \
-        -password=${var.db_password} \
-        -locations=filesystem:${path.module}/migrations \
-        migrate
-    EOT
-  }
-}
-```
-
-Your migrations directory:
-
-```
-migrations/
-├── V1__initial_schema.sql
-├── V2__add_users_table.sql
-└── V3__add_indexes.sql
-```
-
-Flyway tracks which migrations have run and only applies new ones.
-
-## Method 7: Using Terraform's file Provisioner With Remote Connection
-
-For cases where you need more control:
-
-```hcl
-resource "aws_db_instance" "main" {
-  identifier        = "myapp-db"
-  engine            = "postgres"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-  db_name           = "appdb"
-  username          = "dbadmin"
-  password          = var.db_password
-  publicly_accessible = true  # Only for initial setup
-  skip_final_snapshot = true
-}
-
-# Wait for database to be available
-resource "time_sleep" "wait_for_db" {
-  depends_on = [aws_db_instance.main]
-  create_duration = "60s"
-}
-
-resource "null_resource" "db_migration" {
-  depends_on = [time_sleep.wait_for_db]
-
-  triggers = {
-    migration_version = var.migration_version
-    sql_files = join(",", [
-      for f in fileset("${path.module}/sql", "*.sql") :
-      filemd5("${path.module}/sql/${f}")
-    ])
-  }
-
-  provisioner "local-exec" {
-    command = "${path.module}/scripts/run-migrations.sh"
-
-    environment = {
-      DB_HOST     = aws_db_instance.main.address
-      DB_PORT     = aws_db_instance.main.port
-      DB_NAME     = aws_db_instance.main.db_name
-      DB_USER     = aws_db_instance.main.username
-      DB_PASSWORD = var.db_password
-      SQL_DIR     = "${path.module}/sql"
-    }
-  }
-}
-```
-
-The migration script:
+Schema changes that happen with application releases belong to a migration tool such as Flyway, Liquibase, sqitch or the migrations of your framework. Those tools record which migrations ran, so each one runs once. Let Terraform output the connection details and let the pipeline run the tool after `terraform apply`:
 
 ```bash
-#!/bin/bash
-# scripts/run-migrations.sh
+terraform apply -input=false tfplan
 
-set -e
-
-echo "Running database migrations..."
-
-for sql_file in "$SQL_DIR"/*.sql; do
-  echo "Executing: $sql_file"
-  psql "postgresql://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME" \
-    -f "$sql_file"
-done
-
-echo "Migrations complete!"
+export FLYWAY_URL="jdbc:postgresql://$(terraform output -raw db_address):5432/app?sslmode=require"
+export FLYWAY_USER=dbadmin
+export FLYWAY_PASSWORD="$DB_ADMIN_PASSWORD"   # from the CI secret store
+flyway -locations=filesystem:./migrations migrate
 ```
 
-## Handling Secrets Securely
+This keeps Terraform about infrastructure, and a failed migration does not leave a half-applied Terraform run.
 
-Never hardcode database passwords. Use AWS Secrets Manager:
+Avoid two older patterns: `time_sleep` before the SQL step (the RDS resource already waits for the instance), and `publicly_accessible = true` "only for the setup", which is easy to forget and exposes the database.
+
+## How Do I Retrieve a Secret From AWS Secrets Manager in Terraform?
+
+Use the `aws_secretsmanager_secret_version` data source and read `secret_string`. For a JSON secret, decode it with `jsondecode()`:
 
 ```hcl
-# Store the password in Secrets Manager
-resource "aws_secretsmanager_secret" "db_password" {
-  name = "rds-db-password"
+data "aws_secretsmanager_secret_version" "api" {
+  secret_id = "prod/app/api" # the name or the ARN
 }
 
-resource "aws_secretsmanager_secret_version" "db_password" {
-  secret_id     = aws_secretsmanager_secret.db_password.id
-  secret_string = var.db_password
+locals {
+  api = jsondecode(data.aws_secretsmanager_secret_version.api.secret_string)
+}
+
+resource "aws_ssm_parameter" "api_user" {
+  name  = "/app/api-user"
+  type  = "String"
+  value = local.api.username
+}
+```
+
+You do not need the separate `aws_secretsmanager_secret` data source just to find the ID: `secret_id` accepts the name. Do not put the decoded secret in an `output` without `sensitive = true`, and do not print it in a `local-exec` command.
+
+The catch: Terraform stores everything a data source returns in the state file. Anyone who can read the state can read the secret, `sensitive` only hides it in plan output.
+
+### Keep the Secret Out of the State With an Ephemeral Resource
+
+Terraform 1.10 added ephemeral resources. The AWS provider has an ephemeral version of `aws_secretsmanager_secret_version`. Terraform reads it during the run and never writes it to the plan or the state:
+
+```hcl
+ephemeral "aws_secretsmanager_secret_version" "db_admin" {
+  secret_id = "prod/app/db-admin"
 }
 
 resource "aws_db_instance" "main" {
-  identifier        = "myapp-db"
-  engine            = "postgres"
-  instance_class    = "db.t3.micro"
-  allocated_storage = 20
-  db_name           = "appdb"
-  username          = "dbadmin"
-  password          = var.db_password
-  skip_final_snapshot = true
-}
-
-# Lambda function retrieves password from Secrets Manager
-resource "aws_lambda_function" "db_init" {
-  # ... configuration ...
-
-  environment {
-    variables = {
-      DB_HOST        = aws_db_instance.main.address
-      DB_SECRET_ARN  = aws_secretsmanager_secret.db_password.arn
-    }
-  }
+  # ...
+  username            = "dbadmin"
+  password_wo         = jsondecode(ephemeral.aws_secretsmanager_secret_version.db_admin.secret_string).password
+  password_wo_version = 1 # increase this number to send a new password
 }
 ```
 
-The Lambda code retrieves the password at runtime:
+`password_wo` is a write-only argument (Terraform 1.11 and later). Terraform sends it to AWS and does not keep it. Because Terraform cannot compare a value it does not store, it sends the password again only when `password_wo_version` changes.
 
-```python
-import boto3
-import json
+You can use an ephemeral value in write-only arguments, in provider configuration (for example the `password` of the PostgreSQL provider above), in provisioner and connection blocks, and in ephemeral variables and outputs. Terraform rejects it in a normal resource argument, because that would put it in the state:
 
-def get_db_password():
-    client = boto3.client('secretsmanager')
-    response = client.get_secret_value(SecretId=os.environ['DB_SECRET_ARN'])
-    return json.loads(response['SecretString'])
+```text
+Error: Invalid use of ephemeral value
+
+Ephemeral values are not valid for "input", because it is not a write-only
+attribute and must be persisted to state.
 ```
 
-## Idempotency Best Practices
+To create a password without storing it, the `random` provider has an ephemeral `random_password` (version 3.7 and later). It makes a new value on every run, so write it to the database and to a secret in the same run, and bump both version numbers together:
 
-Make SQL scripts idempotent so they can run multiple times safely:
+```hcl
+ephemeral "random_password" "db" {
+  length  = 32
+  special = false
+}
 
-```sql
--- Use IF NOT EXISTS
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(100) NOT NULL
-);
+resource "aws_secretsmanager_secret" "db" {
+  name = "prod/app/db-admin"
+}
 
--- Conditional user creation
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_user WHERE usename = 'appuser') THEN
-        CREATE USER appuser WITH PASSWORD 'changeme';
-    END IF;
-END
-$$;
+resource "aws_secretsmanager_secret_version" "db" {
+  secret_id                = aws_secretsmanager_secret.db.id
+  secret_string_wo         = ephemeral.random_password.db.result
+  secret_string_wo_version = 1
+}
 
--- Safe index creation
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-
--- Safe column addition
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='users' AND column_name='email'
-    ) THEN
-        ALTER TABLE users ADD COLUMN email VARCHAR(255);
-    END IF;
-END
-$$;
+resource "aws_db_instance" "main" {
+  # ...
+  password_wo         = ephemeral.random_password.db.result
+  password_wo_version = 1
+}
 ```
 
-## When to Avoid SQL in Terraform
+When you change both versions to 2, the same apply sends one new password to RDS and to Secrets Manager. If only one of them changes, the two copies no longer match.
 
-Terraform isn't always the right tool for database changes:
+### Let RDS Manage the Master Password
 
-- **Application migrations**: Use application deployment tools (Liquibase, Flyway, Rails migrations)
-- **Frequent schema changes**: Use dedicated migration tools
-- **Production databases**: Prefer manual approval processes
-- **Large data imports**: Use dedicated ETL tools
+The simplest option for the master user is to not handle the password at all:
 
-Terraform works best for:
-- Initial database setup
-- Creating databases and users
-- Setting up replication
-- Infrastructure-level configuration
+```hcl
+resource "aws_db_instance" "main" {
+  # ...
+  username                    = "dbadmin"
+  manage_master_user_password = true
+}
 
-While Terraform can execute SQL against RDS, combining it with database-specific providers or migration tools provides better idempotency and state management. Choose the approach that fits your deployment model - simple `local-exec` for basic setup, dedicated providers for user and database management, or external migration tools for complex schema evolution.
+output "db_master_secret_arn" {
+  value = aws_db_instance.main.master_user_secret[0].secret_arn
+}
+```
+
+RDS creates the password, stores it in Secrets Manager and rotates it (every 7 days by default). Applications and migration tools read it from the secret ARN at runtime. You cannot combine this with `password` or `password_wo`.
+
+The [keep secrets out of state section](/guides/introduction-to-terraform/10-best-practices-and-production-patterns#h2-keep-secrets-out-of-state) of our Terraform guide compares these options in more detail.
+
+## Related Resources
+
+- [RDS databases](/guides/introduction-to-aws/06-rds-databases) in our AWS guide, including [how to create an application user](/guides/introduction-to-aws/06-rds-databases#h2-create-an-application-user).
+- [HashiCorp Vault Secrets Management Checklist](/checklists/hashicorp-vault-secrets-management) if you keep secrets in Vault instead.
+- [Ephemeral variables](/guides/introduction-to-terraform/06-variables-and-outputs#h2-ephemeral-variables) in our Terraform guide.
+- [How to Set Up Fargate Execution Roles and IAM Policies](/posts/terraform-fargate-task-definition-execution-role) for passing secrets to containers.
+- [SQL terminal simulator](/games/sql-terminal-simulator) to practice the SQL side.

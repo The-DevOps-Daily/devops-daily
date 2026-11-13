@@ -6,8 +6,8 @@ category:
   slug: 'terraform'
 date: '2026-08-25'
 publishedAt: '2026-08-25T09:00:00Z'
-updatedAt: '2026-11-05T09:00:00Z'
-readingTime: '14 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -31,7 +31,7 @@ This guide collects the whole value pipeline in one place, including the errors 
 - `for_each` needs a map or set of strings **known at plan time**; resource-derived values trigger `Invalid for_each argument`.
 - With `count`, output all instances with the splat `[*]`; with `for_each`, use `values()`.
 - `sensitive = true` hides values in plans; `terraform output -json` or `nonsensitive()` reveals them deliberately.
-- Backend blocks and provider `required_version` run before variables exist, hence `Variables may not be used here` during `terraform init`.
+- The backend block, `required_version` and provider aliases are read before variables exist, hence `Variables not allowed` during `terraform init`. Since Terraform 1.15, `const` variables work in module `source`, and since 1.17 in `required_providers`.
 
 ## Prerequisites
 
@@ -97,7 +97,7 @@ locals {
 }
 ```
 
-Two caveats: `file()` only reads files that exist before the run starts (it is not part of the dependency graph), and when the data must come from a *program* rather than a file, the [`external` data source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external) runs any executable that prints JSON and exposes its result.
+Two caveats: `file()` only reads files that exist before the run starts (it is not part of the dependency graph), and when the data must come from a _program_ rather than a file, the [`external` data source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external) runs any executable that prints JSON and exposes its result.
 
 ## Locals: the answer to "variables within variables"
 
@@ -268,7 +268,7 @@ cannot be determined until apply...
 
 1. **Keys derived from another resource's attributes.** `for_each = toset(aws_instance.web[*].id)` cannot work: the IDs do not exist until apply. Key on something you already know (names, the input variable itself) and reference the resource attributes in the body instead.
 2. **Wrong type.** `for_each` takes a map or a set of strings, not a list. Wrap lists: `for_each = toset(var.names)`.
-3. **`null`.** An optional variable that arrives as `null` is invalid, while an *empty* collection is fine (it just creates zero instances). Normalize: `for_each = var.names == null ? toset([]) : toset(var.names)`, keeping both branches the same type.
+3. **`null`.** An optional variable that arrives as `null` is invalid, while an _empty_ collection is fine (it just creates zero instances). Normalize: `for_each = var.names == null ? toset([]) : toset(var.names)`, keeping both branches the same type.
 
 The fix is almost always restating the loop over input data rather than over computed results:
 
@@ -310,9 +310,9 @@ output "user_arns" {
 }
 ```
 
-The same pattern applies to [module](/posts/organize-terraform-modules-multiple-environments) outputs: a module called with `for_each` is addressed as a map, and `values(module.env)[*].vpc_id` flattens it.
+The same pattern applies to [module](/posts/terraform-module-outputs-inputs-and-sources#h2-modules-with-for_each-outputs-become-a-map) outputs: a module called with `for_each` is addressed as a map, and `values(module.env)[*].vpc_id` flattens it.
 
-**Sensitive outputs** show as `(sensitive value)` in plans and in the full `terraform output` listing; asking for one *by name* (or with `-raw`/`-json`) prints it, which is the intended escape hatch rather than a bug. When you legitimately need the value:
+**Sensitive outputs** show as `(sensitive value)` in plans and in the full `terraform output` listing; asking for one _by name_ (or with `-raw`/`-json`) prints it, which is the intended escape hatch rather than a bug. When you legitimately need the value:
 
 ```bash
 terraform output -json db_password | jq -r    # -json bypasses redaction
@@ -322,7 +322,31 @@ Or, inside the configuration, wrap with `nonsensitive()` when you can justify th
 
 ## Two errors that are not about your syntax
 
-**`Variables may not be used here`** during `terraform init` means you used `var.*` in a place Terraform evaluates *before* variables exist: the `backend` block, `required_version`, or version constraints. Note the scope: ordinary **provider arguments are fine with variables** (`region = var.aws_region` is perfectly legal, as is `terraform.workspace`, and most providers also read their own environment variables like `AWS_REGION` if you leave the argument out entirely). The static zone is the backend and version constraints. For backends, the escape hatch is partial configuration, either from a file or inline:
+### "Variables not allowed" in the backend, required_version or a provider alias
+
+`Variables not allowed` (with the detail `Variables may not be used here.`) means you used `var.*` or `local.*` in a place that Terraform reads _before_ it evaluates variables. On Terraform 1.15.8, a variable in the S3 backend stops `terraform init` like this:
+
+```text
+Error: Variables not allowed
+
+  on main.tf line 7, in terraform:
+   7:     bucket = var.state_bucket
+
+Variables may not be used here.
+```
+
+The places that need literal values:
+
+- **The `backend` and `cloud` blocks**, because Terraform must find the state before it can do anything else.
+- **`required_version`**, because Terraform checks it before it reads the rest of the configuration.
+- **A provider's `alias`**, because aliases are names in the configuration, not values.
+- **The `provider` meta-argument of a resource.** `provider = var.west ? aws.west : aws.east` fails with `Invalid provider configuration reference`, because Terraform must know which provider manages a resource before it evaluates expressions.
+
+Two places that used to be on this list are not anymore. Terraform 1.15 added `const = true` for variables: const variables, and locals built from literals and const variables, work in a module's `source` and `version`. A normal variable there fails with `Only literal values and const variables can be evaluated during init.` Terraform 1.17 extended the same rule to `source` and `version` in `required_providers`. A const variable must have a value that is known at `init`, from a default, `-var` or a tfvars file. On Terraform 1.15.8 we checked that a const variable works in a module source and still fails in a backend block.
+
+Ordinary **provider arguments are fine with variables** (`region = var.aws_region` is perfectly legal, as is `terraform.workspace`, and most providers also read their own environment variables like `AWS_REGION` if you leave the argument out entirely). OpenTofu goes further: since OpenTofu 1.8, variables and locals also work in its backend block, which is one of the [differences between Terraform and OpenTofu](/posts/opentofu-2026-switch-from-terraform).
+
+For Terraform backends, the escape hatch is partial configuration, either from a file or inline:
 
 ```bash
 terraform init -backend-config=backend-prod.hcl
@@ -333,9 +357,29 @@ terraform init \
   -backend-config="region=us-east-1"
 ```
 
-Beyond that: a wrapper like Terragrunt, or accepting the duplication. No syntax makes `bucket = var.state_bucket` legal inside a backend block.
+Beyond that: a wrapper like Terragrunt, or accepting the duplication. No syntax makes `bucket = var.state_bucket` legal inside a Terraform backend block.
 
-**Account-specific values you did not declare.** Needing the AWS account ID everywhere tempts people to add `variable "aws_account_id"`. Do not: it is derivable, and derived beats declared because it cannot drift from reality:
+To choose a provider configuration per resource, make the choice in `count` instead of in `provider`:
+
+```hcl
+resource "aws_s3_bucket" "logs_east" {
+  provider = aws.us_east_1
+  count    = var.use_west_region ? 0 : 1
+  bucket   = "acme-logs-east"
+}
+
+resource "aws_s3_bucket" "logs_west" {
+  provider = aws.us_west_2
+  count    = var.use_west_region ? 1 : 0
+  bucket   = "acme-logs-west"
+}
+```
+
+With the AWS provider 6.x you often need no second provider block at all: most resources accept a `region` argument, and that argument takes expressions like any other, for example `region = var.use_west_region ? "us-west-2" : "us-east-1"`.
+
+### Account-specific values you did not declare
+
+Needing the AWS account ID everywhere tempts people to add `variable "aws_account_id"`. Do not: it is derivable, and derived beats declared because it cannot drift from reality:
 
 ```hcl
 data "aws_caller_identity" "current" {}

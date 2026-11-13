@@ -58,7 +58,7 @@ resource "aws_acm_certificate" "cdn" {
 }
 ```
 
-Inside a module, leave out provider blocks and let the caller pass configurations like this one in ([share providers and variables across modules](/posts/terraform-provider-variable-sharing-modules)).
+Inside a module, leave out provider blocks and let the caller pass configurations like this one in ([share providers and variables across modules](/posts/terraform-module-outputs-inputs-and-sources#h2-how-do-i-share-providers-and-variables-across-terraform-modules)).
 
 The provider's documentation on the [Terraform Registry](https://registry.terraform.io/providers/hashicorp/aws/latest/docs) lists every resource type, its arguments (what you set) and its attributes (what you can read after creation). Keep it open while you write code.
 
@@ -431,7 +431,7 @@ The rules that follow:
 - Use **`for_each`** whenever the copies have an identity (a name, a region, a user). Keys must be known at plan time, so build them from variables and literals, not from attributes of resources that do not exist yet.
 - Use **`count`** for "N identical things" and for the on/off switch `count = var.create_dns ? 1 : 0`. Refer to the optional resource with `one(aws_route53_record.www[*].fqdn)` or `aws_route53_record.www[0]`.
 - To switch an existing resource from `count` to `for_each` without recreating anything, use `moved` blocks ([Part 5](/guides/introduction-to-terraform/05-state-management#h3-rename-with-a-moved-block)).
-- More patterns are in [How to Reference Resources Created With for_each](/posts/terraform-referencing-for-each-resources) and [How to Get List Index When Using for_each](/posts/terraform-get-list-index-for-each).
+- More patterns are in [How to Reference Resources Created With for_each](/posts/terraform-referencing-for-each-resources) and [How to get the list index when using for_each](/posts/terraform-referencing-for-each-resources#h2-how-do-i-get-the-list-index-when-using-for_each).
 
 ### lifecycle
 
@@ -691,14 +691,14 @@ A data source that looks up one object, such as `aws_vpc` or `aws_ami`, fails th
 - **Filter precisely.** `most_recent = true` plus a name pattern and an `owners` list for images; tags or names for networks.
 - **Avoid data sources for things in the same configuration.** If Terraform creates the VPC, refer to `aws_vpc.main` directly. A data source that reads it back depends on timing and can fail on the first apply.
 
-When a data source depends on a resource that changes in the same plan, Terraform reads it during apply instead and shows it with `<=` in the plan. The post [How are data sources used in Terraform?](/posts/how-are-data-sources-used-in-terraform) has more examples.
+When a data source depends on a resource that changes in the same plan, Terraform reads it during apply instead and shows it with `<=` in the plan. [How are data sources used in Terraform?](/posts/terraform-best-practices#h2-how-are-data-sources-used-in-terraform) has more examples.
 
 ## Targeting and Forcing Replacement
 
 Two flags change what one run does without changing the code:
 
 - `terraform apply -replace=aws_instance.web` replaces one object even though nothing changed, for example a server in a bad state. It replaces the old `terraform taint` command.
-- `terraform apply -target=aws_instance.web` limits the run to one resource and its dependencies. Terraform prints a warning every time, because the rest of the configuration is not checked. Use it to recover from errors, not as a habit. The post [I would like to run Terraform only for a specific resource](/posts/i-would-like-to-run-terraform-only-for-a-specific-resource) covers the details.
+- `terraform apply -target=aws_instance.web` limits the run to one resource and its dependencies. Terraform prints a warning every time, because the rest of the configuration is not checked. Use it to recover from errors, not as a habit. [How to run Terraform only for a specific resource](/posts/terraform-run-init-from-different-folder#h2-how-do-i-run-terraform-only-for-a-specific-resource) covers the details.
 
 ## Common Mistakes
 
@@ -722,5 +722,5 @@ In [Part 5](/guides/introduction-to-terraform/05-state-management) you look insi
 
 - [AWS VPC with Terraform](/exercises/terraform-aws-vpc) exercise
 - [SSH keys for servers, without the private key in state](/guides/introduction-to-terraform/10-best-practices-and-production-patterns#h3-ssh-keys-for-servers)
-- [Can Terraform Be Used to Provision On-Premises Servers?](/posts/terraform-on-premises-servers)
+- [Can Terraform Be Used to Provision On-Premises Servers?](/posts/should-terraform-lock-be-in-your-gitignore#h2-can-terraform-provision-on-premises-servers)
 - [Build a Terraform Provider for Your API with the Plugin Framework](/posts/build-a-terraform-provider-plugin-framework)

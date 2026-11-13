@@ -277,5 +277,5 @@ Next: [Managing Your AWS Costs](/guides/introduction-to-aws/10-cost-management),
 ## Keep Learning
 
 - [AWS Lambda cold start optimization flashcards](/flashcards/aws-lambda-cold-start-optimization)
-- [Use Terraform to set up a Lambda function triggered by a scheduled event source](/posts/use-terraform-to-set-up-a-lambda-function-triggered-by-a-scheduled-event-source)
+- [Use Terraform to set up a Lambda function triggered by a scheduled event source](/posts/terraform-cloudwatch-log-subscription-lambda#h2-how-do-i-run-a-lambda-function-on-a-schedule-with-terraform)
 - [The provided execution role does not have permissions to call DescribeNetworkInterfaces on EC2](/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2)

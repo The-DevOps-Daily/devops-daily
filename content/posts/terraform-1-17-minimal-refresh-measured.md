@@ -43,7 +43,7 @@ That trade is the whole story of this flag. It is a real speed-up, and it is als
 
 ## What the flag does
 
-A refresh reads each resource in the state from the provider's API and records what it finds. [What Does Terraform Refresh Really Do?](/posts/terraform-refresh-explained) covers the basics. `-minimal-refresh` changes which resources get that read.
+A refresh reads each resource in the state from the provider's API and records what it finds. [What does terraform refresh do?](/posts/who-owns-the-terraform-state-file#h3-what-does-terraform-refresh-do) covers the basics. `-minimal-refresh` changes which resources get that read.
 
 The [plan command docs](https://developer.hashicorp.com/terraform/cli/commands/plan) describe it in one line: it "reduces the number of remote API requests by refreshing only resource instances that Terraform plans to change". The implementation is in [PR #38953](https://github.com/hashicorp/terraform/pull/38953), which spells out the details:
 

@@ -68,7 +68,7 @@ terraform {
 
 The lock file records the exact version and checksums `init` chose. Commit it, and let CI install with `terraform init -lockfile=readonly` so nothing changes unless a pull request changes the lock file.
 
-The lock file holds two kinds of checksums. `zh:` entries are the SHA-256 sums of the release zip files for every platform, copied from the registry's signed checksum list. `h1:` entries are hashes of the unpacked package, and `init` only records them for the platform it ran on. Some installs record or check only `h1:` hashes, for example installs from a provider mirror or from the plugin cache, and then a lock file made on a Mac can fail on a Linux CI runner ([the checksum mismatch error and its fixes](/posts/terraform-failed-install-provider-checksums-mismatch)). `terraform providers lock` adds `h1:` hashes for every platform your team and CI use. Here it runs in a small local project with this `versions.tf`, after a `terraform init` on a Linux arm64 machine:
+The lock file holds two kinds of checksums. `zh:` entries are the SHA-256 sums of the release zip files for every platform, copied from the registry's signed checksum list. `h1:` entries are hashes of the unpacked package, and `init` only records them for the platform it ran on. Some installs record or check only `h1:` hashes, for example installs from a provider mirror or from the plugin cache, and then a lock file made on a Mac can fail on a Linux CI runner ([the checksum mismatch error and its fixes](/posts/should-terraform-lock-be-in-your-gitignore#h2-how-do-i-fix-does-not-match-checksums-from-dependency-lock-file)). `terraform providers lock` adds `h1:` hashes for every platform your team and CI use. Here it runs in a small local project with this `versions.tf`, after a `terraform init` on a Linux arm64 machine:
 
 ```hcl
 terraform {
@@ -641,7 +641,7 @@ That completes the guide. You can now write, test and run Terraform the way prod
 ## Keep Learning
 
 - [Terraform Infrastructure as Code Best Practices](/posts/terraform-best-practices)
-- [How to Retrieve a Secret in Terraform from AWS Secret Manager](/posts/retrieve-secret-terraform-aws-secret-manager)
+- [How to Retrieve a Secret in Terraform from AWS Secret Manager](/posts/terraform-apply-sql-scripts-rds#h2-how-do-i-retrieve-a-secret-from-aws-secrets-manager-in-terraform)
 - [SOC 2 Evidence From GitHub and Terraform](/posts/soc2-evidence-from-github-and-terraform)
 - [Interview question: Infrastructure as Code patterns](/interview-questions/topic/infrastructure#infrastructure-as-code-patterns)
 - [OpenTofu 1.13 Re-Encodes base64gzip and Drops WinRM](/posts/opentofu-1-13-upgrade-base64gzip-winrm)

@@ -70,7 +70,7 @@ Pick your platform. Every option installs the same `terraform` binary.
 
 **Windows.** `winget` and Chocolatey add Terraform to your `PATH`. Open a new terminal afterwards so the change takes effect. The winget package sometimes lags a few days behind a new release.
 
-**Several versions side by side.** If different projects need different Terraform versions, use a version manager such as `tenv`, which installs Terraform, OpenTofu and Terragrunt versions and picks the right one from a `.terraform-version` file or the `required_version` setting. The post [Upgrade Terraform to a Specific Version](/posts/upgrade-terraform-to-specific-version) shows the options.
+**Several versions side by side.** If different projects need different Terraform versions, use a version manager such as `tenv`, which installs Terraform, OpenTofu and Terragrunt versions and picks the right one from a `.terraform-version` file or the `required_version` setting. [Install or upgrade to a specific Terraform version](/posts/should-terraform-lock-be-in-your-gitignore#h2-how-do-i-install-or-upgrade-to-a-specific-terraform-version) shows the options.
 
 ## Manual Install With Checksum Verification
 
@@ -394,7 +394,7 @@ Some rules that apply to every platform:
 - **Prefer short-lived credentials.** SSO sessions, `gcloud` user logins and OIDC tokens in CI expire on their own. Long-lived access keys and service account key files are the credentials that leak.
 - **Use environment variables, not provider arguments**, for anything secret. A `token = "..."` line in a provider block is a secret in Git.
 - **In CI, use OpenID Connect (OIDC)** so the pipeline gets temporary cloud credentials without stored keys. [Part 9](/guides/introduction-to-terraform/09-remote-backends-and-collaboration) shows a GitHub Actions example.
-- **Start with broad permissions in a sandbox account, then narrow them.** The post [Determining Minimum AWS Permissions for Terraform](/posts/minimum-aws-permissions-for-terraform) shows how.
+- **Start with broad permissions in a sandbox account, then narrow them.** [Minimum AWS permissions for Terraform](/posts/terraform-fargate-task-definition-execution-role#h2-what-are-the-minimum-aws-permissions-for-terraform) shows how.
 
 ## Your First Cloud Server
 
@@ -519,7 +519,7 @@ Commit `.terraform.lock.hcl`. Older guides told you to ignore it; that is wrong 
 
 **`Failed to query available provider packages` or a timeout during `init`.** Your network blocks `registry.terraform.io` or `releases.hashicorp.com`. Behind a corporate proxy, set `HTTPS_PROXY`. In air-gapped networks, use a provider mirror (`terraform providers mirror` and a `provider_installation` block in the CLI configuration).
 
-**`the cached package ... does not match any of the checksums recorded in the dependency lock file`.** The lock file was created on another operating system or CPU and only has checksums for that platform, or a download was corrupted. Add the missing platforms with `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64 -platform=windows_amd64`. See [How to Fix Terraform Provider Checksum Mismatch Errors](/posts/terraform-failed-install-provider-checksums-mismatch).
+**`the cached package ... does not match any of the checksums recorded in the dependency lock file`.** The lock file was created on another operating system or CPU and only has checksums for that platform, or a download was corrupted. Add the missing platforms with `terraform providers lock -platform=linux_amd64 -platform=darwin_arm64 -platform=windows_amd64`. See [How to fix a provider checksum mismatch](/posts/should-terraform-lock-be-in-your-gitignore#h2-how-do-i-fix-does-not-match-checksums-from-dependency-lock-file).
 
 **`No valid credential sources found` or `401 Unauthorized`.** The provider did not find credentials. Check the environment variables in the shell where you run Terraform, run the platform's "who am I" command (`aws sts get-caller-identity`, `doctl account get`, `gcloud auth list`) and check that the session has not expired.
 
@@ -540,6 +540,6 @@ In [Part 3](/guides/introduction-to-terraform/03-configuration-language-basics) 
 ## Keep Learning
 
 - [Experimenting Locally with Terraform](/posts/experimenting-locally-with-terraform)
-- [How to Execute Terraform Actions Without the Interactive Prompt](/posts/execute-terraform-actions-without-prompt)
-- [Terraform: Failed to install provider, does not match checksums from dependency lock file](/posts/terraform-provider-checksum-mismatch)
+- [How to Execute Terraform Actions Without the Interactive Prompt](/posts/terraform-run-init-from-different-folder#h2-how-do-i-run-terraform-without-the-interactive-prompt)
+- [Terraform: Failed to install provider, does not match checksums from dependency lock file](/posts/should-terraform-lock-be-in-your-gitignore#h2-how-do-i-fix-does-not-match-checksums-from-dependency-lock-file)
 - [Terraform terminal simulator](/games/terraform-terminal-simulator), to practise the commands in your browser

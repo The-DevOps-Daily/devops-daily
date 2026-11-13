@@ -265,6 +265,6 @@ Next: [VPC: Build Your Private Network](/guides/introduction-to-aws/05-vpc-netwo
 ## Keep Learning
 
 - [Free Egress Has Fine Print: S3 vs R2, B2, Wasabi and More](/posts/object-storage-free-egress-fine-print)
-- [How to Create a Folder in an AWS S3 Bucket Using Terraform](/posts/create-folder-in-s3-bucket)
+- [How to Create a Folder in an AWS S3 Bucket Using Terraform](/posts/terraform-read-environment-variables-from-env-file#h2-how-do-i-create-a-folder-in-an-s3-bucket-with-terraform)
 - [Fix common Terraform S3 backend errors](/posts/terraform-state-remove-move-migrate-backend#h3-common-s3-backend-errors)
 - [AWS Cloud Services Quiz](/quizzes/aws-quiz)

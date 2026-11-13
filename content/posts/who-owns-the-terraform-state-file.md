@@ -6,8 +6,8 @@ category:
   slug: 'terraform'
 date: '2026-09-03'
 publishedAt: '2026-09-03T09:00:00Z'
-updatedAt: '2026-09-03T09:00:00Z'
-readingTime: '14 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '19 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -28,8 +28,9 @@ Each of those is a state question, not a syntax question. This post walks throug
 ## TL;DR
 
 - **One writer per state file.** A remote backend with locking is the floor. On S3 that now means `use_lockfile = true`; the DynamoDB lock table is legacy.
+- **A stuck lock is released with `terraform force-unlock <ID>`,** but only after you have checked that the run holding it is gone.
 - **Split state by ownership and failure domain**, not by convenience. Per environment always; per component when different teams or different lifecycles share a file.
-- **Drift is normal.** Run `terraform plan -detailed-exitcode` on a schedule and treat exit code 2 as "something changed, go look". Use `-refresh-only` to record what you observed, then fix code or lifecycle rules so the next plan agrees.
+- **Drift is normal.** Run `terraform plan -detailed-exitcode` on a schedule and treat exit code 2 as "something changed, go look". Use `-refresh-only` (not the deprecated `terraform refresh`) to record what you observed, then fix code or `ignore_changes` so the next plan agrees.
 - **Review the plan, not the diff.** The plan output is the artifact that changes infrastructure. Put it on the pull request, and make the apply run against a plan someone approved.
 - **State is sensitive.** It contains attribute values, including things you did not think of as secrets. Encrypt it, restrict who can read it, and use ephemeral values and write-only arguments to keep secrets out entirely.
 
@@ -73,6 +74,76 @@ Three different things protect you here, and it helps to keep them apart. The **
 :::
 
 The same shape exists on every cloud (Azure Blob with lease-based locking, GCS with native locking). The hosted platforms take the decision away from you: HCP Terraform, Spacelift and env0 put every run behind their own queue, so there is one serialized writer per stack by construction. HCP Terraform also hosts the state; Spacelift and env0 can hold it for you or work against a backend you already own. Digger is different in kind: it runs Terraform inside your existing CI with your backend, and coordinates pull request locks and plan caching from its own component. More on that split in question 4.
+
+### The State Is Locked. How Do I Unlock It?
+
+First find out whether the run that holds the lock is still running. The error tells you who took it and when:
+
+```text
+Error: Error acquiring the state lock
+
+Error message: resource temporarily unavailable
+Lock Info:
+  ID:        2ab78a17-06fc-83e4-d6e7-d8968e9c6f46
+  Path:      terraform.tfstate
+  Operation: OperationTypeApply
+  Who:       dev@devbox
+  Version:   1.17.0
+  Created:   2026-10-23 23:08:28.990847457 +0000 UTC
+```
+
+- **The run is still going** (a colleague's apply, a CI job in another branch). Wait for it, or run your command again with `-lock-timeout=5m` so it waits for you.
+- **The run is gone** (a CI job was cancelled, a laptop lost its network in the middle of an apply). Release the lock with the ID from the error, from the same configuration and workspace:
+
+```bash
+terraform force-unlock 2ab78a17-06fc-83e4-d6e7-d8968e9c6f46
+```
+
+`force-unlock` asks for confirmation (`-force` skips it). It only removes the lock: it does not finish or undo the interrupted apply. Run a plan afterwards, and if the apply died halfway, expect the plan to show what is left. Never release a lock that a live run holds. Two writers at the same time is how state gets corrupted.
+
+With `use_lockfile`, the lock is the `<key>.tflock` object next to the state, and `force-unlock` deletes it. The legacy DynamoDB lock shows up as `ConditionalCheckFailedException`; [How to Fix "Error acquiring the state lock: ConditionalCheckFailedException"](/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception) covers that case. Do not answer a lock error with `-lock=false` on a command that writes state. To make stale locks rare, let CI cancel Terraform with a signal it can handle (Terraform stops cleanly and releases the lock on the first interrupt) instead of killing the runner.
+
+### How Do I Store Azure State in a Different Subscription?
+
+Point the `azurerm` backend at the storage account in the shared subscription, and point the provider at the subscription where the resources live. The two are configured separately:
+
+```hcl
+terraform {
+  backend "azurerm" {
+    storage_account_name = "acmetfstate" # in the shared services subscription
+    container_name       = "tfstate"
+    key                  = "prod/app.tfstate"
+    use_azuread_auth     = true # Microsoft Entra ID, no storage account keys
+  }
+
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
+    }
+  }
+}
+
+provider "azurerm" {
+  features {}
+  subscription_id = "22222222-2222-2222-2222-222222222222" # where the resources are created
+}
+```
+
+With `use_azuread_auth = true`, the backend talks to the storage account's data plane by name, so the state subscription does not matter and the backend needs no `subscription_id`. It needs `subscription_id` (or `ARM_SUBSCRIPTION_ID`) only when it must look something up in the management plane: with `lookup_blob_endpoint = true`, or when it fetches the storage account key through `resource_group_name` because Entra ID auth is off. The provider block is different: azurerm 4.x requires a `subscription_id` there, either in the block or from `ARM_SUBSCRIPTION_ID`.
+
+The identity that runs Terraform needs a data-plane role on the state, and its normal roles on the target subscription:
+
+```bash
+az role assignment create \
+  --assignee "$ARM_CLIENT_ID" \
+  --role "Storage Blob Data Contributor" \
+  --scope "/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/tfstate-rg/providers/Microsoft.Storage/storageAccounts/acmetfstate/blobServices/default/containers/tfstate"
+```
+
+`Contributor` on the state subscription is not enough with Entra ID auth, because it grants no access to blob data. Without Entra ID auth, the backend fetches the account key instead, which needs `Reader` plus `Storage Account Key Operator Service Role` on the storage account: a much wider permission. Locking uses blob leases and works across subscriptions without extra settings.
+
+Keep the subscription IDs and per-environment keys out of the code with partial configuration, `terraform init -backend-config=backend-prod.hcl`. Storage account names must be 3 to 24 lowercase letters and numbers, so `acmetfstateprod` works and `acme-tfstate-prod` does not. To move existing state into the shared account, change the backend settings and run `terraform init -migrate-state`. For resources in several subscriptions from one configuration, add aliased `azurerm` provider blocks with their own `subscription_id`.
 
 ## Question 2: how is state split?
 
@@ -215,6 +286,55 @@ resource "aws_autoscaling_group" "web" {
 
 `ignore_changes` does not stop Terraform from refreshing and recording the attribute. It stops Terraform from planning an update when that attribute differs from the code, which is what you want for values another system legitimately controls.
 
+### What Does terraform refresh Do?
+
+`terraform refresh` reads every resource in the state from the provider's API and writes what it finds to the state. It changes no infrastructure. It is deprecated (since Terraform 0.15.4) because it writes the result without showing it first: with credentials for the wrong account or region, it can record every resource as gone. Use the two-step form instead:
+
+```bash
+terraform plan -refresh-only    # shows what changed outside Terraform; writes nothing
+terraform apply -refresh-only   # the same, then asks before it updates the state
+```
+
+`plan -refresh-only` never changes the state, so it is safe to run at any time. `apply -refresh-only` is the command from the demo above.
+
+You rarely need either one, because every normal `plan` and `apply` refreshes first, in memory, and plans against the result. Three flags change that:
+
+- `-refresh=false` skips the refresh. The plan is faster and blind to drift.
+- `-refresh-only` refreshes and plans no changes to resources, as above.
+- `-minimal-refresh` (Terraform 1.17) refreshes only the resources that have planned changes. On 202 DigitalOcean resources it cut the API calls from 202 to 0, and it also stopped noticing drift on the rest; [Terraform 1.17's -minimal-refresh, measured](/posts/terraform-1-17-minimal-refresh-measured) has the numbers.
+
+### How Do I Ignore Changes to One Attribute?
+
+Add the attribute to `ignore_changes` in the resource's `lifecycle` block. Write attribute references, not strings, and use index syntax for one key of a map:
+
+```hcl
+resource "aws_instance" "app" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.small"
+
+  tags = {
+    Name = "app"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      ami,           # a new AMI release should not replace the server
+      tags["Owner"], # set by another team's tooling
+    ]
+  }
+}
+```
+
+Older examples write `ignore_changes = ["tags[\"Name\"]", "instance_type"]` with quoted strings. That is Terraform 0.11 syntax. Terraform 1.15 still accepts it, but prints `Warning: Quoted references are deprecated` and says the form will be removed in a future version, so drop the quotes. `ignore_changes = all` ignores every argument, which turns the resource into create-only: Terraform creates it from the code and then never updates it.
+
+Know the limits:
+
+- It applies to updates only. When Terraform creates or replaces the resource, it uses the values in the code.
+- It cannot stop a replacement caused by another argument, and it does not apply to meta-arguments such as `count`.
+- Every ignored attribute is drift that nobody reviews. Add a comment that says which system owns the value.
+
+### Run a Change Check on a Schedule
+
 A change check that runs on a schedule:
 
 ```yaml
@@ -222,7 +342,7 @@ A change check that runs on a schedule:
 name: change-check
 on:
   schedule:
-    - cron: "17 6 * * 1-5" # weekday mornings, before people start applying
+    - cron: '17 6 * * 1-5' # weekday mornings, before people start applying
 jobs:
   plan:
     strategy:
@@ -231,9 +351,9 @@ jobs:
         stack: [platform/network, platform/clusters, apps/checkout/prod]
     runs-on: ubuntu-latest
     permissions:
-      id-token: write   # OIDC to AWS
+      id-token: write # OIDC to AWS
       contents: read
-      issues: write     # to open or update the issue for the stack
+      issues: write # to open or update the issue for the stack
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v4
@@ -296,7 +416,7 @@ Doing this well with plain GitHub Actions is harder than it looks, and the hard 
 
 The version below is honest about that: it reviews the plan on the pull request, and on merge it plans again in an ungated job, then applies **that** plan from a gated job. The order matters: GitHub evaluates an environment's protection rules before the job starts, so a gated job that runs the plan itself would ask for approval of a plan that does not exist yet. Planning first and gating only the apply gives the approver the actual plan to read.
 
-```yaml
+````yaml
 # .github/workflows/terraform.yml
 on:
   pull_request:
@@ -401,7 +521,7 @@ jobs:
         with: { name: tfplan, path: ${{ env.STACK }} }
       - name: apply the approved plan
         run: terraform -chdir=$STACK apply -input=false tfplan
-```
+````
 
 What this buys you: the plan is on the pull request where the reviewer is, the summary line (`Plan: 1 to add, 0 to change, 3 to destroy`) is visible without expanding anything, the apply job applies exactly the plan file the previous job produced (same run, so `download-artifact` finds it), the same Terraform version runs everywhere, and the environment gate puts a human in front of the real apply plan. What it does not buy you: a guarantee that the plan on the pull request and the plan at apply are the same. If someone merged another change to the same stack in between, the apply plan will differ, and the environment approver is the only one who sees it.
 

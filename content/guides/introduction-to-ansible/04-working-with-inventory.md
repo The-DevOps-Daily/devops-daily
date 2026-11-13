@@ -311,4 +311,4 @@ In [Part 5](/guides/introduction-to-ansible/05-variables-and-facts) you look at 
 ## Keep Learning
 
 - [Configuration Management Basics](/interview-questions/topic/infrastructure#configuration-management-basics), interview questions
-- [Can Terraform Provision On-Premises Servers?](/posts/terraform-on-premises-servers), which pairs Terraform with Ansible
+- [Can Terraform Provision On-Premises Servers?](/posts/should-terraform-lock-be-in-your-gitignore#h2-can-terraform-provision-on-premises-servers), which pairs Terraform with Ansible

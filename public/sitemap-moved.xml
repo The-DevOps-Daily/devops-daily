@@ -120,9 +120,13 @@
   <url><loc>https://devops-daily.com/interview-questions/senior/system-design-reliability</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/interview-questions/senior/zero-trust-architecture</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/and-or-conditional-operator-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/api-gateway-endpoint-variable</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/append-to-list-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/attach-multiple-iam-policies</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/bash-iterate-number-range-variables</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/bash-redirect-append-stdout-stderr</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/best-practices-when-using-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/can-terraform-watch-directory-for-changes</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/change-commit-author-single</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/change-echo-output-colors-linux</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/change-permissions-folder-subfolders-files-linux</loc><lastmod>2026-11-13</lastmod></url>
@@ -149,8 +153,10 @@
   <url><loc>https://devops-daily.com/posts/count-lines-in-file-linux-terminal</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/create-bash-alias-that-takes-parameters</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/create-copy-directory-unix-linux</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/create-folder-in-s3-bucket</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/defining-variables-with-without-export-linux</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/delete-all-local-docker-images</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/delete-all-resources-except-one</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/delete-exported-environment-variables-linux</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/designing-rate-limiting-for-apislog-in</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/devops-mistakes-2025</loc><lastmod>2026-11-13</lastmod></url>
@@ -158,6 +164,7 @@
   <url><loc>https://devops-daily.com/posts/difference-between-port-and-socket</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/difference-between-sh-and-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/difference-between-targetport-and-port-in-kubernetes-service-definition</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/different-environments-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/display-sensitive-data-output-variables</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/docker-alpine-use-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/docker-assign-port-mapping</loc><lastmod>2026-11-13</lastmod></url>
@@ -191,8 +198,10 @@
   <url><loc>https://devops-daily.com/posts/dockerfile-update-path</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/echo-to-stderr-in-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/enter-docker-container-new-tty</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/error-creating-iam-role-malformed-policy</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/exclude-directories-from-grep</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/exclude-directories-when-using-find-linux</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/execute-terraform-actions-without-prompt</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/exploring-docker-container-file-system</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/expose-multiple-ports-docker</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/expose-port-on-live-docker-container</loc><lastmod>2026-11-13</lastmod></url>
@@ -203,6 +212,7 @@
   <url><loc>https://devops-daily.com/posts/fix-echo-newline-bash-literal-n</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/format-date-yyyy-mm-dd-in-shell-script</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-current-time-seconds-since-epoch-bash</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/get-current-working-directory-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-directory-bash-script-location</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-environment-variable-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/get-full-path-of-file</loc><lastmod>2026-11-13</lastmod></url>
@@ -211,6 +221,7 @@
   <url><loc>https://devops-daily.com/posts/git-cherry-pick-commit</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/grep-continuous-stream</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/grep-show-filenames-only-linux</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-are-data-sources-used-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-can-i-keep-a-container-running-on-kubernetes</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-can-i-remove-a-resource-from-terraform-state</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-do-i-run-a-command-on-an-already-existing-docker-container</loc><lastmod>2026-11-13</lastmod></url>
@@ -233,13 +244,17 @@
   <url><loc>https://devops-daily.com/posts/how-to-remove-local-untracked-files-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-resolve-git-merge-conflicts</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-run-cron-job-in-docker</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/how-to-split-terraform-file</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-stash-changes-in-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/how-to-use-sudo-in-docker-container</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/i-would-like-to-run-terraform-only-for-a-specific-resource</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/if-else-elsif-conditional-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/ignore-change-of-attribute</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/initial-setup-of-terraform-backend-using-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/inspect-filesystem-of-failed-docker-build</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/interactive-shell-docker-compose</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/invalid-for-each-argument-in-terraform</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/invalid-legacy-provider-address</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/ios-ci-m1-to-m4</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kill-process-running-on-port-linux</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/kill-processes-by-partial-name</loc><lastmod>2026-11-13</lastmod></url>
@@ -251,10 +266,12 @@
   <url><loc>https://devops-daily.com/posts/loop-through-array-strings-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/looping-through-file-content-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/migrate-terraform-state</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/minimum-aws-permissions-for-terraform</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/modify-specific-commit-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/modules-output-from-for-each</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/move-uncommitted-work-to-new-branch</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/network-usage-top-htop-on-linux</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/organize-terraform-modules-multiple-environments</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/pass-environment-variables-docker-containers</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/pipe-clipboard-bash-script</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/preferred-bash-shebang</loc><lastmod>2026-11-13</lastmod></url>
@@ -275,26 +292,39 @@
   <url><loc>https://devops-daily.com/posts/resource-as-variable-in-module</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/resource-type-attribute-access</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/restart-single-container-docker-compose</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/retrieve-secret-terraform-aws-secret-manager</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/set-variable-command-output-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/should-i-commit-tfstate-files-to-git</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/split-string-delimiter-bash</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/start-stopped-docker-container-different-command</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-add-ssh-key-gcp-instance</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-api-gateway-stage-not-deploying</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-azure-state-file-different-subscription</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-concatenate-lists-concat-function</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-conditional-data-source</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-conditionals-if-variable-does-not-exist</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-convert-list-to-string</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-dynamodb-all-attributes-must-be-indexed</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-failed-install-provider-checksums-mismatch</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-get-list-index-for-each</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-import-index-value-required-error</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-module-output-as-input-another-module</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-modules-git-branch</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-on-premises-servers</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-output-field-from-module</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-outputs-for-resources-with-count</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-provider-checksum-mismatch</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-provider-variable-sharing-modules</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-refresh-explained</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/terraform-s3-backend-configuration-errors</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-statefile-locked</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/terraform-variables-not-allowed-error-plan</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/tfvars-vs-variables</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/upgrade-docker-container-image-changed</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/upgrade-terraform-to-specific-version</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/use-aws-account-id-variable</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/use-local-docker-images-minikube</loc><lastmod>2026-11-13</lastmod></url>
+  <url><loc>https://devops-daily.com/posts/use-terraform-to-set-up-a-lambda-function-triggered-by-a-scheduled-event-source</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/using-ssh-keys-in-docker-container</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/vagrant-vs-docker-for-isolated-environments</loc><lastmod>2026-11-13</lastmod></url>
   <url><loc>https://devops-daily.com/posts/variable-keys-in-terraform-maps</loc><lastmod>2026-11-13</lastmod></url>

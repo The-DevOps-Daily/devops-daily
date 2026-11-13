@@ -292,6 +292,6 @@ Next, you use a role for real: [launch your first EC2 server](/guides/introducti
 ## Keep Learning
 
 - [Cloud IAM Basics interview questions](/interview-questions/topic/cloud#cloud-iam-basics)
-- [How to Attach Multiple IAM Policies to IAM Roles Using Terraform](/posts/attach-multiple-iam-policies)
-- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/minimum-aws-permissions-for-terraform)
+- [How to Attach Multiple IAM Policies to IAM Roles Using Terraform](/posts/terraform-fargate-task-definition-execution-role#h2-how-do-i-attach-multiple-iam-policies-to-an-iam-role)
+- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/terraform-fargate-task-definition-execution-role#h2-what-are-the-minimum-aws-permissions-for-terraform)
 - [AWS Security Checklist](/checklists/aws-security)

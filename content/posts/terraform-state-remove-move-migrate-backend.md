@@ -346,7 +346,7 @@ If the bucket uses SSE-KMS with your own key (`kms_key_id`), the same identity a
 
 **`Backend configuration changed`.** You edited the `backend` block after `init`. Run `terraform init -migrate-state` to copy the state to the new location, or `terraform init -reconfigure` to use the new settings without copying anything, for example when only credentials changed. Choosing `-reconfigure` when the key changed leaves you with an empty state at the new key and the real one at the old key.
 
-If a crashed run leaves the state locked, see [how to release a stuck state lock](/posts/terraform-statefile-locked).
+If a crashed run leaves the state locked, see [how to release a stuck state lock](/posts/who-owns-the-terraform-state-file#h3-the-state-is-locked-how-do-i-unlock-it).
 
 ## The DynamoDB lock table is on its way out
 
