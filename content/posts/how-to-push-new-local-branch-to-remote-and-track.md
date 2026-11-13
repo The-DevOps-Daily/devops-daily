@@ -1,13 +1,13 @@
 ---
 title: 'How to Push a New Local Branch to Remote Git Repository and Track It'
-excerpt: 'Learn how to push a new local Git branch to a remote repository and set up tracking, including different methods for initial push, setting upstream branches, and managing branch relationships.'
+excerpt: 'Push a new branch with git push -u origin <branch>, fix "src refspec does not match any", and rename or delete a branch locally and on the remote.'
 category:
   name: 'Git'
   slug: 'git'
 date: '2024-12-13'
 publishedAt: '2024-12-13T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '5 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -19,7 +19,7 @@ tags:
   - Command Line
 ---
 
-When you create a new branch locally in Git, it exists only on your local machine until you push it to a remote repository. Additionally, you'll want to set up tracking so that future pushes and pulls work seamlessly. This tutorial covers the complete process of pushing a new local branch to a remote repository and establishing proper tracking relationships.
+When you create a new branch locally in Git, it exists only on your local machine until you push it to a remote repository. Additionally, you'll want to set up tracking so that a plain `git push` and `git pull` know where to go. This tutorial covers the complete process of pushing a new local branch to a remote repository and establishing proper tracking relationships.
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ When you create a local branch, Git doesn't automatically know which remote bran
 
 The most efficient way to push a new branch and set up tracking simultaneously:
 
-### Using --set-upstream-to Flag
+### Using the --set-upstream Flag
 
 ```bash
 git push --set-upstream origin <branch-name>
@@ -77,7 +77,7 @@ git branch -vv
 
 Output should show something like:
 
-```
+```text
 * feature/user-authentication 3a7b9f2 [origin/feature/user-authentication] Add user login functionality
   main                        8c4d1e9 [origin/main] Initial commit
 ```
@@ -120,6 +120,149 @@ git push -u origin HEAD
 ```
 
 The `HEAD` refers to your current branch, so Git automatically uses the current branch name. This is useful when you have long or complex branch names.
+
+## How Do I Create a Remote Branch?
+
+Push a local branch with `-u`. The push creates the branch on the remote and sets it as the upstream of your local branch:
+
+```bash
+git switch -c feature/payments
+git push -u origin feature/payments
+```
+
+To create a remote branch without a local one, push a commit to a new name:
+
+```bash
+git push origin HEAD:feature/payments                  # from the current commit
+git push origin 3a7b9f2:refs/heads/hotfix              # from a commit hash: write the full ref name
+git push origin 'v1.0.0^{commit}:refs/heads/release-1.0'   # from the commit of a tag
+```
+
+From a hash, Git cannot guess whether you mean a branch or a tag, so `3a7b9f2:hotfix` fails with `The destination you provided is not a full refname`. From an annotated tag, add `^{commit}`. Without it, Git tries to put the tag object itself on a branch, and the server rejects it with `trying to write non-commit object`.
+
+If you can create branches in the web interface of GitHub, GitLab or Bitbucket, a branch made there appears locally after `git fetch`. [Check out a remote branch](/posts/git-fetch-remote-branch#h2-how-do-i-check-out-a-remote-branch) shows how to start working on it.
+
+### Push without -u every time
+
+Git 2.37 and later can create the upstream on the first `git push` of a new branch:
+
+```bash
+git config --global push.autoSetupRemote true
+git switch -c feature/x
+git push
+# * [new branch]      feature/x -> feature/x
+# branch 'feature/x' set up to track 'origin/feature/x'.
+```
+
+Without the setting, the first plain `git push` stops and prints the `git push --set-upstream origin feature/x` command to run.
+
+## How Do I Fix "src refspec master does not match any"?
+
+Git has no local branch or commit with the name you pushed. Push a branch that exists:
+
+```bash
+git branch --show-current       # the name of your branch, for example main
+git push -u origin main         # push that name
+git push -u origin HEAD         # or: push the current branch, whatever its name
+```
+
+The error has three common causes:
+
+1. **No commits yet.** After `git init`, the branch exists only after the first commit. `git log` confirms it:
+
+   ```text
+   fatal: your current branch 'main' does not have any commits yet
+   ```
+
+   Make the first commit: `git add .` and `git commit -m "Initial commit"`. Then push.
+
+2. **The branch is `main`, and you pushed `master`** (or the other way round). New repositories on GitHub and GitLab use `main`, and so does Git when `init.defaultBranch` is `main`. Git 3.0 plans to make `main` the default for new repositories ([what changes in Git 3.0](/guides/introduction-to-git/01-fundamentals#h2-what-changes-in-git-30)). Push the name that `git branch --show-current` prints.
+3. **A typo** in the branch name, for example `git push origin maste`.
+
+If the remote expects `master` and you want your branch to have that name, rename it: `git branch -m main master`, then `git push -u origin master`.
+
+A missing remote gives a different error, `fatal: 'origin' does not appear to be a git repository`. Add it with `git remote add origin <url>`. If the push is rejected because the remote already has a commit, for example a README, see [refusing to merge unrelated histories](/posts/undo-git-merge-not-pushed#h2-how-do-i-fix-refusing-to-merge-unrelated-histories).
+
+## How Do I Rename a Git Branch?
+
+Rename the current branch with `git branch -m <new-name>`, or any branch with `git branch -m <old> <new>`:
+
+```bash
+git branch -m featur-login feature-login
+```
+
+The commits, the reflog and the branch settings move to the new name. The upstream does not change: in a test, the renamed branch still tracked `origin/featur-login`. So if you pushed the branch before, push the new name, set it as the upstream, and delete the old remote branch:
+
+```bash
+git push -u origin feature-login        # the new name, now the upstream
+git push origin --delete featur-login   # the old name
+```
+
+On GitHub, deleting the old branch closes the open pull requests that use it as their head branch, and you must open them again from the new branch.
+
+### Rename a shared or default branch
+
+For a branch that other people use, such as `master` to `main`, rename it in the web interface of the hosting service. GitHub then moves branch protection rules, changes the base branch of open pull requests, and redirects web URLs that contain the old name. It does not update GitHub Actions workflows that name the old branch. Each collaborator then runs the commands that [GitHub's documentation](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/renaming-a-branch) lists:
+
+```bash
+git branch -m master main
+git fetch origin
+git branch -u origin/main main
+git remote set-head origin -a
+```
+
+On macOS and Windows, a rename that changes only the case (`Feature` to `feature`) can fail, because the file system does not see a difference. `git branch -M` forces it.
+
+## How Do I Delete a Git Branch Locally and Remotely?
+
+Delete the local branch with `git branch -d`, and the remote branch with `git push origin --delete`:
+
+```bash
+git switch main                              # you cannot delete the branch you are on
+git branch -d feature/login                  # local
+git push origin --delete feature/login       # remote
+```
+
+`-d` refuses to delete a branch whose commits are not merged:
+
+```text
+error: The branch 'feature/login' is not fully merged.
+If you are sure you want to delete it, run 'git branch -D feature/login'.
+```
+
+`-d` checks the branch against its upstream, or against the current branch if it has no upstream. So a branch whose upstream has all its commits counts as merged, even if it never reached `main`. A branch that you pushed without `-u` and never merged counts as "not fully merged". Use `-D` only when you are sure. Git prints the last commit of the deleted branch, so you can undo the delete:
+
+```bash
+git branch -D feature/login
+# Deleted branch feature/login (was 0f1ce33).
+git branch feature/login 0f1ce33             # undo, if you need it again
+```
+
+### Clean up after branches are merged
+
+When a pull request is merged and the remote branch is deleted, your clone still has the remote-tracking branch until you prune:
+
+```bash
+git fetch --prune                            # or set it once: git config --global fetch.prune true
+git branch -vv                               # local branches whose upstream is gone show ": gone]"
+```
+
+To delete every local branch whose upstream is gone:
+
+```bash
+git for-each-ref --format='%(refname:short) %(upstream:track)' refs/heads |
+  awk '$2 == "[gone]" {print $1}' | xargs -r git branch -d
+```
+
+Read the list first: drop the `xargs` part to see it. A gone upstream does not prove that the work was merged, so the command uses `-d`, which refuses branches with commits that are not merged. If your team squash-merges pull requests, `-d` refuses most of them, because the squash commit is a new commit. Check each refused branch, for example with `git log --oneline origin/main..<branch>` and the state of its pull request, before you delete it with `-D`. `git branch --merged main` lists the branches that are merged into `main`.
+
+### When the delete fails
+
+- **`error: Cannot delete branch 'x' checked out at '/path'`**: the branch is open in another [worktree](/guides/introduction-to-git/10-advanced-techniques#h2-worktrees-several-branches-checked-out-at-once). Switch that worktree to another branch, or remove it with `git worktree remove /path`.
+- **The remote refuses:** GitHub does not let you delete the default branch, and branch protection rules can block a delete. Change the default branch or the rule first.
+- **`error: unable to delete 'x': remote ref does not exist`**: someone already deleted it. Run `git fetch --prune`.
+
+A deleted remote branch is gone from the server, but every clone that fetched it still has the commits. Push it again from such a clone with `git push origin <hash>:refs/heads/<name>`.
 
 ## Working with Different Remote Names
 
@@ -182,7 +325,7 @@ git status
 
 With tracking set up, you'll see messages like:
 
-```
+```text
 On branch feature/user-authentication
 Your branch is up to date with 'origin/feature/user-authentication'.
 ```
@@ -240,21 +383,23 @@ git push -u origin feature/login:feature/user-authentication
 
 ## Advanced Push Options
 
-### Force Push New Branch
+### Replace a Branch You Pushed Before
 
-If you need to force push a new branch (use with caution):
+A new branch never needs a force push. If you rewrote a branch that you pushed before, for example after a rebase, replace it with a lease:
 
 ```bash
-git push -u origin feature/branch --force
+git push --force-with-lease origin feature/branch
 ```
 
 ### Push All Branches
 
-To push all local branches that have corresponding remote branches:
+To push every local branch, also the ones that are not on the remote yet:
 
 ```bash
 git push --all origin
 ```
+
+Use it with care: it also publishes old experiments and backup branches. To push only the current branch by default, keep `push.default` at its default value, `simple`.
 
 ### Push Tags Along with Branch
 
@@ -294,13 +439,14 @@ git config user.email
 
 ### Branch Already Exists on Remote
 
-If the branch exists on remote but you want to push your version:
+If the branch exists on the remote, someone else may have created it, or pushed to it. Fetch and look before you decide:
 
 ```bash
-git push -u origin <branch-name> --force
+git fetch origin
+git log --oneline <branch-name>..origin/<branch-name>   # commits on the remote that you do not have
 ```
 
-**Warning**: Force pushing overwrites the remote branch. Use with extreme caution.
+If those commits belong to someone else, pick another branch name, or put your commits on top of theirs with `git rebase origin/<branch-name>` and push again. Only if you are sure the remote branch is yours and can go, replace it with `git push --force-with-lease -u origin <branch-name>`. A plain `--force` overwrites commits that you have not even seen.
 
 ## Best Practices
 
@@ -385,3 +531,13 @@ git push -u origin HEAD
 ```
 
 By following these methods, you can efficiently push new local branches to remote repositories and establish proper tracking relationships, making your Git workflow smoother and more collaborative.
+
+## Related Resources
+
+- [Introduction to Git: Push, Fetch, Pull and Tracking Branches](/guides/introduction-to-git/06-remote-repositories#h2-tracking-branches)
+- [Introduction to Git: List, Rename and Delete Branches](/guides/introduction-to-git/04-branching#h2-list-rename-and-delete-branches)
+- [Fetch a remote branch and check it out](/posts/git-fetch-remote-branch)
+- [Make an existing branch track a remote branch](/posts/make-git-branch-track-remote)
+- [Git concepts simulator](/games/git-concepts-simulator)
+- [Git branching strategies interview question](/interview-questions/topic/git#git-branching-strategies)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz) and the [Git workflow exercise](/exercises/git-workflow-collaboration)

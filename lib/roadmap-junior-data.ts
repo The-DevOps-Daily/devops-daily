@@ -101,7 +101,7 @@ export const juniorStages: SyllabusStage[] = [
         resources: [
           part('introduction-to-git', '04-branching'),
           part('introduction-to-git', '05-merging'),
-          post('how-do-i-resolve-merge-conflicts-in-a-git-repository'),
+          post('undo-git-merge-not-pushed'),
           sim('git-merge-conflict-simulator'),
         ],
       },
@@ -113,7 +113,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 6,
         resources: [
           part('introduction-to-git', '07-collaboration'),
-          post('difference-between-git-pull-and-git-fetch'),
+          post('git-fetch-remote-branch'),
           lab('git-workflow-collaboration'),
         ],
       },

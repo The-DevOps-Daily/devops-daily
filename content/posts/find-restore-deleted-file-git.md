@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2025-02-05'
 publishedAt: '2025-02-05T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -21,7 +21,7 @@ tags:
 
 You deleted a file and committed the deletion, or someone else deleted it in a previous commit. Now you need to find and restore it. Git keeps the complete history of all files, making it possible to recover deleted files.
 
-**TLDR:** To restore a deleted file, first find when it was deleted with `git log -- path/to/file`, then restore it from the commit before deletion using `git checkout commit-hash^ -- path/to/file`. The `^` means "parent commit" - the version before deletion.
+**TLDR:** To restore a deleted file, find the commit that deleted it with `git log --diff-filter=D -- path/to/file`, then restore the file from the parent of that commit with `git restore --source=<commit>^ --staged --worktree -- path/to/file` (or `git checkout <commit>^ -- path/to/file` on Git older than 2.23). The `^` means "parent commit": the last version before the deletion. To put any file back to an older version, see [reset or revert a file to a specific revision](#h2-how-do-i-reset-or-revert-a-file-to-a-specific-revision).
 
 In this guide, you'll learn how to find and recover deleted files from Git history.
 
@@ -92,6 +92,36 @@ git checkout v1.0.0 -- path/to/deleted-file.js
 # Or from a branch
 git checkout main~5 -- path/to/deleted-file.js
 ```
+
+## How Do I Reset or Revert a File to a Specific Revision?
+
+Run `git restore` with the commit as the source. Only that file changes, and the rest of the repository stays as it is:
+
+```bash
+git log --oneline -- src/main.js                                  # find the commit, for example 3a7b9f2
+git restore --source=3a7b9f2 --staged --worktree -- src/main.js   # file and index now match 3a7b9f2
+git commit -m "Restore src/main.js from 3a7b9f2"
+```
+
+This replaces your uncommitted changes to that file, staged and unstaged, so commit or stash them first if you need them. Without `--staged --worktree`, `git restore --source` changes only the file on disk, and you stage it with `git add`. The older `git checkout 3a7b9f2 -- src/main.js` changes both the file and the index, like the command above. Some variants:
+
+- **From another branch or a tag:** `git restore --source=main -- config/settings.json`, or `--source=v1.2.0`.
+- **The version before a commit:** `--source=3a7b9f2^` is the parent of `3a7b9f2`.
+- **Only some changes:** `git restore -p --source=3a7b9f2 -- src/main.js` asks for each hunk.
+- **From a stash:** `git restore --source=stash@{0} -- src/main.js`. `git stash show -p stash@{0} src/main.js` does not work: Git reads the path as a second stash name and stops with `Too many revisions specified`.
+- **Throw away local edits:** `git restore src/main.js` puts back the version in the index.
+
+To see an old version without changing the file, print it. The path is relative to the root of the repository, or relative to the current directory with `./`:
+
+```bash
+git show 3a7b9f2:src/main.js            # from any directory
+git show 3a7b9f2:./main.js              # from inside src/
+git show 3a7b9f2:src/main.js > /tmp/main.js.old
+```
+
+Check that the file exists in the commit before you restore it: `git ls-tree -r --name-only 3a7b9f2 | grep main.js` lists the matching paths. If the file is tracked now but not in that commit, `git restore` deletes it to match the commit. If Git knows the path from neither, it stops with `pathspec 'src/main.js' did not match any file(s) known to git`. To compare before you restore, run `git diff 3a7b9f2 -- src/main.js`. [View the change history of a file](/posts/view-file-change-history-git) shows more ways to find the right commit.
+
+To return the whole repository to an old commit instead of one file, see [revert the repository to a previous commit](/posts/delete-commit-from-branch#h2-how-do-i-revert-the-repository-to-a-previous-commit-without-rewriting-history).
 
 ## Finding File by Partial Name
 
@@ -214,11 +244,11 @@ if [ -z "$COMMIT" ]; then
     exit 1
 fi
 
-echo "Last commit with file: $COMMIT"
+echo "Commit that deleted the file: $COMMIT"
 git show --summary $COMMIT
 
 echo ""
-echo "To restore: git checkout $COMMIT -- $FILE"
+echo "To restore: git checkout $COMMIT^ -- $FILE"
 ```
 
 Use it:
@@ -344,11 +374,11 @@ fi
 If someone force-pushed and deleted files:
 
 ```bash
-# Find commit before force push
-git reflog
+# origin/main@{1} is where origin/main pointed before your last fetch
+git reflog show origin/main
 
 # Restore files from that point
-git checkout HEAD@{1} -- deleted-files/
+git restore --source=origin/main@{1} --staged --worktree -- deleted-files/
 ```
 
 ## Best Practices
@@ -359,8 +389,9 @@ Always search before assuming a file is gone:
 # Check if file still exists somewhere
 git log --all --full-history -- path/to/file
 
-# Check other branches
-git branch -a --contains filename
+# Check which branches still have the file
+git for-each-ref --format='%(refname:short)' refs/heads refs/remotes |
+  while read -r ref; do git cat-file -e "$ref:path/to/file" 2>/dev/null && echo "$ref"; done
 ```
 
 Document why you're restoring:
@@ -389,11 +420,21 @@ Create aliases for common recovery operations:
 # Add to ~/.gitconfig
 [alias]
     find-deleted = log --diff-filter=D --summary
-    restore = "!f() { git checkout $(git rev-list -n 1 HEAD -- \"$1\")^ -- \"$1\"; }; f"
+    restore-deleted = "!f() { git checkout $(git rev-list -n 1 HEAD -- \"$1\")^ -- \"$1\"; }; f"
 
 # Use them
 git find-deleted
-git restore path/to/deleted-file.js
+git restore-deleted path/to/deleted-file.js
 ```
 
-Now you know how to find and restore deleted files in Git. Use `git log --full-history` to find when a file was deleted, then `git checkout commit^` to restore it from before the deletion. Git's complete history means no file is ever truly lost unless the commits themselves are deleted.
+Do not name an alias after a built-in command. Git ignores an alias called `restore`, and runs the real `git restore` instead.
+
+Now you know how to find and restore deleted files in Git. Use `git log --full-history` to find when a file was deleted, then `git checkout commit^` to restore it from before the deletion. Git's complete history means a committed file is not lost while any commit that contains it still exists.
+
+## Related Resources
+
+- [Introduction to Git: Show Old Versions of Files](/guides/introduction-to-git/08-history#h2-show-old-versions-of-files)
+- [View the change history of a file](/posts/view-file-change-history-git)
+- [Remove a file from Git without deleting it, or undo git add](/posts/remove-file-from-git-keep-local)
+- [Delete or undo a commit: reset, rebase or revert](/posts/delete-commit-from-branch)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz)

@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2024-10-20'
 publishedAt: '2024-10-20T13:00:00Z'
-updatedAt: '2026-10-11T09:00:00Z'
-readingTime: '5 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -33,12 +33,73 @@ You'll need Git installed on your system, a repository with a configured remote,
 
 The key difference between fetch and pull:
 
-```
+```text
 git fetch:  Remote → Local repository (no merge)
 git pull:   Remote → Local repository → Working directory (with merge)
 ```
 
 Fetch updates your local copy of remote branches without touching your working files.
+
+## What Is the Difference Between git pull and git fetch?
+
+A normal `git fetch` downloads new commits and updates the remote-tracking branches such as `origin/main`. It does not change your local branches or your files. (A fetch with an explicit destination, such as `git fetch origin pull/123/head:pr-123` below, does write a local branch.) `git pull` runs a fetch and then integrates the upstream branch into your current branch, with a merge or a rebase:
+
+```bash
+git pull                          # fetch, then merge or rebase origin/<branch> into the current branch
+# is about the same as
+git fetch
+git merge origin/main             # or: git rebase origin/main
+```
+
+Fetch first when you want to see what is new before it changes your branch. `@{u}` is the upstream of the current branch:
+
+```bash
+git fetch
+git log --oneline HEAD..@{u}      # commits on the remote that you do not have
+git diff HEAD...@{u}              # their changes since your branch and the remote split
+git merge @{u}                    # or: git rebase @{u}
+```
+
+### Tell git pull how to join the histories
+
+When your branch and the remote branch both have new commits, Git needs to know whether to merge or to rebase. Without a setting, current Git versions stop instead of guessing. Git 2.39 prints:
+
+```text
+hint: You have divergent branches and need to specify how to reconcile them.
+fatal: Need to specify how to reconcile divergent branches.
+```
+
+Choose once:
+
+```bash
+git config --global pull.rebase true    # replay your local commits on top: a straight history
+git config --global pull.ff only        # or: only fast-forward, and stop when the branches diverged
+```
+
+For one pull, use `git pull --rebase`, `git pull --no-rebase` (merge) or `git pull --ff-only`. The [remotes chapter of the Git guide](/guides/introduction-to-git/06-remote-repositories#h2-pull-merge-or-rebase) compares them with real output.
+
+### Pull with uncommitted changes
+
+Git refuses a pull that would overwrite your uncommitted changes:
+
+```text
+error: Your local changes to the following files would be overwritten by merge:
+        src/auth.js
+Please commit your changes or stash them before you merge.
+```
+
+Commit or stash first, or let Git stash for you: `git pull --rebase --autostash` saves your changes, pulls, and puts the changes back.
+
+### In scripts and deployments
+
+Do not run a plain `git pull` in a deploy script. It can create a merge commit on the server, or stop at a conflict. Use `git pull --ff-only`, which fails when the histories diverged, or make the copy match the remote exactly:
+
+```bash
+git fetch origin
+git reset --hard origin/main      # discards any local change on the server
+```
+
+[Reset a local branch to match the remote](/posts/how-to-reset-local-branch-to-match-remote-head) explains the reset. To see fetch, pull and rebase move the branch pointers, try the [Git concepts simulator](/games/git-concepts-simulator).
 
 ## Fetching All Remote Branches
 
@@ -120,6 +181,57 @@ git switch -c feature-auth origin/feature-auth
 # Verify tracking
 git branch -vv
 ```
+
+## How Do I Check Out a Remote Branch?
+
+Fetch, then switch to a local branch with the same name. Git creates the local branch and sets `origin/<name>` as its upstream:
+
+```bash
+git fetch origin
+git switch feature/user-auth
+# branch 'feature/user-auth' set up to track 'origin/feature/user-auth'.
+```
+
+`git checkout feature/user-auth` does the same. Git can only find branches that you fetched, so if Git says `invalid reference`, run `git fetch` first. `git branch -r` lists the remote branches that Git knows.
+
+### The same branch name on two remotes
+
+With two remotes, for example `origin` and `upstream` in a fork, the short form fails when both have the branch:
+
+```text
+fatal: 'topic' matched multiple (2) remote tracking branches
+```
+
+Name the remote:
+
+```bash
+git switch --track upstream/topic                # local branch "topic" that tracks upstream/topic
+git switch -c my-topic --track upstream/topic    # the same, with another local name
+```
+
+Or set a default remote for the short form: `git config --global checkout.defaultRemote origin`.
+
+### The local branch already exists
+
+`git switch <name>` then switches to your local branch and does not update it. Pull to bring in the new commits. To throw away the local branch and start again from the remote, `git switch -C <name> origin/<name>` (or `git checkout -B`) resets it. Its local-only commits are no longer on any branch. In a test, the reflog of the branch still listed the dropped commit, so `git reflog show <name>` gets it back.
+
+### Look at a remote branch without a local branch
+
+```bash
+git switch --detach origin/feature/user-auth     # read-only look, no branch is created
+git switch -                                     # back to where you were
+```
+
+### Check out a pull request
+
+GitHub keeps each pull request under `refs/pull/<number>/head`, even when it comes from a fork. Fetch it into a local branch:
+
+```bash
+git fetch origin pull/123/head:pr-123
+git switch pr-123
+```
+
+With the GitHub CLI, `gh pr checkout 123` does both. GitLab uses `refs/merge-requests/<number>/head` for merge requests.
 
 ## Fetching with Different Remote
 
@@ -300,11 +412,11 @@ git fetch origin abc123
 Configure Git to fetch automatically:
 
 ```bash
-# Fetch before operations
+# Remove deleted remote branches on every fetch
 git config --global fetch.prune true
 
-# Set fetch interval (if using GUI tools)
-git config --global gui.gcwarning false
+# Prefetch in the background every hour, without changing your remote-tracking branches
+git maintenance start
 ```
 
 ## Fetch in CI/CD Pipelines
@@ -356,8 +468,8 @@ git branch -r
 # Check credentials
 git config --get remote.origin.url
 
-# For HTTPS, update credentials
-git config --global credential.helper store
+# For HTTPS, use a credential manager (not "store", which saves the token in plain text)
+git config --global credential.helper cache
 
 # For SSH, check key
 ssh -T git@github.com
@@ -455,3 +567,13 @@ git ls-remote origin HEAD
 ```
 
 Now you know how to fetch remote branches in Git. Use `git fetch` to download branches without affecting your working directory, then decide when and how to integrate those changes. Fetching gives you control over when to merge remote updates into your work.
+
+## Related Resources
+
+- [Introduction to Git: Push, Fetch, Pull and Tracking Branches](/guides/introduction-to-git/06-remote-repositories)
+- [Make an existing branch track a remote branch](/posts/make-git-branch-track-remote)
+- [Push a new local branch, rename or delete branches](/posts/how-to-push-new-local-branch-to-remote-and-track)
+- [Git clone a specific branch](/posts/clone-specific-git-branch)
+- [Git concepts simulator](/games/git-concepts-simulator)
+- [Git workflow and collaboration exercise](/exercises/git-workflow-collaboration)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz)

@@ -6,17 +6,17 @@ category:
   slug: 'git'
 date: '2024-12-15'
 publishedAt: '2024-12-15T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '5 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
 tags:
-  - Linux
-  - Networking
+  - Git
+  - Reset
+  - Remote Branches
   - Troubleshooting
   - Command Line
-  - Ports
 ---
 
 When working with Git repositories, you might find yourself in a situation where your local branch has diverged from the remote repository, and you want to completely reset your local branch to match the remote HEAD exactly. This is particularly useful when you want to discard all local changes and start fresh with the latest remote state.
@@ -61,19 +61,53 @@ Now reset your current branch to match the remote branch exactly:
 git reset --hard origin/main
 ```
 
-Replace `main` with your actual branch name (it might be `master`, `develop`, or another branch name).
+Replace `main` with your actual branch name (it might be `master`, `develop`, or another branch name). `@{u}` names the upstream of the current branch, so `git reset --hard @{u}` works on any branch that has one. On a branch without an upstream, Git stops with `fatal: no upstream configured for branch`.
 
 **Warning**: The `--hard` flag will discard all local changes, including staged and unstaged modifications.
 
 ### Step 3: Clean Untracked Files (Optional)
 
-If you also want to remove any untracked files and directories:
+If you also want to remove any untracked files and directories, list them first, then delete them:
 
 ```bash
+git clean -nd     # dry run: shows what would be deleted
 git clean -fd
 ```
 
-The `-f` flag forces the removal, and `-d` removes untracked directories as well.
+The `-f` flag forces the removal, and `-d` removes untracked directories as well. Files that `.gitignore` matches, such as `node_modules/` or `.env`, stay. Add `-x` to delete those too.
+
+## How Do I Force git pull to Overwrite Local Files?
+
+There is no `git pull` option that discards local changes. Fetch, then reset to the remote branch:
+
+```bash
+git stash push -u -m "before reset"   # optional: keep a copy of local changes, untracked files too
+git fetch                             # fetches from the remote of the current branch's upstream
+git reset --hard @{u}                 # the upstream of the current branch, for example origin/main
+git clean -fd                         # optional: delete untracked files
+```
+
+`git pull --force` exists, but it does something else: it lets the fetch update a local ref that does not fast-forward. It does not discard local changes, and the merge or rebase step still refuses to overwrite them.
+
+A pull stops for two kinds of local files:
+
+```text
+error: Your local changes to the following files would be overwritten by merge:
+        config.js
+Please commit your changes or stash them before you merge.
+```
+
+```text
+error: The following untracked working tree files would be overwritten by merge:
+        newfile.txt
+Please move or remove them before you merge.
+```
+
+The first is a change to a tracked file: commit it, stash it, or let the reset above discard it. The second is an untracked file with the same name as a file that the pull brings in: move it away, or delete it with `git clean`. If you want to keep your local changes and still get the new commits, `git pull --rebase --autostash` stashes them, pulls and applies them again. It stashes changes to tracked files only. For an untracked file in the way, rename or move it, pull, and then compare your copy with the file that the pull brought in.
+
+:::warning
+`git reset --hard` discards uncommitted changes to tracked files for good, and `git clean -fd` deletes untracked files for good. The reflog keeps only commits. Your local commits that were not pushed are still in `git reflog` for a while after the reset.
+:::
 
 ## Method 2: Reset Specific Branch
 
@@ -106,23 +140,25 @@ This ensures your local branch is tracking the remote branch for future pushes a
 
 ## Method 4: Complete Repository Reset
 
-For a more thorough reset that includes all branches:
+For a more thorough reset that also deletes every other local branch:
 
 ```bash
 git fetch origin
+git switch main
 git reset --hard origin/main
 git clean -fd
-git branch -D $(git branch | grep -v main)
-git checkout main
+git for-each-ref --format='%(refname:short)' refs/heads | grep -vx main | xargs -r git branch -D
 ```
 
 This approach:
 
 1. Fetches latest changes
-2. Hard resets the main branch
-3. Cleans untracked files
-4. Deletes all local branches except main
-5. Switches to the main branch
+2. Switches to the main branch
+3. Hard resets it to the remote
+4. Cleans untracked files
+5. Deletes all local branches except main
+
+Do not use `git branch -D $(git branch | grep -v main)`. `git branch` marks the current branch with `*`, and the shell expands that `*` to the file names in the current directory.
 
 ## Verification Steps
 
@@ -136,7 +172,7 @@ git status
 
 You should see something like:
 
-```
+```text
 On branch main
 Your branch is up to date with 'origin/main'.
 
@@ -222,8 +258,10 @@ git checkout -b feature-branch origin/feature-branch
 ```bash
 git fetch upstream
 git reset --hard upstream/main
-git push origin main --force
+git push --force-with-lease origin main
 ```
+
+This throws away any commit on your fork's `main` that `upstream` does not have. [How to sync a forked repository](/posts/sync-forked-repository-github) shows the merge and rebase options.
 
 ## Troubleshooting
 
@@ -262,3 +300,11 @@ git fetch origin
 5. **Verify results**: Check that the reset worked as expected
 
 By following these methods, you can safely reset your local Git branch to match the remote repository HEAD, ensuring your local development environment is synchronized with the latest remote state.
+
+## Related Resources
+
+- [Delete or undo a commit: reset, rebase or revert](/posts/delete-commit-from-branch)
+- [What is the difference between git pull and git fetch?](/posts/git-fetch-remote-branch#h2-what-is-the-difference-between-git-pull-and-git-fetch)
+- [Introduction to Git: Undo Things](/guides/introduction-to-git/03-tracking-changes#h2-undo-things)
+- [Git concepts simulator](/games/git-concepts-simulator)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz)

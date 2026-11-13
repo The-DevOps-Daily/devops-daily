@@ -485,7 +485,7 @@ To copy a single commit from one branch to another without merging the branch, u
 - **Rebasing a shared branch.** Merge `main` into it instead, or agree with everyone using it first.
 - **`git pull` merges you did not mean to make.** Choose a pull strategy once ([Part 6](/guides/introduction-to-git/06-remote-repositories#h2-pull-merge-or-rebase)).
 - **Deleting a squash-merged branch with `-D` without checking.** `-D` deletes unmerged work too. Compare the snapshots first, as above; if `main` has moved on since the squash merge, review what the diff still shows.
-- **"refusing to merge unrelated histories".** Two repositories with no common commit; see [this post](/posts/git-refusing-merge-unrelated-histories) before adding `--allow-unrelated-histories`.
+- **"refusing to merge unrelated histories".** Two repositories with no common commit; see [this post](/posts/undo-git-merge-not-pushed#h2-how-do-i-fix-refusing-to-merge-unrelated-histories) before adding `--allow-unrelated-histories`.
 
 ## Summary
 
@@ -498,7 +498,6 @@ Next: [Working with Remote Repositories](/guides/introduction-to-git/06-remote-r
 
 ## Keep Learning
 
-- [How to resolve merge conflicts](/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository) and [how to abort a merge](/posts/abort-merge-conflict-git)
-- [Undo a merge that has not been pushed](/posts/undo-git-merge-not-pushed)
+- [Undo or abort a merge, and resolve merge conflicts](/posts/undo-git-merge-not-pushed)
 - [Squash your last N commits](/posts/how-do-i-squash-my-last-n-commits-together)
 - [See the differences between two branches](/posts/see-differences-between-branches-git)
