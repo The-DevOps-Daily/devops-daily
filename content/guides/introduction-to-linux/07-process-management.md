@@ -417,6 +417,72 @@ journalctl -k | grep -i -E 'out of memory|oom-kill'
 
 On kernels with **pressure stall information** (PSI), `/proc/pressure/cpu`, `/proc/pressure/memory` and `/proc/pressure/io` show how much of the time processes were stalled waiting for each resource, which is a clearer warning sign than raw usage. For example, `some avg10=12.50` in `/proc/pressure/memory` means at least one process waited for memory 12.5% of the last 10 seconds. Part 10 covers `vmstat` and the `sysstat` tools (`iostat`, `pidstat`, `sar`) for longer investigations.
 
+### How Do I Measure the Actual Memory Usage of a Process?
+
+For one process, read `RSS`. For a program that runs as several processes, add up **PSS** from `/proc/<pid>/smaps_rollup`, because `RSS` counts shared memory once for every process that shares it. The columns in `ps` and `top` answer different questions:
+
+| Number        | Where you find it                                   | What it counts                                                                                        |
+| ------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `VSZ`, `VIRT` | `ps`, `top`                                         | All address space the process has mapped, also memory it never touched. Not a measure of RAM          |
+| `RSS`, `RES`  | `ps`, `top`, `VmRSS` in `/proc/<pid>/status`        | Pages of the process that are in RAM now, shared pages included in full                               |
+| PSS           | `/proc/<pid>/smaps_rollup`                          | Like RSS, but each shared page is divided by the number of processes that share it. PSS values add up |
+| USS           | `Private_Clean` + `Private_Dirty` in `smaps_rollup` | Memory that only this process uses: about what you get back when it exits                             |
+
+The difference is large for servers that fork workers, such as PostgreSQL, nginx, gunicorn and PHP-FPM. In this test, a Python script fills a 200 MiB buffer and then forks a child, which shares the buffer with its parent:
+
+```python
+# mem.py
+import os, time
+
+data = bytearray(200 * 1024 * 1024)  # 200 MiB, written once by the zero fill
+os.fork()                            # the child shares these pages until one side writes to them
+time.sleep(30)
+```
+
+```terminal
+{
+  "title": "two processes that share 200 MiB",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "comment": "mem.py fills a 200 MiB buffer, then forks one child that shares it"
+    },
+    {
+      "cmd": "python3 mem.py &"
+    },
+    {
+      "cmd": "ps -o pid,ppid,rss,vsz,comm -p 3199485,3199487",
+      "output": "    PID    PPID   RSS    VSZ COMMAND\n3199485 3199482 213140 220936 python3\n3199487 3199485 210516 220936 python3"
+    },
+    {
+      "cmd": "grep -E '^(Rss|Pss|Shared_Dirty|Private_Dirty):' /proc/3199485/smaps_rollup",
+      "output": "Rss:              213140 kB\nPss:              106174 kB\nShared_Dirty:     207884 kB\nPrivate_Dirty:       404 kB"
+    },
+    {
+      "cmd": "grep -E '^(Rss|Pss|Shared_Dirty|Private_Dirty):' /proc/3199487/smaps_rollup",
+      "output": "Rss:              210516 kB\nPss:              104728 kB\nShared_Dirty:     207884 kB\nPrivate_Dirty:       404 kB"
+    }
+  ]
+}
+```
+
+`ps` shows about 208 MiB for each process, 414 MiB together. They share 203 MiB (`Shared_Dirty`), so together they use about 206 MiB of RAM, which is the sum of the two `Pss` values. To add up the PSS of every process of one program:
+
+```bash
+for pid in $(pgrep -x postgres); do
+    sudo awk '/^Pss:/ {print $2}' "/proc/$pid/smaps_rollup"
+done | awk '{ kb += $1 } END { printf "%.0f MiB\n", kb / 1024 }'
+```
+
+Reading `smaps_rollup` of another user's process needs root. The `smem` package prints PSS and USS for each process in one table (`smem -k -P postgres`).
+
+Three more questions come up often:
+
+- **What was the peak?** `VmHWM` in `/proc/<pid>/status` is the highest RSS so far. For a command that you start yourself, `/usr/bin/time -v ./job.sh` (the GNU `time` package, not the shell keyword) prints `Maximum resident set size` when it ends.
+- **How much does a service or a container use?** Look at its cgroup. `systemctl status app.service` shows a `Memory:` line, and `/sys/fs/cgroup/system.slice/app.service/memory.current` has the value in bytes. It includes the page cache that the service's file reads created, which RSS does not, and it is the number that the cgroup's `MemoryMax=` limit applies to. `docker stats` reads the same cgroup files but subtracts inactive cache. [cgroup v2 memory.high vs memory.max, measured](/posts/cgroup-v2-memory-high-vs-memory-max-measured) shows what happens near the limit.
+- **Is it a leak?** Watch the same number over hours, not seconds: `pidstat -r -p <pid> 60` (from `sysstat`) prints RSS every minute. Memory that grows after start-up and then stays level is usually a cache or a heap that the runtime keeps. Memory that keeps growing under steady traffic can be a leak, but caches and allocator fragmentation look the same from outside, so confirm it with the heap tools of the runtime. Runtimes report their own heap: `process.memoryUsage()` in Node.js, `tracemalloc` in Python, and heap metrics in the JVM. A JVM heap limit (`-Xmx`) is not the RSS: the JVM also uses memory outside the heap.
+
 ## Services With systemd
 
 Long-running programs (web servers, databases, agents) run as **services** managed by systemd. systemd starts them at boot in the right order, restarts them when they crash, collects their output in the journal and limits their resources. You control them with `systemctl`. Output from a Debian 12 machine:
@@ -542,7 +608,8 @@ Next: [Networking in Linux](/guides/introduction-to-linux/08-networking), where 
 
 ## Keep Learning
 
-- [Measure the actual memory usage of a process](/posts/measure-actual-memory-usage-of-process)
+- [cgroup v2 memory.high vs memory.max, measured](/posts/cgroup-v2-memory-high-vs-memory-max-measured): what a service does near its memory limit
+- [Disk full but du disagrees](/posts/disk-full-du-disagrees-deleted-open-files): deleted files that a running process still holds
 - Exercise: [Linux performance tuning and troubleshooting](/exercises/linux-performance-troubleshooting)
 - Interview questions: [Linux process debugging](/interview-questions/topic/linux#linux-process-debugging)
 - See what happens when processes multiply: [fork bomb simulator](/games/fork-bomb-simulator)

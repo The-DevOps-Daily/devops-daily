@@ -1,13 +1,13 @@
 ---
 title: 'What Does "2>&1" Mean in Linux and Bash?'
-excerpt: 'Learn what the 2>&1 redirection operator means, how stdout and stderr work, and how to send all output to a file, to the screen and a file with tee, or only to stderr.'
+excerpt: 'Learn what the 2>&1 redirection operator means, how stdout and stderr work, and how to send all output to a file, to the screen and a file with tee, to a protected file with sudo, or only to stderr.'
 category:
   name: 'Bash'
   slug: 'bash'
 date: '2024-04-18'
 publishedAt: '2024-04-18T10:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '14 min read'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -18,6 +18,7 @@ tags:
   - Streams
   - stderr
   - tee
+  - sudo
   - Shell
 ---
 
@@ -33,6 +34,7 @@ This guide explains what `2>&1` means, how it works with Linux streams, and prov
 | Append stdout and stderr to a file | `cmd >> out.log 2>&1` (Bash 4.0+ also has `cmd &>> out.log`) |
 | Discard all output                 | `cmd > /dev/null 2>&1`                                       |
 | Show output and save it to a file  | `cmd 2>&1 \| tee out.log`                                    |
+| Write to a file that needs root    | `echo "x" \| sudo tee -a /etc/file > /dev/null`              |
 | Print your own message to stderr   | `echo "Error: config not found" >&2`                         |
 | Send only stderr through a pipe    | `cmd 2>&1 > /dev/null \| grep -i error`                      |
 
@@ -324,15 +326,6 @@ ls /nope 2>&1 | tee out.log; echo "ls exit: ${PIPESTATUS[0]}, tee exit: ${PIPEST
 
 [What set -e and pipefail do](/posts/what-does-set-e-mean-in-bash-script) explains these options in detail.
 
-### Write to a Protected File With sudo tee
-
-`sudo echo "x" > /etc/app.conf` fails with `Permission denied`, because your own shell opens `/etc/app.conf` before `sudo` runs. Let `tee` open the file as root instead, and send its copy of the output to `/dev/null`:
-
-```bash
-echo "max_connections = 200" | sudo tee /etc/app.conf > /dev/null
-echo "log_level = info" | sudo tee -a /etc/app.conf > /dev/null   # append
-```
-
 ### Send a Whole Script Through tee
 
 To see and log everything a script prints, combine `exec` with process substitution:
@@ -346,6 +339,47 @@ echo "done"
 ```
 
 All three lines, including the error from `ls`, appear on the screen and in `run.log`. `tee` runs as a separate process, so the last lines can reach the file a moment after the script exits.
+
+## How Do I Use sudo to Redirect Output to a Protected File?
+
+Let a program that runs with `sudo` open the file. `tee` is the usual one:
+
+```bash
+echo "127.0.0.1 app.local" | sudo tee -a /etc/hosts > /dev/null     # append a line
+echo "max_connections = 200" | sudo tee /etc/app.conf > /dev/null   # replace the whole file
+```
+
+The obvious command fails:
+
+```text
+$ sudo echo "127.0.0.1 app.local" >> /etc/hosts
+bash: /etc/hosts: Permission denied
+```
+
+The redirection belongs to your shell, not to `sudo`. Your shell opens `/etc/hosts` with your own permissions before it starts `sudo echo`, the open fails, and `echo` never runs. With `tee`, your shell only sets up a pipe, and `tee`, running as root, opens the file.
+
+Details that matter:
+
+- **`tee` without `-a` empties the file first.** `echo "127.0.0.1 app.local" | sudo tee /etc/hosts` leaves a hosts file with one line. Use `-a` to append.
+- **`> /dev/null` only hides the copy that `tee` prints.** That redirection runs as you, which is fine, because everybody may write to `/dev/null`.
+- **Several lines: use a here document.** Quote the delimiter (`'EOF'`) so that the shell does not expand `$` in the text:
+
+```bash
+sudo tee /etc/sysctl.d/99-app.conf > /dev/null <<'EOF'
+net.core.somaxconn = 4096
+vm.swappiness = 10
+EOF
+sudo sysctl --system
+```
+
+A file of its own in `/etc/sysctl.d/` is easier to review and remove than lines appended to `/etc/sysctl.conf`, and running the same script twice does not add the lines twice. [How cat << EOF works](/posts/how-cat-eof-works-in-bash) explains here documents.
+
+- **The whole command as root: `sudo sh -c '...'`.** Put the redirection inside the quotes: `sudo sh -c 'echo "127.0.0.1 app.local" >> /etc/hosts'`. In `sudo sh -c echo x > file`, the `> file` is outside again. Inside single quotes, your shell variables are not expanded, so pass values as arguments: `sudo sh -c 'echo "$1" >> /etc/hosts' sh "$line"`.
+- **To change a file, edit it instead of writing it.** `sudoedit /etc/app.conf` runs your editor as you on a temporary copy and writes it back as root. `sudo sed -i 's/^log_level=.*/log_level=info/' /etc/app.conf` changes one line. Do not read and write the same file in one pipeline (`sudo cat f | grep -v x | sudo tee f`): `tee` empties the file while `cat` may still read it.
+- **To install a file with an owner and mode, use `install`:** `sudo install -m 0640 -o root -g app app.conf /etc/app/app.conf`.
+- **Kernel settings in `/proc/sys`** work the same way (`echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward`), but `sudo sysctl -w net.ipv4.ip_forward=1` is clearer. Both last only until the next reboot.
+
+Reading works the other way round. In `sudo cat /var/log/secure | grep sshd`, `cat` opens the file as root and the pipe needs no permission, so it works. `sudo grep sshd /var/log/secure` is shorter.
 
 ## How Do I Echo to stderr in Bash?
 

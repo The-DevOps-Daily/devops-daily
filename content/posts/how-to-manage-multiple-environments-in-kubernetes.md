@@ -1,13 +1,13 @@
 ---
 title: 'How to Manage Kubernetes Environments: Namespaces, Contexts, Clusters'
-excerpt: 'Separate staging, QA and production with namespaces or clusters, switch kubectl between namespaces and clusters such as GKE and minikube, and sign in to a cluster web UI.'
+excerpt: 'Separate staging, QA and production with namespaces or clusters, switch kubectl between namespaces and clusters such as GKE and minikube, reach Services in other namespaces, and sign in to a cluster web UI.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
 date: '2024-01-22'
 publishedAt: '2024-01-22T09:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '14 min read'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -20,19 +20,20 @@ tags:
   - Environments
 ---
 
-Most teams run the same app in several environments: development, QA, staging and production. In Kubernetes that raises two questions. First, where does each environment live: in its own namespace, or in its own cluster? Second, how do you make sure that every `kubectl` command goes to the environment you mean? A `kubectl delete` in the production context instead of staging is one of the most expensive mistakes in Kubernetes. This post answers both questions, shows how to switch namespaces and clusters (including GKE and minikube), and how to sign in to a web UI for a cluster.
+Most teams run the same app in several environments: development, QA, staging and production. In Kubernetes that raises two questions. First, where does each environment live: in its own namespace, or in its own cluster? Second, how do you make sure that every `kubectl` command goes to the environment you mean? A `kubectl delete` in the production context instead of staging is one of the most expensive mistakes in Kubernetes. This post answers both questions, shows how to switch namespaces and clusters (including GKE and minikube), how to reach a Service in another namespace, and how to sign in to a web UI for a cluster.
 
 ## TLDR
 
-| Question                                   | Short answer                                                                                       |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Namespaces or clusters for environments?   | Production in its own cluster. Development, QA and staging can share a cluster, one namespace each |
-| One set of manifests for all environments? | Kustomize overlays or Helm values files, one for each environment                                  |
-| Switch the default namespace               | `kubectl config set-context --current --namespace=staging`                                         |
-| Which namespace am I in?                   | `kubectl config view --minify -o jsonpath='{..namespace}'` (empty means `default`)                 |
-| Switch cluster                             | `kubectl config use-context <context>`, or `--context <context>` for one command                   |
-| Get a GKE context                          | `gcloud container clusters get-credentials <cluster> --region <region>`                            |
-| Kubernetes Dashboard sign-in               | The Dashboard is archived. Use Headlamp, which signs in with your kubeconfig or a token            |
+| Question                                   | Short answer                                                                                        |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Namespaces or clusters for environments?   | Production in its own cluster. Development, QA and staging can share a cluster, one namespace each  |
+| One set of manifests for all environments? | Kustomize overlays or Helm values files, one for each environment                                   |
+| Switch the default namespace               | `kubectl config set-context --current --namespace=staging`                                          |
+| Which namespace am I in?                   | `kubectl config view --minify -o jsonpath='{..namespace}'` (empty means `default`)                  |
+| Reach a Service in another namespace       | Use `<service>.<namespace>`, for example `http://api.staging:8080`, and allow it in NetworkPolicies |
+| Switch cluster                             | `kubectl config use-context <context>`, or `--context <context>` for one command                    |
+| Get a GKE context                          | `gcloud container clusters get-credentials <cluster> --region <region>`                             |
+| Kubernetes Dashboard sign-in               | The Dashboard is archived. Use Headlamp, which signs in with your kubeconfig or a token             |
 
 ## Prerequisites
 
@@ -160,6 +161,54 @@ Two things surprise people:
 
 [kubens](https://github.com/ahmetb/kubectx) is a small tool that lists namespaces and switches with one word: `kubens staging`.
 
+## How Do I Reach a Service in Another Namespace?
+
+Add the namespace to the Service name. Cluster DNS gives every Service the name `<service>.<namespace>.svc.cluster.local`, and the search path in each pod lets you use the short form `<service>.<namespace>`:
+
+```bash
+# from a pod in the shop namespace, to the api Service in the staging namespace
+curl http://api.staging:8080/health
+curl http://api.staging.svc.cluster.local:8080/health   # the full name; also works
+```
+
+The bare name `api` resolves only inside the pod's own namespace, which is why the same code works in `staging` and fails with an unknown host in `shop`. `cluster.local` is the default cluster domain. Some clusters use another one, so prefer `api.staging` in configuration, or `api.staging.svc` when a client needs a dot-qualified name.
+
+To test name resolution and the connection from inside the cluster, start a short-lived pod:
+
+```bash
+kubectl run net-test -n shop --rm -it --restart=Never --image=busybox:1.37 -- \
+  sh -c 'nslookup api.staging && wget -qO- -T 3 http://api.staging:8080/health'
+```
+
+If the name resolves but the connection times out, a NetworkPolicy probably blocks it. Namespaces do not block traffic by themselves, but a default-deny policy in `staging` does, and then you need a rule that lets the other namespace in. Every namespace has the label `kubernetes.io/metadata.name`, so you can select it by name:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-shop
+  namespace: staging # the policy lives where the traffic arrives
+spec:
+  podSelector:
+    matchLabels:
+      app: api
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: shop
+      ports:
+        - port: 8080
+```
+
+If `shop` has a default-deny egress policy, it also needs a rule that allows traffic to `staging` and to DNS. Two more cases need a different tool:
+
+- **An alias in your own namespace.** A Service of type `ExternalName` with `externalName: api.staging.svc.cluster.local` lets pods in `shop` use the name `api`. It is only a DNS CNAME: it does not proxy traffic, and it does not change the ports or the NetworkPolicies that apply.
+- **Routing from an Ingress or a Gateway.** An Ingress can only send traffic to Services in its own namespace. With the Gateway API, an HTTPRoute can point to a Service in another namespace when that namespace allows it with a `ReferenceGrant`. [Gateway API in the Kubernetes guide](/guides/introduction-to-kubernetes/05-services-and-networking#h2-gateway-api) shows Gateways and HTTPRoutes.
+
+`kubectl` itself is not the problem here: to read a Service in another namespace, add `-n`, for example `kubectl get service api -n staging` or `kubectl get endpointslices -n staging -l kubernetes.io/service-name=api`.
+
 ## How Do I Switch kubectl Between Clusters, Such as GKE and minikube?
 
 To use a cluster, you need a **context** in your kubeconfig: a cluster, a user and an optional namespace. List the contexts:
@@ -237,6 +286,8 @@ kubectl -n kube-system create token headlamp-viewer
 - [Introduction to Kubernetes: Setting Up a Cluster](/guides/introduction-to-kubernetes/02-setting-up-a-kubernetes-cluster#h2-namespaces): contexts, kubeconfig and namespaces on kind
 - [Authentication and RBAC](/guides/introduction-to-kubernetes/10-best-practices-in-kubernetes#h2-authentication-and-rbac) in the Kubernetes guide
 - [Kubernetes RBAC simulator](/games/k8s-rbac-simulator): see which binding allows or blocks a request
+- [Kubernetes networking and CNI simulator](/games/kubernetes-networking-cni-simulator): follow a packet between pods, Services and nodes
+- [Service DNS](/guides/introduction-to-kubernetes/05-services-and-networking#h2-service-dns) and [NetworkPolicies that also allow DNS](/posts/kubernetes-concepts-junior-to-mid-level#h3-networkpolicies-that-also-allow-dns)
 - [Preview environment simulator](/games/preview-environment-simulator): short-lived environments for each pull request
 - [kubectl apply vs create, and how to export live YAML](/posts/kubectl-apply-vs-create-differences)
 - [Helm vs Kustomize](/comparisons/helm-vs-kustomize) and the [Helm packaging exercise](/exercises/helm-kubernetes-packaging)

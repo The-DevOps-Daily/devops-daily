@@ -631,7 +631,7 @@ Ubuntu 25.10 and 26.04 LTS replaced most GNU coreutils (`ls`, `sort`, `cut`, `da
 
 - **Unquoted names with spaces.** `rm my file.txt` tries to delete two files, `my` and `file.txt`. Quote it, or press Tab and let the shell escape it.
 - **Overwriting with `>`.** `sort data.txt > data.txt` empties the file before `sort` reads it. Write to a new file, then move it. `set -o noclobber` makes `>` refuse to overwrite existing files.
-- **`sudo` with a redirection.** In `sudo echo "x" > /etc/file`, the redirection runs in your own shell, without root, and fails. Use `echo "x" | sudo tee /etc/file` (or `tee -a` to append). See [how to redirect output to a privileged file](/posts/sudo-redirect-output-to-privileged-location).
+- **`sudo` with a redirection.** In `sudo echo "x" > /etc/file`, the redirection runs in your own shell, without root, and fails. Use `echo "x" | sudo tee /etc/file` (or `tee -a` to append). See [how to redirect output to a privileged file](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-use-sudo-to-redirect-output-to-a-protected-file).
 - **`rm -rf $DIR/` with an empty variable.** If `DIR` is empty, that becomes `rm -rf /`. Quote variables and use `${DIR:?}` in scripts so an empty value stops the command.
 - **Copying commands from the web without reading them.** Check what a command does before you paste it, especially when it starts with `sudo` or pipes a download into `bash`.
 

@@ -1,13 +1,13 @@
 ---
-title: 'How to Create and Remove Symbolic Links and Get the Full Path of a File in Linux'
-excerpt: 'Create symlinks with ln -s and get relative targets right, replace a link to a directory safely, remove a symlink without deleting the target, find broken links, and get the absolute path of any file with realpath.'
+title: 'How to Copy, Overwrite and Symlink Files in Linux, and Get Their Full Path'
+excerpt: 'Make cp overwrite without asking, copy whole directories with their hidden files, create symlinks with ln -s and get relative targets right, remove a symlink without deleting the target, and get the absolute path of any file.'
 category:
   name: 'Linux'
   slug: 'linux'
 date: '2024-12-20'
 publishedAt: '2024-12-20T14:20:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '11 min read'
+readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -16,12 +16,13 @@ tags:
   - Symlinks
   - ln
   - realpath
+  - cp
   - File System
 ---
 
 A **symbolic link** (symlink) is a small file that contains a path to another file or directory. Programs that open the link get the target instead. Symlinks let a deploy switch `current` from one release to the next, keep dotfiles in a Git repository, or make a tool available under a second name.
 
-Most symlink problems come from three details: relative targets, trailing slashes, and what `ln -sf` does when the link points to a directory. This post covers creating, replacing and removing links, and getting the full path of a file, with or without resolving the links on the way.
+Most symlink problems come from three details: relative targets, trailing slashes, and what `ln -sf` does when the link points to a directory. This post covers creating, replacing and removing links, and getting the full path of a file, with or without resolving the links on the way. It also covers the copy side: why `cp` keeps asking before it overwrites a file, and how to copy a whole directory without losing hidden files.
 
 ## TLDR
 
@@ -34,6 +35,8 @@ Most symlink problems come from three details: relative targets, trailing slashe
 | Remove a symlink to a directory       | `rm link_name` or `unlink link_name`, no trailing `/` |
 | Find broken symlinks                  | `find . -xtype l` (GNU)                               |
 | Absolute path of a file               | `realpath file` or `readlink -f file`                 |
+| Overwrite without the cp question     | `\cp new.conf app.conf` skips the `cp -i` alias       |
+| Copy a directory with hidden files    | `cp -a site/. backup/`                                |
 
 ## Prerequisites
 
@@ -195,9 +198,82 @@ esac
 
 This check catches links that were already there. It does not stop a user who replaces the file or a parent directory between the `realpath` check and the `cat`. When other users can change the tree while your script runs, a shell check is not enough: the program must open the file relative to a trusted directory with restricted path resolution, such as `openat2()` with `RESOLVE_BENEATH` on Linux.
 
+## How Do I Force cp to Overwrite Files Without Asking?
+
+Skip the alias that adds `-i`. When `cp` asks `cp: overwrite 'app.conf'?` although you did not type `-i`, your shell runs `cp -i` for you:
+
+```text
+$ type cp
+cp is aliased to `cp -i'
+$ cp -f new.conf app.conf
+cp: overwrite 'app.conf'? n
+$ \cp new.conf app.conf      # the backslash skips the alias: no question
+```
+
+`-f` does not help. In GNU `cp`, `-i` wins over `-f` in any order: we tested `cp -i -f` and `cp -f -i` with coreutils 9.1, and both asked. `-f` means something else: if the target exists but cannot be opened for writing, `cp` removes it and tries again. On macOS and BSD, the last of `-i`, `-f` and `-n` wins, so there `cp -f` does override an earlier `-i`.
+
+Ways to get past the alias:
+
+```bash
+\cp new.conf /etc/app/app.conf          # this command only
+command cp new.conf /etc/app/app.conf   # this command only; also skips a shell function named cp
+unalias cp                              # the rest of this shell session
+```
+
+The alias usually comes from root's `~/.bashrc` on RHEL, Rocky, AlmaLinux, CentOS and Fedora, which define `cp -i`, `mv -i` and `rm -i` there. Debian and Ubuntu do not set it by default. To find it, run `grep -rn "alias cp" ~/.bashrc ~/.bash_aliases ~/.bash_profile /etc/bashrc /etc/bash.bashrc /etc/profile.d/ 2>/dev/null`, then delete or comment out the line and open a new shell. The alias is a guard against typos in an interactive shell, so many people keep it and type `\cp` when they mean it.
+
+Scripts are not affected. Bash does not expand aliases in a non-interactive shell, so a script that runs `cp new.conf app.conf` overwrites without a question even when your interactive `cp` is an alias. You do not need `/bin/cp` in scripts for this reason. A script that hangs on the question has `-i` written in it, or it was started with `bash -i`.
+
+The opposite case, never overwrite, needs care with versions:
+
+- `cp -n` (`--no-clobber`) skips files that exist. Its exit status changed: in GNU coreutils 9.2 to 9.4, a skipped file made `cp -n` fail. 9.5 went back to skipping silently, and its documentation advises against `-n` because it differs between platforms.
+- `cp --update=none` (coreutils 9.3 and later) always skips existing files with exit status 0, and `--update=none-fail` fails instead (for `cp`, in coreutils 9.6 and later, or a distribution build with that fix). `cp -u` copies only when the source is newer than the target.
+- The same change hit `mv -n`, which [scripts on newer Ubuntu releases notice](/posts/ubuntu-26-10-rust-coreutils-what-changes#h2-a-change-that-is-not-about-rust-mv-n).
+
+Before you overwrite configuration files on a server, keep the old version: `cp --backup=numbered new.conf /etc/app/app.conf` renames the existing file to `app.conf.~1~` first (GNU). For whole trees, `rsync -a --backup --backup-dir=../app-backup-$(date +%F) src/ dest/` moves every file that it replaces into a directory next to `dest`, because a relative `--backup-dir` starts from the destination.
+
+## How Do I Copy a Whole Directory With cp?
+
+Use `cp -a`. It copies recursively and keeps permissions, timestamps and symbolic links, which `cp -r` alone does not promise:
+
+```bash
+cp -a site backup
+```
+
+Whether `backup` exists already changes the result. If it does not exist, `cp` creates it as a copy of `site`. If it exists, `cp` puts the copy **inside** it, as `backup/site`. Running the same command twice therefore gives you a nested copy the second time:
+
+```text
+$ cp -a site backup        # backup did not exist
+$ find backup | sort
+backup
+backup/css
+backup/css/main.css
+backup/.env
+backup/home.html
+backup/index.html
+
+$ cp -a site backup        # backup exists now
+$ ls -A backup
+css .env home.html index.html site
+```
+
+To copy what is **in** a directory into a directory that already exists, copy `site/.`, not `site/*`. The glob skips hidden files such as `.env`; the `.` entry includes them:
+
+```text
+$ cp -r site/* backup/ && ls -A backup     # backup is empty before each command
+css home.html index.html
+
+$ cp -a site/. backup/ && ls -A backup
+css .env home.html index.html
+```
+
+GNU `cp` also has `-T` (`--no-target-directory`): `cp -aT site backup` always copies the contents of `site` into `backup`, whether `backup` exists or not. macOS and BSD `cp` do not have `-T`, so use `site/.` in scripts that must run on both. `rsync -a site/ backup/` follows the same idea: with the trailing slash on the source it copies the contents, without it, the directory itself. To check afterwards that the copy matches, see [how to compare two directory trees](/guides/introduction-to-linux/10-system-administration#h3-compare-two-directory-trees).
+
 ## Related Resources
 
 - [Linux file system hierarchy and permissions](/guides/introduction-to-linux/04-file-system-hierarchy#h2-file-types-links-and-inodes): file types, links and inodes
-- [How to find files in Linux](/posts/find-files-with-wildcards-linux): exclude directories and count files
+- [How to find files in Linux](/posts/find-files-with-wildcards-linux): exclude directories and count files, and fix ["Argument list too long" for cp and mv](/posts/find-files-with-wildcards-linux#h2-how-do-i-fix-argument-list-too-long-for-rm-cp-and-mv)
+- [How to permanently set $PATH](/posts/permanently-set-path-on-linux-unix): where `~/.bashrc`, aliases and functions are loaded
+- [Linux command line basics](/guides/introduction-to-linux/03-command-line-interface): creating, copying, moving and deleting files in the Linux guide
 - [What does set -e mean?](/posts/what-does-set-e-mean-in-bash-script): stop a deploy script when a step such as `ln` fails
 - [Learn Linux interactive tutorial](/games/linux-terminal)

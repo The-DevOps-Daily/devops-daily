@@ -150,7 +150,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Scripts and CLIs', 'JSON and HTTP APIs', 'Error handling', 'Tests'],
         resources: [
           guide('introduction-to-python'),
-          post('what-is-the-quickest-way-to-http-get-in-python'),
           post('go-runs-the-cloud-native-control-plane'),
           ext('The Python Tutorial', 'https://docs.python.org/3/tutorial/'),
           ext('Go by Example', 'https://gobyexample.com/'),
@@ -167,7 +166,7 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['TCP/IP and ports', 'DNS', 'HTTP and TLS', 'SSH'],
         resources: [
           guide('networking-fundamentals'),
-          post('when-is-it-appropriate-to-use-udp-instead-of-tcp'),
+          post('udp-vs-tcp-performance-comparison'),
           post('ping-timeout-vs-destination-unreachable'),
           sim('dns-simulator'),
           sim('tcp-vs-udp'),
@@ -798,7 +797,6 @@ export const roadmapStages: RoadmapStage[] = [
         ],
         resources: [
           post('slos-slis-error-budgets-practical-guide'),
-          post('what-is-p99-latency'),
           post('on-call-rotation-escalation-policy-guide'),
           sim('latency-percentiles-simulator'),
           sim('incident-commander-simulator'),

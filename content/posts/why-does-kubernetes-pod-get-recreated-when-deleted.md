@@ -1,13 +1,13 @@
 ---
 title: 'Why Does a Deleted Kubernetes Pod Get Recreated? Deployments, Images'
-excerpt: 'A deleted pod comes back because a controller owns it. Find and stop that controller, compare pods, Deployments and StatefulSets, and update or re-pull an image.'
+excerpt: 'A deleted pod comes back because a controller owns it. Find and stop that controller, compare pods, Deployments and StatefulSets, update or re-pull an image, and debug ImagePullBackOff.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
 date: '2024-06-20'
 publishedAt: '2024-06-20T09:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '13 min read'
+readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -24,16 +24,17 @@ You delete a pod, and a few seconds later a pod with a new name is running in it
 
 ## TLDR
 
-| Question                                  | Short answer                                                                                           |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Why does a deleted pod come back?         | A controller (ReplicaSet, StatefulSet, DaemonSet, Job) owns it and restores the replica count          |
-| How do I find the owner?                  | `kubectl get pod <pod> -o jsonpath='{.metadata.ownerReferences[*].kind}'`                              |
-| How do I stop the pods for good?          | `kubectl scale deployment/web --replicas=0`, or delete the Deployment                                  |
-| Pod or Deployment?                        | A Deployment for anything that must keep running. A bare pod only for a quick test                     |
-| Deployment or StatefulSet?                | A StatefulSet when each replica needs its own name and its own volume                                  |
-| How do I change the image?                | `kubectl set image deployment/web app=<image>`, or change the manifest and apply it                    |
-| How do I force a re-pull of the same tag? | `imagePullPolicy: Always` plus `kubectl rollout restart`. Better: a new tag or a digest for each build |
-| How do I remove old ReplicaSets?          | Set `revisionHistoryLimit` on the Deployment (default 10)                                              |
+| Question                                  | Short answer                                                                                                    |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Why does a deleted pod come back?         | A controller (ReplicaSet, StatefulSet, DaemonSet, Job) owns it and restores the replica count                   |
+| How do I find the owner?                  | `kubectl get pod <pod> -o jsonpath='{.metadata.ownerReferences[*].kind}'`                                       |
+| How do I stop the pods for good?          | `kubectl scale deployment/web --replicas=0`, or delete the Deployment                                           |
+| Pod or Deployment?                        | A Deployment for anything that must keep running. A bare pod only for a quick test                              |
+| Deployment or StatefulSet?                | A StatefulSet when each replica needs its own name and its own volume                                           |
+| How do I change the image?                | `kubectl set image deployment/web app=<image>`, or change the manifest and apply it                             |
+| How do I force a re-pull of the same tag? | `imagePullPolicy: Always` plus `kubectl rollout restart`. Better: a new tag or a digest for each build          |
+| Why is my pod in `ImagePullBackOff`?      | Read the pull error in `kubectl describe pod`: a wrong name or tag, no credentials, or no route to the registry |
+| How do I remove old ReplicaSets?          | Set `revisionHistoryLimit` on the Deployment (default 10)                                                       |
 
 ## Prerequisites
 
@@ -266,6 +267,55 @@ The reliable fix is to never reuse a tag. Give each build a unique tag, such as 
 kubectl set image deployment/web -n shop app=ghcr.io/example/web@sha256:<digest>
 ```
 
+## How Do I Debug ImagePullBackOff?
+
+Read the events of the pod. The kubelet records the error that the registry or the network returned, and that text names the cause:
+
+```bash
+kubectl describe pod <pod> -n shop | sed -n '/^Events:/,$p'
+kubectl get events -n shop --field-selector involvedObject.name=<pod>
+```
+
+`ErrImagePull` is a failed pull. `ImagePullBackOff` means that the kubelet now waits before the next attempt, and the wait gets longer each time, up to 5 minutes. You do not have to delete the pod: when you fix a cause outside the pod spec, such as a missing secret, the next attempt starts the container. When you fix the image name in the Deployment, the Deployment creates a new pod.
+
+| Text in the event                                            | Cause                                                                       | Fix                                                                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `not found`                                                  | The repository or the tag does not exist                                    | Check the registry host, the path and the tag                                            |
+| `pull access denied`, `unauthorized`, `authorization failed` | A private image and no credentials, or wrong ones                           | Add an image pull secret (below)                                                         |
+| `toomanyrequests`                                            | The registry's rate limit; Docker Hub counts anonymous pulls per IP address | Pull with credentials, which have a higher limit, or copy the image to your own registry |
+| `no match for platform in manifest`                          | The image has no build for the node's CPU, for example amd64 only on arm64  | Build a multi-platform image                                                             |
+| `x509: certificate signed by unknown authority`              | A private registry with a certificate that the node does not trust          | Add the CA to the nodes and the container runtime                                        |
+| `i/o timeout`, `no such host`                                | The node cannot resolve or reach the registry                               | Check DNS, the proxy settings and the egress firewall of the node                        |
+
+A name without a registry is a Docker Hub name: `nginx:1.29` becomes `docker.io/library/nginx:1.29`, and `myteam/web:1.4.2` becomes `docker.io/myteam/web:1.4.2`. A typo in the host of a private registry therefore often shows up as a Docker Hub error.
+
+For a private registry, create a secret in the **same namespace** as the pod, then reference it in the pod template. Use a read-only token, not your password:
+
+```bash
+kubectl create secret docker-registry regcred -n shop \
+  --docker-server=ghcr.io \
+  --docker-username=<user> \
+  --docker-password=<read-only-token>
+```
+
+```yaml
+spec:
+  imagePullSecrets:
+    - name: regcred
+  containers:
+    - name: app
+      image: ghcr.io/example/web:1.4.2
+```
+
+To give a workload the secret without changing its pod spec, add it to the ServiceAccount that its pods use, which is `default` unless the spec names another one. Kubernetes copies it into new pods that have no `imagePullSecrets` of their own, so restart the workload afterwards:
+
+```bash
+kubectl patch serviceaccount default -n shop -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+kubectl rollout restart deployment/web -n shop
+```
+
+If the events do not make the cause clear, pull the image on the node itself. On a node where you can log in, `sudo crictl pull <image>` shows the error without Kubernetes in between. It does not use the pod's pull secret, so pass the same credentials for a private image (`--creds <user>:<token>`). If a DNS, proxy or certificate error appears there too, the problem is the node, not the pod spec. One related status is `ErrImageNeverPull`: the pod has `imagePullPolicy: Never` and the image is not on the node, which happens with local images on minikube or kind ([use local images with minikube](/posts/how-to-restart-container-within-pod#h2-how-do-i-use-local-docker-images-with-minikube)).
+
 ## How Do I Clean Up Old ReplicaSets?
 
 You usually do not need to. Each rollout leaves the old ReplicaSet in place, scaled to 0 replicas. It holds no pods and uses no resources apart from a small object in etcd. It is what `kubectl rollout undo` goes back to.
@@ -288,6 +338,8 @@ Do not set `revisionHistoryLimit: 0`. Then no old ReplicaSet stays, and `kubectl
 - [Introduction to Kubernetes: Deployments and ReplicaSets](/guides/introduction-to-kubernetes/04-deployments-and-replicasets): self-healing, rollouts and rollbacks with real output
 - [How to restart, list and keep containers running in a pod](/posts/how-to-restart-container-within-pod)
 - [How to fix pods stuck in Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
+- [A troubleshooting playbook for pods](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes#h2-a-troubleshooting-playbook) in the Kubernetes guide
+- [How to fix "denied" on docker push](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-fix-denied-requested-access-to-the-resource-is-denied-on-docker-push): registry logins and tokens on the push side
 - [Kubernetes terminal simulator](/games/kubernetes-terminal-simulator): practice `scale`, `set image` and `rollout undo` in the browser
 - [Fix the Deployment](/challenges/fix-the-deployment): a broken Deployment, Service and ConfigMap to repair
 - [Kubernetes pod lifecycle interview questions](/interview-questions/topic/kubernetes#kubernetes-pod-lifecycle)

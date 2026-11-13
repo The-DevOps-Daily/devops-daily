@@ -1,13 +1,13 @@
 ---
 title: 'Close vs Shutdown Socket'
-excerpt: 'Understanding the difference between close() and shutdown() for sockets matters for proper connection handling. Learn when to use each, how shutdown enables half-closed connections, and how close releases file descriptors.'
+excerpt: 'The difference between close() and shutdown() on a socket: when to use each, how shutdown enables half-closed connections, why a restarted server gets "Address already in use", and how SO_REUSEADDR and SO_REUSEPORT differ.'
 category:
   name: 'Networking'
   slug: 'networking'
 date: '2025-02-18'
 publishedAt: '2025-02-18T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -21,7 +21,7 @@ tags:
 
 When working with network sockets, you have two ways to end a connection: `close()` and `shutdown()`. While both can terminate socket communication, they work differently and serve different purposes. Using the wrong one can lead to data loss, connection leaks, or improper connection termination.
 
-This guide explains the difference between close and shutdown, when to use each, and how they affect TCP connections.
+This guide explains the difference between close and shutdown, when to use each, and how they affect TCP connections. The last part covers what a close leaves behind: connections in `TIME_WAIT`, the `Address already in use` error when a server restarts, and how `SO_REUSEADDR` and `SO_REUSEPORT` differ.
 
 ## TLDR
 
@@ -119,6 +119,7 @@ shutdown(sockfd, SHUT_WR);
 This tells the other end: "I'm done sending data, but I'll still receive."
 
 **What happens:**
+
 1. TCP FIN packet is sent to the peer
 2. Your application can no longer send data on this socket
 3. Your application can still receive data from the peer
@@ -146,13 +147,13 @@ close(sockfd);
 
 ## Key Differences
 
-| Aspect | close() | shutdown() |
-|--------|---------|------------|
-| File descriptor | Releases the fd | Keeps fd open |
-| Affects | Only your process's reference | All references to the socket |
-| Directional control | No - closes everything | Yes - can close read, write, or both |
-| Immediate effect | Not guaranteed (buffering) | Immediate (sends FIN for TCP) |
-| Use after | Cannot use the fd number | Can still use the socket for allowed operations |
+| Aspect              | close()                                                    | shutdown()                                      |
+| ------------------- | ---------------------------------------------------------- | ----------------------------------------------- |
+| File descriptor     | Releases the fd                                            | Keeps fd open                                   |
+| Affects             | Only your process's reference                              | All references to the socket                    |
+| Directional control | No - closes everything                                     | Yes - can close read, write, or both            |
+| Effect on TCP       | FIN after queued data, only when the last reference closes | `SHUT_WR` sends FIN after queued data at once   |
+| Use after           | Cannot use the fd number                                   | Can still use the socket for allowed operations |
 
 ## When to Use shutdown()
 
@@ -353,8 +354,7 @@ import "net"
 
 conn, _ := net.Dial("tcp", "server:8080")
 
-// Go doesn't expose shutdown directly
-// Must use raw syscall
+// Go has no shutdown() method, but TCPConn has both halves
 conn.(*net.TCPConn).CloseWrite()  // Equivalent to shutdown(SHUT_WR)
 
 conn.Close()  // Close the connection
@@ -378,11 +378,80 @@ const net = require('net');
 
 const socket = net.connect(8080, 'server');
 
-socket.end();  // Sends FIN (half-close write)
+socket.end(); // Sends FIN (half-close write)
 // Can still receive data
 
-socket.destroy();  // Forcibly close socket (similar to close)
+socket.destroy(); // Forcibly close socket (similar to close)
 ```
+
+## Why Does bind() Fail With "Address already in use" After a Restart?
+
+The connections that the old process closed are still in `TIME_WAIT`, and they hold the port. The side that closes a TCP connection first keeps it in `TIME_WAIT` for a while, 60 seconds on Linux, so that delayed packets from the old connection cannot be mistaken for a new one. A server that closes its client connections, for example while it shuts down, leaves these entries behind, and the new process gets `OSError: [Errno 98] Address already in use` from `bind()`.
+
+Set `SO_REUSEADDR` on the listening socket before `bind()`:
+
+```python
+import socket
+
+srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # before bind()
+srv.bind(("0.0.0.0", 8080))
+srv.listen()
+```
+
+On Linux, the option must be set in **both** processes: the connections in `TIME_WAIT` keep the setting of the listening socket that accepted them. We tested every combination on localhost with Python 3.11: a server accepts one connection, closes it first, exits, and a new server binds the same port at once:
+
+```text
+first run without, restart with   : [Errno 98] Address already in use
+first run with, restart without   : [Errno 98] Address already in use
+first run with, restart with      : ok
+```
+
+`ss -tan state time-wait '( sport = :8080 )'` lists the connections that block the port. Most servers set the option for you: nginx, Go's `net` package, Node.js and Python's `http.server` all do. Python's `socketserver.TCPServer` does not, unless you set `allow_reuse_address = True` on your class. Do not try to avoid `TIME_WAIT` with `SO_LINGER` set to 0. That makes `close()` send a reset, and the peer can lose data that was still on the way.
+
+What `SO_REUSEADDR` does **not** do on Linux, from the same test:
+
+- It does not let two sockets listen on the same address and port. A second listener fails with `Address already in use`, also when both set the option.
+- It does not let a socket on `127.0.0.1:8080` and one on `0.0.0.0:8080` listen at the same time. BSD and macOS allow that with `SO_REUSEADDR`; Linux does not.
+- Two different specific addresses need no option at all: `127.0.0.1:8080` and `127.0.0.2:8080` can both listen.
+
+## How Do SO_REUSEADDR and SO_REUSEPORT Differ?
+
+`SO_REUSEADDR` is for restarts. `SO_REUSEPORT` lets several sockets listen on the **same** address and port, and the kernel spreads the new connections across them:
+
+|                                            | `SO_REUSEADDR`                                   | `SO_REUSEPORT`                                                                                                            |
+| ------------------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Solves                                     | Binding while old connections are in `TIME_WAIT` | Several processes or threads that accept on one port                                                                      |
+| Two listeners on the same address and port | No                                               | Yes, when every socket sets it before `bind()`                                                                            |
+| Who may share the port                     | Not applicable                                   | Only sockets of the same effective user, so another user cannot take traffic                                              |
+| Who picks the socket for a connection      | Not applicable                                   | The Linux kernel, by a hash of the connection's addresses and ports                                                       |
+| Platforms                                  | All, with other rules on BSD, macOS and Windows  | Linux 3.9 and later spread connections; BSD and macOS have an option with the same name and other rules; Windows has none |
+
+With four worker processes that each set `SO_REUSEPORT` and listen on `127.0.0.1:9030`, 400 connections from one client were spread like this:
+
+```text
+worker 3 (pid 3200034): 100 connections
+worker 2 (pid 3200033): 99 connections
+worker 1 (pid 3200032): 105 connections
+worker 0 (pid 3200031): 96 connections
+```
+
+```python
+# each worker process runs this; a parent forks four of them
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+s.bind(("127.0.0.1", 9030))
+s.listen(512)
+while True:
+    conn, _ = s.accept()
+    conn.close()
+```
+
+The spread is by hash, not by load: a worker that is busy with a slow request still gets its share of new connections. When one of the sockets closes, for example during a restart of one worker, the connections waiting in its accept queue are reset. nginx (`listen 80 reuseport;`), HAProxy and Envoy use the option, and DNS servers use it for UDP to spread queries across threads.
+
+Node.js's `cluster` module is often named as an example, but it does not use `SO_REUSEPORT`. By default, on every platform except Windows, the primary process accepts the connections and hands them to the workers in turn.
+
+To combine both, set `SO_REUSEADDR` and `SO_REUSEPORT` on each socket. [Can two sockets share a TCP port?](/posts/can-two-sockets-share-tcp-port) walks through more cases, including UDP and multicast.
 
 ## Best Practices
 
@@ -397,3 +466,11 @@ socket.destroy();  // Forcibly close socket (similar to close)
 **Avoid SO_LINGER with zero timeout**: This sends RST instead of FIN, which is abrupt and can lose data.
 
 Understanding the difference between close() and shutdown() helps you write better network code. Use shutdown() when you need directional control or half-closed connections, and always follow up with close() to release the file descriptor. For simple cases, close() alone is sufficient, but protocols requiring graceful shutdown benefit from the shutdown() then close() pattern.
+
+## Related Resources
+
+- [Can two sockets share a TCP port?](/posts/can-two-sockets-share-tcp-port): ports, sockets and the 4-tuple, with more `SO_REUSEPORT` cases
+- [How to free up a TCP port](/posts/how-to-free-up-tcp-port): find and stop the process that holds a port
+- [Increasing the maximum number of TCP connections](/posts/increasing-the-maximum-number-of-tcp-ip-connections-in-linux#h3-time_wait): `TIME_WAIT`, ephemeral ports and backlog limits
+- [UDP vs TCP: how much faster is UDP?](/posts/udp-vs-tcp-performance-comparison), measured on localhost
+- [Sockets and connection states](/guides/networking-fundamentals/08-network-monitoring-and-troubleshooting#h2-sockets-and-connection-states) in the networking guide, and the [TCP vs UDP simulator](/games/tcp-vs-udp)

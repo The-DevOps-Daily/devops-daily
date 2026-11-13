@@ -1,13 +1,13 @@
 ---
 title: 'UDP vs TCP: How Much Faster Is UDP Really?'
-excerpt: "Understanding the performance differences between UDP and TCP protocols, when speed matters, and why UDP isn't always the faster choice in real-world applications."
+excerpt: 'How much faster UDP really is, measured on localhost, where the difference comes from, and when it is appropriate to use UDP instead of TCP: DNS, calls, games, VPNs and QUIC.'
 category:
   name: 'Networking'
   slug: 'networking'
 date: '2025-02-14'
 publishedAt: '2025-02-14T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -19,7 +19,7 @@ tags:
   - Protocols
 ---
 
-**TLDR:** UDP can be 2-10x faster than TCP for small messages in ideal conditions, but this advantage shrinks or disappears when you add the reliability features your application needs. TCP's overhead is around 20-40 bytes per packet plus connection setup, while UDP uses only 8 bytes. The real difference comes from TCP's flow control, congestion management, and retransmission logic, not just header size.
+**TLDR:** UDP saves time before and between messages, not per byte: no handshake before the first byte, no waiting for acknowledgments, and a lost packet does not hold back the packets after it. It does not move more data. In our localhost test, TCP sent 2 to 6 times more messages per second than UDP, and UDP lost up to 2.8% of them. The UDP header is 8 bytes and the TCP header 20 bytes (32 with timestamps), so headers are rarely the difference. Choose UDP for traffic where a late packet is worth less than a lost one, such as calls, games and DNS, and TCP or QUIC for everything that must arrive complete.
 
 When you're choosing between UDP and TCP for your application, the question "how much faster is UDP?" comes up constantly. The answer isn't straightforward because it depends heavily on your network conditions, message size, and what reliability features you need to implement on top of UDP.
 
@@ -75,52 +75,124 @@ For a 1500-byte packet, TCP uses about 32 bytes (2.1%) while UDP uses 8 bytes (0
 
 ## Real Performance Numbers
 
-Let's look at actual measurements. Here's a simple benchmark sending 10,000 messages between two processes on localhost:
+To see what the protocols cost on one machine, we sent 100,000 messages of three sizes from one Python process to a receiver process over localhost, once with UDP and once with TCP, and counted what arrived:
 
 ```python
-import socket
-import time
+"""Send COUNT messages of SIZE bytes over localhost with UDP and with TCP.
+The receiver runs in another process and counts what really arrives."""
+import multiprocessing as mp, socket, sys, time
 
-def benchmark_udp(message_size, count):
-    """Send messages via UDP and measure throughput."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    data = b'x' * message_size
+COUNT = 100_000
 
-    start = time.time()
-    for _ in range(count):
-        sock.sendto(data, ('127.0.0.1', 9999))
-    elapsed = time.time() - start
+def udp_receiver(port, size, q, ready):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+    s.bind(("127.0.0.1", port)); s.settimeout(1.0); ready.set()
+    got = 0
+    try:
+        while True:
+            s.recv(65536); got += 1
+    except socket.timeout:
+        pass
+    q.put(got)
 
-    sock.close()
-    return count / elapsed  # messages per second
+def tcp_receiver(port, size, q, ready):
+    srv = socket.socket(); srv.bind(("127.0.0.1", port)); srv.listen(); ready.set()
+    conn, _ = srv.accept(); total = 0
+    while total < COUNT * size:
+        data = conn.recv(1 << 20)
+        if not data: break
+        total += len(data)
+    q.put((total // size, time.monotonic()))
 
-def benchmark_tcp(message_size, count):
-    """Send messages via TCP and measure throughput."""
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(('127.0.0.1', 9998))
-    data = b'x' * message_size
+def run(proto, size, port):
+    q, ready = mp.Queue(), mp.Event()
+    target = udp_receiver if proto == "udp" else tcp_receiver
+    p = mp.Process(target=target, args=(port, size, q, ready)); p.start(); ready.wait()
+    data = b"x" * size
+    if proto == "udp":
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        start = time.monotonic()
+        for _ in range(COUNT): s.sendto(data, ("127.0.0.1", port))
+        elapsed = time.monotonic() - start
+        got = q.get()
+    else:
+        s = socket.create_connection(("127.0.0.1", port))
+        start = time.monotonic()
+        for _ in range(COUNT): s.sendall(data)
+        got, end = q.get(); elapsed = end - start
+    p.join()
+    print(f"{proto} {size:>5} B: {COUNT/elapsed:>9,.0f} msg/s sent, {got/COUNT:6.1%} delivered")
 
-    start = time.time()
-    for _ in range(count):
-        sock.sendall(data)
-    elapsed = time.time() - start
-
-    sock.close()
-    return count / elapsed
-
-# Example results on a modern Linux system
-# 100-byte messages:
-#   UDP: ~180,000 msg/sec
-#   TCP: ~120,000 msg/sec (1.5x slower)
-# 1500-byte messages:
-#   UDP: ~85,000 msg/sec
-#   TCP: ~75,000 msg/sec (1.13x slower)
-# 8KB messages:
-#   UDP: ~28,000 msg/sec
-#   TCP: ~27,000 msg/sec (nearly identical)
+if __name__ == "__main__":
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 9100
+    for size in (100, 1400, 8000):
+        for proto in ("udp", "tcp"):
+            run(proto, size, port); port += 1
 ```
 
-The performance gap narrows as message size increases because the overhead becomes proportionally smaller. For large transfers, TCP can actually be faster because its congestion control prevents overwhelming the network.
+We ran it twice; the numbers of the two runs differ by less than 6%:
+
+| Message size | UDP messages/s | UDP delivered | TCP messages/s  | TCP delivered |
+| ------------ | -------------- | ------------- | --------------- | ------------- |
+| 100 bytes    | 53,788-55,403  | 100%          | 323,061-341,262 | 100%          |
+| 1,400 bytes  | 50,817-52,482  | 99.3-99.7%    | 299,205-309,291 | 100%          |
+| 8,000 bytes  | 43,072-44,953  | 97.2-99.2%    | 91,334-94,371   | 100%          |
+
+```chart
+{
+  "type": "bar",
+  "title": "Messages per second over localhost, 100,000 messages",
+  "unit": " msg/s",
+  "caption": "Python 3.11 on a small ARM board (4 cores, Linux 6.12), sender and receiver as two processes. Mean of two runs. UDP delivered 100%, 99.5% and 98.2% of the messages; TCP delivered all of them.",
+  "rows": [
+    {
+      "label": "100 B",
+      "value": 54596,
+      "series": "UDP"
+    },
+    {
+      "label": "100 B",
+      "value": 332162,
+      "series": "TCP"
+    },
+    {
+      "label": "1,400 B",
+      "value": 51650,
+      "series": "UDP"
+    },
+    {
+      "label": "1,400 B",
+      "value": 304248,
+      "series": "TCP"
+    },
+    {
+      "label": "8,000 B",
+      "value": 44012,
+      "series": "UDP"
+    },
+    {
+      "label": "8,000 B",
+      "value": 92852,
+      "series": "TCP"
+    }
+  ],
+  "series": [
+    {
+      "name": "UDP",
+      "color": "#f59e0b"
+    },
+    {
+      "name": "TCP",
+      "color": "#0080ff"
+    }
+  ]
+}
+```
+
+TCP sent more messages per second, and UDP lost some. The reasons are the features this post is about. TCP is a byte stream: the kernel joins many small writes into large segments, so a hundred 100-byte messages can travel as one packet. UDP sends each message as its own datagram, with the full trip through the network stack every time. When the receiver falls behind, TCP's flow control slows the sender down, while the kernel drops UDP datagrams as soon as the receive buffer is full, and nobody is told.
+
+Localhost has no network in between and almost no round-trip time. The test shows what system calls, buffering and scheduling cost with this Python code on this machine, not a general ranking of the protocols. On a real network, the round trips and the loss that the next sections describe decide the latency, and that is where UDP can be faster.
 
 ## Where TCP's "Slowness" Comes From
 
@@ -256,6 +328,31 @@ class ReliableUDP:
 
 This is why protocols like QUIC exist - they use UDP as a transport but implement TCP-like reliability features at the application layer with better performance characteristics than kernel-level TCP.
 
+## When Is It Appropriate to Use UDP Instead of TCP?
+
+Use UDP when a late packet is worth less than a lost one, when every message stands on its own, or when one sender must reach many receivers at once. Use TCP, or QUIC, when every byte must arrive and in order: web pages, APIs, file transfers, databases, email and SSH.
+
+| Traffic                                     | Transport             | Why                                                                                                                      |
+| ------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| DNS queries                                 | UDP first             | One small question and one answer; the client asks again after a timeout. Large answers and zone transfers switch to TCP |
+| Voice and video calls (WebRTC, SIP and RTP) | UDP                   | A resent audio packet arrives too late to play. The codec hides a small loss                                             |
+| Fast online games                           | UDP                   | The next position update replaces a lost one. Chat, purchases and results go over a reliable channel                     |
+| Time sync (NTP)                             | UDP                   | Waiting for a retransmission would spoil the time measurement                                                            |
+| Metrics such as StatsD                      | UDP                   | Fire and forget: the app never waits for the metrics server, and a few lost samples do not matter                        |
+| VPN tunnels (WireGuard, OpenVPN by default) | UDP                   | The TCP connections inside the tunnel already resend lost data. TCP inside TCP resends twice and stalls                  |
+| DHCP, mDNS and other discovery              | UDP                   | Broadcast and multicast exist only for UDP, and a DHCP client has no IP address for a connection yet                     |
+| HTTP/3                                      | QUIC over UDP         | QUIC adds encryption and reliable streams on top of UDP, so one lost packet stalls only its own stream                   |
+| Live video for viewers (YouTube, Twitch)    | HTTP over TCP or QUIC | Players download segments of a few seconds and buffer them. Only low-latency calls need UDP                              |
+
+Several of these are not plain UDP anymore. DNS over TLS and DNS over HTTPS run on TCP or QUIC, and browsers use HTTP/3 where the server offers it. When you choose UDP for your own protocol, you take over the jobs that TCP does for you:
+
+- **Loss and order.** Add sequence numbers, so the receiver can see gaps and old packets, and timeouts with retries where a message must arrive.
+- **Rate.** UDP has no congestion control. A sender that ignores loss can fill a link and push out other traffic, including its own.
+- **Size.** Keep each datagram below the path MTU, about 1,200 bytes to be safe on the internet. A larger datagram is split into IP fragments or not sent at all, depending on the protocol and the socket settings, and a lost fragment loses the whole datagram.
+- **Spoofed senders.** UDP has no handshake, so the source address of a packet can be false. A service that answers a small request with a large response can be used to flood someone else; DNS, NTP and memcached have all been used this way.
+
+If your list of jobs grows toward all of TCP, use TCP or QUIC instead. The [TCP vs UDP simulator](/games/tcp-vs-udp) shows lost and reordered packets side by side.
+
 ## Practical Recommendations
 
 Choose UDP when:
@@ -274,8 +371,14 @@ Choose TCP when:
 - You need the connection state that TCP provides
 - You're building a standard request-response API
 
-The speed difference between UDP and TCP is real but often overstated. In many real-world scenarios, the difference is less than 2x, and once you add necessary reliability features to UDP, TCP's battle-tested implementation often wins.
+The speed difference between UDP and TCP is about latency, not throughput. UDP gets the first byte out sooner and does not let one lost packet hold back the rest, but it does not move more data, and once you add the reliability your application needs, TCP's well-tested implementation often wins.
 
 Your network conditions, message patterns, and reliability requirements matter far more than the raw protocol speed. Profile your specific use case before optimizing.
 
-To see TCP and UDP side by side on a practice network you build yourself, read [Network Fundamentals: Layers, IP, TCP, UDP and Ports](/guides/networking-fundamentals/01-network-fundamentals-and-protocols) in our networking guide.
+## Related Resources
+
+- [Network Fundamentals: Layers, IP, TCP, UDP and Ports](/guides/networking-fundamentals/01-network-fundamentals-and-protocols#h2-tcp-and-udp): TCP and UDP side by side on a practice network you build yourself
+- [TCP vs UDP simulator](/games/tcp-vs-udp) and [packet journey simulator](/games/packet-journey)
+- [Close vs shutdown on a socket](/posts/close-vs-shutdown-socket): how a TCP connection ends, and `SO_REUSEADDR` after a restart
+- [How to simulate a slow network](/posts/simulating-slow-internet-connection): add delay and loss to test both protocols
+- [Networking fundamentals quiz](/quizzes/networking-fundamentals-quiz) and [TCP/IP interview questions](/interview-questions/topic/networking#tcp-ip-basics)

@@ -485,5 +485,5 @@ Next: [Data Structures](/guides/introduction-to-python/05-data-structures), wher
 
 ## Keep Learning
 
-- [What is the quickest way to HTTP GET in Python?](/posts/what-is-the-quickest-way-to-http-get-in-python), a preview of the HTTP clients in Part 8.
+- [What is the quickest way to HTTP GET in Python?](/guides/introduction-to-python/08-error-handling#h3-what-is-the-quickest-way-to-make-an-http-get-request-in-python), a preview of the HTTP clients in Part 8.
 - The [mypy documentation](https://mypy.readthedocs.io/) and its cheat sheet of type hints.

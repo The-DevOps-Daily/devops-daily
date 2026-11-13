@@ -7,7 +7,7 @@ category:
 date: '2026-09-03'
 publishedAt: '2026-09-03T09:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '19 min read'
+readingTime: '21 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -101,7 +101,35 @@ terraform force-unlock 2ab78a17-06fc-83e4-d6e7-d8968e9c6f46
 
 `force-unlock` asks for confirmation (`-force` skips it). It only removes the lock: it does not finish or undo the interrupted apply. Run a plan afterwards, and if the apply died halfway, expect the plan to show what is left. Never release a lock that a live run holds. Two writers at the same time is how state gets corrupted.
 
-With `use_lockfile`, the lock is the `<key>.tflock` object next to the state, and `force-unlock` deletes it. The legacy DynamoDB lock shows up as `ConditionalCheckFailedException`; [How to Fix "Error acquiring the state lock: ConditionalCheckFailedException"](/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception) covers that case. Do not answer a lock error with `-lock=false` on a command that writes state. To make stale locks rare, let CI cancel Terraform with a signal it can handle (Terraform stops cleanly and releases the lock on the first interrupt) instead of killing the runner.
+With `use_lockfile`, the lock is the `<key>.tflock` object next to the state, and `force-unlock` deletes it. The legacy DynamoDB lock shows up as `ConditionalCheckFailedException`, which the next section covers. Do not answer a lock error with `-lock=false` on a command that writes state. To make stale locks rare, let CI cancel Terraform with a signal it can handle (Terraform stops cleanly and releases the lock on the first interrupt) instead of killing the runner.
+
+### How Do I Fix "Error acquiring the state lock: ConditionalCheckFailedException"?
+
+Handle it like any other lock error: find out whether the run that holds the lock is still alive, and if it is not, run `terraform force-unlock <ID>` with the ID from the error. `ConditionalCheckFailedException: The conditional request failed` only says where the lock lives. The backend uses the legacy DynamoDB table (`dynamodb_table`), and Terraform creates the lock item with a condition that no lock item exists yet. The condition failed, so another run holds the lock, or a run that died left its lock behind.
+
+The table holds two items for each state file, and only one of them is the lock:
+
+| `LockID` of the item                                          | What it is                                                                                     |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `acme-terraform-state/platform/network/terraform.tfstate`     | The lock: bucket and key. It exists only while a run holds the lock. `Info` names who and when |
+| `acme-terraform-state/platform/network/terraform.tfstate-md5` | The checksum (`Digest`) of the state that Terraform wrote last. It is not a lock               |
+
+For a workspace other than `default`, the key has a prefix: `env:/staging/platform/network/terraform.tfstate` (`workspace_key_prefix` changes `env:`). To see who holds the lock without running Terraform:
+
+```bash
+aws dynamodb get-item --table-name terraform-locks \
+  --key '{"LockID": {"S": "acme-terraform-state/platform/network/terraform.tfstate"}}' \
+  --query 'Item.Info.S' --output text | jq .
+```
+
+Mistakes that make it worse:
+
+- **Deleting or editing the `-md5` item.** It does not release the lock. The checksum is how Terraform notices that the state in S3 is not the one it wrote last. Without it, you lose that check until the next write; with a wrong value, the next run fails with `state data in S3 does not have the expected content`.
+- **Waiting for the lock to expire.** DynamoDB locks have no expiry. A lock from a crashed run stays until someone removes it.
+- **Deleting the lock item by hand** when `force-unlock` works. The result is the same, but `force-unlock` checks the ID first, which makes it less likely that you remove a newer lock by mistake. It is not an atomic check, so stop the other writers first.
+- **Removing locks in a CI cleanup step.** A step that runs `force-unlock` after every failure can remove the lock of another job that has just started. Let only one job run per state instead, for example with a `concurrency` group in GitHub Actions, as in question 4.
+
+The lasting fix is to move off the table. Terraform 1.11 made the S3 lock file generally available and deprecated the DynamoDB arguments. Enable `use_lockfile = true` next to `dynamodb_table` first, so that runners with the old and the new configuration both take a lock during the change. Run `terraform init -reconfigure` (the state stays where it is), then remove `dynamodb_table` when every runner has the new configuration, and delete the table later. The IAM role needs the `.tflock` permissions from the list above.
 
 ### How Do I Store Azure State in a Different Subscription?
 

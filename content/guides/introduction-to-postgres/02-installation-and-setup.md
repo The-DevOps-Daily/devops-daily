@@ -224,7 +224,43 @@ Check the client version and ask the server if it accepts connections:
 }
 ```
 
-`psql --version` shows the build you installed. That is the client; `SELECT version();` in psql shows [which server version you are running](/posts/which-postgresql-version-am-i-running). This output comes from the PGDG Debian package; Homebrew and EDB builds print their own suffix. `pg_isready` exits with code 0 when the server accepts connections. "no response" means nothing listens on that host and port. "rejecting connections" means the server is still starting or shutting down.
+`psql --version` shows the build you installed. That is the client; the next section shows how to ask the server for its version. This output comes from the PGDG Debian package; Homebrew and EDB builds print their own suffix. `pg_isready` exits with code 0 when the server accepts connections. "no response" means nothing listens on that host and port. "rejecting connections" means the server is still starting or shutting down.
+
+### Which PostgreSQL Version Am I Running?
+
+Ask the server, not the client. Connect with `psql` and run one of these:
+
+```sql
+SELECT version();          -- the full string: version, build, platform and compiler
+SHOW server_version;       -- only the version, for example 18.6
+SHOW server_version_num;   -- the same as a number, 180006, easy to compare in scripts
+```
+
+From a shell or a script, `-X` skips your `~/.psqlrc`, and `-A -t` print the value without headers and padding:
+
+```bash
+psql -h db.internal -U app -d app -XAtc 'SHOW server_version_num'
+```
+
+Compare `server_version_num` as a number: `180006 >= 170000` means version 17 or later. Do not cut the major version out of `version()`, whose format differs between builds.
+
+The client and the server are often different versions. `psql --version` and `pg_dump --version` only describe the programs on your machine. When `psql` connects to a server of another major version, it says so:
+
+```text
+WARNING: psql major version 15, server major version 18.
+         Some psql features might not work.
+```
+
+Use a client of the same major version as the server, or a newer one. This matters most for `pg_dump`, which refuses to dump a server that is newer than itself.
+
+Other places to look, when you cannot connect:
+
+- **On the database host:** `pg_lsclusters` on Debian and Ubuntu lists every cluster with its version, port and status. `ls /usr/lib/postgresql/` shows which server versions are installed.
+- **In a data directory:** the file `PG_VERSION` holds the major version that the directory was created for, for example `18`. The server binary must have the same major version.
+- **In a container:** `docker exec <container> postgres --version`. The image tag can be a moving target such as `postgres:18`, so ask the running container.
+- **On a managed service** (Amazon RDS, Cloud SQL, Azure, Neon), run the SQL above. The console also shows the version, but minor updates can happen in a maintenance window.
+
+The minor version matters too: it decides which bug and security fixes you have. [PostgreSQL 18.2 broke standbys](/posts/postgres-18-2-standby-regression-upgrade-footguns) is an example of a minor release that was worth checking for before an upgrade.
 
 ## Understanding PostgreSQL's Structure
 

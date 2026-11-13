@@ -7,7 +7,7 @@ category:
 date: '2024-11-25'
 publishedAt: '2024-11-25T09:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '14 min read'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -287,6 +287,40 @@ Use `COPY` unless you need one of the `ADD` features. Its behavior is easy to pr
 - **Only the build context is visible.** `COPY ../shared /app/` fails, because files outside the context are not sent to the builder. [Use files outside the build context](/posts/force-docker-clean-build#h2-how-do-i-include-files-outside-the-docker-build-context) shows the fixes.
 
 To leave files out of a `COPY . .`, use a `.dockerignore` file, as [COPY with exclusion](/posts/copy-with-docker-exclusion) explains.
+
+### How Do I Copy a Directory to Another Directory With ADD or COPY?
+
+Name the source directory and the target directory. Docker copies the **contents** of the source into the target and creates the target if it does not exist:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+FROM python:3.14-slim
+WORKDIR /srv
+
+# app/main.py ends up as /srv/app/main.py, not /srv/app/app/main.py
+COPY app /srv/app/
+# the trailing slash on the source changes nothing
+COPY config/ /etc/myapp/
+# the same as COPY for a local directory
+ADD app /usr/src/app
+```
+
+`ADD` does nothing more than `COPY` for a local directory, so use `COPY`. Older tutorials also say that `ADD` unpacks an archive from a URL. It does not: `ADD https://example.com/app.tar.gz /usr/src/app/` saves the archive as a file. Only local archives are unpacked, and a remote one only with `--unpack=true` (Dockerfile syntax 1.17 and later). `ADD` downloads one file for each URL; for a whole repository, use a Git URL as shown above.
+
+To copy several directories and keep their paths, use `--parents` (Dockerfile syntax 1.20 and later). Without it, the contents of all sources land in the same target:
+
+```dockerfile
+# creates /srv/services/api/... and /srv/services/worker/...
+COPY --parents services/api services/worker /srv/
+```
+
+To leave some files out of one `COPY` without a `.dockerignore` entry for the whole build, use `--exclude` (Dockerfile syntax 1.19 and later), once for each pattern. As everywhere in a Dockerfile, put comments on their own lines: after an instruction, `#` and the words after it are read as more paths.
+
+```dockerfile
+COPY --exclude=*.md --exclude=tests . /srv/app/
+```
+
+The `# syntax=docker/dockerfile:1` line at the top makes BuildKit use the newest 1.x Dockerfile frontend, which has these flags. `.dockerignore` is still the better tool for files that no instruction needs, such as `.git` and `node_modules`, because it keeps them out of the build context completely.
 
 ## How Do I Write a Comment in a Dockerfile?
 

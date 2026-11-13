@@ -7,7 +7,7 @@ category:
 date: '2026-08-25'
 publishedAt: '2026-08-25T09:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '15 min read'
+readingTime: '17 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -140,6 +140,30 @@ The junior instinct is that probes are good, so more probes are better, so copy 
 The two probes have opposite failure semantics. Readiness failing means "stop sending me traffic," which is reversible and safe. Liveness failing means "kill and restart me," which is destructive. Now run the tape on a common incident: the database gets slow, your health endpoint (which pings the database) starts timing out, and the kubelet begins restarting _every replica at once_, throwing away warm caches and in-flight work, while the restarts themselves stampede the recovering database. The cluster did exactly what you configured: it turned a slow dependency into a restart loop. Restarting also does nothing to fix a slow database, which is the other tell: liveness restarts only help for states a restart can cure, like a deadlocked process.
 
 The mid-level defaults: every serving container gets a readiness probe; liveness probes only where a restart genuinely un-sticks the process, never checking dependencies, with generous `failureThreshold`; slow-booting apps get a startup probe so liveness does not kill them mid-initialization. If a pod is restart-looping and the logs are empty, [the troubleshooting playbook in our Kubernetes guide](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes#h2-a-troubleshooting-playbook) walks the diagnosis.
+
+### Where Does the /healthz Convention Come From?
+
+From Google. Its internal servers expose status pages whose paths end in `z`, such as `/statusz` and `/varz`, often called **z-pages**. The usual explanation for the `z` is that it makes a clash with a real application path unlikely: an app may well have a `/health` or `/status` page of its own. Kubernetes came out of Google, its components exposed `/healthz`, and the name spread from there into many other projects.
+
+Kubernetes itself has moved on. The API server's `/healthz` has been deprecated since Kubernetes 1.16 in favor of two endpoints with clear meanings, and the control plane components still serve [other z-pages](https://kubernetes.io/docs/reference/instrumentation/zpages/) for debugging:
+
+- **`/livez`**: is the process alive, or does it need a restart? A failure means a state such as a deadlock that only a restart fixes.
+- **`/readyz`**: can it serve traffic right now? A failure means "send traffic elsewhere for a while", for example during start-up or while a dependency is unavailable.
+
+`kubectl get --raw='/readyz?verbose'` shows each check of the API server. The same split works for your own services, and the path name matters much less than what the endpoint checks:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /livez # only "the process can answer": no database, no downstream calls
+    port: 8080
+readinessProbe:
+  httpGet:
+    path: /readyz # "I can take requests": start-up finished, caches loaded
+    port: 8080
+```
+
+Keep `/livez` cheap and local, for the reasons above. Let `/readyz` check what this instance needs before it can take requests, such as a finished start-up and loaded caches. Be careful with shared dependencies there too: when every replica reports "not ready" because the database is slow, the Service has no endpoints left at all. Many apps and charts still use `/healthz` for one or both probes; that works, as long as one endpoint is not asked to answer both questions.
 
 ## 6. The scheduler places pods once, then never thinks about them again
 

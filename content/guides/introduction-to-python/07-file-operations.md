@@ -169,6 +169,47 @@ Iterating over a file object reads one line at a time, so even a multi-gigabyte 
 
 `errors="replace"` turns undecodable bytes into the replacement character `�` and keeps going, which is the right choice for reading logs. Use the default strict mode for configuration and data files, where a bad byte means a real problem. [Python 3.15 made UTF-8 the default](/posts/python-3-15-utf-8-default-linux-locales) has the details of what changes between versions and locales.
 
+### Why Does open() Not Create a File That Does Not Exist?
+
+Because the default mode is `"r"`, and reading needs a file that exists. Only the write modes create one: `"w"`, `"a"` and `"x"`, and the same modes with `+` or `b`. `"r+"` (read and write) does not create a file either:
+
+```terminal
+{
+  "title": "which modes create a file",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -q",
+      "output": ">>> for mode in [\"r\", \"r+\", \"w\", \"a\", \"x\"]:\n...     try:\n...         open(f\"new-{mode}.txt\", mode, encoding=\"utf-8\").close()\n...         print(mode, \"created the file\")\n...     except OSError as err:\n...         print(mode, type(err).__name__)\n...\nr FileNotFoundError\nr+ FileNotFoundError\nw created the file\na created the file\nx created the file\n>>> open(\"logs/new/app.log\", \"a\", encoding=\"utf-8\")\nTraceback (most recent call last):\n  File \"<stdin>\", line 1, in <module>\nFileNotFoundError: [Errno 2] No such file or directory: 'logs/new/app.log'\n>>> exit()"
+    }
+  ]
+}
+```
+
+The last error is the other common surprise: no mode creates missing **directories**. Create them first with `Path("logs/new").mkdir(parents=True, exist_ok=True)`.
+
+Pick the mode by what should happen to a file that is already there:
+
+- **Keep it and add to the end:** `"a"`. A log or a list that grows.
+- **Replace it:** `"w"`, which empties the file the moment it opens it. For files you care about, use the atomic write further down instead.
+- **Never replace it:** `"x"`, which raises `FileExistsError`. Use it for lock files and for "create the default config only once".
+- **Read it, and create it empty if it is missing:** `Path("state.txt").touch(exist_ok=True)`, then read it.
+
+Do not test with `os.path.exists()` and then open the file: another process can create or delete it in between. Open it and handle the exception instead:
+
+```python
+import json
+
+try:
+    with open("config.json", encoding="utf-8") as f:
+        config = json.load(f)
+except FileNotFoundError:
+    config = {"port": 8080}  # defaults when the file does not exist yet
+```
+
+`"a+"` reads and appends. Writes always go to the end, also after `f.seek(0)`, so you can read the whole file and then add a line, but you cannot change it in the middle.
+
 ## Parse Access Logs, Plain and Gzipped
 
 A regular expression with named groups turns each access log line into a dictionary. `gzip.open()` in text mode (`"rt"`) reads a rotated `.gz` log exactly like a plain one, so one function handles both:
@@ -576,6 +617,5 @@ Next: [Error Handling](/guides/introduction-to-python/08-error-handling), where 
 
 ## Keep Learning
 
-- [Why Python open() does not create a file if it does not exist](/posts/python-open-does-not-create-file), on file modes and the errors they raise.
 - [Python 3.15 made UTF-8 the default](/posts/python-3-15-utf-8-default-linux-locales): 13 cases in seven Linux locales.
-- [How to tar a directory while excluding files and folders](/posts/tar-directory-excluding-files-and-folders), the command-line side of archives.
+- [How to tar a directory while excluding files and folders](/posts/find-files-with-wildcards-linux#h2-how-do-i-tar-a-directory-and-exclude-files-and-folders), the command-line side of archives.
