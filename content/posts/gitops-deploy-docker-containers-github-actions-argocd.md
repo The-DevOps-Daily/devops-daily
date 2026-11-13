@@ -549,7 +549,7 @@ GitOps is the industry standard for Kubernetes deployments. No more SSH scripts 
 
 ## Related Resources
 
-- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences): when to use each
+- [Docker Compose vs Kubernetes](/posts/how-docker-works-under-the-hood#h2-do-you-need-kubernetes-or-is-docker-compose-enough): when to use each
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes): learn K8s from scratch
-- [Docker Security Best Practices](/posts/docker-security-best-practices): secure your images
+- [Docker Security Best Practices](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers): secure your images
 - [DevOps Roadmap](/roadmap): the full DevOps learning path

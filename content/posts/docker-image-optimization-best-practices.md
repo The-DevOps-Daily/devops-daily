@@ -501,8 +501,8 @@ Remember: every megabyte saved is multiplied across your entire infrastructure: 
 ## Related Resources
 
 - [Advanced Docker Features](/posts/advanced-docker-features): BuildKit, health checks, and more
-- [Docker Security Best Practices](/posts/docker-security-best-practices): secure your optimized images
-- [COPY vs ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands): choose the right instruction
+- [Docker Security Best Practices](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers): secure your optimized images
+- [COPY vs ADD in Dockerfiles](/posts/difference-run-cmd-dockerfile#h2-what-is-the-difference-between-copy-and-add): choose the right instruction
 - [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on optimization
 - [Docker Security Checklist](/checklists/docker-security): verify your setup
 - [Introduction to Docker: Best Practices](/guides/introduction-to-docker): complete guide

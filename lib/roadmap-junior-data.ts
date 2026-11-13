@@ -162,7 +162,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 20,
         resources: [
           guide('introduction-to-docker'),
-          post('docker-image-vs-container'),
+          post('how-docker-works-under-the-hood'),
           sim('docker-terminal-simulator'),
           sim('docker-under-the-hood-simulator'),
           lab('docker-server-deployment'),
@@ -178,7 +178,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 8,
         resources: [
           part('introduction-to-docker', '05-building-custom-docker-images'),
-          post('difference-between-cmd-and-entrypoint-in-dockerfiles'),
+          post('difference-run-cmd-dockerfile'),
           post('docker-image-optimization-best-practices'),
           lab('docker-multi-stage-build'),
           challenge('shrink-the-image'),
@@ -193,8 +193,8 @@ export const juniorStages: SyllabusStage[] = [
         hours: 10,
         resources: [
           part('introduction-to-docker', '08-docker-compose'),
-          post('docker-compose-ports-vs-expose'),
-          post('communication-multiple-docker-compose'),
+          post('rebuild-docker-container-compose'),
+          post('forward-host-port-to-docker-container'),
         ],
       },
     ],

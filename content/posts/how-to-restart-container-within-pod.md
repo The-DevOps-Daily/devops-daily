@@ -1,13 +1,13 @@
 ---
-title: 'How to Restart a Container Within a Kubernetes Pod'
-excerpt: 'Learn practical ways to restart a container inside a Kubernetes pod, including when and why you might need to do this, and the best approaches for different scenarios.'
+title: 'How to Restart, List and Keep Containers Running in a Kubernetes Pod'
+excerpt: 'Kubernetes has no command to restart one container. Learn the ways that work, how to list every container in a pod, how to keep a container from exiting or crash-looping, and how to run images you built locally on minikube, kind and k3d.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
 date: '2024-01-10'
 publishedAt: '2024-01-10T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -15,65 +15,174 @@ tags:
   - Kubernetes
   - Pods
   - Containers
+  - kubectl
+  - minikube
   - Troubleshooting
-  - DevOps
 ---
 
-Restarting a container inside a Kubernetes pod is a common troubleshooting step, but Kubernetes doesn't provide a direct command to restart just one container within a pod. Instead, you'll need to use a few practical workarounds. In this guide, you'll learn why you might need to restart a container, what options are available, and how to do it safely in real-world scenarios.
+In Kubernetes, the pod is the unit you manage, not the container. That is why `kubectl` has no "restart container" command, why a container that finishes its work goes into `CrashLoopBackOff`, and why an image you just built with Docker gives `ErrImagePull` in your local cluster. Each of these has a short, reliable answer once you know how pods treat their containers.
+
+This post covers restarting a container in a pod, listing the containers of a pod, keeping a container running, and using local images with minikube, kind and k3d.
+
+## TLDR
+
+| Task                             | Command or setting                                                          |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| Restart the pods of a Deployment | `kubectl rollout restart deployment/web`                                    |
+| Replace one pod                  | `kubectl delete pod web-7d4b9c-x2kqz` (its controller makes a new one)      |
+| List the containers of a pod     | `kubectl get pod web-7d4b9c-x2kqz -o jsonpath='{.spec.containers[*].name}'` |
+| Keep a debug container running   | `command: ["sleep", "infinity"]`                                            |
+| See why a container stopped      | `kubectl describe pod <pod>` and `kubectl logs <pod> -c <name> --previous`  |
+| Use a local image in minikube    | `minikube image load my-app:1.0`, with `imagePullPolicy: IfNotPresent`      |
 
 ## Prerequisites
 
-You'll need:
+- A Kubernetes cluster and `kubectl`. A local cluster from minikube, kind, k3d or Docker Desktop is enough.
+- Basic knowledge of pods and Deployments. [Introduction to Kubernetes: Pods and Containers](/guides/introduction-to-kubernetes/03-pods-and-containers-in-kubernetes) covers them.
 
-- Access to a Kubernetes cluster
-- `kubectl` installed and configured
-- Basic understanding of pods and deployments
+## How Do I Restart a Container Within a Kubernetes Pod?
 
-## Why Restart a Container?
+There is no `kubectl` command that restarts a single container. `kubectl rollout restart` is the only restart command, and it works on whole workloads. Pick the option that matches what you need.
 
-You might want to restart a container if it is stuck, misbehaving, or needs to reload configuration. Since pods are designed to be ephemeral, Kubernetes expects you to manage restarts at the pod level, not the container level.
-
-## Option 1: Delete the Pod (Recommended)
-
-The most reliable way to restart a container is to delete the pod. If your pod is managed by a Deployment, ReplicaSet, or StatefulSet, Kubernetes will automatically create a new pod to replace the old one.
+**Restart all pods of a workload, one at a time.** This is the normal way, for example after you change a ConfigMap or Secret that the app reads at startup:
 
 ```bash
-kubectl delete pod <pod-name> -n <namespace>
+kubectl rollout restart deployment/web -n shop
+kubectl rollout status deployment/web -n shop
 ```
 
-This approach restarts all containers in the pod. It's safe for stateless workloads and is the standard practice in Kubernetes.
+It works for `deployment`, `statefulset` and `daemonset`. It adds an annotation with the current time to the pod template, so the controller replaces the pods with its update strategy. A Deployment with `RollingUpdate`, several replicas and a readiness probe stays available. `Recreate` stops all pods first, and a StatefulSet or DaemonSet with `OnDelete` waits until you delete the pods yourself.
 
-## Option 2: Trigger a Rolling Restart for Deployments
-
-If you want to restart all pods managed by a Deployment (for example, after updating a config or secret), you can trigger a rolling restart:
+**Replace one pod.** Delete it, and its controller (ReplicaSet, StatefulSet or DaemonSet) creates a new one:
 
 ```bash
-kubectl rollout restart deployment <deployment-name> -n <namespace>
+kubectl delete pod web-7d4b9c-x2kqz -n shop
 ```
 
-This command tells Kubernetes to restart each pod in the deployment one by one, minimizing downtime.
+All containers start again in a replacement pod. A ReplicaSet or DaemonSet gives it a new name, and a StatefulSet keeps the same name and ordinal. A **bare pod**, one that no controller manages, is not recreated. Check `kubectl get pod <name> -o jsonpath='{.metadata.ownerReferences[*].kind}'` first: an empty result means a bare pod, and you have to apply its manifest again.
 
-## Option 3: Kill the Container Process (Advanced)
-
-If you really need to restart just one container and you have access, you can kill the main process inside the container. Kubernetes will detect the failure and restart the container automatically.
+**Restart only one container in place.** Make that container's main process exit. The kubelet then restarts the container in the same pod, according to the pod's `restartPolicy` (`Always`, the default, or `OnFailure`):
 
 ```bash
-kubectl exec <pod-name> -c <container-name> -- kill 1
+kubectl exec web-7d4b9c-x2kqz -c app -- kill 1
+kubectl get pod web-7d4b9c-x2kqz -w     # the RESTARTS count goes up by one
 ```
 
-- `kill 1` sends a signal to the main process (PID 1), causing the container to exit.
-- Kubernetes will restart the container if the pod's restart policy is set to `Always` (the default for most workloads).
+This depends on the app. Inside its own PID namespace, the main process is PID 1, and the kernel does not deliver signals that PID 1 has no handler for. `kill 1` (SIGTERM) works for most servers, because they handle SIGTERM. For a process that ignores it, even `kill -9 1` from inside the container does nothing. The image also needs a `kill` command, which distroless images do not have. Treat this as a debugging trick, not an operations procedure.
 
-Use this method with caution, as it can have side effects if the container is not designed to handle abrupt termination.
+Newer clusters can also decide per container what happens when it exits, with `restartPolicy` and `restartPolicyRules` on the container (the `ContainerRestartRules` feature, beta and on by default since Kubernetes 1.35). That is a pod spec setting for exit codes, not a command you run.
 
-## When Not to Restart
+## How Do I List All Containers in a Kubernetes Pod?
 
-If your pod is not managed by a controller (like a bare pod), deleting it will not recreate it. Bare pods are not automatically replaced, so if you delete one, you'll need to manually re-apply the manifest to bring it back.
+`kubectl describe pod` shows them under `Containers:` and `Init Containers:`. For scripts, ask for the names with JSONPath:
 
-This can lead to downtime and configuration drift, especially as your workloads grow. For most production scenarios, it's a good idea to migrate to Deployments or StatefulSets, which provide self-healing and automated management of pods. These controllers help maintain the desired state and make restarts and rollouts much safer and more predictable.
+```bash
+kubectl get pod web-7d4b9c-x2kqz -o jsonpath='{.spec.containers[*].name}{"\n"}'
+kubectl get pod web-7d4b9c-x2kqz -o jsonpath='{.spec.initContainers[*].name}{"\n"}'
+kubectl get pod web-7d4b9c-x2kqz -o jsonpath='{.spec.ephemeralContainers[*].name}{"\n"}'
+```
 
-## Next Steps
+Native sidecar containers are listed under `initContainers`, with `restartPolicy: Always`. Ephemeral containers are the ones that `kubectl debug` added.
 
-For more reliable operations, automate restarts using health checks such as liveness and readiness probes. These probes let Kubernetes detect and recover from unhealthy containers automatically, reducing the need for manual intervention. You can also integrate restart logic into your CI/CD pipeline to handle updates and rollbacks efficiently.
+For every pod in a namespace, one line each:
 
-As your infrastructure grows, explore Kubernetes controllers and operators to manage pod lifecycles, scaling, and recovery in a more automated and reliable way. Learning these patterns will help you build resilient, production-ready systems.
+```bash
+kubectl get pods -n shop -o custom-columns='POD:.metadata.name,CONTAINERS:.spec.containers[*].name,IMAGES:.spec.containers[*].image'
+```
+
+To see the state of each container, with restart counts, read `status.containerStatuses`:
+
+```bash
+kubectl get pod web-7d4b9c-x2kqz -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.ready}{"\t"}{.restartCount}{"\n"}{end}'
+```
+
+Once you have the name, pass it with `-c` to other commands: `kubectl logs web-7d4b9c-x2kqz -c app`, `kubectl exec -it web-7d4b9c-x2kqz -c app -- sh`. `kubectl logs <pod> --all-containers` prints the logs of all of them.
+
+## How Can I Keep a Container Running on Kubernetes?
+
+A container runs as long as its main process runs, exactly as in Docker. Two different problems hide behind this question.
+
+**The container finishes at once.** An image such as `ubuntu` or `busybox` has no long-running process: its default command is a shell, which exits when there is no input. In a Deployment, Kubernetes restarts it again and again, with a growing delay, and the pod shows `CrashLoopBackOff`. To keep such a container alive for debugging, give it a command that does not end:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: toolbox
+spec:
+  terminationGracePeriodSeconds: 5 # sleep ignores SIGTERM, so do not wait 30 seconds
+  containers:
+    - name: toolbox
+      image: ubuntu:24.04
+      command: ['sleep', 'infinity']
+```
+
+```bash
+kubectl apply -f toolbox.yaml
+kubectl exec -it toolbox -- bash
+```
+
+For a one-off shell you do not need a manifest: `kubectl run tmp --rm -it --image=ubuntu:24.04 --restart=Never -- bash` starts a pod, attaches to it, and deletes it when you exit. To debug a pod that already runs, `kubectl debug -it <pod> --image=busybox:1.37 --target=app` adds an ephemeral container that shares the app's process namespace.
+
+**A service keeps stopping.** Then the question is why the main process ends. Run it under a Deployment (its pods always use `restartPolicy: Always`), and read the reason:
+
+```bash
+kubectl describe pod web-7d4b9c-x2kqz     # "Last State: Terminated", Reason and Exit Code
+kubectl logs web-7d4b9c-x2kqz -c app --previous   # the log of the container that died
+```
+
+| Reason or exit code             | Cause                                         | What to change                                       |
+| ------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
+| `OOMKilled`, 137                | The container used more than its memory limit | Raise `resources.limits.memory`, or fix the leak     |
+| `Error`, 1                      | The app failed                                | Read `logs --previous`                               |
+| `Completed`, 0                  | The command finished                          | Run a long-running process, or use a Job             |
+| Liveness probe failed in Events | The probe killed it                           | Check the probe path, port and `initialDelaySeconds` |
+
+Two settings cause many of these restarts. A memory **limit** below what the app needs gets the container killed, while a **request** decides where the pod is scheduled and how early it is evicted under memory pressure, but is not a cap. A liveness probe that checks a dependency, such as the database, restarts healthy containers whenever that dependency is slow. Keep liveness probes about the process itself, and use readiness probes for "can serve traffic". For work that should finish, use a Job or CronJob instead of keeping a container alive.
+
+## How Do I Use Local Docker Images With Minikube?
+
+A local cluster does not see the images in your Docker Engine. It pulls from a registry, fails, and the pod shows `ErrImagePull` or `ImagePullBackOff`. Load the image into the cluster:
+
+```bash
+docker build -t my-app:1.0 .
+minikube image load my-app:1.0       # copy it from Docker into minikube
+minikube image ls | grep my-app
+```
+
+Or build it inside minikube directly, which saves the copy:
+
+```bash
+minikube image build -t my-app:1.0 .
+```
+
+Both commands work with any container runtime in minikube. The older `eval $(minikube docker-env)` method points your `docker` client at a Docker daemon inside minikube. Since minikube 1.39 the default runtime is containerd, so `docker-env` needs a cluster started with `minikube start --container-runtime=docker`. Undo it with `eval $(minikube docker-env -u)`, or the next `docker` command in that shell goes to minikube.
+
+Then make sure Kubernetes does not try to pull the image:
+
+```yaml
+containers:
+  - name: my-app
+    image: my-app:1.0 # a fixed tag, not :latest
+    imagePullPolicy: IfNotPresent
+```
+
+If you leave out `imagePullPolicy`, Kubernetes uses `Always` for the `:latest` tag or no tag, and `IfNotPresent` for other tags. With `:latest`, it ignores your loaded image and pulls, which fails. Use a version tag, or set `imagePullPolicy: Never` for an image that only exists locally. After you load a new build under the same tag, run `kubectl rollout restart deployment/my-app`: pods that run do not pick up the new image by themselves.
+
+Other local clusters have the same command under another name:
+
+| Cluster  | Load a local image                         |
+| -------- | ------------------------------------------ |
+| minikube | `minikube image load my-app:1.0`           |
+| kind     | `kind load docker-image my-app:1.0`        |
+| k3d      | `k3d image import my-app:1.0 -c mycluster` |
+
+For a team or CI, a registry is simpler than loading images by hand: push to it, and let every cluster pull from it.
+
+## Related Resources
+
+- [Introduction to Kubernetes: Pods and Containers](/guides/introduction-to-kubernetes/03-pods-and-containers-in-kubernetes): lifecycle, restart policy and sidecars
+- [Introduction to Kubernetes: Deployments and ReplicaSets](/guides/introduction-to-kubernetes/04-deployments-and-replicasets): rollouts and rollbacks
+- [Kubernetes terminal simulator](/games/kubernetes-terminal-simulator): practice `rollout restart`, `logs` and `exec` in the browser
+- [Do you need Kubernetes, or is Docker Compose enough?](/posts/how-docker-works-under-the-hood#h2-do-you-need-kubernetes-or-is-docker-compose-enough)
+- [Kubernetes quiz](/quizzes/kubernetes-quiz) and [Kubernetes security checklist](/checklists/kubernetes-security)

@@ -405,7 +405,7 @@ For this app the gain from two stages is modest, because `psycopg[binary]` ships
       pip install --no-cache-dir --index-url "https://__token__:${PIP_INDEX_TOKEN}@pypi.example.com/simple" -r requirements.txt
   ```
 
-  Build it with `docker build --secret id=pip_token,env=PIP_INDEX_TOKEN .`. The `env=` option of the mount needs Dockerfile syntax 1.10 or newer, which `docker/dockerfile:1` gives you. For an SSH key, such as one for a private Git dependency, use `--mount=type=ssh` to forward your agent ([SSH keys in Docker builds and containers](/posts/using-ssh-keys-in-docker-container)).
+  Build it with `docker build --secret id=pip_token,env=PIP_INDEX_TOKEN .`. The `env=` option of the mount needs Dockerfile syntax 1.10 or newer, which `docker/dockerfile:1` gives you. For an SSH key, such as one for a private Git dependency, use `--mount=type=ssh` to forward your agent ([SSH keys in Docker builds and containers](/posts/force-docker-clean-build#h2-how-do-i-use-ssh-keys-or-secrets-in-a-docker-build)).
 
 - **`COPY --link`** copies files into an independent layer that does not depend on the layers below it. When the base image changes, BuildKit can reuse that layer instead of copying again. It is safe when you do not rely on symlinks in the destination path.
 - **`COPY --exclude=*.md`** and **`COPY --parents`** filter what you copy and keep directory structure ([more ways to exclude files from `COPY`](/posts/copy-with-docker-exclusion)).
@@ -451,9 +451,9 @@ The app needs a database. Next, give Postgres storage that survives container re
 
 ## Keep Learning
 
-- [Understanding the Difference Between CMD and ENTRYPOINT in Dockerfiles](/posts/difference-between-cmd-and-entrypoint-in-dockerfiles)
-- [Understanding the Difference Between COPY and ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands)
+- [Understanding the Difference Between CMD and ENTRYPOINT in Dockerfiles](/posts/difference-run-cmd-dockerfile#h2-what-is-the-difference-between-cmd-and-entrypoint)
+- [Understanding the Difference Between COPY and ADD in Dockerfiles](/posts/difference-run-cmd-dockerfile#h2-what-is-the-difference-between-copy-and-add)
 - [How to Force Docker for a Clean Build of an Image](/posts/force-docker-clean-build)
-- [How Can I Inspect the File System of a Failed Docker Build?](/posts/inspect-filesystem-of-failed-docker-build)
+- [How Can I Inspect the File System of a Failed Docker Build?](/posts/force-docker-clean-build#h2-how-do-i-inspect-the-file-system-of-a-failed-docker-build)
 - Exercise: [Docker Multi-Stage Build Optimization](/exercises/docker-multi-stage-build)
 - Interview question: [Dockerfile best practices](/interview-questions/topic/docker#dockerfile-best-practices)

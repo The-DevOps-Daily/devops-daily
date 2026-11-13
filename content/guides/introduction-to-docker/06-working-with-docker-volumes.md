@@ -191,7 +191,7 @@ Do not copy a running database's files: the copy can be inconsistent and fail to
 
 ## Bind Mounts for Development
 
-A bind mount puts a host directory into the container. Change a file on the host and the container sees it immediately, which makes it the standard way to work on code or static files without rebuilding the image. It beats [editing files inside the container](/posts/docker-edit-file-in-container), where the changes disappear with the container. Serve a local directory with nginx:
+A bind mount puts a host directory into the container. Change a file on the host and the container sees it immediately, which makes it the standard way to work on code or static files without rebuilding the image. It beats [editing files inside the container](/posts/how-to-access-docker-container-shell#h2-how-do-i-edit-a-file-inside-a-container), where the changes disappear with the container. Serve a local directory with nginx:
 
 ```bash
 mkdir -p site && echo '<h1>Served from my laptop</h1>' > site/index.html
@@ -365,8 +365,8 @@ Next, connect hello-api to this database over a Docker network in [Docker Networ
 
 ## Keep Learning
 
-- [How to Handle Persistent Storage for Databases in Docker](/posts/docker-persistent-storage-databases)
+- [How to Handle Persistent Storage for Databases in Docker](/posts/docker-data-loss-when-container-exits#h2-how-do-i-store-a-databases-data-in-docker)
 - [How to Prevent Data Loss When Docker Containers Exit](/posts/docker-data-loss-when-container-exits)
-- [How to Mount a Host Directory in a Docker Container](/posts/docker-mount-host-directory)
-- [How to Add a Volume to an Existing Docker Container](/posts/how-to-add-a-volume-to-an-existing-docker-container)
+- [How to Mount a Host Directory in a Docker Container](/posts/docker-data-loss-when-container-exits#h2-how-do-i-mount-a-host-directory-in-a-container)
+- [How to Add a Volume to an Existing Docker Container](/posts/docker-data-loss-when-container-exits#h2-how-do-i-add-a-volume-to-an-existing-docker-container)
 - [Install PostgreSQL 18, including the Docker image](/guides/introduction-to-postgres/02-installation-and-setup)

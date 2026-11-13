@@ -1380,5 +1380,5 @@ This is the end of the guide. Go back to the [guide overview](/guides/introducti
 
 - [Introduction to CI/CD with GitHub Actions](/guides/introduction-to-cicd), to run svcheck's checks in a full pipeline.
 - [Shai-Hulud reaches PyPI](/posts/shai-hulud-hades-pypi-wave-june-2026): why pinned actions, locked dependencies and a release cooldown matter.
-- [Why your Docker container exits immediately](/posts/why-docker-container-exits-immediately), for the PID 1 and signal behaviour of the container example.
+- [Why your Docker container exits immediately](/posts/difference-run-cmd-dockerfile#h2-why-does-my-docker-container-exit-immediately), for the PID 1 and signal behaviour of the container example.
 - The [pytest documentation](https://docs.pytest.org/), the [Ruff rules](https://docs.astral.sh/ruff/rules/) and the [mypy cheat sheet](https://mypy.readthedocs.io/en/stable/cheat_sheet_py3.html).

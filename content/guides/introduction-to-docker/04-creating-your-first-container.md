@@ -179,7 +179,7 @@ echo '<h1>Hello from docker cp</h1>' > index.html
 docker cp ./index.html web:/usr/share/nginx/html/index.html
 ```
 
-Changes you make inside a container are lost when you remove it. Use `exec` and `cp` to investigate ([more ways to explore a container's file system](/posts/exploring-docker-container-file-system)), and put permanent changes into the image ([Part 5](/guides/introduction-to-docker/05-building-custom-docker-images)) or a volume ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
+Changes you make inside a container are lost when you remove it. Use `exec` and `cp` to investigate ([more ways to explore a container's file system](/posts/how-to-access-docker-container-shell#h2-how-do-i-explore-a-containers-file-system)), and put permanent changes into the image ([Part 5](/guides/introduction-to-docker/05-building-custom-docker-images)) or a volume ([Part 6](/guides/introduction-to-docker/06-working-with-docker-volumes)).
 
 ## Stop, Start and Remove
 
@@ -264,7 +264,7 @@ CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT   MEM %     NET I/O        
 - `--cpus 0.5`: at most half of one CPU core, measured over time.
 - `--pids-limit 200`: at most 200 processes, which stops a fork bomb.
 
-`docker update --memory 512m web` changes limits on a running container. It cannot add or change port mappings ([what to do instead](/posts/docker-assign-port-mapping)).
+`docker update --memory 512m web` changes limits on a running container. It cannot add or change port mappings ([what to do instead](/posts/forward-host-port-to-docker-container#h2-how-do-i-add-a-port-to-a-running-container)).
 
 ## Health Checks
 
@@ -327,8 +327,8 @@ Next, build your own image for a small web API in [How to Write a Dockerfile](/g
 
 ## Keep Learning
 
-- [Why Your Docker Container Exits Immediately](/posts/why-docker-container-exits-immediately)
-- [Difference Between Running and Starting a Docker Container](/posts/docker-run-vs-docker-start)
+- [Why Your Docker Container Exits Immediately](/posts/difference-run-cmd-dockerfile#h2-why-does-my-docker-container-exit-immediately)
+- [Difference Between Running and Starting a Docker Container](/posts/how-docker-works-under-the-hood#h2-what-is-the-difference-between-docker-run-and-docker-start)
 - [How to Access a Docker Container's Shell](/posts/how-to-access-docker-container-shell)
-- [Docker: Name is Already in Use by Container](/posts/docker-name-already-in-use)
+- [Docker: Name is Already in Use by Container](/posts/docker-list-containers#h2-how-do-i-fix-the-container-name-is-already-in-use-error)
 - Practice in the browser: [Docker Terminal simulator](/games/docker-terminal-simulator)

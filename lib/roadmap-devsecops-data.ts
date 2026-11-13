@@ -264,7 +264,6 @@ export const devsecopsStages: SyllabusStage[] = [
         priority: 'essential',
         hours: 20,
         resources: [
-          post('docker-security-best-practices'),
           post('why-your-base-image-has-1684-cves'),
           lab('docker-multi-stage-build'),
           challenge('shrink-the-image'),

@@ -217,7 +217,7 @@ Groups give several users the same access, for example to a shared directory or 
 `usermod -G developers alice` without `-a` **replaces** all of Alice's supplementary groups with `developers`. Run it on your own account without `-a` and you can drop yourself out of the `sudo` group. Always use `-aG`.
 :::
 
-Group changes apply to **new** logins. A user who is already logged in must log out and back in (or start a new SSH session) before `id` shows the new group. `newgrp developers` starts a shell with the new group in the meantime. This is why `docker` can still say "permission denied" right after `usermod -aG docker` ([the fix](/posts/fix-docker-permission-denied-error)).
+Group changes apply to **new** logins. A user who is already logged in must log out and back in (or start a new SSH session) before `id` shows the new group. `newgrp developers` starts a shell with the new group in the meantime. This is why `docker` can still say "permission denied" right after `usermod -aG docker` ([the fix](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-fix-permission-denied-on-the-docker-socket)).
 
 Other group commands: `sudo groupmod -n new-name old-name` renames a group, `sudo groupdel developers` deletes it, and `sudo gpasswd -a alice developers` is another way to add a member.
 
