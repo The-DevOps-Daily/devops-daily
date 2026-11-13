@@ -1,13 +1,13 @@
 ---
-title: 'How to Run Terraform Init From a Different Directory'
-excerpt: "Learn how to initialize and manage Terraform configurations from outside their directory using -chdir, working directories, and automation patterns."
+title: 'How to Run Terraform From a Different Directory and in Scripts'
+excerpt: 'Use terraform -chdir to run init, plan and apply against another folder, run Terraform without interactive prompts, limit a run to one resource with -target, and destroy everything except one resource without losing it.'
 category:
   name: 'Terraform'
   slug: 'terraform'
 date: '2025-02-25'
 publishedAt: '2025-02-25T10:15:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -16,495 +16,224 @@ tags:
   - Infrastructure as Code
   - CLI
   - Automation
+  - CI/CD
   - DevOps
 ---
 
-By default, Terraform operates on the configuration in your current directory. But sometimes you need to run Terraform commands against configurations in other directories - like managing multiple environments from a central location, running Terraform in CI/CD pipelines, or automating multi-project deployments.
+Terraform works on the folder you run it in, and by default it asks before it changes anything. That is right for a person at a terminal. In scripts, Makefiles and CI pipelines you want the opposite: run against a folder you name, never wait for input, and change only what you meant to change.
 
-Terraform provides the `-chdir` flag specifically for this purpose, though there are other approaches depending on your use case.
+This post covers the CLI options for that: `-chdir` to work on another folder, the flags that turn off prompts, `-target` to limit a run to one resource, and a safe way to destroy every resource except one.
 
-**TLDR:** Use `terraform -chdir=/path/to/config init` to run Terraform against a configuration in a different directory. The `-chdir` flag must come before the subcommand (init, plan, apply). Alternatively, use shell commands like `cd /path && terraform init` for simple cases, or `terraform -chdir=path plan -out=path/tfplan` to save output files in the target directory. The `-chdir` flag is the recommended modern approach over older methods.
+## TLDR
 
-## Using the -chdir Flag
+| Question                                         | Short answer                                                                                  |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| How do I run `init` in another folder?           | `terraform -chdir=environments/prod init`. `-chdir` goes before the subcommand                |
+| Where do `-out` and `-var-file` paths point?     | They are relative to the `-chdir` folder                                                      |
+| How do I skip the "Enter a value: yes" prompt?   | `terraform apply tfplan` for a saved plan, or `-auto-approve`. Add `-input=false` in scripts  |
+| How do I apply only one resource?                | `terraform apply -target=aws_instance.web`, for recovery only, then a full plan               |
+| How do I destroy everything except one resource? | Replace its block with a `removed` block (`destroy = false`), apply, then `terraform destroy` |
 
-The `-chdir` flag changes Terraform's working directory before executing the command:
+## Prerequisites
 
-```bash
-# Initialize Terraform in another directory
-terraform -chdir=./environments/production init
-```
+- Terraform 0.14 or later for `-chdir`, and 1.7 or later for `removed` blocks.
+- The outputs in this post come from Terraform 1.15.8 with the built-in `terraform_data` resource.
 
-This is equivalent to:
+## How Do I Run Terraform Init From a Different Directory?
 
-```bash
-cd ./environments/production
-terraform init
-```
-
-But with `-chdir`, your shell's working directory doesn't change, which can be useful in scripts.
-
-The flag must come before the subcommand:
-
-```bash
-# Correct
-terraform -chdir=./prod init
-terraform -chdir=./prod plan
-terraform -chdir=./prod apply
-
-# Incorrect - won't work
-terraform init -chdir=./prod
-```
-
-## Running Multiple Commands
-
-When running multiple Terraform commands, specify `-chdir` for each one:
-
-```bash
-# Initialize, plan, and apply
-terraform -chdir=./environments/staging init
-terraform -chdir=./environments/staging plan -out=tfplan
-terraform -chdir=./environments/staging apply tfplan
-```
-
-Or create a shell function to reduce repetition:
-
-```bash
-# Add to your shell profile
-tf() {
-  local dir=$1
-  shift
-  terraform -chdir="$dir" "$@"
-}
-
-# Use it
-tf ./environments/staging init
-tf ./environments/staging plan
-tf ./environments/staging apply
-```
-
-## Absolute vs Relative Paths
-
-You can use both absolute and relative paths:
-
-```bash
-# Relative path (from current directory)
-terraform -chdir=./terraform/prod init
-
-# Absolute path
-terraform -chdir=/home/user/infrastructure/terraform/prod init
-
-# Using environment variable
-export TF_DIR="/home/user/infrastructure/terraform/prod"
-terraform -chdir="${TF_DIR}" init
-```
-
-Relative paths are resolved from your current working directory, not from where the `terraform` binary is located.
-
-## Managing Multiple Environments
-
-For projects with multiple environments, use `-chdir` to operate on each:
-
-```
-infrastructure/
-├── environments/
-│   ├── dev/
-│   │   ├── main.tf
-│   │   └── terraform.tfvars
-│   ├── staging/
-│   │   ├── main.tf
-│   │   └── terraform.tfvars
-│   └── prod/
-│       ├── main.tf
-│       └── terraform.tfvars
-└── modules/
-    └── vpc/
-        └── main.tf
-```
-
-Initialize all environments from the root:
-
-```bash
-#!/bin/bash
-# init-all-envs.sh
-
-for env in dev staging prod; do
-  echo "Initializing $env environment..."
-  terraform -chdir="environments/$env" init
-done
-```
-
-Plan all environments:
-
-```bash
-#!/bin/bash
-# plan-all-envs.sh
-
-for env in dev staging prod; do
-  echo "Planning $env environment..."
-  terraform -chdir="environments/$env" plan -out="tfplan-$env"
-done
-```
-
-## File Paths and -chdir
-
-When using `-chdir`, file paths in the output are relative to the target directory:
-
-```bash
-terraform -chdir=./environments/prod plan -out=tfplan
-```
-
-The `tfplan` file is created in `./environments/prod/tfplan`, not in your current directory.
-
-To save files in your current directory, use absolute paths or path references:
-
-```bash
-# Save plan in current directory
-terraform -chdir=./environments/prod plan -out="$(pwd)/prod-tfplan"
-```
-
-Or use relative paths from the target directory:
-
-```bash
-# Save plan one level up
-terraform -chdir=./environments/prod plan -out=../prod-tfplan
-```
-
-## Using cd vs -chdir in Scripts
-
-Both approaches work, but have different characteristics:
-
-**Using cd:**
-
-```bash
-#!/bin/bash
-# Approach 1: Using cd
-
-cd /path/to/terraform/config || exit 1
-terraform init
-terraform plan
-terraform apply
-```
-
-Pros:
-- Simple and familiar
-- All subsequent commands operate in the target directory
-- Easier to read for simple scripts
-
-Cons:
-- Changes your script's working directory
-- Need error handling (`|| exit`) if directory doesn't exist
-- Can cause issues if script continues after Terraform commands
-
-**Using -chdir:**
-
-```bash
-#!/bin/bash
-# Approach 2: Using -chdir
-
-terraform -chdir=/path/to/terraform/config init
-terraform -chdir=/path/to/terraform/config plan
-terraform -chdir=/path/to/terraform/config apply
-```
-
-Pros:
-- Doesn't change the script's working directory
-- More explicit about which directory is targeted
-- Safer in complex scripts
-
-Cons:
-- More verbose
-- Need to repeat the flag for each command
-
-**Best of both worlds:**
-
-```bash
-#!/bin/bash
-# Approach 3: Subshell with cd
-
-(
-  cd /path/to/terraform/config || exit 1
-  terraform init
-  terraform plan
-  terraform apply
-)
-
-# Script continues here in the original directory
-echo "Deployment complete"
-```
-
-The subshell `()` isolates the `cd` command, so when it exits, you're back in your original directory.
-
-## CI/CD Pipeline Patterns
-
-In CI/CD, you often need to run Terraform from different directories:
-
-```yaml
-# GitHub Actions
-name: Terraform
-on:
-  push:
-    branches: [main]
-
-jobs:
-  terraform-prod:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform Init
-        run: terraform -chdir=environments/prod init
-
-      - name: Terraform Plan
-        run: terraform -chdir=environments/prod plan
-
-      - name: Terraform Apply
-        run: terraform -chdir=environments/prod apply -auto-approve
-```
-
-For multiple environments:
-
-```yaml
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [dev, staging, prod]
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Terraform Init
-        run: terraform -chdir=environments/${{ matrix.environment }} init
-
-      - name: Terraform Plan
-        run: terraform -chdir=environments/${{ matrix.environment }} plan
-```
-
-## Working With Modules
-
-When your configuration uses local modules, `-chdir` affects how module paths are resolved:
-
-```hcl
-# environments/prod/main.tf
-
-module "vpc" {
-  source = "../../modules/vpc"  # Relative to this file's location
-
-  cidr_block = "10.0.0.0/16"
-}
-```
-
-Running from the root directory:
+Use the global `-chdir` option. It changes the working folder before the subcommand runs, and your shell stays where it is:
 
 ```bash
 terraform -chdir=environments/prod init
+terraform -chdir=environments/prod plan -out=tfplan
+terraform -chdir=environments/prod apply tfplan
 ```
 
-Terraform resolves the module path `../../modules/vpc` relative to `environments/prod`, which correctly points to `modules/vpc`.
+`-chdir` must come before the subcommand. After it, the subcommand rejects it:
 
-## Handling Backend Configuration
+```text
+$ terraform init -chdir=environments/prod
+Error: Failed to parse command-line flags
 
-Backend configuration files are also resolved relative to the target directory:
-
-```bash
-# Backend config in the target directory
-terraform -chdir=./environments/prod init -backend-config=backend.hcl
+flag provided but not defined: -chdir
 ```
 
-This looks for `./environments/prod/backend.hcl`.
+The old form with the folder as the last argument was removed. On current versions, `terraform init environments/prod` fails with `Too many command line arguments. Did you mean to use -chdir?`.
 
-To use a backend config from your current directory:
+### Paths Are Relative to the New Folder
+
+Every relative path on the command line is resolved from the `-chdir` folder. That includes `-out`, `-var-file`, `-backend-config` and plan file names:
 
 ```bash
-# Backend config in current directory
-terraform -chdir=./environments/prod init -backend-config="$(pwd)/backend.hcl"
+# writes environments/prod/tfplan
+terraform -chdir=environments/prod plan -out=tfplan
+
+# reads backends/prod.hcl from the folder you are in
+terraform -chdir=environments/prod init -backend-config="$PWD/backends/prod.hcl"
+
+# the same with a path relative to the target folder
+terraform -chdir=environments/prod init -backend-config=../../backends/prod.hcl
 ```
 
-Or with a relative path from the target:
+Inside the configuration, `path.module` and `path.root` point at the target folder, and local module sources such as `../../modules/vpc` resolve from it. The exception is `path.cwd`: it still returns the folder you started in, which is one more reason not to use it. [Where path.module points](/posts/terraform-read-environment-variables-from-env-file#h2-how-do-i-get-the-current-working-directory-in-terraform) shows the values side by side.
+
+The `.terraform` folder is created inside the target folder. If you set `TF_DATA_DIR` to move it, set the same value for every command that uses that folder, because a later `plan` without it will not find the providers that `init` installed.
+
+### Run Several Folders From One Script
+
+A loop with `-chdir` is enough for a handful of root folders:
 
 ```bash
-# Backend config one level up
-terraform -chdir=./environments/prod init -backend-config=../backend.hcl
-```
+#!/usr/bin/env bash
+set -euo pipefail
 
-## Automating Multi-Directory Operations
-
-Here's a script that initializes and plans multiple Terraform directories:
-
-```bash
-#!/bin/bash
-# terraform-multi-init.sh
-
-set -e
-
-TERRAFORM_DIRS=(
-  "infrastructure/networking"
-  "infrastructure/compute"
-  "infrastructure/database"
-  "infrastructure/monitoring"
-)
-
-for dir in "${TERRAFORM_DIRS[@]}"; do
-  echo "========================================="
-  echo "Processing: $dir"
-  echo "========================================="
-
-  if [ ! -d "$dir" ]; then
-    echo "Warning: Directory $dir does not exist, skipping..."
-    continue
-  fi
-
-  echo "Running terraform init..."
-  terraform -chdir="$dir" init
-
-  echo "Running terraform validate..."
+for dir in environments/dev/network environments/dev/app; do
+  echo "== $dir"
+  terraform -chdir="$dir" init -input=false
   terraform -chdir="$dir" validate
-
-  echo "Running terraform plan..."
-  terraform -chdir="$dir" plan -out="tfplan"
-
-  echo ""
+  terraform -chdir="$dir" plan -input=false -out=tfplan
 done
-
-echo "All directories processed successfully!"
 ```
 
-Make it executable and run:
+`cd` in a subshell does the same and is fine too: `(cd "$dir" && terraform plan)`. The parentheses keep the `cd` from affecting the rest of the script. A Makefile target such as `plan-%:` with `terraform -chdir=environments/$* plan` gives you `make plan-prod`.
+
+In GitHub Actions, a matrix runs each folder as its own job:
+
+```yaml
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [environments/dev/app, environments/staging/app, environments/prod/app]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.17.2
+      - run: terraform -chdir=${{ matrix.dir }} init -input=false
+      - run: terraform -chdir=${{ matrix.dir }} plan -input=false -no-color -out=tfplan
+```
+
+Each job also needs credentials for its environment, ideally a separate role per environment.
+
+## How Do I Run Terraform Without the Interactive Prompt?
+
+There are two prompts, and each has its own switch:
+
+- **The approval prompt** (`Enter a value:` before apply or destroy). Apply a saved plan, `terraform apply tfplan`, which never asks. Or pass `-auto-approve` to `apply` or `destroy`.
+- **Questions for missing variables.** Pass `-input=false`, or set `TF_INPUT=0`. Terraform then stops with an error instead of waiting for someone to type a value.
+
+The safe pattern for automation saves the plan and applies exactly that plan:
 
 ```bash
-chmod +x terraform-multi-init.sh
-./terraform-multi-init.sh
+export TF_IN_AUTOMATION=1   # shorter output, no "run terraform apply next" hints
+
+terraform init -input=false
+terraform plan -input=false -out=tfplan
+# review or approve the plan here
+terraform apply -input=false tfplan
 ```
 
-## Using -chdir With Terraform Workspaces
+`terraform apply tfplan` refuses to run if the state changed after the plan was made, so you never apply a plan that is out of date. `terraform apply -auto-approve` without a plan file makes a new plan and applies it at once, so nobody sees what it will do. Keep `-auto-approve` for throwaway environments and for `destroy` in test pipelines.
 
-When working with Terraform workspaces:
+With `TF_INPUT=0` and a required variable without a value, Terraform stops at once:
+
+```text
+Error: No value for required variable
+
+  on main.tf line 1:
+   1: variable "name" {
+```
+
+Give variable values with `-var-file`, `TF_VAR_<name>` environment variables, or an `*.auto.tfvars` file. Add `-lock-timeout=5m` when two pipelines can run against the same state, so the second one waits for the lock instead of failing. [How to Save Terraform Plan and Apply Output to a File](/posts/terraform-save-plan-apply-output-to-file) shows how to keep the plan and the logs as artifacts.
+
+## How Do I Run Terraform Only for a Specific Resource?
+
+Pass `-target` with the resource address to `plan` or `apply`:
 
 ```bash
-# Initialize in a specific directory
-terraform -chdir=./infrastructure init
+terraform plan -target=aws_instance.web -out=tfplan
+terraform apply tfplan
 
-# List workspaces in that directory
-terraform -chdir=./infrastructure workspace list
+# for_each and count instances need the key, in quotes
+terraform apply -target='aws_instance.servers["web"]'
 
-# Select a workspace
-terraform -chdir=./infrastructure workspace select production
-
-# Run plan for that workspace
-terraform -chdir=./infrastructure plan
+# a whole module
+terraform apply -target=module.network
 ```
 
-The workspace is scoped to the configuration directory, so `-chdir` must be consistent across commands.
+Terraform includes the resources that the target depends on, so a target on an instance also creates its security group if it does not exist yet. With `destroy`, `-target` also destroys everything that depends on the target. Here is the start of a targeted apply where `terraform_data.app` depends on `terraform_data.net`:
 
-## Debugging Path Issues
+```text
+  # terraform_data.app will be created
+  # terraform_data.net will be created
+Plan: 2 to add, 0 to change, 0 to destroy.
+...
+Warning: Resource targeting is in effect
 
-If you encounter path-related errors, verify what Terraform sees:
+You are creating a plan with the -target option, which means that the result
+of this plan may not represent all of the changes requested by the current
+configuration.
+
+The -target option is not for routine use, and is provided only for
+exceptional situations such as recovering from errors or mistakes, or when
+Terraform specifically suggests to use it as part of an error message.
+```
+
+Take the warning seriously. A targeted run skips every other change in the configuration, so the state and the code drift apart until someone runs a full plan. Use `-target` to recover, for example when one broken resource blocks the whole apply, and run a full `terraform plan` afterwards to see what is still pending. If you need `-target` every week, the configuration is too big: split it into smaller root folders with their own state.
+
+Two related flags are often what you want instead:
+
+- `-replace=aws_instance.web` replaces one resource that is in a bad state, as part of a normal full plan. It is the replacement for the deprecated `terraform taint` command.
+- `-refresh-only` updates the state from the real objects without changing them. [Who Owns the State File](/posts/who-owns-the-terraform-state-file#h3-what-does-terraform-refresh-do) explains when that helps.
+
+## How Do I Delete All Resources Except One?
+
+Tell Terraform to forget the resource you want to keep, then destroy the rest. On Terraform 1.7 and later, do the first step with a `removed` block, so it is part of the code and shows up in review:
+
+```hcl
+# The block for terraform_data.db is deleted from the code and replaced with:
+removed {
+  from = terraform_data.db
+
+  lifecycle {
+    destroy = false
+  }
+}
+```
 
 ```bash
-# Show the current working directory from Terraform's perspective
-terraform -chdir=./environments/prod version
-
-# Show detailed output including paths
-terraform -chdir=./environments/prod init -upgrade
+terraform apply     # forgets terraform_data.db, changes nothing else
+terraform destroy   # destroys every resource that is still in the state
 ```
 
-Add debugging to your scripts:
+The plan for the first step says what will happen:
 
-```bash
-#!/bin/bash
+```text
+  # terraform_data.db will no longer be managed by Terraform, but will not be destroyed
+  # (destroy = false is set in the configuration)
 
-TARGET_DIR="./environments/prod"
+Plan: 0 to add, 0 to change, 0 to destroy.
 
-echo "Current directory: $(pwd)"
-echo "Target directory: $TARGET_DIR"
-echo "Resolved path: $(cd "$TARGET_DIR" && pwd)"
-
-terraform -chdir="$TARGET_DIR" init
+Warning: Some objects will no longer be managed by Terraform
 ```
 
-## Alternative: Using -c Flag (Older Versions)
+After that, `terraform destroy` showed `Plan: 0 to add, 0 to change, 2 to destroy.` and the kept object was not part of it. To manage the kept object again, in this configuration or another one, write its resource block and an `import` block with its ID.
 
-In very old Terraform versions (pre-0.14), there was no `-chdir` flag. The workaround was always using `cd`:
+Before you run the destroy, check the dependencies:
 
-```bash
-# Old approach (before Terraform 0.14)
-(cd /path/to/config && terraform init)
-```
+- **The kept resource may depend on resources you destroy.** A database in a subnet that you destroy either blocks the destroy (AWS refuses to delete a subnet that is in use) or loses its network. Keep those resources too, or move the database first.
+- **`prevent_destroy` does not help here.** It makes the whole `terraform destroy` fail with `Instance cannot be destroyed`. It does not skip the resource.
+- **`terraform state rm` does the same as the `removed` block** in one command, but nothing records it in Git. Use it only when you cannot change the code.
+- **Terraform 1.16 and later** also accept `destroy = false` in a resource's own `lifecycle` block. Terraform then removes that resource from the state instead of destroying it. Read your version's documentation before you rely on it, and check the plan.
 
-If you're on Terraform 0.14 or later (you should be), always use `-chdir` instead.
+If only a few resources must go, the reverse is simpler: `terraform destroy -target=...` for each of them, followed by removing their blocks from the code. The [state management chapter](/guides/introduction-to-terraform/05-state-management#h3-stop-managing-an-object-without-deleting-it) of our Terraform guide covers `removed` blocks, and [Terraform State: Remove, Move and Migrate Resources](/posts/terraform-state-remove-move-migrate-backend) shows moving resources between state files.
 
-## Environment Variables and -chdir
+## Related Resources
 
-Environment variables like `TF_DATA_DIR` are still relative to the target directory:
-
-```bash
-# .terraform directory will be created inside target dir
-terraform -chdir=./environments/prod init
-
-# Override the data directory location
-TF_DATA_DIR="$(pwd)/.terraform-prod" \
-  terraform -chdir=./environments/prod init
-```
-
-This creates the `.terraform` directory in your current directory rather than the target.
-
-## Using Make for Multi-Directory Management
-
-For complex setups, use Make to manage Terraform commands:
-
-```makefile
-# Makefile
-
-.PHONY: init-all plan-all apply-all
-
-ENVS := dev staging prod
-
-init-all:
-	@for env in $(ENVS); do \
-		echo "Initializing $$env..."; \
-		terraform -chdir=environments/$$env init; \
-	done
-
-plan-all:
-	@for env in $(ENVS); do \
-		echo "Planning $$env..."; \
-		terraform -chdir=environments/$$env plan -out=tfplan; \
-	done
-
-apply-all:
-	@for env in $(ENVS); do \
-		echo "Applying $$env..."; \
-		terraform -chdir=environments/$$env apply tfplan; \
-	done
-
-# Target specific environment
-init-%:
-	terraform -chdir=environments/$* init
-
-plan-%:
-	terraform -chdir=environments/$* plan
-
-apply-%:
-	terraform -chdir=environments/$* apply
-```
-
-Use it:
-
-```bash
-# Initialize all environments
-make init-all
-
-# Plan specific environment
-make plan-prod
-
-# Apply specific environment
-make apply-staging
-```
-
-The `-chdir` flag is the cleanest way to run Terraform commands against configurations in other directories. It keeps your scripts simple and explicit about which configuration is being operated on, without changing your shell's working directory or creating complex path resolution logic.
+- [Terraform terminal simulator](/games/terraform-terminal-simulator) to practice `init`, `plan`, `apply` and `state` commands.
+- [Targeting and forcing replacement](/guides/introduction-to-terraform/04-resources-and-data-sources#h2-targeting-and-forcing-replacement) in our Terraform guide.
+- [Plan in pull requests, apply after review](/guides/introduction-to-terraform/09-remote-backends-and-collaboration#h2-team-workflow-plan-in-pull-requests-apply-after-review), a full CI workflow.
+- [How to Organize a Terraform Repository](/posts/organizing-terraform-repository-with-subfolders) for the folder layout that `-chdir` runs against.

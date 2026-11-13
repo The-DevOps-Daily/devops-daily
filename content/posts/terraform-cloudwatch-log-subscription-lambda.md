@@ -1,13 +1,13 @@
 ---
 title: 'How to Configure CloudWatch Logs Subscription Filter to Lambda With Terraform'
-excerpt: "Learn how to stream CloudWatch Logs to a Lambda function using Terraform, including proper permissions and error handling."
+excerpt: 'Learn how to stream CloudWatch Logs to a Lambda function using Terraform, including permissions and error handling, and how to run a Lambda function on a schedule with EventBridge.'
 category:
   name: 'Terraform'
   slug: 'terraform'
 date: '2024-12-18'
 publishedAt: '2024-12-18T15:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -35,9 +35,9 @@ Here's a minimal configuration that streams all logs from a log group to a Lambd
 resource "aws_lambda_function" "log_processor" {
   filename         = "lambda_function.zip"
   function_name    = "cloudwatch-log-processor"
-  role            = aws_iam_role.lambda_execution.arn
-  handler         = "index.handler"
-  runtime         = "python3.11"
+  role             = aws_iam_role.lambda_execution.arn
+  handler          = "index.handler"
+  runtime          = "python3.13"
   source_code_hash = filebase64sha256("lambda_function.zip")
 
   environment {
@@ -88,7 +88,7 @@ resource "aws_cloudwatch_log_group" "application" {
 resource "aws_cloudwatch_log_subscription_filter" "lambda_subscription" {
   name            = "lambda-log-processor"
   log_group_name  = aws_cloudwatch_log_group.application.name
-  filter_pattern  = ""  # Empty string means all log events
+  filter_pattern  = "" # Empty string means all log events
   destination_arn = aws_lambda_function.log_processor.arn
 
   # Make sure permission is in place before creating the subscription
@@ -281,11 +281,11 @@ data "archive_file" "lambda_zip" {
 resource "aws_lambda_function" "log_processor" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "cloudwatch-log-processor"
-  role            = aws_iam_role.lambda_execution.arn
-  handler         = "lambda_function.handler"
-  runtime         = "python3.11"
+  role             = aws_iam_role.lambda_execution.arn
+  handler          = "lambda_function.handler"
+  runtime          = "python3.13"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  timeout         = 60  # Give enough time to process batches
+  timeout          = 60 # Give enough time to process batches
 
   environment {
     variables = {
@@ -451,21 +451,20 @@ For log groups with high volume, configure appropriate Lambda settings:
 resource "aws_lambda_function" "log_processor" {
   filename         = "lambda_function.zip"
   function_name    = "cloudwatch-log-processor"
-  role            = aws_iam_role.lambda_execution.arn
-  handler         = "index.handler"
-  runtime         = "python3.11"
+  role             = aws_iam_role.lambda_execution.arn
+  handler          = "index.handler"
+  runtime          = "python3.13"
   source_code_hash = filebase64sha256("lambda_function.zip")
 
   # Increase timeout for processing large batches
-  timeout = 300  # 5 minutes (max)
+  timeout = 300 # seconds; the Lambda maximum is 900 (15 minutes)
 
   # Increase memory for faster processing
-  memory_size = 1024  # MB
+  memory_size = 1024 # MB
 
   # Control concurrent executions to prevent overwhelming downstream systems
   reserved_concurrent_executions = 10
 
-  # Enable function URL for direct testing (optional)
   environment {
     variables = {
       LOG_LEVEL       = "INFO"
@@ -482,7 +481,7 @@ You can also add a Dead Letter Queue to capture failed invocations:
 resource "aws_sqs_queue" "lambda_dlq" {
   name = "log-processor-dlq"
 
-  message_retention_seconds = 1209600  # 14 days
+  message_retention_seconds = 1209600 # 14 days
 }
 
 resource "aws_lambda_function" "log_processor" {
@@ -509,4 +508,144 @@ resource "aws_iam_role_policy" "lambda_dlq" {
 }
 ```
 
-Setting up CloudWatch Logs subscription filters to Lambda with Terraform requires coordinating several resources, but once you understand the pattern, it's straightforward to replicate across multiple log groups. The key is making sure the Lambda permission is in place before creating the subscription filter, and using appropriate filter patterns to control which logs get sent to your function.
+## How Do I Run a Lambda Function on a Schedule With Terraform?
+
+Create an EventBridge schedule that targets the function. There are two ways to do that, and both start with the same function:
+
+```hcl
+data "archive_file" "job" {
+  type        = "zip"
+  source_file = "${path.module}/src/job.py"
+  output_path = "${path.module}/build/job.zip"
+}
+
+resource "aws_iam_role" "job" {
+  name = "nightly-job"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Action    = "sts:AssumeRole"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "job_logs" {
+  role       = aws_iam_role.job.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_function" "job" {
+  function_name    = "nightly-job"
+  role             = aws_iam_role.job.arn
+  runtime          = "python3.13"
+  handler          = "job.handler"
+  filename         = data.archive_file.job.output_path
+  source_code_hash = data.archive_file.job.output_base64sha256
+  timeout          = 60
+}
+```
+
+```python
+# src/job.py
+def handler(event, context):
+    print("scheduled run", event.get("time"))
+    return {"ok": True}
+```
+
+`archive_file` builds the zip during the plan, and `source_code_hash` makes Terraform update the function when the code changes. Older examples use `python3.9`, which Lambda deprecated in December 2025. Use a supported runtime such as `python3.13`.
+
+### Option 1: EventBridge Scheduler
+
+EventBridge Scheduler is the newer service for schedules, and the one AWS recommends for new work. It supports time zones, one-time schedules and retries. It invokes the function with a role that you give it:
+
+```hcl
+resource "aws_iam_role" "scheduler" {
+  name = "nightly-job-scheduler"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Action    = "sts:AssumeRole"
+      Principal = { Service = "scheduler.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "scheduler_invoke" {
+  name = "invoke-nightly-job"
+  role = aws_iam_role.scheduler.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "lambda:InvokeFunction"
+      Resource = aws_lambda_function.job.arn
+    }]
+  })
+}
+
+resource "aws_scheduler_schedule" "nightly" {
+  name                         = "nightly-job"
+  schedule_expression          = "cron(0 2 * * ? *)" # 02:00 every day
+  schedule_expression_timezone = "Europe/Berlin"
+
+  flexible_time_window {
+    mode = "OFF"
+  }
+
+  target {
+    arn      = aws_lambda_function.job.arn
+    role_arn = aws_iam_role.scheduler.arn
+
+    retry_policy {
+      maximum_retry_attempts = 2
+    }
+  }
+}
+```
+
+The scheduler needs no `aws_lambda_permission`, because it calls the function with its own role.
+
+### Option 2: An EventBridge Rule
+
+The older way is an EventBridge rule with a schedule. It is still supported and common in existing code. Here the function needs a resource-based permission that lets EventBridge invoke it:
+
+```hcl
+resource "aws_cloudwatch_event_rule" "every_5_minutes" {
+  name                = "nightly-job-every-5-minutes"
+  schedule_expression = "rate(5 minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "job" {
+  rule = aws_cloudwatch_event_rule.every_5_minutes.name
+  arn  = aws_lambda_function.job.arn
+}
+
+resource "aws_lambda_permission" "allow_eventbridge" {
+  statement_id  = "AllowExecutionFromEventBridge"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.job.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.every_5_minutes.arn
+}
+```
+
+Rule schedules run in UTC. If the permission is missing, the rule shows failed invocations in its metrics and the function never runs, which is the most common problem with this setup.
+
+### Schedule Expressions
+
+Both services support `rate()` and `cron()` expressions, and EventBridge Scheduler also supports one-time `at()` expressions, for example `at(2026-12-01T09:00:00)`:
+
+- `rate(5 minutes)`, `rate(1 hour)`, `rate(7 days)`: the unit is singular for a value of 1 (`rate(1 hour)`) and plural otherwise.
+- `cron(minutes hours day-of-month month day-of-week year)`: six fields, unlike Unix cron. One of day-of-month and day-of-week must be `?`. `cron(0 6 ? * MON-FRI *)` runs at 06:00 on weekdays.
+
+To check that it runs, follow the function's log group: `aws logs tail /aws/lambda/nightly-job --follow`. Our [cron expression simulator](/games/cron-expression-simulator) explains cron fields, and the [Lambda chapter](/guides/introduction-to-aws/09-lambda-serverless#h2-triggers) of our AWS guide covers other triggers.
+
+## Summary
+
+Setting up CloudWatch Logs subscription filters to Lambda with Terraform requires coordinating several resources, and once the pattern works for one log group, you can repeat it for many. The key is making sure the Lambda permission is in place before creating the subscription filter, and using appropriate filter patterns to control which logs get sent to your function. For scheduled functions, prefer EventBridge Scheduler with its own invoke role, and remember the `aws_lambda_permission` when you use an EventBridge rule instead.

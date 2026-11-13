@@ -14,18 +14,15 @@
 /images/posts/ai-sre-agents-what-they-fix-and-break.svg /images/posts/ai-sre-agents-what-they-fix-and-break.jpg 301
 /images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.svg /images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.jpg 301
 /images/posts/antv-npm-shai-hulud-wave-may-2026.svg /images/posts/antv-npm-shai-hulud-wave-may-2026.jpg 301
-/images/posts/api-gateway-endpoint-variable.svg /images/posts/api-gateway-endpoint-variable.jpg 301
 /images/posts/argocd-cve-2026-42880-serversidediff-secret-leak.svg /images/posts/argocd-cve-2026-42880-serversidediff-secret-leak.jpg 301
 /images/posts/argument-list-too-long-error.svg /images/posts/argument-list-too-long-error.jpg 301
 /images/posts/assumerole-service-ec2.svg /images/posts/assumerole-service-ec2.jpg 301
 /images/posts/at-least-one-invalid-signature-was-encountered.svg /images/posts/at-least-one-invalid-signature-was-encountered.jpg 301
-/images/posts/attach-multiple-iam-policies.svg /images/posts/attach-multiple-iam-policies.jpg 301
 /images/posts/aws-asg-launch-templates-vs-configurations.svg /images/posts/aws-asg-launch-templates-vs-configurations.jpg 301
 /images/posts/aws-cost-optimization.svg /images/posts/aws-cost-optimization.jpg 301
 /images/posts/aws-use1-az4-thermal-event-single-az-lessons.svg /images/posts/aws-use1-az4-thermal-event-single-az-lessons.jpg 301
 /images/posts/bash-loop-through-file-content.svg /images/posts/bash-loop-through-file-content.jpg 301
 /images/posts/best-claude-code-plugins-devops-2026.svg /images/posts/best-claude-code-plugins-devops-2026.jpg 301
-/images/posts/best-practices-when-using-terraform.svg /images/posts/best-practices-when-using-terraform.jpg 301
 /images/posts/can-two-sockets-share-tcp-port.svg /images/posts/can-two-sockets-share-tcp-port.jpg 301
 /images/posts/capturing-mobile-phone-traffic-on-wireshark.svg /images/posts/capturing-mobile-phone-traffic-on-wireshark.jpg 301
 /images/posts/change-echo-output-color-linux.svg /images/posts/change-echo-output-color-linux.jpg 301
@@ -45,9 +42,7 @@
 /images/posts/copy-with-docker-exclusion.svg /images/posts/copy-with-docker-exclusion.jpg 301
 /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.svg /images/posts/correct-way-to-attach-aws-managed-policies-to-a-role.jpg 301
 /images/posts/count-lines-of-code-recursively.svg /images/posts/count-lines-of-code-recursively.jpg 301
-/images/posts/create-folder-in-s3-bucket.svg /images/posts/create-folder-in-s3-bucket.jpg 301
 /images/posts/delete-all-pods-in-all-namespaces.svg /images/posts/delete-all-pods-in-all-namespaces.jpg 301
-/images/posts/delete-all-resources-except-one.svg /images/posts/delete-all-resources-except-one.jpg 301
 /images/posts/deployment-strategies-guide.svg /images/posts/deployment-strategies-guide.jpg 301
 /images/posts/designing-automation-with-failure-in-mind.svg /images/posts/designing-automation-with-failure-in-mind.jpg 301
 /images/posts/designing-rate-limiting-for-apis.svg /images/posts/designing-rate-limiting-for-apis.jpg 301
@@ -56,7 +51,6 @@
 /images/posts/difference-between-git-pull-and-git-fetch.svg /images/posts/difference-between-git-pull-and-git-fetch.jpg 301
 /images/posts/difference-between-pod-and-deployment.svg /images/posts/difference-between-pod-and-deployment.jpg 301
 /images/posts/difference-run-cmd-dockerfile.svg /images/posts/difference-run-cmd-dockerfile.jpg 301
-/images/posts/different-environments-in-terraform.svg /images/posts/different-environments-in-terraform.jpg 301
 /images/posts/digitalocean-serverless-inference-first-call.svg /images/posts/digitalocean-serverless-inference-first-call.jpg 301
 /images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.svg /images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.jpg 301
 /images/posts/distributed-tracing-opentelemetry-instrumentation-visualization.svg /images/posts/distributed-tracing-opentelemetry-instrumentation-visualization.jpg 301
@@ -67,8 +61,6 @@
 /images/posts/docker-list-containers.svg /images/posts/docker-list-containers.jpg 301
 /images/posts/docker-rename-image-repository.svg /images/posts/docker-rename-image-repository.jpg 301
 /images/posts/docker-tty-error-fix.svg /images/posts/docker-tty-error-fix.jpg 301
-/images/posts/error-creating-iam-role-malformed-policy.svg /images/posts/error-creating-iam-role-malformed-policy.jpg 301
-/images/posts/execute-terraform-actions-without-prompt.svg /images/posts/execute-terraform-actions-without-prompt.jpg 301
 /images/posts/experimenting-locally-with-terraform.svg /images/posts/experimenting-locally-with-terraform.jpg 301
 /images/posts/find-files-containing-specific-text-linux.svg /images/posts/find-files-containing-specific-text-linux.jpg 301
 /images/posts/find-files-with-wildcards-linux.svg /images/posts/find-files-with-wildcards-linux.jpg 301
@@ -95,7 +87,6 @@
 /images/posts/hetzner-doubled-prices-ai-memory-crunch.svg /images/posts/hetzner-doubled-prices-ai-memory-crunch.jpg 301
 /images/posts/hetzner-price-increases-2026.svg /images/posts/hetzner-price-increases-2026.jpg 301
 /images/posts/hidden-cost-overengineering-first-50-engineers.svg /images/posts/hidden-cost-overengineering-first-50-engineers.jpg 301
-/images/posts/how-are-data-sources-used-in-terraform.svg /images/posts/how-are-data-sources-used-in-terraform.jpg 301
 /images/posts/how-can-i-debug-imagepullbackoff.svg /images/posts/how-can-i-debug-imagepullbackoff.jpg 301
 /images/posts/how-cat-eof-works-in-bash.svg /images/posts/how-cat-eof-works-in-bash.jpg 301
 /images/posts/how-do-i-get-flask-to-run-on-port-80.svg /images/posts/how-do-i-get-flask-to-run-on-port-80.jpg 301
@@ -125,18 +116,14 @@
 /images/posts/how-to-safely-revert-repository-to-previous-commit.svg /images/posts/how-to-safely-revert-repository-to-previous-commit.jpg 301
 /images/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes.svg /images/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes.jpg 301
 /images/posts/how-to-sign-in-kubernetes-dashboard.svg /images/posts/how-to-sign-in-kubernetes-dashboard.jpg 301
-/images/posts/how-to-split-terraform-file.svg /images/posts/how-to-split-terraform-file.jpg 301
 /images/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube.svg /images/posts/how-to-switch-kubectl-clusters-between-gcloud-and-minikube.jpg 301
 /images/posts/how-to-symlink-files-linux.svg /images/posts/how-to-symlink-files-linux.jpg 301
 /images/posts/how-to-undo-git-add-before-commit.svg /images/posts/how-to-undo-git-add-before-commit.jpg 301
 /images/posts/how-to-undo-recent-local-commits-in-git.svg /images/posts/how-to-undo-recent-local-commits-in-git.jpg 301
 /images/posts/how-to-update-kubernetes-secret-from-file.svg /images/posts/how-to-update-kubernetes-secret-from-file.jpg 301
 /images/posts/how-to-view-git-commit-history.svg /images/posts/how-to-view-git-commit-history.jpg 301
-/images/posts/i-would-like-to-run-terraform-only-for-a-specific-resource.svg /images/posts/i-would-like-to-run-terraform-only-for-a-specific-resource.jpg 301
-/images/posts/ignore-change-of-attribute.svg /images/posts/ignore-change-of-attribute.jpg 301
 /images/posts/ingress-nginx-eol-gateway-api-migration.svg /images/posts/ingress-nginx-eol-gateway-api-migration.jpg 301
 /images/posts/ingress-vs-load-balancer-kubernetes.svg /images/posts/ingress-vs-load-balancer-kubernetes.jpg 301
-/images/posts/invalid-legacy-provider-address.svg /images/posts/invalid-legacy-provider-address.jpg 301
 /images/posts/is-valkey-ready-to-replace-redis-2026.svg /images/posts/is-valkey-ready-to-replace-redis-2026.jpg 301
 /images/posts/istio-traffic-management-routing-retries-circuit-breaking.svg /images/posts/istio-traffic-management-routing-retries-circuit-breaking.jpg 301
 /images/posts/karpenter-spot-storm-fallback-gap.svg /images/posts/karpenter-spot-storm-fallback-gap.jpg 301
@@ -153,7 +140,6 @@
 /images/posts/listing-all-resources-in-a-namespace.svg /images/posts/listing-all-resources-in-a-namespace.jpg 301
 /images/posts/mcp-design-flaw-rce-supply-chain-risk.svg /images/posts/mcp-design-flaw-rce-supply-chain-risk.jpg 301
 /images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.svg /images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.jpg 301
-/images/posts/minimum-aws-permissions-for-terraform.svg /images/posts/minimum-aws-permissions-for-terraform.jpg 301
 /images/posts/move-most-recent-commits-to-new-branch-git.svg /images/posts/move-most-recent-commits-to-new-branch-git.jpg 301
 /images/posts/multi-region-active-active-aws.svg /images/posts/multi-region-active-active-aws.jpg 301
 /images/posts/neon-vs-supabase-free-tier-benchmarks.svg /images/posts/neon-vs-supabase-free-tier-benchmarks.jpg 301
@@ -171,7 +157,6 @@
 /images/posts/opentelemetry-graduated-what-to-retire-this-quarter.svg /images/posts/opentelemetry-graduated-what-to-retire-this-quarter.jpg 301
 /images/posts/opentofu-1-12-destroy-false-state-surgery.svg /images/posts/opentofu-1-12-destroy-false-state-surgery.jpg 301
 /images/posts/opentofu-2026-switch-from-terraform.svg /images/posts/opentofu-2026-switch-from-terraform.jpg 301
-/images/posts/organize-terraform-modules-multiple-environments.svg /images/posts/organize-terraform-modules-multiple-environments.jpg 301
 /images/posts/ory-ecosystem-identity-auth-kubernetes.svg /images/posts/ory-ecosystem-identity-auth-kubernetes.jpg 301
 /images/posts/parse-command-line-arguments-bash.svg /images/posts/parse-command-line-arguments-bash.jpg 301
 /images/posts/permanently-set-path-on-linux-unix.svg /images/posts/permanently-set-path-on-linux-unix.jpg 301
@@ -182,7 +167,6 @@
 /images/posts/real-world-k8s.svg /images/posts/real-world-k8s.jpg 301
 /images/posts/rebuild-docker-container-compose.svg /images/posts/rebuild-docker-container-compose.jpg 301
 /images/posts/restart-pods-when-configmap-updates-in-kubernetes.svg /images/posts/restart-pods-when-configmap-updates-in-kubernetes.jpg 301
-/images/posts/retrieve-secret-terraform-aws-secret-manager.svg /images/posts/retrieve-secret-terraform-aws-secret-manager.jpg 301
 /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.svg /images/posts/right-sizing-kubernetes-resources-vpa-karpenter.jpg 301
 /images/posts/running-first-chaos-engineering-experiment-litmus.svg /images/posts/running-first-chaos-engineering-experiment-litmus.jpg 301
 /images/posts/see-differences-between-branches-git.svg /images/posts/see-differences-between-branches-git.jpg 301
@@ -200,19 +184,12 @@
 /images/posts/sync-forked-repository-github.svg /images/posts/sync-forked-repository-github.jpg 301
 /images/posts/tanstack-npm-worm-dead-mans-switch.svg /images/posts/tanstack-npm-worm-dead-mans-switch.jpg 301
 /images/posts/terraform-best-practices.svg /images/posts/terraform-best-practices.jpg 301
-/images/posts/terraform-on-premises-servers.svg /images/posts/terraform-on-premises-servers.jpg 301
-/images/posts/terraform-provider-checksum-mismatch.svg /images/posts/terraform-provider-checksum-mismatch.jpg 301
-/images/posts/terraform-provider-variable-sharing-modules.svg /images/posts/terraform-provider-variable-sharing-modules.jpg 301
 /images/posts/terraform-referencing-for-each-resources.svg /images/posts/terraform-referencing-for-each-resources.jpg 301
-/images/posts/terraform-refresh-explained.svg /images/posts/terraform-refresh-explained.jpg 301
-/images/posts/terraform-statefile-locked.svg /images/posts/terraform-statefile-locked.jpg 301
 /images/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2.svg /images/posts/the-provided-execution-role-does-not-have-permissions-to-call-describenetworkinterfaces-on-ec2.jpg 301
 /images/posts/top-github-devops-learning-repos-2026.svg /images/posts/top-github-devops-learning-repos-2026.jpg 301
 /images/posts/trigger-kubernetes-scheduled-job-manually.svg /images/posts/trigger-kubernetes-scheduled-job-manually.jpg 301
 /images/posts/udp-vs-tcp-performance-comparison.svg /images/posts/udp-vs-tcp-performance-comparison.jpg 301
 /images/posts/undo-git-merge-not-pushed.svg /images/posts/undo-git-merge-not-pushed.jpg 301
-/images/posts/upgrade-terraform-to-specific-version.svg /images/posts/upgrade-terraform-to-specific-version.jpg 301
-/images/posts/use-terraform-to-set-up-a-lambda-function-triggered-by-a-scheduled-event-source.svg /images/posts/use-terraform-to-set-up-a-lambda-function-triggered-by-a-scheduled-event-source.jpg 301
 /images/posts/using-ls-list-directories-sizes.svg /images/posts/using-ls-list-directories-sizes.jpg 301
 /images/posts/vercel-april-2026-security-incident.svg /images/posts/vercel-april-2026-security-incident.jpg 301
 /images/posts/view-file-change-history-git.svg /images/posts/view-file-change-history-git.jpg 301
@@ -681,6 +658,38 @@
 /guides/02-sigstore /posts/software-supply-chain-security 301
 /guides/02-snyk /posts/software-supply-chain-security 301
 /guides/03-dependabot /posts/software-supply-chain-security 301
+
+# Terraform posts merged (2026-11)
+/posts/api-gateway-endpoint-variable /posts/terraform-strings-and-conditionals 301
+/posts/attach-multiple-iam-policies /posts/terraform-fargate-task-definition-execution-role 301
+/posts/best-practices-when-using-terraform /posts/terraform-best-practices 301
+/posts/can-terraform-watch-directory-for-changes /posts/experimenting-locally-with-terraform 301
+/posts/create-folder-in-s3-bucket /posts/terraform-read-environment-variables-from-env-file 301
+/posts/delete-all-resources-except-one /posts/terraform-run-init-from-different-folder 301
+/posts/different-environments-in-terraform /posts/organizing-terraform-repository-with-subfolders 301
+/posts/error-creating-iam-role-malformed-policy /posts/terraform-fargate-task-definition-execution-role 301
+/posts/execute-terraform-actions-without-prompt /posts/terraform-run-init-from-different-folder 301
+/posts/get-current-working-directory-terraform /posts/terraform-read-environment-variables-from-env-file 301
+/posts/how-are-data-sources-used-in-terraform /posts/terraform-best-practices 301
+/posts/how-to-split-terraform-file /posts/organizing-terraform-repository-with-subfolders 301
+/posts/i-would-like-to-run-terraform-only-for-a-specific-resource /posts/terraform-run-init-from-different-folder 301
+/posts/ignore-change-of-attribute /posts/who-owns-the-terraform-state-file 301
+/posts/invalid-legacy-provider-address /posts/should-terraform-lock-be-in-your-gitignore 301
+/posts/minimum-aws-permissions-for-terraform /posts/terraform-fargate-task-definition-execution-role 301
+/posts/organize-terraform-modules-multiple-environments /posts/organizing-terraform-repository-with-subfolders 301
+/posts/retrieve-secret-terraform-aws-secret-manager /posts/terraform-apply-sql-scripts-rds 301
+/posts/terraform-azure-state-file-different-subscription /posts/who-owns-the-terraform-state-file 301
+/posts/terraform-failed-install-provider-checksums-mismatch /posts/should-terraform-lock-be-in-your-gitignore 301
+/posts/terraform-get-list-index-for-each /posts/terraform-referencing-for-each-resources 301
+/posts/terraform-import-index-value-required-error /posts/terraform-referencing-for-each-resources 301
+/posts/terraform-on-premises-servers /posts/should-terraform-lock-be-in-your-gitignore 301
+/posts/terraform-provider-checksum-mismatch /posts/should-terraform-lock-be-in-your-gitignore 301
+/posts/terraform-provider-variable-sharing-modules /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/terraform-refresh-explained /posts/who-owns-the-terraform-state-file 301
+/posts/terraform-statefile-locked /posts/who-owns-the-terraform-state-file 301
+/posts/terraform-variables-not-allowed-error-plan /posts/terraform-variables-loops-and-outputs 301
+/posts/upgrade-terraform-to-specific-version /posts/should-terraform-lock-be-in-your-gitignore 301
+/posts/use-terraform-to-set-up-a-lambda-function-triggered-by-a-scheduled-event-source /posts/terraform-cloudwatch-log-subscription-lambda 301
 
 # Single interview question pages merged into their topic pages (Nov 2026)
 /interview-questions/junior/argocd-bootstrapping-self-management /interview-questions/topic/gitops#argocd-bootstrapping-self-management 301

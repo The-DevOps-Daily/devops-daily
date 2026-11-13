@@ -1,13 +1,13 @@
 ---
 title: 'Terraform Module Outputs, Inputs and Sources: How Modules Pass Data to Each Other'
-excerpt: 'How to get a value out of a Terraform module, pass a resource into another module, chain modules with for_each, pin a Git branch or tag as a module source, and fix the "Provider configuration not present" error that shows up when you refactor. All examples were run on Terraform 1.15.'
+excerpt: 'How to get a value out of a Terraform module, pass a resource into another module, chain modules with for_each, pin a Git branch or tag as a module source, share providers and variables across modules, and fix the "Provider configuration not present" error that shows up when you refactor. The terminal examples were run on Terraform 1.15.'
 category:
   name: 'Terraform'
   slug: 'terraform'
 date: '2026-09-26'
 publishedAt: '2026-09-26T09:00:00Z'
-updatedAt: '2026-09-26T09:00:00Z'
-readingTime: '11 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -31,6 +31,7 @@ This post walks through the module questions that come up most in real projects:
 - Referencing `module.network.vpc_id` from another module creates the dependency automatically. No `depends_on` needed.
 - A module with `for_each` becomes a map of instances: `module.network["production"].vpc_id`, or a `for` expression to collect them all.
 - Git module sources take `?ref=` with a branch, tag or commit. Use tags or commits for anything shared, branches only while developing.
+- Child modules inherit the root's default provider configurations, never its variables. Declare `required_providers` in every module, and use `configuration_aliases` when a module needs two configurations of one provider.
 - "Provider configuration not present" means Terraform needs a provider configuration that is gone, most often because a module with its own `provider` block was removed while its resources are still in state. Move provider blocks to the root, apply, then remove the module.
 
 ## Prerequisites
@@ -322,18 +323,147 @@ module "backup_bucket" {
 }
 ```
 
-For the bigger picture of sharing providers and variables between many modules, see [how to share providers and variables across Terraform modules](/posts/terraform-provider-variable-sharing-modules).
+## How Do I Share Providers and Variables Across Terraform Modules?
+
+Providers and variables cross the module boundary in different ways:
+
+- **Default provider configurations are inherited.** A child module uses the root's `provider "aws"` block automatically. You do not repeat it.
+- **Variables are never inherited.** A child module sees only the variables it declares. The caller sets the required ones in the `module` block, and variables with a `default` can be left out. `var.environment` in a module is an error unless the module has its own `variable "environment"`.
+- **Aliased provider configurations are passed explicitly** with the `providers` argument, as in the backup bucket example above.
+
+### Declare required_providers in Every Module
+
+Each module declares the providers it uses, with their source, even when the root configures them:
+
+```hcl
+# modules/dns-monitoring/versions.tf
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 6.0"
+    }
+    datadog = {
+      source  = "datadog/datadog"
+      version = ">= 3.0"
+    }
+  }
+}
+```
+
+This is more than documentation. Without an entry, Terraform assumes the provider is `hashicorp/<name>`. That works for `aws` by luck and fails for `datadog`: `terraform init` looks for `hashicorp/datadog`, does not find it, and asks `Did you intend to use datadog/datadog?`. In a reusable module, use `>=` with the oldest version that works, and let the root pin the exact version with its own constraint and lock file.
+
+### A Module That Needs Two Configurations of One Provider
+
+A module that writes to two regions or two accounts declares the configuration names it expects with `configuration_aliases`. The caller then maps its own provider blocks onto those names:
+
+```hcl
+# modules/replicated-bucket/versions.tf
+terraform {
+  required_providers {
+    aws = {
+      source                = "hashicorp/aws"
+      version               = ">= 6.0"
+      configuration_aliases = [aws.primary, aws.replica]
+    }
+  }
+}
+
+# modules/replicated-bucket/main.tf
+resource "aws_s3_bucket" "primary" {
+  provider = aws.primary
+  bucket   = "${var.name}-primary"
+}
+
+resource "aws_s3_bucket" "replica" {
+  provider = aws.replica
+  bucket   = "${var.name}-replica"
+}
+```
+
+```hcl
+# root main.tf
+provider "aws" {
+  alias  = "us"
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "eu"
+  region = "eu-west-1"
+}
+
+module "logs" {
+  source = "./modules/replicated-bucket"
+  name   = "acme-logs"
+
+  providers = {
+    aws.primary = aws.us
+    aws.replica = aws.eu
+  }
+}
+```
+
+If the caller leaves out one of the names, `terraform validate` stops before anything runs. We tested the same module with the `random` provider:
+
+```text
+Error: Missing required provider configuration
+
+The child module requires an additional configuration for provider
+hashicorp/random, with the local name "random.dr".
+```
+
+With the AWS provider 6.x, a second region often needs no extra provider configuration: most resources accept a `region` argument, so the module can take the region as a normal variable.
+
+### Provider Blocks Inside a Module
+
+Terraform still allows `provider` blocks in a child module, and a provider block can use the module's variables. These are legacy modules, though. A module that contains its own provider configuration cannot be called with `count`, `for_each` or `depends_on`, and removing it later leads to the "Provider configuration not present" error from the previous section. Keep provider blocks in the root and pass configurations down.
+
+### Pass Common Values Without Repeating Them
+
+When many modules need the same inputs, compute them once in the root and pass them on:
+
+```hcl
+locals {
+  common = {
+    environment = var.environment
+    tags = {
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
+module "network" {
+  source      = "./modules/network"
+  environment = local.common.environment
+  tags        = local.common.tags
+}
+
+module "database" {
+  source      = "./modules/database"
+  environment = local.common.environment
+  tags        = local.common.tags
+  subnet_ids  = module.network.private_subnet_ids
+}
+```
+
+For tags, `default_tags` in the root's AWS provider block is shorter still: every taggable resource that the provider creates, in every module that uses it, gets them. Instances that an Auto Scaling group launches are the usual exception and need tag propagation on the group. Add `validation` blocks to module variables, so a wrong value fails at plan time with your own message instead of an API error during apply.
+
+Since Terraform 1.15, a module `source` and `version` can also use `const` variables and locals, for example to switch a module between a local path and a released version. [Variables not allowed](/posts/terraform-variables-loops-and-outputs#h3-variables-not-allowed-in-the-backend-required_version-or-a-provider-alias) lists where variables work during `init`.
 
 ## Summary
 
-| Question                                             | Answer                                                          |
-| ---------------------------------------------------- | --------------------------------------------------------------- |
-| How do I read a value from a module?                 | Add an `output` in the module, read `module.<name>.<output>`    |
-| Can I reference a resource inside a module directly? | No, only its outputs                                            |
-| How do I pass a resource into a module?              | Pass its attributes, or a typed object, through a `variable`    |
-| Do chained modules need `depends_on`?                | No, references create the dependency                            |
-| How do I read outputs from a `for_each` module?      | `module.x["key"].output`, or a `for` expression over `module.x` |
-| Branch, tag or commit as a Git source?               | Tag or commit for shared code, branch only while developing     |
-| "Provider configuration not present"?                | Move the provider to the root, apply, then remove the module    |
+| Question                                             | Answer                                                                    |
+| ---------------------------------------------------- | ------------------------------------------------------------------------- |
+| How do I read a value from a module?                 | Add an `output` in the module, read `module.<name>.<output>`              |
+| Can I reference a resource inside a module directly? | No, only its outputs                                                      |
+| How do I pass a resource into a module?              | Pass its attributes, or a typed object, through a `variable`              |
+| Do chained modules need `depends_on`?                | No, references create the dependency                                      |
+| How do I read outputs from a `for_each` module?      | `module.x["key"].output`, or a `for` expression over `module.x`           |
+| Branch, tag or commit as a Git source?               | Tag or commit for shared code, branch only while developing               |
+| "Provider configuration not present"?                | Move the provider to the root, apply, then remove the module              |
+| Do child modules inherit providers and variables?    | Default providers yes, aliased providers via `providers`, variables never |
+| Module needs two configs of one provider?            | `configuration_aliases` in the module, `providers = {}` in the caller     |
 
-Modules stay pleasant to work with when their interface is small and explicit: a few typed variables in, a few described outputs out, no provider blocks inside. For the language features that go into those interfaces, [Terraform variables, loops and outputs](/posts/terraform-variables-loops-and-outputs) is the next read, and for laying modules out across environments, see [how to organize Terraform modules for multiple environments](/posts/organize-terraform-modules-multiple-environments).
+Modules stay pleasant to work with when their interface is small and explicit: a few typed variables in, a few described outputs out, no provider blocks inside. For the language features that go into those interfaces, [Terraform variables, loops and outputs](/posts/terraform-variables-loops-and-outputs) is the next read, and for laying modules out across environments, see [how to organize Terraform modules for multiple environments](/posts/organizing-terraform-repository-with-subfolders#h2-how-do-i-organize-terraform-modules-for-multiple-environments).

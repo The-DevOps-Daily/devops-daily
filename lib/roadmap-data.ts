@@ -291,7 +291,7 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Desired state', 'Drift', 'YAML', 'Repository layout'],
         resources: [
           post('infrastructure-as-code-fundamentals'),
-          post('terraform-refresh-explained'),
+          post('who-owns-the-terraform-state-file'),
           guide('introduction-to-packer'),
           sim('yaml-parsing-simulator'),
           checklist('terraform-repo-structure'),
@@ -907,7 +907,7 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Least privilege', 'Cloud IAM', 'Kubernetes RBAC', 'OAuth and OIDC'],
         resources: [
           guide('security-principles'),
-          post('minimum-aws-permissions-for-terraform'),
+          post('terraform-fargate-task-definition-execution-role'),
           sim('k8s-rbac-simulator'),
           sim('oauth-oidc-flow-simulator'),
           lab('linux-server-security'),

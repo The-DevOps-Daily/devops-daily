@@ -92,7 +92,7 @@ function TerraformPuzzleEducational() {
           </Link>{' '}
           and{' '}
           <Link
-            href="/posts/terraform-statefile-locked"
+            href="/posts/who-owns-the-terraform-state-file#h3-the-state-is-locked-how-do-i-unlock-it"
             className="text-primary underline-offset-4 hover:underline"
           >
             how to unlock a locked state file

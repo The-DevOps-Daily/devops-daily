@@ -358,7 +358,7 @@ export const devsecopsStages: SyllabusStage[] = [
         hours: 25,
         resources: [
           part('introduction-to-aws', '02-iam-security'),
-          post('minimum-aws-permissions-for-terraform'),
+          post('terraform-fargate-task-definition-execution-role'),
           sim('oauth-oidc-flow-simulator'),
           checklist('aws-security'),
         ],
