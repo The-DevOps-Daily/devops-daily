@@ -98,7 +98,7 @@ done
 }
 ```
 
-Use `${1-}` rather than `$1` in tests like these so they also work under `set -u`. For a value the script cannot run without, `${1:?usage: deploy.sh TARGET}` checks and exits in one go ([Part 4](/guides/introduction-to-bash/04-bash-variables)). More variations: [check if an input argument exists](/posts/check-existence-of-input-argument-in-bash-shell-script).
+Use `${1-}` rather than `$1` in tests like these so they also work under `set -u`. For a value the script cannot run without, `${1:?usage: deploy.sh TARGET}` checks and exits in one go ([Part 4](/guides/introduction-to-bash/04-bash-variables)). More variations: [check if an input argument exists](/posts/parse-command-line-arguments-bash#h2-how-do-i-check-if-an-argument-was-passed-to-a-bash-script).
 
 ## shift
 
@@ -614,7 +614,7 @@ Next: [Bash Text Processing](/guides/introduction-to-bash/09-bash-tools), where 
 
 ## Keep Learning
 
-- [Check if an input argument exists](/posts/check-existence-of-input-argument-in-bash-shell-script)
+- [Check if an input argument exists](/posts/parse-command-line-arguments-bash#h2-how-do-i-check-if-an-argument-was-passed-to-a-bash-script)
 - [Prompt for yes, no or cancel](/posts/prompt-for-yes-no-cancel-input-in-linux-shell-script)
-- [Create an alias that takes parameters](/posts/create-bash-alias-that-takes-parameters)
+- [Create an alias that takes parameters](/posts/permanently-set-path-on-linux-unix#h2-how-do-i-create-a-bash-alias-that-takes-parameters)
 - Interview questions: [Shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals)

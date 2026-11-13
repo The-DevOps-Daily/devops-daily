@@ -425,5 +425,5 @@ In [Part 8](/guides/introduction-to-ansible/08-roles-and-organization) you turn 
 
 ## Keep Learning
 
-- [How to change permissions for folders, subfolders and files in Linux](/posts/change-permissions-folder-subfolders-files-linux)
+- [How to change permissions for folders, subfolders and files in Linux](/posts/find-files-with-wildcards-linux#h2-how-do-i-change-permissions-for-a-folder-its-subfolders-and-files)
 - [Hash rings in nginx, HAProxy and Envoy](/posts/hash-ring-points-nginx-haproxy-envoy), for when the fleet grows behind a load balancer

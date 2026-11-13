@@ -109,7 +109,7 @@ export const roadmapStages: RoadmapStage[] = [
         resources: [
           guide('introduction-to-linux'),
           post('linux-git-docker-learning-order'),
-          post('change-permissions-folder-subfolders-files-linux'),
+          post('find-files-with-wildcards-linux'),
           post('find-files-containing-specific-text-linux'),
           sim('linux-terminal'),
           lab('cloud-server-setup'),
@@ -130,7 +130,7 @@ export const roadmapStages: RoadmapStage[] = [
           guide('introduction-to-bash'),
           post('parse-command-line-arguments-bash'),
           post('bash-loop-through-file-content'),
-          post('redirect-all-output-to-file-bash'),
+          post('what-does-2-and-1-mean-linux-bash'),
           ext(
             'Introduction to Bash Scripting (free ebook)',
             'https://github.com/bobbyiliev/introduction-to-bash-scripting'

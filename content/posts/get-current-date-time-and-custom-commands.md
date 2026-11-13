@@ -1,117 +1,90 @@
 ---
-title: 'How to Get Current Date and Time in Linux Terminal and Create Custom Commands'
-excerpt: "Learn how to display the current date and time in various formats using the date command, and create custom shell aliases for quick access to your preferred formats."
+title: 'How to Get the Current Date, Time and Epoch Seconds in Linux and Bash'
+excerpt: 'Print and format the current date and time with date, get Unix epoch seconds and milliseconds, convert between dates and timestamps, measure how long a command takes, and turn your favorite format into a custom command.'
 category:
   name: 'Linux'
   slug: 'linux'
 date: '2025-03-28'
 publishedAt: '2025-03-28T09:00:00Z'
-updatedAt: '2026-11-05T09:00:00Z'
-readingTime: '9 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
 tags:
   - Linux
   - Bash
-  - Date
+  - date
+  - Unix Time
   - Command Line
   - Shell Aliases
 ---
 
-You need to check the current date and time, or maybe include a timestamp in a log file or backup name. What's the command, and how can you format it the way you want?
+You need the current date and time in a log line, a timestamp in a backup name, or the Unix time for an API call or a time difference. One command does all of it: `date`. Bash also has builtins that give the same values without starting a process, which matters inside loops.
 
-## TL;DR
+This post shows how to format the date, how to work with **epoch seconds** (seconds since 1970-01-01 00:00:00 UTC), and how to save the formats you use as short commands.
 
-Use `date` to display the current date and time. Format it with `date +"%Y-%m-%d %H:%M:%S"` for custom output. Create a custom command by adding an alias to your `~/.bashrc` file, like `alias now='date +"%Y-%m-%d %H:%M:%S"'`, then run `source ~/.bashrc` to activate it. After that, typing `now` will show the formatted date and time.
+## TLDR
 
-The `date` command is your go-to tool for displaying and formatting date/time information in Linux.
+| Task                             | Command                                                   |
+| -------------------------------- | --------------------------------------------------------- |
+| Date and time in your own format | `date +"%Y-%m-%d %H:%M:%S"`                               |
+| Today as YYYY-MM-DD              | `date +%F`                                                |
+| ISO 8601 with time zone          | `date -Iseconds` (GNU)                                    |
+| Seconds since the epoch          | `date +%s`, or `$EPOCHSECONDS` in Bash 5                  |
+| Milliseconds since the epoch     | `date +%s%3N` (GNU)                                       |
+| Date to epoch seconds            | `date -d "2026-01-15 14:30" +%s` (GNU)                    |
+| Epoch seconds to a date          | `date -d @1704067200` (GNU), `date -r 1704067200` (macOS) |
+| A short custom command           | `alias now='date +"%F %T"'` in `~/.bashrc`                |
 
-The simplest usage shows the current date and time:
+## Prerequisites
+
+- A Linux terminal. The `date -d`, `-I` and `%N` examples use GNU `date` from coreutils, which most Linux distributions ship. BusyBox `date` (Alpine) supports only part of them. macOS has BSD `date`; the differences are noted.
+- Bash 4.2 or later for `printf '%(...)T'`, and Bash 5 for `$EPOCHSECONDS`.
+
+## How Do I Get the Current Date and Time in Linux?
+
+Run `date`:
 
 ```bash
 date
+# Fri Nov 13 09:30:12 UTC 2026
 ```
 
-Output:
-```
-Thu Mar 28 14:23:45 UTC 2025
-```
-
-This default format includes the day of the week, month, day, time, timezone, and year.
-
-## Formatting the Date Output
-
-Use the `+` flag followed by format specifiers to customize the output:
+To choose the format, pass a format string that starts with `+`. The `%` codes are the same as in C `strftime`:
 
 ```bash
-# Year-Month-Day format
-date +"%Y-%m-%d"
-# Output: 2025-03-28
-
-# With time included
-date +"%Y-%m-%d %H:%M:%S"
-# Output: 2025-03-28 14:23:45
-
-# 12-hour format with AM/PM
-date +"%Y-%m-%d %I:%M:%S %p"
-# Output: 2025-03-28 02:23:45 PM
+date +"%Y-%m-%d %H:%M:%S"        # 2026-11-13 09:30:12
+date +"%Y-%m-%d_%H-%M-%S"        # 2026-11-13_09-30-12, safe in file names
+date +"%A, %B %d, %Y %I:%M %p"   # Friday, November 13, 2026 09:30 AM
+date -u +"%Y-%m-%dT%H:%M:%SZ"    # 2026-11-13T09:30:12Z, UTC
+date -Iseconds                   # 2026-11-13T09:30:12+00:00 (GNU)
 ```
 
-Common format specifiers:
+| Code | Meaning                  | Code | Meaning                      |
+| ---- | ------------------------ | ---- | ---------------------------- |
+| `%Y` | Year (2026)              | `%H` | Hour, 00-23                  |
+| `%m` | Month, 01-12             | `%I` | Hour, 01-12                  |
+| `%d` | Day of the month, 01-31  | `%M` | Minute, 00-59                |
+| `%F` | Same as `%Y-%m-%d`       | `%S` | Second, 00-60                |
+| `%T` | Same as `%H:%M:%S`       | `%p` | AM or PM                     |
+| `%A` | Weekday name (Friday)    | `%Z` | Time zone abbreviation (UTC) |
+| `%B` | Month name (November)    | `%z` | Offset from UTC (+0000)      |
+| `%j` | Day of the year, 001-366 | `%s` | Seconds since the epoch      |
 
-```
-Date components:
-%Y - Year (2025)
-%y - Year, 2 digits (25)
-%m - Month (01-12)
-%d - Day of month (01-31)
-%B - Full month name (March)
-%b - Abbreviated month name (Mar)
-%A - Full weekday name (Thursday)
-%a - Abbreviated weekday name (Thu)
-
-Time components:
-%H - Hour, 24-hour format (00-23)
-%I - Hour, 12-hour format (01-12)
-%M - Minute (00-59)
-%S - Second (00-59)
-%p - AM or PM
-%Z - Timezone name (UTC, EST, etc.)
-%z - Timezone offset (+0000)
-
-Special:
-%s - Seconds since epoch (1711634625)
-```
-
-## Practical Date Formats
-
-For log files:
+To show the time in another time zone, set `TZ` for the one command. The names come from the tz database in `/usr/share/zoneinfo`:
 
 ```bash
-date +"%Y-%m-%d_%H-%M-%S"
-# Output: 2025-03-28_14-23-45
+TZ=UTC date
+TZ=America/New_York date +"%F %T %Z"
+TZ=Asia/Tokyo date +"%F %T %Z"
 ```
 
-For human-readable output:
+Use UTC (`date -u`) for timestamps in logs and file names. They sort correctly and do not jump when daylight saving time starts or ends. A timestamp in a file name then looks like this:
 
 ```bash
-date +"%B %d, %Y at %I:%M %p"
-# Output: March 28, 2025 at 02:23 PM
-```
-
-For ISO 8601 format:
-
-```bash
-date +"%Y-%m-%dT%H:%M:%S%z"
-# Output: 2025-03-28T14:23:45+0000
-```
-
-For backup file names (no colons or spaces):
-
-```bash
-date +"%Y%m%d_%H%M%S"
-# Output: 20250328_142345
+cp app.conf "app.conf.$(date -u +%Y%m%dT%H%M%SZ).bak"
+tar -czf "backup-$(date +%F).tar.gz" /etc/myapp
 ```
 
 ## Format the Date as YYYY-MM-DD in a Script
@@ -181,320 +154,129 @@ GNU `date -d` also does date arithmetic. Watch the month steps: "one month after
 
 The last command fails with exit code 1, so `date -d "$input" +%F >/dev/null` is a quick way to check that a string is a valid date.
 
-## Creating a Custom Command with an Alias
+## How Do I Get the Current Time in Seconds Since the Epoch in Bash?
 
-Let's create a custom command called `now` that shows the date and time in your preferred format.
-
-Open your shell configuration file:
-
-```bash
-nano ~/.bashrc
-```
-
-Add an alias at the end:
-
-```bash
-# Custom date/time command
-alias now='date +"%Y-%m-%d %H:%M:%S"'
-```
-
-Save the file and reload your configuration:
-
-```bash
-source ~/.bashrc
-```
-
-Now you can use your custom command:
-
-```bash
-now
-```
-
-Output:
-```
-2025-03-28 14:23:45
-```
-
-## Creating Multiple Date Aliases
-
-You might want different formats for different purposes:
-
-```bash
-# Add these to ~/.bashrc
-
-# Simple date
-alias today='date +"%Y-%m-%d"'
-
-# Date and time
-alias now='date +"%Y-%m-%d %H:%M:%S"'
-
-# Timestamp for filenames
-alias timestamp='date +"%Y%m%d_%H%M%S"'
-
-# Full readable format
-alias fulldate='date +"%A, %B %d, %Y at %I:%M:%S %p %Z"'
-```
-
-After sourcing your `.bashrc`:
-
-```bash
-today
-# Output: 2025-03-28
-
-now
-# Output: 2025-03-28 14:23:45
-
-timestamp
-# Output: 20250328_142345
-
-fulldate
-# Output: Thursday, March 28, 2025 at 02:23:45 PM UTC
-```
-
-## Using Date in File Names
-
-When creating backups or logs, include timestamps in filenames:
-
-```bash
-# Create a backup with timestamp
-cp important.txt "important_$(date +%Y%m%d_%H%M%S).txt"
-
-# Create a log file with today's date
-touch "log_$(date +%Y-%m-%d).log"
-
-# Create a directory with month and year
-mkdir "backup_$(date +%Y_%m)"
-```
-
-This prevents overwriting files and makes it easy to sort by date.
-
-## Getting Time in Different Timezones
-
-Display time in a specific timezone:
-
-```bash
-# UTC time
-TZ=UTC date
-
-# Eastern Time
-TZ=America/New_York date
-
-# Tokyo time
-TZ=Asia/Tokyo date
-```
-
-Create aliases for frequently-used timezones:
-
-```bash
-# Add to ~/.bashrc
-alias utcnow='TZ=UTC date +"%Y-%m-%d %H:%M:%S %Z"'
-alias nynow='TZ=America/New_York date +"%Y-%m-%d %H:%M:%S %Z"'
-```
-
-## Getting Unix Timestamp (Seconds Since Epoch)
-
-For programming or logging:
+Use `date +%s`. It prints the number of seconds since 1970-01-01 00:00:00 UTC:
 
 ```bash
 date +%s
-# Output: 1711634625
+# 1794562212
 ```
 
-Create an alias for it:
+Bash 5 has the same value in variables, so you do not need to start `date`:
 
 ```bash
-# Add to ~/.bashrc
+echo "$EPOCHSECONDS"            # 1794562212
+echo "$EPOCHREALTIME"           # 1794562212.564326, with microseconds
+printf '%(%s)T\n' -1            # Bash 4.2+: -1 means "now"
+```
+
+The epoch value is the same in every time zone, so `TZ=Asia/Tokyo date +%s` prints the same number as `date +%s`. Only the conversion to a readable date depends on the time zone.
+
+### Get Milliseconds or Nanoseconds
+
+GNU `date` prints fractions of a second with `%N` (nanoseconds). `%3N` keeps the first three digits:
+
+```bash
+date +%s%3N      # milliseconds, 13 digits: 1794562212564
+date +%s%6N      # microseconds
+date +%s%N       # nanoseconds
+```
+
+BSD `date` on macOS does not support `%N`. In Bash 5, take the digits of `$EPOCHREALTIME` instead. It has six decimal places, so the digits are microseconds:
+
+```bash
+ms=$(( ${EPOCHREALTIME//[!0-9]/} / 1000 ))
+```
+
+`${EPOCHREALTIME//[!0-9]/}` removes the decimal separator, which is a comma instead of a dot in some locales.
+
+### Convert Between Dates and Epoch Seconds
+
+GNU `date -d` reads a date string, and `@` marks an epoch value:
+
+```bash
+date -d "2026-01-15 14:30:00" +%s           # local time to epoch
+date -u -d "2026-01-15 14:30:00" +%s        # the same time read as UTC
+date -d "3 days ago" +%s                    # relative dates work too
+date -u -d @1704067200 +"%F %T"             # 2024-01-01 00:00:00
+TZ=America/New_York date -d "today 00:00" +%s   # midnight in New York
+```
+
+On macOS, use `date -r 1704067200` for epoch to date, and `date -j -f "%Y-%m-%d %H:%M:%S" "2026-01-15 14:30:00" +%s` for a date to epoch.
+
+To get the modification time of a file as epoch seconds, use `stat -c %Y file` on Linux (`stat -f %m file` on macOS), or let `date` read it: `date -r file +%s`.
+
+### Measure How Long Something Takes
+
+For whole seconds, use the `SECONDS` variable. It holds the number of seconds since the shell started, or since you last assigned a value to it:
+
+```bash
+SECONDS=0
+./run-backup.sh
+echo "backup took ${SECONDS}s"
+```
+
+For more precision, subtract two `$EPOCHREALTIME` values. Bash arithmetic has no decimals, so let `awk` do the subtraction:
+
+```bash
+start=$EPOCHREALTIME
+curl -s -o /dev/null https://example.com
+end=$EPOCHREALTIME
+awk -v s="$start" -v e="$end" 'BEGIN { printf "request took %.3f s\n", e - s }'
+```
+
+This assumes the decimal separator is a dot. To time one command interactively, `time curl -s -o /dev/null https://example.com` prints real, user and system time.
+
+To wait for a fraction of a second between steps, see [how to sleep for milliseconds in Bash](/posts/sleep-for-milliseconds).
+
+### Epoch Time Limits
+
+- A signed 32-bit counter ends at 2147483647, which is 2038-01-19 03:14:07 UTC (the **year 2038 problem**). 64-bit Linux uses a 64-bit time value. Old 32-bit systems and file formats that store 32-bit timestamps still have the limit.
+- Unix time ignores leap seconds: every day has exactly 86400 seconds.
+
+## How Do I Turn a Date Format Into a Custom Command?
+
+Add an alias to `~/.bashrc`, then reload the file:
+
+```bash
+# in ~/.bashrc
+alias now='date +"%Y-%m-%d %H:%M:%S"'
+alias today='date +%F'
+alias stamp='date -u +%Y%m%dT%H%M%SZ'
 alias epoch='date +%s'
 ```
 
-Then use:
-
 ```bash
-epoch
-# Output: 1711634625
+source ~/.bashrc
+now        # 2026-11-13 09:30:12
 ```
 
-## Creating a Function for More Complex Commands
-
-For more complex date formatting that needs parameters, use a function instead of an alias:
+An alias cannot take arguments in the middle of the command, so use a function when the format needs input:
 
 ```bash
-# Add to ~/.bashrc
-
-# Function to show time in any timezone
 timein() {
-    if [ -z "$1" ]; then
-        echo "Usage: timein <timezone>"
-        echo "Example: timein America/New_York"
+    if [[ -z ${1-} ]]; then
+        echo "Usage: timein ZONE, for example timein Europe/Berlin" >&2
         return 1
     fi
-    TZ="$1" date +"%Y-%m-%d %H:%M:%S %Z"
+    TZ="$1" date +"%F %T %Z"
 }
 
-# Function to create dated backup of a file
 backup() {
-    if [ -z "$1" ]; then
-        echo "Usage: backup <filename>"
-        return 1
-    fi
-    cp "$1" "${1}.$(date +%Y%m%d_%H%M%S).bak"
-    echo "Backup created: ${1}.$(date +%Y%m%d_%H%M%S).bak"
+    local stamp
+    stamp=$(date +%Y%m%d_%H%M%S)
+    cp -- "$1" "$1.$stamp.bak" && echo "created $1.$stamp.bak"
 }
 ```
 
-After sourcing your `.bashrc`:
+The `backup` function computes the time once. If it called `date` twice, once for `cp` and once for the message, the two values could differ by a second.
 
-```bash
-timein America/Los_Angeles
-# Output: 2025-03-28 07:23:45 PDT
+For aliases for all users, add them to `/etc/bash.bashrc` on Debian and Ubuntu, or to a `.sh` file in `/etc/profile.d/` on Fedora and RHEL, whose `/etc/bashrc` reads that directory for every interactive shell. On Debian and Ubuntu, `/etc/profile.d/` is read only by login shells, and aliases are not passed on to the shells they start, so most terminal windows would not have them. [How to reload .bashrc and write aliases that take parameters](/posts/permanently-set-path-on-linux-unix#h2-how-do-i-reload-bashrc-without-logging-out) has more about startup files.
 
-backup important.conf
-# Creates: important.conf.20250328_142345.bak
-```
+## Related Resources
 
-## Displaying a Calendar
-
-The `cal` command shows a calendar:
-
-```bash
-# Current month
-cal
-
-# Specific month and year
-cal 12 2025
-
-# Entire year
-cal 2025
-```
-
-Create an alias for the current month with highlighted today:
-
-```bash
-# Add to ~/.bashrc
-alias calendar='cal'
-```
-
-## Practical Example: Log Entry Script
-
-Here's a script that adds timestamped log entries:
-
-```bash
-#!/bin/bash
-
-LOG_FILE="$HOME/activity.log"
-
-# Function to log with timestamp
-log() {
-    echo "[$(date +"%Y-%m-%d %H:%M:%S")] $*" >> "$LOG_FILE"
-}
-
-# Usage
-log "Started application"
-log "User logged in"
-log "Processing complete"
-
-# View the log
-cat "$LOG_FILE"
-```
-
-Output in `activity.log`:
-```
-[2025-03-28 14:23:45] Started application
-[2025-03-28 14:23:47] User logged in
-[2025-03-28 14:23:52] Processing complete
-```
-
-## Practical Example: Automated Backup Script
-
-A script that creates daily backups with timestamps:
-
-```bash
-#!/bin/bash
-
-SOURCE_DIR="/var/www/app"
-BACKUP_DIR="/backup"
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_FILE="$BACKUP_DIR/app_backup_$DATE.tar.gz"
-
-# Create backup
-tar -czf "$BACKUP_FILE" -C "$(dirname "$SOURCE_DIR")" "$(basename "$SOURCE_DIR")"
-
-echo "Backup created: $BACKUP_FILE"
-
-# Keep only last 7 days of backups
-find "$BACKUP_DIR" -name "app_backup_*.tar.gz" -mtime +7 -delete
-```
-
-## Making Aliases Available System-Wide
-
-If you want your aliases available for all users:
-
-```bash
-# Create system-wide alias file
-sudo nano /etc/profile.d/custom-aliases.sh
-```
-
-Add your aliases:
-
-```bash
-# System-wide date/time aliases
-alias now='date +"%Y-%m-%d %H:%M:%S"'
-alias today='date +"%Y-%m-%d"'
-```
-
-Make it executable:
-
-```bash
-sudo chmod +x /etc/profile.d/custom-aliases.sh
-```
-
-These aliases will be available to all users after they log in.
-
-## Checking if Your Alias Works
-
-After adding an alias, verify it's loaded:
-
-```bash
-# List all aliases
-alias
-
-# Check specific alias
-alias now
-
-# Test it
-now
-```
-
-If it's not working, make sure you sourced your `.bashrc`:
-
-```bash
-source ~/.bashrc
-```
-
-Or open a new terminal window.
-
-## Removing or Changing Aliases
-
-To temporarily remove an alias in the current session:
-
-```bash
-unalias now
-```
-
-To permanently remove it, delete or comment out the line in `~/.bashrc`:
-
-```bash
-# Open bashrc
-nano ~/.bashrc
-
-# Comment out or delete the alias line
-# alias now='date +"%Y-%m-%d %H:%M:%S"'
-```
-
-Then source the file:
-
-```bash
-source ~/.bashrc
-```
-
-The `date` command is flexible enough for any date/time formatting you need, and creating custom aliases or functions makes your common formats just a short command away. Whether you're creating timestamped backups, logging events, or just checking the time in different formats, these techniques speed up your workflow.
+- [Introduction to Bash: Bash Tools](/guides/introduction-to-bash/09-bash-tools): `date`, `printf` and other tools for scripts
+- [Cron expression simulator](/games/cron-expression-simulator): build the schedule for a job that writes timestamped backups
+- [How to sleep for milliseconds in Bash](/posts/sleep-for-milliseconds)
+- [What does 2>&1 mean?](/posts/what-does-2-and-1-mean-linux-bash): add timestamps and error output to a log file
