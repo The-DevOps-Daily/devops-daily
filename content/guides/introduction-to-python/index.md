@@ -101,7 +101,7 @@ Parts 1 to 9 work in one directory, `~/pyops`, with one virtual environment, cre
 
 - Test yourself with the [Python Fundamentals Quiz](/quizzes/python-quiz).
 - [Python 3.15 made UTF-8 the default](/posts/python-3-15-utf-8-default-linux-locales): what changes on Linux when you upgrade.
-- [What is the quickest way to HTTP GET in Python?](/posts/what-is-the-quickest-way-to-http-get-in-python) and [why open() does not create a file](/posts/python-open-does-not-create-file), two short answers to common questions.
+- [What is the quickest way to HTTP GET in Python?](/guides/introduction-to-python/08-error-handling#h3-what-is-the-quickest-way-to-make-an-http-get-request-in-python) and [why open() does not create a file](/guides/introduction-to-python/07-file-operations#h3-why-does-open-not-create-a-file-that-does-not-exist), two short answers to common questions.
 - [Shai-Hulud reaches PyPI](/posts/shai-hulud-hades-pypi-wave-june-2026): the supply-chain risk behind lock files and cooldowns.
 - Next guide: [Introduction to Ansible](/guides/introduction-to-ansible), configuration management written in, and extensible with, Python.
 

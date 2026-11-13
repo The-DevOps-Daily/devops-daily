@@ -382,7 +382,7 @@ The pattern is the point: each handshake costs one round trip. The DNS answer ar
 }
 ```
 
-That is why connection reuse matters so much: HTTP keep-alive, connection pools for databases, and HTTP/2, which sends many requests over one connection. It is also why **QUIC**, the transport under **HTTP/3**, runs over UDP: it combines the transport and TLS handshakes into one round trip, and lets a resumed connection send data in the first packet. UDP itself is not magic; QUIC rebuilds reliability and congestion control on top of it. The posts [UDP vs TCP: how much faster is UDP really?](/posts/udp-vs-tcp-performance-comparison) and [when to use UDP instead of TCP](/posts/when-is-it-appropriate-to-use-udp-instead-of-tcp) measure this further.
+That is why connection reuse matters so much: HTTP keep-alive, connection pools for databases, and HTTP/2, which sends many requests over one connection. It is also why **QUIC**, the transport under **HTTP/3**, runs over UDP: it combines the transport and TLS handshakes into one round trip, and lets a resumed connection send data in the first packet. UDP itself is not magic; QUIC rebuilds reliability and congestion control on top of it. [UDP vs TCP: how much faster is UDP really?](/posts/udp-vs-tcp-performance-comparison) measures this further and shows [when to use UDP instead of TCP](/posts/udp-vs-tcp-performance-comparison#h2-when-is-it-appropriate-to-use-udp-instead-of-tcp).
 
 ## HTTP and TLS
 

@@ -128,7 +128,7 @@ Adding compute to the backend does not increase throughput if a proxy in front o
 
 This is why capacity planning based only on CPU and memory fails. Resource metrics tell you what a process consumes. **Work metrics** tell you whether the component can accept another request: active connections, in-flight requests, pending requests, queue depth, flow-table utilization, rejection count, and retry ratio.
 
-If you want a refresher on the user-facing side of this, [P99 latency](/posts/what-is-p99-latency) is often the first signal that a queue is growing while averages still look normal.
+If you want a refresher on the user-facing side of this, [P99 latency](/posts/slos-slis-error-budgets-practical-guide#h2-what-is-p99-latency) is often the first signal that a queue is growing while averages still look normal.
 
 ## 1. Scale on the Component That Saturates
 

@@ -6,8 +6,8 @@ category:
   slug: 'devops'
 date: '2026-04-13'
 publishedAt: '2026-04-13T09:00:00Z'
-updatedAt: '2026-04-13T09:00:00Z'
-readingTime: '10 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -21,6 +21,7 @@ tags:
   - observability
   - devops
   - prometheus
+  - latency
 ---
 
 Your checkout service threw 500 errors for 12 minutes last Tuesday. The on-call engineer fixed it, wrote a short postmortem, and moved on. Then it happened again on Thursday, for 8 minutes this time. Product asked: "Is this normal? Should we stop shipping features until it's fixed?" Nobody had a good answer because there was no agreed-upon definition of "reliable enough."
@@ -68,11 +69,44 @@ REQUEST_LATENCY = Histogram(
     'http_request_duration_seconds',
     'HTTP request latency in seconds',
     ['method', 'endpoint'],
-    buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
+    buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.3, 0.5, 1.0, 2.5]  # 0.3 = the SLO threshold below
 )
 ```
 
 Every request increments the counter with its status code, and the histogram records how long it took. These two metrics give you everything you need for availability and latency SLIs.
+
+## What Is P99 Latency?
+
+P99 latency is the 99th percentile of the response times: 99% of requests are faster than this value, and 1% are slower. If the P99 of an API is 800 ms, one request in a hundred takes 800 ms or longer. P50, the median, describes a typical request. P95, P99 and P99.9 describe the slow tail, which an average hides.
+
+Take 100 requests: 50 take 50 ms, 30 take 100 ms, 15 take 200 ms, 4 take 500 ms and 1 takes 5,000 ms. Computed with Python's `statistics` module:
+
+| Statistic | Value    |
+| --------- | -------- |
+| Average   | 155 ms   |
+| P50       | 75 ms    |
+| P95       | 215 ms   |
+| P99       | 545 ms   |
+| Maximum   | 5,000 ms |
+
+The average looks fine, and it does not show that four requests took half a second. Two details in this example are worth knowing:
+
+- **The method changes small samples.** `statistics.quantiles(data, n=100, method="inclusive")` and NumPy's default interpolate between two neighboring values, so P99 is 545 ms. The "nearest rank" method picks a real sample and gives 500 ms. With 100 requests, P99 depends on the two slowest ones. Measure percentiles over enough requests: hundreds for P99, thousands for P99.9.
+- **P99 is not the maximum.** With interpolation, the one 5-second request moves P99 a little (545 ms instead of 500 ms), but P99 does not show that a request took 5 seconds. Watch the maximum or P99.9 too if single very slow requests matter, for example for payments.
+
+The tail matters more than the 1% suggests. A page that calls many backends waits for the slowest call. When a page needs 100 calls and each has a 1% chance to be slower than its P99, and the slow calls happen independently of each other, 63% of the page loads include at least one slow call (1 - 0.99^100). In this example, the P99 of a backend becomes the typical latency of the page that uses it. Real slow calls often come together, for example during a garbage collection pause, which changes the number but not the lesson: measure the tail of every dependency on a fan-out path.
+
+With the histogram from the previous section, Prometheus estimates P99 like this:
+
+```promql
+histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+```
+
+- **Add up the buckets first** (`sum by (le)`), then compute the quantile. Do not average the P99 values of several instances: an average of percentiles is not a percentile of all requests.
+- **The result is an estimate.** Prometheus finds the bucket that holds the 99th percentile and interpolates inside it. With buckets at 0.5 s and 1.0 s, a P99 of 0.73 s only means "between 0.5 and 1 second". Put bucket boundaries near the values you care about, such as your SLO threshold. Native histograms have much finer buckets.
+- **For the SLO itself, count requests under a threshold** instead of computing a percentile. "99% of requests are faster than 300 ms" and "P99 is below 300 ms" mean the same thing, but the count adds up exactly across instances and over the whole SLO window, and the error budget follows from it directly. The latency query in the next sections does that.
+
+A high P99 with a normal median usually has a cause that hits a few requests: garbage collection pauses, cold starts and empty caches, waits for a lock or for a free connection in a pool, retries after a timeout, CPU throttling from a container limit, or a query that is slow for some parameters only. Traces show which span is slow ([distributed tracing with OpenTelemetry](/posts/distributed-tracing-opentelemetry-instrumentation-visualization)). The [latency percentiles simulator](/games/latency-percentiles-simulator) lets you change a distribution and watch P50, P95 and P99 move.
 
 ## Setting Your First SLO
 
@@ -168,10 +202,12 @@ Here is a Grafana dashboard definition you can import:
     {
       "title": "Availability SLI (30d rolling)",
       "type": "gauge",
-      "targets": [{
-        "expr": "sum(rate(http_requests_total{status!~\"5..\"}[30d])) / sum(rate(http_requests_total[30d]))",
-        "legendFormat": "Availability"
-      }],
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status!~\"5..\"}[30d])) / sum(rate(http_requests_total[30d]))",
+          "legendFormat": "Availability"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "thresholds": {
@@ -190,10 +226,12 @@ Here is a Grafana dashboard definition you can import:
     {
       "title": "Error Budget Remaining",
       "type": "stat",
-      "targets": [{
-        "expr": "((sum(rate(http_requests_total{status!~\"5..\"}[30d])) / sum(rate(http_requests_total[30d]))) - 0.999) / (1 - 0.999) * 100",
-        "legendFormat": "Budget %"
-      }],
+      "targets": [
+        {
+          "expr": "((sum(rate(http_requests_total{status!~\"5..\"}[30d])) / sum(rate(http_requests_total[30d]))) - 0.999) / (1 - 0.999) * 100",
+          "legendFormat": "Budget %"
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
@@ -243,8 +281,8 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "Checkout API burning error budget 14x faster than sustainable"
-          description: "At this rate, the 30-day error budget will be exhausted in ~2 days."
+          summary: 'Checkout API burning error budget 14x faster than sustainable'
+          description: 'At this rate, the 30-day error budget will be exhausted in ~2 days.'
 
       # Slow burn: 3x over 1 day AND 1x over 3 days
       # Creates a ticket, no page
@@ -263,8 +301,8 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Checkout API slowly burning error budget"
-          description: "Budget will be exhausted before the window resets if this continues."
+          summary: 'Checkout API slowly burning error budget'
+          description: 'Budget will be exhausted before the window resets if this continues.'
 ```
 
 The two-window approach (short and long) prevents alert fatigue. A brief spike triggers the short window but not the long one, so you do not get paged for a 30-second blip. A sustained problem triggers both, which means something is actually wrong.
@@ -333,3 +371,11 @@ fi
 6. Schedule a monthly SLO review meeting to check if targets still make sense
 
 Start small. One service, two SLIs, one dashboard. You will learn more from running a real SLO for a month than from planning the perfect SLO framework on a whiteboard.
+
+## Related Resources
+
+- [Latency percentiles simulator](/games/latency-percentiles-simulator) and [PromQL playground](/games/promql-playground)
+- [SLOs, SLIs and error budgets checklist](/checklists/slos-slis-error-budgets), [quiz](/quizzes/slos-slis-error-budgets-quiz) and [flashcards](/flashcards/slos-slis-error-budgets)
+- [Choosing SLIs](/interview-questions/topic/sre#sre-choosing-slis) and [burn rate alerting](/interview-questions/topic/sre#sre-burn-rate-alerting) interview questions
+- [Prometheus and Grafana monitoring exercise](/exercises/prometheus-grafana-monitoring)
+- [How to build an on-call rotation and escalation policy](/posts/on-call-rotation-escalation-policy-guide)

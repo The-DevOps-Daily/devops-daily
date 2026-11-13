@@ -322,7 +322,7 @@ The pieces of the second method:
 - `read -d ''` reads up to the next null byte, `-r` keeps backslashes, and `IFS=` keeps leading and trailing spaces.
 - `< <(...)` is **process substitution**: the loop reads `find`'s output as if it were a file. Writing `find ... | while read` would also work, but the loop would run in a subshell and `total` would be 0 afterwards ([Part 5](/guides/introduction-to-bash/05-control-structures) shows why).
 
-`find -exec ... {} +` is the simplest choice when one command can take all the names. Use the loop when you need Bash logic for each file. [Count lines of code recursively](/posts/count-lines-of-code-recursively) has more variations.
+`find -exec ... {} +` is the simplest choice when one command can take all the names. Use the loop when you need Bash logic for each file. [Count lines of code recursively](/posts/find-files-with-wildcards-linux#h3-how-do-i-count-lines-of-code-in-a-directory-recursively) and [fix "Argument list too long"](/posts/find-files-with-wildcards-linux#h2-how-do-i-fix-argument-list-too-long-for-rm-cp-and-mv) show more variations.
 
 ## Test Files and Directories
 

@@ -80,7 +80,7 @@ How to read it:
 - `mtr` lists every hop, and this run shows its classic trap. The last line, `10.0.2.11`, has the real numbers: a few percent loss and about 40 ms. The router's line shows far more "loss" than the destination behind it, which cannot be real loss, because every packet to `10.0.2.11` passed through that router. Linux limits the ICMP "time exceeded" replies that `mtr` relies on to about one per second per destination (`net.ipv4.icmp_ratelimit`), and `mtr -i 0.2` asks five times a second. Judge a path by its last line, and treat loss at a middle hop that does not continue to the end as rate limiting.
 - `netem` worked in one direction only, on the router's way out to `client`. Real problems are often one-way too; `mtr` from both ends tells them apart.
 
-This is also the easiest way to test how your own application behaves on a bad network: run it behind `tc netem` and watch timeouts, retries and the user experience. The posts [simulating a slow internet connection](/posts/simulating-slow-internet-connection) and [network tools that simulate slow connections](/posts/network-tools-that-simulate-slow-network-connection) cover the options on macOS and Windows too.
+This is also the easiest way to test how your own application behaves on a bad network: run it behind `tc netem` and watch timeouts, retries and the user experience. [Simulating a slow internet connection](/posts/simulating-slow-internet-connection) covers the options on macOS and Windows too, and how to [slow down a single service with Toxiproxy](/posts/simulating-slow-internet-connection#h2-how-do-i-slow-down-one-service-instead-of-the-whole-machine).
 
 ## What Loss Does to TCP
 

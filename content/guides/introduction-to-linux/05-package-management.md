@@ -481,6 +481,23 @@ Installing into `/usr/local` keeps your files apart from the distribution's. The
 
 **dnf: "Error: GPG check FAILED".** The package was not signed with a key dnf trusts. Import the vendor's key (`sudo rpm --import <url>`) after you have checked its fingerprint. Do not set `gpgcheck=0`.
 
+### How Do I Fix "At least one invalid signature was encountered"?
+
+apt downloaded a repository index, and its signature check failed:
+
+```text
+W: GPG error: http://ports.ubuntu.com/ubuntu-ports noble InRelease: At least one invalid signature was encountered.
+E: The repository 'http://ports.ubuntu.com/ubuntu-ports noble InRelease' is not signed.
+```
+
+The repository's key is almost never the cause; a missing key gives `NO_PUBKEY` instead. Usually apt got a damaged file, or the signature check itself could not run. Check these in order:
+
+1. **A full disk.** apt and `gpgv` need space in `/var/lib/apt/lists` and `/tmp`, and they report a failed check when they cannot write. Inside `docker build`, a full Docker disk is a frequent cause. Check with `df -h /var /tmp`, or `docker system df` on a Docker host, and free space with `docker builder prune` and `docker image prune` ([where Docker's disk space goes](/posts/docker-list-containers#h2-how-do-i-fix-no-space-left-on-device-in-docker)). With Docker Desktop, the disk of its VM is the one that is full.
+2. **Damaged lists or a proxy in the way.** Delete the downloaded lists and fetch them again: `sudo rm -rf /var/lib/apt/lists/*`, then `sudo apt update`. A caching proxy that serves a damaged or old copy can cause the same error; try another network, or an `https://` mirror. A captive portal that returns its own login page gives a different error: `Clearsigned file isn't valid, got 'NOSPLIT' (does the network require authentication?)`.
+3. **An old container runtime with a new image.** Newer distribution images use system calls that an old seccomp profile on the host blocks, so `gpgv` fails inside the container. Update Docker (and `libseccomp` on the host). If a test run with `--security-opt seccomp=unconfined` works, this is the cause; do not keep that option.
+
+A wrong system clock gives a different error, `Release file ... is not valid yet`. Fix the time (`timedatectl status`) instead of the keys. Do not make the error go away with `[trusted=yes]` or `--allow-insecure-repositories`: that turns off the check that protects you from changed packages.
+
 ## Common Mistakes
 
 - **Following `apt-key` tutorials.** Use a keyring file and `Signed-By` as shown above.
@@ -506,3 +523,4 @@ Next: [User and Group Management](/guides/introduction-to-linux/06-user-manageme
 - Interview questions: [Linux package management](/interview-questions/topic/linux#linux-package-management)
 - [Introduction to Docker](/guides/introduction-to-docker), which starts from the Docker repository you added above
 - [Linux Command Line Quiz](/quizzes/linux-quiz)
+- [How to fix "No space left on device" in Docker](/posts/docker-list-containers#h2-how-do-i-fix-no-space-left-on-device-in-docker), a frequent cause of signature errors in `docker build`

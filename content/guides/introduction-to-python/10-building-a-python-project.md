@@ -791,6 +791,56 @@ For checks like these, threads are the simplest choice. The alternatives, for wh
 - **Processes** (`concurrent.futures.ProcessPoolExecutor`) for CPU-heavy work such as parsing huge files, because the GIL lets only one thread run Python code at a time. On Linux, Python 3.14 changed the default way of starting worker processes from `fork` to `forkserver`, which can break code that relied on `fork` copying the parent's state.
 - **The free-threaded build** (`uv python install 3.14t`) runs Python threads truly in parallel. Since 3.14 it is officially supported but optional, single-threaded code is about 5 to 10% slower on it, and every compiled library you use must support it.
 
+### Which Lightweight Alternatives to Twisted Are There?
+
+For new code, asyncio from the standard library. Twisted was the main way to write event-driven network code in Python before `async` and `await` existed. Since Python 3.11, asyncio also has structured concurrency: `asyncio.TaskGroup` waits for a group of tasks and cancels the rest when one fails, and `asyncio.timeout()` puts one deadline on a whole block. This echo server and its three clients need nothing outside the standard library:
+
+```python
+import asyncio
+
+
+async def handle(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+    while data := await reader.readline():
+        writer.write(data)
+        await writer.drain()
+    writer.close()
+    await writer.wait_closed()
+
+
+async def client(n: int) -> str:
+    reader, writer = await asyncio.open_connection("127.0.0.1", 9009)
+    writer.write(f"hello {n}\n".encode())
+    await writer.drain()
+    reply = await reader.readline()
+    writer.close()
+    await writer.wait_closed()
+    return reply.decode().strip()
+
+
+async def main() -> None:
+    server = await asyncio.start_server(handle, "127.0.0.1", 9009)
+    async with server:
+        async with asyncio.timeout(5):  # one deadline for all clients (3.11+)
+            async with asyncio.TaskGroup() as tg:  # waits for all, cancels the rest on error (3.11+)
+                tasks = [tg.create_task(client(n)) for n in range(3)]
+        print([t.result() for t in tasks])
+
+
+asyncio.run(main())
+```
+
+```text
+$ python echo_async.py
+['hello 0', 'hello 1', 'hello 2']
+```
+
+Libraries that build on asyncio cover most protocols: httpx or aiohttp for HTTP, `websockets` for WebSocket servers and clients, asyncssh for SSH and asyncpg for PostgreSQL. Two other choices:
+
+- **AnyIO or Trio** if you want stricter rules for cancellation and timeouts. Trio is its own event loop. AnyIO offers the same style on top of asyncio or Trio, and httpx uses it inside.
+- **gevent** to make existing blocking code concurrent without rewriting it. It patches the standard library's sockets (`monkey.patch_all()`), which can surprise libraries that do not expect it.
+
+Twisted itself is still maintained, and it remains a good choice for the protocols it already implements, such as SSH (Conch), DNS and IRC. It can run on the asyncio event loop (`twisted.internet.asyncioreactor`), so you can move a Twisted program to asyncio one part at a time. Curio, often listed as a light alternative, is archived: its author ended the project in December 2025.
+
 ## Test with pytest
 
 pytest finds files named `test_*.py`, runs every function named `test_*` and reports each `assert` that fails with the values involved. **Fixtures** provide what tests need: pytest's built-in `tmp_path` (a fresh directory), `monkeypatch` (temporarily replace a function or environment variable), `capsys` and `caplog` (captured output and logs), and your own fixtures in `conftest.py`. This one starts a real HTTP server on a free port, so the HTTP check is tested over a real connection without mocking anything:

@@ -1,13 +1,13 @@
 ---
 title: 'How to Fix Pods Stuck in Terminating and Delete All Resources'
-excerpt: 'Why a pod or namespace stays in Terminating, when a force delete is safe, how to handle finalizers, down nodes and volumes, and how to delete all resources.'
+excerpt: 'Why a pod or namespace stays in Terminating, when a force delete is safe, how to handle finalizers, down nodes and volumes, and how to list or delete all resources and pods.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
 date: '2024-12-19'
 publishedAt: '2024-12-19T10:00:00Z'
 updatedAt: '2026-11-13T09:00:00Z'
-readingTime: '14 min read'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -31,7 +31,9 @@ A pod in `Terminating` has a deletion request, but it is not gone yet. Two thing
 | A finalizer is left and its controller is gone | Fix the controller, or remove the finalizer with `kubectl patch` if no cleanup is needed      |
 | A PVC in `Terminating`                         | A pod still uses it (`kubernetes.io/pvc-protection`). Delete the pod first                    |
 | A namespace in `Terminating`                   | Its conditions show which object types and finalizers block it                                |
+| List everything in a namespace                 | Loop over `kubectl api-resources --namespaced`. `get all` shows only some workload types      |
 | Delete everything in a namespace               | `kubectl delete namespace <name>`. `delete all --all` misses most object types                |
+| Restart all pods                               | `kubectl rollout restart` per namespace. Do not delete the pods in `kube-system`              |
 
 ## Prerequisites
 
@@ -185,6 +187,26 @@ kubectl get namespace demo -o json | jq '.spec.finalizers = []' \
 
 The namespace disappears, but the objects that blocked it do not. They stay in etcd. When we created a namespace with the same name again, the old ConfigMap was back in it, finalizer included. Use this only when you have removed the leftovers some other way. Otherwise they stay in etcd, and the cleanup that their finalizers stood for never happens.
 
+## How Do I List All Resources in a Namespace?
+
+Ask the API server for every namespaced type that supports `list`, and get each type in the namespace:
+
+```bash
+kubectl api-resources --verbs=list --namespaced -o name \
+  | xargs -n 1 kubectl get --show-kind --ignore-not-found -n shop
+```
+
+`kubectl get all -n shop` looks like the answer, but `all` is a category with a fixed set of workload types: pods, Services, Deployments, ReplicaSets, StatefulSets, DaemonSets, Jobs, CronJobs, ReplicationControllers and HorizontalPodAutoscalers. ConfigMaps, Secrets, PVCs, Ingresses, NetworkPolicies, ServiceAccounts, Roles and most custom resources are not in it. `kubectl api-resources --categories=all` prints the types in the category.
+
+Some details about the loop:
+
+- It runs one request for each type, so it takes a few seconds. Add `-o name` to the `kubectl get` part for a short list of `kind/name` lines.
+- It also lists objects that Kubernetes creates in every namespace: the `default` ServiceAccount, the `kube-root-ca.crt` ConfigMap, and events. Events expire after one hour by default.
+- You need `list` permission for each type. Types that you cannot list print a `Forbidden` error, and the loop goes on with the next type. `kubectl auth can-i --list -n shop` shows what you may do.
+- `kubectl api-resources --namespaced=false` shows the cluster-scoped types, such as Nodes, PersistentVolumes, ClusterRoles and CRDs, which do not belong to any namespace.
+
+To list one type in all namespaces, add `-A`: `kubectl get pods -A`. To see what an app is made of, filter by its label: `kubectl get deployment,service,configmap,ingress -l app=web -n shop`.
+
 ## How Do I Delete All Resources in a Namespace or Cluster at One Time?
 
 To remove everything in a namespace, delete the namespace:
@@ -220,6 +242,26 @@ kubectl api-resources --namespaced --verbs=list,delete -o name \
 The loop also deletes the `default` ServiceAccount and the `kube-root-ca.crt` ConfigMap, which Kubernetes creates again at once. In the `default` namespace it also deletes the `kubernetes` Service, which the API server also creates again.
 
 Delete by label when you want to remove one app and keep the rest: `kubectl delete deployment,service,configmap,secret -l app=web -n shop`, or `kubectl delete -f k8s/` with the manifests that created it. For a local test cluster, deleting the whole cluster is faster than any cleanup: `kind delete cluster` or `minikube delete`.
+
+### How Do I Delete All Pods in All Namespaces?
+
+The command exists, but it is almost never what you want:
+
+```bash
+kubectl delete pods --all --all-namespaces   # -A is the short form of --all-namespaces
+```
+
+It deletes every pod in the cluster at the same time, including CoreDNS, the CNI plugin, kube-proxy and the ingress controller. Name resolution and networking can stop for every app until those pods are back. A `kubectl delete` also does not respect PodDisruptionBudgets: only evictions (a drain) do. Pods that a controller owns come back, static pods come back because the kubelet runs them from files on the node, and bare pods are gone for good.
+
+The usual goal is to restart the apps. Use `kubectl rollout restart` for each namespace instead. It replaces the pods by the workload's own update strategy: a few at a time for a Deployment with the default `RollingUpdate` and enough replicas, but all at once with `Recreate`, not at all for a StatefulSet or DaemonSet with `OnDelete`, and with a short outage for anything that has a single replica:
+
+```bash
+kubectl rollout restart deployment -n shop    # every Deployment in the namespace
+kubectl rollout restart statefulset -n shop   # the same for StatefulSets (and daemonset)
+kubectl delete pods --all -n shop             # the blunt way: all pods of one namespace at once
+```
+
+To restart only pods in a bad state, select them by phase: `kubectl delete pods -A --field-selector=status.phase=Failed` removes pods that have stopped with an error, such as evicted pods.
 
 ## How Do I Make Pods Terminate Faster?
 

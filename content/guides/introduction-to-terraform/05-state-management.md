@@ -450,7 +450,7 @@ If a run crashed or was killed and left a lock behind on a remote backend, relea
 terraform force-unlock 3b6a1f8c-2c9e-4b8a-9d55-0f1e2a3b4c5d
 ```
 
-Only do this after you have checked that the run that owns the lock is really gone (the CI job is finished, the colleague's laptop is not mid-apply). Unlocking a live run is how state gets corrupted. The posts [The State Is Locked. How Do I Unlock It?](/posts/who-owns-the-terraform-state-file#h3-the-state-is-locked-how-do-i-unlock-it) and [Fix Error Acquiring the State Lock: ConditionalCheckFailedException](/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception) cover backend-specific cases.
+Only do this after you have checked that the run that owns the lock is really gone (the CI job is finished, the colleague's laptop is not mid-apply). Unlocking a live run is how state gets corrupted. [The State Is Locked. How Do I Unlock It?](/posts/who-owns-the-terraform-state-file#h3-the-state-is-locked-how-do-i-unlock-it) and [How Do I Fix "Error acquiring the state lock: ConditionalCheckFailedException"?](/posts/who-owns-the-terraform-state-file#h3-how-do-i-fix-error-acquiring-the-state-lock-conditionalcheckfailedexception) cover backend-specific cases.
 
 ## Backups and Recovery
 

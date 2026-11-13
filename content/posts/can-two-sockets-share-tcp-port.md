@@ -276,7 +276,7 @@ If you bind to `0.0.0.0:8080` (all interfaces), you cannot bind another socket t
 
 ## Scenario 6: UDP Port Sharing
 
-UDP works differently from TCP. With `SO_REUSEADDR`, multiple UDP sockets can bind to the same port ([SO_REUSEADDR vs SO_REUSEPORT](/posts/so-reuseaddr-vs-so-reuseport) compares both options):
+UDP works differently from TCP. With `SO_REUSEADDR`, multiple UDP sockets can bind to the same port ([SO_REUSEADDR vs SO_REUSEPORT](/posts/close-vs-shutdown-socket#h2-how-do-so_reuseaddr-and-so_reuseport-differ) compares both options):
 
 ```python
 import socket
