@@ -384,7 +384,8 @@
 /tags/sysadmin /tags/linux 301
 /tags/system-administration /tags/linux 301
 /tags/tuning /tags/performance 301
-/tags/tutorial /tags/docker 301
+/tags/tutorial /guides 301
+/tags/tutorials /guides 301
 /tags/udp /tags/networking 301
 /tags/unix /tags/linux 301
 /tags/unix-timestamp /tags/shell-scripting 301
