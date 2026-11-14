@@ -14,6 +14,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileMenuMounted, setMobileMenuMounted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   // On a simulator page the header scrolls away with the page instead of sticking,
   // so it never covers or shifts the game.
@@ -112,7 +113,13 @@ export function Header() {
           >
             <Search className="w-5 h-5" />
           </Link>
-          <Button variant="ghost" size="sm" onClick={openMobileMenu} className="p-2">
+          <Button
+            ref={menuButtonRef}
+            variant="ghost"
+            size="sm"
+            onClick={openMobileMenu}
+            className="p-2"
+          >
             <span className="sr-only">Open main menu</span>
             <Menu className="w-5 h-5" aria-hidden="true" />
           </Button>
@@ -123,7 +130,13 @@ export function Header() {
       </nav>
 
       {/* Mobile Menu */}
-      {mobileMenuMounted && <MobileMenu isOpen={mobileMenuOpen} onClose={closeMobileMenu} />}
+      {mobileMenuMounted && (
+        <MobileMenu
+          isOpen={mobileMenuOpen}
+          onClose={closeMobileMenu}
+          returnFocusRef={menuButtonRef}
+        />
+      )}
     </header>
   );
 }

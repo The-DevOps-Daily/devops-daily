@@ -60,35 +60,62 @@ describe('header dropdown trigger', () => {
 });
 
 describe('mobile menu', () => {
+  let menuButton: HTMLButtonElement;
   const render = (isOpen: boolean) =>
-    act(async () => root.render(createElement(MobileMenu, { isOpen, onClose: () => {} })));
+    act(async () =>
+      root.render(
+        createElement(MobileMenu, {
+          isOpen,
+          onClose: () => {},
+          returnFocusRef: { current: menuButton },
+        })
+      )
+    );
   const wrapper = () => container.firstElementChild as HTMLElement;
   const hidden = () => wrapper().getAttribute('aria-hidden') === 'true';
   const inert = () => wrapper().hasAttribute('inert');
+  const afterPaint = () => act(async () => vi.advanceTimersByTime(50));
 
-  it('keeps inert out of the opening tap and sets it once the slide-out ends', async () => {
+  beforeEach(() => {
+    menuButton = document.createElement('button');
+    document.body.appendChild(menuButton);
     vi.useFakeTimers({
       toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
     });
+  });
+  afterEach(() => menuButton.remove());
+
+  it('keeps the inert toggle out of the tap, one paint later', async () => {
     await render(false);
     expect(hidden()).toBe(true);
     expect(inert()).toBe(true);
 
-    // Opening: visible to assistive tech at once, inert lifted after the paint.
+    // Opening: announced at once, focusable after the first paint.
     await render(true);
     expect(hidden()).toBe(false);
     expect(inert()).toBe(true);
-    await act(async () => vi.advanceTimersByTime(50));
+    await afterPaint();
     expect(inert()).toBe(false);
 
-    // Closing: the panel is still on screen for 200 ms, so it stays reachable.
+    // Closing: aria-hidden and inert land together, after the first paint.
     await render(false);
     expect(hidden()).toBe(false);
     expect(inert()).toBe(false);
-    await act(async () => vi.advanceTimersByTime(199));
-    expect(inert()).toBe(false);
-    await act(async () => vi.advanceTimersByTime(1));
+    await afterPaint();
     expect(hidden()).toBe(true);
     expect(inert()).toBe(true);
+  });
+
+  it('moves focus out of the menu when it closes', async () => {
+    await render(true);
+    await afterPaint();
+    const link = wrapper().querySelector('a') as HTMLAnchorElement;
+    link.focus();
+    expect(document.activeElement).toBe(link);
+
+    await render(false);
+    expect(document.activeElement).toBe(menuButton);
+    await afterPaint();
+    expect(wrapper().contains(document.activeElement)).toBe(false);
   });
 });
