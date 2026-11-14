@@ -829,11 +829,12 @@ html {
     @apply flex flex-col md:flex-row gap-6 p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all;
     /* Lets the browser skip layout and paint for cards outside the viewport.
        The cards stay in the HTML, in find-in-page and for screen readers.
-       Sizes are the median card heights; "auto" remembers real ones. */
+       The sizes are median card heights (316px phone, 188px desktop) minus
+       the 50px of padding and border; "auto" then remembers real heights. */
     content-visibility: auto;
-    contain-intrinsic-size: auto 316px;
+    contain-intrinsic-size: auto 266px;
     @media (width >= 48rem) {
-      contain-intrinsic-size: auto 188px;
+      contain-intrinsic-size: auto 138px;
     }
   }
   .post-card-badge {
