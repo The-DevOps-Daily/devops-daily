@@ -11,6 +11,9 @@ export default defineConfig({
       '@': resolve(__dirname, './'),
     },
   },
+  // Tests do not need Tailwind, and postcss.config.mjs is in the shape Next
+  // (Turbopack) reads, which Vite's loader does not accept.
+  css: { postcss: { plugins: [] } },
   test: {
     globals: true,
     environment: 'node',

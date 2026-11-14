@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -8,7 +9,8 @@ import { DropdownTrigger } from './dropdown-trigger';
 import { mainNavigation, dropdownNavigation } from './nav-items';
 import { Wrench, MoreHorizontal } from 'lucide-react';
 
-export function DesktopNavigation() {
+// Memoized: opening the mobile menu re-renders the header, not these links.
+export const DesktopNavigation = memo(function DesktopNavigation() {
   return (
     <>
       {/* Desktop Navigation */}
@@ -53,4 +55,4 @@ export function DesktopNavigation() {
       </div>
     </>
   );
-}
+});

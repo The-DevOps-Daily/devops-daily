@@ -10,20 +10,29 @@ interface CarbonAdsProps {
 
 export function CarbonAds({ className }: CarbonAdsProps) {
   useEffect(() => {
-    // Load Carbon Ads script
-    const script = document.createElement('script');
-    script.async = true;
-    script.type = 'text/javascript';
-    script.src = '//cdn.carbonads.com/carbon.js?serve=CE7DL53M&placement=bobbyilievcom&format=cover';
-    script.id = '_carbonads_js';
+    const load = () => {
+      const script = document.createElement('script');
+      script.async = true;
+      script.type = 'text/javascript';
+      script.src =
+        '//cdn.carbonads.com/carbon.js?serve=CE7DL53M&placement=bobbyilievcom&format=cover';
+      script.id = '_carbonads_js';
 
-    const container = document.getElementById('carbon-ads-container');
-    if (container && !document.getElementById('_carbonads_js')) {
-      container.appendChild(script);
-    }
+      const container = document.getElementById('carbon-ads-container');
+      if (container && !document.getElementById('_carbonads_js')) {
+        container.appendChild(script);
+      }
+    };
+    // Load the ad once hydration is done, so it does not delay early taps.
+    const idle = 'requestIdleCallback' in window;
+    const handle = idle
+      ? window.requestIdleCallback(load, { timeout: 3000 })
+      : window.setTimeout(load, 1500);
 
     // Cleanup function
     return () => {
+      if (idle) window.cancelIdleCallback(handle);
+      else window.clearTimeout(handle);
       const existingScript = document.getElementById('_carbonads_js');
       if (existingScript) {
         existingScript.remove();
