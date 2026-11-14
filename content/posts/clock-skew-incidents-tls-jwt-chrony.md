@@ -34,6 +34,11 @@ This post maps the time check behind each failure, shows safe reproductions with
 - On Linux, first check `timedatectl`, then use `chronyc tracking` and `chronyc sources -v` when chrony is your time daemon.
 - Correct the host clock, not a container clock. Alert on sync state and offset, then preserve UTC timestamps and offsets in incident logs.
 
+<figure>
+<video controls muted loop playsinline preload="none" width="1200" height="1560" poster="/images/posts/clock-skew-incidents-tls-jwt-chrony/clock-skew-poster.webp"><source src="/images/posts/clock-skew-incidents-tls-jwt-chrony/clock-skew.mp4" type="video/mp4"></video>
+<figcaption>Press play to watch a server's clock fall 1, 6 and then 20 minutes behind: a fresh JWT fails first, then a certificate issued 2 minutes ago and Kerberos (5 minutes allowed), and finally an S3 signed request (15 minutes allowed).</figcaption>
+</figure>
+
 ## Prerequisites
 
 - Shell access to a Linux host or VM.
