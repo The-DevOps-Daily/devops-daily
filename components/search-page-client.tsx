@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { memo, useEffect, useState, useCallback, useMemo, useRef, useDeferredValue } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Fuse from 'fuse.js';
@@ -120,7 +120,9 @@ export function SearchPageClient() {
     const sortBy = (searchParams.get('sort') as SearchFilters['sortBy']) || 'relevance';
     const sortDirection = (searchParams.get('dir') as SearchFilters['sortDirection']) || 'desc';
 
-    setFilters({ types, categories, tags, sortBy, sortDirection });
+    const next = { types, categories, tags, sortBy, sortDirection };
+    // Typing replaces the URL on every key; keep the same object when nothing changed.
+    setFilters((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
   }, [searchParams]);
 
   // Update URL when query or filters change
@@ -141,6 +143,10 @@ export function SearchPageClient() {
     [router]
   );
 
+  // Results follow the input at a lower priority, so a keystroke paints first.
+  const resultsQuery = useDeferredValue(query);
+  const resultsFilters = useDeferredValue(filters);
+
   // Search results
   const results = useMemo(() => {
     if (!fuse) {
@@ -148,16 +154,18 @@ export function SearchPageClient() {
     }
     // Check if any filters are active
     const hasFilters =
-      filters.types.length > 0 || filters.categories.length > 0 || filters.tags.length > 0;
+      resultsFilters.types.length > 0 ||
+      resultsFilters.categories.length > 0 ||
+      resultsFilters.tags.length > 0;
 
     // If no query and no filters, return empty
-    if (!query.trim() && !hasFilters) {
+    if (!resultsQuery.trim() && !hasFilters) {
       return [];
     }
 
     // Pass searchIndex for filter-only browsing (when no query)
-    return searchWithFuse(fuse, query, filters, searchIndex);
-  }, [fuse, query, filters, searchIndex]);
+    return searchWithFuse(fuse, resultsQuery, resultsFilters, searchIndex);
+  }, [fuse, resultsQuery, resultsFilters, searchIndex]);
 
   // Available filter options
   const filterOptions = useMemo(() => {
@@ -166,12 +174,12 @@ export function SearchPageClient() {
 
   // Update suggestions when query changes
   useEffect(() => {
-    if (query.length >= 2 && searchIndex.length > 0) {
-      setSuggestions(getSuggestions(query, searchIndex));
+    if (resultsQuery.length >= 2 && searchIndex.length > 0) {
+      setSuggestions(getSuggestions(resultsQuery, searchIndex));
     } else {
       setSuggestions([]);
     }
-  }, [query, searchIndex]);
+  }, [resultsQuery, searchIndex]);
 
   // Handle search input change
   const handleQueryChange = (newQuery: string) => {
@@ -614,22 +622,24 @@ export function SearchPageClient() {
       {/* Results */}
       {!loading && (
         <>
-          {(query || results.length > 0) && (
+          {(resultsQuery || results.length > 0) && (
             <div className="mb-4 text-sm text-muted-foreground">
               Found {results.length} result{results.length !== 1 ? 's' : ''}
-              {query ? <> for &quot;{query}&quot;</> : ' matching your filters'}
+              {resultsQuery ? <> for &quot;{resultsQuery}&quot;</> : ' matching your filters'}
             </div>
           )}
 
-          {query && results.length === 0 && (
+          {resultsQuery && results.length === 0 && (
             <div className="text-center py-12">
               <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h2 className="text-xl font-semibold mb-2">No results found</h2>
-              <p className="text-muted-foreground mb-4">No matches for &quot;{query}&quot;</p>
+              <p className="text-muted-foreground mb-4">
+                No matches for &quot;{resultsQuery}&quot;
+              </p>
 
               {/* Did you mean suggestions */}
               {(() => {
-                const didYouMean = getDidYouMean(query, searchIndex);
+                const didYouMean = getDidYouMean(resultsQuery, searchIndex);
                 if (didYouMean.length > 0) {
                   return (
                     <div className="mb-6">
@@ -680,7 +690,7 @@ export function SearchPageClient() {
             </div>
           )}
 
-          {!query && results.length === 0 && (
+          {!resultsQuery && results.length === 0 && (
             <div className="text-center py-20">
               <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h2 className="text-xl font-semibold mb-2">Start searching</h2>
@@ -708,7 +718,14 @@ export function SearchPageClient() {
   );
 }
 
-function SearchResultCard({ result, isSelected }: { result: SearchResult; isSelected: boolean }) {
+// Memoized so a keystroke does not re-render every card before the results update.
+const SearchResultCard = memo(function SearchResultCard({
+  result,
+  isSelected,
+}: {
+  result: SearchResult;
+  isSelected: boolean;
+}) {
   const Icon = TYPE_ICONS[result.type] || FileText;
 
   return (
@@ -738,10 +755,7 @@ function SearchResultCard({ result, isSelected }: { result: SearchResult; isSele
                 </Badge>
               )}
               {result.date && (
-                <time
-                  dateTime={result.date}
-                  className="text-xs text-muted-foreground ml-auto"
-                >
+                <time dateTime={result.date} className="text-xs text-muted-foreground ml-auto">
                   {new Date(result.date).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
@@ -780,4 +794,4 @@ function SearchResultCard({ result, isSelected }: { result: SearchResult; isSele
       </div>
     </Link>
   );
-}
+});

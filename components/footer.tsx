@@ -1,5 +1,5 @@
 import { Logo } from '@/components/ui/logo';
-import { EasterEggTerminal } from '@/components/easter-egg-terminal';
+import { LazyEasterEggTerminal } from '@/components/easter-egg-terminal-lazy';
 import { BackgroundDecoration } from './footer/background-decoration';
 import { SocialLink } from './footer/social-link';
 import { FooterSection } from './footer/footer-section';
@@ -62,7 +62,7 @@ export function Footer() {
               </span>
               &quot;
             </p>
-            <EasterEggTerminal variant="text" />
+            <LazyEasterEggTerminal variant="text" />
             <p>
               <span className="text-green-500/70">$</span> uptime{' '}
               <span className="text-muted-foreground/70">#</span>{' '}

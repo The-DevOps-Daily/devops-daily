@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Terminal, X, Rocket, CheckCircle } from 'lucide-react';
+import { EasterEggTrigger } from '@/components/easter-egg-trigger';
 import { Button } from '@/components/ui/button';
 import Confetti from 'react-confetti';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -279,12 +280,8 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
                   <span className="text-sm sm:text-base leading-none" aria-hidden="true">
                     {s.icon}
                   </span>
-                  <span className="font-medium truncate">
-                    {s.name.replace(s.icon, '').trim()}
-                  </span>
-                  {i < stage && (
-                    <CheckCircle className="w-3 h-3 shrink-0" aria-label="Complete" />
-                  )}
+                  <span className="font-medium truncate">{s.name.replace(s.icon, '').trim()}</span>
+                  {i < stage && <CheckCircle className="w-3 h-3 shrink-0" aria-label="Complete" />}
                 </div>
                 {i < stages.length - 1 && (
                   <div
@@ -379,8 +376,14 @@ const AchievementModal = ({ open, onClose }: { open: boolean; onClose: () => voi
   );
 };
 
-export function EasterEggTerminal({ variant = 'icon' }: { variant?: 'icon' | 'text' }) {
-  const [isOpen, setIsOpen] = useState(false);
+export function EasterEggTerminal({
+  variant = 'icon',
+  defaultOpen = false,
+}: {
+  variant?: 'icon' | 'text';
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [history, setHistory] = useState<Array<{ command: string; response: CommandResponse }>>([
     {
       command: '',
@@ -482,27 +485,7 @@ export function EasterEggTerminal({ variant = 'icon' }: { variant?: 'icon' | 'te
   return (
     <>
       {/* Trigger Button/Text */}
-      {variant === 'icon' ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsOpen(true)}
-          className="relative group"
-          aria-label="Open terminal"
-        >
-          <Terminal className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        </Button>
-      ) : (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="text-xs text-muted-foreground hover:text-primary transition-colors font-mono group inline-flex items-center gap-1"
-          aria-label="Open terminal"
-        >
-          <Terminal className="w-3 h-3 opacity-50 group-hover:opacity-100" />
-          <span className="opacity-50 group-hover:opacity-100">~$</span>
-        </button>
-      )}
+      <EasterEggTrigger variant={variant} onClick={() => setIsOpen(true)} />
 
       {/* Terminal Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

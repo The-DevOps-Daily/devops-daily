@@ -75,6 +75,35 @@ export function HeroDemoTerminal() {
   const [visibleLines, setVisibleLines] = useState<Line[]>([]);
   const [partial, setPartial] = useState<{ line: Line; chars: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Off screen or in a hidden tab the typing waits, so it does not keep the
+  // main thread busy under the reader's taps further down the page.
+  const pausedRef = useRef(false);
+  const resumeRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    let onScreen = true;
+    const update = () => {
+      pausedRef.current = !onScreen || document.visibilityState === 'hidden';
+      if (!pausedRef.current && resumeRef.current) {
+        const resume = resumeRef.current;
+        resumeRef.current = null;
+        resume();
+      }
+    };
+    const observer = new IntersectionObserver(([entry]) => {
+      onScreen = entry.isIntersecting;
+      update();
+    });
+    observer.observe(el);
+    document.addEventListener('visibilitychange', update);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', update);
+    };
+  }, []);
 
   useEffect(() => {
     const scene = SCENES[sceneIdx];
@@ -90,14 +119,19 @@ export function HeroDemoTerminal() {
     let lineIndex = 0;
     const clearTimer = () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      resumeRef.current = null;
+    };
+    const wait = (step: () => void, ms: number) => {
+      timerRef.current = setTimeout(() => {
+        if (pausedRef.current) resumeRef.current = step;
+        else step();
+      }, ms);
     };
 
     const renderNextLine = () => {
       if (lineIndex >= scene.lines.length) {
         // Scene finished. Hold, then next scene
-        timerRef.current = setTimeout(() => {
-          setSceneIdx((i) => (i + 1) % SCENES.length);
-        }, SCENE_PAUSE);
+        wait(() => setSceneIdx((i) => (i + 1) % SCENES.length), SCENE_PAUSE);
         return;
       }
 
@@ -109,13 +143,13 @@ export function HeroDemoTerminal() {
           chars += 1;
           if (chars <= line.text.length) {
             setPartial({ line, chars });
-            timerRef.current = setTimeout(typeChar, TYPE_SPEED);
+            wait(typeChar, TYPE_SPEED);
           } else {
             // Commit the typed line
             setPartial(null);
             setVisibleLines((prev) => [...prev, line]);
             lineIndex += 1;
-            timerRef.current = setTimeout(renderNextLine, LINE_DELAY);
+            wait(renderNextLine, LINE_DELAY);
           }
         };
         typeChar();
@@ -123,7 +157,7 @@ export function HeroDemoTerminal() {
         // Output line appears instantly with small delay before next
         setVisibleLines((prev) => [...prev, line]);
         lineIndex += 1;
-        timerRef.current = setTimeout(renderNextLine, LINE_DELAY);
+        wait(renderNextLine, LINE_DELAY);
       }
     };
 
@@ -134,16 +168,17 @@ export function HeroDemoTerminal() {
   const currentScene = SCENES[sceneIdx];
 
   return (
-    <div className="rounded-md border border-border/80 bg-card overflow-hidden font-mono text-sm">
+    <div
+      ref={rootRef}
+      className="rounded-md border border-border/80 bg-card overflow-hidden font-mono text-sm"
+    >
       <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b border-border/80">
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-red-400/70" />
           <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
           <div className="w-3 h-3 rounded-full bg-green-400/70" />
         </div>
-        <span className="text-xs text-muted-foreground ml-2 truncate">
-          {currentScene.title}
-        </span>
+        <span className="text-xs text-muted-foreground ml-2 truncate">{currentScene.title}</span>
       </div>
       <div className="px-4 py-3 h-[280px] overflow-hidden text-xs sm:text-sm leading-relaxed">
         <div className="space-y-0.5">

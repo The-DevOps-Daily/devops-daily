@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useRef, useState, type RefObject } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
@@ -12,17 +12,44 @@ import { mainNavigation, dropdownNavigation } from './nav-items';
 interface MobileMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
 // Opening the menu only flips CSS classes: the links are rendered while the page
 // is idle and are memoized, so a tap does not mount or re-render ~40 links.
-export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
+// Toggling `inert` restyles every element in the menu, so it follows the menu
+// one paint later, outside the tap. aria-hidden goes with it on close and is
+// removed at once on open. Focus inside the menu returns to the menu button.
+export function MobileMenu({ isOpen, onClose, returnFocusRef }: MobileMenuProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [closed, setClosed] = useState(!isOpen);
+
+  useEffect(() => {
+    const returnFocus = () => {
+      if (!isOpen && rootRef.current?.contains(document.activeElement)) {
+        returnFocusRef?.current?.focus({ preventScroll: true });
+      }
+    };
+    returnFocus();
+    let timer = 0;
+    const frame = requestAnimationFrame(() => {
+      timer = window.setTimeout(() => {
+        returnFocus();
+        setClosed(!isOpen);
+      }, 0);
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [isOpen, returnFocusRef]);
+
   return (
-    <div className="lg:hidden" aria-hidden={!isOpen} inert={!isOpen}>
+    <div ref={rootRef} className="lg:hidden" aria-hidden={!isOpen && closed} inert={closed}>
       <div
         className={cn(
           'fixed inset-0 z-50 bg-black/40 transition-[opacity,visibility] duration-200 motion-reduce:transition-none',
-          isOpen ? 'visible opacity-100' : 'invisible opacity-0'
+          isOpen ? 'visible opacity-100' : 'pointer-events-none invisible opacity-0'
         )}
         onClick={onClose}
       />

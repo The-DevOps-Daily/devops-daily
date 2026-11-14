@@ -9,7 +9,7 @@ import Confetti from 'react-confetti';
 import { useNewsletterSubscribe } from '@/components/newsletter/use-newsletter-subscribe';
 import { TurnstileWidget } from '@/components/newsletter/turnstile-widget';
 
-export function BookPromotionPopup() {
+export function BookPromotionPopup({ delayMs = 180000 }: { delayMs?: number }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const [email, setEmail] = useState('');
@@ -49,13 +49,13 @@ export function BookPromotionPopup() {
         setIsVisible(true);
         setTimeout(() => setIsLoaded(true), 100);
       }
-    }, 180000); // 3 minutes (180 seconds)
+    }, delayMs);
 
     return () => {
       clearTimeout(timer);
       setShowConfetti(false);
     };
-  }, []);
+  }, [delayMs]);
 
   const handleDismiss = () => {
     setShowConfetti(false);
