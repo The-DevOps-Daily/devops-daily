@@ -8,7 +8,7 @@ import { MarkdownContent } from '@/components/markdown-content';
 import { Mail, Globe, MapPin, DollarSign, Calendar } from 'lucide-react';
 import { ExpertContentToggle } from '@/components/experts/expert-content-toggle';
 import { toPostSummary } from '@/lib/posts';
-import { toGuideSummary } from '@/lib/guides';
+import { toGuideCard } from '@/lib/guides';
 
 export const dynamicParams = false;
 
@@ -197,7 +197,7 @@ export default async function ExpertPage({ params }: { params: Promise<{ slug: s
           expertName={expert.name}
           expertSlug={expert.slug}
           posts={posts.map(toPostSummary)}
-          guides={guides.map(toGuideSummary)}
+          guides={guides.map(toGuideCard)}
           postCount={expert.postCount || 0}
           guideCount={expert.guideCount || 0}
           defaultShowPosts={showPosts}

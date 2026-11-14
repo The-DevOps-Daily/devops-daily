@@ -821,3 +821,33 @@ html {
 
 /* Tabs code panel: no stray margin (CodeBlockWrapper is skipped via data-processed) */
 .post-tabs pre { margin: 0 !important; }
+
+/* Post list cards (components/posts-list.tsx). /posts renders every post, so
+   each card uses these short classes instead of repeating long utility lists. */
+@layer components {
+  .post-card {
+    @apply flex flex-col md:flex-row gap-6 p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all;
+    /* Lets the browser skip layout and paint for cards outside the viewport.
+       The cards stay in the HTML, in find-in-page and for screen readers. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 290px;
+    @media (width >= 48rem) {
+      contain-intrinsic-size: auto 180px;
+    }
+  }
+  .post-card-badge {
+    @apply inline-flex items-center rounded-full border border-transparent px-2.5 py-0.5 text-xs font-semibold transition-colors bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+  .post-card-meta {
+    @apply flex items-center text-sm text-muted-foreground;
+  }
+  .post-card-icon {
+    @apply mr-1 h-4 w-4;
+  }
+  .post-card-title {
+    @apply mt-2 text-xl font-semibold group-hover:text-primary transition-colors;
+  }
+  .post-card-excerpt {
+    @apply mt-2 text-muted-foreground;
+  }
+}

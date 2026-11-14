@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { Fragment, useMemo, type ReactNode } from 'react';
 import { useDeferredSearch } from '@/hooks/use-deferred-search';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Calendar, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { PostSummary } from '@/lib/posts';
 
@@ -24,6 +23,42 @@ interface PostsListProps {
   sponsorAfter?: number;
 }
 
+// Lists can hold hundreds of cards, so each card stays small: the post-card-*
+// classes live in app/globals.css, and the calendar and clock icons (Lucide's)
+// are drawn once per list and reused through <use>.
+const ICON_STROKE = {
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+} as const;
+
+function PostCardIconSprite() {
+  return (
+    <svg className="hidden" aria-hidden="true">
+      <symbol id="post-card-calendar" viewBox="0 0 24 24" {...ICON_STROKE}>
+        <path d="M8 2v3" />
+        <path d="M16 2v3" />
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <path d="M3 9h18" />
+      </symbol>
+      <symbol id="post-card-clock" viewBox="0 0 24 24" {...ICON_STROKE}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
+      </symbol>
+    </svg>
+  );
+}
+
+function PostCardIcon({ name }: { name: 'calendar' | 'clock' }) {
+  return (
+    <svg className="post-card-icon" aria-hidden="true">
+      <use href={`#post-card-${name}`} />
+    </svg>
+  );
+}
+
 export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: PostsListProps) {
   const { searchQuery, setSearchQuery, deferredSearchQuery, searchInputRef } = useDeferredSearch({
     focusShortcut: true,
@@ -36,13 +71,14 @@ export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: P
       (post) =>
         post.title.toLowerCase().includes(searchLower) ||
         (post.excerpt ?? '').toLowerCase().includes(searchLower) ||
-        (post.category?.name || '').toLowerCase().includes(searchLower) ||
+        (post.categoryName ?? '').toLowerCase().includes(searchLower) ||
         (post.tags && post.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
     );
   }, [posts, deferredSearchQuery]);
 
   return (
     <div className={cn('space-y-8', className)}>
+      <PostCardIconSprite />
       <div className="flex items-center gap-2 relative mb-6">
         <Search className="h-5 w-5 text-muted-foreground absolute left-3 pointer-events-none" />
         <Input
@@ -74,27 +110,20 @@ export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: P
           // space-y-8 keeps applying to the Link (and the sponsor block
           // when present) as direct children.
           <Fragment key={post.slug}>
-            <Link
-              href={`/posts/${post.slug}`}
-              className="group flex flex-col md:flex-row gap-6 p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
-            >
+            <Link href={`/posts/${post.slug}`} className="post-card group">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">
-                    <span>{post.category?.name ?? 'Uncategorized'}</span>
-                  </Badge>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="mr-1 h-4 w-4" />
+                  <span className="post-card-badge">{post.categoryName ?? 'Uncategorized'}</span>
+                  <div className="post-card-meta">
+                    <PostCardIcon name="calendar" />
                     <time dateTime={post.date}>{post.date}</time>
                     <span className="mx-2">|</span>
-                    <Clock className="mr-1 h-4 w-4" />
+                    <PostCardIcon name="clock" />
                     <span>{post.readingTime}</span>
                   </div>
                 </div>
-                <h3 className="mt-2 text-xl font-semibold group-hover:text-primary transition-colors">
-                  {post.title}
-                </h3>
-                <p className="mt-2 text-muted-foreground">{post.excerpt}</p>
+                <h3 className="post-card-title">{post.title}</h3>
+                <p className="post-card-excerpt">{post.excerpt}</p>
               </div>
             </Link>
             {/* Sponsor slot is hidden while searching so results stay clean.
