@@ -13,6 +13,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tagToSlug } from '../lib/tag-utils';
 
 export interface MapOptions {
   /** Read a content file; used for routes whose params live inside the file. */
@@ -53,15 +54,15 @@ export function contentPathToUrl(filePath: string, options: MapOptions = {}): st
   if ((m = p.match(/^content\/checklists\/([^/]+)\.json$/))) return `/checklists/${m[1]}`;
   if ((m = p.match(/^content\/challenges\/([^/]+)\.json$/))) return `/challenges/${m[1]}`;
 
-  // Interview questions render at /interview-questions/<tier>/<slug>; the
-  // tier is only known from the file body.
+  // Interview questions render on their topic page; the topic is only known
+  // from the category in the file body.
   if ((m = p.match(/^content\/interview-questions\/([^/]+)\.json$/))) {
     const raw = read(p);
     if (!raw) return null;
     try {
-      const data = JSON.parse(raw) as { tier?: string; slug?: string };
-      if (typeof data.tier !== 'string') return null;
-      return `/interview-questions/${data.tier}/${data.slug || m[1]}`;
+      const data = JSON.parse(raw) as { category?: string };
+      if (typeof data.category !== 'string' || !tagToSlug(data.category)) return null;
+      return `/interview-questions/topic/${tagToSlug(data.category)}`;
     } catch {
       return null;
     }

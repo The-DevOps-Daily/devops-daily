@@ -69,3 +69,20 @@ export interface Comparison {
   /** Campaign id on go.devops-daily.com for a comparison written for a sponsor. Counts views in the sponsor report. */
   sponsorCampaign?: string;
 }
+
+/** What a related-comparison link shows. Pages pass only this to the client, not every comparison in full. */
+export interface ComparisonSummary {
+  slug: string;
+  category: string;
+  toolA: Pick<ToolInfo, 'name' | 'color'>;
+  toolB: Pick<ToolInfo, 'name' | 'color'>;
+}
+
+export function toComparisonSummary(c: Comparison): ComparisonSummary {
+  return {
+    slug: c.slug,
+    category: c.category,
+    toolA: { name: c.toolA.name, color: c.toolA.color },
+    toolB: { name: c.toolB.name, color: c.toolB.color },
+  };
+}

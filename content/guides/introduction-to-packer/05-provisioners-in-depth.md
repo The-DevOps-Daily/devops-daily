@@ -616,5 +616,5 @@ In [Part 6](/guides/introduction-to-packer/06-variables-and-best-practices), you
 - [Introduction to Ansible](/guides/introduction-to-ansible)
 - [Complete Web Server Automation with Ansible](/exercises/ansible-web-server-automation) (exercise)
 - [Ansible Basics flashcards](/flashcards/ansible-basics) and the [Ansible quiz](/quizzes/ansible-quiz)
-- [Interview question: configuration management basics](/interview-questions/junior/configuration-management-basics)
+- [Interview question: configuration management basics](/interview-questions/topic/infrastructure#configuration-management-basics)
 - [Introduction to Bash](/guides/introduction-to-bash), for provisioning scripts

@@ -650,8 +650,8 @@ The job ID comes from the first command's output. Last-accessed data counts atte
 
 - Next: [Part 4, Zero Trust Architecture](/guides/security-principles/04-zero-trust), which checks identity on every request instead of trusting the network
 - [Broken access control in the OWASP Top 10 guide](/guides/owasp-top-10/01-broken-access-control)
-- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/minimum-aws-permissions-for-terraform)
+- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/terraform-fargate-task-definition-execution-role#h2-what-are-the-minimum-aws-permissions-for-terraform)
 - [hostNetwork Is Still a Footgun: What CVE-2026-32193 Teaches Every Cluster](/posts/hostnetwork-footgun-cve-2026-32193)
 - [AWS Security Checklist](/checklists/aws-security) and [Kubernetes Security Checklist](/checklists/kubernetes-security)
 - [Flashcards: Pod Security Standards in Kubernetes](/flashcards/pod-security-standards-kubernetes)
-- [Interview questions: Cloud IAM basics](/interview-questions/junior/cloud-iam-basics)
+- [Interview questions: Cloud IAM basics](/interview-questions/topic/cloud#cloud-iam-basics)

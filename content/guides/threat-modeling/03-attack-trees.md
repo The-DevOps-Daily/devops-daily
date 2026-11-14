@@ -283,7 +283,7 @@ Goal: Run attacker code in the ticket shop's production API          OR
     └── Production deploys by tag without verifying signatures
 ```
 
-The leaves map to concrete controls: branch protection with required reviews, `pull_request_target` only for workflows that never run untrusted code, actions pinned to a full commit SHA, lockfiles with dependency review, and images signed in CI, verified at deploy time and deployed by digest. The [CI/CD pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) and [supply chain security post](/posts/software-supply-chain-security) cover each of them.
+The leaves map to concrete controls: branch protection with required reviews, `pull_request_target` only for workflows that never run untrusted code, actions pinned to a full commit SHA, lockfiles with dependency review, and images signed in CI, verified at deploy time and deployed by digest. The [pipeline hardening](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) and [artifact signing](/posts/software-supply-chain-security#h2-artifact-signing-with-sigstore) sections of the supply chain security post cover each of them.
 
 ## Attack-Defense Trees and Tools
 
@@ -321,4 +321,4 @@ In [Part 4](/guides/threat-modeling/04-practical-exercises), you practice all th
 - [Server-Side Request Forgery (part of A01:2025)](/guides/owasp-top-10/10-ssrf), one way to reach internal services in branch 3
 - [Security-Focused Code Reviews](/posts/security-focused-code-reviews), where many of these leaves are caught
 - [Defense in depth](/guides/security-principles/02-defense-in-depth), the idea behind blocking AND nodes twice
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

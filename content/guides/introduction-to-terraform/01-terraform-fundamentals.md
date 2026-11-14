@@ -329,6 +329,6 @@ In [Part 2](/guides/introduction-to-terraform/02-installation-and-setup) you ins
 ## Keep Learning
 
 - [Infrastructure as Code: A Beginner's Guide to IaC Fundamentals](/posts/infrastructure-as-code-fundamentals)
-- [How are data sources used in Terraform?](/posts/how-are-data-sources-used-in-terraform)
+- [How are data sources used in Terraform?](/posts/terraform-best-practices#h2-how-are-data-sources-used-in-terraform)
 - [Terraform Basics flashcards](/flashcards/terraform-basics)
-- [Interview question: Infrastructure as Code patterns](/interview-questions/mid/infrastructure-as-code-patterns)
+- [Interview question: Infrastructure as Code patterns](/interview-questions/topic/infrastructure#infrastructure-as-code-patterns)

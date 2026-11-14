@@ -2,6 +2,8 @@
  * Utility functions and types for interview questions
  */
 
+import { tagToSlug } from './tag-utils';
+
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
 export type ExperienceTier = 'junior' | 'mid' | 'senior';
@@ -33,7 +35,7 @@ export interface InterviewQuestion {
   }>;
 }
 
-/** The fields the browsing pages need. Answers and examples stay on detail/practice routes. */
+/** The fields the browsing pages need. Answers and examples stay on the topic and practice routes. */
 export type InterviewQuestionSummary = Pick<
   InterviewQuestion,
   'id' | 'slug' | 'title' | 'question' | 'category' | 'difficulty' | 'tier' | 'tags'
@@ -58,6 +60,16 @@ export const toQuestionSummary = ({
   tier,
   tags,
 });
+
+/** Each topic page holds its questions in full; a question lives at its anchor there. */
+export const getInterviewTopicHref = (category: string): string =>
+  `/interview-questions/topic/${tagToSlug(category)}`;
+
+export const getInterviewQuestionHref = ({
+  category,
+  slug,
+}: Pick<InterviewQuestion, 'category' | 'slug'>): string =>
+  `${getInterviewTopicHref(category)}#${slug}`;
 
 export interface InterviewQuestionProgress {
   [questionId: string]: {

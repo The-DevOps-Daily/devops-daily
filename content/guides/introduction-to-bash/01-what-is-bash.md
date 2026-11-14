@@ -167,7 +167,7 @@ On Fedora and RHEL, `/bin/sh` is Bash running in POSIX mode, which hides the pro
 - **Makefile** recipes use `/bin/sh` unless you set `SHELL := /bin/bash`.
 - **GitHub Actions** runs a `run:` step on Linux with `bash -e {0}` by default, and with `bash --noprofile --norc -eo pipefail {0}` when you write `shell: bash`. The second one also catches failures in the middle of a pipeline.
 
-The fix is simple: start every Bash script with a Bash shebang (`#!/usr/bin/env bash` or `#!/bin/bash`) and run it directly or with `bash script.sh`, never with `sh script.sh`. [Part 7](/guides/introduction-to-bash/07-script-permissions) covers shebangs in depth, and [the difference between sh and Bash](/posts/difference-between-sh-and-bash) lists more differences.
+The fix is simple: start every Bash script with a Bash shebang (`#!/usr/bin/env bash` or `#!/bin/bash`) and run it directly or with `bash script.sh`, never with `sh script.sh`. [Part 7](/guides/introduction-to-bash/07-script-permissions) covers shebangs in depth, and [the difference between sh and Bash](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-difference-between-sh-and-bash) lists more differences.
 
 ## Login, Interactive and Non-Interactive Shells
 
@@ -237,7 +237,7 @@ The login shell ran `~/.profile`, which on Ubuntu sources `~/.bashrc`, but the d
 
 One exception: Debian and Ubuntu build Bash so that when `sshd` runs a command for you (`ssh devbox 'uptime'`), it reads `~/.bashrc` even though the shell is not interactive. That is one reason the default `~/.bashrc` returns early for non-interactive shells, and why anything that prints text belongs below that check: output from `~/.bashrc` breaks tools such as `scp` and `rsync` that talk over the same connection.
 
-Be careful with `~/.bash_profile`: if it exists, Bash reads it **instead of** `~/.profile`. If you create one, add `[[ -f ~/.profile ]] && . ~/.profile` to it, or the settings in `~/.profile` stop loading. After editing `~/.bashrc`, apply the changes to your current terminal with `source ~/.bashrc` (see [how to reload .bashrc](/posts/reload-bashrc-without-logout)).
+Be careful with `~/.bash_profile`: if it exists, Bash reads it **instead of** `~/.profile`. If you create one, add `[[ -f ~/.profile ]] && . ~/.profile` to it, or the settings in `~/.profile` stop loading. After editing `~/.bashrc`, apply the changes to your current terminal with `source ~/.bashrc` (see [how to reload .bashrc](/posts/permanently-set-path-on-linux-unix#h2-how-do-i-reload-bashrc-without-logging-out)).
 
 Remove the two test lines when you are done. The `# startup-test` comment marks them, so `sed` deletes exactly those lines and nothing else:
 
@@ -468,7 +468,7 @@ Next: [Bash Basics](/guides/introduction-to-bash/02-bash-basics), where you foll
 
 ## Keep Learning
 
-- [What is the difference between sh and Bash?](/posts/difference-between-sh-and-bash)
-- [Which shebang should a Bash script use?](/posts/preferred-bash-shebang)
-- [Reload .bashrc without logging out](/posts/reload-bashrc-without-logout)
+- [What is the difference between sh and Bash?](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-difference-between-sh-and-bash)
+- [Which shebang should a Bash script use?](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-preferred-bash-shebang)
+- [Reload .bashrc without logging out](/posts/permanently-set-path-on-linux-unix#h2-how-do-i-reload-bashrc-without-logging-out)
 - Practise commands in the browser with the [Linux Terminal simulator](/games/linux-terminal)

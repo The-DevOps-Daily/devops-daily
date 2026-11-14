@@ -1,319 +1,325 @@
 ---
-title: 'How to Specify a Private SSH Key for Git Commands'
-excerpt: 'Learn multiple methods to use specific SSH keys with Git operations, from command-line options to SSH config files and environment variables, making it easy to manage multiple keys for different repositories.'
+title: 'Specify a Private SSH Key for Git, and Show or Change the Remote URL'
+excerpt: 'Choose the SSH key Git uses with core.sshCommand, GIT_SSH_COMMAND or an ~/.ssh/config alias with IdentitiesOnly, and show or change the remote URL.'
 category:
   name: 'Git'
   slug: 'git'
 date: '2024-09-28'
 publishedAt: '2024-09-28T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
 tags:
   - Git
   - SSH
-  - DevOps
+  - Remotes
   - Security
-  - Linux
+  - DevOps
 ---
+
+Git does not choose an SSH key itself. It runs `ssh`, and `ssh` picks the key. So when you need a work key for one repository and a personal key for another, you tell `ssh` which key to use: for one command, for one repository, or for one host name. The host name is part of the remote URL, so the key and the URL are often one problem. This page covers both: how to choose the key, and how to show and change the URL a repository uses.
 
 ## TLDR
 
-To use a specific SSH key with Git, you can set the `GIT_SSH_COMMAND` environment variable, configure it in your SSH config file (`~/.ssh/config`), or use the `core.sshCommand` Git configuration option. The SSH config method is the most flexible and persistent approach for managing multiple keys across different repositories.
+| Question                                   | Short answer                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| Use a key for one command                  | `GIT_SSH_COMMAND='ssh -i ~/.ssh/work_ed25519 -o IdentitiesOnly=yes' git fetch`              |
+| Use a key for one repository               | `git config core.sshCommand 'ssh -i ~/.ssh/work_ed25519 -o IdentitiesOnly=yes'`             |
+| Use a key for a host or an account         | A `Host` alias in `~/.ssh/config` with `IdentityFile` and `IdentitiesOnly yes`              |
+| Why `IdentitiesOnly`?                      | Without it, `ssh` can offer a key from the agent first, and you log in as the wrong account |
+| Which URL was this repository cloned from? | `git remote get-url origin`, or `git remote -v` for all remotes                             |
+| Change the remote URL                      | `git remote set-url origin <new-url>`                                                       |
 
-## Why Use Different SSH Keys?
+## Prerequisites
 
-You might need different SSH keys for various reasons:
-- Separate keys for work and personal GitHub/GitLab accounts
-- Different security requirements for different projects
-- Multiple deployment keys for CI/CD systems
-- Client-specific keys for consulting work
+- Git and OpenSSH. The commands work on Linux, macOS and Git for Windows. The tests on this page used Git 2.39 and OpenSSH 9.2.
+- An SSH key that the hosting service knows. If you need a new one, see [create and test the key](#h2-how-do-i-create-and-test-an-ssh-key-for-git) below.
 
-By default, SSH uses `~/.ssh/id_rsa` or `~/.ssh/id_ed25519`, but when you need a different key, Git and SSH need explicit instructions.
+## How Do I Specify a Private SSH Key for Git?
 
-## Using GIT_SSH_COMMAND Environment Variable
+Choose by scope:
 
-The quickest way to specify a key for a single Git command is the `GIT_SSH_COMMAND` environment variable:
+- **One command:** set `GIT_SSH_COMMAND` in the environment.
+- **One repository:** set `core.sshCommand` in the repository config.
+- **One host or account:** add a `Host` entry to `~/.ssh/config`, and use that host name in the remote URL.
+
+In all three, add `IdentitiesOnly`. The [section below](#h3-why-do-i-need-identitiesonly) explains why.
+
+### Use a key for one command with GIT_SSH_COMMAND
 
 ```bash
-GIT_SSH_COMMAND="ssh -i ~/.ssh/work_id_ed25519" git clone git@github.com:company/project.git
+GIT_SSH_COMMAND='ssh -i ~/.ssh/work_ed25519 -o IdentitiesOnly=yes' \
+  git clone git@github.com:acme/api.git
 ```
 
-This tells Git to use the specified key just for this one command. The `-i` flag to SSH specifies the identity file (private key) to use.
+Git runs this command instead of plain `ssh`. The variable applies only to that one command. `export` it to use it for the rest of the shell session, and `unset GIT_SSH_COMMAND` to stop.
 
-You can also set it for multiple commands in a session:
+`GIT_SSH_COMMAND` wins over `core.sshCommand`. In a test with both set, Git ran the command from the environment variable.
+
+### Use a key for one repository with core.sshCommand
 
 ```bash
-export GIT_SSH_COMMAND="ssh -i ~/.ssh/work_id_ed25519"
-git fetch origin
-git pull origin main
-git push origin feature-branch
+cd ~/work/api
+git config core.sshCommand 'ssh -i ~/.ssh/work_ed25519 -o IdentitiesOnly=yes'
 ```
 
-The environment variable persists until you close the terminal or unset it with `unset GIT_SSH_COMMAND`.
-
-For scripts that need a specific key, this approach is straightforward:
+Every fetch, pull and push over SSH in this repository now uses that key. HTTPS remotes do not use SSH, so the setting does not apply to them. To set it at clone time, pass it with `-c`. Git writes it into the config of the new repository before the first fetch:
 
 ```bash
-#!/bin/bash
-
-# Deploy script using dedicated deployment key
-export GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
-
-git clone git@github.com:company/production-app.git
-cd production-app
-git pull origin main
-
-# Run deployment
-./deploy.sh
+git clone -c core.sshCommand='ssh -i ~/.ssh/work_ed25519 -o IdentitiesOnly=yes' \
+  git@github.com:acme/api.git
 ```
 
-The `-o StrictHostKeyChecking=no` option prevents SSH from prompting about unknown hosts, which is useful in automated environments where you've verified the host key separately.
+Check or remove the setting with `git config --get core.sshCommand` and `git config --unset core.sshCommand`.
 
-## Configuring SSH Config File
+### Use a key for all repositories in a folder
 
-The most elegant solution for permanent setups is configuring `~/.ssh/config`. This file lets you define connection settings per host:
+Put the setting in a separate file, and include it only for repositories below `~/work/`:
 
-```bash
+```ini
+# ~/.gitconfig
+[includeIf "gitdir:~/work/"]
+    path = ~/.gitconfig-work
+
+# ~/.gitconfig-work
+[core]
+    sshCommand = ssh -i ~/.ssh/work_ed25519 -o IdentitiesOnly=yes
+[user]
+    email = jane@acme.example
+```
+
+Git 2.36 and later can also match on the remote URL instead of the folder. This rule applies to every repository with a remote in the `acme` organization, wherever you cloned it:
+
+```ini
+[includeIf "hasconfig:remote.*.url:git@github.com:acme/**"]
+    path = ~/.gitconfig-work
+```
+
+In a test, a repository with the remote `git@github.com:acme/app.git` got the work `core.sshCommand`, and a repository with `git@github.com:me/dotfiles.git` did not. `git config --show-origin core.sshCommand` shows which file set the value.
+
+### Use a key for a host with ~/.ssh/config
+
+This is the best choice when you have two accounts on the same service. Give each account its own host alias:
+
+```text
 # ~/.ssh/config
-
-# Personal GitHub account
-Host github.com-personal
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/personal_id_ed25519
-    IdentitiesOnly yes
-
-# Work GitHub account
 Host github.com-work
     HostName github.com
     User git
-    IdentityFile ~/.ssh/work_id_ed25519
+    IdentityFile ~/.ssh/work_ed25519
     IdentitiesOnly yes
-```
 
-After configuring this, you clone repositories using the custom host alias:
-
-```bash
-# Clone with work key
-git clone git@github.com-work:company/project.git
-
-# Clone with personal key
-git clone git@github.com-personal:username/my-project.git
-```
-
-The `IdentitiesOnly yes` directive is important - it tells SSH to only use the specified key and not try other keys in your `.ssh` directory. Without it, SSH might authenticate with the wrong key if you have multiple keys loaded in your SSH agent.
-
-Here's how the flow works:
-
-```
-Git command with custom host
-        |
-        v
-SSH looks up host in ~/.ssh/config
-        |
-        v
-Finds matching Host entry
-        |
-        v
-Uses IdentityFile specified
-        |
-        v
-Connects to actual HostName
-```
-
-For existing repositories, update the remote URL to use your custom host:
-
-```bash
-cd ~/projects/work-project
-git remote set-url origin git@github.com-work:company/project.git
-```
-
-Verify the change:
-
-```bash
-git remote -v
-```
-
-## Using Git Configuration
-
-Git has its own configuration option for the SSH command:
-
-```bash
-# Set for a specific repository
-cd ~/projects/work-project
-git config core.sshCommand "ssh -i ~/.ssh/work_id_ed25519 -F /dev/null"
-
-# Set globally for all repositories
-git config --global core.sshCommand "ssh -i ~/.ssh/default_key_ed25519"
-```
-
-The `-F /dev/null` option tells SSH to ignore the config file, which can be useful if you want the command to be fully self-contained.
-
-To check the current setting:
-
-```bash
-git config --get core.sshCommand
-```
-
-To remove it:
-
-```bash
-git config --unset core.sshCommand
-```
-
-This approach works well when you want repository-specific key settings without modifying your SSH config.
-
-## Multiple Keys for Different Services
-
-A common setup involves different keys for GitHub, GitLab, and Bitbucket:
-
-```bash
-# ~/.ssh/config
-
-Host github.com
+Host github.com-personal
     HostName github.com
     User git
-    IdentityFile ~/.ssh/github_ed25519
-    IdentitiesOnly yes
-
-Host gitlab.com
-    HostName gitlab.com
-    User git
-    IdentityFile ~/.ssh/gitlab_ed25519
-    IdentitiesOnly yes
-
-Host bitbucket.org
-    HostName bitbucket.org
-    User git
-    IdentityFile ~/.ssh/bitbucket_ed25519
+    IdentityFile ~/.ssh/personal_ed25519
     IdentitiesOnly yes
 ```
 
-With this configuration, you don't need to change anything - Git automatically uses the right key based on the repository URL:
+Then use the alias in place of `github.com` in the URL:
 
 ```bash
-git clone git@github.com:user/repo.git        # Uses github_ed25519
-git clone git@gitlab.com:user/repo.git        # Uses gitlab_ed25519
-git clone git@bitbucket.org:user/repo.git     # Uses bitbucket_ed25519
+git clone git@github.com-work:acme/api.git
+git remote set-url origin git@github.com-work:acme/api.git   # for an existing clone
 ```
 
-## Testing Your SSH Key Setup
-
-Before cloning or pushing, verify that SSH is using the correct key:
+`ssh -G` prints the settings that `ssh` will use for a host, without a connection. Use it to check your config:
 
 ```bash
-# Test GitHub connection with specific key
-ssh -i ~/.ssh/work_id_ed25519 -T git@github.com
+ssh -G github.com-work | grep -E '^(hostname|user|identityfile|identitiesonly) '
 ```
 
-You should see a message like:
-
+```text
+user git
+hostname github.com
+identitiesonly yes
+identityfile ~/.ssh/work_ed25519
 ```
-Hi username! You've successfully authenticated, but GitHub does not provide shell access.
+
+If you have only one key for each service, you do not need aliases. Use the real host names in the `Host` lines (`Host github.com`, `Host gitlab.com`), and the normal URLs keep working.
+
+### Why do I need IdentitiesOnly?
+
+Because `ssh` can offer other keys before the one you named. When an SSH agent is running, OpenSSH tries keys in this order:
+
+1. Keys in the agent that are also named in your config or on the command line.
+2. All other keys in the agent.
+3. Key files from your config or the command line that are not in the agent.
+
+`IdentitiesOnly yes` (or `-o IdentitiesOnly=yes`) removes the second group. It does not remove keys that your `~/.ssh/config` names for the same host, for example in a `Host *` block. `ssh -G <host> | grep identityfile` lists every key file that `ssh` will try.
+
+This matters on GitHub and GitLab, because the server accepts the first key that belongs to any account. If your personal key is in the agent and your work key is not, `ssh -i ~/.ssh/work_ed25519` can log you in as your personal account. The push then fails with an error that looks like a URL problem:
+
+```text
+ERROR: Repository not found.
+fatal: Could not read from remote repository.
 ```
 
-If you're using SSH config aliases:
+`ssh -vT git@github.com-work` shows each key that `ssh` offers, in order.
+
+## How Do I Create and Test an SSH Key for Git?
+
+Create an Ed25519 key, add the public key to your account, and test the connection:
 
 ```bash
+ssh-keygen -t ed25519 -C "jane@acme.example" -f ~/.ssh/work_ed25519
+cat ~/.ssh/work_ed25519.pub          # paste this into the SSH keys page of your account
 ssh -T git@github.com-work
 ```
 
-For verbose output to debug connection issues:
-
-```bash
-ssh -vT git@github.com-work
+```text
+Hi jane-acme! You've successfully authenticated, but GitHub does not provide shell access.
 ```
 
-The verbose mode shows which keys SSH is trying and can help identify authentication problems.
+The name in the greeting is the account that the key belongs to. If it is the wrong account, check `IdentitiesOnly`.
 
-## Practical Example: CI/CD Pipeline
+- Use Ed25519 for new keys. GitHub is removing SHA-1 `ssh-rsa` signatures, and new RSA keys need at least 3072 bits. [GitHub Is Removing ssh-rsa Signatures](/posts/github-ssh-algorithm-removal) shows how to test an existing key.
+- `ssh` refuses a private key that other users can read (`Permissions 0644 ... are too open`). Fix it with `chmod 600 ~/.ssh/work_ed25519` and `chmod 700 ~/.ssh`.
+- Give the key a passphrase, and load it once a session with `ssh-add ~/.ssh/work_ed25519`. `ssh-add -l` lists the keys in the agent.
 
-Here's a complete example for a deployment script that needs a dedicated key:
+The [remotes chapter of the Git guide](/guides/introduction-to-git/06-remote-repositories#h3-ssh-keys) covers SSH and HTTPS authentication, and the [SSH hardening checklist](/checklists/ssh-hardening) covers the server side.
+
+## How Do I Use a Deploy Key in a Script or CI?
+
+Use a key that can read only that one repository (a deploy key), and check the host key of the server. Do not turn off host key checks with `StrictHostKeyChecking=no`: then anyone who can intercept the connection can pretend to be the server.
 
 ```bash
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+DEPLOY_KEY="$HOME/.ssh/deploy_api_ed25519"
+KNOWN_HOSTS="$HOME/.ssh/known_hosts_github"   # created once, see below
 
-DEPLOY_KEY="$HOME/.ssh/deploy_production_ed25519"
-REPO_URL="git@github.com:company/production-app.git"
-DEPLOY_DIR="/var/www/production"
+export GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o UserKnownHostsFile=$KNOWN_HOSTS -o StrictHostKeyChecking=yes"
 
-# Verify the deploy key exists
-if [ ! -f "$DEPLOY_KEY" ]; then
-    echo "Error: Deploy key not found at $DEPLOY_KEY"
-    exit 1
-fi
-
-# Set permissions (SSH is strict about key permissions)
-chmod 600 "$DEPLOY_KEY"
-
-# Configure Git to use the deployment key
-export GIT_SSH_COMMAND="ssh -i $DEPLOY_KEY -o StrictHostKeyChecking=no"
-
-# Clone or update the repository
-if [ -d "$DEPLOY_DIR/.git" ]; then
-    echo "Updating existing repository..."
-    cd "$DEPLOY_DIR"
-    git fetch origin
-    git reset --hard origin/main
+if [ -d /srv/api/.git ]; then
+  git -C /srv/api fetch origin
+  git -C /srv/api reset --hard origin/main   # the deploy copy holds no local work: this discards any change in it
 else
-    echo "Cloning repository..."
-    git clone "$REPO_URL" "$DEPLOY_DIR"
-    cd "$DEPLOY_DIR"
+  git clone git@github.com:acme/api.git /srv/api
 fi
-
-# Show current commit
-echo "Deployed commit: $(git rev-parse --short HEAD)"
-
-# Run application-specific deployment steps
-npm install --production
-npm run build
-sudo systemctl restart app
-
-echo "Deployment complete"
+echo "Deployed $(git -C /srv/api rev-parse --short HEAD)"
 ```
 
-This script handles both initial deployment and updates, verifies the key exists, sets proper permissions, and uses environment variables to specify the key.
-
-## Managing Key Permissions
-
-SSH is particular about key file permissions. If your key has incorrect permissions, SSH will reject it:
+Create the known hosts file once, and compare the fingerprints with the ones the service publishes, such as [GitHub's SSH key fingerprints](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints):
 
 ```bash
-# Set correct permissions on private key
-chmod 600 ~/.ssh/work_id_ed25519
-
-# Set correct permissions on public key
-chmod 644 ~/.ssh/work_id_ed25519.pub
-
-# Set correct permissions on SSH directory
-chmod 700 ~/.ssh
+ssh-keyscan -t ed25519 github.com > ~/.ssh/known_hosts_github
+ssh-keygen -lf ~/.ssh/known_hosts_github     # compare with the published fingerprint
 ```
 
-If you see "WARNING: UNPROTECTED PRIVATE KEY FILE!" or "Permissions 0644 are too open", these permission commands will fix it.
+`-o StrictHostKeyChecking=accept-new` is a middle way: `ssh` saves the key of an unknown host on the first connection and refuses a changed key later. The first connection is still not checked.
 
-## SSH Agent and Multiple Keys
+:::note
+`core.sshCommand` is a command that Git runs. A config file you did not write, for example in a repository that someone sent you, can use it to run code. [A Poisoned .git/config Runs Code on git status](/posts/poisoned-git-config-git-status-runs-code) tests which commands and copies carry it.
+:::
 
-If you use `ssh-agent` to manage keys, you can add specific keys:
+## How Do I See Which URL a Repository Was Cloned From?
+
+Run `git remote get-url origin`. `origin` is the name `git clone` gives to the remote you cloned from. `git remote -v` lists every remote with its fetch and push URL:
 
 ```bash
-# Start the agent
-eval "$(ssh-agent -s)"
+git remote get-url origin
+# git@github.com:jane/api.git
 
-# Add specific keys
-ssh-add ~/.ssh/work_id_ed25519
-ssh-add ~/.ssh/personal_id_ed25519
-
-# List loaded keys
-ssh-add -l
+git remote -v
+# origin    git@github.com:jane/api.git (fetch)
+# origin    git@github.com:jane/api.git (push)
+# upstream  git@github.com:acme/api.git (fetch)
+# upstream  git@github.com:acme/api.git (push)
 ```
 
-When using the agent, SSH automatically tries all loaded keys. While convenient, this can cause issues if you hit authentication attempt limits. The SSH config approach with `IdentitiesOnly yes` prevents this by only trying the specified key.
+In a fork, `origin` is usually your fork and `upstream` the original project. [How to sync a forked repository](/posts/sync-forked-repository-github) shows that setup.
 
-Each method has its place: environment variables for one-off commands, SSH config for permanent multi-key setups, Git config for repository-specific settings, and SSH agent for interactive sessions. Choose based on whether you need temporary flexibility or persistent configuration. For most development workflows, the SSH config approach offers the best balance of convenience and control.
+Some details:
 
-Git can also sign your commits with an SSH key, so you do not need GPG. The [signed Git commits section](/guides/cryptography-essentials/04-pki#h3-signed-git-commits-with-an-ssh-key) of our Cryptography Essentials guide shows the setup and the allowed signers file that verifies them.
+- **`git config --get remote.origin.url` prints the raw value.** `git remote get-url` and `git remote -v` print the URL that Git really uses, after `url.<base>.insteadOf` rules (see below). In a test with an `insteadOf` rule, the config showed `https://github.com/acme/app.git`, and `git remote get-url` showed `git@github.com:acme/app.git`.
+- **Git does not keep a history of the URL.** If someone ran `git remote set-url` after the clone, the first URL is gone.
+- **`git remote show origin`** also lists the remote branches and what `git pull` and `git push` do. It connects to the remote, so it fails when you are offline. Run `git remote show -n origin` to skip the connection.
+- **A repository made with `git init` has no remote** until you add one with `git remote add origin <url>`.
+
+In a script, the repository name is the last part of the URL:
+
+```bash
+url=$(git remote get-url origin)
+name=$(basename -s .git "$url")
+echo "$name"    # api
+```
+
+## How Do I Change the URL of a Git Remote?
+
+Run `git remote set-url`, then check it:
+
+```bash
+git remote set-url origin git@github.com:acme/api.git
+git remote -v
+git ls-remote origin HEAD     # proves that the new URL and your credentials work
+```
+
+The common reasons:
+
+- **HTTPS to SSH** (or back): `git remote set-url origin git@github.com:acme/api.git`, or `https://github.com/acme/api.git`.
+- **The repository moved** to a new owner, name or host. GitHub redirects the old URL after a rename or transfer, but update your remotes anyway: the redirect stops working if someone creates a new repository with the old name.
+- **A second account** on the same host: use the host alias from `~/.ssh/config` in the URL.
+
+### Use one URL to fetch and another to push
+
+`--push` changes only the push URL:
+
+```bash
+git remote set-url --push origin git@github.com:acme/api.git
+git remote -v
+```
+
+```text
+origin	https://github.com/acme/api.git (fetch)
+origin	git@github.com:acme/api.git (push)
+```
+
+### Change many URLs at once
+
+Rewrite a URL prefix for every repository with `url.<base>.insteadOf`. This rule sends every `https://github.com/` URL over SSH, and the remotes themselves do not change:
+
+```bash
+git config --global url."git@github.com:".insteadOf "https://github.com/"
+```
+
+To change the stored URLs in many clones, loop over them. This loop moves SSH remotes from the `old-org` organization to `new-org`:
+
+```bash
+for repo in ~/work/*/; do
+  old=$(git -C "$repo" remote get-url origin) || continue
+  new=${old/github.com:old-org\//github.com:new-org/}
+  [ "$old" != "$new" ] && git -C "$repo" remote set-url origin "$new" && echo "$repo -> $new"
+done
+```
+
+### Add, rename and remove remotes
+
+```bash
+git remote add upstream https://github.com/acme/api.git   # a second remote
+git remote rename origin old-origin                        # rename
+git remote remove old-origin                               # delete the remote and its remote-tracking branches
+```
+
+### Fix credential errors after the change
+
+An SSH URL needs an SSH key on your account (see above). An HTTPS URL on GitHub needs a personal access token or a credential manager, not your password. Use a credential helper that stores the token safely: Git Credential Manager, `osxkeychain` on macOS, or `cache` on Linux. Do not use `credential.helper store`: it writes the token in plain text to `~/.git-credentials`.
+
+To make Git forget a saved HTTPS credential, so that it asks again:
+
+```bash
+printf 'protocol=https\nhost=github.com\n\n' | git credential reject
+```
+
+## Related Resources
+
+- [Introduction to Git: Remotes, Push, Fetch and Pull](/guides/introduction-to-git/06-remote-repositories#h2-inspect-and-change-remotes)
+- [GitHub Is Removing ssh-rsa Signatures](/posts/github-ssh-algorithm-removal)
+- [How to push a new branch and set the upstream](/posts/how-to-push-new-local-branch-to-remote-and-track)
+- [SSH hardening checklist](/checklists/ssh-hardening)
+- [Sign Git commits with an SSH key](/guides/cryptography-essentials/04-pki#h3-signed-git-commits-with-an-ssh-key), from the Cryptography Essentials guide
+- [Git concepts simulator](/games/git-concepts-simulator): see how remotes and remote-tracking branches relate
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz)

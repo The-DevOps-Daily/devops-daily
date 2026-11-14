@@ -262,6 +262,127 @@ Most slow pipelines have the same few causes. In order of how much they usually 
 
 When the hosted runners are not enough, larger runners (more cores, GPUs, static IP addresses) are billed even in public repositories, and self-hosted runners run on your own machines. Self-hosted runners must stay up to date: since 29 September 2026, runners older than v2.329.0 cannot register, and runners below a newer minimum version stop getting jobs.
 
+### How Do I Speed Up a Workflow That Runs Everything in One Job?
+
+Split the one long job into jobs that can run at the same time, and connect them with `needs:` only where one job really uses the result of another. The steps of one job run one after another, so the job takes the sum of all its steps. Separate jobs start on separate runners at once, and the run takes as long as its slowest chain of jobs.
+
+A typical "one big job" lints, tests, builds and deploys in sequence. Lint, tests and the build do not depend on each other, so they can run side by side. Only the deploy needs all three:
+
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "lint", "label": "lint", "sub": "npm run lint", "icon": "check", "tone": "blue" },
+      { "id": "test", "label": "test", "sub": "4 shards", "icon": "activity", "tone": "blue" },
+      { "id": "build", "label": "build", "sub": "uploads dist/", "icon": "box", "tone": "violet" }
+    ],
+    [
+      { "id": "deploy", "label": "deploy", "sub": "downloads dist/", "icon": "rocket", "tone": "green" }
+    ]
+  ],
+  "edges": [
+    ["lint", "deploy"],
+    ["test", "deploy", "needs"],
+    ["build", "deploy", "artifact"]
+  ]
+}
+```
+
+```yaml
+name: CI and deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx jest --ci --shard=${{ matrix.shard }}/4
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: site
+          path: dist/
+          retention-days: 1
+
+  deploy:
+    needs: [lint, test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # OIDC, no stored AWS keys
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: site
+          path: dist/
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/site-deploy
+          aws-region: eu-west-1
+      - name: Upload the site
+        env:
+          BUCKET: ${{ vars.SITE_BUCKET }}
+        run: aws s3 sync dist/ "s3://$BUCKET" --delete
+```
+
+Three details make this faster without making it less safe:
+
+- **Build once, deploy that build.** The deploy job downloads the artifact that the `build` job uploaded, so it deploys exactly the files that were built, and nothing is rebuilt on the way. `upload-artifact` and `download-artifact` v3, which many older examples use, stopped working on 30 January 2025.
+- **Shard the slowest job.** `--shard=1/4` in Jest (and similar options in Vitest and Playwright) gives each matrix job a quarter of the test files.
+- **Credentials only where needed.** Only the deploy job gets `id-token: write` and the `production` environment, whose reviewers and secrets [Part 6](/guides/introduction-to-cicd/06-deployment-strategies-and-environments) set up. The role comes from OIDC ([Part 5](/guides/introduction-to-cicd/05-environment-variables-and-secrets#h2-oidc-instead-of-cloud-keys)), not from access keys stored as secrets.
+
+Parallel jobs are not free. Each job starts on a new runner and repeats the checkout, the Node.js setup and `npm ci`, so a job with a few seconds of real work mostly waits for its own setup. In private repositories, GitHub also rounds the minutes of each job up to a whole minute, so the run gets shorter while the billed minutes grow. Split work that takes minutes, not seconds; for small commands, use parallel steps inside one job (Part 7). Measure the step timings before and after the change, as described above, instead of trusting a rule of thumb.
+
+The [GitHub Actions lab](/exercises/ci-cd-github-actions) builds a complete pipeline with separate test, build and deploy jobs, and the [GitHub Actions quiz](/quizzes/github-actions-quiz) checks matrices, artifacts, caching and conditional jobs.
+
 ## Common Mistakes
 
 - **Reading the whole log.** Start with the annotations and `--log-failed`.

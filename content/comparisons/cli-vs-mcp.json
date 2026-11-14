@@ -249,5 +249,23 @@
     "toolBScore": 4.0,
     "recommendation": "Use CLI for standard DevOps tools where LLMs already know the syntax and composability matters. Use MCP for multi-user platforms, stateful sessions, and environments that require audit trails and access control. The best setups use both."
   },
-  "relatedTags": ["AI", "DevOps", "CLI", "MCP", "Automation", "Model Context Protocol"]
+  "relatedTags": ["AI", "DevOps", "CLI", "MCP", "Automation", "Model Context Protocol"],
+  "relatedLinks": [
+    {
+      "label": "CLI vs MCP: When to Use Each for AI-Powered DevOps",
+      "href": "/posts/cli-vs-mcp-when-to-use-each"
+    },
+    {
+      "label": "The MCP Design Flaw That Exposes 150M Downloads to RCE",
+      "href": "/posts/mcp-design-flaw-rce-supply-chain-risk"
+    },
+    {
+      "label": "Agentic AI Vocabulary for DevOps: 12 Terms You Already Operate Under Another Name",
+      "href": "/posts/agentic-ai-vocabulary-for-devops"
+    },
+    {
+      "label": "Agentic Loop Simulator",
+      "href": "/games/agentic-loop-simulator"
+    }
+  ]
 }

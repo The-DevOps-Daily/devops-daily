@@ -545,7 +545,7 @@ Two more things to know about updates:
 
 ### Rotate the Certificate
 
-Create a new key pair and replace the Secret's contents. `kubectl create ... --dry-run=client -o yaml | kubectl apply -f -` is the usual way to update a Secret from files or literals ([more ways to update a Secret](/posts/how-to-update-kubernetes-secret-from-file)):
+Create a new key pair and replace the Secret's contents. `kubectl create ... --dry-run=client -o yaml | kubectl apply -f -` is the usual way to update a Secret from files or literals ([more ways to update a Secret](/posts/how-to-restart-container-within-pod#h3-how-do-i-update-a-secret-that-was-created-from-a-file)):
 
 ```terminal
 {
@@ -739,7 +739,7 @@ spec:
 
 ## Keep Learning
 
-- [Restart pods when a ConfigMap changes](/posts/restart-pods-when-configmap-updates-in-kubernetes)
+- [Restart pods when a ConfigMap changes](/posts/how-to-restart-container-within-pod#h2-how-do-i-restart-pods-when-a-configmap-or-secret-changes)
 - [How to manage multiple environments in Kubernetes](/posts/how-to-manage-multiple-environments-in-kubernetes)
 - [GitOps implementation checklist](/checklists/gitops-implementation)
 

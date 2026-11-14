@@ -199,7 +199,7 @@ The design questions are the ones you would ask of any worker pool. What happens
 
 These two get flattened together in most explainers and they are quite different.
 
-**Memory** is persistence. An agent with memory carries information between runs, which means it has state, which means all your stateful-workload instincts apply. Where does it live, what happens when it is lost, who can read it, and is it in your backup. The [Deployment versus StatefulSet](/posts/kubernetes-deployments-vs-statefulsets) distinction is exactly the right lens: an agent with memory is not a stateless replica you can reschedule freely, and if that memory holds anything derived from production data, it inherits the same handling requirements as the data itself.
+**Memory** is persistence. An agent with memory carries information between runs, which means it has state, which means all your stateful-workload instincts apply. Where does it live, what happens when it is lost, who can read it, and is it in your backup. The [Deployment versus StatefulSet](/posts/why-does-kubernetes-pod-get-recreated-when-deleted#h2-deployments-vs-statefulsets-which-one-do-you-need) distinction is exactly the right lens: an agent with memory is not a stateless replica you can reschedule freely, and if that memory holds anything derived from production data, it inherits the same handling requirements as the data itself.
 
 **Context window** is a resource limit. It is the amount the model can consider at once, and the operational behaviour when you exceed it is familiar: things get evicted. Early context drops out, and the agent forgets a constraint it was given at the start, in exactly the way a process forgets nothing gracefully when it hits a memory limit.
 
@@ -251,4 +251,4 @@ Mostly in the payload. It is untrusted input reaching a privileged interpreter, 
 Usually not at first. It is a distributed system, and it brings coordination overhead, partial-failure handling and token cost. Start with one agent and narrow tools, and split only when a single loop is demonstrably the bottleneck.
 
 **Where does MCP fit if we already have CLIs?**
-MCP standardises capability exposure across clients, and a CLI is often cheaper in tokens and already known to the model. [Our comparison](/posts/cli-vs-mcp-when-to-use-each) goes through the tradeoff properly; in practice most teams end up running both.
+MCP standardises capability exposure across clients, and a CLI is often cheaper in tokens and already known to the model. [Our comparison](/posts/cli-vs-mcp-when-to-use-each) goes through the tradeoff properly, and the [CLI vs MCP feature comparison](/comparisons/cli-vs-mcp) puts the two side by side; in practice most teams end up running both.

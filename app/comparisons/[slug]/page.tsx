@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getComparisonBySlug, getAllComparisons } from '@/lib/comparisons';
 import { ComparisonPageClient } from '@/components/comparisons/comparison-page-client';
+import { toComparisonSummary } from '@/lib/comparison-types';
 import { BreadcrumbSchema, ArticleSchema } from '@/components/schema-markup';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { detailPageMetadata } from '@/lib/metadata-utils';
@@ -93,7 +94,10 @@ export default async function ComparisonDetailPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }}
       />
-      <ComparisonPageClient comparison={comparison} allComparisons={allComparisons} />
+      <ComparisonPageClient
+        comparison={comparison}
+        allComparisons={allComparisons.map(toComparisonSummary)}
+      />
     </>
   );
 }

@@ -154,6 +154,49 @@ Work through these in order. Committing before you right-size locks in waste.
 
 Serverless helps when usage is spiky: a Lambda function that runs a few thousand times a day costs a tiny fraction of a server that waits all day for the same requests. For constant high load, the reverse is often true.
 
+### How Do I Lower an AWS Bill Without Making the App Slower?
+
+Measure first, then change one thing at a time and compare. Record the numbers your users feel, such as p95 latency and error rate from Part 8, next to CPU, memory and cost, before and after each change. EC2 does not report memory on its own: install the CloudWatch agent, which Compute Optimizer also uses for better recommendations. These changes usually save money without hurting performance, as long as you check the trade-off that each one has:
+
+- **gp2 to gp3 volumes.** AWS prices gp3 up to 20 percent lower per GB, and every gp3 volume gets 3,000 IOPS and 125 MiB/s as a baseline, whatever its size. A gp2 volume gets a baseline of 3 IOPS per GiB (at least 100) and bursts above it on credits, so small volumes get a much higher sustained baseline after the change. A gp2 volume larger than 1 TiB has more than 3,000 IOPS: set `--iops` and `--throughput` on gp3 to match it. The change works on a volume in use, and you can modify a volume up to four times in 24 hours:
+
+```bash
+aws ec2 modify-volume --volume-id vol-0123456789abcdef0 --volume-type gp3
+aws ec2 describe-volumes-modifications --volume-ids vol-0123456789abcdef0 \
+  --query 'VolumesModifications[].[ModificationState,Progress]' --output text
+```
+
+- **Burstable instances only for spiky load.** T3, T3a and T4g instances start in **unlimited** mode. When their average CPU over 24 hours stays above the baseline, AWS charges a flat rate per vCPU-hour for the extra, and a busy T instance can cost more than a general purpose one. Watch the `CPUSurplusCreditsCharged` metric; if it is often above zero, move to an `m` or `c` instance.
+- **Lifecycle rules for S3 data you rarely read.** Move old objects to Standard-IA or Glacier Flexible Retrieval and expire what you do not need. Read the minimums first: Standard-IA bills at least 30 days and at least 128 KB per object, Glacier Flexible Retrieval at least 90 days, reads from both cost extra, and every transition is a billed request. Since September 2024, lifecycle rules do not move objects smaller than 128 KB by default. When you do not know how often objects are read, S3 Intelligent-Tiering moves them between tiers for a small monitoring fee per object; objects smaller than 128 KB stay in its frequent access tier.
+
+```json
+{
+  "Rules": [
+    {
+      "ID": "old-logs",
+      "Filter": { "Prefix": "logs/" },
+      "Status": "Enabled",
+      "Transitions": [
+        { "Days": 30, "StorageClass": "STANDARD_IA" },
+        { "Days": 90, "StorageClass": "GLACIER" }
+      ],
+      "Expiration": { "Days": 365 },
+      "NoncurrentVersionExpiration": { "NoncurrentDays": 30 }
+    }
+  ]
+}
+```
+
+```bash
+aws s3api put-bucket-lifecycle-configuration --bucket photo-app-uploads-example \
+  --lifecycle-configuration file://lifecycle.json
+```
+
+- **One load balancer for several services.** Every Application Load Balancer bills per hour and for its public IPv4 addresses. One ALB can route to many target groups with host and path rules ([Part 7](/guides/introduction-to-aws/07-load-balancing#h2-route-by-path-or-host)), up to 100 rules by default. Keep separate load balancers where teams, security rules or blast radius must stay apart.
+- **CloudFront in front of static and cacheable content.** Data transfer from AWS origins to CloudFront is free, and every cache hit is a request your servers do not handle.
+
+Some savings cost reliability, so make them on purpose. One NAT gateway for all AZs is cheaper than one per AZ, but instances in the other AZs then send their traffic across AZs, which is billed, and lose internet access when that one AZ fails. Keep one per AZ in production. The [cloud cost optimization quiz](/quizzes/cloud-cost-optimization-quiz) and the [cost optimization interview questions](/interview-questions/topic/cloud#cloud-cost-optimization) test the trade-offs.
+
 ## Clean Up the Photo App
 
 When you have finished the guide, delete the resources in this order (dependencies first). Check each Region you used.
@@ -168,9 +211,45 @@ When you have finished the guide, delete the resources in this order (dependenci
 8. **VPC** `photo-app`: deleting the VPC from the console also removes its subnets, route tables, internet gateway, gateway endpoints and security groups.
 9. **IAM**: delete the `photo-app-web` role and any test users or policies. Keep your admin user.
 
-Then check **Cost Explorer** grouped by service for the last few days, and **EC2 Global View** for anything left in other Regions. Tools such as aws-nuke can delete everything in an account, which is useful for sandbox accounts and dangerous anywhere else; see [How to Nuke All AWS Resources in an AWS Account](/posts/nuke-all-aws-resources).
+Then check **Cost Explorer** grouped by service for the last few days, and **EC2 Global View** for anything left in other Regions.
 
-If you will not use the account again, close it from the **Account** page. On the free plan, it closes by itself when the plan ends.
+### How Do I Delete Every Resource in an AWS Account?
+
+If you will not use the account again, close it from the **Account** page instead of deleting resources one by one. On the free plan, it closes by itself when the plan ends. Closing stops the charges for most services; Reserved Instances and Savings Plans keep billing until their term ends. For 90 days after closing you can reopen the account; after that, AWS deletes its content and resources. In an organization with all features enabled, the management account can close a member account:
+
+```bash
+aws organizations close-account --account-id 111122223333
+```
+
+To keep the account but empty it, for example a sandbox that you reset every week, use **aws-nuke**. The maintained version is [ekristen/aws-nuke](https://github.com/ekristen/aws-nuke) (version 3); the original `rebuy-de/aws-nuke` is archived. It has safety checks on purpose: it refuses to run without a non-empty `blocklist` of accounts it must never touch, without an account alias, or against an alias that contains `prod`, and it only lists what it would delete until you add `--no-dry-run`.
+
+```yaml
+# nuke-config.yaml
+blocklist:
+  - '999999999999' # production: aws-nuke refuses to run against it
+
+regions:
+  - global # IAM and other global resources
+  - us-east-1
+  - eu-west-1
+
+accounts:
+  '111122223333': # the sandbox account to empty
+    filters:
+      IAMRole:
+        - 'OrganizationAccountAccessRole'
+      IAMRolePolicyAttachment:
+        - 'OrganizationAccountAccessRole -> AdministratorAccess'
+```
+
+The filters keep the role that you use to get into the account. Run it once without deleting anything, read the whole list, then run it for real:
+
+```bash
+aws-nuke run --config nuke-config.yaml
+aws-nuke run --config nuke-config.yaml --no-dry-run
+```
+
+Shell one-liners are not a replacement. `aws s3 rb --force` does not remove old object versions, so deleting a versioned bucket fails, and `aws ec2 terminate-instances` with IDs from `describe-instances` covers one Region and stops at instances with termination protection. Whatever you use, finish with **Cost Explorer** grouped by service and by Region: a resource that still costs money shows up there.
 
 ## Habits That Keep Bills Boring
 
@@ -199,7 +278,7 @@ You now know the core of AWS: accounts and IAM, compute, storage, networking, da
 ## Keep Learning
 
 - [How to Set Up AWS Cost Explorer and Budgets for Teams](/posts/how-to-set-up-aws-cost-explorer-and-budgets-for-teams)
-- [What Is FinOps? A Beginner's Guide to Cloud Cost Management](/posts/what-is-finops-a-beginners-guide-to-cloud-cost-management)
+- [FinOps Principles and the Operating Model](/guides/finops-for-devops-engineers/01-principles)
 - [FinOps for DevOps Engineers](/guides/finops-for-devops-engineers)
 - [Cloud Cost Optimization Quiz](/quizzes/cloud-cost-optimization-quiz)
 - [AWS Well-Architected Review Checklist](/checklists/aws-well-architected)

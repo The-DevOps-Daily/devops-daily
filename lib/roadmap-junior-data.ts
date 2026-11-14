@@ -101,7 +101,7 @@ export const juniorStages: SyllabusStage[] = [
         resources: [
           part('introduction-to-git', '04-branching'),
           part('introduction-to-git', '05-merging'),
-          post('how-do-i-resolve-merge-conflicts-in-a-git-repository'),
+          post('undo-git-merge-not-pushed'),
           sim('git-merge-conflict-simulator'),
         ],
       },
@@ -113,7 +113,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 6,
         resources: [
           part('introduction-to-git', '07-collaboration'),
-          post('difference-between-git-pull-and-git-fetch'),
+          post('git-fetch-remote-branch'),
           lab('git-workflow-collaboration'),
         ],
       },
@@ -162,7 +162,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 20,
         resources: [
           guide('introduction-to-docker'),
-          post('docker-image-vs-container'),
+          post('how-docker-works-under-the-hood'),
           sim('docker-terminal-simulator'),
           sim('docker-under-the-hood-simulator'),
           lab('docker-server-deployment'),
@@ -178,7 +178,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 8,
         resources: [
           part('introduction-to-docker', '05-building-custom-docker-images'),
-          post('difference-between-cmd-and-entrypoint-in-dockerfiles'),
+          post('difference-run-cmd-dockerfile'),
           post('docker-image-optimization-best-practices'),
           lab('docker-multi-stage-build'),
           challenge('shrink-the-image'),
@@ -193,8 +193,8 @@ export const juniorStages: SyllabusStage[] = [
         hours: 10,
         resources: [
           part('introduction-to-docker', '08-docker-compose'),
-          post('docker-compose-ports-vs-expose'),
-          post('communication-multiple-docker-compose'),
+          post('rebuild-docker-container-compose'),
+          post('forward-host-port-to-docker-container'),
         ],
       },
     ],
@@ -242,7 +242,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 15,
         resources: [
           part('introduction-to-cicd', '07-advanced-workflows-and-automation'),
-          post('github-actions-fast'),
+          part('introduction-to-cicd', '08-monitoring-debugging-and-optimization'),
           lab('ci-cd-github-actions'),
           quiz('github-actions-quiz'),
           checklist('cicd-pipeline-setup'),
@@ -294,7 +294,7 @@ export const juniorStages: SyllabusStage[] = [
         hours: 10,
         resources: [
           guide('introduction-to-aws'),
-          post('what-is-finops-a-beginners-guide-to-cloud-cost-management'),
+          part('finops-for-devops-engineers', '01-principles'),
           quiz('aws-quiz'),
           cards('aws-essentials'),
         ],

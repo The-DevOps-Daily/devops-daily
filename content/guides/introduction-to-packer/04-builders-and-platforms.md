@@ -581,4 +581,4 @@ In [Part 5](/guides/introduction-to-packer/05-provisioners-in-depth), you go dee
 
 - [Introduction to AWS: EC2 servers](/guides/introduction-to-aws/03-ec2-servers)
 - [Docker Security Hardening Checklist](/checklists/docker-security), for images you build with the Docker builder
-- [Interview question: multi-cloud architecture](/interview-questions/senior/multi-cloud-architecture)
+- [Interview question: multi-cloud architecture](/interview-questions/topic/architecture#multi-cloud-architecture)

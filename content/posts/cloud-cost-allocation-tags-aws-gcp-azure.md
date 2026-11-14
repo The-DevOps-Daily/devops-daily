@@ -351,7 +351,7 @@ Run a dry-run first by listing what would be touched, especially in production.
 
 You now have a tag schema, enforcement at apply time, and visibility in each cloud's billing tooling. Pick one of these as the next move:
 
-1. **Wire the cost data into one place.** Pull AWS CUR, GCP BigQuery export, and Azure exports into a single warehouse (BigQuery, Snowflake, or even Postgres if your bill is small). Build one chargeback report instead of three.
+1. **Wire the cost data into one place.** Pull AWS CUR, GCP BigQuery export, and Azure exports into a single warehouse (BigQuery, Snowflake, or even Postgres if your bill is small). If you are choosing a warehouse, see [Databricks vs Snowflake](/comparisons/databricks-vs-snowflake). Build one chargeback report instead of three.
 2. **Add a CI check that fails PRs missing tags.** Run `terraform plan` and pipe through `conftest` or `checkov` to reject any resource block without the required keys. Catch it before it hits the cloud at all.
 3. **Set up an "untagged resources" alert.** A weekly job that counts resources without `team` and posts to Slack. The number should trend toward zero. If it does not, your enforcement has a hole.
 4. **Run a tagging coverage report monthly.** AWS calls this the "Cost Allocation Tag" coverage view. GCP and Azure require a quick SQL query or KQL query against the billing export. Track it like an SLO.

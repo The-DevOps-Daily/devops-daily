@@ -230,5 +230,23 @@
     "toolBScore": 3.9,
     "recommendation": "Choose PostgreSQL for new projects where you want maximum flexibility and advanced SQL features. Choose MySQL when simplicity, read performance, and ecosystem compatibility (especially with PHP frameworks and CMS platforms) are your top priorities."
   },
-  "relatedTags": ["PostgreSQL", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"]
+  "relatedTags": ["PostgreSQL", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Introduction to PostgreSQL",
+      "href": "/guides/introduction-to-postgres"
+    },
+    {
+      "label": "RDS: Managed Databases",
+      "href": "/guides/introduction-to-aws/06-rds-databases"
+    },
+    {
+      "label": "PostgreSQL Terminal Simulator",
+      "href": "/games/postgres-terminal-simulator"
+    },
+    {
+      "label": "SQL Terminal Simulator",
+      "href": "/games/sql-terminal-simulator"
+    }
+  ]
 }

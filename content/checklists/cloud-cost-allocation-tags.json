@@ -1,7 +1,7 @@
 {
   "id": "cloud-cost-allocation-tags",
   "slug": "cloud-cost-allocation-tags",
-  "title": "How to Set Up Cloud Cost Allocation Tags Across AWS, GCP, and Azure",
+  "title": "Cloud Cost Allocation Tags Checklist for AWS, GCP and Azure",
   "description": "A practical guide to implementing consistent cost allocation tagging strategies across multi-cloud environments for accurate chargeback and showback.",
   "category": "FinOps",
   "difficulty": "intermediate",

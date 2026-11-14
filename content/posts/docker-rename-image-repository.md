@@ -75,6 +75,6 @@ Good luck with your project!
 ## Related Resources
 
 - [Push an image to a private registry](/guides/introduction-to-docker/03-working-with-docker-images#h3-push-to-a-private-registry): push renamed images
-- [Docker Push: Denied Access](/posts/docker-push-denied-access): fix push errors
+- [Docker Push: Denied Access](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-fix-denied-requested-access-to-the-resource-is-denied-on-docker-push): fix push errors
 - [Copy Docker Images Between Hosts](/guides/introduction-to-docker/03-working-with-docker-images#h2-move-images-without-a-registry): transfer images
 - [Introduction to Docker: Working with Images](/guides/introduction-to-docker): image management

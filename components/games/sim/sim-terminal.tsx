@@ -90,7 +90,11 @@ export interface SimTerminalProps {
   disabled?: boolean;
   placeholder?: string;
   className?: string;
-  /** Overrides the height that keeps the input in a 1280x800 window. */
+  /**
+   * The height of the output and input, under the title bar. The default
+   * fills a SimFrame's --sim-fill-h on lg. In a lab, LAB_TERMINAL_HEIGHT
+   * fills the lab's terminal column instead.
+   */
   heightClassName?: string;
 }
 
@@ -120,7 +124,7 @@ export function SimTerminal({
   disabled = false,
   placeholder,
   className,
-  heightClassName = 'h-[clamp(16rem,calc(100dvh-22rem),30rem)]',
+  heightClassName = 'h-[clamp(16rem,calc(100dvh-22rem),30rem)] lg:h-[max(16rem,calc(var(--sim-fill-h,32rem)-2.25rem))]',
 }: SimTerminalProps) {
   const ownInput = useRef<HTMLInputElement | null>(null);
   const ownLog = useRef<HTMLDivElement | null>(null);
@@ -162,7 +166,11 @@ export function SimTerminal({
     <SimTerminalWindow
       label={label}
       status={status}
-      className={cn('flex flex-col focus-within:ring-2 focus-within:ring-ring', className)}
+      // flex-1: in a flex column (a lab's terminal column) the window takes the free height.
+      className={cn(
+        'flex flex-col focus-within:ring-2 focus-within:ring-ring lg:min-h-0 lg:flex-1',
+        className
+      )}
       bodyClassName={cn('flex min-h-0 flex-col', heightClassName)}
     >
       <div

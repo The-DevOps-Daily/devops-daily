@@ -21,6 +21,14 @@
     {
       "href": "/guides/introduction-to-cicd",
       "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    },
+    {
+      "href": "/quizzes/github-actions-quiz",
+      "label": "GitHub Actions Workflows Quiz"
+    },
+    {
+      "href": "/checklists/cicd-pipeline-setup",
+      "label": "CI/CD Pipeline Setup Checklist"
     }
   ],
   "toolA": {

@@ -60,7 +60,7 @@ Use it when you have that automation, or when your team already does. Without it
 
 ## Make Small, Focused Commits
 
-- **One logical change per commit.** "Add the docs service" and "Rename the template" are two commits, even if you made them in the same hour. `git add -p` ([Part 3](/guides/introduction-to-git/03-tracking-changes#h3-stage-part-of-a-file-with-git-add-p), and [how to commit only part of a file](/posts/commit-part-of-file-git)) makes this easy.
+- **One logical change per commit.** "Add the docs service" and "Rename the template" are two commits, even if you made them in the same hour. `git add -p` ([Part 3](/guides/introduction-to-git/03-tracking-changes#h3-stage-part-of-a-file-with-git-add-p), and [how to commit only part of a file](/posts/remove-file-from-git-keep-local#h2-how-do-i-commit-only-part-of-a-file)) makes this easy.
 - **Each commit should build and pass the tests**, so `git bisect` ([Part 8](/guides/introduction-to-git/08-history#h2-find-the-commit-that-broke-something-with-git-bisect)) and `git revert` work on any of them.
 - **Commit often on your branch, clean up before review.** Small local commits are a safety net; fixups and an interactive rebase turn them into a readable series.
 - **Do not mix formatting and logic.** A mass reformat goes in its own commit, listed in `.git-blame-ignore-revs`.
@@ -385,6 +385,6 @@ Next: [Advanced Git Techniques](/guides/introduction-to-git/10-advanced-techniqu
 ## Keep Learning
 
 - [Git Command Quiz](/quizzes/git-quiz)
-- [Git Workflow Strategies interview questions](/interview-questions/junior/git-workflow-strategies)
+- [Git Workflow Strategies interview questions](/interview-questions/topic/git#git-workflow-strategies)
 - [How to make Git ignore file mode changes](/posts/git-ignore-file-mode-changes)
 - [Set the editor for commit messages](/posts/set-git-editor-commit-messages)

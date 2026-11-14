@@ -229,5 +229,23 @@
     "toolBScore": 4.0,
     "recommendation": "Choose Cilium if you want eBPF-native performance, Hubble observability, and L7 network policies. Choose Calico if you need BGP integration, support for older kernels, or a lower resource footprint on smaller clusters."
   },
-  "relatedTags": ["Cilium", "Calico", "Kubernetes", "CNI", "eBPF", "Networking"]
+  "relatedTags": ["Cilium", "Calico", "Kubernetes", "CNI", "eBPF", "Networking"],
+  "relatedLinks": [
+    {
+      "label": "Kubernetes Networking / CNI Simulator",
+      "href": "/games/kubernetes-networking-cni-simulator"
+    },
+    {
+      "label": "CKNE Is Live: What the Kubernetes Network Engineer Exam Tests and How to Practice",
+      "href": "/posts/ckne-kubernetes-network-engineer-exam-guide"
+    },
+    {
+      "label": "Cilium 1.19 ClusterMesh Policy Flip: The Silent Default That Will Drop Your Cross-Cluster Traffic",
+      "href": "/posts/cilium-1-19-clustermesh-policy-flip"
+    },
+    {
+      "label": "Container Networking: Docker Bridges, Ports and Kubernetes",
+      "href": "/guides/networking-fundamentals/06-container-networking"
+    }
+  ]
 }

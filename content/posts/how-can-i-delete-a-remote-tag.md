@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2025-07-08'
 publishedAt: '2025-07-08T13:30:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -53,6 +53,43 @@ git push --tags
 
 Once pushed, the tag exists in two places - your local repository and the remote repository. Deleting a local tag doesn't automatically delete the remote tag, and vice versa. You need to delete them separately.
 
+## How Do I Push a Git Tag to a Remote?
+
+Push the tag by name. `git push` without a tag name does not send tags:
+
+```bash
+git tag -a v1.0.0 -m "Release 1.0.0"    # an annotated tag: it stores the tagger, date and message
+git push origin v1.0.0
+```
+
+Other ways to push tags:
+
+```bash
+git push origin --tags                  # every local tag, lightweight ones too
+git push --follow-tags                  # the pushed commits, plus the annotated tags that point into them
+git push origin 'refs/tags/v1.*'        # the tags that match a pattern
+git ls-remote --tags origin             # check what the remote has
+```
+
+`--follow-tags` is the safer default. It sends the annotated tags that point at commits reachable from the branches you push, and it never sends lightweight tags, which people often use as private bookmarks. In a test, it pushed two annotated tags and left a lightweight tag at home. Make it the default with `git config --global push.followTags true`.
+
+Some details:
+
+- **Use annotated tags for releases.** `git tag -a` records who made the tag and when. `git tag -s` also signs it, with GPG or, with `gpg.format ssh`, with your SSH key. Check a signature with `git tag -v v1.0.0`.
+- **Tag an older commit** with `git tag -a v1.0.1 3a7b9f2 -m "Hotfix 1.0.1"`.
+- **A tag and a branch with the same name** make the short name ambiguous: `git push origin v1.0` fails with `src refspec v1.0 matches more than one`. Push `refs/tags/v1.0` instead, and avoid such names.
+- **CI and releases.** GitHub Actions, GitLab CI and most other systems can start a release job when a tag is pushed, and the hosting service can create a release page from the tag.
+
+### Do not move a tag that others fetched
+
+You can move a tag and force-push it (`git tag -f v1.0.0 <commit>`, then `git push --force origin v1.0.0`). But other clones do not follow. Since Git 2.20, a fetch refuses to change an existing tag:
+
+```text
+ ! [rejected]        v1.1.0     -> v1.1.0  (would clobber existing tag)
+```
+
+Each clone must run `git fetch --tags --force`, and until it does, the same tag name means two commits. Release a new version (`v1.0.1`) instead. The [remotes chapter of the Git guide](/guides/introduction-to-git/06-remote-repositories#h2-push-tags) and the [tag section of the tracking chapter](/guides/introduction-to-git/03-tracking-changes#h2-tag-a-release) show tags with real output.
+
 ## Deleting a Remote Tag
 
 The standard way to delete a remote tag is:
@@ -63,7 +100,7 @@ git push origin --delete v1.0.0
 
 This tells Git to delete the tag `v1.0.0` from the remote named `origin`. You'll see output like:
 
-```
+```text
 To github.com:username/project.git
  - [deleted]         v1.0.0
 ```
@@ -75,6 +112,8 @@ git push origin :refs/tags/v1.0.0
 ```
 
 This older syntax means "push nothing to the remote tag v1.0.0", which effectively deletes it. The modern `--delete` flag is clearer and preferred, but both work identically.
+
+If a branch on the remote has the same name as the tag, `git push origin --delete v1.0.0` fails with `dst refspec v1.0.0 matches more than one`. Name the tag in full: `git push origin --delete refs/tags/v1.0.0`.
 
 ## Deleting Both Local and Remote Tags
 
@@ -124,11 +163,11 @@ After deleting a remote tag, verify it's gone:
 # List all remote tags
 git ls-remote --tags origin
 
-# Or fetch the latest tag info
-git fetch --tags --prune
+# Or remove local tags that are gone from the remote
+git fetch --prune --prune-tags
 ```
 
-The `--prune` flag removes references to tags that no longer exist on the remote. Without it, your local Git might still show remote tags that have been deleted.
+`--prune-tags` (Git 2.17 and later) deletes local tags that no longer exist on the remote. `git fetch --tags --prune` does not do this: `--prune` does not apply to tags that `--tags` fetches. In a test, the deleted tag was still there after `git fetch --tags --prune`, and gone after `git fetch --prune --prune-tags`. Note that `--prune-tags` also deletes tags that you created locally and never pushed.
 
 Check your local tags:
 
@@ -144,7 +183,7 @@ git tag -l "v1.0.0"
 
 If you get a permission error when deleting a remote tag:
 
-```
+```text
 error: unable to delete 'v1.0.0': remote ref does not exist
 error: failed to push some refs to 'github.com:username/project.git'
 ```
@@ -156,6 +195,7 @@ This could mean:
 3. **The tag is protected**: Platforms like GitHub and GitLab allow protecting tags to prevent accidental deletion
 
 For protected tags, you may need to:
+
 - Temporarily unprotect the tag in your Git hosting platform's settings
 - Ask someone with appropriate permissions to delete it
 - Use your Git host's web interface to delete the tag
@@ -197,10 +237,10 @@ When you delete a remote tag, it doesn't automatically disappear from your teamm
 
 ```bash
 # Team members should run this to sync tags
-git fetch --tags --prune
+git fetch --prune --prune-tags
 ```
 
-This updates their local tag references to match the remote, removing tags that no longer exist remotely.
+This removes the local tags that no longer exist on the remote, including tags that someone created locally and never pushed. To make it the default, set both `git config fetch.prune true` and `git config fetch.pruneTags true`: tag pruning only happens on a fetch that prunes.
 
 **Important**: Coordinate with your team before deleting tags. If someone has deployed code using a specific tag, deleting it can cause confusion. If the tag is referenced in documentation, CI/CD pipelines, or deployment scripts, those references will break.
 
@@ -222,17 +262,18 @@ This preserves the history and makes it clear that 1.0.1 supersedes 1.0.0.
 
 ## Recovering a Deleted Tag
 
-If you accidentally delete a tag before pushing the deletion, you can recover it from your reflog:
+Tags have no reflog, so `git reflog` does not help here. Use the hash that `git tag -d` printed. For an annotated tag, it is the hash of the tag object, and a tag that points to it restores the original tag, with its message and tagger:
 
 ```bash
-# Find the commit that was tagged
-git reflog | grep "v1.0.0"
+git tag -d v1.2.0
+# Deleted tag 'v1.2.0' (was 7dbb286)
 
-# Recreate the tag on that commit
-git tag v1.0.0 <commit-hash>
+git tag v1.2.0 7dbb286      # restores the annotated tag
+git tag -n1 -l v1.2.0
+# v1.2.0          Release 1.2.0
 ```
 
-However, if the tag has been deleted from both local and remote and you don't have it in your reflog, you'll need to recreate it on what you believe was the correct commit. This is why it's important to be certain before deleting tags, especially release tags.
+If the terminal output is gone, any clone that fetched the tag still has it: run `git ls-remote --tags` against that clone, or push the tag from there. Until `git gc` deletes it, the unreachable tag object is also listed by `git fsck --unreachable --no-reflogs | grep tag`. If nobody has the tag, recreate it on the commit you believe was right, and say so in the release notes.
 
 ## Deleting Tags on Different Git Platforms
 
@@ -317,3 +358,10 @@ This script finds all alpha, beta, and release candidate tags, shows them to you
 **Never reuse tag names**: If you delete a tag, don't recreate it with the same name pointing to a different commit. This causes confusion. Instead, increment the version number.
 
 Deleting remote tags is straightforward once you know the command, but the decision to delete should be made carefully. Tags serve as important markers in your project's history, and removing them can impact deployments, documentation, and team workflows. When in doubt, it's usually better to create a new tag with an incremented version than to delete and recreate an existing one.
+
+## Related Resources
+
+- [Introduction to Git: Push Tags](/guides/introduction-to-git/06-remote-repositories#h2-push-tags)
+- [How to push a new branch, rename or delete branches](/posts/how-to-push-new-local-branch-to-remote-and-track)
+- [Fetch a remote branch and check it out](/posts/git-fetch-remote-branch)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz)

@@ -665,5 +665,5 @@ Next, [Part 7](/guides/networking-fundamentals/07-cloud-networking) maps the lab
 ## Keep Learning
 
 - Simulators: [Kubernetes networking and CNI](/games/kubernetes-networking-cni-simulator), [Docker under the hood](/games/docker-under-the-hood-simulator)
-- Interview questions: [Kubernetes Services and networking](/interview-questions/mid/kubernetes-services-networking)
+- Interview questions: [Kubernetes Services and networking](/interview-questions/topic/kubernetes#kubernetes-services-networking)
 - [Networking in Docker](/guides/introduction-to-docker/07-networking-in-docker) in the Introduction to Docker guide

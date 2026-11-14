@@ -32,7 +32,7 @@ You do not get a shell on the database host, and you get admin rights that are c
 
 RDS runs **PostgreSQL**, **MySQL**, **MariaDB**, **Oracle**, **Microsoft SQL Server** and **IBM Db2**. **Amazon Aurora** is AWS's own engine, compatible with MySQL or PostgreSQL, with storage that is replicated across three AZs; it costs more but fails over faster and scales reads further.
 
-For new applications, PostgreSQL or MySQL are the usual choices. Pick a current major version:
+For new applications, PostgreSQL or MySQL are the usual choices. The [PostgreSQL vs MySQL comparison](/comparisons/postgresql-vs-mysql) helps you choose. Pick a current major version:
 
 - **PostgreSQL 18** is available on RDS since November 2025.
 - **MySQL 8.4** is the current long-term version. **MySQL 8.0** left RDS standard support on 31 July 2026.
@@ -263,4 +263,4 @@ Next: [Load Balancing and Auto Scaling](/guides/introduction-to-aws/07-load-bala
 
 - The full [Introduction to PostgreSQL guide](/guides/introduction-to-postgres)
 - [How to Apply SQL Scripts to RDS Databases With Terraform](/posts/terraform-apply-sql-scripts-rds)
-- [Database Backup and Recovery interview questions](/interview-questions/mid/database-backup-recovery)
+- [Database Backup and Recovery interview questions](/interview-questions/topic/infrastructure#database-backup-recovery)

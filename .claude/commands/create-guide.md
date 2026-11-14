@@ -137,14 +137,15 @@ The slug portion should be kebab-case and descriptive.
 - Acknowledge tradeoffs rather than being dogmatic
 - Bold key terms on first use
 
-## OG Image
+## Cover image
 
-After creating the guide, remind the user to generate the OG image:
+Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+
 ```bash
-pnpm generate:images
+npx tsx scripts/generate-content-og.ts --only=guide/<guide-slug>
 ```
 
-The OG image is auto-generated from the guide title and category. The social image will be at `/images/guides/<guide-slug>.jpg` (1200x630 JPEG).
+It writes `public/images/guides/<guide-slug>.jpg` (1200x630 JPEG) from the guide title and category. Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
 
 ## Checklist
 

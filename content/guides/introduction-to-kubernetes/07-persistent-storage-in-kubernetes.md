@@ -559,7 +559,7 @@ Snapshots are not a full backup plan. For databases, also take application-level
 ## Keep Learning
 
 - [The anatomy of Kubernetes persistent storage](/posts/anatomy-of-kubernetes-persistent-storage)
-- [Running Postgres on Kubernetes](/posts/postgres-k8s)
+- [Should you run Postgres on Kubernetes?](/posts/when-kubernetes-is-wrong-default#h2-should-you-run-postgres-on-kubernetes)
 - [Kubernetes 1.37: finding unused PVCs](/posts/kubernetes-1-37-unused-pvc-condition)
 
 Next, in [Part 8](/guides/introduction-to-kubernetes/08-resource-management-and-scaling), you give the pods CPU and memory budgets, scale them with load and drain a node, including the one this volume lives on.

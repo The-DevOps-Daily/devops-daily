@@ -97,8 +97,8 @@ If you learned Bash from an older tutorial, these are the changes that matter mo
 
 - [What does set -e mean in a Bash script?](/posts/what-does-set-e-mean-in-bash-script)
 - [How cat <<EOF works in Bash](/posts/how-cat-eof-works-in-bash)
-- [Check if a variable is set in Bash](/posts/check-if-variable-set-bash)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)
+- [Check if a variable is set in Bash](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-variable-is-set-in-bash)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals)
 - The free [Introduction to Bash Scripting eBook](https://github.com/bobbyiliev/introduction-to-bash-scripting) on GitHub, for another walk through the same topics
 - Next guide: [Introduction to Git](/guides/introduction-to-git)
 

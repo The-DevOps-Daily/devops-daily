@@ -298,7 +298,7 @@ Both containers report `healthy`: `db` from the `pg_isready` check in `compose.y
 | `docker compose down`                   | Stop and remove containers and networks; volumes stay                      |
 | `docker compose down -v`                | Also remove the named volumes declared in the file: **deletes the data**   |
 
-Most commands also take service names: `docker compose up -d db` starts only `db` and the services it depends on ([start only certain services](/posts/docker-compose-up-only-certain-containers)).
+Most commands also take service names: `docker compose up -d db` starts only `db` and the services it depends on ([start only certain services](/posts/rebuild-docker-container-compose#h2-how-do-i-start-only-some-services-with-docker-compose)).
 
 `docker compose logs` prefixes each line with the container (example output):
 
@@ -391,8 +391,8 @@ Next, harden the image and the container in [Docker Best Practices](/guides/intr
 
 ## Keep Learning
 
-- [What Is the Difference Between 'docker compose' and 'docker-compose'?](/posts/docker-compose-vs-docker-compose)
+- [What Is the Difference Between 'docker compose' and 'docker-compose'?](/posts/rebuild-docker-container-compose#h2-what-is-the-difference-between-docker-compose-and-docker-compose)
 - [How Can I Use Environment Variables in docker-compose?](/posts/docker-compose-environment-variables)
-- [Docker Compose: Wait for Container X Before Starting Y](/posts/docker-compose-wait-container)
+- [Docker Compose: Wait for Container X Before Starting Y](/posts/rebuild-docker-container-compose#h2-how-do-i-make-one-service-wait-for-another)
 - [How to Rebuild, Restart and Upgrade a Docker Compose Container](/posts/rebuild-docker-container-compose)
-- [Docker Compose: Understanding Ports vs Expose](/posts/docker-compose-ports-vs-expose)
+- [Docker Compose: Understanding Ports vs Expose](/posts/forward-host-port-to-docker-container#h2-what-is-the-difference-between-ports-and-expose-in-docker-compose)

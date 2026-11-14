@@ -201,7 +201,7 @@ This trust policy lets EC2 instances assume the role. You attach the role to an 
 }
 ```
 
-Attach the bucket policy from [Read a Policy](#h2-read-a-policy) as the permissions policy, and code on the instance can read and write `uploads/` with no credentials in the code or on disk. The [AssumeRole Service: ec2 explainer](/posts/assumerole-service-ec2) walks through this trust relationship in more detail.
+Attach the bucket policy from [Read a Policy](#h2-read-a-policy) as the permissions policy, and code on the instance can read and write `uploads/` with no credentials in the code or on disk. [What Does AssumeRole With Service: ec2.amazonaws.com Do?](#h3-what-does-assumerole-with-service-ec2amazonawscom-do) below shows the pieces in detail, with the same setup in Terraform.
 
 The SDKs find role credentials through the **default credential provider chain**: environment variables, the shared config files (including `aws login` and SSO profiles), then container and instance metadata. Write your code without credentials and it works on your laptop and on AWS. To use an `aws login` profile from Python, you need boto3 1.41.0 or later with the AWS Common Runtime (`pip install 'boto3[crt]'`):
 
@@ -233,6 +233,87 @@ Other places roles replace keys:
 
 If a third-party tool truly needs an access key, create a dedicated IAM user with the narrowest policy, store the key in a secrets manager, rotate it, and delete it when the tool goes away.
 
+### What Does AssumeRole With Service: ec2.amazonaws.com Do?
+
+It lets the EC2 service assume the role for your instances, and nothing more. The statement is a **trust policy**: `ec2.amazonaws.com` may call `sts:AssumeRole` on this role. When an instance starts with the role's instance profile, EC2 assumes the role and puts temporary credentials into the instance metadata. The SDKs and the CLI on the instance find them there. What the instance may then do comes from the role's **permissions policies**, plus resource policies (such as a bucket policy) that name the role, and any explicit deny or organization guardrail still wins. A role with this trust policy and no permissions policy can be assumed, but almost every call it makes is denied (`aws sts get-caller-identity` works for every identity).
+
+Three resources work together:
+
+| Resource                   | What it answers                  | Created by the console for you?                                                  |
+| -------------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
+| Role with the trust policy | Who may assume the role          | Yes, when you choose the **EC2** use case                                        |
+| Permissions policies       | What the role may do             | You attach them                                                                  |
+| Instance profile           | Which role an instance runs with | Yes, with the same name as the role; not by the CLI, CloudFormation or Terraform |
+
+An instance profile holds exactly one role. To give an instance more permissions, attach more policies to that role. The person or pipeline that launches the instance needs `iam:PassRole` for the role. That check decides which roles each developer may hand to an instance; without it, anyone who can launch instances could run code with any role in the account.
+
+The same setup in Terraform, for the `photo-app-web` role from [Part 3](/guides/introduction-to-aws/03-ec2-servers#h2-create-a-role-for-session-manager), with the uploads policy from [Read a Policy](#h2-read-a-policy) saved as `uploads-policy.json`:
+
+```hcl
+data "aws_iam_policy_document" "ec2_trust" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "web" {
+  name               = "photo-app-web"
+  assume_role_policy = data.aws_iam_policy_document.ec2_trust.json
+}
+
+# Permissions: Session Manager (AWS managed) and the uploads prefix (your own)
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.web.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy" "uploads" {
+  name   = "uploads"
+  role   = aws_iam_role.web.id
+  policy = file("${path.module}/uploads-policy.json")
+}
+
+resource "aws_iam_instance_profile" "web" {
+  name = "photo-app-web"
+  role = aws_iam_role.web.name
+}
+
+data "aws_ami" "al2023_arm64" {
+  owners      = ["amazon"]
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["al2023-ami-2023.*-kernel-*-arm64"]
+  }
+}
+
+resource "aws_instance" "web" {
+  ami                  = data.aws_ami.al2023_arm64.id
+  instance_type        = "t4g.micro"
+  iam_instance_profile = aws_iam_instance_profile.web.name
+
+  metadata_options {
+    http_tokens = "required" # IMDSv2 only
+  }
+}
+```
+
+On the instance, check which identity the CLI uses. The role session is named after the instance ID (example output):
+
+```bash
+aws sts get-caller-identity --query Arn --output text
+```
+
+```text
+arn:aws:sts::111122223333:assumed-role/photo-app-web/i-0123456789abcdef0
+```
+
+EC2 renews the credentials before they expire, and the SDKs read the new ones without a restart. Do not copy them out of the metadata service into files or environment variables, where they stop being renewed and can leak. To change the role of a running instance, use `aws ec2 replace-iam-instance-profile-association`, or attach more policies to the current role.
+
 ## Managed Policies Worth Knowing
 
 | Policy                | What it allows                                   | Typical use                          |
@@ -242,7 +323,37 @@ If a third-party tool truly needs an access key, create a dedicated IAM user wit
 | `ReadOnlyAccess`      | Read and list in almost every service            | Auditors, on-call dashboards         |
 | `ViewOnlyAccess`      | List and describe, without reading data          | Inventory tools                      |
 
-Service-wide policies such as `AmazonS3FullAccess` allow every action on every bucket in the account. Start from one of them while you explore, then replace it with a customer managed policy scoped to your resources. The post [Correct way to attach AWS managed policies to a role](/posts/correct-way-to-attach-aws-managed-policies-to-a-role) shows how to do that with Terraform.
+Service-wide policies such as `AmazonS3FullAccess` allow every action on every bucket in the account. Start from one of them while you explore, then replace it with a customer managed policy scoped to your resources.
+
+### What Is the Correct Way to Attach an AWS Managed Policy to a Role?
+
+Attach it by its ARN, as a separate attachment, and do not copy its JSON into an inline policy. An attached managed policy stays linked to AWS's version, so you get AWS's updates, and one policy can serve many roles. In the console, open the role and choose **Add permissions**, **Attach policies**. With the CLI:
+
+```bash
+aws iam attach-role-policy \
+  --role-name photo-app-web \
+  --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+aws iam list-attached-role-policies --role-name photo-app-web
+```
+
+AWS managed policies have `aws` where an account ID would be, and some have a path. The Lambda VPC policy, for example, is `arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole`. Without the path, the call fails with `NoSuchEntity`. In AWS GovCloud (US) and the China Regions, the ARN starts with `arn:aws-us-gov` or `arn:aws-cn`.
+
+In Terraform, use one `aws_iam_role_policy_attachment` per policy, as in the example above. Avoid two other ways that look similar:
+
+- **`aws_iam_policy_attachment`** (without `role_`) manages every attachment of the policy in the whole account. Roles, users and groups that it does not list lose the policy at the next apply.
+- **The `managed_policy_arns` argument of `aws_iam_role`** is deprecated since AWS provider 5.72. To make Terraform remove attachments that someone added by hand, add `aws_iam_role_policy_attachments_exclusive` next to the attachments.
+
+Use AWS managed policies where AWS knows best what a service needs: `AmazonSSMManagedInstanceCore` for Session Manager, the Lambda execution role policies, and the job function policies above. AWS changes their permissions from time to time, and every role that has one attached gets the change. For access to your own buckets, tables and queues, write a customer managed policy with your resource ARNs, as in [Read a Policy](#h2-read-a-policy). A role can have up to 20 managed policies attached by default (25 with a quota increase); if you get close, merge your own policies instead of attaching more. To see what an AWS managed policy allows before you attach it, read its default version:
+
+```bash
+arn=arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+version=$(aws iam get-policy --policy-arn "$arn" --query Policy.DefaultVersionId --output text)
+aws iam get-policy-version --policy-arn "$arn" --version-id "$version" \
+  --query PolicyVersion.Document
+```
+
+For more than one policy, `for_each` over a set of ARNs, and for policies that Terraform itself needs, see [How Do I Attach Multiple IAM Policies to an IAM Role?](/posts/terraform-fargate-task-definition-execution-role#h2-how-do-i-attach-multiple-iam-policies-to-an-iam-role).
 
 ## Find Out What Is Used
 
@@ -291,7 +402,7 @@ Next, you use a role for real: [launch your first EC2 server](/guides/introducti
 
 ## Keep Learning
 
-- [Cloud IAM Basics interview questions](/interview-questions/junior/cloud-iam-basics)
-- [How to Attach Multiple IAM Policies to IAM Roles Using Terraform](/posts/attach-multiple-iam-policies)
-- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/minimum-aws-permissions-for-terraform)
+- [Cloud IAM Basics interview questions](/interview-questions/topic/cloud#cloud-iam-basics)
+- [How to Attach Multiple IAM Policies to IAM Roles Using Terraform](/posts/terraform-fargate-task-definition-execution-role#h2-how-do-i-attach-multiple-iam-policies-to-an-iam-role)
+- [Determining Minimum AWS Permissions for Terraform Configurations](/posts/terraform-fargate-task-definition-execution-role#h2-what-are-the-minimum-aws-permissions-for-terraform)
 - [AWS Security Checklist](/checklists/aws-security)

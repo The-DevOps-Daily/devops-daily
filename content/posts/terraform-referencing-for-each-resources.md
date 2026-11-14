@@ -1,13 +1,13 @@
 ---
-title: 'How to Reference Resources Created With for_each in Terraform'
-excerpt: "Learn how to reference individual resources and attributes from for_each loops in other Terraform resources, including cross-resource dependencies and data extraction patterns."
+title: 'How to Reference for_each Resources in Terraform: Keys, Indexes and Import'
+excerpt: 'A resource with for_each is a map of instances. Learn how to reference one instance or all of them, how to get a list index inside for_each, and how to import existing objects into for_each addresses without quoting errors.'
 category:
   name: 'Terraform'
   slug: 'terraform'
 date: '2024-10-12'
 publishedAt: '2024-10-12T09:45:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -15,19 +15,31 @@ tags:
   - Terraform
   - Infrastructure as Code
   - for_each
+  - Import
   - Resources
   - DevOps
 ---
 
-When you create multiple resources using `for_each`, those resources become a map rather than a single resource. This changes how you reference them in other parts of your Terraform configuration. Instead of accessing attributes directly, you need to specify which instance from the map you want to reference using its key.
+When you add `for_each` to a resource, the resource stops being one object. It becomes a map of instances, one for each key. Every reference to it changes, `terraform import` needs a key in the address, and there is no `count.index` to tell you the position. This post answers the three questions that come from that change: how to reference the instances, how to get an index, and how to import existing objects into them.
 
-Understanding how to properly reference `for_each` resources is essential for building complex infrastructure where resources depend on each other.
+## TLDR
 
-**TLDR:** Resources created with `for_each` become maps where the key is from your `for_each` expression. Reference individual instances with `resource_type.resource_name[key].attribute`. To reference all instances, use `resource_type.resource_name` (the map) or extract values with `for` expressions like `[for k, v in resource_type.resource_name : v.attribute]`. Use `values(resource_type.resource_name)` to get a list of all resource instances.
+| Question                                    | Short answer                                                                                       |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| How do I reference one instance?            | `aws_instance.servers["web"].private_ip`                                                           |
+| How do I reference all instances?           | `{ for k, s in aws_instance.servers : k => s.private_ip }` or `values(aws_instance.servers)[*].id` |
+| Is there a `count.index` for `for_each`?    | No. Convert the list to a map with `{ for i, v in list : i => v }` and use `each.key`              |
+| How do I import into a `for_each` resource? | An `import` block with `to = aws_instance.servers["web"]`, or `for_each` on the import block       |
+| Why "Index value required" on import?       | The shell removed the quotes around the key. Quote the whole address                               |
 
-## Basic for_each Reference
+## Prerequisites
 
-When you create resources with `for_each`, each instance gets a unique key:
+- Terraform 1.5 or later for `import` blocks, and 1.7 or later for `for_each` inside an `import` block.
+- The error messages and plan output in this post come from Terraform 1.15.8 with the built-in `terraform_data` resource, so you can repeat them without a cloud account. The AWS examples need the AWS provider and credentials.
+
+## How Do I Reference a Resource Created With for_each?
+
+Put the key in square brackets after the resource name, then the attribute: `<type>.<name>[<key>].<attribute>`. The key is the map key, or the string itself when `for_each` is a set.
 
 ```hcl
 variable "instances" {
@@ -35,70 +47,67 @@ variable "instances" {
     instance_type = string
     ami           = string
   }))
-
   default = {
-    web = {
-      instance_type = "t3.medium"
-      ami           = "ami-12345678"
-    }
-    api = {
-      instance_type = "t3.large"
-      ami           = "ami-87654321"
-    }
+    web = { instance_type = "t3.medium", ami = "ami-12345678" }
+    api = { instance_type = "t3.large", ami = "ami-87654321" }
   }
 }
 
 resource "aws_instance" "servers" {
   for_each = var.instances
 
-  instance_type = each.value.instance_type
   ami           = each.value.ami
+  instance_type = each.value.instance_type
 
   tags = {
     Name = each.key
   }
 }
-```
 
-Now `aws_instance.servers` is a map with keys `"web"` and `"api"`. To reference a specific instance:
-
-```hcl
-# Reference the web server's ID
-resource "aws_security_group_rule" "allow_web" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_instance.servers["web"].vpc_security_group_ids[0]
-}
-
-# Output the API server's private IP
-output "api_server_ip" {
+output "api_private_ip" {
   value = aws_instance.servers["api"].private_ip
 }
 ```
 
-The syntax `aws_instance.servers["web"]` accesses the instance with key `"web"` from the map.
+`aws_instance.servers` is now a map with the keys `"web"` and `"api"`. A reference without a key fails at validate time:
 
-## Referencing in Another for_each Loop
+```text
+Error: Missing resource instance key
 
-When creating resources that depend on a `for_each` resource, you can iterate over the same map:
+  on main.tf line 6, in output "x":
+   6:   value = terraform_data.servers.id
+
+Because terraform_data.servers has "for_each" set, its attributes must be
+accessed on specific instances.
+
+For example, to correlate with indices of a referring resource, use:
+    terraform_data.servers[each.key]
+```
+
+A key that is not in the map fails at plan time with `The given key does not identify an element in this collection value.` Keys are case sensitive, so `"Web"` and `"web"` are different instances.
+
+### Reference All Instances
+
+Use a `for` expression when you need an attribute from every instance. A map keeps the key next to each value, which makes outputs easier to read:
 
 ```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
+locals {
+  # list of IDs, in key order
+  instance_ids = [for k, s in aws_instance.servers : s.id]
 
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-
-  tags = {
-    Name = each.key
-  }
+  # map of name => private IP
+  private_ips = { for k, s in aws_instance.servers : k => s.private_ip }
 }
+```
 
-# Create an EIP for each instance
-resource "aws_eip" "server_ips" {
+`values(aws_instance.servers)` turns the map into a list of objects, and a splat then picks one attribute: `values(aws_instance.servers)[*].id`. A splat directly on the map (`aws_instance.servers[*].id`) does not work, because splat expressions only work on lists, sets and tuples.
+
+### Create One Resource per Instance of Another
+
+Pass the first resource to `for_each` of the second one. The keys stay the same, and `each.value` is the full instance object:
+
+```hcl
+resource "aws_eip" "servers" {
   for_each = aws_instance.servers
 
   instance = each.value.id
@@ -110,435 +119,278 @@ resource "aws_eip" "server_ips" {
 }
 ```
 
-Here, `for_each = aws_instance.servers` iterates over the map of instances. Inside the loop:
-- `each.key` is the instance name ("web", "api")
-- `each.value` is the full instance resource object
-- `each.value.id` accesses the instance ID
+This is also the answer when Terraform says a single attribute such as `instance` needs one ID and you passed the whole map. Either pick one key (`aws_instance.servers["web"].id`) or repeat the loop.
 
-## Creating One Resource That References All for_each Instances
+### Use Only Some Instances
 
-Sometimes you need a single resource that references all instances from a `for_each`:
+Filter on the input data, not on the created resources. Input values are known at plan time, so you can use them in `for_each` and `count`:
+
+```hcl
+variable "instances" {
+  type = map(object({
+    instance_type = string
+    ami           = string
+    tier          = string
+  }))
+}
+
+locals {
+  web_keys = toset([for k, v in var.instances : k if v.tier == "web"])
+}
+
+resource "aws_lb_target_group_attachment" "web" {
+  for_each = local.web_keys
+
+  target_group_arn = aws_lb_target_group.web.arn
+  target_id        = aws_instance.servers[each.key].id
+  port             = 80
+}
+```
+
+If you build the keys from attributes that only exist after apply, such as instance IDs, the plan fails with `Invalid for_each argument`. The [variables, loops and outputs guide](/posts/terraform-variables-loops-and-outputs#h2-the-for_each-error-everyone-hits) explains that error.
+
+### When a Key May Not Exist
+
+Use `try()` to get `null` instead of an error:
+
+```hcl
+output "db_ip" {
+  value = try(aws_instance.servers["database"].private_ip, null)
+}
+```
+
+To create something only when a key exists, test the input variable: `count = contains(keys(var.instances), "prod") ? 1 : 0`.
+
+### Sets Have No Index
+
+Some attributes are sets, for example `vpc_security_group_ids` on `aws_instance`. You cannot index a set with `[0]`:
+
+```text
+Error: Invalid index
+
+  on main.tf line 10, in output "sg":
+  10:   value = terraform_data.servers["web"].output.sgs[0]
+    ├────────────────
+    │ terraform_data.servers["web"].output.sgs is a set of string
+
+Elements of a set are identified only by their value and don't have any
+separate index or key to select with, so it's only possible to perform
+operations across all elements of the set.
+```
+
+Reference the security group resource directly, or convert with `tolist()` if any element will do. `tolist()` sorts strings, so "the first element" is the first in sort order, not the one you added first.
+
+## How Do I Get the List Index When Using for_each?
+
+`for_each` has no index. It gives you `each.key` and `each.value`. To get a position, convert the list to a map whose keys are the positions:
+
+```hcl
+variable "availability_zones" {
+  type    = list(string)
+  default = ["us-east-1a", "us-east-1b", "us-east-1c"]
+}
+
+locals {
+  az_by_index = { for i, az in var.availability_zones : i => az }
+  # { "0" = "us-east-1a", "1" = "us-east-1b", "2" = "us-east-1c" }
+}
+
+resource "aws_subnet" "private" {
+  for_each = local.az_by_index
+
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, tonumber(each.key))
+  availability_zone = each.value
+}
+```
+
+Map keys are always strings, so `each.key` is `"0"`, not `0`. Terraform converts it automatically where a number is required, but `tonumber(each.key)` makes the intent clear.
+
+### Why for_each Has No Index
+
+`for_each` exists so that an instance does not depend on its position. Here is what happens with `count` when you remove the middle item of `["web", "api", "worker"]`, run on Terraform 1.15.8:
+
+```text
+  # terraform_data.srv[1] will be updated in-place
+      ~ input  = "api" -> "worker"
+  # terraform_data.srv[2] will be destroyed
+  # (because index [2] is out of range for count)
+      - input  = "worker" -> null
+
+Plan: 0 to add, 1 to change, 1 to destroy.
+```
+
+Terraform does not delete `api`. It changes instance `[1]` into `worker` and destroys instance `[2]`. For a real server, changing an attribute such as `ami` forces a replacement, so you lose a server that you wanted to keep. With `for_each = toset(["web", "api", "worker"])`, the same change destroys only `aws_instance.app["api"]`.
+
+So a key made from a position, like the `az_by_index` map above, has the same problem as `count`. Prefer a key that means something:
+
+```hcl
+locals {
+  # key by the AZ name, keep the position as a value
+  subnets = {
+    for i, az in var.availability_zones : az => {
+      index = i
+      cidr  = cidrsubnet(var.vpc_cidr, 8, i)
+    }
+  }
+}
+
+resource "aws_subnet" "private" {
+  for_each = local.subnets
+
+  vpc_id            = aws_vpc.main.id
+  availability_zone = each.key
+  cidr_block        = each.value.cidr
+
+  tags = {
+    Name = "private-${each.value.index + 1}"
+  }
+}
+```
+
+Now removing an AZ from the middle of the list removes one subnet, and the others keep their keys. Their CIDRs are still calculated from the position, though, so pin the CIDRs in the input if the list can change.
+
+### Combine Two Lists
+
+`zipmap()` builds a map from a list of keys and a list of values:
+
+```hcl
+locals {
+  instance_types = zipmap(
+    ["web-1", "web-2", "api-1"],
+    ["t3.medium", "t3.medium", "t3.large"],
+  )
+  # { "api-1" = "t3.large", "web-1" = "t3.medium", "web-2" = "t3.medium" }
+}
+```
+
+The two lists must have the same length, and a duplicate key keeps the last value. A list of objects, keyed with `{ for app in var.apps : app.name => app }`, is easier to keep correct than two lists that must stay in step.
+
+### When count Is the Better Choice
+
+Use `count` for N copies of the same thing that you add and remove only at the end, and for on/off switches (`count = var.enabled ? 1 : 0`). Use `for_each` for a set of different things that each need a stable address. The [resources and meta-arguments chapter](/guides/introduction-to-terraform/04-resources-and-data-sources#h3-count-and-for_each) of our Terraform guide compares them on a local project.
+
+## How Do I Import Into a for_each Resource?
+
+Put the key in the import address. With an `import` block (Terraform 1.5 and later) you write the address as HCL, so there are no shell quotes to get wrong:
+
+```hcl
+import {
+  to = aws_instance.servers["web"]
+  id = "i-1234567890abcdef0"
+}
+```
+
+From Terraform 1.7, an `import` block takes `for_each`, so one block imports every instance:
+
+```hcl
+locals {
+  existing = {
+    web = "i-1234567890abcdef0"
+    api = "i-0fedcba9876543210"
+  }
+}
+
+import {
+  for_each = local.existing
+  to       = aws_instance.servers[each.key]
+  id       = each.value
+}
+```
+
+Run `terraform plan` to see the imports, then `terraform apply`. On a test with `terraform_data`, the plan shows each instance:
+
+```text
+  # terraform_data.servers["web"] will be imported
+    resource "terraform_data" "servers" {
+        id = "id-web"
+    }
+
+Plan: 2 to import, 0 to add, 0 to change, 0 to destroy.
+```
+
+The import blocks can stay in the code after the apply, or you can remove them. Terraform 1.16 and later also accept `import` blocks inside child modules.
+
+### Fix "Index value required" With terraform import
+
+The `terraform import` command still works, but the shell processes the address first. If the shell removes the double quotes, Terraform gets `aws_instance.servers[web]` and stops:
+
+```text
+Error: Index value required
+
+  on <import-address> line 1:
+   1: terraform_data.servers[web]
+
+Index brackets must contain either a literal number or a literal string.
+```
+
+Quote the address so the double quotes reach Terraform. The Terraform documentation gives these forms:
+
+```bash
+# Linux, macOS, WSL (bash, zsh)
+terraform import 'aws_instance.servers["web"]' i-1234567890abcdef0
+
+# PowerShell
+terraform import 'aws_instance.servers[\"web\"]' i-1234567890abcdef0
+
+# Windows cmd.exe
+terraform import aws_instance.servers[\"web\"] i-1234567890abcdef0
+```
+
+In a bash loop, put the variable inside escaped double quotes: `terraform import "aws_instance.servers[\"$key\"]" "$id"`. Numeric string keys need quotes too: `aws_subnet.private["0"]`.
+
+Two other errors look similar:
+
+- `Configuration for import target does not exist` means the address has no key, for example `aws_instance.servers`, or the key is not in the `for_each` map.
+- `Invalid address ... Resource specification must include a resource type and name` means you gave only the type.
+
+### Generate Configuration for for_each Imports
+
+`terraform plan -generate-config-out=generated.tf` writes resource blocks for import targets that have no configuration. It does not work with instance keys:
+
+```text
+Error: Configuration for import target does not exist
+
+The given import block is not compatible with config generation. The
+-generate-config-out option cannot be used with import blocks which use
+for_each, or resources which use for_each or count.
+```
+
+Generate the configuration for one plain address such as `aws_instance.imported`, copy the arguments into your `for_each` resource, and then import with keys.
+
+### Change count to for_each Without Recreating
+
+Use `moved` blocks instead of `terraform state mv`. They are part of the code, so the change goes through review and runs in CI like any other change:
 
 ```hcl
 resource "aws_instance" "servers" {
   for_each = toset(["web", "api", "worker"])
-
-  instance_type = "t3.medium"
-  ami           = var.ami_id
-
-  tags = {
-    Name = each.key
-  }
+  # ...
 }
 
-# Load balancer that includes all instances
-resource "aws_lb_target_group_attachment" "servers" {
-  for_each = aws_instance.servers
-
-  target_group_arn = aws_lb_target_group.main.arn
-  target_id        = each.value.id
-  port             = 80
-}
-```
-
-This creates a target group attachment for each instance, connecting all of them to the same load balancer.
-
-## Extracting a List From for_each Resources
-
-To get a list of values from all instances:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
+moved {
+  from = aws_instance.servers[0]
+  to   = aws_instance.servers["web"]
 }
 
-# Get all instance IDs as a list
-locals {
-  instance_ids = [for k, v in aws_instance.servers : v.id]
-  # Result: ["i-12345", "i-67890", ...]
-
-  # Get all private IPs
-  private_ips = [for k, v in aws_instance.servers : v.private_ip]
-  # Result: ["10.0.1.10", "10.0.1.20", ...]
-
-  # Create a map of names to IPs
-  server_ips = {
-    for k, v in aws_instance.servers : k => v.private_ip
-  }
-  # Result: { "web" = "10.0.1.10", "api" = "10.0.1.20" }
+moved {
+  from = aws_instance.servers[1]
+  to   = aws_instance.servers["api"]
 }
 
-# Use the list in another resource
-resource "aws_route53_record" "servers" {
-  zone_id = var.zone_id
-  name    = "servers.example.com"
-  type    = "A"
-  ttl     = 300
-  records = local.private_ips
+moved {
+  from = aws_instance.servers[2]
+  to   = aws_instance.servers["worker"]
 }
 ```
 
-The `for` expression extracts attributes from all instances into a list or map that can be used elsewhere.
+The plan shows `(moved from aws_instance.servers[0])` next to each instance. Check that it has no destroy before you apply. The [state management chapter](/guides/introduction-to-terraform/05-state-management#h2-refactor-without-destroying-anything) of the guide covers `moved` and `removed` blocks in more detail.
 
-## Using values() to Get All Resource Objects
+After any import, run `terraform plan`. A plan with changes means your configuration does not match the real object yet. Change the code until the plan is empty.
 
-The `values()` function converts a map to a list:
+## Related Resources
 
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-}
-
-# Get all instance objects as a list
-locals {
-  all_servers = values(aws_instance.servers)
-  # This is a list of all instance resources
-}
-
-# Use with another for_each (requires converting back to map)
-resource "aws_cloudwatch_metric_alarm" "cpu" {
-  for_each = aws_instance.servers
-
-  alarm_name          = "${each.key}-high-cpu"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = "120"
-  statistic           = "Average"
-  threshold           = "80"
-
-  dimensions = {
-    InstanceId = each.value.id
-  }
-}
-```
-
-## Conditional References Based on Keys
-
-You can conditionally reference instances based on their keys:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-
-  tags = {
-    Name        = each.key
-    Environment = each.key == "prod" ? "production" : "development"
-  }
-}
-
-# Only create an alarm for the production instance
-resource "aws_cloudwatch_metric_alarm" "prod_cpu" {
-  count = contains(keys(aws_instance.servers), "prod") ? 1 : 0
-
-  alarm_name          = "prod-high-cpu"
-  comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = "2"
-  metric_name         = "CPUUtilization"
-  namespace           = "AWS/EC2"
-  period              = "120"
-  statistic           = "Average"
-  threshold           = "80"
-
-  dimensions = {
-    InstanceId = aws_instance.servers["prod"].id
-  }
-}
-```
-
-The `contains(keys(...), "key")` checks if a specific key exists in the map before referencing it.
-
-## Referencing Nested Attributes
-
-When instances have complex nested attributes:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-
-  root_block_device {
-    volume_size = 20
-    volume_type = "gp3"
-  }
-}
-
-# Access nested attributes
-output "root_volume_ids" {
-  value = {
-    for k, v in aws_instance.servers :
-    k => v.root_block_device[0].volume_id
-  }
-}
-```
-
-Use bracket notation `[0]` when the nested attribute is a list.
-
-## Creating Security Group Rules for for_each Instances
-
-A common pattern is creating security group rules that allow traffic between instances:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-
-  vpc_security_group_ids = [aws_security_group.servers[each.key].id]
-}
-
-# Security group for each instance
-resource "aws_security_group" "servers" {
-  for_each = var.instances
-
-  name        = "${each.key}-sg"
-  description = "Security group for ${each.key} server"
-  vpc_id      = var.vpc_id
-}
-
-# Allow each server to talk to every other server
-resource "aws_security_group_rule" "inter_server" {
-  for_each = {
-    for pair in setproduct(keys(var.instances), keys(var.instances)) :
-    "${pair[0]}-to-${pair[1]}" => {
-      source = pair[0]
-      target = pair[1]
-    }
-    if pair[0] != pair[1]
-  }
-
-  type                     = "ingress"
-  from_port                = 0
-  to_port                  = 65535
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.servers[each.value.source].id
-  security_group_id        = aws_security_group.servers[each.value.target].id
-}
-```
-
-This creates rules allowing every server to communicate with every other server using `setproduct()` to generate all combinations.
-
-## Referencing Specific Subset of for_each Resources
-
-To reference only certain instances from a `for_each` resource:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-
-  tags = {
-    Name = each.key
-    Tier = each.value.tier
-  }
-}
-
-locals {
-  # Get only web tier instances
-  web_servers = {
-    for k, v in aws_instance.servers :
-    k => v if v.tags["Tier"] == "web"
-  }
-
-  # List of IDs for web servers only
-  web_server_ids = [for k, v in local.web_servers : v.id]
-}
-
-# Create a load balancer only for web servers
-resource "aws_lb_target_group_attachment" "web" {
-  for_each = local.web_servers
-
-  target_group_arn = aws_lb_target_group.web.arn
-  target_id        = each.value.id
-  port             = 80
-}
-```
-
-The conditional `if` clause filters the map to only include instances matching the criteria.
-
-## Depending on All for_each Resources
-
-Sometimes a resource needs to wait for all `for_each` instances to be created:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-}
-
-# This runs after all instances are created
-resource "null_resource" "post_deploy" {
-  # Implicit dependency on all instances
-  triggers = {
-    instance_ids = join(",", [for k, v in aws_instance.servers : v.id])
-  }
-
-  provisioner "local-exec" {
-    command = "echo 'All servers deployed: ${self.triggers.instance_ids}'"
-  }
-}
-```
-
-The trigger includes data from all instances, creating an implicit dependency on the entire `for_each` resource.
-
-You can also use `depends_on`:
-
-```hcl
-resource "null_resource" "post_deploy" {
-  depends_on = [aws_instance.servers]
-
-  provisioner "local-exec" {
-    command = "echo 'All servers are ready'"
-  }
-}
-```
-
-When using `depends_on` with a `for_each` resource, Terraform waits for all instances to be created.
-
-## Dynamic Blocks With for_each Resource References
-
-You can use dynamic blocks to create multiple sub-resources based on `for_each` resources:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-}
-
-resource "aws_route53_zone" "main" {
-  name = "example.com"
-}
-
-resource "aws_route53_record" "servers" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "servers.example.com"
-  type    = "A"
-  ttl     = 300
-
-  # Create a record for each server's IP
-  records = [for k, v in aws_instance.servers : v.private_ip]
-}
-
-# Or create individual records
-resource "aws_route53_record" "server_individual" {
-  for_each = aws_instance.servers
-
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "${each.key}.example.com"
-  type    = "A"
-  ttl     = 300
-  records = [each.value.private_ip]
-}
-```
-
-## Errors and Troubleshooting
-
-**Error: "This object does not have an attribute named"**
-
-This happens when you try to access a `for_each` resource without specifying a key:
-
-```hcl
-# Wrong - servers is a map, not a single resource
-output "instance_id" {
-  value = aws_instance.servers.id  # ERROR
-}
-
-# Correct - specify which instance
-output "instance_id" {
-  value = aws_instance.servers["web"].id
-}
-```
-
-**Error: "The given key does not identify an element in this collection"**
-
-This means you're trying to access a key that doesn't exist:
-
-```hcl
-# Error if "database" key doesn't exist
-output "db_ip" {
-  value = aws_instance.servers["database"].private_ip
-}
-
-# Safe approach with lookup
-output "db_ip" {
-  value = lookup(aws_instance.servers, "database", null) != null ? aws_instance.servers["database"].private_ip : null
-}
-```
-
-**Reference: "Can't access attributes of entire map"**
-
-Some operations require a specific instance, not the entire map:
-
-```hcl
-# Wrong - trying to pass entire map where single value expected
-resource "aws_eip" "server" {
-  instance = aws_instance.servers  # ERROR - needs single instance ID
-}
-
-# Correct - specify which instance
-resource "aws_eip" "server" {
-  instance = aws_instance.servers["web"].id
-}
-
-# Or use for_each to create one EIP per instance
-resource "aws_eip" "servers" {
-  for_each = aws_instance.servers
-
-  instance = each.value.id
-}
-```
-
-## Converting Between for_each and count
-
-If you need to reference `for_each` resources in a context that expects a list:
-
-```hcl
-resource "aws_instance" "servers" {
-  for_each = var.instances
-
-  instance_type = each.value.instance_type
-  ami           = each.value.ami
-}
-
-# Convert to list for use with count
-resource "aws_route53_health_check" "servers" {
-  count = length(keys(aws_instance.servers))
-
-  ip_address = values(aws_instance.servers)[count.index].private_ip
-  port       = 80
-  type       = "HTTP"
-}
-```
-
-Though usually it's better to stick with `for_each` throughout:
-
-```hcl
-resource "aws_route53_health_check" "servers" {
-  for_each = aws_instance.servers
-
-  ip_address = each.value.private_ip
-  port       = 80
-  type       = "HTTP"
-}
-```
-
-Referencing `for_each` resources requires understanding that they're maps, not single resources. Always specify the key when accessing individual instances, and use `for` expressions or `values()` when you need to work with all instances collectively. This gives you flexible, maintainable infrastructure configurations that scale as your needs grow.
+- [Terraform Variables, Loops, and Outputs](/posts/terraform-variables-loops-and-outputs) for `for` expressions, splats and outputs of counted resources.
+- [Import existing objects](/guides/introduction-to-terraform/05-state-management#h2-import-existing-objects) in the Terraform guide.
+- [Terraform terminal simulator](/games/terraform-terminal-simulator) to practice `plan`, `apply` and `state` commands in the browser.
+- [Terraform Fundamentals Quiz](/quizzes/terraform-quiz) and [Terraform Basics flashcards](/flashcards/terraform-basics) to check what you know.

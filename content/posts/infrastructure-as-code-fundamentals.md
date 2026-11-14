@@ -269,6 +269,8 @@ Resources:
       BucketName: my-data-bucket
 ```
 
+For a side-by-side view, see [Terraform vs CloudFormation](/comparisons/terraform-vs-cloudformation).
+
 ### Pulumi (Real Programming Languages)
 
 **Best for:** Developers who prefer Python/TypeScript/Go over DSLs
@@ -291,6 +293,8 @@ import pulumi_aws as aws
 bucket = aws.s3.Bucket("my-data-bucket")
 ```
 
+On AWS, the AWS CDK takes the same approach and generates CloudFormation from your code. The [Terraform vs Pulumi](/comparisons/terraform-vs-pulumi) and [Pulumi vs AWS CDK](/comparisons/pulumi-vs-cdk) comparisons go into the details.
+
 ### Ansible (Configuration Management)
 
 **Best for:** Configuring servers, orchestration, app deployment
@@ -303,6 +307,8 @@ bucket = aws.s3.Bucket("my-data-bucket")
 **Cons:**
 - Not purpose-built for infrastructure provisioning
 - Can be slow for large deployments
+
+Chef and Puppet are older, agent-based tools for the same job; see [Ansible vs Chef](/comparisons/ansible-vs-chef).
 
 ---
 

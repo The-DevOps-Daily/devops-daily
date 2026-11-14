@@ -143,7 +143,7 @@ A published port forwards traffic from a host address to a container port. `-p 1
 | `-p 192.168.1.20:8000:8000` | Only that host address                                                                                                     |
 | no `-p`                     | Containers on the same Docker network, and with rootful Docker on Linux the host itself through the container's IP address |
 
-Publish the minimum. Ports are fixed when the container is created, so adding one later means [recreating the container](/posts/docker-assign-port-mapping). A database almost never needs a published port in production: the app reaches it over the Docker network, and you can use `docker exec hello-db psql ...` for admin work.
+Publish the minimum. Ports are fixed when the container is created, so adding one later means [recreating the container](/posts/forward-host-port-to-docker-container#h2-how-do-i-add-a-port-to-a-running-container). A database almost never needs a published port in production: the app reaches it over the Docker network, and you can use `docker exec hello-db psql ...` for admin work.
 
 :::warning
 **Published ports bypass `ufw` and `firewalld`.** Docker writes iptables rules that send traffic for published ports to containers before the host firewall's rules see it. `ufw deny 8000` does not block `-p 8000:8000`. Publish on `127.0.0.1` when only the host needs the port, put a reverse proxy in front of the services that must be public, or, with Docker's default iptables backend, add your own rules to the `DOCKER-USER` chain, which Docker evaluates first. With that backend Docker supports `iptables-nft` and `iptables-legacy`, and rules you write with `nft` directly are not supported. The experimental nftables backend in Engine 29 has no `DOCKER-USER` chain; there you put your rules in your own nftables tables.
@@ -215,7 +215,7 @@ The `hello-db-data` volume survives the cleanup. Part 8 starts a separate databa
 
 - **`localhost` in a connection string.** Inside a container it means the container. Use the service or container name.
 - **Relying on the default bridge network.** No DNS by name. Create a network.
-- **Publishing database ports to the world.** `-p 5432:5432` on a server with a public IP is reachable from the internet, regardless of `ufw`. Publish on `127.0.0.1` when only the host needs it ([connect to Postgres in a container from the host](/posts/connecting-to-postgresql-in-a-docker-container-from-outside)).
+- **Publishing database ports to the world.** `-p 5432:5432` on a server with a public IP is reachable from the internet, regardless of `ufw`. Publish on `127.0.0.1` when only the host needs it ([connect to Postgres in a container from the host](/posts/forward-host-port-to-docker-container#h2-how-do-i-connect-to-postgresql-in-a-docker-container-from-the-host)).
 - **Assuming `EXPOSE` publishes anything.** It documents the port; `-p` publishes it.
 - **Using `--link`.** Legacy, and it no longer injects environment variables since Engine 29. Use user-defined networks.
 
@@ -231,7 +231,7 @@ Next, replace all of these commands with one file in [Docker Compose](/guides/in
 ## Keep Learning
 
 - [Docker: Connect to the Host's localhost from a Container](/posts/connect-to-host-localhost-from-docker)
-- [What is the difference between EXPOSE and --publish?](/posts/docker-compose-ports-vs-expose#h2-what-is-the-difference-between-expose-and-publish)
-- [How to Get a Docker Container's IP Address from the Host](/posts/how-to-get-docker-container-ip-from-host)
-- [Docker - Ubuntu - bash: ping: command not found](/posts/docker-ubuntu-ping-not-found)
+- [What is the difference between EXPOSE and --publish?](/posts/forward-host-port-to-docker-container#h3-what-is-the-difference-between-expose-and-publish)
+- [How to Get a Docker Container's IP Address from the Host](/posts/forward-host-port-to-docker-container#h2-how-do-i-get-a-docker-containers-ip-address-from-the-host)
+- [Docker - Ubuntu - bash: ping: command not found](/posts/how-to-access-docker-container-shell#h2-what-if-ps-ping-or-other-tools-are-missing-in-a-container)
 - Guide: [Networking Fundamentals](/guides/networking-fundamentals)

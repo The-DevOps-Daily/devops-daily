@@ -1,13 +1,13 @@
 ---
 title: 'What Does "2>&1" Mean in Linux and Bash?'
-excerpt: 'Learn what the 2>&1 redirection operator means in Linux commands, how it works with standard output and error streams, and when to use it effectively.'
+excerpt: 'Learn what the 2>&1 redirection operator means, how stdout and stderr work, and how to send all output to a file, to the screen and a file with tee, to a protected file with sudo, or only to stderr.'
 category:
   name: 'Bash'
   slug: 'bash'
 date: '2024-04-18'
 publishedAt: '2024-04-18T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -16,12 +16,27 @@ tags:
   - Bash
   - Redirection
   - Streams
+  - stderr
+  - tee
+  - sudo
   - Shell
 ---
 
 The `2>&1` syntax is one of the most commonly seen but least understood pieces of Linux command line syntax. You'll encounter it frequently in scripts, log redirections, and system administration tasks, but its meaning isn't immediately obvious to newcomers.
 
-This guide explains what `2>&1` means, how it works with Linux streams, and provides practical examples of when and how to use it effectively in your daily work.
+This guide explains what `2>&1` means, how it works with Linux streams, and provides practical examples of when and how to use it effectively in your daily work. It also answers the questions that come right after: how to save all output to a file, how to see output and save it at the same time, and how to write your own messages to stderr.
+
+## TLDR
+
+| Task                               | Command                                                      |
+| ---------------------------------- | ------------------------------------------------------------ |
+| Send stdout and stderr to one file | `cmd > out.log 2>&1` (Bash also accepts `cmd &> out.log`)    |
+| Append stdout and stderr to a file | `cmd >> out.log 2>&1` (Bash 4.0+ also has `cmd &>> out.log`) |
+| Discard all output                 | `cmd > /dev/null 2>&1`                                       |
+| Show output and save it to a file  | `cmd 2>&1 \| tee out.log`                                    |
+| Write to a file that needs root    | `echo "x" \| sudo tee -a /etc/file > /dev/null`              |
+| Print your own message to stderr   | `echo "Error: config not found" >&2`                         |
+| Send only stderr through a pipe    | `cmd 2>&1 > /dev/null \| grep -i error`                      |
 
 ## Understanding Linux Streams
 
@@ -137,9 +152,19 @@ You can combine `2>&1` with other redirection operators:
 # Append both stdout and stderr to a file
 command >> logfile.txt 2>&1
 
-# Send stdout to file, stderr to another command
-command > output.txt 2>&1 | logger -t mycommand
+# Send stdout to a file and stderr to another command
+command 2>&1 > output.txt | logger -t mycommand
 ```
+
+The second example uses the order rule from the previous section. `2>&1` comes first, so stderr goes into the pipe. Then `> output.txt` moves only stdout to the file. If you write `command > output.txt 2>&1 | logger`, both streams go to the file and `logger` gets nothing.
+
+To keep stdout on the screen and send only stderr through the pipe, swap the two streams with a spare descriptor:
+
+```bash
+command 3>&1 1>&2 2>&3 3>&- | grep -i error
+```
+
+Descriptor 3 keeps a copy of the pipe, stdout moves to the terminal, stderr moves to the pipe, and `3>&-` closes the spare copy.
 
 ## Real-World Examples
 
@@ -147,14 +172,15 @@ command > output.txt 2>&1 | logger -t mycommand
 
 ```bash
 #!/bin/bash
-# Backup script that logs everything
-mysqldump -u root -p database_name > backup.sql 2>&1
-if [ $? -eq 0 ]; then
-    echo "Backup completed successfully" >> backup.log 2>&1
+# Backup script: the dump goes to one file, errors and status to a log
+if mysqldump database_name > backup.sql 2>> backup.log; then
+    echo "$(date '+%F %T') backup completed" >> backup.log
 else
-    echo "Backup failed" >> backup.log 2>&1
+    echo "$(date '+%F %T') backup failed" >> backup.log
 fi
 ```
+
+Do not use `> backup.sql 2>&1` here. It writes any warning or error into the SQL file, and the restore then fails on that line. Keep data on stdout and messages on stderr, and send them to different files.
 
 ### System Monitoring Script
 
@@ -191,15 +217,200 @@ This sends both stdout and stderr to `tee`, which then sends the output to both 
 
 ## Debugging Redirection
 
-To understand what's happening with your redirections, you can use the `exec` command to show file descriptors:
+To understand what's happening with your redirections, look at the file descriptors in `/proc` on Linux:
 
 ```bash
-# Show where file descriptors point
-exec 2>&1
-ls -l /proc/self/fd/
+# Where the descriptors of your current shell point
+ls -l /proc/$$/fd/
+
+# Where the descriptors of a command point with a given redirection
+bash -c 'ls -l /proc/self/fd/' > fd.txt 2>&1
+cat fd.txt   # 1 and 2 both point to fd.txt
 ```
 
-This helps you verify that your redirections are working as expected.
+This helps you verify that your redirections are working as expected, without changing the descriptors of your interactive shell.
+
+## How Do I Redirect All Output to a File?
+
+Use `> file 2>&1`. It sends stdout to the file, then sends stderr to the same place:
+
+```bash
+./deploy.sh > deploy.log 2>&1      # overwrite the file
+./deploy.sh >> deploy.log 2>&1     # append to the file
+./deploy.sh > out.log 2> err.log   # one file for each stream
+```
+
+Bash has a short form: `&> deploy.log` overwrites and `&>> deploy.log` appends. `&>` exists in every Bash version, and `&>>` needs Bash 4.0 or later. Both are Bash syntax, not POSIX. In a POSIX shell such as dash, which is `/bin/sh` on Debian and Ubuntu, `cmd &>> file` means "run `cmd` in the background", followed by an empty command that only opens `file`. The output goes to the terminal and the log stays empty:
+
+```terminal
+{
+  "title": "&>> in bash and in sh (dash)",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "bash -c 'ls /etc/hostname /nope &>> all.log'; cat all.log",
+      "output": "ls: cannot access '/nope': No such file or directory\n/etc/hostname"
+    },
+    {
+      "cmd": "sh -c 'ls /etc/hostname /nope &>> sh.log'; sleep 0.2; wc -c sh.log",
+      "output": "ls: cannot access '/nope': No such file or directory\n/etc/hostname\n0 sh.log"
+    }
+  ]
+}
+```
+
+That matters most in crontab lines, because cron runs each line with `/bin/sh`. Use the long form there:
+
+```bash
+# crontab -e
+0 2 * * * /home/user/backup.sh >> /var/log/backup.log 2>&1
+```
+
+### Redirect Everything From Inside a Script
+
+To log all output of a script without a redirection on every line, use `exec` once near the top. From that line on, every command writes to the log:
+
+```bash
+#!/usr/bin/env bash
+exec >> /var/log/nightly-job.log 2>&1
+
+echo "=== started $(date '+%F %T') ==="
+rsync -a /srv/data/ /backup/data/
+echo "=== finished ==="
+```
+
+To redirect only one part of a script, put the commands in a group:
+
+```bash
+{
+    echo "Disk usage on $(hostname)"
+    df -h
+    du -sh /var/log
+} > report.txt 2>&1
+```
+
+## How Do I Send Output to a File and the Screen at the Same Time?
+
+Pipe the output to `tee`. It writes its input to the screen and to every file you give it:
+
+```bash
+make build 2>&1 | tee build.log          # overwrite build.log
+make build 2>&1 | tee -a build.log       # append to build.log
+make build |& tee build.log              # Bash 4.0+ short form of 2>&1 |
+make build 2>&1 | tee build.log ~/builds/latest.log
+```
+
+Without `2>&1`, only stdout goes through `tee`. Error messages still reach the screen, but they are not in the file.
+
+### Keep the Exit Code When You Pipe to tee
+
+A pipeline returns the exit code of its last command, and that is `tee`, which almost always succeeds. A failed command looks like a success:
+
+```bash
+ls /nope 2>&1 | tee out.log; echo "exit: $?"
+# ls: cannot access '/nope': No such file or directory
+# exit: 0
+```
+
+That breaks `if cmd | tee log`, `set -e` and CI steps. Turn on `pipefail`, so the pipeline fails when any command in it fails, or read the code of one command from `PIPESTATUS`:
+
+```bash
+set -o pipefail
+ls /nope 2>&1 | tee out.log; echo "exit: $?"
+# exit: 2
+
+ls /nope 2>&1 | tee out.log; echo "ls exit: ${PIPESTATUS[0]}, tee exit: ${PIPESTATUS[1]}"
+# ls exit: 2, tee exit: 0
+```
+
+[What set -e and pipefail do](/posts/what-does-set-e-mean-in-bash-script) explains these options in detail.
+
+### Send a Whole Script Through tee
+
+To see and log everything a script prints, combine `exec` with process substitution:
+
+```bash
+#!/usr/bin/env bash
+exec > >(tee -a run.log) 2>&1   # from here on, stdout and stderr go to the screen and run.log
+echo "starting"
+ls /nope
+echo "done"
+```
+
+All three lines, including the error from `ls`, appear on the screen and in `run.log`. `tee` runs as a separate process, so the last lines can reach the file a moment after the script exits.
+
+## How Do I Use sudo to Redirect Output to a Protected File?
+
+Let a program that runs with `sudo` open the file. `tee` is the usual one:
+
+```bash
+echo "127.0.0.1 app.local" | sudo tee -a /etc/hosts > /dev/null     # append a line
+echo "max_connections = 200" | sudo tee /etc/app.conf > /dev/null   # replace the whole file
+```
+
+The obvious command fails:
+
+```text
+$ sudo echo "127.0.0.1 app.local" >> /etc/hosts
+bash: /etc/hosts: Permission denied
+```
+
+The redirection belongs to your shell, not to `sudo`. Your shell opens `/etc/hosts` with your own permissions before it starts `sudo echo`, the open fails, and `echo` never runs. With `tee`, your shell only sets up a pipe, and `tee`, running as root, opens the file.
+
+Details that matter:
+
+- **`tee` without `-a` empties the file first.** `echo "127.0.0.1 app.local" | sudo tee /etc/hosts` leaves a hosts file with one line. Use `-a` to append.
+- **`> /dev/null` only hides the copy that `tee` prints.** That redirection runs as you, which is fine, because everybody may write to `/dev/null`.
+- **Several lines: use a here document.** Quote the delimiter (`'EOF'`) so that the shell does not expand `$` in the text:
+
+```bash
+sudo tee /etc/sysctl.d/99-app.conf > /dev/null <<'EOF'
+net.core.somaxconn = 4096
+vm.swappiness = 10
+EOF
+sudo sysctl --system
+```
+
+A file of its own in `/etc/sysctl.d/` is easier to review and remove than lines appended to `/etc/sysctl.conf`, and running the same script twice does not add the lines twice. [How cat << EOF works](/posts/how-cat-eof-works-in-bash) explains here documents.
+
+- **The whole command as root: `sudo sh -c '...'`.** Put the redirection inside the quotes: `sudo sh -c 'echo "127.0.0.1 app.local" >> /etc/hosts'`. In `sudo sh -c echo x > file`, the `> file` is outside again. Inside single quotes, your shell variables are not expanded, so pass values as arguments: `sudo sh -c 'echo "$1" >> /etc/hosts' sh "$line"`.
+- **To change a file, edit it instead of writing it.** `sudoedit /etc/app.conf` runs your editor as you on a temporary copy and writes it back as root. `sudo sed -i 's/^log_level=.*/log_level=info/' /etc/app.conf` changes one line. Do not read and write the same file in one pipeline (`sudo cat f | grep -v x | sudo tee f`): `tee` empties the file while `cat` may still read it.
+- **To install a file with an owner and mode, use `install`:** `sudo install -m 0640 -o root -g app app.conf /etc/app/app.conf`.
+- **Kernel settings in `/proc/sys`** work the same way (`echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward`), but `sudo sysctl -w net.ipv4.ip_forward=1` is clearer. Both last only until the next reboot.
+
+Reading works the other way round. In `sudo cat /var/log/secure | grep sshd`, `cat` opens the file as root and the pipe needs no permission, so it works. `sudo grep sshd /var/log/secure` is shorter.
+
+## How Do I Echo to stderr in Bash?
+
+Add `>&2` to the command. It sends that command's stdout to file descriptor 2:
+
+```bash
+echo "Error: config file not found" >&2
+printf 'Error: cannot read %s\n' "$file" >&2
+```
+
+`>&2` is short for `1>&2`, and it works in every POSIX shell. Use stderr for errors, warnings and progress messages, and keep stdout for the data your script produces. Then a caller can capture or pipe the data, and still see the messages:
+
+```bash
+result=$(./export-users.sh)        # $result gets only stdout
+./export-users.sh > users.csv      # messages still appear on the terminal
+./export-users.sh 2> /dev/null     # hide the messages, keep the data
+```
+
+For a script with many messages, define small functions once:
+
+```bash
+warn() { printf 'WARNING: %s\n' "$*" >&2; }
+die()  { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
+
+[[ -r "$config" ]] || die "cannot read $config"
+warn "running without a cache"
+```
+
+Return a non-zero exit code together with the message, as `die` does. The message tells a person what went wrong, and the exit code tells the calling script or CI job.
+
+To color error messages only when a person reads them, test whether stderr is a terminal with `[ -t 2 ]`. [How to print colors and newlines with echo and printf](/posts/change-echo-output-color-linux) shows the pattern.
 
 ## Common Mistakes
 
@@ -216,11 +427,18 @@ command 2>&1
 ### Wrong Order
 
 ```bash
-# This doesn't work as expected
+# Only stdout goes to the file, stderr stays on the terminal
 command 2>&1 > file.txt
 
-# Correct order
+# Both streams go to the file
 command > file.txt 2>&1
 ```
 
 The `2>&1` redirection is essential for proper output handling in Linux systems. Whether you're writing scripts, setting up cron jobs, or debugging applications, understanding how to combine stdout and stderr gives you precise control over where your command output goes. Practice with these examples to become comfortable with this powerful redirection technique.
+
+## Related Resources
+
+- [Introduction to Bash: Bash Basics](/guides/introduction-to-bash/02-bash-basics): redirection, pipelines and exit status in one chapter
+- [How cat << EOF works in Bash](/posts/how-cat-eof-works-in-bash): here documents, which feed text to stdin
+- [Learn Linux interactive tutorial](/games/linux-terminal): practice pipes and redirection in a browser terminal
+- [Linux command line quiz](/quizzes/linux-quiz) and [Linux fundamentals flashcards](/flashcards/linux-fundamentals)

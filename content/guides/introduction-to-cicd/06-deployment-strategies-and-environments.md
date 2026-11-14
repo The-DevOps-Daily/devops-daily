@@ -400,5 +400,5 @@ In [Part 7](/guides/introduction-to-cicd/07-advanced-workflows-and-automation) y
 - [Deployment Strategies: Blue-Green vs Canary vs Rolling](/posts/deployment-strategies-guide) and the [Deployment Strategies simulator](/games/deployment-strategies)
 - [Blue-Green vs Canary Deployments](/comparisons/blue-green-vs-canary-deployments)
 - [Production Deployment Checklist](/checklists/production-deployment)
-- [Interview question: blue-green deployment](/interview-questions/mid/cicd-blue-green-deployment)
+- [Interview question: blue-green deployment](/interview-questions/topic/cicd#cicd-blue-green-deployment)
 - [Preview Environment Simulator](/games/preview-environment-simulator)

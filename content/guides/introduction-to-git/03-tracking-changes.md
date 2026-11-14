@@ -182,7 +182,7 @@ From the top of the repository they stage the same thing. The difference shows i
 }
 ```
 
-The most useful answers at the prompt are `y` (stage), `n` (skip), `s` (split into smaller hunks), `e` (edit the hunk by hand), `q` (quit) and `?` (help). Patch mode is how you keep commits small even when you made several changes at once. [How to commit only part of a file](/posts/commit-part-of-file-git) has more examples.
+The most useful answers at the prompt are `y` (stage), `n` (skip), `s` (split into smaller hunks), `e` (edit the hunk by hand), `q` (quit) and `?` (help). Patch mode is how you keep commits small even when you made several changes at once. [How to commit only part of a file](/posts/remove-file-from-git-keep-local#h2-how-do-i-commit-only-part-of-a-file) has more examples.
 
 ## Make Commits
 
@@ -527,7 +527,7 @@ Next: [Branching](/guides/introduction-to-git/04-branching), where you work on a
 
 ## Keep Learning
 
-- [Undo git add before a commit](/posts/how-to-undo-git-add-before-commit)
+- [Undo git add before a commit](/posts/remove-file-from-git-keep-local#h2-how-do-i-undo-git-add-before-a-commit)
 - [Change an unpushed commit message](/guides/introduction-to-git/08-history#h3-which-commits-can-you-still-rewrite)
 - [List all files in a commit](/posts/list-files-in-commit-git)
 - [Git Command Quiz](/quizzes/git-quiz)

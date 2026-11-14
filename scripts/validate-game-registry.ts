@@ -41,26 +41,14 @@ function activePageExists(slug: string): boolean {
   return exists(path.join(GAME_PAGE_DIR, slug, 'page.tsx'));
 }
 
+// Covers come only from scripts/generate-content-og.ts, which writes this JPEG.
 function imagePathForSlug(slug: string): string | null {
-  const candidates = [
-    path.join(GAME_IMAGES_DIR, `${slug}-og.jpg`),
-    path.join(GAME_IMAGES_DIR, `${slug}.jpg`),
-    path.join(GAME_IMAGES_DIR, `${slug}.png`),
-    path.join(GAME_IMAGES_DIR, `${slug}-og.png`),
-  ];
-
-  return candidates.find(exists) || null;
+  const imagePath = path.join(GAME_IMAGES_DIR, `${slug}-og.jpg`);
+  return exists(imagePath) ? imagePath : null;
 }
 
 function imageDimensions(filePath: string): { width: number; height: number } | null {
   const buffer = fs.readFileSync(filePath);
-  if (buffer.length >= 24 && buffer.toString('ascii', 1, 4) === 'PNG') {
-    return {
-      width: buffer.readUInt32BE(16),
-      height: buffer.readUInt32BE(20),
-    };
-  }
-
   // JPEG: walk the segments to the start-of-frame marker.
   if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
     return null;
@@ -88,29 +76,23 @@ function validateSocialImage(issues: ValidationIssue[], slug: string) {
     addIssue(
       issues,
       slug,
-      'Missing social image in public/images/games. Expected slug-og.jpg (pnpm generate:images).'
+      `Missing cover public/images/games/${slug}-og.jpg. Generate it with: npx tsx scripts/generate-content-og.ts --only=game/${slug} (PNG covers are not accepted).`
     );
     return;
   }
 
-  if (/\.(png|jpg)$/.test(imagePath)) {
-    const dimensions = imageDimensions(imagePath);
-    if (!dimensions) {
-      addIssue(
-        issues,
-        slug,
-        `Could not read image dimensions for ${path.relative(ROOT, imagePath)}`
-      );
-      return;
-    }
+  const dimensions = imageDimensions(imagePath);
+  if (!dimensions) {
+    addIssue(issues, slug, `Could not read image dimensions for ${path.relative(ROOT, imagePath)}`);
+    return;
+  }
 
-    if (dimensions.width !== 1200 || dimensions.height !== 630) {
-      addIssue(
-        issues,
-        slug,
-        `Social image should be 1200x630, got ${dimensions.width}x${dimensions.height} in ${path.relative(ROOT, imagePath)}`
-      );
-    }
+  if (dimensions.width !== 1200 || dimensions.height !== 630) {
+    addIssue(
+      issues,
+      slug,
+      `Social image should be 1200x630, got ${dimensions.width}x${dimensions.height} in ${path.relative(ROOT, imagePath)}`
+    );
   }
 }
 

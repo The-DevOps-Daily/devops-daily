@@ -1,13 +1,13 @@
 ---
-title: 'Increasing the Maximum Number of TCP/IP Connections in Linux'
-excerpt: 'Learn how to tune Linux kernel parameters to handle more TCP connections for high-traffic servers. Adjust file descriptors, TCP backlog, port ranges, and connection tracking limits to scale your applications.'
+title: 'Increasing the Maximum Number of TCP/IP Connections in Linux and Monitoring Network Usage'
+excerpt: 'Find the limit you actually hit, then raise it: file descriptors, the ephemeral port range, listen backlogs, TIME_WAIT and connection tracking. Then watch bandwidth per process, per connection and per interface with nethogs, iftop, nload and ss.'
 category:
   name: 'Linux'
   slug: 'linux'
 date: '2025-03-20'
 publishedAt: '2025-03-20T10:30:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '8 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -15,524 +15,249 @@ tags:
   - Linux
   - Networking
   - Performance
-  - Tuning
+  - sysctl
+  - Monitoring
   - System Administration
 ---
 
-Linux systems ship with conservative default limits for network connections, which work fine for typical workloads but become bottlenecks for high-traffic servers, load balancers, or applications handling thousands of concurrent connections. When you hit these limits, you'll see errors like "too many open files" or connections timing out even though your server has plenty of CPU and memory available.
+Linux defaults work for most servers, but a busy reverse proxy, a WebSocket server or a load test client can run into limits long before the CPU is busy. The symptoms are errors such as `Too many open files` or `Cannot assign requested address`, and connections that hang or time out. Each symptom points to a different limit, so look before you change settings.
 
-This guide explains how to identify and adjust the various Linux kernel parameters that limit TCP/IP connections, allowing your system to handle significantly more simultaneous connections.
+This post explains each limit that caps the number of connections, how to check it and how to raise it, and then the tools that show where the network traffic goes.
 
 ## TLDR
 
-Increase file descriptor limits (controls max open sockets), expand the local port range for outbound connections, raise TCP connection backlog queue sizes, and tune TCP TIME_WAIT settings. Key files to modify: `/etc/security/limits.conf` for file descriptors, `/etc/sysctl.conf` for kernel parameters. Use `sysctl -w` to apply changes immediately. For very high connection counts (100k+), also adjust conntrack table size.
+| Symptom                               | Limit                        | Check                                        | Raise                                            |
+| ------------------------------------- | ---------------------------- | -------------------------------------------- | ------------------------------------------------ |
+| `Too many open files`                 | File descriptors per process | `cat /proc/<pid>/limits`                     | `LimitNOFILE=` for systemd services              |
+| `Cannot assign requested address`     | Ephemeral ports (outgoing)   | `ss -Htan state time-wait \| wc -l`          | `net.ipv4.ip_local_port_range`, connection reuse |
+| New connections hang under load       | Listen backlog               | `nstat -az TcpExtListenOverflows`            | `net.core.somaxconn` and the app's backlog       |
+| `nf_conntrack: table full` in `dmesg` | Connection tracking          | `/proc/sys/net/netfilter/nf_conntrack_count` | `net.netfilter.nf_conntrack_max`                 |
+| Which process uses the bandwidth?     | n/a                          | `sudo nethogs`                               | n/a                                              |
 
 ## Prerequisites
 
-You need root access to modify system parameters. Basic understanding of how TCP connections work helps you grasp which limits affect your use case. Familiarity with editing system configuration files and restarting services is useful.
+- Root access to change kernel parameters and service limits.
+- A Linux kernel from the last few years. Some defaults changed in 5.4 and later; the text says which.
+- A basic idea of how a TCP connection is opened and closed. The [TCP vs UDP simulator](/games/tcp-vs-udp) shows the handshake.
 
-## Understanding the Limits
+## Which Limits Cap the Number of TCP Connections?
 
-Several different limits affect how many TCP connections your system can handle:
+Five limits matter, and each one affects a different side of the traffic:
 
-**File descriptors**: Each TCP connection uses a file descriptor. Default limits are often 1024 per process.
+- **File descriptors.** Every socket is a file descriptor. A process cannot hold more sockets than its `nofile` limit.
+- **Ephemeral ports.** Each outgoing connection to the same destination IP and port needs its own local port. Incoming connections do not use ephemeral ports, because [many sockets share one server port](/posts/can-two-sockets-share-tcp-port).
+- **Listen backlog.** The queue of connections that the kernel has accepted but the application has not yet picked up with `accept()`.
+- **Connection tracking.** When netfilter tracks connections (for NAT, Docker, or stateful firewall rules), its table has a size limit.
+- **Memory.** Each connection has buffers. With very many idle connections, socket memory becomes the limit.
 
-**Ephemeral ports**: Outbound connections need local ports. Default range provides about 28,000 ports. Incoming connections do not use them, because [many sockets share one server port](/posts/can-two-sockets-share-tcp-port).
+## How Do I Increase the File Descriptor Limit?
 
-**TCP backlog**: Limits queued incoming connections waiting to be accepted.
-
-**Connection tracking**: Firewall/netfilter tracks connections. Default limit is often too low for high-traffic servers.
-
-**System-wide limits**: Maximum open files across all processes.
-
-Let's address each one.
-
-## Increasing File Descriptor Limits
-
-File descriptors are the most common bottleneck.
-
-### Check Current Limits
+Check the limit of the process that fails, not of your shell. A service started by systemd does not get the limits of your login session:
 
 ```bash
-# Per-process soft limit
-ulimit -n
-
-# Per-process hard limit
-ulimit -Hn
-
-# System-wide limit
-cat /proc/sys/fs/file-max
+cat /proc/$(pgrep -o nginx)/limits | grep 'open files'
+ls /proc/$(pgrep -o nginx)/fd | wc -l       # descriptors it uses now
+ulimit -n                                    # soft limit of your shell
+cat /proc/sys/fs/file-nr                     # allocated, unused, system-wide maximum
 ```
 
-Default output might show:
-
-```
-1024        # Soft limit per process
-4096        # Hard limit per process
-185688      # System-wide maximum
-```
-
-### Increase Per-Process Limits
-
-Edit `/etc/security/limits.conf`:
+systemd starts services with a soft limit of 1024 and a hard limit of 524288 by default. Set the limit in the unit with a drop-in file:
 
 ```bash
-sudo nano /etc/security/limits.conf
+sudo systemctl edit nginx
 ```
 
-Add these lines:
-
-```
-*  soft  nofile  65536
-*  hard  nofile  65536
-root  soft  nofile  65536
-root  hard  nofile  65536
-```
-
-This sets the limit to 65,536 file descriptors for all users.
-
-For specific users or applications:
-
-```
-nginx  soft  nofile  100000
-nginx  hard  nofile  100000
-```
-
-**Note**: Changes take effect on new login sessions. Existing sessions keep their old limits.
-
-### Increase System-Wide Limit
-
-Edit `/etc/sysctl.conf`:
-
-```bash
-sudo nano /etc/sysctl.conf
-```
-
-Add:
-
-```
-fs.file-max = 2097152
-```
-
-Apply immediately:
-
-```bash
-sudo sysctl -p
-```
-
-Verify:
-
-```bash
-cat /proc/sys/fs/file-max
-```
-
-### For systemd Services
-
-If you're running a service via systemd (like Nginx or Node.js), set limits in the service file:
-
-```bash
-sudo nano /etc/systemd/system/myapp.service
-```
-
-Add under `[Service]`:
-
-```
+```ini
 [Service]
 LimitNOFILE=65536
 ```
 
-Reload systemd and restart the service:
+```bash
+sudo systemctl restart nginx
+```
+
+`/etc/security/limits.conf` applies only to sessions that go through PAM, such as SSH and console logins. It does not change systemd services:
+
+```text
+# /etc/security/limits.conf: for login sessions
+deploy  soft  nofile  65536
+deploy  hard  nofile  65536
+```
+
+The new limit applies to sessions that start after the change. A process can raise its soft limit up to its hard limit, and no limit can go above `fs.nr_open` (1048576 by default). The system-wide `fs.file-max` is very high by default on current 64-bit kernels, so you rarely need to change it. Some applications have their own setting on top: nginx needs `worker_rlimit_nofile` and `worker_connections` large enough for the connections you expect.
+
+## How Do I Get More Ports for Outgoing Connections?
+
+Check the range the kernel uses for local ports of outgoing connections:
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl restart myapp
+cat /proc/sys/net/ipv4/ip_local_port_range      # 32768   60999
 ```
 
-## Expanding the Local Port Range
+That is about 28,000 ports for each combination of source IP, destination IP and destination port. A proxy that opens many short connections to one backend can use them all, and `connect()` then fails with `Cannot assign requested address`.
 
-For making outbound connections (like a reverse proxy or API client), you're limited by the number of available local ports.
-
-### Check Current Range
+You can widen the range:
 
 ```bash
-cat /proc/sys/net/ipv4/ip_local_port_range
+# /etc/sysctl.d/90-connections.conf
+net.ipv4.ip_local_port_range = 15000 64999
 ```
-
-Default:
-
-```
-32768   60999
-```
-
-This gives about 28,000 ports for outbound connections.
-
-### Increase Port Range
-
-Edit `/etc/sysctl.conf`:
-
-```
-net.ipv4.ip_local_port_range = 1024 65535
-```
-
-This expands the range to about 64,000 ports.
-
-Apply:
 
 ```bash
-sudo sysctl -p
+sudo sysctl --system
 ```
 
-**Note**: Ports below 1024 are privileged. Starting at 1024 is safe. Don't go below 1024 unless you have a specific reason.
+Do not start the range at 1024. Services that listen on ports in the range, such as 3306, 5432 or 8080, can then fail to start when an outgoing connection holds the same number. If a service port must be inside the range, list it in `net.ipv4.ip_local_reserved_ports`.
 
-## Increasing TCP Connection Backlog
+More ports only delay the problem when the application opens a new connection for every request. Reuse connections first: HTTP keep-alive, connection pools for databases, `keepalive` in nginx `upstream` blocks. More backend IP addresses also multiply the available ports, because each destination IP has its own set.
 
-The backlog queue holds incoming connections waiting to be accepted by your application.
+### TIME_WAIT
 
-### TCP SYN Backlog
-
-Controls how many half-open connections the kernel queues:
+After a connection closes, the side that closed it first keeps the port in the `TIME_WAIT` state for 60 seconds. This protects the next connection from old packets. Count the sockets in that state:
 
 ```bash
-# Check current value
-cat /proc/sys/net/ipv4/tcp_max_syn_backlog
+ss -Htan state time-wait | wc -l
+ss -s          # summary, including timewait
 ```
 
-Default is often 1024 or 2048.
+The 60 seconds are fixed in the kernel. `net.ipv4.tcp_fin_timeout` does **not** change them: it controls how long a socket waits in the `FIN_WAIT_2` state. The setting that helps is:
 
-Increase it:
-
-```
-net.ipv4.tcp_max_syn_backlog = 8192
+```bash
+net.ipv4.tcp_tw_reuse = 1
 ```
 
-### Application Listen Backlog
+It lets new **outgoing** connections reuse a port in `TIME_WAIT` when the TCP timestamps make it safe. It has no effect on incoming connections, so it does no harm on a server. The default on current kernels is `2`, which allows reuse only for loopback traffic. The old `tcp_tw_recycle` setting broke clients behind NAT and was removed in Linux 4.12. Do not copy it from old guides.
 
-Your application also specifies a backlog when calling `listen()`. In most languages:
+## How Do I Increase the TCP Listen Backlog?
 
-**Node.js:**
-```javascript
-server.listen(3000, () => {
-  // Default backlog is 511
-});
+When a server cannot call `accept()` fast enough, finished handshakes wait in its accept queue. When the queue is full, the kernel drops new connections, and clients see slow connects or timeouts. Check for overflows:
 
-// Increase it
-server.listen(3000, null, 1024, () => {
-  console.log('Server listening with backlog of 1024');
-});
+```bash
+nstat -az TcpExtListenOverflows TcpExtListenDrops    # counters since boot
+ss -ltn 'sport = :443'                               # Recv-Q: queued now, Send-Q: queue size
 ```
 
-**Python:**
+The queue size is the smaller of the backlog that the application passes to `listen()` and `net.core.somaxconn`. Since Linux 5.4, `somaxconn` defaults to 4096, so on current kernels the application value usually decides:
+
+```nginx
+server {
+    listen 443 ssl backlog=4096;
+}
+```
+
 ```python
-import socket
-
-sock = socket.socket()
-sock.bind(('0.0.0.0', 8000))
-sock.listen(1024)  # Set backlog to 1024
+sock.listen(4096)        # Python: the argument is the backlog
 ```
 
-**Nginx:**
-```nginx
-# In nginx.conf
-events {
-    worker_connections 4096;
-}
-
-http {
-    server {
-        listen 80 backlog=4096;
-    }
-}
-```
-
-### Maximum Listen Backlog
-
-The kernel has a maximum listen backlog:
+Node.js uses a backlog of 511 unless you pass another value to `server.listen()`. Raise `somaxconn` only if you need a larger queue than 4096, or if the kernel is older than 5.4:
 
 ```bash
-# Check current value
-cat /proc/sys/net/core/somaxconn
+net.core.somaxconn = 8192
+net.ipv4.tcp_max_syn_backlog = 8192     # queue for half-open connections; the default depends on memory
 ```
 
-Default is often 128, which is very low.
+A full SYN queue is usually covered by SYN cookies (`net.ipv4.tcp_syncookies = 1`, the default). Overflows in a steady state mostly mean the application is too slow to accept, so more workers often help more than a bigger queue.
 
-Increase it:
+## How Do I Increase the Connection Tracking Limit?
 
-```
-net.core.somaxconn = 4096
-```
-
-## Handling TIME_WAIT Connections
-
-When a connection closes, it enters TIME_WAIT state for 60 seconds by default. This can exhaust your port pool on high-traffic servers.
-
-### Allow Port Reuse
-
-```
-net.ipv4.tcp_tw_reuse = 1
-```
-
-This allows reusing ports in TIME_WAIT for outbound connections.
-
-**Important**: Only enable this for clients making many outbound connections (like reverse proxies). Don't enable it on servers accepting inbound connections.
-
-### Reduce TIME_WAIT Duration (Not Recommended)
-
-You can reduce the TIME_WAIT timeout, but this risks connection problems:
-
-```
-# Not recommended - can cause issues
-net.ipv4.tcp_fin_timeout = 30
-```
-
-The default 60 seconds exists for good reasons (preventing old packets from interfering with new connections). Only reduce this if you understand the implications.
-
-## Increasing Connection Tracking Limits
-
-If you're using a firewall (iptables/netfilter), it tracks connections. This has limits too.
-
-### Check Current Conntrack Table Size
-
-```bash
-cat /proc/sys/net/netfilter/nf_conntrack_max
-```
-
-### Check Current Usage
+netfilter tracks connections when NAT or stateful rules are in use, which includes every Docker host. When the table is full, the kernel drops new connections and logs `nf_conntrack: table full, dropping packet`:
 
 ```bash
 cat /proc/sys/net/netfilter/nf_conntrack_count
+cat /proc/sys/net/netfilter/nf_conntrack_max
+sudo dmesg | grep -i conntrack
 ```
 
-If count approaches max, you'll see connection failures.
+Raise the limit:
 
-### Increase Conntrack Table
-
-```
+```bash
+# /etc/sysctl.d/90-connections.conf
 net.netfilter.nf_conntrack_max = 262144
 ```
 
-Also increase the hash table size:
+Each entry uses roughly 300 bytes of kernel memory, so 262,144 entries need about 75 MB. The `nf_conntrack` module must be loaded before `sysctl` can set the value; on a host with Docker or a stateful firewall it already is.
 
-```
-net.netfilter.nf_conntrack_buckets = 65536
-```
+## A Starting sysctl File for a Busy Server
 
-Apply:
+Put the settings in a file under `/etc/sysctl.d/`, apply them with `sudo sysctl --system`, and change only the values that match a symptom you measured:
 
 ```bash
-sudo sysctl -p
-```
-
-**Memory impact**: Conntrack uses memory. Each entry uses about 300 bytes, so 262,144 entries ≈ 75MB RAM.
-
-## TCP Tuning for High Connections
-
-Additional TCP parameters that help with many concurrent connections:
-
-```
-# Increase receive and send buffers
-net.core.rmem_max = 134217728
-net.core.wmem_max = 134217728
-net.ipv4.tcp_rmem = 4096 87380 134217728
-net.ipv4.tcp_wmem = 4096 65536 134217728
-
-# Increase network device backlog
-net.core.netdev_max_backlog = 5000
-
-# Disable TCP slow start after idle
-net.ipv4.tcp_slow_start_after_idle = 0
-
-# Enable TCP window scaling
-net.ipv4.tcp_window_scaling = 1
-
-# Increase maximum number of orphaned sockets
-net.ipv4.tcp_max_orphans = 65536
-```
-
-## Complete sysctl Configuration
-
-Here's a complete `/etc/sysctl.conf` for high-connection servers:
-
-```bash
-# File system limits
-fs.file-max = 2097152
-
-# Network core
-net.core.somaxconn = 4096
-net.core.netdev_max_backlog = 5000
-net.core.rmem_max = 134217728
-net.core.wmem_max = 134217728
-
-# TCP settings
+# /etc/sysctl.d/90-connections.conf
+net.ipv4.ip_local_port_range = 15000 64999
+net.ipv4.tcp_tw_reuse = 1
+net.core.somaxconn = 8192
 net.ipv4.tcp_max_syn_backlog = 8192
-net.ipv4.tcp_rmem = 4096 87380 134217728
-net.ipv4.tcp_wmem = 4096 65536 134217728
-net.ipv4.tcp_window_scaling = 1
-net.ipv4.tcp_slow_start_after_idle = 0
-
-# TCP port and connection handling
-net.ipv4.ip_local_port_range = 1024 65535
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_fin_timeout = 30
-net.ipv4.tcp_max_orphans = 65536
-
-# Connection tracking (if using iptables)
 net.netfilter.nf_conntrack_max = 262144
-net.netfilter.nf_conntrack_buckets = 65536
+net.core.netdev_max_backlog = 5000
 ```
 
-Apply all settings:
+Keep the TCP buffer sizes (`net.ipv4.tcp_rmem`, `tcp_wmem`) at their defaults unless you measured a throughput problem on links with high latency. Linux already tunes buffers per connection, and large values multiply by the number of connections. To check the result, load test from a separate machine with a tool such as `wrk` or `k6`, and watch the counters above during the test. The load test client needs higher limits too: it opens the connections, so it uses the ephemeral ports and file descriptors.
+
+## How Do I See Network Usage Like top or htop?
+
+`top` shows no network traffic, and `htop` can show only the total rate for the system in its Network I/O meter. To see where the traffic goes, use one of these tools, depending on the question:
+
+| Question                              | Tool                     | Install (Debian, Ubuntu)      |
+| ------------------------------------- | ------------------------ | ----------------------------- |
+| Which process uses the bandwidth?     | `sudo nethogs`           | `sudo apt install nethogs`    |
+| Which remote hosts use the bandwidth? | `sudo iftop -i eth0`     | `sudo apt install iftop`      |
+| How busy is each interface?           | `nload`, `bmon`          | `sudo apt install nload bmon` |
+| How much traffic per day or month?    | `vnstat -d`, `vnstat -m` | `sudo apt install vnstat`     |
+| What are the open connections doing?  | `ss -tin`                | included in iproute2          |
+
+On Fedora, install the same packages with `dnf`. On RHEL and its rebuilds, most of them are in EPEL. `nethogs` and `iftop` need root, because they capture packets.
+
+### Bandwidth per Process With nethogs
 
 ```bash
-sudo sysctl -p
+sudo nethogs eth0           # interactive, like top
+sudo nethogs -t eth0        # trace mode: plain text lines, for logs and scripts
 ```
 
-## Monitoring Your Limits
+The interactive view shows the PID, user, program, and the send and receive rate for each process. Press `m` to switch between KB/s and totals, and `q` to quit.
 
-Check if you're hitting limits:
-
-### File Descriptors
+### Bandwidth per Connection With iftop
 
 ```bash
-# System-wide file descriptor usage
-cat /proc/sys/fs/file-nr
+sudo iftop -i eth0 -n -P          # -n: no DNS lookups, -P: show ports
+sudo iftop -i eth0 -t -s 10       # text output: one 10-second report, then exit
+sudo iftop -i eth0 -f 'port 443'  # pcap filter: only HTTPS traffic
 ```
 
-Output:
+By default, each pair of lines is the traffic between your host and one remote host, which can include several connections. With `-P` (or `p` while it runs), iftop splits the traffic by port as well. `=>` is traffic you send and `<=` is traffic you receive, with averages over the last 2, 10 and 40 seconds. Press `n` to toggle DNS lookups.
 
-```
-5120    0    2097152
-│       │    │
-│       │    └─ Maximum file descriptors
-│       └────── Always 0 (historical)
-└────────────── Currently open file descriptors
-```
+### Interface Totals and History
 
-### Per-Process File Descriptors
+`nload eth0` draws incoming and outgoing traffic of one interface, and `bmon` shows all interfaces at once. For history, `vnstat` collects counters in the background with its daemon:
 
 ```bash
-# For a specific process
-ls /proc/<PID>/fd | wc -l
-
-# Or using lsof
-lsof -p <PID> | wc -l
+sudo systemctl enable --now vnstat
+vnstat -i eth0 -d       # traffic per day
+vnstat -l -i eth0       # live rate
 ```
 
-### Port Usage
+### Read the Counters in a Script
+
+The kernel keeps byte counters per interface in `/sys`. Two reads one second apart give the rate:
 
 ```bash
-# Count connections in TIME_WAIT
-netstat -an | grep TIME_WAIT | wc -l
-
-# Count all TCP connections
-netstat -an | grep tcp | wc -l
-
-# See port usage distribution
-ss -s
+iface=eth0
+rx1=$(< /sys/class/net/$iface/statistics/rx_bytes)
+tx1=$(< /sys/class/net/$iface/statistics/tx_bytes)
+sleep 1
+rx2=$(< /sys/class/net/$iface/statistics/rx_bytes)
+tx2=$(< /sys/class/net/$iface/statistics/tx_bytes)
+echo "rx $(( (rx2 - rx1) / 1024 )) KiB/s, tx $(( (tx2 - tx1) / 1024 )) KiB/s"
 ```
 
-### Connection Tracking
+`ip -s link show eth0` shows the same counters together with errors and drops, and `sar -n DEV 1` from the sysstat package prints the rate for every interface each second. Rising `errors` or `dropped` values point to a network or driver problem rather than an application problem.
 
-```bash
-# Check conntrack usage
-cat /proc/sys/net/netfilter/nf_conntrack_count
-cat /proc/sys/net/netfilter/nf_conntrack_max
-```
+`ss -tin` shows details for each connection: round-trip time (`rtt`), congestion window, bytes sent and received, and retransmissions. It answers "is this connection slow because of the network" without capturing packets.
 
-## Testing Your Changes
+## Related Resources
 
-Verify your server can handle the increased connections:
-
-### Using Apache Bench
-
-```bash
-# Test with 10,000 concurrent connections
-ab -n 100000 -c 10000 http://localhost/
-```
-
-### Using wrk
-
-```bash
-# More realistic HTTP benchmarking
-wrk -t4 -c10000 -d30s http://localhost/
-```
-
-Watch for errors about too many open files or connection failures.
-
-## Application-Specific Tuning
-
-Different applications have their own limits:
-
-### Nginx
-
-```nginx
-events {
-    worker_connections 10000;
-    use epoll;
-}
-
-worker_processes auto;
-worker_rlimit_nofile 100000;
-```
-
-### Apache
-
-```apache
-# In mpm_worker.conf or mpm_event.conf
-<IfModule mpm_worker_module>
-    ServerLimit           250
-    StartServers          10
-    MinSpareThreads       75
-    MaxSpareThreads       250
-    ThreadsPerChild       64
-    MaxRequestWorkers     16000
-    MaxConnectionsPerChild 0
-</IfModule>
-```
-
-### Node.js
-
-```javascript
-// Increase max listeners
-require('events').EventEmitter.defaultMaxListeners = 100;
-
-// Use clustering to utilize all CPU cores
-const cluster = require('cluster');
-const numCPUs = require('os').cpus().length;
-
-if (cluster.isMaster) {
-    for (let i = 0; i < numCPUs; i++) {
-        cluster.fork();
-    }
-} else {
-    // Worker processes
-    app.listen(3000);
-}
-```
-
-## Troubleshooting Common Issues
-
-### "Too many open files" Error
-
-**Cause**: File descriptor limit reached.
-
-**Solution**: Increase `ulimit -n` and `fs.file-max`.
-
-### "Cannot assign requested address"
-
-**Cause**: Out of ephemeral ports.
-
-**Solution**: Increase `ip_local_port_range` or enable `tcp_tw_reuse`.
-
-### Connections Hang or Timeout
-
-**Cause**: SYN backlog queue full.
-
-**Solution**: Increase `tcp_max_syn_backlog` and `somaxconn`.
-
-### "nf_conntrack: table full"
-
-**Cause**: Connection tracking table exhausted.
-
-**Solution**: Increase `nf_conntrack_max` or disable connection tracking if not needed.
-
-Increasing TCP/IP connection limits on Linux involves adjusting multiple parameters across different system layers. Start by increasing file descriptor limits and expanding the ephemeral port range. For very high connection counts, tune TCP backlog queues, connection tracking, and TCP-specific kernel parameters. Always test your changes under realistic load to make sure they're effective and monitor your system to detect when you approach the new limits.
+- [Linux performance tuning and troubleshooting exercise](/exercises/linux-performance-troubleshooting): CPU, memory, disk and network analysis step by step
+- [Introduction to Linux: Networking](/guides/introduction-to-linux/08-networking): `ip`, `ss`, DNS and `tcpdump`
+- [How to free up a TCP port](/posts/how-to-free-up-tcp-port): find the process on a port, find a free port, close a port
+- [Packet journey simulator](/games/packet-journey): follow one request through the network stack
+- [Fork bomb simulator](/games/fork-bomb-simulator): how `ulimit` and cgroups protect a system from runaway processes

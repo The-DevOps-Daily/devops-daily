@@ -2,6 +2,7 @@
 
 import { useSearchParams, usePathname } from 'next/navigation';
 import { EmbedBadge } from '@/components/embed';
+import { cn } from '@/lib/utils';
 import { Suspense, useEffect, useState } from 'react';
 import { SimGameProvider } from '@/components/games/sim/sim-game';
 import { EmbedProvider } from '@/lib/games/embed-context';
@@ -146,13 +147,14 @@ function EmbedContent({ slug, title, GameComponent, info }: EmbedClientProps) {
         </div>
       )}
 
-      {/* Game content. --sim-embed-pad is this padding, top plus bottom, so a
-          SimFrame stage still fits the frame. */}
+      {/* Game content. --sim-embed-top is what sits above the game: this
+          padding, plus the 37px title bar when it shows. A SimFrame fills the
+          rest of the frame's height with its stage or lab (--sim-fill-h). */}
       <div
         className={
           opsvilleRequested
-            ? 'p-2 [--sim-embed-pad:16px] md:p-3 md:[--sim-embed-pad:24px]'
-            : 'p-4 [--sim-embed-pad:32px]'
+            ? 'p-2 [--sim-embed-top:8px] md:p-3 md:[--sim-embed-top:12px]'
+            : cn('p-4', !hideTitle ? '[--sim-embed-top:53px]' : '[--sim-embed-top:16px]')
         }
       >
         <EmbedProvider

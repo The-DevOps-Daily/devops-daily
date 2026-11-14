@@ -1,7 +1,7 @@
 {
   "id": "slos-slis-error-budgets",
   "slug": "slos-slis-error-budgets",
-  "title": "SLOs, SLIs, and Error Budgets: A Practical Implementation Guide",
+  "title": "SLO, SLI and Error Budget Checklist",
   "description": "A step-by-step checklist for defining service level objectives, picking the right service level indicators, and using error budgets to make better decisions about reliability vs. feature velocity.",
   "category": "SRE",
   "difficulty": "intermediate",

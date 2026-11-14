@@ -167,7 +167,7 @@ To test whether a variable is set at all, use `[[ -v name ]]` (Bash 4.2+). It wo
 }
 ```
 
-More patterns are in [check if a variable is set in Bash](/posts/check-if-variable-set-bash).
+More patterns are in [check if a variable is set in Bash](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-variable-is-set-in-bash).
 
 ## Parameter Expansion for Strings
 
@@ -260,7 +260,7 @@ Replacement and case conversion:
 }
 ```
 
-`${var@Q}` quotes a value so it can be read back by Bash, which is useful for log messages that must show hidden characters. See [convert a string to lowercase](/posts/convert-string-to-lowercase-in-bash) and [check if a string contains a substring](/posts/check-string-contains-substring-bash) for more.
+`${var@Q}` quotes a value so it can be read back by Bash, which is useful for log messages that must show hidden characters. See [convert a string to lowercase](/posts/check-directory-exists-bash-script#h2-how-do-i-compare-strings-without-case-or-convert-them-to-lowercase) and [check if a string contains a substring](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-string-contains-a-substring-in-bash) for more.
 
 ### Join and Append Strings
 
@@ -518,7 +518,7 @@ Write `count=$(( count + 1 ))` instead. `(( ++count ))` happens to work when cou
 }
 ```
 
-`printf '%(...)T'` formats a time with `strftime` codes inside Bash, so you do not need to call `date` in a loop. See [get the current time in seconds since the epoch](/posts/get-current-time-seconds-since-epoch-bash) and [format a date as YYYY-MM-DD](/posts/get-current-date-time-and-custom-commands#h2-format-the-date-as-yyyy-mm-dd-in-a-script).
+`printf '%(...)T'` formats a time with `strftime` codes inside Bash, so you do not need to call `date` in a loop. See [get the current time in seconds since the epoch](/posts/get-current-date-time-and-custom-commands#h2-how-do-i-get-the-current-time-in-seconds-since-the-epoch-in-bash) and [format a date as YYYY-MM-DD](/posts/get-current-date-time-and-custom-commands#h2-format-the-date-as-yyyy-mm-dd-in-a-script).
 
 ## Indexed Arrays
 
@@ -781,5 +781,5 @@ Next: [Control Structures](/guides/introduction-to-bash/05-control-structures), 
 ## Keep Learning
 
 - [Set a variable to the output of a command](/guides/introduction-to-bash/09-bash-tools#h2-command-substitution)
-- [Iterate over a range of numbers](/posts/bash-iterate-number-range-variables)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics)
+- [Iterate over a range of numbers](/posts/bash-loop-through-file-content#h2-how-do-i-loop-over-a-range-of-numbers-stored-in-variables)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics)

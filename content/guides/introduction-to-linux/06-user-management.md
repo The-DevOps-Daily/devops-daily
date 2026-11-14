@@ -217,7 +217,7 @@ Groups give several users the same access, for example to a shared directory or 
 `usermod -G developers alice` without `-a` **replaces** all of Alice's supplementary groups with `developers`. Run it on your own account without `-a` and you can drop yourself out of the `sudo` group. Always use `-aG`.
 :::
 
-Group changes apply to **new** logins. A user who is already logged in must log out and back in (or start a new SSH session) before `id` shows the new group. `newgrp developers` starts a shell with the new group in the meantime. This is why `docker` can still say "permission denied" right after `usermod -aG docker` ([the fix](/posts/fix-docker-permission-denied-error)).
+Group changes apply to **new** logins. A user who is already logged in must log out and back in (or start a new SSH session) before `id` shows the new group. `newgrp developers` starts a shell with the new group in the meantime. This is why `docker` can still say "permission denied" right after `usermod -aG docker` ([the fix](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-fix-permission-denied-on-the-docker-socket)).
 
 Other group commands: `sudo groupmod -n new-name old-name` renames a group, `sudo groupdel developers` deletes it, and `sudo gpasswd -a alice developers` is another way to add a member.
 
@@ -401,7 +401,7 @@ Copy the public key to a server:
 ssh-copy-id -i ~/.ssh/id_ed25519.pub alice@203.0.113.10
 ```
 
-`ssh-copy-id` appends the key to `~/.ssh/authorized_keys` on the server and fixes the permissions. Without it, append the contents of the `.pub` file to that file yourself and make sure `~/.ssh` is `700` and `authorized_keys` is `600`, both owned by the user. Then log in with `ssh alice@203.0.113.10`. The [SSH basics interview questions](/interview-questions/junior/ssh-basics) go through the most common problems.
+`ssh-copy-id` appends the key to `~/.ssh/authorized_keys` on the server and fixes the permissions. Without it, append the contents of the `.pub` file to that file yourself and make sure `~/.ssh` is `700` and `authorized_keys` is `600`, both owned by the user. Then log in with `ssh alice@203.0.113.10`. The [SSH basics interview questions](/interview-questions/topic/linux#ssh-basics) go through the most common problems.
 
 ## Accounts for Services
 
@@ -484,7 +484,7 @@ Next: [Process Management](/guides/introduction-to-linux/07-process-management),
 
 ## Keep Learning
 
-- Interview questions: [SSH basics and key authentication](/interview-questions/junior/ssh-basics)
+- Interview questions: [SSH basics and key authentication](/interview-questions/topic/linux#ssh-basics)
 - [SSH Hardening Checklist](/checklists/ssh-hardening)
 - Exercise: [Securing your Linux server: essential first steps](/exercises/linux-server-security)
 - [OpenSSH 10.6: domain usernames and compression](/posts/openssh-10-6-domain-usernames-and-compression)

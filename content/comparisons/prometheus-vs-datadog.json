@@ -315,5 +315,23 @@
     "Observability",
     "Metrics",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Prometheus Query Builder (PromQL Playground)",
+      "href": "/games/promql-playground"
+    },
+    {
+      "label": "Complete Monitoring Stack Setup",
+      "href": "/exercises/prometheus-grafana-monitoring"
+    },
+    {
+      "label": "Datadog Alternatives in 2026: 12 Tools, Their Real Prices, and What 300 GB of Logs Costs on Each",
+      "href": "/posts/datadog-alternatives-2026-real-prices"
+    },
+    {
+      "label": "Monitoring & Observability Quiz",
+      "href": "/quizzes/monitoring-observability-quiz"
+    }
   ]
 }

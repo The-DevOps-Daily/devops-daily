@@ -10,6 +10,7 @@ import GenericQuiz from '@/components/games/generic-quiz';
 import dockerQuiz from '@/content/quizzes/docker-quiz.json';
 import type { QuizConfig } from '@/lib/quiz-types';
 import { SimGameProvider } from '@/components/games/sim/sim-game';
+import { LAB_TERMINAL_HEIGHT, SimLabLayout } from '@/components/games/sim/sim-lab';
 import { SimTerminal, resultLine, type SimTerminalLine } from '@/components/games/sim/sim-terminal';
 import { missionProgress, passedMissions, useMissions } from '@/components/games/sim/use-missions';
 import { EmbedProvider, useEmbed, type EmbedInfo } from '@/lib/games/embed-context';
@@ -364,7 +365,7 @@ describe('missions', () => {
 });
 
 describe('SimStage', () => {
-  it('caps the columns under the bar and any part of the site header in view', async () => {
+  it('caps the columns at the fill height: the screen under the bar and any site header in view', async () => {
     await render(
       createElement(
         SimFrame,
@@ -380,10 +381,60 @@ describe('SimStage', () => {
         })
       )
     );
+    const frame = container.querySelector<HTMLElement>('[data-sim-frame]');
+    const fill = frame?.style.getPropertyValue('--sim-fill-h') ?? '';
+    expect(fill).toContain('max(var(--site-header-h, 0px), var(--site-header-visible, 0px))');
+    expect(fill).toContain('var(--sim-embed-top, 12px)');
+    expect(fill).toContain('var(--sim-bar-h)');
+    expect(frame?.style.getPropertyValue('--sim-bar-h')).toMatch(/^\d+px$/);
     const grid = container.querySelector<HTMLElement>('.lg\\:grid');
-    expect(grid?.style.maxHeight).toContain(
-      'max(var(--site-header-h, 0px), var(--site-header-visible, 0px))'
+    expect(grid?.className).toContain('max-h-[var(--sim-fill-h)]');
+  });
+});
+
+describe('SimLabLayout', () => {
+  it('fills the fill height on lg, with the terminal taking the free height', async () => {
+    await render(
+      createElement(
+        SimFrame,
+        null,
+        createElement(SimLabLayout, {
+          terminal: createElement(SimTerminal, {
+            label: 'kubectl',
+            lines: [],
+            value: '',
+            onChange: () => {},
+            onSubmit: () => {},
+            heightClassName: LAB_TERMINAL_HEIGHT,
+          }),
+          aside: 'side',
+        })
+      )
     );
+    const lab = container.querySelector<HTMLElement>('[data-sim-frame] > .grid');
+    expect(lab?.className).toContain('lg:h-[var(--sim-fill-h)]');
+    // The row is the lab's height, so a long log scrolls instead of growing the lab.
+    expect(lab?.className).toContain('lg:grid-rows-[minmax(0,1fr)]');
+    expect(lab?.firstElementChild?.className).toContain('lg:flex-col');
+    // No fixed cap on lg: the terminal is as tall as the lab.
+    expect(LAB_TERMINAL_HEIGHT).toContain('lg:h-auto lg:flex-1');
+  });
+});
+
+describe('embed route', () => {
+  it('tells the frame what sits above the game', async () => {
+    pathname = '/games/demo/embed';
+    const Game = () => createElement(SimFrame, null, 'game');
+    window.history.replaceState(null, '', '/games/demo/embed?embed=opsville&theme=dark');
+    await render(createElement(EmbedClient, { slug: 'demo', title: 'Demo', GameComponent: Game }));
+    let pad = container.querySelector('[data-sim-frame]')?.closest('[class*="--sim-embed-top"]');
+    expect(pad?.className).toContain('md:[--sim-embed-top:12px]');
+
+    window.history.replaceState(null, '', '/games/demo/embed?theme=light');
+    await render(createElement(EmbedClient, { slug: 'demo', title: 'Demo', GameComponent: Game }));
+    pad = container.querySelector('[data-sim-frame]')?.closest('[class*="--sim-embed-top"]');
+    // 16px of padding and the 37px title bar.
+    expect(pad?.className).toContain('[--sim-embed-top:53px]');
   });
 });
 

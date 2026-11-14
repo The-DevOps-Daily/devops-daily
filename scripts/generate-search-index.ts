@@ -14,6 +14,7 @@ import { getAllQuizzes } from '../lib/quiz-loader.js';
 import { TOOLS, CATEGORY_LABEL } from '../lib/tools.js';
 import { interviewQuestions, getAllTopics } from '../content/interview-questions/index.js';
 import type { SearchItem } from '../lib/search-types.js';
+import { getInterviewQuestionHref } from '../lib/interview-utils.js';
 
 // Static pages
 const PAGES: SearchItem[] = [
@@ -401,7 +402,7 @@ async function generateSearchIndex() {
     type: 'interview-question',
     title: question.title,
     description: question.question,
-    url: `/interview-questions/${question.tier}/${question.slug}`,
+    url: getInterviewQuestionHref(question),
     category: question.category,
     tags: question.tags,
     icon: '💬',

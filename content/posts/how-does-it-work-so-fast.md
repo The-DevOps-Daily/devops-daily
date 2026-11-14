@@ -113,7 +113,7 @@ SELECT target_url FROM links WHERE id = 56800235584;
 
 Primary key lookups in any database are fast, but URL shorteners add two more layers:
 
-1. **In-memory cache**: Popular short URLs (which follow a power-law distribution - a small percentage of links get most of the clicks) are cached in Redis or Memcached. Cache hit rate is typically above 90%.
+1. **In-memory cache**: Popular short URLs (which follow a power-law distribution - a small percentage of links get most of the clicks) are cached in [Redis or Memcached](/comparisons/redis-vs-memcached). Cache hit rate is typically above 90%.
 
 2. **CDN redirect**: The most popular links are served as HTTP 301 redirects directly from CDN edge servers, never hitting the origin database at all.
 

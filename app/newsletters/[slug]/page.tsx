@@ -41,6 +41,8 @@ export async function generateMetadata({
     title: { absolute: newsletter.title },
     description,
     alternates: { canonical: `/newsletters/${slug}` },
+    // Issues mostly repeat links to our own posts, so only /newsletters is indexed.
+    robots: { index: false, follow: true },
     openGraph: {
       title: newsletter.title,
       description: `Weekly roundup - Week ${newsletter.week}, ${newsletter.year}`,

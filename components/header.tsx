@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { MobileMenu } from './header/mobile-menu';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuMounted, setMobileMenuMounted] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
   // On a simulator page the header scrolls away with the page instead of sticking,
@@ -49,6 +50,26 @@ export function Header() {
       cancelAnimationFrame(frame);
     };
   }, [onSimulator]);
+
+  // Render the hidden mobile menu once the page is idle, so a tap on the menu
+  // button only has to show it (INP on mobile).
+  useEffect(() => {
+    if (window.matchMedia('(min-width: 1024px)').matches) return;
+    if ('requestIdleCallback' in window) {
+      const handle = window.requestIdleCallback(() => setMobileMenuMounted(true), {
+        timeout: 4000,
+      });
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timer = setTimeout(() => setMobileMenuMounted(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const openMobileMenu = useCallback(() => {
+    setMobileMenuMounted(true);
+    setMobileMenuOpen(true);
+  }, []);
+  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
   // Close mobile menu on escape key
   useEffect(() => {
@@ -91,7 +112,7 @@ export function Header() {
           >
             <Search className="w-5 h-5" />
           </Link>
-          <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(true)} className="p-2">
+          <Button variant="ghost" size="sm" onClick={openMobileMenu} className="p-2">
             <span className="sr-only">Open main menu</span>
             <Menu className="w-5 h-5" aria-hidden="true" />
           </Button>
@@ -102,7 +123,7 @@ export function Header() {
       </nav>
 
       {/* Mobile Menu */}
-      <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+      {mobileMenuMounted && <MobileMenu isOpen={mobileMenuOpen} onClose={closeMobileMenu} />}
     </header>
   );
 }

@@ -314,5 +314,23 @@
     "Cloud",
     "VPS",
     "Hosting"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Heroku is Shutting Down: Top Alternatives for Your Apps in 2026",
+      "href": "/posts/heroku-alternatives-2026"
+    },
+    {
+      "label": "Creating and Connecting to Your First Linux Server",
+      "href": "/exercises/cloud-server-setup"
+    },
+    {
+      "label": "Deploy a DigitalOcean Droplet with Terraform",
+      "href": "/exercises/terraform-digitalocean-droplet"
+    },
+    {
+      "label": "DigitalOcean Agent Droplets: When the $50 Plan Pays Off",
+      "href": "/posts/digitalocean-agent-droplets-when-the-plan-pays-off"
+    }
   ]
 }

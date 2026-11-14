@@ -654,7 +654,7 @@ You have used every part of the Git workflow on one project: from `git init` to 
 
 - Put the checks into a pipeline with the [Introduction to CI/CD](/guides/introduction-to-cicd) guide.
 - Test yourself with the [Git Command Quiz](/quizzes/git-quiz), the [Git Fundamentals flashcards](/flashcards/git-fundamentals) and the [Git Concepts simulator](/games/git-concepts-simulator).
-- Practice for interviews: [Git staging and committing](/interview-questions/junior/git-basics), [rebase vs merge](/interview-questions/junior/git-rebase-vs-merge).
+- Practice for interviews: [Git staging and committing](/interview-questions/topic/git#git-basics), [rebase vs merge](/interview-questions/topic/git#git-rebase-vs-merge).
 - The free [Introduction to Git and GitHub eBook](https://github.com/bobbyiliev/introduction-to-git-and-github-ebook) covers the basics again from another angle.
 
 ## Keep Learning

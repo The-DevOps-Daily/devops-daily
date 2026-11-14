@@ -484,5 +484,5 @@ Next, [CI/CD Integration](/guides/security-gates/04-cicd-integration) puts the p
 
 - [SOC 2 Evidence From GitHub and Terraform, and the Part That Still Needs a Person](/posts/soc2-evidence-from-github-and-terraform)
 - [AWS Security Checklist](/checklists/aws-security)
-- [Interview question: compliance and governance in the cloud](/interview-questions/senior/compliance-governance)
+- [Interview question: compliance and governance in the cloud](/interview-questions/topic/security#compliance-governance)
 - [Terraform Infrastructure as Code Best Practices](/posts/terraform-best-practices)

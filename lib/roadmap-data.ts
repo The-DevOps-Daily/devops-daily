@@ -109,7 +109,7 @@ export const roadmapStages: RoadmapStage[] = [
         resources: [
           guide('introduction-to-linux'),
           post('linux-git-docker-learning-order'),
-          post('change-permissions-folder-subfolders-files-linux'),
+          post('find-files-with-wildcards-linux'),
           post('find-files-containing-specific-text-linux'),
           sim('linux-terminal'),
           lab('cloud-server-setup'),
@@ -130,7 +130,7 @@ export const roadmapStages: RoadmapStage[] = [
           guide('introduction-to-bash'),
           post('parse-command-line-arguments-bash'),
           post('bash-loop-through-file-content'),
-          post('redirect-all-output-to-file-bash'),
+          post('what-does-2-and-1-mean-linux-bash'),
           ext(
             'Introduction to Bash Scripting (free ebook)',
             'https://github.com/bobbyiliev/introduction-to-bash-scripting'
@@ -150,7 +150,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Scripts and CLIs', 'JSON and HTTP APIs', 'Error handling', 'Tests'],
         resources: [
           guide('introduction-to-python'),
-          post('what-is-the-quickest-way-to-http-get-in-python'),
           post('go-runs-the-cloud-native-control-plane'),
           ext('The Python Tutorial', 'https://docs.python.org/3/tutorial/'),
           ext('Go by Example', 'https://gobyexample.com/'),
@@ -167,7 +166,7 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['TCP/IP and ports', 'DNS', 'HTTP and TLS', 'SSH'],
         resources: [
           guide('networking-fundamentals'),
-          post('when-is-it-appropriate-to-use-udp-instead-of-tcp'),
+          post('udp-vs-tcp-performance-comparison'),
           post('ping-timeout-vs-destination-unreachable'),
           sim('dns-simulator'),
           sim('tcp-vs-udp'),
@@ -186,8 +185,8 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Commits and branches', 'Merges and conflicts', 'Pull requests', 'Rebase'],
         resources: [
           guide('introduction-to-git'),
-          post('how-do-i-resolve-merge-conflicts-in-a-git-repository'),
-          post('difference-between-git-pull-and-git-fetch'),
+          post('undo-git-merge-not-pushed'),
+          post('git-fetch-remote-branch'),
           post('delete-commit-from-branch'),
           sim('git-concepts-simulator'),
           sim('git-merge-conflict-simulator'),
@@ -291,7 +290,7 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Desired state', 'Drift', 'YAML', 'Repository layout'],
         resources: [
           post('infrastructure-as-code-fundamentals'),
-          post('terraform-refresh-explained'),
+          post('who-owns-the-terraform-state-file'),
           guide('introduction-to-packer'),
           sim('yaml-parsing-simulator'),
           checklist('terraform-repo-structure'),
@@ -363,9 +362,9 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Images and Dockerfiles', 'Volumes', 'Compose', 'Multi-stage builds'],
         resources: [
           guide('introduction-to-docker'),
-          post('docker-image-vs-container'),
-          post('dockerfile-copy-vs-add-commands'),
-          post('docker-mount-host-directory'),
+          post('how-docker-works-under-the-hood'),
+          post('difference-run-cmd-dockerfile'),
+          post('docker-data-loss-when-container-exits'),
           sim('docker-terminal-simulator'),
           sim('docker-under-the-hood-simulator'),
           lab('docker-server-deployment'),
@@ -389,8 +388,7 @@ export const roadmapStages: RoadmapStage[] = [
           'Network policies',
         ],
         resources: [
-          post('docker-compose-ports-vs-expose'),
-          post('communication-multiple-docker-compose'),
+          post('forward-host-port-to-docker-container'),
           post('connect-to-host-localhost-from-docker'),
           sim('kubernetes-networking-cni-simulator'),
           sim('load-balancer-simulator'),
@@ -408,8 +406,8 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Pods and Deployments', 'Services and Ingress', 'Scheduling', 'Autoscaling'],
         resources: [
           guide('introduction-to-kubernetes'),
-          post('difference-between-pod-and-deployment'),
-          post('kubernetes-deployments-vs-statefulsets'),
+          post('why-does-kubernetes-pod-get-recreated-when-deleted'),
+          post('ingress-vs-load-balancer-kubernetes'),
           post('kubernetes-concepts-junior-to-mid-level'),
           sim('kubernetes-terminal-simulator'),
           sim('k8s-scheduler'),
@@ -449,7 +447,6 @@ export const roadmapStages: RoadmapStage[] = [
           'No secrets in layers',
         ],
         resources: [
-          post('docker-security-best-practices'),
           post('docker-image-optimization-best-practices'),
           post('why-your-base-image-has-1684-cves'),
           sim('docker-escape'),
@@ -504,7 +501,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Workflows and jobs', 'Runners', 'Secrets', 'Caching'],
         resources: [
           guide('introduction-to-cicd'),
-          post('github-actions-fast'),
           post('github-actions-bill-keeps-growing'),
           lab('ci-cd-github-actions'),
           quiz('github-actions-quiz'),
@@ -642,7 +638,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['IAM', 'EC2 and S3', 'VPC networking', 'Lambda'],
         resources: [
           guide('introduction-to-aws'),
-          post('assumerole-service-ec2'),
           sim('aws-vpc-simulator'),
           lab('terraform-aws-vpc'),
           quiz('aws-quiz'),
@@ -679,7 +674,6 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Cost allocation tags', 'Right-sizing', 'Reserved and spot', 'Data transfer'],
         resources: [
           guide('finops-for-devops-engineers'),
-          post('what-is-finops-a-beginners-guide-to-cloud-cost-management'),
           post('how-to-set-up-aws-cost-explorer-and-budgets-for-teams'),
           quiz('cloud-cost-optimization-quiz'),
           cards('cloud-cost-allocation-tags'),
@@ -800,7 +794,6 @@ export const roadmapStages: RoadmapStage[] = [
         ],
         resources: [
           post('slos-slis-error-budgets-practical-guide'),
-          post('what-is-p99-latency'),
           post('on-call-rotation-escalation-policy-guide'),
           sim('latency-percentiles-simulator'),
           sim('incident-commander-simulator'),
@@ -909,7 +902,7 @@ export const roadmapStages: RoadmapStage[] = [
         subtopics: ['Least privilege', 'Cloud IAM', 'Kubernetes RBAC', 'OAuth and OIDC'],
         resources: [
           guide('security-principles'),
-          post('minimum-aws-permissions-for-terraform'),
+          post('terraform-fargate-task-definition-execution-role'),
           sim('k8s-rbac-simulator'),
           sim('oauth-oidc-flow-simulator'),
           lab('linux-server-security'),

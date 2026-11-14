@@ -494,7 +494,7 @@ Next: [Functions](/guides/introduction-to-bash/06-functions), where scope, retur
 
 ## Keep Learning
 
-- [Check if a string contains a substring](/posts/check-string-contains-substring-bash)
-- [Loop over a range of numbers stored in variables](/posts/bash-iterate-number-range-variables)
+- [Check if a string contains a substring](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-string-contains-a-substring-in-bash)
+- [Loop over a range of numbers stored in variables](/posts/bash-loop-through-file-content#h2-how-do-i-loop-over-a-range-of-numbers-stored-in-variables)
 - [Read a file line by line](/posts/bash-loop-through-file-content)
-- Interview questions: [Shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)
+- Interview questions: [Shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals)

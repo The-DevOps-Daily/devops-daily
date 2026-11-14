@@ -222,5 +222,23 @@
     "toolBScore": 4.4,
     "recommendation": "Choose Keycloak for a self-hosted identity system that works out of the box, especially with enterprise directories, non-engineer administrators, or a small team. Choose Ory when the sign-in experience is part of your product, when you want one piece such as Hydra rather than the whole thing, or when your authorization is relationship shaped. If your access decisions depend on request context, keep either for authentication and put a dedicated policy engine next to your application."
   },
-  "relatedTags": ["Identity", "Authentication", "OAuth", "SSO", "Security", "Self-Hosted"]
+  "relatedTags": ["Identity", "Authentication", "OAuth", "SSO", "Security", "Self-Hosted"],
+  "relatedLinks": [
+    {
+      "label": "The Ory Ecosystem Explained: Identity, OAuth2, and SSO for Kubernetes",
+      "href": "/posts/ory-ecosystem-identity-auth-kubernetes"
+    },
+    {
+      "label": "Adding SAML and SCIM Before It Costs You a Deal",
+      "href": "/posts/saml-scim-before-it-costs-you-a-deal"
+    },
+    {
+      "label": "OAuth/OIDC Flow Simulator",
+      "href": "/games/oauth-oidc-flow-simulator"
+    },
+    {
+      "label": "A07:2025 Authentication Failures",
+      "href": "/guides/owasp-top-10/07-authentication-failures"
+    }
+  ]
 }

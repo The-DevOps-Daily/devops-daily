@@ -56,7 +56,7 @@ The first line is the **shebang**. It tells the kernel which interpreter runs th
 A script needs the execute bit (`chmod +x`) to run as `./hello.sh`. You can also run any script with `bash hello.sh`, which ignores the execute bit and the shebang.
 
 :::warning
-`sh` is not Bash. On Debian and Ubuntu, `/bin/sh` is **dash**, a small POSIX shell without arrays, `[[ ]]` or `{1..5}`. Running a Bash script with `sh script.sh` fails in confusing ways. Use a `#!/usr/bin/env bash` shebang and run the script directly. See [the difference between sh and Bash](/posts/difference-between-sh-and-bash).
+`sh` is not Bash. On Debian and Ubuntu, `/bin/sh` is **dash**, a small POSIX shell without arrays, `[[ ]]` or `{1..5}`. Running a Bash script with `sh script.sh` fails in confusing ways. Use a `#!/usr/bin/env bash` shebang and run the script directly. See [the difference between sh and Bash](/posts/what-does-set-e-mean-in-bash-script#h2-what-is-the-difference-between-sh-and-bash).
 :::
 
 ## Variables and Quoting
@@ -871,6 +871,6 @@ Next: [Linux System Administration Basics](/guides/introduction-to-linux/10-syst
 ## Keep Learning
 
 - [Introduction to Bash guide](/guides/introduction-to-bash), which goes deeper into each topic
-- [Check if a variable is set in Bash](/posts/check-if-variable-set-bash)
-- [Loop through an array of strings in Bash](/posts/loop-through-array-strings-bash)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/junior/shell-scripting-fundamentals)
+- [Check if a variable is set in Bash](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-variable-is-set-in-bash)
+- [Loop through an array of strings in Bash](/posts/bash-loop-through-file-content#h2-how-do-i-loop-through-an-array-of-strings-in-bash)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics) and [shell scripting fundamentals](/interview-questions/topic/linux#shell-scripting-fundamentals)

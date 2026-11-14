@@ -211,7 +211,7 @@ LAST SEEN   TYPE      REASON      OBJECT        MESSAGE
 2s          Warning   Unhealthy   Pod/podinfo   Readiness probe failed: Get "http://10.244.2.2:9898/readyz": dial tcp 10.244.2.2:9898: connect: connection refused
 ```
 
-A failed readiness probe during startup is normal; the pod becomes `Ready` with the next check. A readiness probe that keeps failing means the app never gets traffic, and a liveness probe that keeps failing means it restarts in a loop ([Part 9](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes)). See also [how to get events for a single pod](/posts/kubectl-get-events-only-for-pod).
+A failed readiness probe during startup is normal; the pod becomes `Ready` with the next check. A readiness probe that keeps failing means the app never gets traffic, and a liveness probe that keeps failing means it restarts in a loop ([Part 9](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes)). See also [how to get events for a single pod](/posts/get-logs-from-all-pods-replication-controller#h2-how-do-i-get-events-only-for-a-pod).
 
 Containers should log to standard output. The kubelet stores those logs on the node, and `kubectl logs` reads them. podinfo logs JSON:
 
@@ -467,9 +467,9 @@ pod "client" deleted from demo namespace
 
 ## Keep Learning
 
-- [Kubernetes pod lifecycle interview questions](/interview-questions/mid/kubernetes-pod-lifecycle)
-- [How to list all containers in a pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
-- [How to keep a container running on Kubernetes](/posts/how-can-i-keep-a-container-running-on-kubernetes)
-- [Difference between a pod and a Deployment](/posts/difference-between-pod-and-deployment)
+- [Kubernetes pod lifecycle interview questions](/interview-questions/topic/kubernetes#kubernetes-pod-lifecycle)
+- [How to list all containers in a pod](/posts/how-to-restart-container-within-pod#h2-how-do-i-list-all-containers-in-a-kubernetes-pod)
+- [How to keep a container running on Kubernetes](/posts/how-to-restart-container-within-pod#h2-how-can-i-keep-a-container-running-on-kubernetes)
+- [Difference between a pod and a Deployment](/posts/why-does-kubernetes-pod-get-recreated-when-deleted#h2-what-is-the-difference-between-a-pod-and-a-deployment)
 
 Next, in [Part 4](/guides/introduction-to-kubernetes/04-deployments-and-replicasets), a Deployment runs three copies of podinfo and replaces them safely during updates.

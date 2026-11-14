@@ -338,6 +338,6 @@ In [Part 2](/guides/introduction-to-packer/02-installation-and-setup), you insta
 ## Keep Learning
 
 - [Infrastructure as Code: A Beginner's Guide to IaC Fundamentals](/posts/infrastructure-as-code-fundamentals)
-- [Interview question: immutable infrastructure](/interview-questions/mid/immutable-infrastructure)
-- [Interview question: infrastructure as code patterns](/interview-questions/mid/infrastructure-as-code-patterns)
+- [Interview question: immutable infrastructure](/interview-questions/topic/infrastructure#immutable-infrastructure)
+- [Interview question: infrastructure as code patterns](/interview-questions/topic/infrastructure#infrastructure-as-code-patterns)
 - [Introduction to Docker](/guides/introduction-to-docker), if you build containers with Dockerfiles

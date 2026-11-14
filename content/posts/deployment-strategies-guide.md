@@ -41,7 +41,7 @@ The way you deploy your application matters just as much as what you deploy. Dif
 Try it in the simulator: the [Deployment Strategies Simulator](/games/deployment-strategies) routes traffic with each strategy and lets you roll back a bad release.
 :::
 
-For a head-to-head on the two most common choices, see [blue-green vs canary deployments](/comparisons/blue-green-vs-canary-deployments). To decouple releasing a feature from deploying it, see [progressive delivery with feature flags](/posts/how-to-implement-progressive-delivery-with-feature-flags), and to practice explaining a rollback plan in an interview, try [this rollback strategy question](/interview-questions/senior/progressive-delivery-rollback-strategy).
+For a head-to-head on the two most common choices, see [blue-green vs canary deployments](/comparisons/blue-green-vs-canary-deployments). To decouple releasing a feature from deploying it, see [progressive delivery with feature flags](/posts/how-to-implement-progressive-delivery-with-feature-flags), and to practice explaining a rollback plan in an interview, try [this rollback strategy question](/interview-questions/topic/cicd#progressive-delivery-rollback-strategy).
 
 ## Why Deployment Strategy Matters
 
@@ -273,11 +273,11 @@ Progressive delivery encompasses all these techniques, treating deployment as a 
 
 Your deployment strategy choice is constrained by available infrastructure. Cloud platforms like AWS, Azure, and Google Cloud provide managed services that implement various strategies. AWS CodeDeploy, Azure DevOps, and Google Cloud Deploy offer blue-green and canary deployments with varying levels of automation.
 
-Container orchestration platforms like Kubernetes provide rolling deployment primitives out of the box. Blue-green requires additional configuration but is straightforward. Canary deployments benefit from service mesh integration (Istio, Linkerd) for traffic management.
+Container orchestration platforms like Kubernetes provide rolling deployment primitives out of the box. Blue-green requires additional configuration but is straightforward. Canary deployments benefit from service mesh integration (Istio, Linkerd) for traffic management. The [Istio vs Linkerd comparison](/comparisons/istio-vs-linkerd) helps you pick a mesh.
 
 Serverless platforms like AWS Lambda, Azure Functions, and Google Cloud Functions have their own deployment models. Lambda aliases and versioning enable blue-green and canary patterns natively.
 
-The right tooling reduces deployment strategy complexity significantly. Platforms like Spinnaker, Argo CD, and Flagger provide deployment automation specifically designed for sophisticated strategies.
+The right tooling reduces deployment strategy complexity significantly. Platforms like Spinnaker, Argo CD, and Flagger provide deployment automation specifically designed for sophisticated strategies. For how the first two compare, see [Spinnaker vs Argo CD](/comparisons/spinnaker-vs-argocd).
 
 ## Monitoring and Observability Essentials
 

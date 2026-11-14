@@ -8,6 +8,7 @@ import { tagToSlug } from '@/lib/tag-utils';
 import {
   getDifficultyColor,
   getInterviewProgress,
+  getInterviewQuestionHref,
   type InterviewQuestionSummary,
   type ExperienceTier,
   type Difficulty,
@@ -219,7 +220,7 @@ export function QuestionBrowser({
             return (
               <li key={q.id}>
                 <Link
-                  href={`/interview-questions/${q.tier}/${q.slug}`}
+                  href={getInterviewQuestionHref(q)}
                   className="group flex items-start gap-3 bg-card p-4 transition-colors hover:bg-muted/40"
                 >
                   <span className="mt-0.5 flex-shrink-0" aria-hidden="true">

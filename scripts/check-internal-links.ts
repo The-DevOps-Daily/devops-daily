@@ -15,6 +15,7 @@
 
 import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join, basename } from 'path';
+import { tagToSlug } from '../lib/tag-utils';
 
 const CONTENT_DIR = join(process.cwd(), 'content');
 
@@ -75,7 +76,23 @@ function extractInternalLinks(content: string): InternalLink[] {
   return links;
 }
 
+// Interview questions live on their topic page: /interview-questions/topic/<topic>#<slug>
+function interviewTopicExists(linkPath: string): boolean {
+  const [segment, topic] = linkPath.slice('/interview-questions/'.length).split('/');
+  if (['junior', 'mid', 'senior', 'practice'].includes(segment)) return !topic;
+  if (segment !== 'topic' || !topic) return false;
+  const dir = join(CONTENT_DIR, 'interview-questions');
+  return readdirSync(dir)
+    .filter((file) => file.endsWith('.json'))
+    .some(
+      (file) =>
+        tagToSlug(JSON.parse(readFileSync(join(dir, file), 'utf-8')).category ?? '') === topic
+    );
+}
+
 function linkTargetExists(linkPath: string): boolean {
+  if (linkPath.startsWith('/interview-questions/')) return interviewTopicExists(linkPath);
+
   // Parse the link path
   for (const [prefix, target] of Object.entries(LINK_TARGETS)) {
     if (!linkPath.startsWith(prefix)) continue;

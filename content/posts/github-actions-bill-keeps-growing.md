@@ -6,7 +6,7 @@ category:
   slug: 'ci-cd'
 date: '2026-10-26'
 publishedAt: '2026-10-26T09:00:00Z'
-updatedAt: '2026-11-06T09:00:00Z'
+updatedAt: '2026-11-13T09:00:00Z'
 readingTime: '20 min read'
 author:
   name: 'DevOps Daily Team'
@@ -417,7 +417,7 @@ The decision is per job, and `runs-on` makes it a one-line change.
 
 - **iOS and other macOS jobs: move them first.** This is where the test was both faster and cheaper: 2.7 times faster and about a fifth of the cost per job, on a newer and larger Mac than GitHub's standard runner. Start with the M4 Large. On the Enterprise plan, the M4 Pro XLarge was faster still.
 - **Heavy Linux jobs, such as Android Gradle builds: move them if waiting costs you more than the minutes.** On a 16 vCPU machine they ran about twice as fast at about twice the cost per job. Measure an 8 vCPU machine too.
-- **Light Linux jobs: keep them on GitHub.** Build Hub's smallest Linux machine has 4 vCPU at $0.0125 a minute. A lint or labeler job is cheaper on `ubuntu-slim` at $0.002 or a 2-core runner at $0.006.
+- **Light Linux jobs: either side works.** Build Hub's smallest Linux machine is now the 2Small (2 vCPU, 8 GB) at $0.00625 a minute, close to GitHub's 2-core runner at $0.006. For the smallest jobs, such as a labeler, `ubuntu-slim` at $0.002 is still the cheapest.
 - **Before any of that, run the audit.** Rounding, re-runs and storage are free to fix, and they shrink whatever runner bill you end up with.
 
 For the full feature-by-feature view, including concurrency limits, images, caching and what happens when the budget runs out, see the [Bitrise Build Hub vs GitHub-hosted runners comparison](/comparisons/bitrise-build-hub-vs-github-hosted-runners).

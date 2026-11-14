@@ -508,7 +508,7 @@ In [Part 9](/guides/introduction-to-terraform/09-remote-backends-and-collaborati
 
 ## Keep Learning
 
-- [Managing Different Environments in Terraform](/posts/different-environments-in-terraform)
-- [How to Organize Terraform Modules for Multiple Environments](/posts/organize-terraform-modules-multiple-environments)
+- [Managing Different Environments in Terraform](/posts/organizing-terraform-repository-with-subfolders#h2-how-do-i-manage-dev-staging-and-production-in-terraform)
+- [How to Organize Terraform Modules for Multiple Environments](/posts/organizing-terraform-repository-with-subfolders#h2-how-do-i-organize-terraform-modules-for-multiple-environments)
 - [How to Run Terraform Init From a Different Directory](/posts/terraform-run-init-from-different-folder)
 - [Terraform Repository Structure Checklist](/checklists/terraform-repo-structure)

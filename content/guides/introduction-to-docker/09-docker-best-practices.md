@@ -141,7 +141,7 @@ hello-api's image already switches to UID 10001 with `USER 10001`. Check what an
 docker image inspect --format '{{.Config.User}}' hello-api:1.0
 ```
 
-An empty value means root. Many official images start as root on purpose, because their entrypoint must prepare files and then drops privileges (the postgres image switches to the `postgres` user). For your own images, there is rarely a reason to run as root. Images rarely include `sudo`; for a one-off admin task in a non-root container, run the command with `-u root` instead ([why sudo is missing in containers](/posts/how-to-use-sudo-in-docker-container)). If a process must bind a port below 1024, let it listen on a high port inside the container and publish it as 80 or 443, or let the reverse proxy do it.
+An empty value means root. Many official images start as root on purpose, because their entrypoint must prepare files and then drops privileges (the postgres image switches to the `postgres` user). For your own images, there is rarely a reason to run as root. Images rarely include `sudo`; for a one-off admin task in a non-root container, run the command with `-u root` instead ([why sudo is missing in containers](/posts/how-to-access-docker-container-shell#h2-how-do-i-run-commands-as-root-or-with-sudo-in-a-container)). If a process must bind a port below 1024, let it listen on a high port inside the container and publish it as 80 or 443, or let the reverse proxy do it.
 
 ## Drop Privileges at Run Time
 
@@ -377,7 +377,7 @@ Next, take hello-api to a server in [Docker in Production](/guides/introduction-
 
 ## Keep Learning
 
-- [Docker Security Best Practices](/posts/docker-security-best-practices)
+- [Docker Security Best Practices](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers)
 - [Docker Image Optimization: Best Practices for Smaller, Faster Images](/posts/docker-image-optimization-best-practices)
 - [Docker Desktop Switched New Containers to the local Log Driver](/posts/docker-desktop-local-log-driver)
 - Checklist: [Docker Security Hardening Checklist](/checklists/docker-security)

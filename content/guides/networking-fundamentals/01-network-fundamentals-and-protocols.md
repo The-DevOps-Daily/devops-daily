@@ -382,7 +382,7 @@ The pattern is the point: each handshake costs one round trip. The DNS answer ar
 }
 ```
 
-That is why connection reuse matters so much: HTTP keep-alive, connection pools for databases, and HTTP/2, which sends many requests over one connection. It is also why **QUIC**, the transport under **HTTP/3**, runs over UDP: it combines the transport and TLS handshakes into one round trip, and lets a resumed connection send data in the first packet. UDP itself is not magic; QUIC rebuilds reliability and congestion control on top of it. The posts [UDP vs TCP: how much faster is UDP really?](/posts/udp-vs-tcp-performance-comparison) and [when to use UDP instead of TCP](/posts/when-is-it-appropriate-to-use-udp-instead-of-tcp) measure this further.
+That is why connection reuse matters so much: HTTP keep-alive, connection pools for databases, and HTTP/2, which sends many requests over one connection. It is also why **QUIC**, the transport under **HTTP/3**, runs over UDP: it combines the transport and TLS handshakes into one round trip, and lets a resumed connection send data in the first packet. UDP itself is not magic; QUIC rebuilds reliability and congestion control on top of it. [UDP vs TCP: how much faster is UDP really?](/posts/udp-vs-tcp-performance-comparison) measures this further and shows [when to use UDP instead of TCP](/posts/udp-vs-tcp-performance-comparison#h2-when-is-it-appropriate-to-use-udp-instead-of-tcp).
 
 ## HTTP and TLS
 
@@ -476,6 +476,6 @@ Next, [Part 2](/guides/networking-fundamentals/02-ip-addressing-and-subnetting) 
 ## Keep Learning
 
 - Simulators: [a packet's journey](/games/packet-journey), [TCP vs UDP](/games/tcp-vs-udp), [the TLS handshake](/games/ssl-tls-handshake)
-- Interview questions: [TCP/IP fundamentals](/interview-questions/junior/tcp-ip-basics), [HTTP methods and status codes](/interview-questions/junior/http-basics)
+- Interview questions: [TCP/IP fundamentals](/interview-questions/topic/networking#tcp-ip-basics), [HTTP methods and status codes](/interview-questions/topic/networking#http-basics)
 - [Network & Security Fundamentals quiz](/quizzes/network-security-quiz)
 - [How to find which process listens on a port in Windows](/posts/find-process-listening-on-port-windows) and [on macOS](/posts/who-is-listening-on-a-given-tcp-port-on-mac-os-x)

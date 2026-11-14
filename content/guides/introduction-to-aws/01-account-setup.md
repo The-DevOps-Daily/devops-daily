@@ -195,6 +195,6 @@ Next: [IAM: Users, Roles and Policies](/guides/introduction-to-aws/02-iam-securi
 
 ## Keep Learning
 
-- [Cloud Regions and Availability Zones interview questions](/interview-questions/junior/cloud-regions-availability-zones)
+- [Cloud Regions and Availability Zones interview questions](/interview-questions/topic/cloud#cloud-regions-availability-zones)
 - [How to Set Up Cloud Cost Allocation Tags Across AWS, GCP, and Azure](/posts/cloud-cost-allocation-tags-aws-gcp-azure)
 - [AWS Essentials flashcards](/flashcards/aws-essentials)

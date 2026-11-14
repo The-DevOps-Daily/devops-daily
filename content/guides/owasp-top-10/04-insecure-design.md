@@ -281,4 +281,4 @@ Next, [A07:2025 Authentication Failures](/guides/owasp-top-10/07-authentication-
 - [Threat Modeling guide](/guides/threat-modeling)
 - [Practical exercises in the Threat Modeling guide](/guides/threat-modeling/04-practical-exercises)
 - [Designing Rate Limiting for APIs](/posts/designing-rate-limiting-for-apis)
-- [Interview questions: Security Architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview questions: Security Architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

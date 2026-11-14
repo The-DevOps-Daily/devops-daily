@@ -301,5 +301,19 @@
     "TypeScript",
     "Cloud",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Infrastructure as Code: A Beginner's Guide to IaC Fundamentals",
+      "href": "/posts/infrastructure-as-code-fundamentals"
+    },
+    {
+      "label": "Introduction to AWS",
+      "href": "/guides/introduction-to-aws"
+    },
+    {
+      "label": "What Is Terraform? Core Concepts and Workflow",
+      "href": "/guides/introduction-to-terraform/01-terraform-fundamentals"
+    }
   ]
 }

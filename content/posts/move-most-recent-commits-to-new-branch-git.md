@@ -6,8 +6,8 @@ category:
   slug: 'git'
 date: '2024-12-06'
 publishedAt: '2024-12-06T10:00:00Z'
-updatedAt: '2026-11-05T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -15,7 +15,7 @@ tags:
   - Git
   - Version Control
   - Branch Management
-  - Development
+  - Cherry-Pick
   - Workflow
 ---
 
@@ -211,16 +211,110 @@ For non-consecutive commits, use cherry-pick:
 
 ```bash
 # Create new branch
-git checkout -b selected-commits main~5
+git switch -c selected-commits main~5
 
 # Cherry-pick specific commits
-git cherry-pick a1b2c3d
-git cherry-pick e4f5g6h
+git cherry-pick 3a7b9f2
+git cherry-pick 8c4d1e9
 
 # Remove original commits from main if needed
 git checkout main
 git rebase -i HEAD~5  # Mark unwanted commits as 'drop'
 ```
+
+## How Do I Cherry-Pick a Commit in Git?
+
+Switch to the branch that needs the change, and name the commit:
+
+```bash
+git switch release/1.4
+git cherry-pick -x 3a7b9f2
+```
+
+`git cherry-pick` applies the changes of one commit as a new commit on the current branch. The new commit has the same changes, message and author, but a new hash, a new committer date, and you as the committer. `-x` adds the line `(cherry picked from commit 3a7b9f2...)` to the message, so anyone can trace the copy back to the original. Use it whenever you copy a commit to a branch that others use.
+
+Before you pick, read the commit: `git show 3a7b9f2`. If it depends on earlier commits that the target branch does not have, pick those first. Otherwise the pick can stop with a conflict, or apply cleanly and then fail to build. Run the tests after each pick.
+
+### Pick several commits
+
+```bash
+git cherry-pick 3a7b9f2 8c4d1e9      # two commits, in this order
+```
+
+**A range leaves out its first commit.** `A..B` means "the commits reachable from B but not from A", so A itself is not picked. Add `^` to include it. With four commits on `feature`, Add A to Add D:
+
+```bash
+git cherry-pick bd36727..52dac3e    # picks Add B, Add C, Add D
+git cherry-pick bd36727^..52dac3e   # picks Add A, Add B, Add C, Add D
+```
+
+Git applies a range from the oldest commit to the newest. If one of them turns out empty because the change is already on your branch, Git stops and asks; `git cherry-pick --skip` drops that commit and goes on with the rest.
+
+**Take one file, not the whole commit.** Cherry-pick always applies a whole commit. To copy one file as it is on another branch or commit, restore it and commit it yourself. This replaces your uncommitted changes to that file:
+
+```bash
+git restore --source=feature --staged --worktree -- src/auth.js
+git commit -m "Take the auth fix from feature"
+```
+
+**See what is already picked.** `git cherry -v main feature` lists the commits on `feature`. A `-` marks a commit whose change is already on `main`, for example through a cherry-pick, and a `+` marks one that is not:
+
+```text
++ 1ffa6895d63c7a0ef73e634482241b9413bddcc5 Add A
++ 383a0b6f7475f360e505a30f33a27a38bdb375ab Add B
+- 94637059a61f5bc812e0c72af5935063791747b7 Add C
++ 4941b0dfe8f2ff78daaec76115da81c00cd6378d Add D
+```
+
+**Undo a cherry-pick.** Each picked commit is a normal commit. If you have not pushed, remove the last N with `git reset --hard HEAD~N`, which also discards uncommitted changes (`git reflog` shows where the branch was before). If you have pushed, `git revert` the picked commits instead, so nobody else's history changes.
+
+### Resolve a conflict, or stop
+
+When a pick conflicts, Git stops and lists the files:
+
+```text
+error: could not apply 3a7b9f2... Fix the token check
+hint: After resolving the conflicts, mark them with
+hint: "git add/rm <pathspec>", then run
+hint: "git cherry-pick --continue".
+```
+
+Fix the files, `git add` them, and run `git cherry-pick --continue`. `git cherry-pick --skip` drops the current commit and goes on with the rest. `git cherry-pick --abort` returns the branch to where it was before the pick. The [merge conflicts section](/posts/undo-git-merge-not-pushed#h2-how-do-i-resolve-merge-conflicts-in-git) shows how to read the conflict markers.
+
+### Other useful options
+
+- **`-n` (`--no-commit`):** apply the changes but do not commit, for example to join several picks into one commit.
+- **`-e` (`--edit`):** edit the message before the commit.
+- **`-m 1`:** pick a merge commit. Git needs to know which parent is the main line. Picking a merge copies all the changes of the merged branch as one commit, which is rarely what you want. Pick the commits of the branch instead.
+
+### Backport a fix to a release branch
+
+Make the fix on the main branch first, through the normal review. Then copy it to each release branch that still gets fixes:
+
+```bash
+git switch main
+git log --oneline -5                 # the fix is 3a7b9f2
+git switch release/1.4
+git cherry-pick -x 3a7b9f2
+git push origin release/1.4
+```
+
+Fixing `main` first means the fix cannot get lost in the next release. The [collaboration chapter of the Git guide](/guides/introduction-to-git/07-collaboration#h2-release-branches-and-backports) shows the same flow.
+
+### Pick a commit from another repository
+
+Fetch the other repository as a remote, then pick by hash:
+
+```bash
+git remote add other https://github.com/acme/other-repo.git
+git fetch other
+git cherry-pick -x 3a7b9f2
+git remote remove other
+```
+
+### When not to cherry-pick
+
+To bring a whole branch over, merge or rebase it. A branch that you copy commit by commit gets duplicate commits with new hashes, and a later merge of the two branches can conflict with its own copies.
 
 ## Handling Different Scenarios
 
@@ -394,3 +488,12 @@ git checkout -b moved-stuff
 ```
 
 Now you understand how to effectively move recent commits to new branches. This technique helps you maintain organized branch structure and correct mistakes in commit placement while preserving your work and maintaining clean Git history.
+
+## Related Resources
+
+- [Introduction to Git: Branches, Stash and Detached HEAD](/guides/introduction-to-git/04-branching)
+- [Delete or undo a commit: reset, rebase or revert](/posts/delete-commit-from-branch)
+- [How to undo a git rebase](/posts/undo-git-rebase)
+- [Git concepts simulator](/games/git-concepts-simulator): watch commits move between branches
+- [Git workflow strategies interview question](/interview-questions/topic/git#git-workflow-strategies)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz)

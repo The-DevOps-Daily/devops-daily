@@ -574,4 +574,4 @@ Next, [Part 6](/guides/finops-for-devops-engineers/06-cultural-shift) turns thes
 - [Introduction to CI/CD with GitHub Actions](/guides/introduction-to-cicd)
 - [Why Your GitHub Actions Bill Keeps Growing, and What Each Fix Saves](/posts/github-actions-bill-keeps-growing)
 - [What Does One Merge Actually Cost You in CI?](/posts/what-does-one-merge-cost-in-ci)
-- [Interview questions: Cloud Cost Optimization](/interview-questions/senior/cloud-cost-optimization)
+- [Interview questions: Cloud Cost Optimization](/interview-questions/topic/cloud#cloud-cost-optimization)

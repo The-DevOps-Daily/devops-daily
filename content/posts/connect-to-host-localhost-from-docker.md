@@ -158,7 +158,7 @@ Happy containerizing!
 ## Related Resources
 
 - [Docker Access Host Port from Container](/posts/docker-access-host-port): more on host-container networking
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): understand port publishing
+- [Docker Compose: Ports vs Expose](/posts/forward-host-port-to-docker-container#h2-what-is-the-difference-between-ports-and-expose-in-docker-compose): understand port publishing
 - [Introduction to Docker: Networking](/guides/introduction-to-docker): Docker networking fundamentals
 - [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge
 - [DevOps Roadmap](/roadmap): where Docker fits in the bigger picture

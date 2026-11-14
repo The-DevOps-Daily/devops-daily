@@ -725,4 +725,4 @@ For each system, decide in advance and write it down: what data it handles, the 
 - [Secrets Management Guide: Vault, AWS Secrets Manager, and Azure Key Vault](/posts/secrets-management-guide)
 - [Designing Rate Limiting for APIs](/posts/designing-rate-limiting-for-apis)
 - [High Availability Checklist](/checklists/high-availability)
-- [Interview questions: secrets management](/interview-questions/mid/secrets-management)
+- [Interview questions: secrets management](/interview-questions/topic/security#secrets-management)

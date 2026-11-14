@@ -15,6 +15,8 @@ export interface Mission<S> {
   label: string;
   /** Shown under the label until the mission is done. */
   hint?: string;
+  /** The exact moves, behind "Show me how", for a player who is stuck. */
+  steps?: string[];
   check: (state: S) => boolean;
 }
 
@@ -22,6 +24,7 @@ export interface MissionView {
   id: string;
   label: string;
   hint?: string;
+  steps?: string[];
   done: boolean;
   /** The first mission not done yet. */
   current: boolean;
@@ -64,6 +67,7 @@ export function missionProgress<S>(
     id: m.id,
     label: m.label,
     hint: m.hint,
+    steps: m.steps,
     done: done.has(m.id),
     current: i === firstOpen,
   }));

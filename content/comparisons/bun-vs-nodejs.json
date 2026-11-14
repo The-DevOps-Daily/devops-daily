@@ -229,5 +229,19 @@
     "toolBScore": 4.3,
     "recommendation": "Choose Bun for new TypeScript projects, CLI tools, and environments where startup speed and developer experience are top priorities. Choose Node.js for production applications that need maximum ecosystem compatibility, mature debugging tools, and universal hosting support."
   },
-  "relatedTags": ["Bun", "Node.js", "JavaScript", "TypeScript", "Runtime", "Backend"]
+  "relatedTags": ["Bun", "Node.js", "JavaScript", "TypeScript", "Runtime", "Backend"],
+  "relatedLinks": [
+    {
+      "label": "Where Your Code Runs When There Is No Region",
+      "href": "/posts/edge-runtime-no-long-lived-process"
+    },
+    {
+      "label": "Node.js October 2026 Security Release: Finding Every Node You Actually Run",
+      "href": "/posts/node-october-2026-security-release-find-every-node"
+    },
+    {
+      "label": "JavaScript Promises & Async/Await Simulator",
+      "href": "/games/javascript-promises-async-await-simulator"
+    }
+  ]
 }

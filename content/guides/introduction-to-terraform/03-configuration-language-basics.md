@@ -25,7 +25,7 @@ Terraform reads every file ending in `.tf` (or `.tf.json`, the same language in 
 | `.terraform.lock.hcl`               | Provider versions and checksums, written by `init`                                                                  |
 | `override.tf`, `*_override.tf`      | Merged over the other files; rarely a good idea, because readers miss them                                          |
 
-A common layout splits a small project into `main.tf`, `variables.tf`, `outputs.tf`, `providers.tf` and `versions.tf`. That is a convention for humans; Terraform does not care. The post [How to Split a Terraform File](/posts/how-to-split-terraform-file) shows the options.
+A common layout splits a small project into `main.tf`, `variables.tf`, `outputs.tf`, `providers.tf` and `versions.tf`. That is a convention for humans; Terraform does not care. [How to split main.tf into several files](/posts/organizing-terraform-repository-with-subfolders#h2-how-do-i-split-maintf-into-several-files) shows the options.
 
 ## Blocks and Arguments
 
@@ -513,5 +513,5 @@ In [Part 4](/guides/introduction-to-terraform/04-resources-and-data-sources) you
 
 - [Terraform Strings and Conditionals: The Complete Guide](/posts/terraform-strings-and-conditionals)
 - [Terraform Variables, Loops, and Outputs: The Complete Guide](/posts/terraform-variables-loops-and-outputs)
-- [How to Get the Current Working Directory in Terraform](/posts/get-current-working-directory-terraform)
+- [How to Get the Current Working Directory in Terraform](/posts/terraform-read-environment-variables-from-env-file#h2-how-do-i-get-the-current-working-directory-in-terraform)
 - [Terraform Fundamentals Quiz](/quizzes/terraform-quiz)

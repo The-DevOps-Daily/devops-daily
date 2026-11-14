@@ -237,7 +237,7 @@ S3 charges for:
 - **retrieval**, per GB, for the IA and Glacier classes;
 - **data transfer out** to the internet. The first 100 GB a month, aggregated across all AWS services, is free (per the [S3 pricing page](https://aws.amazon.com/s3/pricing/), checked 23 October 2026). Transfer into S3, and from S3 to CloudFront or to EC2 in the same Region, is free.
 
-Use the [S3 pricing page](https://aws.amazon.com/s3/pricing/) or the [AWS Pricing Calculator](https://calculator.aws/) for the current rates in your Region. A learning bucket with a few hundred MB costs cents a month. Servers in a private subnet that reach S3 through a NAT gateway pay NAT data processing on every GB; Part 5 shows the free gateway endpoint that avoids it.
+Use the [S3 pricing page](https://aws.amazon.com/s3/pricing/) or the [AWS Pricing Calculator](https://calculator.aws/) for the current rates in your Region. A learning bucket with a few hundred MB costs cents a month. Servers in a private subnet that reach S3 through a NAT gateway pay NAT data processing on every GB; Part 5 shows the free gateway endpoint that avoids it. To compare S3 with the storage services of the other large clouds, see [S3 vs GCS vs Azure Blob Storage](/comparisons/s3-vs-gcs-vs-azure-blob).
 
 ## Common Mistakes
 
@@ -265,6 +265,6 @@ Next: [VPC: Build Your Private Network](/guides/introduction-to-aws/05-vpc-netwo
 ## Keep Learning
 
 - [Free Egress Has Fine Print: S3 vs R2, B2, Wasabi and More](/posts/object-storage-free-egress-fine-print)
-- [How to Create a Folder in an AWS S3 Bucket Using Terraform](/posts/create-folder-in-s3-bucket)
+- [How to Create a Folder in an AWS S3 Bucket Using Terraform](/posts/terraform-read-environment-variables-from-env-file#h2-how-do-i-create-a-folder-in-an-s3-bucket-with-terraform)
 - [Fix common Terraform S3 backend errors](/posts/terraform-state-remove-move-migrate-backend#h3-common-s3-backend-errors)
 - [AWS Cloud Services Quiz](/quizzes/aws-quiz)

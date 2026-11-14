@@ -281,7 +281,7 @@ Karpenter will now monitor unschedulable pods and provision appropriately-sized 
 
 ## Monitoring Cost Impact
 
-To validate your optimizations, you need visibility into resource costs. Kubecost provides detailed insights into how much each workload costs and how much capacity you're wasting.
+To validate your optimizations, you need visibility into resource costs. Kubecost provides detailed insights into how much each workload costs and how much capacity you're wasting. It shows what is running now; Infracost shows the cost of an infrastructure change before you apply it. The [Infracost vs Kubecost comparison](/comparisons/infracost-vs-kubecost) explains how the two fit together.
 
 Install Kubecost in your cluster:
 
@@ -467,7 +467,7 @@ The key is to treat right-sizing as an ongoing process. As your applications evo
 
 ## Related Resources
 
-- [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
+- [Checking pod CPU and memory usage](/posts/5-minute-kubernetes-cluster-health-check#h2-how-do-i-check-the-cpu-and-memory-usage-of-a-pod)
 - [Kubernetes HPA Lab Exercise](/exercises/kubernetes-hpa-lab)
 - [Introduction to Kubernetes: Resource Management](/guides/introduction-to-kubernetes)
 - [FinOps for DevOps Engineers: where cloud cost comes from, Kubernetes requests included](/guides/finops-for-devops-engineers/02-challenges)

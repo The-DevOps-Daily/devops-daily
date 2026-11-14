@@ -568,4 +568,4 @@ Next, [Part 2](/guides/cryptography-essentials/02-hashing) covers hashing: check
 - [Secrets Management Best Practices with HashiCorp Vault](/posts/hashicorp-vault-secrets-management-best-practices)
 - [You Cannot Rotate a Secret You Cannot Find](/posts/you-cannot-rotate-a-secret-you-cannot-find)
 - [Exercise: Infrastructure Security with Vault and SOPS](/exercises/infrastructure-security-vault-sops)
-- [Interview questions: Secrets Management](/interview-questions/mid/secrets-management)
+- [Interview questions: Secrets Management](/interview-questions/topic/security#secrets-management)
