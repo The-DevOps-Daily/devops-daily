@@ -32,6 +32,11 @@ This post shows the resolver rule, reproduces the count, and gives you a safe wa
 - Do not lower `ndots` blindly. `my-svc.other-ns` made six queries with `ndots:1`, because glibc tried the absolute name first; it made four with `ndots:2` and then found the Service through `svc.cluster.local`.
 - Start with the names your workload actually resolves, then measure CoreDNS requests and NXDOMAIN responses. For external configuration, an absolute FQDN with a trailing dot is the narrowest change. For a Pod-wide change, test `ndots: "2"` against every short and cross-namespace Service name it uses.
 
+<figure>
+<video controls muted loop playsinline preload="none" width="1200" height="1640" poster="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries-poster.webp"><source src="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries.mp4" type="video/mp4"></video>
+<figcaption>Press play to watch one lookup of api.example.com from a Pod with four search suffixes: five names, each asked as A and AAAA, so ten queries reach CoreDNS and eight of them ask for names that do not exist. A trailing dot or ndots:2 takes it down to two.</figcaption>
+</figure>
+
 ## Prerequisites
 
 - Access to a non-production namespace and permission to inspect Pods and the `kube-system` namespace.
