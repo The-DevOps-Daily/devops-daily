@@ -18,6 +18,8 @@ interface DropdownTriggerProps {
 
 export function DropdownTrigger({ label, sections, icon: Icon }: DropdownTriggerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // Rendered from the first open on, so its code is not fetched before that.
+  const [used, setUsed] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -30,6 +32,7 @@ export function DropdownTrigger({ label, sections, icon: Icon }: DropdownTrigger
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
+    setUsed(true);
     setIsOpen(true);
   };
 
@@ -47,7 +50,10 @@ export function DropdownTrigger({ label, sections, icon: Icon }: DropdownTrigger
           'hover:bg-primary/8 hover:text-primary hover:shadow-sm',
           isOpen && 'bg-primary/8 text-primary shadow-sm'
         )}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setUsed(true);
+          setIsOpen(!isOpen);
+        }}
       >
         <Icon className="w-4 h-4" />
         <span>{label}</span>
@@ -56,7 +62,9 @@ export function DropdownTrigger({ label, sections, icon: Icon }: DropdownTrigger
         />
       </button>
 
-      <DropdownMenu sections={sections} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      {used && (
+        <DropdownMenu sections={sections} isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      )}
     </div>
   );
 }
