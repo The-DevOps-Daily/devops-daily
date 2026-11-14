@@ -1,0 +1,240 @@
+{
+  "id": "nginx-quiz",
+  "title": "Nginx Reverse Proxy & Load Balancing Quiz",
+  "description": "Test your knowledge of Nginx configuration, location matching, reverse proxying, upstream load balancing, rate limiting, TLS termination, and production troubleshooting.",
+  "category": "Networking",
+  "icon": "Network",
+  "totalPoints": 180,
+  "theme": {
+    "primaryColor": "emerald",
+    "gradientFrom": "from-emerald-500",
+    "gradientTo": "to-teal-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 6,
+      "advanced": 3
+    },
+    "createdDate": "2026-10-14"
+  },
+  "questions": [
+    {
+      "id": "validate-config-and-graceful-reload",
+      "title": "Validating Config Before Graceful Reload",
+      "description": "You edited /etc/nginx/conf.d/app.conf on a live production gateway. Which command sequence validates the syntax and applies the change without dropping active connections?",
+      "situation": "Your checkout gateway is serving 4,000 requests per second. You just updated an upstream block and need to apply the change safely without risking a full service outage if there is a typo.",
+      "codeExample": "# Updated /etc/nginx/conf.d/app.conf\nupstream checkout_backend {\n    server 10.0.1.10:8080;\n    server 10.0.1.11:8080;\n}",
+      "options": [
+        "nginx -t && nginx -s reload",
+        "systemctl restart nginx --force",
+        "nginx -s stop && nginx -c /etc/nginx/nginx.conf",
+        "kill -9 $(cat /var/run/nginx.pid) && systemctl start nginx"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Running 'nginx -t' parses and tests all included configuration files and checks certificate/log paths before touching the running process. Chaining it with '&& nginx -s reload' sends SIGHUP to the master process only if validation succeeds. The master process then spawns new worker processes with the updated configuration and instructs old workers to finish in-flight requests before exiting.",
+      "hint": "Look for the flag that tests configuration syntax first, followed by sending a reload signal."
+    },
+    {
+      "id": "spa-try-files-fallback",
+      "title": "Serving Single-Page Applications with try_files",
+      "description": "Your React single-page app works on the root URL '/', but refreshing '/dashboard/settings' in the browser returns an Nginx 404 page. Which directive fixes client-side routing?",
+      "situation": "You deployed a static React build to /usr/share/nginx/html. Navigating inside the app works via the History API, but direct deep links fail because no file named /usr/share/nginx/html/dashboard/settings exists on disk.",
+      "codeExample": "server {\n    listen 80;\n    root /usr/share/nginx/html;\n    index index.html;\n\n    location / {\n        # How should Nginx handle client-side routes?\n    }\n}",
+      "options": [
+        "autoindex on;",
+        "try_files $uri $uri/ /index.html;",
+        "error_page 404 =301 /static/app.js;",
+        "rewrite ^/.*$ /404.html permanent;"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "The 'try_files $uri $uri/ /index.html;' directive checks whether the requested path exists as a static file ($uri) or directory ($uri/) under the document root. When neither exists on disk, Nginx internally rewrites the request to /index.html with a 200 status so the JavaScript router in the browser can render '/dashboard/settings'.",
+      "hint": "Nginx should check for an existing static asset first and fall back to the main HTML entry point."
+    },
+    {
+      "id": "forwarding-client-ip-headers",
+      "title": "Preserving Original Client IP Behind a Reverse Proxy",
+      "description": "Your Node.js backend logs every request IP as 127.0.0.1 after you placed Nginx in front of it. How do you pass the client's IP address and protocol to the upstream app?",
+      "situation": "Rate limiting and audit logs in your backend API suddenly treat all users as a single client at 127.0.0.1 because the application only sees the local TCP connection from Nginx.",
+      "codeExample": "location /api/ {\n    proxy_pass http://127.0.0.1:3000;\n    # Add headers so the backend knows the real client IP and scheme\n}",
+      "options": [
+        "Set 'proxy_bind $remote_addr;' without any HTTP headers",
+        "Enable 'real_ip_recursive off;' inside the upstream block",
+        "Add 'proxy_set_header X-Real-IP $remote_addr;' and 'proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' plus 'proxy_set_header X-Forwarded-Proto $scheme;'",
+        "Use 'add_header Client-Address $server_addr;' so the response header is sent to the browser"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Because Nginx opens a new TCP connection to the upstream server, the backend sees Nginx's IP unless forwarding headers are set with 'proxy_set_header'. '$remote_addr' holds the direct client IP, '$proxy_add_x_forwarded_for' appends '$remote_addr' to any existing X-Forwarded-For chain, and '$scheme' passes whether the original request used http or https. By contrast, 'add_header' modifies responses sent back to the client rather than requests sent to the upstream.",
+      "hint": "You need a directive that sets HTTP request headers sent to the proxied backend, not response headers."
+    },
+    {
+      "id": "location-matching-precedence",
+      "title": "Location Block Matching Order",
+      "description": "A request arrives for GET /images/logo.png. Given the four location blocks below, which block will Nginx select to serve the request?",
+      "situation": "You added a regex rule to set caching headers on all '.png' files, but requests to '/images/logo.png' are not receiving those headers. You inspect the server configuration to see which location block is winning.",
+      "codeExample": "server {\n    location /images/ {\n        # Block A\n    }\n    location ^~ /images/ {\n        # Block B\n    }\n    location ~ \\.(png|jpg)$ {\n        # Block C\n    }\n    location = /images/ {\n        # Block D\n    }\n}",
+      "options": [
+        "Block A, because standard prefix locations always override regex locations",
+        "Block C, because regular expression matches are evaluated before all prefix rules",
+        "Block D, because '=' matches any path that starts with /images/",
+        "Block B, because the '^~' modifier halts regex evaluation when it is the longest matching prefix"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Nginx evaluates location blocks in a specific priority order: first exact matches ('='), which only match '/images/' and not '/images/logo.png'. Next, Nginx finds the longest matching prefix location. If that longest prefix uses the '^~' modifier (Block B), Nginx stops immediately and does not check regular expression locations (Block C). Without '^~', regex locations would be checked in order of appearance.",
+      "hint": "Check what the '^~' prefix modifier does when Nginx finishes finding the longest prefix match."
+    },
+    {
+      "id": "proxy-pass-trailing-slash-behavior",
+      "title": "The proxy_pass Trailing Slash Gotcha",
+      "description": "A client sends GET /api/v1/users. What path is forwarded to the backend server when proxy_pass has a trailing slash versus when it does not?",
+      "situation": "After refactoring your Nginx config, every call to '/api/v1/users' started returning 404 from the backend service, which expects requests at '/v1/users' instead of '/api/v1/users'.",
+      "codeExample": "# Config 1 (no trailing slash on upstream URI)\nlocation /api/ {\n    proxy_pass http://backend:8080;\n}\n\n# Config 2 (trailing slash on upstream URI)\nlocation /api/ {\n    proxy_pass http://backend:8080/;\n}",
+      "options": [
+        "Config 1 forwards '/api/v1/users' unchanged, whereas Config 2 strips the matched '/api/' prefix and forwards '/v1/users'",
+        "Both configs forward '/api/v1/users' because trailing slashes in proxy_pass are ignored by Nginx",
+        "Config 1 strips '/api/' and forwards '/v1/users', whereas Config 2 forwards '//v1/users' with a double slash",
+        "Config 2 redirects the browser with a 301 status before contacting the upstream server"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "In Nginx, when 'proxy_pass' is specified without a URI path (such as 'http://backend:8080'), the full original request URI ('/api/v1/users') is passed to the upstream unchanged. When 'proxy_pass' includes a URI path—even a single trailing slash ('http://backend:8080/')—Nginx replaces the portion matched by the location prefix ('/api/') with that URI ('/'), resulting in '/v1/users'.",
+      "hint": "Adding any URI component (even '/') to the proxy_pass target triggers prefix replacement."
+    },
+    {
+      "id": "websocket-upgrade-headers",
+      "title": "Proxying WebSocket Connections",
+      "description": "Your real-time notification service works locally, but fails with 400/426 errors during the WebSocket handshake when routed through Nginx. What is missing from the location block?",
+      "situation": "Browser clients connect to wss://app.example.com/ws/. Nginx terminates TLS and forwards traffic to an internal Go service, but the connection never upgrades from HTTP to WebSocket.",
+      "codeExample": "location /ws/ {\n    proxy_pass http://realtime_backend;\n    # What directives are required for WebSocket handshakes?\n}",
+      "options": [
+        "Enabling 'proxy_buffering on;' and setting 'keepalive_requests 10000;'",
+        "Setting 'proxy_http_version 1.1;' along with 'proxy_set_header Upgrade $http_upgrade;' and 'proxy_set_header Connection \"upgrade\";'",
+        "Adding 'websocket_pass http://realtime_backend;' instead of 'proxy_pass'",
+        "Switching the upstream block to 'http2 on;' because WebSockets require HTTP/2 frames"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "By default, Nginx uses HTTP/1.0 for upstream connections and treats 'Upgrade' and 'Connection' as hop-by-hop headers that are not forwarded automatically. To proxy WebSockets, you must explicitly set 'proxy_http_version 1.1;' and pass both the 'Upgrade' header ('$http_upgrade') and 'Connection \"upgrade\"' header so the upstream server can complete the 101 Switching Protocols handshake.",
+      "hint": "Upgrade and Connection are hop-by-hop headers that require HTTP/1.1 to reach the upstream."
+    },
+    {
+      "id": "upstream-keepalive-connection-reuse",
+      "title": "Enabling Upstream Keepalive Connections",
+      "description": "You added 'keepalive 64;' to your upstream block to reduce TCP handshake overhead, but netstat still shows Nginx opening a new ephemeral port for every request. Why?",
+      "situation": "Under peak load, your Nginx reverse proxy is exhausting ephemeral ports (TIME_WAIT buildup) when talking to an internal microservice, even though 'keepalive 64;' is configured in the upstream block.",
+      "codeExample": "upstream orders_service {\n    server 10.0.2.15:8080;\n    keepalive 64;\n}\n\nserver {\n    location /orders/ {\n        proxy_pass http://orders_service;\n        # Why is Nginx still closing connections after every request?\n    }\n}",
+      "options": [
+        "The 'keepalive' directive only works when 'least_conn;' is also enabled in the upstream block",
+        "Nginx requires 'worker_connections' to be set to the exact same number as 'keepalive'",
+        "The location block must also set 'proxy_http_version 1.1;' and clear the Connection header with 'proxy_set_header Connection \"\";'",
+        "Upstream keepalive is only supported for FastCGI backends, not HTTP proxy_pass backends"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Nginx defaults to HTTP/1.0 for upstream requests and sends 'Connection: close' to the backend after every request. Even with 'keepalive 64;' in the upstream block, you must configure 'proxy_http_version 1.1;' and 'proxy_set_header Connection \"\";' in the location or server block so Nginx keeps idle backend connections open in the worker's cache.",
+      "hint": "Check what HTTP protocol version and Connection header Nginx sends to upstreams by default."
+    },
+    {
+      "id": "rate-limiting-burst-nodelay",
+      "title": "Rate Limiting with Burst and nodelay",
+      "description": "Your API allows 10 requests/second per IP, but loading the dashboard fires 15 parallel API requests at once. How do you allow that initial burst without adding artificial latency?",
+      "situation": "After adding 'limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;', legitimate users complain that half of the widgets on their dashboard fail with 503 Service Temporarily Unavailable on page load.",
+      "codeExample": "limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;\n\nserver {\n    location /api/ {\n        # Allow short bursts of 20 requests immediately without queuing delay\n    }\n}",
+      "options": [
+        "Set 'limit_conn api_limit 20;' to cap concurrent TCP sockets per IP",
+        "Set 'limit_rate 20k;' to throttle response bandwidth per connection",
+        "Use 'limit_req zone=api_limit;' alone so excess requests queue indefinitely",
+        "Use 'limit_req zone=api_limit burst=20 nodelay;' to serve burst slots immediately"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A rate of '10r/s' is enforced strictly as 1 request every 100ms. Without 'burst', if 15 requests arrive in the same millisecond, 1 succeeds and 14 are rejected. Adding 'burst=20' creates a 20-slot leaky bucket queue, and adding 'nodelay' serves requests in those burst slots immediately instead of spacing them out by 100ms each, while only rejecting requests once the burst bucket is full.",
+      "hint": "Combine the bucket size parameter with the keyword that disables artificial queuing delay."
+    },
+    {
+      "id": "debugging-502-vs-504-errors",
+      "title": "Distinguishing 502 Bad Gateway from 504 Gateway Timeout",
+      "description": "During an incident, some endpoints return 502 Bad Gateway immediately while a reporting endpoint returns 504 Gateway Timeout after 60 seconds. What do these two status codes indicate?",
+      "situation": "Your on-call pager fires with a mix of 502 and 504 errors from Nginx. You need to quickly triage whether the application containers crashed or whether database queries are hanging.",
+      "codeExample": "# Error log snippet A:\nconnect() failed (111: Connection refused) while connecting to upstream\n\n# Error log snippet B:\nupstream timed out (110: Connection timed out) while reading response header from upstream",
+      "options": [
+        "502 indicates Nginx received an invalid response or could not connect to the upstream (e.g., crashed process or oversized headers), whereas 504 indicates the upstream failed to respond within proxy_read_timeout / proxy_connect_timeout",
+        "502 means the client's request payload exceeded client_max_body_size, whereas 504 means Nginx ran out of worker_connections",
+        "502 is returned when TLS handshake fails with the browser, whereas 504 is returned when DNS resolution fails at startup",
+        "Both 502 and 504 mean the upstream returned HTTP 500 Internal Server Error, chosen randomly by load balancer weight"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Nginx returns 502 Bad Gateway when it cannot establish a valid communication channel with the upstream—for example, the backend process crashed (Connection refused), closed the socket prematurely, or returned response headers larger than 'proxy_buffer_size'. Nginx returns 504 Gateway Timeout when the upstream accepts the connection but takes longer than 'proxy_read_timeout' (default 60s) to send back response headers.",
+      "hint": "One error happens when connection/protocol communication fails; the other happens when waiting exceeds the configured timer."
+    },
+    {
+      "id": "dynamic-dns-resolution-in-proxy-pass",
+      "title": "Preventing Stale DNS Caching in Upstream Hosts",
+      "description": "In Kubernetes or Docker, an upstream service changes its IP after a redeploy, but Nginx keeps sending traffic to the old dead IP until Nginx is reloaded. How do you force Nginx to re-resolve DNS dynamically?",
+      "situation": "Your Nginx gateway proxies to an AWS internal ALB and containerized services whose DNS records change during scaling events. Because Nginx caches DNS lookups performed at config load time, traffic blackholes whenever upstream IPs rotate.",
+      "codeExample": "server {\n    listen 80;\n    # How do you make open-source Nginx re-resolve 'auth-service.internal' per TTL?\n    location /auth/ {\n        proxy_pass http://auth-service.internal:8080;\n    }\n}",
+      "options": [
+        "Add 'dns_cache off;' to the main http block so Nginx queries /etc/resolv.conf on every packet",
+        "Define a 'resolver' directive (e.g., 'resolver 10.96.0.10 valid=10s;') and store the upstream hostname in a variable with 'set $upstream http://auth-service.internal:8080; proxy_pass $upstream;'",
+        "Set 'proxy_next_upstream dns_error;' so Nginx flushes its internal host table on 502 errors",
+        "Use 'ip_hash;' in the upstream block so DNS records are hashed dynamically per request"
+      ],
+      "correctAnswer": 1,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "When a static hostname is written directly in 'proxy_pass' or an 'upstream' block, open-source Nginx resolves it once during startup/reload and caches the IP indefinitely. By configuring a 'resolver' directive and using a variable in 'proxy_pass' (e.g., 'set $upstream ...; proxy_pass $upstream;'), Nginx defers resolution to runtime and re-queries the specified DNS resolver when the TTL or 'valid=' interval expires.",
+      "hint": "Open-source Nginx only uses the runtime DNS resolver when the proxy_pass target is evaluated dynamically via a variable."
+    },
+    {
+      "id": "add-header-inheritance-trap",
+      "title": "The add_header Inheritance Pitfall",
+      "description": "You defined security headers (HSTS, X-Frame-Options) at the 'server' level, then added a single 'add_header Cache-Control' inside 'location /assets/'. What headers are returned for '/assets/app.js'?",
+      "situation": "A security audit flags that all static files under '/assets/' are missing 'Strict-Transport-Security' and 'X-Content-Type-Options' headers, even though those headers are configured at the top of the server block.",
+      "codeExample": "server {\n    add_header Strict-Transport-Security \"max-age=63072000; includeSubDomains\" always;\n    add_header X-Content-Type-Options \"nosniff\" always;\n\n    location /assets/ {\n        add_header Cache-Control \"public, max-age=31536000, immutable\";\n    }\n}",
+      "options": [
+        "All three headers are returned because Nginx merges add_header directives across parent and child contexts",
+        "Only Strict-Transport-Security and X-Content-Type-Options are returned because server-level directives override location directives",
+        "Only the Cache-Control header is returned; defining any add_header in a child block completely drops all inherited add_header directives from parent blocks",
+        "Nginx fails 'nginx -t' with a duplicate directive error when add_header appears in both server and location blocks"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "In Nginx, array-style directives like 'add_header' and 'proxy_set_header' inherit from outer blocks ONLY if the inner block defines zero directives of that same type. As soon as you add even one 'add_header' inside 'location /assets/', all 'add_header' directives from the 'server' or 'http' blocks are silently dropped for that location. You must either repeat the security headers in the location block or include them via a shared snippet file.",
+      "hint": "Nginx configuration inheritance for array directives is all-or-nothing when overridden in a nested block."
+    },
+    {
+      "id": "proxy-buffer-size-upstream-headers",
+      "title": "Fixing 'upstream sent too big header' 502 Errors",
+      "description": "Users logging in via OIDC with large JWT cookies receive a 502 Bad Gateway, and the error log shows 'upstream sent too big header while reading response header from upstream'. Which directive fixes this?",
+      "situation": "After adding group claims to your OAuth2/OIDC tokens, the 'Set-Cookie' response header from the authentication service grew to 12 KB. Increasing 'client_max_body_size' and 'large_client_header_buffers' had no effect.",
+      "codeExample": "2026/10/14 14:22:08 [error] 412#412: *9812 upstream sent too big header while reading response header from upstream, client: 198.51.100.42, server: auth.example.com, request: \"GET /oauth2/callback HTTP/2.0\", upstream: \"http://10.0.4.20:4180/oauth2/callback\"",
+      "options": [
+        "Increase 'client_max_body_size 64m;' in the server block",
+        "Increase 'large_client_header_buffers 4 32k;' in the http block",
+        "Set 'proxy_request_buffering off;' so response headers bypass Nginx memory",
+        "Increase 'proxy_buffer_size 16k;' (along with compatible 'proxy_buffers' and 'proxy_busy_buffers_size') in the location block"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "'large_client_header_buffers' only controls request headers sent by the browser to Nginx, and 'client_max_body_size' only controls request bodies. When an upstream backend sends back a large response header (such as a big OIDC Set-Cookie header), Nginx must fit the entire response header into the initial buffer controlled by 'proxy_buffer_size' (which defaults to 4k or 8k). Increasing 'proxy_buffer_size 16k;' and adjusting 'proxy_buffers' / 'proxy_busy_buffers_size' resolves the 502 error.",
+      "hint": "Pay attention to the direction of traffic in the error message: the header is coming FROM the upstream, not from the client."
+    }
+  ]
+}
