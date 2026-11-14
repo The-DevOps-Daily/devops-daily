@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
@@ -52,16 +52,16 @@ export function Header() {
   }, [onSimulator]);
 
   // Render the hidden mobile menu once the page is idle, so a tap on the menu
-  // button only has to show it (INP on mobile).
+  // button only has to show it (INP on mobile). As a transition the render
+  // yields to a tap that comes in meanwhile.
   useEffect(() => {
     if (window.matchMedia('(min-width: 1024px)').matches) return;
+    const mount = () => startTransition(() => setMobileMenuMounted(true));
     if ('requestIdleCallback' in window) {
-      const handle = window.requestIdleCallback(() => setMobileMenuMounted(true), {
-        timeout: 4000,
-      });
+      const handle = window.requestIdleCallback(mount, { timeout: 4000 });
       return () => window.cancelIdleCallback(handle);
     }
-    const timer = setTimeout(() => setMobileMenuMounted(true), 2000);
+    const timer = setTimeout(mount, 2000);
     return () => clearTimeout(timer);
   }, []);
 

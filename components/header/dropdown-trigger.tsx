@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DropdownMenu } from './dropdown-menu';
 import { type NavSection } from './nav-items';
+
+// The menu and framer-motion load on desktop while idle, never on phones.
+const loadDropdownMenu = () => import('./dropdown-menu').then((m) => m.DropdownMenu);
+const DropdownMenu = dynamic(loadDropdownMenu, { ssr: false });
 
 interface DropdownTriggerProps {
   label: string;
@@ -15,6 +19,12 @@ interface DropdownTriggerProps {
 export function DropdownTrigger({ label, sections, icon: Icon }: DropdownTriggerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 2000));
+    idle(() => void loadDropdownMenu());
+  }, []);
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) {

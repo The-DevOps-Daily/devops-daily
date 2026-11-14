@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { EasterEggTerminal } from '@/components/easter-egg-terminal';
 
 const KONAMI_CODE = [
   'ArrowUp',
@@ -23,11 +22,7 @@ export function KonamiCodeListener() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only track arrow keys and B/A keys
-      if (
-        e.code.startsWith('Arrow') ||
-        e.code === 'KeyB' ||
-        e.code === 'KeyA'
-      ) {
+      if (e.code.startsWith('Arrow') || e.code === 'KeyB' || e.code === 'KeyA') {
         setKeys((prevKeys) => {
           const newKeys = [...prevKeys, e.code].slice(-10); // Keep last 10 keys
 

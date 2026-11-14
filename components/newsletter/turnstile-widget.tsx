@@ -57,27 +57,53 @@ export function TurnstileWidget({ className }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
     let widgetId: string | undefined;
     let cancelled = false;
-    loadTurnstile()
-      .then((turnstile) => {
-        if (cancelled || !ref.current) return;
-        widgetId = turnstile.render(ref.current, {
-          sitekey: SITE_KEY,
-          action: 'newsletter',
-          appearance: 'interaction-only',
-          theme: 'auto',
-          size: 'flexible',
-          'refresh-expired': 'auto',
+    let started = false;
+    const form = el.closest('form');
+    // The challenge script is heavy on a phone's main thread, so it loads only
+    // when the form comes near the screen or gets focus.
+    const start = () => {
+      if (started) return;
+      started = true;
+      observer?.disconnect();
+      form?.removeEventListener('focusin', start);
+      loadTurnstile()
+        .then((turnstile) => {
+          if (cancelled || !ref.current) return;
+          widgetId = turnstile.render(ref.current, {
+            sitekey: SITE_KEY,
+            action: 'newsletter',
+            appearance: 'interaction-only',
+            theme: 'auto',
+            size: 'flexible',
+            'refresh-expired': 'auto',
+          });
+          if (widgetId) ref.current.setAttribute(WIDGET_ATTR, widgetId);
+        })
+        .catch(() => {
+          // Without the widget the submit carries no token. smtpfast then says
+          // to complete the challenge, which is better than a silent failure.
         });
-        if (widgetId) ref.current.setAttribute(WIDGET_ATTR, widgetId);
-      })
-      .catch(() => {
-        // Without the widget the submit carries no token. smtpfast then says
-        // to complete the challenge, which is better than a silent failure.
-      });
+    };
+    const observer =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(
+            (entries) => {
+              if (entries.some((e) => e.isIntersecting)) start();
+            },
+            { rootMargin: '600px 0px' }
+          );
+    if (observer) observer.observe(el);
+    else start();
+    form?.addEventListener('focusin', start);
     return () => {
       cancelled = true;
+      observer?.disconnect();
+      form?.removeEventListener('focusin', start);
       if (widgetId) window.turnstile?.remove(widgetId);
     };
   }, []);

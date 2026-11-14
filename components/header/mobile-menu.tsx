@@ -16,13 +16,16 @@ interface MobileMenuProps {
 
 // Opening the menu only flips CSS classes: the links are rendered while the page
 // is idle and are memoized, so a tap does not mount or re-render ~40 links.
+// No `inert` here: toggling it (or pointer-events) on the panel restyles every
+// element in the menu. The closed menu is `invisible`, which already takes it
+// out of focus, hit testing and the accessibility tree.
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   return (
-    <div className="lg:hidden" aria-hidden={!isOpen} inert={!isOpen}>
+    <div className="lg:hidden" aria-hidden={!isOpen}>
       <div
         className={cn(
           'fixed inset-0 z-50 bg-black/40 transition-[opacity,visibility] duration-200 motion-reduce:transition-none',
-          isOpen ? 'visible opacity-100' : 'invisible opacity-0'
+          isOpen ? 'visible opacity-100' : 'pointer-events-none invisible opacity-0'
         )}
         onClick={onClose}
       />
