@@ -321,7 +321,7 @@ Keep the query `type`, `zone`, `server`, and response `rcode` labels in your das
 
 If resolver counters say the problem is upstream of CoreDNS, capture packets from an approved privileged debug environment on the node, for example with [`kubectl debug node/NODE -it --image=IMAGE`](https://kubernetes.io/docs/tasks/debug/debug-cluster/kubectl-node-debug/) using an approved image that ships `tcpdump`, and filter UDP and TCP port 53. Check your cluster's security policy before doing this. The goal is to distinguish client-to-CoreDNS repeats from CoreDNS-to-upstream forwarding, not to leave packet capture running.
 
-For a refresher on what happens after a resolver cache miss, the [DNS Resolution Simulator](/games/dns-simulator) lets you step through browser, OS, and resolver caches, then root, TLD, and authoritative servers, and rerun a lookup to see a cache hit. For the Kubernetes naming side, see [Service Located in Another Namespace](/posts/service-located-in-another-namespace).
+For a refresher on what happens after a resolver cache miss, the [DNS Resolution Simulator](/games/dns-simulator) lets you step through browser, OS, and resolver caches, then root, TLD, and authoritative servers, and rerun a lookup to see a cache hit. For the Kubernetes naming side, see [How Do I Reach a Service in Another Namespace?](/posts/how-to-manage-multiple-environments-in-kubernetes#h2-how-do-i-reach-a-service-in-another-namespace).
 
 ## The operating rule
 
