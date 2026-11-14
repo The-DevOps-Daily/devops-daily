@@ -318,7 +318,7 @@ Git 3.0 is the first release since Git 2.0 (2014) that is allowed to break backw
 
 ## Common Mistakes
 
-- **Committing before setting your name and email.** Git stops with "Author identity unknown" when it cannot work out an email address. On a machine whose host name includes a domain, it builds one from your user and host name instead and only prints a warning, and those commits are not linked to your account. Set the identity and, if the commits are not shared yet, see [how to change the author of the last commit](/posts/change-author-multiple-commits-git#h2-change-the-author-of-only-the-last-commit) or [of several commits](/posts/change-author-multiple-commits-git).
+- **Committing before setting your name and email.** Git stops with "Author identity unknown" when it cannot work out an email address. On a machine whose host name includes a domain, it builds one from your user and host name instead and only prints a warning, and those commits are not linked to your account. Set the identity and, if the commits are not shared yet, see [how to change the author of the last commit](/posts/how-do-i-squash-my-last-n-commits-together#h2-how-do-i-change-the-author-of-the-last-commit) or [of several commits](/posts/how-do-i-squash-my-last-n-commits-together#h2-how-do-i-change-the-author-of-many-commits).
 - **An editor that returns at once.** Graphical editors need a "wait" flag (`code --wait`); otherwise Git sees an empty message and aborts the commit.
 - **Using `sudo git`.** Files created as root in your project lead to permission errors later. Git never needs root for your own repositories.
 - **Assuming the history is in the cloud.** Commits live in your `.git` until you push them ([Part 6](/guides/introduction-to-git/06-remote-repositories)).
@@ -337,4 +337,4 @@ Next: [Creating and Managing Repositories](/guides/introduction-to-git/02-reposi
 
 - [Git Concepts simulator](/games/git-concepts-simulator): see commits, branches and merges as a graph in your browser.
 - [Git Fundamentals flashcards](/flashcards/git-fundamentals)
-- Interview questions: [Git staging and committing](/interview-questions/junior/git-basics)
+- Interview questions: [Git staging and committing](/interview-questions/topic/git#git-basics)

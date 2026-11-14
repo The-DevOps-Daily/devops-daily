@@ -31,6 +31,8 @@ GitOps uses Git as the single source of truth for your infrastructure and applic
 - **Automated Sync**: Tools continuously reconcile actual state with desired state
 - **Pull-Based Deployment**: The cluster pulls changes rather than CI pushing them
 
+For how this pull model differs from a CI server that pushes each deploy, see [Flux vs Jenkins](/comparisons/flux-vs-jenkins).
+
 ```
 How GitOps Works (Step by Step):
 
@@ -531,7 +533,7 @@ flux bootstrap github \
   --personal
 ```
 
-Both ArgoCD and Flux are CNCF projects with active communities. ArgoCD has a better UI; Flux integrates more tightly with Git.
+Both ArgoCD and Flux are CNCF projects with active communities. ArgoCD has a better UI; Flux integrates more tightly with Git. For a side-by-side view, see [Argo CD vs Flux](/comparisons/argocd-vs-flux).
 
 ## Summary
 
@@ -549,7 +551,7 @@ GitOps is the industry standard for Kubernetes deployments. No more SSH scripts 
 
 ## Related Resources
 
-- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences): when to use each
+- [Docker Compose vs Kubernetes](/posts/how-docker-works-under-the-hood#h2-do-you-need-kubernetes-or-is-docker-compose-enough): when to use each
 - [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes): learn K8s from scratch
-- [Docker Security Best Practices](/posts/docker-security-best-practices): secure your images
+- [Docker Security Best Practices](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers): secure your images
 - [DevOps Roadmap](/roadmap): the full DevOps learning path

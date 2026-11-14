@@ -538,8 +538,8 @@ Keep the podinfo Deployment: the next part puts a Service in front of it.
 
 ## Keep Learning
 
-- [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets)
-- [How to make a Deployment update its image](/posts/kubernetes-how-to-make-deployment-to-update-image)
+- [Kubernetes Deployments vs StatefulSets](/posts/why-does-kubernetes-pod-get-recreated-when-deleted#h2-deployments-vs-statefulsets-which-one-do-you-need)
+- [How to make a Deployment update its image](/posts/why-does-kubernetes-pod-get-recreated-when-deleted#h2-how-do-i-update-the-image-of-a-deployment)
 - [How to trigger a CronJob manually](/posts/trigger-kubernetes-scheduled-job-manually)
 - [Why a pod comes back after you delete it](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
 

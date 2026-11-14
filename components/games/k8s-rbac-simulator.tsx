@@ -10,6 +10,7 @@ import {
   SimComplete,
   SimFeedback,
   SimFrame,
+  SimMissionHelp,
   SimMissionList,
   SimResetButton,
   SimStage,
@@ -101,12 +102,22 @@ const MISSIONS: Mission<MissionState>[] = [
     id: 'clusterrole-rolebinding',
     label: 'Find the one namespace where the RoleBinding lets ci list pods',
     hint: 'In “The one that surprises everyone”, change the namespace.',
+    steps: [
+      'Open scenario 2, “The one that surprises everyone”.',
+      'Keep subject dev/ci, verb list and resource pods.',
+      'Set the namespace to dev. The answer turns to Allowed: the RoleBinding lives in dev, so the ClusterRole only applies there.',
+    ],
     check: (s) => s.scenarioId === 'clusterrole-rolebinding' && s.answer.allowed,
   },
   {
     id: 'cluster-scoped',
     label: 'Show that a RoleBinding in dev still cannot grant nodes',
     hint: 'In “Nodes are not in a namespace”, set the namespace to dev.',
+    steps: [
+      'Open scenario 3, “Nodes are not in a namespace”.',
+      'Keep resource nodes.',
+      'Set the namespace to dev. It stays Denied: nodes have no namespace, so a RoleBinding can never grant them.',
+    ],
     check: (s) =>
       s.scenarioId === 'cluster-scoped' &&
       s.question.resource === 'nodes' &&
@@ -117,6 +128,11 @@ const MISSIONS: Mission<MissionState>[] = [
     id: 'resource-names',
     label: 'Show that the one-secret rule does not cover list',
     hint: 'In “One secret, not the list”, switch the verb to list.',
+    steps: [
+      'Open scenario 4, “One secret, not the list”.',
+      'Keep subject dev/app and resource secrets.',
+      'Set the verb to list. It turns Denied: the rule only grants get on db-password.',
+    ],
     check: (s) =>
       s.scenarioId === 'resource-names' &&
       s.question.resource === 'secrets' &&
@@ -127,12 +143,22 @@ const MISSIONS: Mission<MissionState>[] = [
     id: 'no-deny',
     label: 'Show that the empty role takes nothing away',
     hint: 'In “There is no deny”, ask about a verb ci does have, such as list.',
+    steps: [
+      'Open scenario 6, “There is no deny”.',
+      'Keep subject dev/ci and resource pods in dev.',
+      'Set the verb to list. It is Allowed: the empty audit role cannot take it away.',
+    ],
     check: (s) => s.scenarioId === 'no-deny' && s.answer.allowed,
   },
   {
     id: 'cluster-wide',
     label: 'Show that a ClusterRoleBinding reaches prod too',
     hint: 'In “Genuinely cluster-wide”, set the namespace to prod.',
+    steps: [
+      'Open scenario 7, “Genuinely cluster-wide”.',
+      'Keep subject dev/ci, verb list and resource pods.',
+      'Set the namespace to prod. It is Allowed: a ClusterRoleBinding applies in every namespace.',
+    ],
     check: (s) =>
       s.scenarioId === 'cluster-wide' && s.answer.allowed && s.question.namespace === 'prod',
   },
@@ -220,6 +246,8 @@ export default function K8sRbacSimulator() {
   const index = SCENARIOS.findIndex((s) => s.id === scenario.id);
   const doneIds = new Set(missions.missions.filter((m) => m.done).map((m) => m.id));
   const missionFor = (id: string) => MISSIONS.find((m) => m.id === id);
+  // Each mission is named after the scenario it happens in.
+  const goIndex = SCENARIOS.findIndex((s) => s.id === missions.current?.id);
 
   const open = (i: number) => {
     const s = SCENARIOS[i];
@@ -520,7 +548,13 @@ export default function K8sRbacSimulator() {
             </>
           )
         }
-      />
+      >
+        <SimMissionHelp
+          mission={missions.current}
+          onGo={goIndex >= 0 && goIndex !== index ? () => open(goIndex) : undefined}
+          goLabel={`Go to scenario ${goIndex + 1}`}
+        />
+      </SimBar>
 
       <SimAnnouncer message={`${answer.allowed ? 'Allowed' : 'Denied'}. ${answer.summary}`} />
 

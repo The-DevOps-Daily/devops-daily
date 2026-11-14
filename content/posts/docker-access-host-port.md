@@ -94,7 +94,7 @@ Good luck with your project!
 ## Related Resources
 
 - [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker): more on host networking
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): port publishing fundamentals
+- [Docker Compose: Ports vs Expose](/posts/forward-host-port-to-docker-container#h2-what-is-the-difference-between-ports-and-expose-in-docker-compose): port publishing fundamentals
 - [Introduction to Docker: Networking](/guides/introduction-to-docker): Docker networking guide
 - [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge
 - [DevOps Roadmap](/roadmap): where Docker fits in your learning path

@@ -322,7 +322,7 @@ The pieces of the second method:
 - `read -d ''` reads up to the next null byte, `-r` keeps backslashes, and `IFS=` keeps leading and trailing spaces.
 - `< <(...)` is **process substitution**: the loop reads `find`'s output as if it were a file. Writing `find ... | while read` would also work, but the loop would run in a subshell and `total` would be 0 afterwards ([Part 5](/guides/introduction-to-bash/05-control-structures) shows why).
 
-`find -exec ... {} +` is the simplest choice when one command can take all the names. Use the loop when you need Bash logic for each file. [Count lines of code recursively](/posts/count-lines-of-code-recursively) has more variations.
+`find -exec ... {} +` is the simplest choice when one command can take all the names. Use the loop when you need Bash logic for each file. [Count lines of code recursively](/posts/find-files-with-wildcards-linux#h3-how-do-i-count-lines-of-code-in-a-directory-recursively) and [fix "Argument list too long"](/posts/find-files-with-wildcards-linux#h2-how-do-i-fix-argument-list-too-long-for-rm-cp-and-mv) show more variations.
 
 ## Test Files and Directories
 
@@ -412,7 +412,7 @@ done
 }
 ```
 
-Related: [check if a file does not exist](/posts/check-file-not-exist-bash) and [get a file name's extension](/guides/introduction-to-bash/04-bash-variables#h2-parameter-expansion-for-strings).
+Related: [check if a file does not exist](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-file-does-not-exist-in-bash) and [get a file name's extension](/guides/introduction-to-bash/04-bash-variables#h2-parameter-expansion-for-strings).
 
 ## Read Files
 
@@ -685,7 +685,7 @@ Next: [Bash Variables](/guides/introduction-to-bash/04-bash-variables), with par
 ## Keep Learning
 
 - [Loop through the lines of a file](/posts/bash-loop-through-file-content)
-- [Check if a file does not exist](/posts/check-file-not-exist-bash)
+- [Check if a file does not exist](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-file-does-not-exist-in-bash)
 - [List directories with their sizes](/posts/using-ls-list-directories-sizes)
 - [How cat <<EOF works](/posts/how-cat-eof-works-in-bash)
-- Interview questions: [Linux file permissions](/interview-questions/junior/linux-file-permissions)
+- Interview questions: [Linux file permissions](/interview-questions/topic/linux#linux-file-permissions)

@@ -1,7 +1,7 @@
 {
   "id": "internal-developer-platform",
   "slug": "internal-developer-platform",
-  "title": "Building an Internal Developer Platform from Scratch",
+  "title": "Internal Developer Platform Checklist",
   "description": "A step-by-step checklist for designing and building an internal developer platform (IDP) that gives your engineers self-service access to infrastructure, environments, and deployments without filing tickets.",
   "category": "Platform Engineering",
   "difficulty": "advanced",

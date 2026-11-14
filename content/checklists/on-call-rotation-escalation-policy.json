@@ -1,7 +1,7 @@
 {
   "id": "on-call-rotation-escalation-policy",
   "slug": "on-call-rotation-escalation-policy",
-  "title": "How to Build an Effective On-Call Rotation and Escalation Policy",
+  "title": "On-Call Rotation and Escalation Policy Checklist",
   "description": "A practical checklist for designing on-call schedules, defining escalation paths, and cutting alert fatigue so your team can sleep at night and still respond fast when things break.",
   "category": "Incident Management",
   "difficulty": "intermediate",

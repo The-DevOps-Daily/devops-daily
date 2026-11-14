@@ -316,5 +316,23 @@
     "Kubernetes",
     "Container Orchestration",
     "Fargate"
+  ],
+  "relatedLinks": [
+    {
+      "label": "When Kubernetes Is the Wrong Default",
+      "href": "/posts/when-kubernetes-is-wrong-default"
+    },
+    {
+      "label": "Introduction to Kubernetes",
+      "href": "/guides/introduction-to-kubernetes"
+    },
+    {
+      "label": "Introduction to AWS",
+      "href": "/guides/introduction-to-aws"
+    },
+    {
+      "label": "AWS Cloud Services Quiz",
+      "href": "/quizzes/aws-quiz"
+    }
   ]
 }

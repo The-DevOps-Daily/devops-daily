@@ -155,7 +155,7 @@ For a true emergency, keep a separate break-glass deployment workflow that runs 
 ## Keep Learning
 
 - [SAST Tools guide](/guides/sast-tools) and [Threat Modeling guide](/guides/threat-modeling)
-- [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
+- [CI/CD pipeline hardening: runners, egress, OIDC and pinning](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline)
 - [Pre-commit Hooks for Security: Stop Secrets Before They Hit Your Repository](/posts/pre-commit-hooks-security-guide)
 - [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup)
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

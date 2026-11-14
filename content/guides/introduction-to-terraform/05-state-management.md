@@ -212,7 +212,7 @@ Sometimes the manual change is correct (an emergency fix in the console, a size 
 }
 ```
 
-Two flags change how much Terraform refreshes. `-refresh=false` skips the refresh entirely (faster, but blind to drift), and `-minimal-refresh`, new in Terraform 1.17, only refreshes resources that have changes in your configuration, which speeds up plans of large configurations. The post [What Does Terraform Refresh Really Do?](/posts/terraform-refresh-explained) goes deeper, and [-minimal-refresh, measured](/posts/terraform-1-17-minimal-refresh-measured) shows what the flag saves on 202 resources and which drift it misses.
+Two flags change how much Terraform refreshes. `-refresh=false` skips the refresh entirely (faster, but blind to drift), and `-minimal-refresh`, new in Terraform 1.17, only refreshes resources that have changes in your configuration, which speeds up plans of large configurations. [What does terraform refresh do?](/posts/who-owns-the-terraform-state-file#h3-what-does-terraform-refresh-do) goes deeper, and [-minimal-refresh, measured](/posts/terraform-1-17-minimal-refresh-measured) shows what the flag saves on 202 resources and which drift it misses.
 
 ## Refactor Without Destroying Anything
 
@@ -450,7 +450,7 @@ If a run crashed or was killed and left a lock behind on a remote backend, relea
 terraform force-unlock 3b6a1f8c-2c9e-4b8a-9d55-0f1e2a3b4c5d
 ```
 
-Only do this after you have checked that the run that owns the lock is really gone (the CI job is finished, the colleague's laptop is not mid-apply). Unlocking a live run is how state gets corrupted. The posts [Terraform Statefile is Locked: How to Unlock It](/posts/terraform-statefile-locked) and [Fix Error Acquiring the State Lock: ConditionalCheckFailedException](/posts/fix-error-acquiring-the-state-lock-conditionalcheckfailedexception) cover backend-specific cases.
+Only do this after you have checked that the run that owns the lock is really gone (the CI job is finished, the colleague's laptop is not mid-apply). Unlocking a live run is how state gets corrupted. [The State Is Locked. How Do I Unlock It?](/posts/who-owns-the-terraform-state-file#h3-the-state-is-locked-how-do-i-unlock-it) and [How Do I Fix "Error acquiring the state lock: ConditionalCheckFailedException"?](/posts/who-owns-the-terraform-state-file#h3-how-do-i-fix-error-acquiring-the-state-lock-conditionalcheckfailedexception) cover backend-specific cases.
 
 ## Backups and Recovery
 
@@ -499,6 +499,6 @@ In [Part 6](/guides/introduction-to-terraform/06-variables-and-outputs) you make
 
 - [Terraform State: Remove, Move and Migrate Resources, and Set Up a Remote Backend](/posts/terraform-state-remove-move-migrate-backend)
 - [Who Owns the State File, and Other Questions That Decide Your Week](/posts/who-owns-the-terraform-state-file)
-- [How to Fix Terraform Import "Index Value Required" Error for String Keys](/posts/terraform-import-index-value-required-error)
-- [Interview question: Terraform state management](/interview-questions/mid/terraform-state-management)
+- [How to Fix Terraform Import "Index Value Required" Error for String Keys](/posts/terraform-referencing-for-each-resources#h3-fix-index-value-required-with-terraform-import)
+- [Interview question: Terraform state management](/interview-questions/topic/terraform#terraform-state-management)
 - [Terraform puzzle game](/games/terraform-puzzle)

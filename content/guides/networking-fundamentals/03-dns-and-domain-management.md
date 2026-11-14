@@ -526,6 +526,6 @@ Next, [Part 4](/guides/networking-fundamentals/04-network-security-and-firewalls
 ## Keep Learning
 
 - [DNS resolution simulator](/games/dns-simulator)
-- Interview questions: [DNS basics](/interview-questions/junior/networking-basics-dns), [what happens when you type a URL](/interview-questions/junior/system-design-dns-resolution)
+- Interview questions: [DNS basics](/interview-questions/topic/networking#networking-basics-dns), [what happens when you type a URL](/interview-questions/topic/system-design#system-design-dns-resolution)
 - [How to fix SSH "Could not resolve hostname"](/posts/ssh-could-not-resolve-hostname-error)
 - [DMARCbis: what changed in DMARC](/posts/dmarcbis-what-changed-new-dmarc) for the TXT records behind email authentication

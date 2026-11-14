@@ -629,7 +629,6 @@ You now have the complete set: [policy as code](/guides/security-gates/01-policy
 ## Keep Learning
 
 - [The pwn request just got harder: what actions/checkout v7 changes, and what it does not](/posts/pwn-request-github-actions-checkout-v7)
-- [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
-- [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security)
+- [Software Supply Chain Security: CI/CD Pipeline Hardening, SBOMs, Sigstore and SLSA](/posts/software-supply-chain-security)
 - [GitHub Actions Workflows Quiz](/quizzes/github-actions-quiz) and [Complete CI/CD Pipeline with GitHub Actions](/exercises/ci-cd-github-actions) (exercise)
-- [Interview question: CI/CD pipeline design](/interview-questions/mid/cicd-pipeline-design)
+- [Interview question: CI/CD pipeline design](/interview-questions/topic/cicd#cicd-pipeline-design)

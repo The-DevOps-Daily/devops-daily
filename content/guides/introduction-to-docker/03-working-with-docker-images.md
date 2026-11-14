@@ -164,7 +164,7 @@ Most official images come in variants. For the Python image:
 
 - `python:3.14`: Debian with compilers and many libraries. Good for building, too big to ship.
 - `python:3.14-slim`: Debian with only what Python needs. The usual choice for applications.
-- `python:3.14-alpine`: Alpine Linux with musl instead of glibc. Smaller, but some Python packages with C extensions have no musl wheels and must compile. It also ships `sh`, not `bash` ([how to use bash on Alpine](/posts/docker-alpine-use-bash)).
+- `python:3.14-alpine`: Alpine Linux with musl instead of glibc. Smaller, but some Python packages with C extensions have no musl wheels and must compile. It also ships `sh`, not `bash` ([how to use bash on Alpine](/posts/how-to-access-docker-container-shell#h2-how-do-i-use-bash-in-an-alpine-container)).
 - `gcr.io/distroless/python3-debian13`: Google's distroless image: Python and its libraries, no shell and no package manager. Its Python version is whatever Debian 13 ships (3.13), not one you choose.
 
 The size difference is large. These numbers come from the registry manifests, with every layer unpacked to count its files:
@@ -398,9 +398,9 @@ Next, run containers from these images in [Run Your First Docker Container](/gui
 
 ## Keep Learning
 
-- [Where Docker Images Are Stored on Your Host Machine](/posts/docker-image-storage-locations)
-- [How to Remove Old and Unused Docker Images](/posts/remove-old-unused-docker-images)
-- [Fix "No Space Left on Device" in Docker](/posts/docker-image-storage-locations#h2-fixing-no-space-left-on-device)
+- [Where Docker Images Are Stored on Your Host Machine](/posts/docker-list-containers#h2-where-does-docker-store-images-and-containers)
+- [How to Remove Old and Unused Docker Images](/posts/docker-list-containers#h2-how-do-i-remove-docker-images)
+- [Fix "No Space Left on Device" in Docker](/posts/docker-list-containers#h2-how-do-i-fix-no-space-left-on-device-in-docker)
 - [Why Your Base Image Has 1,684 CVEs](/posts/why-your-base-image-has-1684-cves)
 - [Harbor vs Docker Hub](/comparisons/harbor-vs-docker-hub)
-- Interview question: [Docker image layers and caching](/interview-questions/mid/docker-layers-caching)
+- Interview question: [Docker image layers and caching](/interview-questions/topic/docker#docker-layers-caching)

@@ -758,5 +758,5 @@ Next, [Part 5](/guides/finops-for-devops-engineers/05-cicd-integration) checks e
 - [Managing Your AWS Costs](/guides/introduction-to-aws/10-cost-management) in the Introduction to AWS guide
 - [Cloud Cost Allocation Tags Checklist](/checklists/cloud-cost-allocation-tags)
 - [Cloud Cost Allocation Tags Flashcards](/flashcards/cloud-cost-allocation-tags)
-- [Interview questions: Enforcing Tagging Policies Across Clouds](/interview-questions/mid/enforcing-tagging-policies-multi-cloud)
-- [Interview questions: Activating Tags in Billing Reports](/interview-questions/mid/activating-cost-allocation-tags)
+- [Interview questions: Enforcing Tagging Policies Across Clouds](/interview-questions/topic/finops#enforcing-tagging-policies-multi-cloud)
+- [Interview questions: Activating Tags in Billing Reports](/interview-questions/topic/finops#activating-cost-allocation-tags)

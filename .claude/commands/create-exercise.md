@@ -153,12 +153,15 @@ Include links to documentation, tutorials, and tools:
 
 Valid resource types: `documentation`, `tutorial`, `tool`, `reference`
 
-## OG Image
+## Cover image
 
-After creating the exercise, remind the user to generate the OG image:
+Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+
 ```bash
-pnpm generate:images
+npx tsx scripts/generate-content-og.ts --only=exercise/<exercise-id>
 ```
+
+It writes `public/images/exercises/<exercise-id>.jpg` (1200x630 JPEG). Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
 
 ## Checklist
 

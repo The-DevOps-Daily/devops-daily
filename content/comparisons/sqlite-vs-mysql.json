@@ -235,5 +235,23 @@
     "toolBScore": 4.4,
     "recommendation": "Pick MySQL when you need true multi-writer concurrency across application servers, built-in user management, or the deepest possible ecosystem of tools and hosting providers - which covers most classic web app shapes. Pick SQLite when operational simplicity, in-process read latency, embeddability, or edge deployment are the dominant requirements."
   },
-  "relatedTags": ["SQLite", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"]
+  "relatedTags": ["SQLite", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "SQL Terminal Simulator",
+      "href": "/games/sql-terminal-simulator"
+    },
+    {
+      "label": "How Shopify Survives Black Friday: The Flash-Sale Playbook",
+      "href": "/posts/how-shopify-survives-black-friday-flash-sale-playbook"
+    },
+    {
+      "label": "How YouTube, Slack and GitHub Shard MySQL: We Built the Vitess Pattern on Five Servers and Measured What It Costs",
+      "href": "/posts/how-youtube-slack-github-shard-mysql-vitess"
+    },
+    {
+      "label": "SQL & Database Design Quiz",
+      "href": "/quizzes/sql-quiz"
+    }
+  ]
 }

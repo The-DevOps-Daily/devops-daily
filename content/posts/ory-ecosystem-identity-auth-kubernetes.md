@@ -82,7 +82,7 @@ Managed auth services like Auth0 and Clerk are great until you hit their pricing
 
 The tradeoff: you're responsible for running and maintaining the infrastructure. If your team is already comfortable with Kubernetes, this is manageable. If you don't have ops capacity, a managed service might be the better call until you do.
 
-Beyond cost, there are cases where self-hosted is the only option: strict data residency requirements, air-gapped environments, or compliance rules that don't allow user data to leave your infrastructure.
+Beyond cost, there are cases where self-hosted is the only option: strict data residency requirements, air-gapped environments, or compliance rules that don't allow user data to leave your infrastructure. Ory is not the only self-hosted option; the [Ory vs Keycloak comparison](/comparisons/ory-vs-keycloak) compares it with the other established one.
 
 ## The Ory Components
 

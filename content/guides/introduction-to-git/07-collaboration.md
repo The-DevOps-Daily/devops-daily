@@ -406,7 +406,7 @@ A user reports that the footer is hard to read in dark mode. The fix goes to `ma
 }
 ```
 
-`git cherry-pick` applies the changes of one commit as a new commit on the current branch. `-x` adds the "(cherry picked from commit ...)" line, so anyone can trace the backport to the original. Fix on `main` first and copy to release branches, not the other way round; otherwise the next release can miss the fix. [How to cherry-pick commits](/posts/how-to-cherry-pick-commits-in-git) covers ranges and conflicts.
+`git cherry-pick` applies the changes of one commit as a new commit on the current branch. `-x` adds the "(cherry picked from commit ...)" line, so anyone can trace the backport to the original. Fix on `main` first and copy to release branches, not the other way round; otherwise the next release can miss the fix. [How to cherry-pick commits](/posts/move-most-recent-commits-to-new-branch-git#h2-how-do-i-cherry-pick-a-commit-in-git) covers ranges and conflicts.
 
 ## Choose a Workflow
 
@@ -472,5 +472,5 @@ Next: [Git History](/guides/introduction-to-git/08-history), where you search th
 ## Keep Learning
 
 - [Git Workflow and Collaboration exercise](/exercises/git-workflow-collaboration)
-- Interview questions: [Git workflow strategies](/interview-questions/junior/git-workflow-strategies) and [Git branching strategies](/interview-questions/junior/git-branching-strategies)
-- [Create a remote Git branch](/posts/create-remote-git-branch)
+- Interview questions: [Git workflow strategies](/interview-questions/topic/git#git-workflow-strategies) and [Git branching strategies](/interview-questions/topic/git#git-branching-strategies)
+- [Create a remote Git branch](/posts/how-to-push-new-local-branch-to-remote-and-track#h2-how-do-i-create-a-remote-branch)

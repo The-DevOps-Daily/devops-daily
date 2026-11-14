@@ -122,4 +122,4 @@ Start with [Part 1: SAST Fundamentals](/guides/sast-tools/01-sast-fundamentals),
 - [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide), for the code SAST does not cover
 - [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide)
 - [Threat Modeling guide](/guides/threat-modeling), to decide what to scan for first
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

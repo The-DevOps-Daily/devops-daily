@@ -1,524 +1,235 @@
 ---
-title: 'How to Prevent Data Loss When Docker Containers Exit'
-excerpt: "Learn why data disappears when Docker containers stop, how to persist data with volumes and bind mounts, and best practices for managing stateful applications in containers."
+title: 'How to Keep Docker Data When a Container Exits: Volumes and Bind Mounts'
+excerpt: 'Data in a container goes away with the container. Learn when that happens, how named volumes and bind mounts keep data, how to add a volume to an existing container, where database images keep their files, and how to back up and remove volumes safely.'
 category:
   name: 'Docker'
   slug: 'docker'
 date: '2024-10-15'
-publishedAt: '2024-10-15T11:30:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '9 min read'
+publishedAt: '2024-10-15T09:00:00Z'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
 tags:
   - Docker
   - Volumes
-  - Data Persistence
-  - DevOps
+  - Bind Mounts
   - Storage
+  - PostgreSQL
+  - DevOps
 ---
 
-**TLDR:** Docker containers are ephemeral - any data written inside a container's filesystem is lost when the container is removed. To persist data, use Docker volumes (`docker volume create` and `-v` flag), bind mounts (map host directories), or named volumes in Docker Compose. Volumes persist independently of container lifecycle and are the recommended approach for databases, uploads, and any data you can't afford to lose.
+The first time you remove a database container and run a new one, you find an empty database. Nothing went wrong: everything the container wrote went into its own writable layer, and `docker rm` deleted that layer. Data that must stay needs a volume or a bind mount.
 
-When you first encounter Docker, it's shocking to lose all your data after removing a container. Here's what happens and how to prevent it.
+This post explains when data disappears, how to choose between a named volume and a bind mount, how to mount a host directory, how to add a volume to a container that already exists, where the common database images keep their data, and how to back up and remove volumes without losing anything by accident.
 
-## Why Data Disappears
+## TLDR
 
-Docker containers have their own isolated filesystem. When you write data inside a container, it's stored in a writable layer on top of the image:
+- Stopping a container keeps its data. Removing it (`docker rm`, `docker compose down`, a redeploy) deletes the writable layer.
+- Put data in a **named volume**: `docker run -e POSTGRES_PASSWORD=change-me -v pgdata:/var/lib/postgresql postgres:18`. The volume stays when the container goes.
+- Use a **bind mount** to share a host directory: `docker run -v "$(pwd)/data":/app/data myapp`. Good for source code and config files in development.
+- You cannot add a mount to an existing container. Create a new container with the mount, and copy the old data first.
+- `docker volume prune` removes only anonymous volumes. Named volumes go only with `docker volume rm`, `docker volume prune --all` or `docker compose down -v`.
 
+## Prerequisites
+
+- Docker Engine 23 or later, or Docker Desktop.
+- For the database examples, the `postgres:18` image. Older tags use another data path, as shown below.
+
+## Why Does Data Disappear When a Container Is Removed?
+
+Each container gets a thin writable layer on top of the read-only image layers. Every file the app writes outside a mount lands in that layer:
+
+```text
+┌──────────────────────────────┐
+│  Writable container layer    │  <- your data, deleted by docker rm
+├──────────────────────────────┤
+│  Read-only image layers      │  <- shared by every container of the image
+└──────────────────────────────┘
 ```
-Container filesystem layers:
-┌─────────────────────────┐
-│  Writable Container     │  ← Your data goes here
-│  Layer (temporary)      │     Lost when container is removed
-├─────────────────────────┤
-│  Read-only Image Layers │  ← Never changes
-└─────────────────────────┘
-```
 
-When you remove the container:
+The writable layer lives as long as the container, not as long as the process:
+
+| Action                                                        | Data in the writable layer |
+| ------------------------------------------------------------- | -------------------------- |
+| `docker stop` and `docker start`                              | Kept                       |
+| `docker restart`, a host reboot                               | Kept                       |
+| `docker rm`, `docker compose down`                            | Deleted                    |
+| Recreate: `docker compose up` after a change, a new image tag | Deleted                    |
+
+Many database images declare a `VOLUME` in their Dockerfile. If you do not mount anything there, Docker creates an **anonymous volume** with a random name. The data then survives `docker rm`, but the new container gets a new, empty anonymous volume, so it looks lost. Find the old one with `docker volume ls` (the long hex names) and mount it by name, or better, use a named volume from the start. `docker rm -v` removes a container together with its anonymous volumes.
+
+## Volumes, Bind Mounts and tmpfs: Which Should I Use?
+
+| Type         | Example                         | Where the data is                  | Use it for                                                 |
+| ------------ | ------------------------------- | ---------------------------------- | ---------------------------------------------------------- |
+| Named volume | `-v pgdata:/var/lib/postgresql` | Managed by Docker                  | Databases, uploads, anything that must stay                |
+| Bind mount   | `-v "$(pwd)/src":/app/src`      | A directory you choose on the host | Source code and config in development                      |
+| tmpfs        | `--tmpfs /tmp`                  | Memory only                        | Scratch files that must not stay after the container stops |
+
+Named volumes work the same on Linux, macOS and Windows, and on Docker Desktop they are faster than bind mounts because they stay inside Docker's VM. Bind mounts give you the files directly on the host, with the host's permissions. [Introduction to Docker: Volumes](/guides/introduction-to-docker/06-working-with-docker-volumes) covers all three in depth.
+
+## How Do I Persist Data With a Named Volume?
+
+Mount a named volume at the directory where the app writes. Docker creates the volume if it does not exist:
 
 ```bash
-# Start a container and write data
-docker run --name mydb postgres:15
-# Database creates data in /var/lib/postgresql/data
+docker run -d --name db \
+  -e POSTGRES_PASSWORD=change-me \
+  -v pgdata:/var/lib/postgresql \
+  postgres:18
 
-# Stop and remove the container
-docker stop mydb
-docker rm mydb
+docker exec db psql -U postgres -c "CREATE DATABASE shop;"
 
-# Data is gone! The writable layer is deleted
+# Remove the container and start a new one on the same volume
+docker rm -f db
+docker run -d --name db -e POSTGRES_PASSWORD=change-me -v pgdata:/var/lib/postgresql postgres:18
+docker exec db psql -U postgres -c "\l"     # shop is still there
 ```
 
-Even if you restart the container (without removing it), data persists:
+The `postgres` image refuses to start without `POSTGRES_PASSWORD` (or another auth setting) on an empty data directory, so always set it. The `POSTGRES_*` variables only apply on the first start, when the image creates the database cluster in an empty volume.
 
-```bash
-# Create container
-docker run -d --name mydb postgres:15
-
-# Write some data (create database, tables, etc.)
-docker exec -it mydb psql -U postgres -c "CREATE DATABASE myapp;"
-
-# Stop the container
-docker stop mydb
-
-# Start it again - data is still there
-docker start mydb
-docker exec -it mydb psql -U postgres -c "\l"
-# myapp database exists
-```
-
-But as soon as you `docker rm mydb`, the data is gone. This is by design - containers are meant to be disposable.
-
-## Solution 1: Docker Volumes (Recommended)
-
-Volumes are Docker-managed storage that exists independently of containers:
-
-```bash
-# Create a named volume
-docker volume create postgres-data
-
-# Use the volume when running a container
-docker run -d \
-  --name mydb \
-  -v postgres-data:/var/lib/postgresql/data \
-  postgres:15
-```
-
-Now the data lives in the volume, not the container:
-
-```
-Volume (persistent):          Container (ephemeral):
-┌──────────────────┐         ┌────────────────────┐
-│ postgres-data    │<─────── │ /var/lib/postgresql│
-│                  │   mount │ /data              │
-│ (survives rm)    │         │ (deleted on rm)    │
-└──────────────────┘         └────────────────────┘
-```
-
-```bash
-# Create some data
-docker exec -it mydb psql -U postgres -c "CREATE DATABASE myapp;"
-
-# Remove the container
-docker stop mydb
-docker rm mydb
-
-# Create a new container using the same volume
-docker run -d \
-  --name mydb2 \
-  -v postgres-data:/var/lib/postgresql/data \
-  postgres:15
-
-# Data is still there!
-docker exec -it mydb2 psql -U postgres -c "\l"
-# myapp database exists
-```
-
-### Listing Volumes
-
-```bash
-# See all volumes
-docker volume ls
-
-# Inspect a volume
-docker volume inspect postgres-data
-
-# Output shows where data is stored on host:
-# "Mountpoint": "/var/lib/docker/volumes/postgres-data/_data"
-```
-
-### Removing Volumes
-
-Volumes persist even after container removal:
-
-```bash
-# Remove container
-docker rm mydb
-# Volume still exists
-
-# Remove volume manually
-docker volume rm postgres-data
-
-# Or remove all unused volumes
-docker volume prune
-```
-
-## Solution 2: Bind Mounts
-
-Bind mounts map a host directory directly into the container:
-
-```bash
-# Create a directory on the host
-mkdir -p /home/user/postgres-data
-
-# Mount it into the container
-docker run -d \
-  --name mydb \
-  -v /home/user/postgres-data:/var/lib/postgresql/data \
-  postgres:15
-```
-
-Data is stored in `/home/user/postgres-data` on your host machine:
-
-```bash
-# View data on host
-ls -la /home/user/postgres-data
-# base/ global/ pg_wal/ ...
-
-# Remove container
-docker rm -f mydb
-
-# Data still exists on host
-ls -la /home/user/postgres-data
-# Still there!
-```
-
-### Bind Mounts vs Volumes
-
-```
-Volumes:
-✓ Managed by Docker
-✓ Work on all platforms
-✓ Better performance on Mac/Windows
-✓ Can be shared between containers easily
-✓ Backup with docker commands
-- Less direct access from host
-
-Bind Mounts:
-✓ Direct access to files from host
-✓ Useful for development (live code editing)
-✓ Full control over location
-- Must exist before mounting
-- Path differences across systems
-- Permissions can be tricky
-```
-
-For production data like databases, use volumes. For development like mounting source code, use bind mounts.
-
-## Real-World Examples
-
-### PostgreSQL Database
-
-```bash
-# Create volume
-docker volume create pgdata
-
-# Run database with volume
-docker run -d \
-  --name postgres \
-  -e POSTGRES_PASSWORD=secret \
-  -v pgdata:/var/lib/postgresql/data \
-  -p 5432:5432 \
-  postgres:15
-
-# Use the database (data persists)
-docker exec -it postgres psql -U postgres
-
-# Restart, remove, recreate - data survives
-docker rm -f postgres
-docker run -d --name postgres -e POSTGRES_PASSWORD=secret -v pgdata:/var/lib/postgresql/data postgres:15
-```
-
-### MySQL Database
-
-```bash
-# Create volume
-docker volume create mysql-data
-
-# Run MySQL
-docker run -d \
-  --name mysql \
-  -e MYSQL_ROOT_PASSWORD=rootpass \
-  -v mysql-data:/var/lib/mysql \
-  -p 3306:3306 \
-  mysql:8
-
-# Data persists in mysql-data volume
-```
-
-### MongoDB
-
-```bash
-# Create volume
-docker volume create mongo-data
-
-# Run MongoDB
-docker run -d \
-  --name mongodb \
-  -v mongo-data:/data/db \
-  -p 27017:27017 \
-  mongo:7
-```
-
-### Web Application with Uploads
-
-```bash
-# Create volume for uploaded files
-docker volume create app-uploads
-
-# Run application
-docker run -d \
-  --name webapp \
-  -v app-uploads:/app/uploads \
-  -p 8080:80 \
-  myapp:latest
-
-# User uploads files to /app/uploads in container
-# Files are stored in app-uploads volume
-# They persist even if you redeploy the app
-```
-
-## Using Docker Compose
-
-Docker Compose makes volume management easier:
+In Compose, declare the volume at the top level and mount it in the service:
 
 ```yaml
-# docker-compose.yml
-version: '3.8'
-
 services:
   db:
-    image: postgres:15
+    image: postgres:18
     environment:
-      POSTGRES_PASSWORD: secret
+      POSTGRES_PASSWORD: change-me
     volumes:
-      # Named volume (recommended)
-      - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  web:
-    image: myapp:latest
-    volumes:
-      # Bind mount for development
-      - ./src:/app/src
-      # Named volume for uploads
-      - uploads:/app/uploads
-    ports:
-      - "8080:80"
-    depends_on:
-      - db
-
-# Define volumes
-volumes:
-  postgres-data:
-  uploads:
-```
-
-Start everything:
-
-```bash
-docker-compose up -d
-
-# Data persists across down/up cycles
-docker-compose down  # Stops and removes containers
-docker-compose up -d # Starts new containers, data is still there
-
-# To remove volumes, add -v flag
-docker-compose down -v  # WARNING: Deletes all data!
-```
-
-### Volume Configuration Options
-
-```yaml
-volumes:
-  # Simple named volume
-  postgres-data:
-
-  # Volume with driver options
-  cache-data:
-    driver: local
-    driver_opts:
-      type: tmpfs
-      device: tmpfs
-
-  # External volume (created manually)
-  shared-data:
-    external: true
-    name: my-existing-volume
-```
-
-## Multiple Volumes
-
-A container can use multiple volumes:
-
-```bash
-docker run -d \
-  --name app \
-  -v app-data:/app/data \
-  -v app-logs:/app/logs \
-  -v app-config:/app/config \
-  myapp:latest
-```
-
-Or in Compose:
-
-```yaml
-services:
-  app:
-    image: myapp:latest
-    volumes:
-      - app-data:/app/data
-      - app-logs:/app/logs
-      - app-config:/app/config
+      - pgdata:/var/lib/postgresql
 
 volumes:
-  app-data:
-  app-logs:
-  app-config:
+  pgdata:
 ```
 
-## Read-Only Volumes
+Compose prefixes the name with the project name, for example `shop_pgdata`. `docker compose down` keeps it, and `docker compose down -v` deletes it. To see which containers use which volumes, see [how to list volumes in Docker containers](/posts/how-to-list-docker-volumes-in-containers).
 
-For configuration files that shouldn't be modified:
+## How Do I Mount a Host Directory in a Container?
+
+Pass the host path and the container path to `-v`, or use the longer `--mount`:
 
 ```bash
-# Mount volume as read-only
-docker run -d \
-  --name app \
-  -v app-config:/app/config:ro \
-  myapp:latest
+# Read and write
+docker run --rm -v "$(pwd)/data":/app/data alpine:3.24 ls /app/data
+
+# Read-only, for config files
+docker run --rm -v "$(pwd)/config":/etc/myapp:ro alpine:3.24 ls /etc/myapp
+
+# The same with --mount
+docker run --rm --mount type=bind,src="$(pwd)/config",dst=/etc/myapp,readonly alpine:3.24 ls /etc/myapp
 ```
 
-The `:ro` flag makes the volume read-only inside the container.
+Details that cause most bind-mount problems:
 
-## Backing Up Volumes
+- **Use an absolute host path.** `-v data:/app/data` without `/` or `./` makes a named volume called `data`, not a bind mount. `$(pwd)` gives an absolute path.
+- **A missing host directory.** `-v` creates it, owned by root. `--mount` fails with an error instead, which is usually what you want.
+- **The mount hides what is in the image.** A bind mount on `/app` replaces the image's `/app` with the host directory. A named volume that is empty copies the image's files in first, a bind mount never does.
+- **Permissions.** The container sees the host's UIDs. If the app runs as UID 1000 and the directory belongs to another user, writes fail. Fix the owner on the host (`sudo chown -R 1000:1000 ./data`) or run the container with `-u "$(id -u):$(id -g)"`.
+- **SELinux** (Fedora, RHEL): add `:z` (shared) or `:Z` (private to this container) so the container may read the files: `-v "$(pwd)/data":/app/data:Z`.
+- **Docker Desktop.** Only shared folders can be mounted. The home directory is shared by default, other paths need **Settings > Resources > File sharing**.
 
-### Backup a Volume
+## How Do I Add a Volume to an Existing Docker Container?
+
+You cannot add, remove or change a mount on a container that exists. Mounts, like ports, are fixed when the container is created. Create a new container with the same settings plus the mount. If the old container wrote data that you want to keep, copy it before you remove the old one:
 
 ```bash
-# Create a backup
-docker run --rm \
-  -v postgres-data:/data \
-  -v $(pwd):/backup \
-  ubuntu \
-  tar czf /backup/postgres-backup.tar.gz -C /data .
+# 1. Keep the old container, but free the name
+docker stop app
+docker rename app app-old
 
-# This creates postgres-backup.tar.gz in current directory
+# 2. Copy the old data into a new named volume (works on a stopped container)
+docker volume create app-data
+docker cp app-old:/var/lib/app/. - | docker run --rm -i -v app-data:/dst alpine:3.24 tar -xf - -C /dst
+
+# 3. Start the new container with the same options as before, plus the volume
+docker run -d --name app -p 8080:8080 -v app-data:/var/lib/app myorg/app:2.1.0
+
+# 4. Check, then remove the old container
+docker inspect -f '{{range .Mounts}}{{.Name}} -> {{.Destination}}{{"\n"}}{{end}}' app
+docker rm app-old
 ```
 
-What this does:
-1. Starts a temporary container (`--rm` removes it after)
-2. Mounts the volume to backup as `/data`
-3. Mounts current directory as `/backup`
-4. Creates a compressed archive of the volume
+`docker cp CONTAINER:PATH -` writes a `tar` archive to stdout, and the helper container unpacks it into the volume. If the app runs as a non-root user, fix the owner in the volume afterwards, for example `docker run --rm -v app-data:/dst alpine:3.24 chown -R 1000:1000 /dst`.
 
-### Restore a Volume
+To recall the old options, read them from the old container: `docker inspect app-old` shows the image, ports (`HostConfig.PortBindings`), environment (`Config.Env`) and mounts.
+
+With Compose, add the mount to the service and run `docker compose up -d`. Compose sees the changed config and recreates the container. Copy any data out first, because the recreate deletes the old writable layer.
+
+## How Do I Store a Database's Data in Docker?
+
+Give each database its own named volume, mounted at the image's data directory:
+
+| Image                   | Mount the volume at        | Notes                                                            |
+| ----------------------- | -------------------------- | ---------------------------------------------------------------- |
+| `postgres:18`           | `/var/lib/postgresql`      | The image keeps the cluster in a versioned subdirectory          |
+| `postgres:17` and older | `/var/lib/postgresql/data` | The path from most older tutorials                               |
+| `mysql:8.4`, `mariadb`  | `/var/lib/mysql`           |                                                                  |
+| `mongo`                 | `/data/db`                 |                                                                  |
+| `redis`                 | `/data`                    | Only useful with persistence on: `redis-server --appendonly yes` |
+
+The `postgres:18` change trips up many people. The 18 image keeps its data in `/var/lib/postgresql/18/docker` and declares the volume one level above the version directory. If you mount a volume at the old `/var/lib/postgresql/data` path, the container refuses to start with an error that begins `Error: in 18+, these Docker images are configured to store database data in a format which is compatible with "pg_ctlcluster"`. A volume from Postgres 17 or older also cannot be reused as it is: dump and restore, or run `pg_upgrade`. Run `docker image inspect -f '{{json .Config.Volumes}}' postgres:18` to see the path any image expects.
+
+Rules that keep database data safe:
+
+- **One data directory, one container.** Two database containers on the same volume corrupt it.
+- **Stop it cleanly.** `docker stop` sends the image's stop signal (SIGINT for `postgres`, which selects a fast shutdown) and waits 10 seconds before SIGKILL. A large database may need longer: `docker stop -t 60 db`, or `stop_grace_period: 1m` in Compose.
+- **Bind mounts need the right owner.** The Debian-based `postgres` and `mysql` images run as UID 999, and `postgres:*-alpine` as UID 70. A host directory must belong to that UID.
+- **Do not publish the port to the world.** Use `-p 127.0.0.1:5432:5432` for local tools, see [connect to Postgres from outside](/posts/forward-host-port-to-docker-container#h2-how-do-i-connect-to-postgresql-in-a-docker-container-from-the-host).
+- **Back up with the database's own tool.** A dump is consistent while the database runs, a copy of its files is not.
+
+## How Do I Back Up and Restore a Docker Volume?
+
+For a database, use a logical dump:
 
 ```bash
-# Create a new volume
-docker volume create postgres-data-restored
-
-# Restore from backup
-docker run --rm \
-  -v postgres-data-restored:/data \
-  -v $(pwd):/backup \
-  ubuntu \
-  tar xzf /backup/postgres-backup.tar.gz -C /data
+docker exec db pg_dump -U postgres shop > shop.sql
+docker exec -i db psql -U postgres -d shop < shop.sql
 ```
 
-## Copying Data Between Volumes
+For any other volume, archive its files with a helper container. Stop the containers that write to the volume first, so the files do not change during the copy:
 
 ```bash
-# Copy from one volume to another
-docker run --rm \
-  -v old-volume:/from \
-  -v new-volume:/to \
-  ubuntu \
-  cp -av /from/. /to/
+# Back up the volume "uploads" to ./uploads.tar.gz
+docker run --rm -v uploads:/data:ro -v "$(pwd)":/backup alpine:3.24 \
+  tar -czf /backup/uploads.tar.gz -C /data .
+
+# Restore it into a new volume
+docker volume create uploads-restored
+docker run --rm -v uploads-restored:/data -v "$(pwd)":/backup alpine:3.24 \
+  tar -xzf /backup/uploads.tar.gz -C /data
 ```
 
-## Troubleshooting
+To copy one volume into another, mount both: `docker run --rm -v old:/from:ro -v new:/to alpine:3.24 cp -a /from/. /to/`.
 
-### Permission Issues
+## How Do I Remove Volumes Without Losing Data by Accident?
 
-Sometimes containers can't write to volumes:
+Volumes are never removed with their containers unless you ask for it. The commands that do remove them:
 
-```bash
-# Check permissions in the volume
-docker run --rm -v myvolume:/data ubuntu ls -la /data
+| Command                     | What it removes                                                    |
+| --------------------------- | ------------------------------------------------------------------ |
+| `docker volume rm pgdata`   | That volume. It fails if a container (even a stopped one) uses it  |
+| `docker volume prune`       | Unused **anonymous** volumes only (since Docker Engine 23)         |
+| `docker volume prune --all` | Every unused volume, named ones included                           |
+| `docker rm -v app`          | The container and its anonymous volumes                            |
+| `docker compose down -v`    | The named volumes declared in the Compose file, and anonymous ones |
 
-# Fix permissions (example for PostgreSQL)
-docker run --rm \
-  -v postgres-data:/data \
-  ubuntu \
-  chown -R 999:999 /data
-# 999 is the postgres user ID in the official image
-```
-
-### Volume Not Mounting
-
-```bash
-# Verify volume exists
-docker volume ls | grep myvolume
-
-# Inspect volume
-docker volume inspect myvolume
-
-# Check container mounts
-docker inspect mycontainer | grep -A 10 Mounts
-```
-
-### Accidentally Deleted Data
-
-If you removed a volume:
-
-```bash
-# Check if volume still exists
-docker volume ls
-
-# If it's gone, it's really gone
-# Restore from backup (you have backups, right?)
-```
+Run `docker volume ls` before any of them, and `docker ps -a --filter volume=pgdata` to see who uses a volume. A removed volume cannot be recovered.
 
 ## Best Practices
 
-**For databases:**
-- Always use named volumes
-- Back up regularly
-- Don't use bind mounts in production
-
-**For development:**
-- Use bind mounts for source code
-- Use named volumes for dependencies (node_modules, etc.)
-- Document required volumes in README
-
-**For production:**
-- Use named volumes managed by Docker
-- Implement regular backup strategy
-- Test restore procedures
-- Monitor disk usage
-
-**Quick reference:**
-
-```bash
-# Create volume
-docker volume create mydata
-
-# Use volume
-docker run -v mydata:/path/in/container image
-
-# List volumes
-docker volume ls
-
-# Backup volume
-docker run --rm -v mydata:/data -v $(pwd):/backup ubuntu tar czf /backup/backup.tar.gz -C /data .
-
-# Remove unused volumes
-docker volume prune
-
-# Remove specific volume
-docker volume rm mydata
-```
-
-The key to preventing data loss is understanding that containers are temporary but volumes are permanent. Use volumes for anything you need to keep, and back them up regularly.
+- Decide where each service writes, and mount a named volume there before the first start.
+- Pin the image tag of a stateful service. A major upgrade (Postgres 17 to 18) needs a dump and restore or `pg_upgrade`, not only a new tag.
+- Use bind mounts for code and config in development, named volumes for data everywhere.
+- Back up on a schedule, and test the restore.
 
 ## Related Resources
 
-- [How to Add a Volume to an Existing Docker Container](/posts/how-to-add-a-volume-to-an-existing-docker-container): add storage after creation
-- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases): database-specific patterns
-- [How to List Docker Volumes](/posts/how-to-list-docker-volumes-in-containers): manage volumes
-- [Introduction to Docker: Volumes](/guides/introduction-to-docker): volume fundamentals
-- [Docker Security Checklist](/checklists/docker-security): secure your data
+- [How to list volumes in Docker containers](/posts/how-to-list-docker-volumes-in-containers): see which container uses which volume
+- [What docker compose down removes](/posts/rebuild-docker-container-compose#h2-what-down-removes-and-what-it-keeps)
+- [Introduction to Docker: Working with Volumes](/guides/introduction-to-docker/06-working-with-docker-volumes)
+- [Running Docker containers on your Linux server](/exercises/docker-server-deployment): an exercise with a database on a volume
+- [Docker terminal simulator](/games/docker-terminal-simulator): try volumes in the browser
+- [Docker quiz](/quizzes/docker-quiz): check what you know about volumes and mounts

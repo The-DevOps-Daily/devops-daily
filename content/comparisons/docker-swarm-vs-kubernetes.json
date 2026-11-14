@@ -315,5 +315,23 @@
     "DevOps",
     "Containers",
     "Cloud Native"
+  ],
+  "relatedLinks": [
+    {
+      "label": "When Kubernetes Is the Wrong Default",
+      "href": "/posts/when-kubernetes-is-wrong-default"
+    },
+    {
+      "label": "Introduction to Kubernetes",
+      "href": "/guides/introduction-to-kubernetes"
+    },
+    {
+      "label": "Docker in Production: Deploy, Update and Monitor Containers",
+      "href": "/guides/introduction-to-docker/10-docker-in-production"
+    },
+    {
+      "label": "Kubernetes Terminal Simulator",
+      "href": "/games/kubernetes-terminal-simulator"
+    }
   ]
 }

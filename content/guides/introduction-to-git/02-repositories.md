@@ -415,7 +415,7 @@ The shallow clone has only the newest commit. That is enough to build or test th
 | Git protocol            | `git://host/repo.git`                  | Read-only and unencrypted; GitHub stopped serving it in 2022             |
 | Local path or `file://` | `/srv/git/repo.git`                    | Another folder or a network share                                        |
 
-To find out where an existing clone came from, run `git remote get-url origin` ([more ways](/posts/how-to-determine-the-url-that-a-local-git-repository-was-originally-cloned-from)).
+To find out where an existing clone came from, run `git remote get-url origin` ([more ways](/posts/specify-private-ssh-key-for-git-commands#h2-how-do-i-see-which-url-a-repository-was-cloned-from)).
 
 ## Common Mistakes
 

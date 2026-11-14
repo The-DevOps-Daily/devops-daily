@@ -314,5 +314,23 @@
     "Automation",
     "Infrastructure",
     "DevOps"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Introduction to Ansible",
+      "href": "/guides/introduction-to-ansible"
+    },
+    {
+      "label": "Complete Web Server Automation with Ansible",
+      "href": "/exercises/ansible-web-server-automation"
+    },
+    {
+      "label": "Ansible Configuration Management Quiz",
+      "href": "/quizzes/ansible-quiz"
+    },
+    {
+      "label": "Infrastructure as Code: A Beginner's Guide to IaC Fundamentals",
+      "href": "/posts/infrastructure-as-code-fundamentals"
+    }
   ]
 }

@@ -6,7 +6,7 @@ category:
   slug: 'terraform'
 date: '2026-08-06'
 publishedAt: '2026-08-06T10:00:00Z'
-updatedAt: '2026-08-06T10:00:00Z'
+updatedAt: '2026-11-13T09:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
@@ -28,7 +28,7 @@ This covers building strings, testing them, and every flavour of conditional: va
 - Build strings with interpolation `"${var.a}-${var.b}"`, join lists with `join(",", list)`, split them back with `split()`.
 - Substring test is `strcontains(str, sub)` on Terraform 1.5 and later, `can(regex(...))` before that. `contains()` is for list membership, not substrings, and mixing them up is the most common mistake here.
 - There is no if/else. There is a ternary: `condition ? a : b`. Chain them for else-if.
-- `&&`, `||` and `!` are the boolean operators. They do not short-circuit the way you might expect in every context, so keep both sides valid.
+- `&&`, `||` and `!` are the boolean operators. Since Terraform 1.12 they short-circuit, so `length(var.l) > 0 && var.l[0] == "x"` is safe. On older versions, keep both sides valid.
 - Make a resource conditional with `count = var.enabled ? 1 : 0`, and remember it becomes a list, so reference it as `resource[0]` or with `one()`.
 - Make an attribute conditional with `dynamic` blocks, or set it to `null` to leave it unset.
 - Handle a value that might not exist with `try()`, `coalesce()` or `lookup()`, not with a conditional.
@@ -68,7 +68,44 @@ name = "${var.app_name}"   # don't
 name = var.app_name        # do
 ```
 
-Terraform will warn you about it, and it is the single most common thing to clean up in an inherited codebase.
+Current Terraform accepts it without a warning (`terraform validate` on 1.15.8 prints nothing), so use TFLint's `terraform_deprecated_interpolation` rule to find it. It is the single most common thing to clean up in an inherited codebase.
+
+### Build an Endpoint URL From Variables
+
+A URL is interpolation with a little cleanup, so that trailing or leading slashes in the input do not produce `//`. The validation block below only checks for an `https://` prefix, which catches the common mistake of a plain `http://` or a missing scheme. It is not full URL validation. This example sets the backend URL of an API Gateway HTTP integration:
+
+```hcl
+variable "backend_base_url" {
+  type        = string
+  description = "Base URL of the backend service, for example https://api.example.com"
+
+  validation {
+    condition     = startswith(var.backend_base_url, "https://")
+    error_message = "backend_base_url must start with https://."
+  }
+}
+
+variable "resource_path" {
+  type    = string
+  default = "v1/orders"
+}
+
+locals {
+  backend_url = "${trim(var.backend_base_url, "/")}/${trim(var.resource_path, "/")}"
+  # https://api.example.com/v1/orders, with or without the extra slashes
+}
+
+resource "aws_api_gateway_integration" "orders" {
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.orders.id
+  http_method             = aws_api_gateway_method.get_orders.http_method
+  type                    = "HTTP_PROXY"
+  integration_http_method = "GET"
+  uri                     = local.backend_url
+}
+```
+
+`HTTP` and `HTTP_PROXY` integrations need `integration_http_method`, the method API Gateway uses to call the backend. A changed integration is not live until a new deployment exists, so give `aws_api_gateway_deployment` a `triggers` map with a hash of the integration (for example `redeployment = sha1(jsonencode(aws_api_gateway_integration.orders))`) and `create_before_destroy`. The public URL of a stage is in `aws_api_gateway_stage.<name>.invoke_url`.
 
 ### format() for anything with structure
 
@@ -124,6 +161,7 @@ locals {
 ```hcl
 subnet_ids = var.subnet_ids_csv == "" ? [] : split(",", var.subnet_ids_csv)
 ```
+
 :::
 
 For machine-readable output, `jsonencode()` beats hand-built strings every time:
@@ -241,15 +279,16 @@ locals {
 }
 ```
 
-Terraform evaluates both sides of `&&` and `||`. Do not rely on the left side guarding the right:
+Since Terraform 1.12, `&&` and `||` short-circuit: when the left side decides the result, Terraform does not evaluate the right side. On Terraform 1.15.8 this is safe with an empty list:
 
 ```hcl
-# both sides get evaluated, so this still errors when the list is empty
-var.items != [] && var.items[0] == "x"
-
-# do the safe thing instead
-length(var.items) > 0 ? var.items[0] == "x" : false
+locals {
+  # false for an empty list, no error
+  first_is_x = length(var.items) > 0 && var.items[0] == "x"
+}
 ```
+
+Two things still go wrong. On Terraform 1.11 and older, both sides are evaluated, so use a ternary there: `length(var.items) > 0 ? var.items[0] == "x" : false`. And on any version, do not test for an empty list with `var.items != []`: `[]` is an empty tuple, a different type from `list(string)`, so the comparison is always `true`. Use `length(var.items) > 0`.
 
 ### When the value might not exist
 
@@ -401,11 +440,11 @@ This is the standard shape for "look it up only if the caller did not tell me".
 
 **Type mismatch across ternary branches.** Both sides must agree. `var.x ? "a" : null` is fine because `null` fits any type; `var.x ? "a" : 1` is not.
 
-**Forgetting the list after adding count.** Adding `count` to an existing resource changes its address from `aws_instance.app` to `aws_instance.app[0]`, and Terraform will plan a destroy and create unless you `terraform state mv` it.
+**Forgetting the list after adding count.** Adding `count` to an existing resource changes its address from `aws_instance.app` to `aws_instance.app[0]`, so every reference must change. The object itself is safe: Terraform proposes to move it to `[0]` on its own (`terraform_data.app has moved to terraform_data.app[0]` in our 1.15.8 run). Switching to `for_each` with string keys needs `moved` blocks, which Terraform 1.1 added for explicit moves.
 
 **Using contains() for substrings.** Covered above, still the most common one.
 
-**Assuming boolean short-circuit.** Both sides evaluate. Guard with a ternary rather than relying on `&&`.
+**Comparing with `[]`.** `var.items != []` is always true for a typed list. Use `length()`.
 
 **`split()` on an empty string.** Returns `[""]`, not `[]`.
 
@@ -417,4 +456,4 @@ Almost every Terraform expression question reduces to one of these: interpolate 
 
 The two that save the most time in practice are `try()` for values that might not exist and `one()` for resources that might not exist. Both replace a conditional that would otherwise be wrong in some edge case.
 
-For more Terraform, we have written about [running Terraform for a specific resource only](/posts/i-would-like-to-run-terraform-only-for-a-specific-resource), [removing a resource from state](/posts/terraform-state-remove-move-migrate-backend) and [Terraform best practices](/posts/terraform-best-practices).
+For more Terraform, we have written about [running Terraform for a specific resource only](/posts/terraform-run-init-from-different-folder#h2-how-do-i-run-terraform-only-for-a-specific-resource), [removing a resource from state](/posts/terraform-state-remove-move-migrate-backend) and [Terraform best practices](/posts/terraform-best-practices).

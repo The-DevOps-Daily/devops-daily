@@ -3,6 +3,7 @@ import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import hljs, { type HLJSApi, type Language } from 'highlight.js';
 import sanitizeHtml from 'sanitize-html';
+import { AFFILIATE_LINK_PATTERNS } from './affiliate-links';
 import { parseChartSpec } from './post-charts';
 import { parseTerminalSpec, parseTabsSpec } from './post-interactive';
 import { parseDiagramSpec } from './post-diagram';
@@ -401,26 +402,37 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
       if (/\bhljs\b/.test(next.class ?? '')) next.tabindex = '0';
       return { tagName, attribs: next };
     },
-    a: (tagName, attribs) => {
-      const href = attribs.href ?? '';
-      const external = /^https?:\/\//i.test(href);
-      return {
-        tagName,
-        attribs: external
-          ? { ...attribs, rel: attribs.rel ?? 'noopener noreferrer' }
-          : attribs,
-      };
-    },
+    a: (tagName, attribs) => linkWithRel(tagName, attribs, false),
   },
 };
 
-export function sanitizeRenderedHtml(html: string): string {
-  return sanitizeHtml(html, SANITIZE_OPTIONS);
+const PAID_LINK = new RegExp(AFFILIATE_LINK_PATTERNS.join('|'));
+const OWN_LINK = /^https?:\/\/((?!go\.)[a-z0-9-]+\.)?devops-daily\.com(\/|$)|^https?:\/\/github\.com\/The-DevOps-Daily(\/|$)/i;
+
+// Google asks for rel="sponsored" on paid and referral links. In a post a
+// sponsor paid for, every outside link gets it.
+function linkWithRel(tagName: string, attribs: sanitizeHtml.Attributes, sponsoredPost: boolean) {
+  const href = attribs.href ?? '';
+  if (!/^https?:\/\//i.test(href) || attribs.rel) return { tagName, attribs };
+  const paid = PAID_LINK.test(href) || (sponsoredPost && !OWN_LINK.test(href));
+  return { tagName, attribs: { ...attribs, rel: paid ? 'sponsored noopener noreferrer' : 'noopener noreferrer' } };
 }
 
-export function parseMarkdown(content: string): string {
+const SPONSORED_SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  ...SANITIZE_OPTIONS,
+  transformTags: {
+    ...SANITIZE_OPTIONS.transformTags,
+    a: (tagName, attribs) => linkWithRel(tagName, attribs, true),
+  },
+};
+
+export function sanitizeRenderedHtml(html: string, sponsoredPost = false): string {
+  return sanitizeHtml(html, sponsoredPost ? SPONSORED_SANITIZE_OPTIONS : SANITIZE_OPTIONS);
+}
+
+export function parseMarkdown(content: string, sponsoredPost = false): string {
   usedHeadingIds.clear();
   reserveHeadingIds(content);
   const result = marked.parse(content);
-  return typeof result === 'string' ? sanitizeRenderedHtml(result) : '';
+  return typeof result === 'string' ? sanitizeRenderedHtml(result, sponsoredPost) : '';
 }

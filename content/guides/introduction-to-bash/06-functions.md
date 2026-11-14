@@ -458,7 +458,7 @@ Three details are worth copying:
 
 - **The `# shellcheck source=` directive** tells ShellCheck which file the computed path refers to, and `shellcheck -x` follows it, so the library's functions are checked together with the script.
 - **The main guard** at the end compares `${BASH_SOURCE[0]}` (this file) with `$0` (the script being run). They are equal when you run `logstat`, and different when another script or a test framework sources it, so the file's functions can be loaded without running anything. The library itself needs no guard, because it only defines functions; [Part 10](/guides/introduction-to-bash/10-bash-best-practices) sources it in bats tests.
-- **`dirname "${BASH_SOURCE[0]}"`** breaks when the script is started through a symbolic link, a problem [Part 7](/guides/introduction-to-bash/07-script-permissions) runs into and fixes. [Get the directory of a Bash script](/posts/get-directory-bash-script-location) covers more cases.
+- **`dirname "${BASH_SOURCE[0]}"`** breaks when the script is started through a symbolic link, a problem [Part 7](/guides/introduction-to-bash/07-script-permissions) runs into and fixes. [Get the directory of a Bash script](/posts/what-does-set-e-mean-in-bash-script#h2-how-do-i-get-the-directory-where-a-bash-script-is-located) covers more cases.
 
 A library meant to be sourced should not change the caller's shell options (no `set -e` at the top), print anything, or exit; `return` from a sourced file ends only the sourcing.
 
@@ -619,7 +619,7 @@ Next: [Script Permissions and Execution](/guides/introduction-to-bash/07-script-
 
 ## Keep Learning
 
-- [Get the directory of a Bash script](/posts/get-directory-bash-script-location)
-- [Create an alias that takes parameters](/posts/create-bash-alias-that-takes-parameters) (spoiler: use a function)
-- [Echo to standard error](/posts/echo-to-stderr-in-bash)
-- Interview questions: [Bash scripting basics](/interview-questions/junior/bash-scripting-basics)
+- [Get the directory of a Bash script](/posts/what-does-set-e-mean-in-bash-script#h2-how-do-i-get-the-directory-where-a-bash-script-is-located)
+- [Create an alias that takes parameters](/posts/permanently-set-path-on-linux-unix#h2-how-do-i-create-a-bash-alias-that-takes-parameters) (spoiler: use a function)
+- [Echo to standard error](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-echo-to-stderr-in-bash)
+- Interview questions: [Bash scripting basics](/interview-questions/topic/linux#bash-scripting-basics)

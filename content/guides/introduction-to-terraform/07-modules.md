@@ -385,7 +385,7 @@ module "vpc_dr" {
 }
 ```
 
-The key (`aws`) is the provider name inside the module, and the value is the configuration in the caller. A module that needs two configurations of the same provider declares them with `configuration_aliases` in its `required_providers` block. More examples are in [How to Share Providers and Variables Across Terraform Modules](/posts/terraform-provider-variable-sharing-modules).
+The key (`aws`) is the provider name inside the module, and the value is the configuration in the caller. A module that needs two configurations of the same provider declares them with `configuration_aliases` in its `required_providers` block. More examples are in [How to Share Providers and Variables Across Terraform Modules](/posts/terraform-module-outputs-inputs-and-sources#h2-how-do-i-share-providers-and-variables-across-terraform-modules).
 
 ## Design Good Modules
 

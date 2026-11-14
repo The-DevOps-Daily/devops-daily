@@ -228,5 +228,19 @@
     "toolBScore": 4.2,
     "recommendation": "Choose S3 if you are on AWS or need the broadest ecosystem compatibility. Choose GCS if you are on GCP and want simpler tier management. Choose Azure Blob Storage if you are on Azure. Do not overthink it - pick the one that matches your cloud and focus your energy on data lifecycle policies and cost optimization."
   },
-  "relatedTags": ["S3", "GCS", "Azure Blob", "Cloud Storage", "AWS", "GCP", "Azure", "DevOps"]
+  "relatedTags": ["S3", "GCS", "Azure Blob", "Cloud Storage", "AWS", "GCP", "Azure", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "S3: Cloud Object Storage",
+      "href": "/guides/introduction-to-aws/04-s3-storage"
+    },
+    {
+      "label": "Free Egress Has Fine Print: S3 vs R2, B2, Wasabi and More",
+      "href": "/posts/object-storage-free-egress-fine-print"
+    },
+    {
+      "label": "Terraform Remote Backends: S3 Native Locking and Team Workflows",
+      "href": "/guides/introduction-to-terraform/09-remote-backends-and-collaboration"
+    }
+  ]
 }

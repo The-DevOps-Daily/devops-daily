@@ -122,7 +122,7 @@ This quickly becomes unmanageable and error-prone.
        │                     │─────────────────────►│
 ```
 
-ArgoCD continuously monitors your Git repositories, compares them with the running state in Kubernetes, and automatically synchronizes any differences.
+ArgoCD continuously monitors your Git repositories, compares them with the running state in Kubernetes, and automatically synchronizes any differences. If you are still choosing a GitOps tool, the [Argo CD vs Flux](/comparisons/argocd-vs-flux), [Argo CD vs Jenkins X](/comparisons/argocd-vs-jenkins-x) and [Spinnaker vs Argo CD](/comparisons/spinnaker-vs-argocd) comparisons cover the main alternatives.
 
 ### Key Features
 

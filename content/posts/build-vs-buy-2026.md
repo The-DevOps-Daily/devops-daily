@@ -182,6 +182,8 @@ Use this flowchart when considering building vs buying infrastructure:
 - **GitLab CI**: Included with GitLab ($19-$99/user/month)
 - **Buildkite**: $15-$40/seat/month for self-hosted agents
 
+To compare the hosted options in detail, see [CircleCI vs GitHub Actions](/comparisons/circleci-vs-github-actions) and [GitLab CI vs GitHub Actions](/comparisons/gitlab-ci-vs-github-actions).
+
 **When to consider building:**
 - You have extremely specialized build requirements (embedded systems, custom hardware)
 - You're running 500+ engineers and spending $200K+/year on CI
@@ -192,7 +194,7 @@ Use this flowchart when considering building vs buying infrastructure:
 - Annual maintenance: $60K-$100K (bug fixes, runner maintenance, integrations)
 - **Total 3-year cost: $250K-$400K**
 
-**Real-world example**: A Series C startup with 80 engineers spent 6 months building a Jenkins-based platform. After 18 months, they migrated to GitHub Actions. Total waste: ~$300K in engineer time + 6 months of opportunity cost.
+**Real-world example**: A Series C startup with 80 engineers spent 6 months building a Jenkins-based platform. After 18 months, they migrated to GitHub Actions. Total waste: ~$300K in engineer time + 6 months of opportunity cost. The [Jenkins vs GitHub Actions comparison](/comparisons/jenkins-vs-github-actions) covers what changes in that move.
 
 ---
 

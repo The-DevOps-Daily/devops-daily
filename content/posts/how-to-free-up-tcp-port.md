@@ -1,13 +1,13 @@
 ---
 title: 'How to Free Up a TCP/IP Port on Linux, macOS, and Windows'
-excerpt: "Learn how to identify processes using a port and free it up by stopping the service, killing the process, or changing configuration across different operating systems."
+excerpt: 'Learn how to identify processes using a port and free it up by stopping the service, killing the process, or changing configuration across different operating systems. Find an available port, and close a port with ufw, firewalld or nftables.'
 category:
   name: 'Networking'
   slug: 'networking'
 date: '2025-07-21'
 publishedAt: '2025-07-21T10:00:00Z'
-updatedAt: '2026-11-05T09:00:00Z'
-readingTime: '9 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '13 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -17,6 +17,7 @@ tags:
   - macOS
   - Windows
   - Ports
+  - Firewall
   - Troubleshooting
 ---
 
@@ -40,6 +41,7 @@ sudo lsof -i :8080
 ```
 
 This tells you:
+
 - `COMMAND`: The program name (`node`)
 - `PID`: Process ID (`12345`)
 - `USER`: Who owns the process (`john`)
@@ -321,6 +323,7 @@ Set-Service -Name "Apache2.4" -StartupType Disabled
 ```
 
 Or use the GUI:
+
 1. Press `Win+R`, type `services.msc`, press Enter
 2. Find the service in the list
 3. Right-click → Stop
@@ -471,6 +474,103 @@ else
 fi
 ```
 
+## How Do I Find an Available Port?
+
+To check one port, ask `ss` for a listener on it. No output means that no program listens on the port:
+
+```bash
+ss -Htln 'sport = :8080'          # TCP; -H drops the header line
+ss -Huln 'sport = :8080'          # the same for UDP
+```
+
+To list every port that something listens on, take the local address column and keep the part after the last colon. That also works for IPv6 addresses such as `[::]:22`:
+
+```bash
+ss -Htln | awk '{print $4}' | sed 's/.*://' | sort -un
+```
+
+On macOS, use `lsof -nP -iTCP:3000 -sTCP:LISTEN`. On Windows, use `Get-NetTCPConnection -LocalPort 8080 -State Listen` in PowerShell, as shown in the Windows section above.
+
+### Let the Operating System Pick a Free Port
+
+When any free port will do, for a test server or a temporary tunnel, bind to port **0**. The kernel then assigns a free port from the ephemeral range, and the program reads back which one it got:
+
+```bash
+python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+# 42539
+```
+
+This prints a port that was free a moment ago, but it closes the socket, so another program can take the port before you use it. It is reliable only when the program that needs the port binds to 0 itself and reports the number, as most test frameworks and servers can (`server.listen(0)` in Node.js, `port=0` in Python). Docker does the same when you publish a container port without a host port:
+
+```bash
+docker run -d --name web -p 80 nginx
+docker port web 80        # 0.0.0.0:32768
+```
+
+### Choose a Fixed Port for a Service
+
+The kernel takes ports for outgoing connections from the **ephemeral range**, `32768` to `60999` by default on Linux. A service that listens on a port in that range can fail to start when an outgoing connection already uses the number. Pick service ports below the range, or reserve the port:
+
+```bash
+cat /proc/sys/net/ipv4/ip_local_port_range       # 32768   60999
+sysctl -n net.ipv4.ip_local_reserved_ports          # the current list, often empty
+sudo sysctl -w net.ipv4.ip_local_reserved_ports=40000   # the kernel no longer gives 40000 to outgoing connections
+```
+
+A write replaces the whole list, so include the ports that are already in it, separated by commas. Put the setting in a file in `/etc/sysctl.d/` to keep it after a reboot.
+
+Ports below 1024 need root on Linux, or the `CAP_NET_BIND_SERVICE` capability for the program. Common development ports are 3000, 5000, 8000 and 8080, which is also why they collide most often.
+
+## How Do I Close a Specific Port on Linux?
+
+"Close a port" means one of two things:
+
+1. **Stop the program that listens on it.** The port is then closed, because nothing accepts connections. This is the sections above: `ss`, `systemctl stop`, `kill`.
+2. **Block the port with the firewall.** The program keeps running, but packets from other hosts do not reach it.
+
+Often the cleanest fix is neither. Configure the service to listen on `127.0.0.1` instead of `0.0.0.0`, so only the machine itself can connect. With Docker, publish the port as `-p 127.0.0.1:8080:80`.
+
+To block the port, use the firewall front end of your distribution.
+
+**ufw** (Ubuntu):
+
+```bash
+sudo ufw status numbered            # see the current rules
+sudo ufw delete allow 8080/tcp      # remove a rule that opened the port
+sudo ufw insert 1 deny 8080/tcp     # or block it explicitly, before any allow rule
+```
+
+When ufw is active, incoming traffic is denied by default, so a port is usually reachable only because an `allow` rule opened it. Deleting that rule closes it.
+
+**firewalld** (Fedora, RHEL):
+
+```bash
+sudo firewall-cmd --list-ports
+sudo firewall-cmd --permanent --remove-port=8080/tcp
+sudo firewall-cmd --permanent --add-rich-rule='rule port port="8080" protocol="tcp" reject'   # explicit block
+sudo firewall-cmd --reload
+```
+
+**nftables or iptables** directly, when no front end manages the rules:
+
+```bash
+# nftables, with the common "inet filter" table
+sudo nft insert rule inet filter input tcp dport 8080 drop
+
+# iptables: -I puts the rule first in the chain
+sudo iptables -I INPUT -p tcp --dport 8080 -j DROP
+sudo ip6tables -I INPUT -p tcp --dport 8080 -j DROP
+```
+
+Insert the rule (`insert`, `-I`) instead of appending it (`add`, `-A`). Rules are checked in order, so a `DROP` appended after an earlier rule that accepts the port never runs. Rules added this way are lost at reboot: save them with `sudo netfilter-persistent save` on Debian and Ubuntu (package `iptables-persistent`), or put them in `/etc/nftables.conf`.
+
+Two checks prevent a false sense of safety:
+
+- **Docker bypasses these rules.** Traffic to a published container port is forwarded to the container and does not go through the `INPUT` chain, so `ufw deny 8080` does not block `docker run -p 8080:80`. Publish on `127.0.0.1`, or filter in the `DOCKER-USER` chain.
+- **Test from another machine.** Many rule sets accept everything on the loopback interface, so a test with `curl localhost:8080` on the server itself still succeeds. Run `nc -zv server 8080` or `nmap -p 8080 server` from a second host.
+
+`DROP` discards packets without an answer, so clients wait until they time out. `REJECT` answers at once with an error. Use `REJECT` on internal networks, where a fast failure helps debugging.
+
 ## When Ports Won't Free Up
 
 Sometimes a port stays in TIME_WAIT state after you kill the process:
@@ -511,6 +611,7 @@ cat /proc/12345/cmdline | tr '\0' ' '
 ```
 
 Don't kill processes unless you know what they are:
+
 - System services might cause issues if killed
 - Databases could corrupt data if not shut down properly
 - Other users' processes aren't yours to kill (on shared systems)
@@ -531,7 +632,7 @@ if [ -z "$PORT" ]; then
 fi
 
 echo "Finding process using port $PORT..."
-PID=$(lsof -ti :$PORT)
+PID=$(lsof -ti tcp:"$PORT" -sTCP:LISTEN)   # only the listener, not connected clients
 
 if [ -z "$PID" ]; then
     echo "No process is using port $PORT"
@@ -560,3 +661,11 @@ chmod +x free-port.sh
 ```
 
 The key to freeing up a port is identifying what's using it first, then deciding the appropriate action - stopping a service cleanly, killing a hung process, or reconfiguring to use a different port. Always verify what you're stopping to avoid breaking production services or other users' work.
+
+## Related Resources
+
+- [Introduction to Linux: Networking](/guides/introduction-to-linux/08-networking#h2-firewalls-nftables-ufw-and-firewalld): `ss`, `nc` and the three firewall front ends
+- [Securing your Linux server exercise](/exercises/linux-server-security): set up UFW and fail2ban on a fresh Ubuntu server
+- [Can two sockets share a TCP port?](/posts/can-two-sockets-share-tcp-port): why many connections can use one server port
+- [How to increase the maximum number of TCP connections](/posts/increasing-the-maximum-number-of-tcp-ip-connections-in-linux): ephemeral ports, TIME_WAIT and connection limits
+- [TCP vs UDP simulator](/games/tcp-vs-udp) and [SSH hardening checklist](/checklists/ssh-hardening)

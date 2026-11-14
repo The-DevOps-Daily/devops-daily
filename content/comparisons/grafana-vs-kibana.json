@@ -314,5 +314,23 @@
     "Visualization",
     "Elasticsearch",
     "Prometheus"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Kubernetes Monitoring, Logging and Troubleshooting",
+      "href": "/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes"
+    },
+    {
+      "label": "Complete Monitoring Stack Setup",
+      "href": "/exercises/prometheus-grafana-monitoring"
+    },
+    {
+      "label": "Prometheus Query Builder (PromQL Playground)",
+      "href": "/games/promql-playground"
+    },
+    {
+      "label": "Monitoring & Observability Quiz",
+      "href": "/quizzes/monitoring-observability-quiz"
+    }
   ]
 }

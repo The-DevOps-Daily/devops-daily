@@ -227,5 +227,23 @@
     "toolBScore": 4.2,
     "recommendation": "Choose Infracost if your biggest problem is engineers deploying expensive infrastructure without cost awareness. Choose Kubecost if your biggest problem is understanding and optimizing your Kubernetes spend. Consider both if you are building a mature FinOps practice."
   },
-  "relatedTags": ["Infracost", "Kubecost", "FinOps", "Cost Management", "Kubernetes", "Cloud Costs"]
+  "relatedTags": ["Infracost", "Kubecost", "FinOps", "Cost Management", "Kubernetes", "Cloud Costs"],
+  "relatedLinks": [
+    {
+      "label": "Essential FinOps Tools for DevOps Teams",
+      "href": "/guides/finops-for-devops-engineers/03-tools"
+    },
+    {
+      "label": "Integrating FinOps into CI/CD Pipelines",
+      "href": "/guides/finops-for-devops-engineers/05-cicd-integration"
+    },
+    {
+      "label": "Right-Sizing Kubernetes Resources with VPA and Karpenter",
+      "href": "/posts/right-sizing-kubernetes-resources-vpa-karpenter"
+    },
+    {
+      "label": "Cloud Cost Optimization Quiz",
+      "href": "/quizzes/cloud-cost-optimization-quiz"
+    }
+  ]
 }

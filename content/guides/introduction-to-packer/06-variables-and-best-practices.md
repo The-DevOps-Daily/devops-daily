@@ -747,8 +747,8 @@ A good next step is to wire the AMI ID from `manifest.json` (or an HCP Packer ch
 ## Keep Learning
 
 - [Terraform Infrastructure as Code Best Practices](/posts/terraform-best-practices)
-- [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
+- [CI/CD pipeline hardening: runners, egress, OIDC and pinning](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline)
 - [Secrets Management Guide: Vault, AWS Secrets Manager, and Azure Key Vault](/posts/secrets-management-guide)
 - [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup) and [HashiCorp Vault Secrets Management Checklist](/checklists/hashicorp-vault-secrets-management)
 - [Complete CI/CD Pipeline with GitHub Actions](/exercises/ci-cd-github-actions) (exercise)
-- [Interview question: secrets management](/interview-questions/mid/secrets-management)
+- [Interview question: secrets management](/interview-questions/topic/security#secrets-management)

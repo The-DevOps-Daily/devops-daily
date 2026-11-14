@@ -630,6 +630,6 @@ In [Part 4](/guides/sast-tools/04-codeql), you scan the same app with CodeQL, wh
 ## Keep Learning
 
 - [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide), for secret scanning before commit
-- [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide)
+- [Secure coding practices every change should follow](/posts/security-focused-code-reviews#h2-which-secure-coding-practices-should-every-change-follow)
 - [GitHub Actions Workflows Quiz](/quizzes/github-actions-quiz)
 - [CI/CD Pipeline Setup Checklist](/checklists/cicd-pipeline-setup)

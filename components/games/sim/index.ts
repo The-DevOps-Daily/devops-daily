@@ -46,7 +46,7 @@ export {
   type SimLabState,
   type SimLabUi,
 } from './sim-lab';
-export { SimMissionList } from './sim-missions';
+export { SimMissionHelp, SimMissionList } from './sim-missions';
 export {
   useMissions,
   passedMissions,

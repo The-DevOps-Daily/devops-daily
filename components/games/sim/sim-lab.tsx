@@ -61,10 +61,10 @@ export interface SimLabState {
 
 /**
  * The terminal's height in a lab: short enough on a phone that the input is
- * in the first screen under the bar, and on lg the whole lab fits 1280x800.
+ * in the first screen under the bar. On lg it fills SimLabLayout's terminal
+ * column, which is as tall as the screen under the bar.
  */
-export const LAB_TERMINAL_HEIGHT =
-  'h-[clamp(11rem,calc(100dvh-33rem),24rem)] lg:h-[clamp(16rem,calc(100dvh-22rem),30rem)]';
+export const LAB_TERMINAL_HEIGHT = 'h-[clamp(11rem,calc(100dvh-33rem),24rem)] lg:h-auto lg:flex-1';
 
 /** Focuses the terminal input without scrolling; on touch screens only when asked. */
 export function focusTerminal(el: HTMLInputElement | null, onTouch = false): void {
@@ -270,19 +270,32 @@ export function SimLabBar({
 }
 
 /**
- * The terminal, rendered once, and the side panels. On lg the side column is
- * exactly as tall as the terminal and scrolls on its own; below lg the panels
- * follow the terminal as closed drawers, so the input stays near the top.
+ * The terminal, rendered once, and the side panels. On lg the lab fills the
+ * screen under the bar (--sim-fill-h): the terminal column is a flex column
+ * whose SimTerminal (LAB_TERMINAL_HEIGHT) takes the free height, and the side
+ * column scrolls on its own. Below lg the panels follow the terminal as
+ * closed drawers, so the input stays near the top.
  */
-export function SimLabLayout({ terminal, aside }: { terminal: ReactNode; aside?: ReactNode }) {
+export function SimLabLayout({
+  terminal,
+  aside,
+  minHeight = 'lg:min-h-[18rem]',
+}: {
+  terminal: ReactNode;
+  aside?: ReactNode;
+  /** The lab's least height on lg, for a short window. */
+  minHeight?: string;
+}) {
   return (
     <div
       className={cn(
-        'grid gap-2',
+        // minmax(0,1fr): the row is the lab's height, never the terminal's whole log.
+        'grid gap-2 lg:h-[var(--sim-fill-h)] lg:grid-rows-[minmax(0,1fr)]',
+        minHeight,
         aside && 'lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]'
       )}
     >
-      <div className="min-w-0">{terminal}</div>
+      <div className="min-w-0 lg:flex lg:flex-col">{terminal}</div>
       {aside && (
         <div className="min-w-0 lg:relative">
           <div className="space-y-2 lg:absolute lg:inset-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">

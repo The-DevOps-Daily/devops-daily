@@ -1,13 +1,13 @@
 ---
-title: 'How to Remove a File from Git Without Deleting It Locally'
-excerpt: 'Need to stop tracking a file in Git but keep it on your filesystem? Learn how to remove files from Git repository while preserving them locally.'
+title: 'Remove a File from Git Without Deleting It, or Undo git add'
+excerpt: 'Stop tracking a file with git rm --cached and keep it on disk, unstage a file with git restore --staged, and commit only part of a file with git add -p.'
 category:
   name: 'Git'
   slug: 'git'
 date: '2024-09-15'
 publishedAt: '2024-09-15T09:00:00Z'
-updatedAt: '2026-11-05T09:00:00Z'
-readingTime: '7 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -16,31 +16,40 @@ tags:
   - Version Control
   - File Management
   - Gitignore
+  - Staging
   - Repository
 ---
 
-You accidentally committed a configuration file or environment file that should not be tracked in Git. Now you want to remove it from the repository while keeping it on your local machine for development.
+You committed a configuration file or an `.env` file that should not be in Git, and you want Git to forget it but keep the file on your machine. Or you have not committed yet: you staged the wrong file, or you staged a whole file when only half of it belongs in the commit. All three fixes work on the **index** (the staging area), the list of file versions that your next commit will contain. This page shows each one.
 
-**TLDR:** To remove a file from Git without deleting it locally, use `git rm --cached filename`. This removes the file from Git's index while keeping it in your working directory. Add the file to `.gitignore` to prevent accidentally tracking it again in the future.
+## TLDR
 
-In this guide, you'll learn how to stop tracking files in Git while preserving them on your filesystem.
+| Question                                         | Short answer                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------- |
+| Stop tracking a file but keep it on disk         | `git rm --cached <file>`, add it to `.gitignore`, and commit              |
+| Stop tracking files that `.gitignore` now covers | `git ls-files -ci --exclude-standard -z \| xargs -0 git rm --cached`      |
+| Undo `git add` before a commit                   | `git restore --staged <file>` (or `git reset <file>`)                     |
+| Undo `git add` before the first commit           | `git rm --cached <file>`                                                  |
+| Commit only part of a file                       | `git add -p <file>`, answer `y` or `n` for each change, then `git commit` |
+| Remove a secret from the history                 | Rotate the secret first. Then rewrite the history with `git filter-repo`  |
 
 ## Prerequisites
 
-You'll need Git installed on your system and a repository with files you want to stop tracking. Basic familiarity with Git commands like add, commit, and gitignore will be helpful.
+- Git 2.23 or later for `git restore`. The output on this page comes from Git 2.39.
+- A repository where you can try the commands. The [Git concepts simulator](/games/git-concepts-simulator) shows the working directory, the index and the commits side by side in your browser.
 
 ## Understanding Git's File Tracking
 
 Git tracks files in three main areas:
 
-```
+```text
 Working Directory  →  Staging Area  →  Repository
 (your files)          (git add)        (git commit)
 ```
 
 When you remove a file with `git rm`, it deletes it from both the staging area and your working directory. To keep it locally, you need the `--cached` flag, which only removes it from Git's tracking.
 
-## Removing a Single File
+## How Do I Remove a File from Git Without Deleting It?
 
 To stop tracking a specific file while keeping it locally:
 
@@ -54,7 +63,7 @@ git status
 
 Git now shows the file as deleted from the repository:
 
-```
+```text
 Changes to be committed:
   deleted:    config.json
 
@@ -97,8 +106,8 @@ To remove several files at once:
 # Remove multiple specific files
 git rm --cached secrets.env database.config api-keys.json
 
-# Or use wildcards
-git rm --cached *.log
+# Or use a pattern. Quote it, so that Git matches it in every directory
+git rm --cached '*.log'
 
 # Commit the changes
 git commit -m "Stop tracking configuration and log files"
@@ -137,9 +146,13 @@ git rm --cached .env
 # Add to gitignore
 echo ".env" >> .gitignore
 
-# Create a template for others
-cp .env .env.example
-git add .env.example
+# Create a template for others: the variable names, no values
+cat > .env.example <<'EOF'
+DATABASE_URL=
+API_KEY=
+EOF
+cat .env.example                     # check that it holds no secret
+git add .gitignore .env.example
 
 # Commit changes
 git commit -m "Stop tracking .env, add .env.example template"
@@ -231,30 +244,28 @@ This is why providing an example file (like `.env.example`) is important - it sh
 
 ## Removing Files That Were Already in History
 
-Using `git rm --cached` only affects future commits. The file still exists in your repository's history. To completely remove it from all history (useful for accidentally committed secrets):
+`git rm --cached` only changes the next commit. Every older commit still contains the file, and anyone with a clone can read it with `git show <commit>:config.json`. If the file holds a secret, the order of the steps matters:
+
+1. **Rotate the secret first.** Revoke the key or change the password now. Bots scan public repositories for keys within minutes, so assume that a pushed secret is known. The rotation alone is often enough, and it is the only step that protects copies you cannot reach: forks, clones, CI caches.
+2. **Then rewrite the history, if you still need to.** Use [git filter-repo](https://github.com/newren/git-filter-repo) in a fresh clone. It is not part of Git, so install it first. The Git project recommends it over `git filter-branch`.
+
+Ask everyone to stop pushing while you work, because a forced push replaces whatever is on the remote:
 
 ```bash
-# Remove from all history (be careful!)
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch config.json" \
-  --prune-empty --tag-name-filter cat -- --all
-
-# Force push (only if you're sure!)
-git push origin --force --all
+git clone git@github.com:acme/api.git api-clean
+cd api-clean
+git ls-remote origin > ../before.txt                # the remote state before the rewrite
+git filter-repo --path config.json --invert-paths   # remove the file from every commit
+git remote add origin git@github.com:acme/api.git   # filter-repo removes origin on purpose
+git ls-remote origin | diff ../before.txt -         # no output: nobody pushed in the meantime
+git fetch origin                                    # gives the lease below something to check
+git push --force-with-lease origin --all
+git push --force origin --tags                      # a lease cannot check tags
 ```
 
-**Warning:** This rewrites history and requires force pushing. Only do this if the file contained sensitive data and you need to remove it completely. Coordinate with your team before rewriting shared history.
+The `git fetch` matters: without remote-tracking branches, `--force-with-lease` rejects every push with `stale info`. The lease then protects against a push that lands after the fetch, and the `diff` covers the time before it. Tags have no remote-tracking copy, so a lease rejects them too; the `diff` is the check for tags.
 
-For a safer modern alternative, use `git filter-repo`:
-
-```bash
-# Install git-filter-repo first
-# Then remove file from all history
-git filter-repo --path config.json --invert-paths
-
-# Force push
-git push origin --force --all
-```
+Every commit hash after the first change is new. Everyone must clone again or reset their branches, and open pull requests may still show the old commits. On GitHub, cached views of old commits can stay visible until GitHub Support removes them. The [history chapter of the Git guide](/guides/introduction-to-git/08-history#h2-remove-a-secret-from-history) walks through the full process, and [pre-commit hooks for security](/posts/pre-commit-hooks-security-guide) stop the next secret before the commit.
 
 ## Make Git Forget a File That Is Now in .gitignore
 
@@ -332,7 +343,7 @@ It works, but the commit can pick up unrelated changes. In a test, it staged an 
 
 ## Alternative: Using git update-index
 
-For temporary local changes you do not want to commit:
+Some answers suggest `--assume-unchanged` for local changes you do not want to commit. It is not a reliable way to ignore a tracked file, as the warning below explains. For local settings, use a tracked template and an ignored real file, as in the `.env` example above. If you still want to see how the flag works:
 
 ```bash
 # Tell Git to ignore changes to this file
@@ -354,49 +365,126 @@ git update-index --no-assume-unchanged config.json
 
 This is different from `git rm --cached` because the file remains in the repository. It is useful for files that need to exist in the repo but have local modifications you do not want to commit.
 
-Be careful with this flag and with its sibling `--skip-worktree`. The `git update-index` documentation says that neither one reliably ignores changes to tracked files, because Git still compares the file during some operations: a `git switch` to a branch that changes the file stops with "Your local changes would be overwritten", even though `git status` shows nothing. To find files you flagged and forgot, run `git ls-files -v | grep '^[hS]'` (`h` is assume-unchanged, `S` is skip-worktree). For local settings, a tracked example file plus an ignored real file is the better pattern.
+Be careful with this flag and with its sibling `--skip-worktree`. The `git update-index` documentation says that neither one reliably ignores changes to tracked files. Git still compares the file during some operations. For example, a `git switch` to a branch that changes the file stops with "Your local changes would be overwritten", even though `git status` shows nothing. To find files you flagged and forgot, run `git ls-files -v | grep '^[hS]'` (`h` is assume-unchanged, `S` is skip-worktree). For local settings, a tracked example file plus an ignored real file is the better pattern.
+
+## How Do I Undo git add Before a Commit?
+
+Run `git restore --staged <file>`. The staged changes leave the index, and your changes stay in the file:
+
+```bash
+git add config.json app.js
+git restore --staged config.json     # unstage one file
+git restore --staged .               # unstage everything below the current directory
+```
+
+`git reset <file>` does the same, and works in Git versions older than 2.23. `git reset` without a file name unstages everything. Neither command changes the files on disk.
+
+`git status` shows which command fits, because it prints the hint for the current state:
+
+```text
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+        modified:   src/auth.js
+        new file:   src/utils.js
+```
+
+What unstaging does depends on the file:
+
+- **A changed file** gets its index entry back from the last commit, so it is "modified but not staged" again.
+- **A new file** leaves the index and becomes untracked again, as if you never ran `git add`.
+- **A deleted file** (`rm old.js` then `git add old.js`): the deletion is no longer staged, but the file stays deleted on disk. Run `git restore old.js` to get the file back.
+
+### Before the first commit
+
+In a repository with no commits yet, there is no `HEAD` to restore from. On Git 2.39, `git restore --staged` stops with `fatal: could not resolve HEAD`. Use `git rm --cached`, which is also the hint that `git status` prints in a new repository:
+
+```text
+No commits yet
+
+Changes to be committed:
+  (use "git rm --cached <file>..." to unstage)
+        new file:   new.js
+```
+
+`git rm --cached new.js` removes the file from the index and leaves it on disk.
+
+### Unstage only some changes in a file
+
+`git restore --staged -p <file>` (or `git reset -p <file>`) shows each staged change and asks whether to unstage it. It is the reverse of `git add -p` below.
+
+## How Do I Commit Only Part of a File?
+
+Stage the changes you want with `git add -p`, then commit. Git shows each **hunk** (a group of changed lines) and asks what to do with it:
+
+```bash
+git add -p app.js
+git diff --staged      # what the commit will contain
+git diff               # what stays out of it
+git commit -m "Add the auth middleware"
+```
+
+```text
+@@ -10,6 +10,9 @@ const app = express();
+
+ app.use(express.json());
+
++// Authentication middleware
++app.use(authenticateUser);
++
+ app.listen(3000);
+(1/2) Stage this hunk [y,n,q,a,d,j,J,g,/,e,?]?
+```
+
+The answers you need most:
+
+- `y` stages the hunk, and `n` skips it.
+- `s` splits the hunk into smaller hunks. Git offers `s` only when there are unchanged lines between the changes.
+- `e` opens the hunk in your editor. Delete the `+` lines you do not want, and change `-` lines you want to keep to lines that start with a space.
+- `q` stops, and `?` prints help for every letter.
+
+The list of letters changes with the hunk and the Git version. In a test with one hunk that contained two separate changes, Git first offered `[y,n,q,a,d,s,e,?]`, and after `s` it offered the two smaller hunks.
+
+`git commit -p` stages with the same questions and then commits in one step. To split a file into several commits, run `git add -p` and `git commit` again for each group of changes.
+
+### Partly stage a new file
+
+`git add -p` ignores untracked files and prints `No changes.`. Mark the file first with `git add -N` (intent to add), so that Git sees its content as a change:
+
+```bash
+git add -N new.js
+git add -p new.js      # Stage addition [y,n,q,a,d,e,?]?
+```
+
+A new file is one hunk that Git cannot split, so use `e` to choose lines.
+
+### Test the staged version only
+
+To check that the staged part works without the rest, put the unstaged changes and the untracked files aside, run the tests, then bring them back:
+
+```bash
+git stash push --keep-index --include-untracked   # keeps only the staged changes in the files
+npm test
+git stash pop
+```
+
+Ignored files, such as `node_modules/` or a local `.env`, stay in place, so the tests can still see them. For a clean check, test in CI or in a fresh clone.
+
+`git stash push --staged` (Git 2.35 and later) does the opposite: it stashes only the staged changes. To save the unstaged changes of one file for later, see [how to stash only one file](/posts/stash-single-file-git). To throw away unstaged hunks instead, `git restore -p <file>` asks for each one. The discarded changes are lost.
+
+The [tracking chapter of the Git guide](/guides/introduction-to-git/03-tracking-changes#h3-stage-part-of-a-file-with-git-add-p) shows a full `git add -p` session with real output.
 
 ## Best Practices
 
-Always add removed files to `.gitignore` immediately:
+- **Add a file to `.gitignore` in the same commit that untracks it**, so nobody adds it back by accident.
+- **Track a template, ignore the real file.** Commit `.env.example` or `database.config.example` with empty or placeholder values, and list the real files in `.gitignore`. Say in the README which files to copy, for example `cp .env.example .env`.
+- **Read `git diff --staged` before each commit.** It shows exactly what the commit will contain.
+- **Stage by name, not with `git add .`**, when the working directory has changes that belong to different commits.
 
-```bash
-# Good practice: Remove and ignore in one step
-git rm --cached secrets.env && echo "secrets.env" >> .gitignore
-git add .gitignore
-git commit -m "Stop tracking and ignore secrets.env"
-```
+## Related Resources
 
-Create example files for necessary configuration:
-
-```bash
-# Provide templates for required files
-cp database.config database.config.example
-
-# Remove sensitive values from example
-sed -i 's/password=.*/password=YOUR_PASSWORD_HERE/' database.config.example
-
-# Track the example, ignore the real file
-git add database.config.example
-echo "database.config" >> .gitignore
-git add .gitignore
-git commit -m "Add database config template"
-```
-
-Document what files team members need to create:
-
-```markdown
-# README.md
-## Setup
-
-Create the following files from their examples:
-
-```bash
-cp .env.example .env
-cp database.config.example database.config
-```
-
-Then edit with your own values.
-```
-
-Now you know how to remove files from Git without deleting them locally. The `git rm --cached` command is your primary tool, and combining it with `.gitignore` prevents the files from being tracked again in the future.
+- [Introduction to Git: git add, commit and diff](/guides/introduction-to-git/03-tracking-changes)
+- [How to stash only one file](/posts/stash-single-file-git)
+- [Find and restore a deleted file, or a file from an old commit](/posts/find-restore-deleted-file-git)
+- [Git concepts simulator](/games/git-concepts-simulator): see the working directory, the index and the commits
+- [Git basics interview question](/interview-questions/topic/git#git-basics)
+- Test yourself: [Git Command Quiz](/quizzes/git-quiz) and [Git Fundamentals flashcards](/flashcards/git-fundamentals)

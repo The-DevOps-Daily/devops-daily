@@ -75,12 +75,15 @@ Description snippet...
 - Link to primary sources, not aggregator sites
 - Target 40-60 total news items across all sections
 
-## OG Image
+## Cover image
 
-After creating the digest, remind the user to generate the OG image:
+Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+
 ```bash
-pnpm generate:images
+npx tsx scripts/generate-content-og.ts --only=news/<year>-week-<week>
 ```
+
+It writes `public/images/news/<year>-week-<week>.jpg` (1200x630 JPEG). Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
 
 ## Checklist
 

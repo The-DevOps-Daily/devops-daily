@@ -901,7 +901,7 @@ Look for rows with one control and no test: that is where a single mistake becom
 - [Network Security and Firewalls in the Networking Fundamentals guide](/guides/networking-fundamentals/04-network-security-and-firewalls-basics)
 - [Attack trees in the Threat Modeling guide](/guides/threat-modeling/03-attack-trees), for finding the paths through your layers
 - [Injection in the OWASP Top 10 guide](/guides/owasp-top-10/03-injection)
-- [Docker Security Best Practices](/posts/docker-security-best-practices)
+- [Docker Security Best Practices](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers)
 - [Kubernetes Security Checklist](/checklists/kubernetes-security) and [SSH Hardening Checklist](/checklists/ssh-hardening)
 - [Exercise: Securing Your Linux Server](/exercises/linux-server-security)
 - [Quiz: Network and Security Fundamentals](/quizzes/network-security-quiz)

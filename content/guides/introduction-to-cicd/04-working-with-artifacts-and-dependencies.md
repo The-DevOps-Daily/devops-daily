@@ -109,6 +109,8 @@ jobs:
       - run: npx playwright test
 ```
 
+If you have not picked a browser test tool yet, the [Selenium vs Playwright comparison](/comparisons/selenium-vs-playwright) compares speed, flakiness and CI integration.
+
 How the cache action behaves:
 
 - **`key`** is the exact match. Build it from everything that changes the content: the OS, the architecture and a `hashFiles()` of the lockfile. `hashFiles()` accepts globs, such as `'**/package-lock.json'` in a monorepo.

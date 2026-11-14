@@ -6,8 +6,8 @@ category:
   slug: 'kubernetes'
 date: '2025-08-12'
 publishedAt: '2025-08-12T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
-readingTime: '6 min read'
+updatedAt: '2026-11-13T09:00:00Z'
+readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -68,6 +68,39 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 ```
 
 The metrics-server is essential for resource monitoring and is required for horizontal pod autoscaling to work properly.
+
+## How Do I Check the CPU and Memory Usage of a Pod?
+
+`kubectl top pod` shows the current usage of each pod. It reads the same metrics-server data as `kubectl top nodes`:
+
+```bash
+kubectl top pod -n shop --sort-by=memory
+kubectl top pod web-7d4b9c-x2kqz -n shop --containers   # one line for each container
+kubectl top pod -A --sort-by=cpu | head -15                # the busiest pods in the cluster
+```
+
+```text
+NAME               CPU(cores)   MEMORY(bytes)
+web-7d4b9c-x2kqz   12m          48Mi
+web-7d4b9c-p4lsm   9m           46Mi
+```
+
+How to read the numbers:
+
+- **CPU** is in millicores: `12m` is 1.2% of one core, and `1000m` is one full core. It is an average over a short recent window, not a live value.
+- **Memory** is the **working set**: the memory that the kernel cannot easily take back. The kubelet uses it for node-pressure eviction, and it is the best of these numbers to compare with your memory limits. Leave headroom: the kernel decides an out-of-memory kill with its own accounting, not with this number.
+- New pods show no numbers for the first minute or so, until metrics-server has collected them. Without metrics-server, the command fails with `error: Metrics API not available`.
+
+Usage alone does not tell you much. Compare it with the pod's requests and limits:
+
+```bash
+kubectl get pod web-7d4b9c-x2kqz -n shop \
+  -o jsonpath='{range .spec.containers[*]}{.name}{"\t"}{.resources.requests}{"\t"}{.resources.limits}{"\n"}{end}'
+```
+
+A container that uses far less than its request holds back capacity that other pods cannot get, because the scheduler places pods by their requests. A container close to its memory limit is likely to be `OOMKilled`. A pod with no requests and no limits at all is `BestEffort`, and it is usually among the first pods evicted when the node runs low on memory. On Kubernetes 1.34 to 1.36, an [empty pod-level `resources: {}` block](/posts/kubernetes-empty-pod-resources-besteffort) also gives a pod the `BestEffort` class, even with container requests. For the node view, `kubectl describe node <node>` lists the requests and limits of each pod under `Non-terminated Pods`, and the totals under `Allocated resources`.
+
+`kubectl top` shows only the current values. To size requests from real data, look at usage over days with Prometheus, as [Right-Sizing Kubernetes Resources with VPA and Karpenter](/posts/right-sizing-kubernetes-resources-vpa-karpenter#h2-identifying-overprovisioned-workloads) shows, or start with the [Kubernetes resource calculator](/tools/k8s-resources). With in-place pod resize (beta since Kubernetes 1.33, stable since 1.35), you can also change the requests of a running pod [without recreating it](/guides/introduction-to-kubernetes/08-resource-management-and-scaling#h3-resize-a-running-pod).
 
 ## Look at All Pods Across All Namespaces
 
@@ -134,11 +167,11 @@ Once you try k9s, it's hard to go back to plain kubectl for exploratory tasks. I
 
 Five minutes a day is all it takes to stay ahead of most cluster problems. Make this health check part of your daily routine and you'll catch issues before they blow up and before your pager goes off at 3 a.m. Regular monitoring helps you understand your cluster's normal behavior, making it easier to spot anomalies when they occur.
 
-
 ## Related Resources
 
-- [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
-- [Kubernetes List All Pods and Nodes](/posts/kubernetes-list-all-pods-and-nodes)
-- [Introduction to Kubernetes: Monitoring](/guides/introduction-to-kubernetes)
+- [How to list all pods and their nodes](/posts/kubernetes-api-get-pods-on-specific-nodes#h2-how-do-i-list-all-pods-and-their-nodes)
+- [How to get logs, events and files from pods](/posts/get-logs-from-all-pods-replication-controller)
+- [Introduction to Kubernetes: Monitoring and Logging](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes)
+- [Kubernetes HPA lab](/exercises/kubernetes-hpa-lab): watch `kubectl top` while an autoscaler adds pods
 - [Kubernetes Quiz](/quizzes/kubernetes-quiz)
 - [DevOps Roadmap](/roadmap)

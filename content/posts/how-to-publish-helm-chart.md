@@ -46,7 +46,7 @@ Chart Repository Structure:
 └─────────────────────────────────────┘
 ```
 
-Modern Helm (3.8+) also supports OCI registries, letting you store charts alongside container images in registries like Docker Hub, GitHub Container Registry, or Amazon ECR.
+Modern Helm (3.8+) also supports OCI registries, letting you store charts alongside container images in registries like Docker Hub, GitHub Container Registry, or Amazon ECR. If you are choosing where to host your artifacts, the [Harbor vs Docker Hub](/comparisons/harbor-vs-docker-hub) and [JFrog Artifactory vs GitHub Packages](/comparisons/artifactory-vs-github-packages) comparisons cover the main options.
 
 ## Packaging Your Chart
 

@@ -229,5 +229,23 @@
     "toolBScore": 4.1,
     "recommendation": "Choose Nginx if you need raw performance, caching, or manage mostly static infrastructure. Choose Traefik if you run dynamic containerized workloads and want auto-discovery with built-in TLS management."
   },
-  "relatedTags": ["Nginx", "Traefik", "Reverse Proxy", "Load Balancing", "Ingress", "Kubernetes"]
+  "relatedTags": ["Nginx", "Traefik", "Reverse Proxy", "Load Balancing", "Ingress", "Kubernetes"],
+  "relatedLinks": [
+    {
+      "label": "Nginx Load Balancing and Reverse Proxy",
+      "href": "/exercises/nginx-load-balancing-reverse-proxy"
+    },
+    {
+      "label": "Ingress-NGINX Is Retired: A Real Migration to Gateway API With ingress2gateway 1.0",
+      "href": "/posts/ingress-nginx-eol-gateway-api-migration"
+    },
+    {
+      "label": "Load Balancer Algorithm Simulator",
+      "href": "/games/load-balancer-simulator"
+    },
+    {
+      "label": "Forward Host Port to Docker Container",
+      "href": "/posts/forward-host-port-to-docker-container"
+    }
+  ]
 }

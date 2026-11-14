@@ -5,6 +5,12 @@ const files: Record<string, string> = {
   'content/interview-questions/otel-context-propagation.json': JSON.stringify({
     slug: 'otel-context-propagation',
     tier: 'senior',
+    category: 'Observability',
+  }),
+  'content/interview-questions/cicd-pipeline-stages.json': JSON.stringify({
+    slug: 'cicd-pipeline-stages',
+    tier: 'junior',
+    category: 'CI/CD',
   }),
   'content/interview-questions/broken.json': '{ not json',
 };
@@ -40,10 +46,13 @@ describe('contentPathToUrl', () => {
     expect(contentPathToUrl('content/challenges/fix-the-deployment.json')).toBe('/challenges/fix-the-deployment');
   });
 
-  it('reads the tier of an interview question from the file', () => {
+  it('maps an interview question to its topic page, read from the file', () => {
     expect(
       contentPathToUrl('content/interview-questions/otel-context-propagation.json', { readFile })
-    ).toBe('/interview-questions/senior/otel-context-propagation');
+    ).toBe('/interview-questions/topic/observability');
+    expect(
+      contentPathToUrl('content/interview-questions/cicd-pipeline-stages.json', { readFile })
+    ).toBe('/interview-questions/topic/cicd');
     expect(contentPathToUrl('content/interview-questions/broken.json', { readFile })).toBeNull();
     expect(contentPathToUrl('content/interview-questions/missing.json', { readFile })).toBeNull();
   });

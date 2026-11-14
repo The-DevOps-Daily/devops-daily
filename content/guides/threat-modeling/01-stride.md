@@ -246,7 +246,7 @@ WHERE code = $2 AND redeemed_by_order IS NULL
 RETURNING id;
 ```
 
-If no row comes back, the code was already used. Other mitigations for tampering: TLS on every flow, including DF5 to DF8 inside the private network, and signed container images and protected branches so code cannot be changed on its way to production (the [CI/CD pipeline hardening guide](/posts/cicd-pipeline-hardening-guide) covers that path).
+If no row comes back, the code was already used. Other mitigations for tampering: TLS on every flow, including DF5 to DF8 inside the private network, and signed container images and protected branches so code cannot be changed on its way to production (the [CI/CD pipeline hardening guide](/posts/software-supply-chain-security#h2-how-do-i-harden-a-cicd-pipeline) covers that path).
 
 ## Repudiation
 
@@ -457,4 +457,4 @@ In [Part 2](/guides/threat-modeling/02-dread), you score these threats with DREA
 - [Insecure design in the OWASP Top 10 guide](/guides/owasp-top-10/04-insecure-design)
 - [Broken access control in the OWASP Top 10 guide](/guides/owasp-top-10/01-broken-access-control), for more on I1 and E1
 - [The CIA triad](/guides/security-principles/01-cia-triad), the properties behind the STRIDE categories
-- [Interview question: security architecture and DevSecOps](/interview-questions/senior/security-architecture)
+- [Interview question: security architecture and DevSecOps](/interview-questions/topic/security#security-architecture)

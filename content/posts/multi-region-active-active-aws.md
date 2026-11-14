@@ -169,6 +169,8 @@ Conflict resolution is last-writer-wins, based on the wall clock of the region t
 
 The fix for hot keys is to not write the same item from two regions. Partition writes by key so a given record is only ever written from one region, or use atomic counters and CRDTs for data that genuinely needs to merge.
 
+If you are still choosing a document database, the [DynamoDB vs MongoDB comparison](/comparisons/dynamodb-vs-mongodb) covers the data model, scaling and pricing.
+
 ### Aurora Global Database is not active-active for writes
 
 Be honest with yourself here. Aurora Global Database replicates a primary region to up to five secondaries at the storage layer, typically under a second of lag. The secondaries are **read-only**. Only one region accepts writes.

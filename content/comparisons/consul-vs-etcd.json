@@ -229,5 +229,19 @@
     "toolBScore": 4.1,
     "recommendation": "Choose Consul if you need cross-platform service discovery with health checks, DNS, and multi-datacenter support. Choose etcd if you need a fast, reliable KV store for configuration management, distributed coordination, or Kubernetes backing."
   },
-  "relatedTags": ["Consul", "etcd", "Service Discovery", "Key-Value Store", "Kubernetes", "HashiCorp"]
+  "relatedTags": ["Consul", "etcd", "Service Discovery", "Key-Value Store", "Kubernetes", "HashiCorp"],
+  "relatedLinks": [
+    {
+      "label": "Kubernetes Architecture Explained: Control Plane and Nodes",
+      "href": "/guides/introduction-to-kubernetes/01-kubernetes-architecture-and-components"
+    },
+    {
+      "label": "Go Is Not Just for CLIs. It Runs the Cloud Native Control Plane",
+      "href": "/posts/go-runs-the-cloud-native-control-plane"
+    },
+    {
+      "label": "Distributed Systems Fundamentals Quiz",
+      "href": "/quizzes/distributed-systems-fundamentals-quiz"
+    }
+  ]
 }

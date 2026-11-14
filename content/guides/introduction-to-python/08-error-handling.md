@@ -710,6 +710,55 @@ Retry only requests that are safe to repeat. A `GET` is; a `POST` that creates s
 }
 ```
 
+### What Is the Quickest Way to Make an HTTP GET Request in Python?
+
+For a single request without extra packages, use `urllib.request.urlopen()` from the standard library, and pass a timeout:
+
+```python
+import json
+import urllib.request
+
+with urllib.request.urlopen("http://127.0.0.1:8080/health", timeout=5) as resp:
+    print(resp.status, json.load(resp))  # 200 {'status': 'ok', 'version': '1.4.2'}
+```
+
+It is also the quickest way from a shell where Python is installed and nothing else is. Against the test API from above:
+
+```terminal
+{
+  "title": "urllib against the test API",
+  "prompt": "(pyops) $",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "python -c 'import urllib.request as u; print(u.urlopen(\"http://127.0.0.1:8080/health\", timeout=5).read().decode())'",
+      "output": "{\"status\": \"ok\", \"version\": \"1.4.2\"}"
+    },
+    {
+      "cmd": "python -c 'import urllib.request as u; u.urlopen(\"http://127.0.0.1:8080/deploys\", timeout=5)' 2>&1 | tail -n 1",
+      "output": "urllib.error.HTTPError: HTTP Error 401: Unauthorized"
+    },
+    {
+      "cmd": "python -c 'import urllib.request as u; u.urlopen(\"http://127.0.0.1:8080/slow?seconds=3\", timeout=1)' 2>&1 | tail -n 1",
+      "output": "TimeoutError: timed out"
+    }
+  ]
+}
+```
+
+`urlopen()` raises `urllib.error.HTTPError` for 4xx and 5xx answers (its `.code` has the status) and `urllib.error.URLError` when it cannot connect. Without `timeout=` it uses the socket default, which is no timeout at all, so a server that never answers blocks the script for good. It has no retries, no connection reuse and no JSON helper, which is why the client above uses httpx. The usual choices:
+
+| Need                              | Use                                                                               |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| One request, no packages          | `urllib.request.urlopen(url, timeout=5)`                                          |
+| A script that calls an API        | `httpx.get(url)`: a 5-second timeout by default, `.raise_for_status()`, `.json()` |
+| Code that already uses `requests` | `requests.get(url, timeout=(3, 10))`: no timeout unless you pass one              |
+| Many requests                     | One `httpx.Client` (or `requests.Session`), as in this section                    |
+| Many requests at the same time    | `httpx.AsyncClient` with asyncio                                                  |
+| A quick check from the shell      | `curl -fsS --max-time 5 URL`                                                      |
+
+`http.client` also comes with Python, but it is the low-level layer under `urllib`: you manage the connection, the headers and any redirects yourself.
+
 ### Secrets
 
 Read tokens and passwords from environment variables or from files that your platform mounts (Docker puts secrets under `/run/secrets/`, and Kubernetes mounts them wherever the pod spec says), never from the source code. Do not log them, do not put them in exception messages and do not pass them on a command line, where other users can see them in `ps`. When a person must type one, `getpass.getpass()` reads it without echoing. [Secrets management](/posts/secrets-management-guide) covers where they should live in the first place.
@@ -740,6 +789,6 @@ Next: [Object-Oriented Programming](/guides/introduction-to-python/09-object-ori
 
 ## Keep Learning
 
-- [How to artificially create a connection timeout error](/posts/how-to-artificially-create-connection-timeout-error), to test timeouts against real network behaviour.
+- [How to artificially create a connection timeout error](/posts/simulating-slow-internet-connection#h2-how-do-i-artificially-create-a-connection-timeout), to test timeouts against real network behaviour.
 - [What does set -e mean in a Bash script?](/posts/what-does-set-e-mean-in-bash-script): the shell's version of "stop on errors", and its traps.
 - [Your trace dies the moment the pipeline shells out](/posts/trace-context-environment-variables), on passing context through `subprocess` environments.

@@ -228,5 +228,23 @@
     "toolBScore": 3.6,
     "recommendation": "Choose Redis when you need more than a simple cache - session storage, rate limiting, leaderboards, queues, or pub/sub. Choose Memcached when you need a lightweight, efficient caching layer and want the simplest possible operational footprint."
   },
-  "relatedTags": ["Redis", "Memcached", "Caching", "In-Memory", "Performance", "DevOps"]
+  "relatedTags": ["Redis", "Memcached", "Caching", "In-Memory", "Performance", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Caching Strategies Simulator",
+      "href": "/games/caching-simulator"
+    },
+    {
+      "label": "Redis Caching Strategies for Scalable Applications",
+      "href": "/exercises/redis-caching-strategies"
+    },
+    {
+      "label": "Is Valkey Ready to Replace Redis in 2026?",
+      "href": "/posts/is-valkey-ready-to-replace-redis-2026"
+    },
+    {
+      "label": "How Does It Work So Fast? The Engineering Behind Instant UI Responses",
+      "href": "/posts/how-does-it-work-so-fast"
+    }
+  ]
 }

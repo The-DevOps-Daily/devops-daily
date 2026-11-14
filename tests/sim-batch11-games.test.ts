@@ -111,13 +111,28 @@ async function setWebhookBehavior(value: string) {
 }
 
 async function settleWebhookVerification() {
-  for (let index = 0; index < 20; index += 1) {
-    await act(async () => {
-      await Promise.resolve();
+  await act(async () => {
+    await vi.waitFor(() => {
+      expect(text()).toContain('Rejected:');
     });
-    if (text().includes('Rejected:')) return;
-  }
-  throw new Error('signature verification did not settle');
+  });
+}
+
+function deterministicWebhookCrypto(): Crypto {
+  const asBytes = (value: BufferSource) =>
+    value instanceof ArrayBuffer
+      ? new Uint8Array(value)
+      : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+
+  return {
+    subtle: {
+      // The engine's dedicated tests exercise Web Crypto itself. Here the stable digest
+      // only needs to preserve the signature equality relationship the UI presents.
+      importKey: async (_format: string, keyData: BufferSource) => keyData as unknown as CryptoKey,
+      sign: async (_algorithm: string, key: CryptoKey, data: BufferSource) =>
+        new Uint8Array([...asBytes(key as unknown as BufferSource), 0, ...asBytes(data)]).buffer,
+    },
+  } as unknown as Crypto;
 }
 
 async function setSmtpScenario(value: 'happy-path' | 'greylist' | 'auth-failure') {
@@ -238,6 +253,14 @@ describe('SMTP Flow Simulator on the kit', () => {
 });
 
 describe('Webhook Delivery Simulator on the kit', () => {
+  beforeEach(() => {
+    vi.stubGlobal('crypto', deterministicWebhookCrypto());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('no hero, no page keys, a goal', async () => {
     await renderWebhook();
     expect(text()).not.toContain('Follow one message from your app to the receiver.');

@@ -9,7 +9,7 @@ import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
 import { getAllChallenges } from '@/lib/challenges';
-import { interviewQuestions, getAllTopics } from '@/content/interview-questions';
+import { getAllTopics } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
 import { getPostgresAdventDays } from '@/lib/advent-postgres';
 import { getAllComparisons } from '@/lib/comparisons';
@@ -224,18 +224,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  // Interview question routes
-  const interviewRoutes = interviewQuestions.map((q) => ({
-    url: `${baseUrl}/interview-questions/${q.tier}/${q.slug}`,
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
-  }));
-
-  // Interview topic landing pages (e.g. /interview-questions/topic/kubernetes)
+  // Interview topic pages hold every question of the topic in full
   const interviewTopicRoutes = getAllTopics().map((t) => ({
     url: `${baseUrl}/interview-questions/topic/${t.slug}`,
     changeFrequency: 'monthly' as const,
-    priority: 0.5,
+    priority: 0.6,
   }));
 
   // Comparison routes
@@ -244,14 +237,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...withLastModified(c.updatedDate || c.createdDate),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
-  }));
-
-  // Newsletter routes
-  const newsletterRoutes = newsletters.map((n) => ({
-    url: `${baseUrl}/newsletters/${n.slug}`,
-    ...withLastModified(n.date),
-    changeFrequency: 'monthly' as const,
-    priority: 0.6,
   }));
 
   // Advent of DevOps routes
@@ -351,13 +336,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...flashcardRoutes,
     ...checklistRoutes,
     ...challengeRoutes,
-    ...interviewRoutes,
     ...interviewTopicRoutes,
     ...adventRoutes,
     ...postgresAdventRoutes,
     ...hacktoberfestRoutes,
     ...comparisonRoutes,
-    ...newsletterRoutes,
     ...toolRoutes,
     ...contentPages,
   ];

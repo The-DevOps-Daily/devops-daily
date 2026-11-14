@@ -16,14 +16,19 @@ import { CodeBlock } from '@/components/code-block-wrapper';
 import type { InterviewQuestion } from '@/lib/interview-utils';
 import {
   getDifficultyColor,
+  getTierColor,
+  getTierLabel,
   markQuestionReviewed,
   getInterviewProgress,
 } from '@/lib/interview-utils';
 
 interface QuestionPracticeProps {
   question: InterviewQuestion;
-  /** Show the question title as a heading (off on permalink pages where PageHero owns the H1). */
+  /** Show the question title as an H2. */
   showTitle?: boolean;
+  /** Label chips in the header. Topic pages show the tier instead of the category. */
+  showCategory?: boolean;
+  showTier?: boolean;
   /** Start with the answer revealed (e.g. deep-linked "show answer"). */
   startRevealed?: boolean;
   /** Called after the learner self-rates, so a parent session can advance. */
@@ -33,6 +38,8 @@ interface QuestionPracticeProps {
 export function QuestionPractice({
   question,
   showTitle = false,
+  showCategory = true,
+  showTier = false,
   startRevealed = false,
   onRated,
 }: QuestionPracticeProps) {
@@ -58,9 +65,18 @@ export function QuestionPractice({
       {/* Header */}
       <div className="p-5 sm:p-6 border-b">
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <span className="px-2.5 py-0.5 text-xs font-mono rounded-md border bg-muted/50 text-muted-foreground">
-            {question.category}
-          </span>
+          {showCategory && (
+            <span className="px-2.5 py-0.5 text-xs font-mono rounded-md border bg-muted/50 text-muted-foreground">
+              {question.category}
+            </span>
+          )}
+          {showTier && (
+            <span
+              className={`px-2.5 py-0.5 text-xs font-medium rounded-md ${getTierColor(question.tier)}`}
+            >
+              {getTierLabel(question.tier)}
+            </span>
+          )}
           <span
             className={`px-2.5 py-0.5 text-xs font-medium rounded-md ${getDifficultyColor(question.difficulty)}`}
           >

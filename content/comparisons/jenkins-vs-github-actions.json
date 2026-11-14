@@ -13,6 +13,18 @@
     {
       "href": "/guides/introduction-to-cicd",
       "label": "Introduction to CI/CD with GitHub Actions (free guide)"
+    },
+    {
+      "href": "/quizzes/jenkins-quiz",
+      "label": "Jenkins CI/CD Pipeline Quiz"
+    },
+    {
+      "href": "/quizzes/github-actions-quiz",
+      "label": "GitHub Actions Workflows Quiz"
+    },
+    {
+      "href": "/posts/build-vs-buy-2026",
+      "label": "Build vs Buy in 2026: What Still Makes Sense to Build In-House?"
     }
   ],
   "toolA": {

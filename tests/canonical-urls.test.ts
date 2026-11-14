@@ -172,7 +172,7 @@ describe('canonical URLs', () => {
       '/exercises/[id]',
       '/checklists/[slug]',
       '/flashcards/[id]',
-      '/interview-questions/[tier]/[slug]',
+      '/interview-questions/topic/[topic]',
       '/games/dns-simulator',
       '/challenges/[slug]',
     ]) {

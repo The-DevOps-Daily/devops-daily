@@ -129,4 +129,4 @@ Start with [Part 1: What Is Packer?](/guides/introduction-to-packer/01-packer-fu
 
 - [Infrastructure as Code: A Beginner's Guide to IaC Fundamentals](/posts/infrastructure-as-code-fundamentals)
 - [Introduction to Terraform](/guides/introduction-to-terraform), to launch servers from the images you build
-- [Interview question: immutable infrastructure](/interview-questions/mid/immutable-infrastructure)
+- [Interview question: immutable infrastructure](/interview-questions/topic/infrastructure#immutable-infrastructure)

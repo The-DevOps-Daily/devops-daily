@@ -475,5 +475,5 @@ Next, [Part 3](/guides/cryptography-essentials/03-tls-ssl) puts encryption and h
 - [OWASP Top 10, A07: Identification and Authentication Failures](/guides/owasp-top-10/07-authentication-failures)
 - [What It Actually Takes to Deliver a Webhook in Production](/posts/reliable-webhook-delivery-retries-signatures-idempotency)
 - [How Stripe Avoids Double-Charging Anyone](/posts/how-stripe-avoids-double-charging-idempotency-keys)
-- [At Least One Invalid Signature Was Encountered](/posts/at-least-one-invalid-signature-was-encountered)
+- [How to fix "At least one invalid signature was encountered" in apt](/guides/introduction-to-linux/05-package-management#h3-how-do-i-fix-at-least-one-invalid-signature-was-encountered)
 - [Docker Security Hardening Checklist](/checklists/docker-security)

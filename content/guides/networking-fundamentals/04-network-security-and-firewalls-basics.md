@@ -171,6 +171,51 @@ The `ns1` test waited 3 seconds and gave up. That is **drop**: the packet disapp
 
 A timeout is the most expensive failure in production, because every caller waits for its full timeout before it can retry or fail over. Inside your own network, rejecting is often kinder than dropping. `ping` shows the same split between silence and an error reply ([Request Timed Out vs Destination Host Unreachable](/posts/ping-timeout-vs-destination-unreachable)).
 
+## Why Does FTP Need Active and Passive Mode?
+
+FTP shows why connection state matters, and why it is hard for firewalls. Besides the control connection on port 21, FTP opens a second TCP connection for every file and every directory listing. The two modes differ in who opens that data connection:
+
+| Mode                       | Control connection       | Data connection                                                    | Fails when                                                                              |
+| -------------------------- | ------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| Active (`PORT`)            | Client to server port 21 | **Server to client**, from port 20 to a port that the client named | The client is behind NAT or a firewall that blocks incoming connections                 |
+| Passive (`PASV` or `EPSV`) | Client to server port 21 | **Client to server**, to a port that the server named in its reply | The server's firewall blocks the passive ports, or the server names its private address |
+
+Use passive mode. It is the default in curl, lftp, FileZilla and Python's `ftplib`, because the client opens both connections, so only the server needs open ports. The symptom of the wrong mode is a login that works followed by a listing that hangs: the control connection is fine, the data connection never arrives. `EPSV` is the extended form that also works with IPv6. The server answers with a port only, `229 Entering Extended Passive Mode (|||50000|)`, while a `PASV` answer carries an IPv4 address and a port, `227 Entering Passive Mode (10,0,2,11,195,80)` (port 195 x 256 + 80 = 50000).
+
+A server behind a firewall and NAT needs a fixed range of passive ports, open in the firewall, and the public address to announce. For vsftpd:
+
+```ini
+# /etc/vsftpd.conf
+pasv_enable=YES
+pasv_min_port=50000
+pasv_max_port=50100
+pasv_address=203.0.113.10
+```
+
+```text
+tcp dport { 21, 50000-50100 } accept
+```
+
+Without `pasv_address`, a server behind NAT announces its private address in the `PASV` reply, and clients that use that address time out. `EPSV` has no address in its reply, and curl has ignored the `PASV` address since version 7.74, so those clients connect to the server's real address and work anyway.
+
+A stateful firewall can also follow FTP itself. The connection tracking **FTP helper** reads the `PORT` and `PASV` commands on the control connection and marks the data connection as `related`, so the `ct state established,related accept` rule lets it in without a port range. Since Linux 4.7 the kernel no longer attaches helpers on its own, so a rule must assign it:
+
+```text
+table inet filter {
+  ct helper ftp-standard {
+    type "ftp" protocol tcp
+  }
+  chain prerouting {
+    type filter hook prerouting priority filter;
+    ip daddr 10.0.2.11 tcp dport 21 ct helper set "ftp-standard"
+  }
+}
+```
+
+Assign the helper only for your FTP server's address, as in the rule above. A helper on every port 21 lets any FTP command that passes through a router open `related` connections to ports and hosts that you did not plan for.
+
+The helper cannot read an encrypted control connection, so with FTPS (FTP over TLS) only the fixed port range works. Plain FTP sends passwords and files unencrypted, and Chrome and Firefox removed FTP support in 2021. For new transfers, use SFTP, which runs inside one SSH connection on port 22, or HTTPS. Keep FTP only for partners that cannot change, and then use FTPS with a fixed passive range.
+
 ## Segment the Network on the Router
 
 A host firewall protects one machine. **Segmentation** puts the rules between zones, so that a compromised web server cannot even try the database's SSH port. The lab already has zones as subnets; the router decides what may cross between them:
@@ -464,6 +509,7 @@ Next, [Part 5](/guides/networking-fundamentals/05-load-balancing) spreads the sh
 
 - [Network & Security Fundamentals quiz](/quizzes/network-security-quiz)
 - Simulators: [rate limiting](/games/rate-limit-simulator), [DDoS](/games/ddos-simulator)
-- [How to artificially create a connection timeout](/posts/how-to-artificially-create-connection-timeout-error)
+- [How to artificially create a connection timeout](/posts/simulating-slow-internet-connection#h2-how-do-i-artificially-create-a-connection-timeout)
+- [SSH hardening checklist](/checklists/ssh-hardening), for SFTP instead of FTP
 - [We put localhost on the internet and watched who turned up](/posts/what-happens-when-you-put-localhost-on-the-internet)
 - The [Security Principles](/guides/security-principles) guide for defence in depth and least privilege

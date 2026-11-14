@@ -113,3 +113,27 @@ describe('parseMarkdown video', () => {
     expect(html).not.toMatch(/autoplay|onplay|javascript:|data:|evil\.example/i);
   });
 });
+
+describe('parseMarkdown link rel', () => {
+  it('marks referral and tracked sponsor links as sponsored', () => {
+    const html = parseMarkdown('[a](https://m.do.co/c/abc) [b](https://go.devops-daily.com/x) [c](https://example.com)');
+    expect(html).toContain('<a href="https://m.do.co/c/abc" rel="sponsored noopener noreferrer"');
+    expect(html).toContain('<a href="https://go.devops-daily.com/x" rel="sponsored noopener noreferrer"');
+    expect(html).toContain('<a href="https://example.com" rel="noopener noreferrer"');
+  });
+
+  it('marks every outside link in a sponsored post, but not our own links', () => {
+    const html = parseMarkdown(
+      '[a](https://neon.com/docs) [b](https://devops-daily.com/posts/x) [c](https://github.com/The-DevOps-Daily/repo) [d](/posts/y)',
+      true
+    );
+    expect(html).toContain('<a href="https://neon.com/docs" rel="sponsored noopener noreferrer"');
+    expect(html).toContain('<a href="https://devops-daily.com/posts/x" rel="noopener noreferrer"');
+    expect(html).toContain('<a href="https://github.com/The-DevOps-Daily/repo" rel="noopener noreferrer"');
+    expect(html).toContain('<a href="/posts/y">');
+  });
+
+  it('keeps a rel the author wrote', () => {
+    expect(parseMarkdown('<a href="https://example.com" rel="nofollow">x</a>', true)).toContain('rel="nofollow"');
+  });
+});

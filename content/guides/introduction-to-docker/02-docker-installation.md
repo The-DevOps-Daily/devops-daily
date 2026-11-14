@@ -83,7 +83,7 @@ Ubuntu and Debian also ship Docker in their own repositories, as `docker.io`. Th
 | Debian 13 trixie (`docker.io`)       | 26.1.5        | packaged separately          | 23 October 2026 |
 | Debian 12 bookworm (`docker.io`)     | 20.10.24      | packaged separately          | 23 October 2026 |
 
-Use one source, not both: the packages conflict, which is why step 1 removes the distribution's packages. Pick Docker's repository unless your company only allows packages from the distribution, and check what version you actually got with `docker version`. Compose v2 runs as `docker compose`, and the old `docker-compose` command is [a different program](/posts/docker-compose-vs-docker-compose).
+Use one source, not both: the packages conflict, which is why step 1 removes the distribution's packages. Pick Docker's repository unless your company only allows packages from the distribution, and check what version you actually got with `docker version`. Compose v2 runs as `docker compose`, and the old `docker-compose` command is [a different program](/posts/rebuild-docker-container-compose#h2-what-is-the-difference-between-docker-compose-and-docker-compose).
 
 ### The Convenience Script
 
@@ -360,6 +360,6 @@ Next, learn how to [find, pull and manage images](/guides/introduction-to-docker
 ## Keep Learning
 
 - [Cannot Connect to the Docker Daemon: Is the Docker Daemon Running?](/posts/cannot-connect-to-docker-daemon)
-- [How to Fix Docker: Permission Denied](/posts/fix-docker-permission-denied-error)
+- [How to Fix Docker: Permission Denied](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-fix-permission-denied-on-the-docker-socket)
 - Exercise: [Running Docker Containers on Your Linux Server](/exercises/docker-server-deployment)
 - Practice in the browser: [Docker Terminal simulator](/games/docker-terminal-simulator)

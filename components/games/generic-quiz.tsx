@@ -240,6 +240,7 @@ export default function GenericQuiz({ quizConfig, detailsOnPage = false }: Gener
             />
             <SimComplete
               title="Quiz complete"
+              newsletter="quiz_complete"
               summary={`${score} of ${totalPoints} points: ${getScoreRating().rating.replace(/!$/, '')}.`}
               stats={[
                 { label: 'Score', value: `${score}/${totalPoints}` },

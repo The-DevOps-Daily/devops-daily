@@ -9,6 +9,7 @@ import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
+import { getInterviewQuestionHref } from '@/lib/interview-utils';
 import { getAllComparisons } from '@/lib/comparisons';
 import { getAllChallenges } from '@/lib/challenges';
 
@@ -98,7 +99,7 @@ ${challenges.map((c) => `- [${c.title}](${baseUrl}/challenges/${c.slug}): ${c.de
 
 ## Interview Questions
 
-${interviewQuestions.map((q) => `- [${q.title}](${baseUrl}/interview-questions/${q.tier}/${q.slug}): ${q.question}`).join('\n')}
+${interviewQuestions.map((q) => `- [${q.title}](${baseUrl}${getInterviewQuestionHref(q)}): ${q.question}`).join('\n')}
 
 ## Simulators
 

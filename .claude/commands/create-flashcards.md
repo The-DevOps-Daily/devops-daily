@@ -55,6 +55,16 @@ Create a new flashcard deck for DevOps Daily on the topic: $ARGUMENTS
 - Mix of concept cards, command cards, and "when to use" cards
 - Avoid yes/no questions — ask "what", "how", "when", "why"
 
+## Cover image
+
+Generate the cover with `scripts/generate-content-og.ts`, the only cover generator (see "Cover images" in `AGENTS.md`):
+
+```bash
+npx tsx scripts/generate-content-og.ts --only=flashcard/<deck-id>
+```
+
+It writes `public/images/flashcards/<deck-id>-og.jpg` (1200x630 JPEG). Add `--force` to replace it. Never hand-make a cover, write a one-off generator, or add a PNG cover; CI fails on PNG covers.
+
 ## Checklist
 
 - [ ] cardCount matches actual card count

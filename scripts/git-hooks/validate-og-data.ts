@@ -4,7 +4,7 @@
  *
  * Validates:
  * - Required frontmatter fields (title, excerpt/description)
- * - OG images exist (JPEG, or a hand-made PNG/SVG) in public/images/{type}/
+ * - OG images exist as the JPEG made by scripts/generate-content-og.ts
  *
  * Usage: tsx scripts/git-hooks/validate-og-data.ts [--staged-only]
  */
@@ -75,7 +75,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     requiredFields: ['title', 'question'],
     descriptionFields: ['question'],
     slugField: 'slug',
-    skipOgImage: true, // Interview questions are displayed on tier pages, not individual pages
+    skipOgImage: true, // Interview questions are shown on their topic page, not on pages of their own
   },
   advent: {
     dir: 'content/advent-of-devops',
@@ -120,13 +120,9 @@ function getSlugFromFilename(filename: string): string {
 
 function ogImageExists(slug: string, imagesDir: string): boolean {
   const imageDir = path.join(PUBLIC_IMAGES_DIR, imagesDir);
-  // Covers are JPEG; PNG/SVG are accepted for hand-made images. The -og suffix
-  // is used by some content types like checklists.
-  return [slug, `${slug}-og`].some((name) =>
-    ['jpg', 'png', 'svg'].some((extension) =>
-      fs.existsSync(path.join(imageDir, `${name}.${extension}`))
-    )
-  );
+  // Covers are JPEG only (scripts/generate-content-og.ts). The -og suffix is
+  // used by some content types like checklists.
+  return [slug, `${slug}-og`].some((name) => fs.existsSync(path.join(imageDir, `${name}.jpg`)));
 }
 
 function parseMarkdownFrontmatter(

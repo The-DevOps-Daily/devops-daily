@@ -537,5 +537,5 @@ In [Part 7](/guides/introduction-to-terraform/07-modules) you package configurat
 
 - [Terraform Variables, Loops, and Outputs: The Complete Guide](/posts/terraform-variables-loops-and-outputs)
 - [How to Read Environment Variables From a .env File in Terraform](/posts/terraform-read-environment-variables-from-env-file)
-- [How to Fix Terraform "Variables Not Allowed" Error During Plan](/posts/terraform-variables-not-allowed-error-plan)
+- [How to Fix Terraform "Variables Not Allowed" Error During Plan](/posts/terraform-variables-loops-and-outputs#h3-variables-not-allowed-in-the-backend-required_version-or-a-provider-alias)
 - [How to Save Terraform Plan and Apply Output to a File](/posts/terraform-save-plan-apply-output-to-file)

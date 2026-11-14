@@ -224,5 +224,23 @@
     "toolBScore": 4.0,
     "recommendation": "Choose Argo CD if you need a visual dashboard and centralized control. Choose Flux if you want a lightweight, composable toolkit that follows Kubernetes conventions."
   },
-  "relatedTags": ["Kubernetes", "GitOps", "CICD", "ArgoCD", "Flux", "DevOps"]
+  "relatedTags": ["Kubernetes", "GitOps", "CICD", "ArgoCD", "Flux", "DevOps"],
+  "relatedLinks": [
+    {
+      "label": "Introduction to ArgoCD: Getting Started with GitOps",
+      "href": "/posts/introduction-to-argocd"
+    },
+    {
+      "label": "GitOps: Deploy Docker Containers with GitHub Actions and ArgoCD",
+      "href": "/posts/gitops-deploy-docker-containers-github-actions-argocd"
+    },
+    {
+      "label": "GitOps Workflow Simulator",
+      "href": "/games/gitops-workflow"
+    },
+    {
+      "label": "GitOps Implementation Checklist",
+      "href": "/checklists/gitops-implementation"
+    }
+  ]
 }

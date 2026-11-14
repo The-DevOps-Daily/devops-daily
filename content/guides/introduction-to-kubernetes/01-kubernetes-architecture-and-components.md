@@ -118,7 +118,7 @@ kubectl get --raw='/readyz?verbose' | grep -E 'etcd|check'
 readyz check passed
 ```
 
-Run etcd with an odd number of members (3 or 5) so it keeps a majority when one fails, and back it up. On a managed service the provider does both.
+Run etcd with an odd number of members (3 or 5) so it keeps a majority when one fails, and back it up. On a managed service the provider does both. Outside Kubernetes, Consul is a common alternative for configuration and service discovery; the [Consul vs etcd comparison](/comparisons/consul-vs-etcd) shows how the two differ.
 
 ### kube-scheduler
 
@@ -308,7 +308,7 @@ Imperative commands are fine for experiments and for debugging. For anything tha
 ## Keep Learning
 
 - [Kubernetes concepts from junior to mid level](/posts/kubernetes-concepts-junior-to-mid-level)
-- [Kubernetes kubelet interview questions](/interview-questions/mid/kubernetes-kubelet)
+- [Kubernetes kubelet interview questions](/interview-questions/topic/kubernetes#kubernetes-kubelet)
 - [Kubernetes scheduler simulator](/games/k8s-scheduler)
 
 Next, in [Part 2](/guides/introduction-to-kubernetes/02-setting-up-a-kubernetes-cluster), you install the tools and create the cluster these outputs came from.

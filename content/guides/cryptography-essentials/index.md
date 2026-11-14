@@ -123,4 +123,4 @@ No prior cryptography knowledge is needed.
 
 For the wider picture, the [Security Principles](/guides/security-principles) and [OWASP Top 10](/guides/owasp-top-10) guides pair well with this one.
 
-Step through a full TLS handshake in the browser with the [SSL/TLS Handshake simulator](/games/ssl-tls-handshake), then test yourself with the [Network & Security Fundamentals Quiz](/quizzes/network-security-quiz) and the [Security Architecture interview questions](/interview-questions/senior/security-architecture).
+Step through a full TLS handshake in the browser with the [SSL/TLS Handshake simulator](/games/ssl-tls-handshake), then test yourself with the [Network & Security Fundamentals Quiz](/quizzes/network-security-quiz) and the [Security Architecture interview questions](/interview-questions/topic/security#security-architecture).

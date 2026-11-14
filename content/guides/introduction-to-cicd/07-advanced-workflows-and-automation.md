@@ -578,7 +578,7 @@ In [Part 8](/guides/introduction-to-cicd/08-monitoring-debugging-and-optimizatio
 
 ## Keep Learning
 
-- [Interview question: CI/CD pipeline design](/interview-questions/mid/cicd-pipeline-design)
-- [The GitHub Actions Workflow That Eliminated Our DevOps Bottleneck](/posts/github-actions-fast)
+- [Interview question: CI/CD pipeline design](/interview-questions/topic/cicd#cicd-pipeline-design)
+- [How Do I Speed Up a Workflow That Runs Everything in One Job?](/guides/introduction-to-cicd/08-monitoring-debugging-and-optimization#h3-how-do-i-speed-up-a-workflow-that-runs-everything-in-one-job)
 - [GitOps: Deploy Docker Containers with GitHub Actions and ArgoCD](/posts/gitops-deploy-docker-containers-github-actions-argocd)
 - [CircleCI vs GitHub Actions](/comparisons/circleci-vs-github-actions)

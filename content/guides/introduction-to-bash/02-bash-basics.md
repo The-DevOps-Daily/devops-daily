@@ -124,7 +124,7 @@ The first word of a command can be one of five kinds of thing, and Bash looks fo
 Two practical consequences:
 
 - `echo` is both a builtin and `/usr/bin/echo`, and they can behave differently. A bare `echo` runs the builtin, unless a function with the same name overrides it or the builtin was turned off with `enable -n echo`. The same is true for `printf`, `test`, `kill`, `pwd` and others, so read their documentation with `help echo`, not `man echo`, which describes the external program.
-- To check whether a command exists in a script, use `command -v name`, not `which`. `which` is a separate program, its output format differs between systems, and it cannot see builtins, functions or aliases. See [how to check if a program exists](/posts/check-if-program-exists-bash-script).
+- To check whether a command exists in a script, use `command -v name`, not `which`. `which` is a separate program, its output format differs between systems, and it cannot see builtins, functions or aliases. See [how to check if a program exists](/posts/check-directory-exists-bash-script#h2-how-do-i-check-if-a-program-exists-from-a-bash-script).
 
 `cd` has to be a builtin: a separate program would change its own directory and exit, leaving your shell where it was.
 
@@ -419,7 +419,7 @@ exec >> /var/tmp/nightly.log 2>&1   # every later command writes here
 echo "started at $(date -u +%FT%TZ)"
 ```
 
-[Redirect all output to a file](/posts/redirect-all-output-to-file-bash), [send output to a file and the screen with tee](/posts/redirect-all-output-to-file-bash#h2-seeing-output-and-saving-it) and [what 2>&1 means](/posts/what-does-2-and-1-mean-linux-bash) go further. Here documents (`<<EOF`) and here strings (`<<<`), which feed text to standard input, are in [Part 9](/guides/introduction-to-bash/09-bash-tools).
+[Redirect all output to a file](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-redirect-all-output-to-a-file), [send output to a file and the screen with tee](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-send-output-to-a-file-and-the-screen-at-the-same-time) and [what 2>&1 means](/posts/what-does-2-and-1-mean-linux-bash) go further. Here documents (`<<EOF`) and here strings (`<<<`), which feed text to standard input, are in [Part 9](/guides/introduction-to-bash/09-bash-tools).
 
 ## History Expansion and Line Editing
 
@@ -466,6 +466,6 @@ Next: [Working with Files](/guides/introduction-to-bash/03-working-with-files), 
 ## Keep Learning
 
 - [What does 2>&1 mean?](/posts/what-does-2-and-1-mean-linux-bash)
-- [Redirect all output of a script to a file](/posts/redirect-all-output-to-file-bash)
-- [Echo to standard error](/posts/echo-to-stderr-in-bash)
+- [Redirect all output of a script to a file](/posts/what-does-2-and-1-mean-linux-bash#h3-redirect-everything-from-inside-a-script)
+- [Echo to standard error](/posts/what-does-2-and-1-mean-linux-bash#h2-how-do-i-echo-to-stderr-in-bash)
 - [Linux command line basics](/guides/introduction-to-linux/03-command-line-interface) in the Linux guide

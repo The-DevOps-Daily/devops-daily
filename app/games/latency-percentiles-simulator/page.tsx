@@ -61,7 +61,7 @@ function LatencyPercentilesEducational() {
         <div className="flex flex-wrap gap-2 text-sm">
           <Link
             className="rounded-md border bg-background px-3 py-2 hover:border-primary/50"
-            href="/posts/what-is-p99-latency"
+            href="/posts/slos-slis-error-budgets-practical-guide#h2-what-is-p99-latency"
           >
             What is P99 latency?
           </Link>

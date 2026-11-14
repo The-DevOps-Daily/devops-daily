@@ -196,5 +196,5 @@ Next, [Part 7](/guides/finops-for-devops-engineers/07-conclusion) covers the met
 
 - [Your Cloud Bill Is an Organizational Problem, Not a Technical One](/posts/cloud-bill-organizational-problem)
 - [Why Most FinOps Initiatives Fail (and What Actually Works)](/posts/why-finops-initiatives-fail)
-- [Interview questions: Chargeback Design for Shared and Untaggable Costs](/interview-questions/senior/chargeback-shared-untaggable-costs)
-- [Interview questions: FinOps and Cloud Cost Management](/interview-questions/senior/finops-cost-management)
+- [Interview questions: Chargeback Design for Shared and Untaggable Costs](/interview-questions/topic/finops#chargeback-shared-untaggable-costs)
+- [Interview questions: FinOps and Cloud Cost Management](/interview-questions/topic/cloud#finops-cost-management)

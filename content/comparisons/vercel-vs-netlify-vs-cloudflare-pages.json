@@ -313,5 +313,23 @@
     "Jamstack",
     "Edge",
     "Deployment"
+  ],
+  "relatedLinks": [
+    {
+      "label": "Where Your Code Runs When There Is No Region",
+      "href": "/posts/edge-runtime-no-long-lived-process"
+    },
+    {
+      "label": "The Vercel April 2026 Security Incident: What Happened and What to Do About It",
+      "href": "/posts/vercel-april-2026-security-incident"
+    },
+    {
+      "label": "Preview Environment Simulator",
+      "href": "/games/preview-environment-simulator"
+    },
+    {
+      "label": "CDN Edge Cache Lab",
+      "href": "/games/cdn-edge-cache-lab"
+    }
   ]
 }

@@ -303,6 +303,5 @@ In [Part 10](/guides/introduction-to-cicd/10-real-world-examples-and-next-steps)
 
 - [Security Gates guide](/guides/security-gates): policy, vulnerability and compliance gates in CI, with signed provenance
 - [The pwn request just got harder: what actions/checkout v7 changes, and what it does not](/posts/pwn-request-github-actions-checkout-v7)
-- [CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure](/posts/cicd-pipeline-hardening-guide)
-- [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security)
+- [Software Supply Chain Security: CI/CD Pipeline Hardening, SBOMs, Sigstore and SLSA](/posts/software-supply-chain-security): runners, egress, OIDC trust policies, signing and provenance for GitHub Actions, GitLab CI and Jenkins
 - [Static Application Security Testing (SAST) guide](/guides/sast-tools)

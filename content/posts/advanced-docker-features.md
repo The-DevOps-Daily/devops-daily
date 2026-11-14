@@ -533,7 +533,7 @@ docker build \\
   -t myapp:latest .
 ```
 
-For SSH keys, BuildKit's `--mount=type=ssh` forwards your SSH agent instead of copying the key file ([using SSH keys inside a Docker container](/posts/using-ssh-keys-in-docker-container)).
+For SSH keys, BuildKit's `--mount=type=ssh` forwards your SSH agent instead of copying the key file ([using SSH keys inside a Docker container](/posts/force-docker-clean-build#h2-how-do-i-use-ssh-keys-or-secrets-in-a-docker-build)).
 
 ### CI/CD Integration
 
@@ -716,7 +716,7 @@ The Docker documentation has detailed guides for each feature. The BuildKit docu
 
 ## Related Resources
 
-- [Docker Security Best Practices](/posts/docker-security-best-practices): harden containers for production
+- [Docker Security Best Practices](/posts/cannot-connect-to-docker-daemon#h2-how-do-i-harden-a-docker-host-and-its-containers): harden containers for production
 - [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller, faster images
 - [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on practice
 - [Docker Security Checklist](/checklists/docker-security): verify your setup

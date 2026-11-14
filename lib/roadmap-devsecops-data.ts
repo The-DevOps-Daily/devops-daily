@@ -106,7 +106,7 @@ export const devsecopsStages: SyllabusStage[] = [
         priority: 'essential',
         hours: 25,
         resources: [
-          post('secure-coding-practices-guide'),
+          post('security-focused-code-reviews'),
           post('postgres-row-level-security-multi-tenant'),
           post('authorization-if-statements-vs-cerbos-vs-spicedb'),
         ],
@@ -178,7 +178,7 @@ export const devsecopsStages: SyllabusStage[] = [
         priority: 'essential',
         hours: 20,
         resources: [
-          post('cicd-pipeline-hardening-guide'),
+          post('software-supply-chain-security'),
           part('introduction-to-cicd', '09-security-best-practices-and-production-patterns'),
           lab('ci-cd-github-actions'),
           checklist('cicd-pipeline-setup'),
@@ -264,7 +264,6 @@ export const devsecopsStages: SyllabusStage[] = [
         priority: 'essential',
         hours: 20,
         resources: [
-          post('docker-security-best-practices'),
           post('why-your-base-image-has-1684-cves'),
           lab('docker-multi-stage-build'),
           challenge('shrink-the-image'),
@@ -359,7 +358,7 @@ export const devsecopsStages: SyllabusStage[] = [
         hours: 25,
         resources: [
           part('introduction-to-aws', '02-iam-security'),
-          post('minimum-aws-permissions-for-terraform'),
+          post('terraform-fargate-task-definition-execution-role'),
           sim('oauth-oidc-flow-simulator'),
           checklist('aws-security'),
         ],

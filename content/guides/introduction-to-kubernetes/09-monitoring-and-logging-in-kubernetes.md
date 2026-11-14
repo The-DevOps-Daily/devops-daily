@@ -86,7 +86,7 @@ The kubelet restarted the container, so plain `kubectl logs` shows the new one. 
 On the node, container logs are files under `/var/log/pods/<namespace>_<pod>_<uid>/`. The kubelet rotates them (10 MiB and 5 files per container by default), and they disappear with the pod. For history and search across pods, run a log agent as a DaemonSet that reads those files and ships them to a store:
 
 - Agents: **Fluent Bit**, the **OpenTelemetry Collector**, Grafana **Alloy** or Vector. Promtail, which many Loki tutorials still use, reached its end of life on 2 March 2026; Grafana replaced it with Alloy.
-- Stores: **Grafana Loki**, **Elasticsearch** or **OpenSearch**, or your cloud provider's logging service.
+- Stores: **Grafana Loki**, **Elasticsearch** or **OpenSearch**, or your cloud provider's logging service. The [ELK Stack vs Loki + Grafana comparison](/comparisons/elk-stack-vs-loki-grafana) explains how the first two differ.
 
 Log in JSON, as podinfo does, so the agent can parse fields such as level and request ID without regular expressions.
 
@@ -581,9 +581,9 @@ Metrics tell you that requests are slow; a trace tells you where one request spe
 
 ## Keep Learning
 
-- [How to follow logs continuously](/posts/kubectl-logs-continuously)
+- [How to follow logs continuously](/posts/get-logs-from-all-pods-replication-controller#h2-how-do-i-stream-kubectl-logs-continuously)
 - [Fix pods stuck in Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
 - [Prometheus and Grafana monitoring exercise](/exercises/prometheus-grafana-monitoring)
-- [Prometheus vs Datadog](/comparisons/prometheus-vs-datadog) and the [monitoring and observability quiz](/quizzes/monitoring-observability-quiz)
+- [Prometheus vs Datadog](/comparisons/prometheus-vs-datadog), [Grafana vs Kibana](/comparisons/grafana-vs-kibana) and the [monitoring and observability quiz](/quizzes/monitoring-observability-quiz)
 
 Next, in [Part 10](/guides/introduction-to-kubernetes/10-best-practices-in-kubernetes), you lock the app and the cluster down.
