@@ -7,7 +7,12 @@ import { cn } from '@/lib/utils';
 import { type NavSection } from './nav-items';
 
 // The menu and framer-motion load on desktop while idle, never on phones.
-const loadDropdownMenu = () => import('./dropdown-menu').then((m) => m.DropdownMenu);
+let menuLoaded = false;
+const loadDropdownMenu = () =>
+  import('./dropdown-menu').then((m) => {
+    menuLoaded = true;
+    return m.DropdownMenu;
+  });
 const DropdownMenu = dynamic(loadDropdownMenu, { ssr: false });
 
 interface DropdownTriggerProps {
@@ -52,7 +57,9 @@ export function DropdownTrigger({ label, sections, icon: Icon }: DropdownTrigger
         )}
         onClick={() => {
           setUsed(true);
-          setIsOpen(!isOpen);
+          // A loaded menu closes on the mousedown outside it, so a click after
+          // hover reopens it. Until its code is in, a click must open it too.
+          setIsOpen(menuLoaded ? !isOpen : true);
         }}
       >
         <Icon className="w-4 h-4" />

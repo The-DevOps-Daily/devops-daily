@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/ui/logo';
@@ -16,12 +16,33 @@ interface MobileMenuProps {
 
 // Opening the menu only flips CSS classes: the links are rendered while the page
 // is idle and are memoized, so a tap does not mount or re-render ~40 links.
-// No `inert` here: toggling it (or pointer-events) on the panel restyles every
-// element in the menu. The closed menu is `invisible`, which already takes it
-// out of focus, hit testing and the accessibility tree.
+// Toggling `inert` restyles every element in the menu, so it never happens in
+// the tap itself: it is removed after the opened menu has painted, and set,
+// with aria-hidden, once the 200 ms slide-out has ended. Until then the
+// closing panel is still visible and so stays focusable and announced.
+const CLOSE_MS = 200;
+
 export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
+  const [closed, setClosed] = useState(!isOpen);
+
+  useEffect(() => {
+    let frame = 0;
+    let timer = 0;
+    if (isOpen) {
+      frame = requestAnimationFrame(() => {
+        timer = window.setTimeout(() => setClosed(false), 0);
+      });
+    } else {
+      timer = window.setTimeout(() => setClosed(true), CLOSE_MS);
+    }
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="lg:hidden" aria-hidden={!isOpen}>
+    <div className="lg:hidden" aria-hidden={!isOpen && closed} inert={closed}>
       <div
         className={cn(
           'fixed inset-0 z-50 bg-black/40 transition-[opacity,visibility] duration-200 motion-reduce:transition-none',
