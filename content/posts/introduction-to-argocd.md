@@ -33,7 +33,7 @@ Before diving into ArgoCD, let's understand the GitOps methodology it implements
 
 ### The Four Core Principles of GitOps
 
-```
+```text
 ┌────────────────────────────────────────────────────────────┐
 │ 1. Declarative Configuration                               │
 │    Everything defined as code (YAML, JSON, etc.)           │
@@ -104,7 +104,7 @@ This quickly becomes unmanageable and error-prone.
 
 **The ArgoCD Solution:**
 
-```
+```text
 ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
 │   Git Repo  │       │   ArgoCD    │       │ K8s Cluster │
 │  (Desired   │       │             │       │   (Actual   │
@@ -140,7 +140,7 @@ ArgoCD continuously monitors your Git repositories, compares them with the runni
 
 Understanding ArgoCD's components helps you troubleshoot issues and optimize your setup.
 
-```
+```text
 ┌────────────────────────────────────────────────────────────┐
 │                    ArgoCD Components                       │
 ├────────────────────────────────────────────────────────────┤
@@ -647,7 +647,7 @@ All three methods work, but **Option 3 is most aligned with GitOps principles** 
 
 Structure your repo for multiple environments:
 
-```
+```text
 myapp-config/
 ├── base/
 │   ├── deployment.yaml
@@ -741,7 +741,7 @@ spec:
 **Mono-repo vs Multi-repo:**
 
 **Mono-repo** (Single repo for all apps):
-```
+```text
 apps/
 ├── app1/
 ├── app2/
@@ -752,7 +752,7 @@ apps/
 ❌ Larger blast radius for mistakes
 
 **Multi-repo** (Separate repos per app):
-```
+```text
 app1-config/
 app2-config/
 app3-config/
@@ -795,7 +795,7 @@ This single application deploys all your other applications.
 
 Keep application code and Kubernetes configs in separate repos:
 
-```
+```text
 myapp/              (Application source code)
 myapp-config/       (Kubernetes manifests)
 ```
@@ -807,18 +807,19 @@ This separation:
 
 ### 4. Use Sync Windows
 
-Prevent deployments during specific times:
+Prevent deployments during specific times by configuring `syncWindows` on your `AppProject`:
 
 ```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: production
+  namespace: argocd
 spec:
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
-    
   # Block syncs during business hours
   syncWindows:
   - kind: deny
-    schedule: '0 9-17 * * 1-5'  # Mon-Fri, 9am-5pm
+    schedule: '0 9 * * 1-5'  # Mon-Fri starting at 9am
     duration: 8h
     applications:
     - '*-production'
