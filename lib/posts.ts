@@ -35,11 +35,28 @@ export type Post = {
   noindex?: boolean;
 };
 
-/** A post without its body, for list pages rendered by client components. */
-export type PostSummary = Omit<Post, 'content'>;
+/**
+ * What a post list card and its search need. List pages send one per post to
+ * the client (369+ on /posts), so keep it to the fields PostsList reads.
+ */
+export type PostSummary = {
+  slug: string;
+  title: string;
+  excerpt?: string;
+  categoryName?: string;
+  date?: string;
+  readingTime?: string;
+  tags?: string[];
+};
 
 export function toPostSummary(post: Post): PostSummary {
-  const { content: _content, ...summary } = post;
+  // Set keys only when they have a value: React sends an undefined prop as "$undefined".
+  const summary: PostSummary = { slug: post.slug, title: post.title };
+  if (post.excerpt) summary.excerpt = post.excerpt;
+  if (post.category?.name) summary.categoryName = post.category.name;
+  if (post.date) summary.date = post.date;
+  if (post.readingTime) summary.readingTime = post.readingTime;
+  if (post.tags?.length) summary.tags = post.tags;
   return summary;
 }
 

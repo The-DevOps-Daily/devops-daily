@@ -4,8 +4,7 @@ import Link from 'next/link';
 import { Fragment, useMemo, type ReactNode } from 'react';
 import { useDeferredSearch } from '@/hooks/use-deferred-search';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Calendar, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import type { PostSummary } from '@/lib/posts';
 
@@ -36,7 +35,7 @@ export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: P
       (post) =>
         post.title.toLowerCase().includes(searchLower) ||
         (post.excerpt ?? '').toLowerCase().includes(searchLower) ||
-        (post.category?.name || '').toLowerCase().includes(searchLower) ||
+        (post.categoryName ?? '').toLowerCase().includes(searchLower) ||
         (post.tags && post.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
     );
   }, [posts, deferredSearchQuery]);
@@ -74,27 +73,20 @@ export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: P
           // space-y-8 keeps applying to the Link (and the sponsor block
           // when present) as direct children.
           <Fragment key={post.slug}>
-            <Link
-              href={`/posts/${post.slug}`}
-              className="group flex flex-col md:flex-row gap-6 p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
-            >
+            {/* post-card-* classes (and the card icons) live in app/globals.css so
+                each of the hundreds of cards on /posts stays small. */}
+            <Link href={`/posts/${post.slug}`} className="post-card group">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary">
-                    <span>{post.category?.name ?? 'Uncategorized'}</span>
-                  </Badge>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="mr-1 h-4 w-4" />
+                  <span className="post-card-badge">{post.categoryName ?? 'Uncategorized'}</span>
+                  <div className="post-card-meta">
                     <time dateTime={post.date}>{post.date}</time>
                     <span className="mx-2">|</span>
-                    <Clock className="mr-1 h-4 w-4" />
-                    <span>{post.readingTime}</span>
+                    <span className="post-card-time">{post.readingTime}</span>
                   </div>
                 </div>
-                <h3 className="mt-2 text-xl font-semibold group-hover:text-primary transition-colors">
-                  {post.title}
-                </h3>
-                <p className="mt-2 text-muted-foreground">{post.excerpt}</p>
+                <h3 className="post-card-title">{post.title}</h3>
+                <p className="post-card-excerpt">{post.excerpt}</p>
               </div>
             </Link>
             {/* Sponsor slot is hidden while searching so results stay clean.

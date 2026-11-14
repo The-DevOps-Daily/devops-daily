@@ -4,31 +4,14 @@ import { PostsList } from '@/components/posts-list';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { BookOpen, FileText } from 'lucide-react';
-import { PostSummary } from '@/lib/posts';
-import { GuideSummary } from '@/lib/guides';
-
-type Post = {
-  slug: string;
-  title: string;
-  excerpt?: string;
-  date?: string;
-  category?: { name: string; slug: string };
-  tags?: { name: string; slug: string }[];
-  readingTime?: string;
-};
-
-type Guide = {
-  slug: string;
-  title: string;
-  description?: string;
-  parts?: { title: string }[];
-};
+import type { PostSummary } from '@/lib/posts';
+import type { GuideCard } from '@/lib/guides';
 
 type ExpertContentToggleProps = {
   expertName: string;
   expertSlug: string;
   posts: PostSummary[];
-  guides: GuideSummary[];
+  guides: GuideCard[];
   postCount: number;
   guideCount: number;
   defaultShowPosts?: boolean;
@@ -110,9 +93,9 @@ export function ExpertContentToggle({
                   >
                     <h4 className="text-xl font-semibold">{guide.title}</h4>
                     <p className="mt-2 text-muted-foreground">{guide.description}</p>
-                    {guide.parts && guide.parts.length > 0 && (
+                    {guide.partsCount > 0 && (
                       <p className="mt-3 text-sm text-muted-foreground">
-                        {guide.parts.length} {guide.parts.length === 1 ? 'part' : 'parts'}
+                        {guide.partsCount} {guide.partsCount === 1 ? 'part' : 'parts'}
                       </p>
                     )}
                   </Link>

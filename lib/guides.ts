@@ -44,6 +44,20 @@ export function toGuideNav(guide: Guide): GuideNav {
   };
 }
 
+/** Just what a guide card on an expert page shows. */
+export type GuideCard = {
+  slug: string;
+  title: string;
+  description?: string;
+  partsCount: number;
+};
+
+export function toGuideCard(guide: Guide): GuideCard {
+  const card: GuideCard = { slug: guide.slug, title: guide.title, partsCount: guide.parts.length };
+  if (guide.description) card.description = guide.description;
+  return card;
+}
+
 export type Guide = {
   title: string;
   /**
