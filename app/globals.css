@@ -161,6 +161,12 @@
   }
 }
 
+/* The open mobile menu (components/header.tsx) covers the cookie banner; hide
+   it so Tab cannot reach it there. It comes back when the menu closes. */
+body[data-mobile-menu='open'] [data-cookie-banner] {
+  display: none;
+}
+
 /* Terminal CRT-style cursor blink — sharp on/off, not a soft pulse */
 @keyframes cursor-blink {
   0%, 49% { opacity: 1; }

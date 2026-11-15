@@ -72,20 +72,31 @@ export function Header() {
   }, []);
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
-  // Close mobile menu on escape key
+  // Close mobile menu on Escape, on Cmd/Ctrl+K, which opens search (z-50) that
+  // would otherwise sit under the open menu, and when the window grows to the
+  // desktop layout, which hides the menu.
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
         setMobileMenuOpen(false);
       }
     };
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const handleDesktop = () => {
+      if (desktop.matches) setMobileMenuOpen(false);
+    };
 
     if (mobileMenuOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
+      desktop.addEventListener('change', handleDesktop);
       document.body.style.overflow = 'hidden';
+      // Hides the cookie banner under the menu, so Tab cannot reach it (globals.css).
+      document.body.dataset.mobileMenu = 'open';
       return () => {
-        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('keydown', handleKeyDown);
+        desktop.removeEventListener('change', handleDesktop);
         document.body.style.overflow = 'unset';
+        delete document.body.dataset.mobileMenu;
       };
     }
   }, [mobileMenuOpen]);
@@ -94,8 +105,12 @@ export function Header() {
     <header
       ref={headerRef}
       className={cn(
-        'z-40 bg-background/95 print:hidden',
-        onSimulator ? 'relative' : 'sticky top-0'
+        'bg-background/95 print:hidden',
+        onSimulator ? 'relative' : 'sticky top-0',
+        // The open mobile menu lives in the header's stacking context, so the
+        // header rises above other fixed layers (bottom bars, popups) and
+        // drops back once the 200 ms slide-out is over.
+        mobileMenuOpen ? 'z-[70]' : 'z-40 [transition:z-index_0s_200ms]'
       )}
     >
       <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
