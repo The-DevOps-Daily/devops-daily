@@ -26,6 +26,8 @@ export interface TerminalLine {
   type: TerminalLineType;
   content: string;
   timestamp: Date;
+  /** The prompt shown before an input line, when the game passes `prompt`. */
+  prompt?: string;
 }
 
 export interface SimulatorLessonCommand {
@@ -65,8 +67,13 @@ export interface UseTerminalSimulatorOptions<C extends SimulatorLessonCommand> {
   guardRepeatCompletion?: boolean;
   /** Enables Tab completion against this list. Components with richer completion (Linux's filesystem-aware paths) leave this unset and intercept Tab before delegating other keys to handleKeyDown. */
   availableCommands?: string[];
-  /** Prefix shown before the echoed input on Ctrl+C (Linux shows '$ '). */
+  /** Prefix shown before the echoed input on Ctrl+C. */
   ctrlCInputPrefix?: string;
+  /**
+   * The prompt right now, kept on each input line so the log shows the prompt
+   * the command was typed at (Linux shows the directory: user@host:~/docs$).
+   */
+  prompt?: string;
   /** Reset domain state (containers, filesystem, cluster...) alongside progress. */
   onReset?: () => void;
   /**
@@ -91,6 +98,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   guardRepeatCompletion = false,
   availableCommands,
   ctrlCInputPrefix = '',
+  prompt,
   onReset,
   signalOnComplete = true,
   autoFocus = true,
@@ -205,7 +213,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
 
       setTerminalHistory((prev) => [
         ...prev,
-        { type: 'input', content: cmd, timestamp: new Date() },
+        { type: 'input', content: cmd, timestamp: new Date(), prompt },
         ...(result.output
           ? [{ type: outputType, content: result.output, timestamp: new Date() }]
           : []),
@@ -251,6 +259,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
       historyStyle,
       matches,
       promoteOutputType,
+      prompt,
       successMessage,
     ]
   );
@@ -273,6 +282,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
             type: inputValue.trim() ? 'input' : 'output',
             content: inputValue.trim() ? `${ctrlCInputPrefix}${inputValue}^C` : '^C',
             timestamp: new Date(),
+            prompt,
           },
         ]);
         setInputValue('');
@@ -290,7 +300,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
         } else if (matchesList.length > 1) {
           setTerminalHistory((prev) => [
             ...prev,
-            { type: 'input', content: inputValue, timestamp: new Date() },
+            { type: 'input', content: inputValue, timestamp: new Date(), prompt },
             { type: 'output', content: matchesList.join('  '), timestamp: new Date() },
           ]);
         }
@@ -326,7 +336,15 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
         }
       }
     },
-    [availableCommands, commandHistory, ctrlCInputPrefix, historyIndex, historyStyle, inputValue]
+    [
+      availableCommands,
+      commandHistory,
+      ctrlCInputPrefix,
+      historyIndex,
+      historyStyle,
+      inputValue,
+      prompt,
+    ]
   );
 
   const resetProgress = useCallback(() => {

@@ -13,17 +13,15 @@ import {
   ListChecks,
 } from 'lucide-react';
 import {
-  LAB_TERMINAL_HEIGHT,
+  LAB_SHELL_HEIGHT,
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabMain,
   SimLabPanel,
+  SimLabTop,
   SimTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
 } from '@/components/games/sim';
 import { grepText, parseLineCount, takeLines, unquote, wcCounts } from '@/lib/games/shell-text';
@@ -544,6 +542,14 @@ function commandMatches(cmd: string, expected: string | string[]): boolean {
   }
 
   return trimmed === expected || trimmed.replace(/\s+/g, ' ') === expected.replace(/\s+/g, ' ');
+}
+
+/** The shell prompt at a directory: user@linux-tutorial:~/documents$ */
+function shellPrompt(path: string): string {
+  const home = '/home/user';
+  const short =
+    path === home ? '~' : path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
+  return `user@linux-tutorial:${short}$`;
 }
 
 const QUICK_REFERENCE = [
@@ -1216,12 +1222,13 @@ Swap:       2097152           0     2097152`;
     setFileSystem(createInitialFileSystem());
   }, []);
 
+  const prompt = shellPrompt(currentPath);
   const lab = useTerminalSimulator({
     lessons: LESSONS,
     execute,
     matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
     successMessage: (command) => `✓ ${command.explanation}`,
-    ctrlCInputPrefix: '$ ',
+    prompt,
     onReset,
     // SimComplete signals Opsville, on the render that completes the last command.
     signalOnComplete: false,
@@ -1290,7 +1297,7 @@ Swap:       2097152           0     2097152`;
             // Show available completions
             setTerminalHistory((prev) => [
               ...prev,
-              { type: 'input', content: `$ ${inputValue}`, timestamp: new Date() },
+              { type: 'input', content: inputValue, timestamp: new Date(), prompt },
               { type: 'output', content: matches.join('  '), timestamp: new Date() },
             ]);
           }
@@ -1366,7 +1373,7 @@ Swap:       2097152           0     2097152`;
                 // Show available completions
                 setTerminalHistory((prev) => [
                   ...prev,
-                  { type: 'input', content: `$ ${inputValue}`, timestamp: new Date() },
+                  { type: 'input', content: inputValue, timestamp: new Date(), prompt },
                   { type: 'output', content: matches.join('  '), timestamp: new Date() },
                 ]);
               }
@@ -1378,26 +1385,24 @@ Swap:       2097152           0     2097152`;
 
       baseHandleKeyDown(e);
     },
-    [baseHandleKeyDown, currentPath, getNode, inputValue, setInputValue, setTerminalHistory]
+    [baseHandleKeyDown, currentPath, getNode, inputValue, prompt, setInputValue, setTerminalHistory]
   );
+
+  const expected = currentCommand
+    ? Array.isArray(currentCommand.expectedCommand)
+      ? currentCommand.expectedCommand[0]
+      : currentCommand.expectedCommand
+    : undefined;
 
   return (
     <SimFrame>
-      <SimLabBar
-        title="Learn Linux"
-        icon={Terminal}
-        lessons={LESSONS}
-        lab={lab}
-        ui={ui}
-        task={currentCommand?.instruction}
-        hint={currentCommand?.hint}
-      />
+      <SimLabTop title="Learn Linux" icon={Terminal} lessons={LESSONS} lab={lab} ui={ui} />
 
       {ui.showComplete ? (
         <SimComplete
           title="Lab complete"
           summary="You moved around the file system, made and read files, searched them, set permissions, checked the system and joined commands with pipes and redirects."
-          stats={labStats(lab, LESSONS, ui)}
+          stats={labStats(lab, LESSONS, ui, { showMe: true })}
           actions={
             <Button type="button" variant="outline" onClick={ui.keepExploring}>
               Keep exploring
@@ -1407,7 +1412,13 @@ Swap:       2097152           0     2097152`;
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={expected}
           terminal={
             <SimTerminal
               label={`user@linux-tutorial:${currentPath}`}
@@ -1415,34 +1426,31 @@ Swap:       2097152           0     2097152`;
                 { type: 'success', content: 'Welcome to the Linux Terminal Tutorial!' },
                 {
                   type: 'muted',
-                  content: 'Type "help" for available commands, or follow the task above.',
+                  content: 'Type "help" for available commands, or follow the current step.',
                 },
               ])}
+              prompt={prompt}
               value={inputValue}
               onChange={setInputValue}
               onSubmit={submitCommand}
               onKeyDown={handleKeyDown}
               inputRef={inputRef}
               autoFocus
-              heightClassName={LAB_TERMINAL_HEIGHT}
+              inline
+              heightClassName={LAB_SHELL_HEIGHT}
             />
           }
-          aside={
-            <>
-              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
-              </SimLabPanel>
-              <SimLabPanel title="Quick reference" icon={ListChecks}>
-                <dl className="grid grid-cols-2 gap-1.5 text-sm">
-                  {QUICK_REFERENCE.map(([command, label]) => (
-                    <div key={command} className="rounded-md bg-muted/50 px-2 py-1.5">
-                      <dt className="font-mono text-xs font-semibold">{command}</dt>
-                      <dd className="text-xs text-muted-foreground">{label}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </SimLabPanel>
-            </>
+          panels={
+            <SimLabPanel title="Quick reference" icon={ListChecks}>
+              <dl className="grid grid-cols-2 gap-1.5 text-sm">
+                {QUICK_REFERENCE.map(([command, label]) => (
+                  <div key={command} className="rounded-md bg-muted/50 px-2 py-1.5">
+                    <dt className="font-mono text-xs font-semibold">{command}</dt>
+                    <dd className="text-xs text-muted-foreground">{label}</dd>
+                  </div>
+                ))}
+              </dl>
+            </SimLabPanel>
           }
         />
       )}

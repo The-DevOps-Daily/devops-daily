@@ -48,6 +48,10 @@ function terminalInputs(): HTMLInputElement[] {
   return [...container.querySelectorAll<HTMLInputElement>('input[aria-label="Terminal command"]')];
 }
 
+function stepCard(): HTMLElement | null {
+  return container.querySelector('section[aria-label="Current step"]');
+}
+
 function input(): HTMLInputElement {
   const all = terminalInputs();
   if (all.length !== 1) throw new Error(`expected one terminal input, found ${all.length}`);
@@ -157,13 +161,47 @@ describe('terminal labs on the kit', () => {
     await render(LinuxTerminal);
     expect(container.querySelector('[data-game-intro]')).toBeNull();
     expect(terminalInputs()).toHaveLength(1);
-    expect(text()).toContain('Goal: First, let');
+    expect(stepCard()?.textContent).toContain("First, let's see where we are");
     await playToTheEnd(LINUX_LESSONS, 0);
 
     await click('Keep exploring');
     await run('pwd');
     expect(completions).toBe(1);
     expect(text()).toContain('/home/user');
+  }, 60_000);
+
+  it('Linux: the hint opens in the step card, and the prompt follows the output', async () => {
+    await render(LinuxTerminal);
+    const hint = [...stepCard()!.querySelectorAll('button')].find((b) => name(b) === 'Hint')!;
+    await act(async () => hint.click());
+    expect(hint.getAttribute('aria-expanded')).toBe('true');
+    const panel = document.getElementById(hint.getAttribute('aria-controls')!);
+    expect(stepCard()?.contains(panel)).toBe(true);
+    expect(panel?.hidden).toBe(false);
+    expect(panel?.textContent).toContain('pwd');
+
+    await run('pwd');
+    expect(text()).toContain('Done: pwd');
+    // The next step's hint starts closed.
+    expect(stepCard()?.querySelector('[id]')?.hasAttribute('hidden')).toBe(true);
+    // The prompt follows the log, in the same scroll box, like a shell.
+    const log = container.querySelector('[role="log"]')!;
+    expect(log.contains(input())).toBe(false);
+    expect(log.nextElementSibling?.contains(input())).toBe(true);
+    expect(log.textContent).toContain('user@linux-tutorial:~$ pwd');
+
+    await run('cd documents');
+    await run('ls');
+    // Each command keeps the prompt it was typed at.
+    expect(log.textContent).toContain('user@linux-tutorial:~$ cd documents');
+    expect(log.textContent).toContain('user@linux-tutorial:~/documents$ ls');
+  }, 60_000);
+
+  it('Linux: Show me types the command but does not run it', async () => {
+    await render(LinuxTerminal);
+    await click('Show me');
+    expect(input().value).toBe('pwd');
+    expect(text()).toContain('0/32 commands');
   }, 60_000);
 
   it('Linux: Tab completes, and leaves the prompt when there is nothing to complete', async () => {
@@ -177,6 +215,12 @@ describe('terminal labs on the kit', () => {
     await typeInto(input(), 'cat zzz');
     expect(press('Tab').defaultPrevented).toBe(false);
     expect(press('Tab', { shiftKey: true }).defaultPrevented).toBe(false);
+    // Several matches: listed under the line, with one prompt before it.
+    await typeInto(input(), 'c');
+    expect(press('Tab').defaultPrevented).toBe(true);
+    const log = container.querySelector('[role="log"]')?.textContent ?? '';
+    expect(log).toContain('user@linux-tutorial:~$ c');
+    expect(log).not.toContain('$ $');
   }, 60_000);
 
   it('Docker: one signal on the last command; Tab leaves when nothing matches', async () => {
