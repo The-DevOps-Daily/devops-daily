@@ -82,7 +82,7 @@ An unclaimed database lasts 72 hours. To keep it for the month, press **Keep it 
 
 Your browser sends your queries straight to your own database. Our small API only asks Neon to create the database and the claim link, and it stores nothing. Answers are checked in your browser against a hash of the right answer, and your progress stays in that browser.
 
-You can also solve every day on your own Postgres. Each open day has a **Download today's data as SQL** link. For Day 1, once it is open:
+You can also solve most days on your own Postgres. Each open day has a **Download today's data as SQL** link. For Day 1, once it is open:
 
 ```bash
 # Download Day 1's data (available after 00:00 UTC on 1 December)
