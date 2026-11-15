@@ -355,6 +355,7 @@ export default function GitMergeConflictSimulator() {
         />
       ) : (
         <SimLabMain
+          minHeight="lg:min-h-[28rem]"
           lessons={LAB_LESSONS}
           lab={lab}
           ui={ui}

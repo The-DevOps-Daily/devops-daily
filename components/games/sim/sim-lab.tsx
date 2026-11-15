@@ -147,6 +147,8 @@ export function useSimLab(lab: SimLabState) {
   };
 }
 
+export type SimLabUi = ReturnType<typeof useSimLab>;
+
 /**
  * The end card's tiles: two, or four with "Show me", so they sit in one row
  * (two by two on a phone) instead of stacking.
@@ -558,7 +560,7 @@ export function SimLabSplit({
   terminal,
   rest,
   panels,
-  minHeight = 'lg:min-h-[28rem]',
+  minHeight = 'lg:min-h-[20rem]',
 }: {
   head: ReactNode;
   /** The SimTerminal (inline, LAB_SHELL_HEIGHT), or a column with an editor above it. */

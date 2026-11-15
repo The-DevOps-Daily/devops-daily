@@ -1013,6 +1013,7 @@ export default function TerraformTerminalSimulator() {
           />
         ) : (
           <SimLabMain
+            minHeight="lg:min-h-[28rem]"
             lessons={LESSONS}
             lab={lab}
             ui={ui}
