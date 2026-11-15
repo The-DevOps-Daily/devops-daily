@@ -149,4 +149,28 @@ describe('header with the mobile menu open', () => {
     expect(header.classList.contains('z-40')).toBe(true);
     expect(document.body.dataset.mobileMenu).toBeUndefined();
   });
+
+  it('closes when the window grows to the desktop layout', async () => {
+    let desktop = false;
+    const listeners = new Set<() => void>();
+    window.matchMedia = ((query: string) => ({
+      get matches() {
+        return desktop && query.includes('min-width: 1024px');
+      },
+      media: query,
+      addEventListener: (_: string, fn: () => void) => listeners.add(fn),
+      removeEventListener: (_: string, fn: () => void) => listeners.delete(fn),
+    })) as unknown as typeof window.matchMedia;
+    await act(async () => root.render(createElement(Header)));
+    const open = [...container.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Open main menu')
+    ) as HTMLButtonElement;
+    await act(async () => open.click());
+    expect(document.body.dataset.mobileMenu).toBe('open');
+
+    desktop = true;
+    await act(async () => listeners.forEach((fn) => fn()));
+    expect(document.body.dataset.mobileMenu).toBeUndefined();
+    expect(document.body.style.overflow).toBe('unset');
+  });
 });

@@ -72,22 +72,29 @@ export function Header() {
   }, []);
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
-  // Close mobile menu on Escape, and on Cmd/Ctrl+K, which opens search (z-50)
-  // that would otherwise sit under the open menu.
+  // Close mobile menu on Escape, on Cmd/Ctrl+K, which opens search (z-50) that
+  // would otherwise sit under the open menu, and when the window grows to the
+  // desktop layout, which hides the menu.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
         setMobileMenuOpen(false);
       }
     };
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const handleDesktop = () => {
+      if (desktop.matches) setMobileMenuOpen(false);
+    };
 
     if (mobileMenuOpen) {
       document.addEventListener('keydown', handleKeyDown);
+      desktop.addEventListener('change', handleDesktop);
       document.body.style.overflow = 'hidden';
       // Hides the cookie banner under the menu, so Tab cannot reach it (globals.css).
       document.body.dataset.mobileMenu = 'open';
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
+        desktop.removeEventListener('change', handleDesktop);
         document.body.style.overflow = 'unset';
         delete document.body.dataset.mobileMenu;
       };
