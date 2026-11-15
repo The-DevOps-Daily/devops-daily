@@ -582,13 +582,14 @@ export function SimLabSplit({
         minHeight
       )}
     >
-      <div className="min-w-0 space-y-2 lg:space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
+      {/* relative: sr-only text in a scrolling column stays inside it, never under the page. */}
+      <div className="min-w-0 space-y-2 lg:relative lg:space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
         {head}
       </div>
       <div className="flex min-w-0 flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
         {terminal}
       </div>
-      <div className="min-w-0 space-y-2 lg:col-start-1 lg:row-start-2 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
+      <div className="min-w-0 space-y-2 lg:relative lg:col-start-1 lg:row-start-2 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
         {rest}
         <CollapsibleOnLg.Provider value={true}>{panels}</CollapsibleOnLg.Provider>
       </div>
