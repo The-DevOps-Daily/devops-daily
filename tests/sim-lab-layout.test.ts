@@ -228,12 +228,17 @@ describe('SimLabMain', () => {
         }),
         panels: withPanel
           ? [
-              createElement(SimLabPanel, { key: 'ref', title: 'Quick reference' }, 'ref body'),
-              createElement(
-                SimLabPanel,
-                { key: 'tree', title: 'Files', defaultOpen: true },
-                'tree body'
-              ),
+              createElement(SimLabPanel, {
+                key: 'ref',
+                title: 'Quick reference',
+                children: 'ref body',
+              }),
+              createElement(SimLabPanel, {
+                key: 'tree',
+                title: 'Files',
+                defaultOpen: true,
+                children: 'tree body',
+              }),
             ]
           : undefined,
       })
