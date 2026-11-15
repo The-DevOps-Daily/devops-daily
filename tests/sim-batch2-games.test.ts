@@ -263,7 +263,8 @@ describe('terminal labs on the kit', () => {
   it('PostgreSQL: one signal on the last command, and a replay signals again', async () => {
     await render(PostgresTerminalSimulator);
     expect(text()).not.toContain('// psql lab');
-    expect(input().placeholder).toBe('\\dt');
+    // An inline prompt has no placeholder; the welcome text names \dt.
+    expect(input().placeholder).toBe('');
     await playToTheEnd(PG_LESSONS, 700);
 
     await click('Keep exploring');
