@@ -51,7 +51,7 @@ Both are free, and you do not need an account to start. You can do one of them, 
 | When a day opens | 00:00 UTC                                         | Midnight in your time zone                          |
 | Cost             | Free                                              | Free (AWS costs on the few days that deploy there)  |
 
-Every day on both calendars has a difficulty label: Beginner, Intermediate or Advanced. The first days are short, and they get harder toward the end of the month.
+Every day on both calendars has a difficulty label: Beginner, Intermediate or Advanced. On Advent of Postgres, the first days are short and the puzzles get harder toward the end of the month.
 
 ## How Advent of Postgres works
 
