@@ -94,8 +94,12 @@ export function Header() {
     <header
       ref={headerRef}
       className={cn(
-        'z-40 bg-background/95 print:hidden',
-        onSimulator ? 'relative' : 'sticky top-0'
+        'bg-background/95 print:hidden',
+        onSimulator ? 'relative' : 'sticky top-0',
+        // The open mobile menu lives in the header's stacking context, so the
+        // header rises above other fixed layers (cookie banner, bottom bars)
+        // and drops back once the 200 ms slide-out is over.
+        mobileMenuOpen ? 'z-[70]' : 'z-40 [transition:z-index_0s_200ms]'
       )}
     >
       <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
