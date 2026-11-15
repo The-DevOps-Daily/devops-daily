@@ -1,13 +1,13 @@
 ---
 title: 'Postgres 19 Slipped to November: Every Pulled Feature and Why'
-excerpt: 'PostgreSQL 19 now ships on 19 November, and 13 items left its release notes after beta 1. Here is each pulled feature with the reason from its revert, what to use instead, a script that finds beta-era code that depends on them, and why "AI found too many bugs" is only part of the story.'
+excerpt: 'PostgreSQL 19 now ships on 19 November, and 15 items left its release notes after beta 1. Here is each pulled feature with the reason from its revert, what to use instead, a script that finds beta-era code that depends on them, and why "AI found too many bugs" is only part of the story.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-10-17'
 publishedAt: '2026-10-17T09:00:00Z'
-updatedAt: '2026-10-17T09:00:00Z'
-readingTime: '14 min read'
+updatedAt: '2026-11-15T09:00:00Z'
+readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -21,18 +21,22 @@ tags:
   - AI
 ---
 
-PostgreSQL 19 was planned for October 2026, and the project's roadmap still says so. General availability is now planned for 19 November, with a second release candidate on 12 November. It will ship without SQL/PGQ graph queries, `UPDATE`/`DELETE ... FOR PORTION OF`, online checksum changes, `ALTER TABLE ... MERGE/SPLIT PARTITION`, and seven smaller features that were in the beta 1 release notes. The short version going around is that AI reviewers found more bugs than the developers could fix. That is part of it. Peter Eisentraut, who committed several of the reverted features, lists several possible causes and says it is probably a different combination for each feature. The mailing-list threads and the commit log fit his account, and which cause matters to you depends on what you planned to use.
+:::note
+**Updated 15 November 2026:** RC2 was stamped on 9 November and released on 12 November together with the minor releases, and general availability is still planned for 19 November. Since the first version of this post, one more release-note feature was reverted (the libpq `servicefile` option, on 18 October), and so was a beta behavior change that affects expression indexes built on JSON constructors (on 6 November). The counts are refreshed at the 14 November branch head.
+:::
+
+PostgreSQL 19 was planned for October 2026. The project's roadmap now says 19 November, and the second release candidate came out on 12 November. It will ship without SQL/PGQ graph queries, `UPDATE`/`DELETE ... FOR PORTION OF`, online checksum changes, `ALTER TABLE ... MERGE/SPLIT PARTITION`, and eight smaller features that were in the beta 1 release notes. The short version going around is that AI reviewers found more bugs than the developers could fix. That is part of it. Peter Eisentraut, who committed several of the reverted features, lists several possible causes and says it is probably a different combination for each feature. The mailing-list threads and the commit log fit his account, and which cause matters to you depends on what you planned to use.
 
 This post goes through every feature that was pulled, with the reason given in its revert and what to use instead. It gives you a script that finds beta-era code using them, covers a limit in REPACK CONCURRENTLY (a feature that stayed) that its reference page does not mention, and counts what the commit log actually says about AI.
 
 ## TLDR
 
-- **13 release-note items, covering 11 features, are gone since beta 1.** Ten features were reverted after beta 1 was stamped on 1 June. The eleventh was reverted in May, but its release-note entry stayed until 13 October.
+- **15 release-note items, covering 12 features, are gone since beta 1.** Eleven features were reverted after beta 1 was stamped on 1 June, the last of them on 18 October. The twelfth was reverted in May, but its release-note entry stayed until 13 October.
 - **The five big reverts landed between 27 August and 16 September.** Their revert messages list 47 commits (SQL/PGQ), 30 (online checksums, some only partly reverted), 23 (FOR PORTION OF), 14 (MERGE/SPLIT PARTITION) and 13 (`pg_get_*_ddl()`).
 - **The causes, as Eisentraut describes them:** some code was not good enough, some features had design problems that beta could not fix, LLM-assisted review found a long tail of edge-case bugs faster than they could be handled, security work from April to August took the senior reviewers, and "everything works with everything" in Postgres makes some features very hard to finish.
 - **The November date has its own reason:** the release team is folding the fixes from the 12 November minor releases into 19 before general availability.
-- **AI in the commit log:** 23 of the 937 commits after beta 1 mention AI assistance, an AI tool or an AI lab. That counts only explicit credit, so it is a floor.
-- **For your upgrade:** run the check script over migrations and ops code written against a beta, plan REPACK CONCURRENTLY runs one at a time across the whole cluster, and expect the first scheduled minor release on 11 February 2027.
+- **AI in the commit log:** 49 of the 1,232 commits after beta 1 mention AI assistance, an AI tool or an AI lab, 24 of them in the 9 November security batch. That counts only explicit credit, so it is a floor.
+- **For your upgrade:** run the check script over migrations and ops code written against a beta, drop or redefine beta-era expression indexes, generated columns and partition keys that use `JSON_ARRAY()` or `JSON_OBJECT()` over arrays, composite types or ranges, plan REPACK CONCURRENTLY runs one at a time across the whole cluster, and expect the first scheduled minor release on 11 February 2027.
 
 ## Prerequisites
 
@@ -40,7 +44,7 @@ This post goes through every feature that was pulled, with the reason given in i
 - `bash` and GNU `grep` for the check script
 - Python 3 and an authenticated `gh` CLI if you want to rebuild the counts from the source tree
 
-Everything below comes from the `REL_19_STABLE` branch at commit `221423812d` (17 October 2026), the release notes at the `REL_19_BETA1` tag, and the threads linked in each section. The scripts and the data snapshot are in the companion repo:
+Everything below comes from the `REL_19_STABLE` branch at commit `2f15cec90d` (14 November 2026; the first version of this post used `221423812d` from 17 October), the release notes at the `REL_19_BETA1` tag, and the threads linked in each section. The scripts and the data snapshot are in the companion repo:
 
 ```github
 https://github.com/The-DevOps-Daily/pg19-revert-ledger
@@ -63,14 +67,17 @@ Dates are commit and tag dates in the source tree. Public announcements follow a
 | 27 August to 16 September | MERGE/SPLIT PARTITION, SQL/PGQ, CREATE SCHEMA, `pg_get_*_ddl()`, FOR PORTION OF and online checksums reverted      |
 | 21 September              | Beta 4 stamped                                                                                                     |
 | 12 October                | RC1 stamped                                                                                                        |
-| 12 November               | RC2 planned, the same day as the minor releases                                                                    |
+| 18 October                | libpq `servicefile` connection option reverted                                                                     |
+| 6 November                | More complete `to_json()`/`to_jsonb()` immutability checks reverted                                                |
+| 9 November                | RC2 stamped, and 84 security commits for the November minor releases                                               |
+| 12 November               | RC2 released together with the minor releases                                                                      |
 | 19 November               | General availability planned                                                                                       |
 
 The cluster from late August to mid September is the part that made news. Five large features came out in three weeks, two of them in the week before the last beta.
 
 ## What was pulled, and why
 
-The list comes from comparing the release notes at beta 1 with the branch head. An item counts as removed when none of the commits it cites appear in any current item, so items that were only reworded or merged do not count. That gives 13 items. The three `pg_get_*_ddl()` functions are one feature, so 11 features.
+The list comes from comparing the release notes at beta 1 with the branch head. An item counts as removed when none of the commits it cites appear in any current item, so items that were only reworded or merged do not count. That gives 15 items. The three `pg_get_*_ddl()` functions are one feature, and the libpq `servicefile` option and its psql variable are another, so 12 features.
 
 | Feature                                                                             | Reverted | Reason given                                                                                                                                                                                                                                                                                                                                                      | What to do instead                                                                                                                   |
 | ----------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -84,9 +91,10 @@ The list comes from comparing the release notes at beta 1 with the branch head. 
 | Fast default for columns on domains with constraints                                | 8 Jun    | Failed with an empty table and an invalid default. The revert says the fix will involve an addition to the table access method API, so it was not ready for 19.                                                                                                                                                                                                   | Expect a table rewrite when you add such a column, as in 18                                                                          |
 | More object types inside `CREATE SCHEMA`                                            | 11 Sep   | It depended on a change to the order of `CREATE SCHEMA` subcommands, and the compatibility risk of that change was judged larger than the gain. Foreign keys in `CREATE SCHEMA` still run at the end, because the SQL standard requires it.                                                                                                                       | Create the objects in separate statements after `CREATE SCHEMA`                                                                      |
 | Lower lock level for `ALTER DOMAIN ... VALIDATE CONSTRAINT`                         | 18 Jun   | Unsafe: DML that had already started when a `NOT VALID` constraint was added could still write rows that violate it.                                                                                                                                                                                                                                              | It takes `ShareLock` on tables that use the domain, as before. Run it in a quiet window.                                             |
+| libpq `servicefile` connection option and the psql `SERVICEFILE` variable           | 18 Oct   | The revert says "PGSERVICEFILE is sufficient for the purpose of specifying a per-session service file", and that some details "will need more attention before being actually usable".                                                                                                                                                                            | Set the `PGSERVICEFILE` environment variable, as in 18                                                                               |
 | Logical decoding plugins that skip shared catalogs (database-specific snapshots)    | 24 May   | The revert says it "was determined to have fundamental flaws".                                                                                                                                                                                                                                                                                                    | Nothing to replace, but it limits REPACK CONCURRENTLY (see below)                                                                    |
 
-Two smaller behavior changes that never made the release notes were reverted too: forcing `LC_COLLATE` to `C` in the postmaster (the commit gives the reason as "Out of an abundance of caution") and basing identifier case folding on the default locale, which behaved differently for the builtin provider with locale `C` and a single-byte encoding.
+Three smaller behavior changes that never made the release notes were reverted too: forcing `LC_COLLATE` to `C` in the postmaster (the commit gives the reason as "Out of an abundance of caution"), basing identifier case folding on the default locale, which behaved differently for the builtin provider with locale `C` and a single-byte encoding, and, on 6 November, more complete immutability checks in `to_json()` and `to_jsonb()`. The last one can break your upgrade if you used it on a beta; see the upgrade section below.
 
 Two features that stayed were cut back. REPACK CONCURRENTLY lost the snapshot change it depended on, which is the limit covered later in this post. The new fast path for foreign key checks went back to SPI on 15 October for keys whose values need a cast function.
 
@@ -150,24 +158,24 @@ The commit messages credit AI in a few clear forms: security reports from Anthro
   "type": "line",
   "title": "REL_19_STABLE commits that mention AI assistance, tools or labs, and security commits, per month",
   "unit": " commits",
-  "caption": "From the commit messages on REL_19_STABLE, 1 April to 17 October 2026 (1,501 commits). AI-credited = the message names Claude, Codex, an LLM, AI-assisted review, Anthropic, OpenAI or similar. Security = a 'Security: CVE-' trailer. Explicit credit only, so the AI line is a floor.",
-  "x": ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"],
+  "caption": "From the commit messages on REL_19_STABLE, 1 April to 14 November 2026 (1,796 commits; November is a partial month). AI-credited = the message names Claude, Codex, an LLM, AI-assisted review, Anthropic, OpenAI or similar. Security = a 'Security: CVE-' trailer. Explicit credit only, so the AI line is a floor.",
+  "x": ["Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"],
   "series": [
-    { "name": "AI-credited", "data": [0, 1, 1, 2, 14, 2, 4], "color": "#8b5cf6" },
-    { "name": "Security: CVE", "data": [0, 23, 0, 0, 35, 0, 0], "color": "#ef4444" }
+    { "name": "AI-credited", "data": [0, 1, 1, 2, 14, 2, 5, 25], "color": "#8b5cf6" },
+    { "name": "Security: CVE", "data": [0, 23, 0, 0, 35, 0, 0, 84], "color": "#ef4444" }
   ]
 }
 ```
 
-After beta 1 that is 23 of 937 commits, or 2.5%. It only counts credit in the commit message. Much of the review happens on the mailing list, and a reviewer who used an LLM to find a bug and then reported it in their own words is not counted unless the commit says so. So read it as a floor, not as the share of bugs AI found.
+After beta 1 that is 49 of 1,232 commits, or 4.0%. In the first version of this post, at 17 October, it was 23 of 937, or 2.5%. Of the 25 in November, 24 are in the 9 November security batch, credited mostly to Anthropic's OSS program, to "Claude and Ada Logics" and to OpenAI's security teams. It only counts credit in the commit message. Much of the review happens on the mailing list, and a reviewer who used an LLM to find a bug and then reported it in their own words is not counted unless the commit says so. So read it as a floor, not as the share of bugs AI found.
 
 The threads add two details that the headline version leaves out. In the FOR PORTION OF thread, Andres Freund raised the concurrency problem in his own review first. His reproduction of the lost update was then an AI-generated isolation test, but he wrote that he "really needed to force both Opus 5 and Fable 5.1 to get to it, they both swore up and down that this isn't a real issue at first". And in the `pg_get_*_ddl()` review, Noah Misch ran an Opus 4.8 review as well and wrote that it "found some minor issues that aren't worth addressing before the above". The revert came from his own design objections. In both cases the LLM was a tool in a person's review, and people made the calls.
 
 ## Cause 3: security work took the reviewers
 
-The third cause is in Eisentraut's post too, and the commit log shows the timing. He calls it the "Vulnpocalypse": from April, the start of feature freeze, to August, the most recent security release, many senior developers were busy fixing security issues. The branch has 58 commits with a `Security: CVE` trailer since April, covering 40 CVEs, all on two days: 23 on 11 May and 35 on 10 August. Several of the AI-credited commits in August are those security fixes.
+The third cause is in Eisentraut's post too, and the commit log shows the timing. He calls it the "Vulnpocalypse": from April, the start of feature freeze, to August, the most recent security release when he wrote, many senior developers were busy fixing security issues. The branch has 142 commits with a `Security: CVE` trailer since April, covering 94 CVEs, all on three days: 23 on 11 May, 35 on 10 August and 84 on 9 November, the last batch for the 12 November minor releases. Several of the AI-credited commits in August, and most of those in November, are those security fixes.
 
-The review and testing that normally happens during beta was reduced while that work ran, and it picked up again in August. He offers that as the possible reason so many issues surfaced, and so many reverts happened, so late. Commit counts cannot measure how busy reviewers were, but the two security dates and the late-August cluster of reverts fit it. He thinks that with about two more months, much of the long tail could have been fixed, but the community chose to keep to the schedule instead of delaying for more fixes.
+The review and testing that normally happens during beta was reduced while that work ran, and it picked up again in August. He offers that as the possible reason so many issues surfaced, and so many reverts happened, so late. Commit counts cannot measure how busy reviewers were, but the May and August security dates and the late-August cluster of reverts fit it. He thinks that with about two more months, much of the long tail could have been fixed, but the community chose to keep to the schedule instead of delaying for more fixes.
 
 ## Cause 4: everything works with everything
 
@@ -177,7 +185,7 @@ He also points to something the project does not have: a way to commit a feature
 
 ## Why the date is 19 November
 
-The reverts explain what is missing. They do not explain the date. The RC1 announcement does: the minor releases on 12 November "will include a large number of fixes", and "the release team decided to include these fixes in PostgreSQL 19 before its general availability". RC2 ships the same day as those minor releases, and general availability follows a week later.
+The reverts explain what is missing. They do not explain the date. The RC1 announcement does: the minor releases on 12 November "will include a large number of fixes", and "the release team decided to include these fixes in PostgreSQL 19 before its general availability". RC2 shipped with those minor releases on 12 November, and its announcement says it "also includes the fixes in this update release that apply to PostgreSQL 19". That update release fixed 52 security vulnerabilities and over 140 bugs. General availability follows a week later.
 
 So the extra weeks are for fixes going into 19, not for features coming back. Some of the reverted features are aimed at 20. The `GROUP BY ALL` revert says "We'll revert and try again in v20", and Eisentraut writes "I'm confident that many of the reverted features will come back before too long", with a few "80%-ready features" already queued for 20. Nothing promises any particular one.
 
@@ -212,7 +220,9 @@ If your team wrote migrations, reports or runbooks against a 19 beta, they may u
 }
 ```
 
-It exits 1 on a hit and 2 if the scan itself fails, so you can run it in CI against the repository that holds your migrations:
+One reverted change is not syntax, so the script cannot find it. On the betas and RC1, `JSON_ARRAY()` and `JSON_OBJECT()` over arrays, composite types, ranges and multiranges counted as immutable, so you could use them in expression indexes, generated columns and partition keys. The revert on 6 November (`4b80cba35a`) leaves objects created that way in place, but its message warns that "a dump and restore or a pg_upgrade will now fail to recreate them. They need to be dropped or redefined before upgrading." If a cluster ran a beta or RC1 and you plan to carry it forward, look for those objects first.
+
+The script exits 1 on a hit and 2 if the scan itself fails, so you can run it in CI against the repository that holds your migrations:
 
 ```bash
 # Fails the job if a pulled-syntax pattern matches. Pinned to a commit, not main;
@@ -230,17 +240,17 @@ The `REPACK` reference page lists `max_repack_replication_slots` (default 5) as 
 
 ### Plan the upgrade window
 
-- **Test on RC1 now.** Feature-wise it is close to what ships. RC2 on 12 November adds the minor-release fixes.
+- **Test on RC2 now.** It came out on 12 November with the minor-release fixes, and the announcement says it "will be mostly identical to the initial release of PostgreSQL 19". A few more fixes have landed on the branch since RC2 and will be in 19.0.
 - **Rehearse the upgrade on a copy of your data.** The pulled features are easy to find with the script; the changes that did ship are where an upgrade surprises you. If you run on Neon, a branch gives you a copy-on-write copy of production in seconds, so you can clean up beta-era migrations and test the queries the script flags against real data without touching the primary. A major version upgrade on Neon is a move to a new project on the new version, and Neon's [major version upgrade guide](https://neon.com/docs/postgresql/postgres-upgrade) covers the Import Data Assistant (for databases under 10 GB), dump and restore, and logical replication. Check which major versions Neon offers before you pick a date.
 - **General availability is planned for 19 November.** The next scheduled minor release after that is 11 February 2027, per the project's roadmap. If your policy is to wait for the first minor release, that is when 19.1 is due, unless an out-of-cycle release comes first.
 - **Do not plan on a pulled feature returning in a 19.x minor release.** Minor releases carry fixes, not new features, so the earliest any of them can return is 20.
 
 ## Summary
 
-- 13 release-note items, covering 11 features, left the PostgreSQL 19 release notes after beta 1. Ten of the features were reverted after beta 1, one in May. The big ones are SQL/PGQ, FOR PORTION OF, online data checksums and MERGE/SPLIT PARTITION.
+- 15 release-note items, covering 12 features, left the PostgreSQL 19 release notes after beta 1. Eleven of the features were reverted after beta 1, one in May. The big ones are SQL/PGQ, FOR PORTION OF, online data checksums and MERGE/SPLIT PARTITION.
 - The reasons differ by feature. In the threads, design questions with no agreed answer drove the big reverts. By Eisentraut's account, a long tail of edge-case bugs found faster with LLM-assisted review filled the queue, four months of security work took reviewers away during beta, and the need for every feature to work with every other one makes some of them very hard to finish.
-- The commit log credits AI in 23 of 937 commits after beta 1. That is a floor, and in the threads people used the tools and people made the decisions.
+- The commit log credits AI in 49 of 1,232 commits after beta 1, 24 of them in the 9 November security batch. That is a floor, and in the threads people used the tools and people made the decisions.
 - The 19 November date is about folding the 12 November minor-release fixes into 19, not about features coming back.
-- Before you upgrade, check beta-era code with the script, and plan REPACK CONCURRENTLY as one run at a time across the cluster.
+- Before you upgrade, check beta-era code with the script, redefine beta-era indexes, generated columns and partition keys built on `JSON_ARRAY()` or `JSON_OBJECT()` over container types, and plan REPACK CONCURRENTLY as one run at a time across the cluster.
 
-Sources: Peter Eisentraut, [The reverts will continue until morale improves](https://peter.eisentraut.org/blog/2026/10/09/the-reverts-will-continue-until-morale-improves); the [PostgreSQL 19 RC 1 announcement](https://www.postgresql.org/about/news/postgresql-19-rc-1-released-3409/); Robert Haas, [scary patch contest](https://www.postgresql.org/message-id/CA%2BTgmob9NY6m0YNFTQ4nFH2d0iC9SQRruDYxfndGKKzh8OC80w%40mail.gmail.com) and [Tom Lane's reply](https://www.postgresql.org/message-id/646368.1787697184%40sss.pgh.pa.us); the [SQL/PGQ design issues](https://www.postgresql.org/message-id/CAAKRu_bEtjWYWhYxSo0o_t3DaZYRQd5PkC0abA0g9Mp4%2BovH0w%40mail.gmail.com); the [FOR PORTION OF thread](https://www.postgresql.org/message-id/flat/62bf70cc-dc33-4188-8070-a8c177bb61de%40eisentraut.org); [pg_get_*_ddl() needs a redesign](https://www.postgresql.org/message-id/20260827015242.54.noahmisch%40microsoft.com); [MERGE/SPLIT PARTITIONS issues](https://www.postgresql.org/message-id/CAN4CZFNCU%3Dt09M%3D%2Br2t9hHLJuujdM4oQ8hCK_Sx-GpfiwMAicw%40mail.gmail.com); and [The Register's report](https://www.theregister.com/databases/2026/10/16/postgres-19-delayed-after-ai-reviewers-find-more-bugs-than-humans-can-fix/5303471).
+Sources: Peter Eisentraut, [The reverts will continue until morale improves](https://peter.eisentraut.org/blog/2026/10/09/the-reverts-will-continue-until-morale-improves); the [PostgreSQL 19 RC 1 announcement](https://www.postgresql.org/about/news/postgresql-19-rc-1-released-3409/) and the [RC 2 announcement](https://www.postgresql.org/about/news/postgresql-187-1712-1616-1520-1425-and-19-rc-2-released-3442/); Robert Haas, [scary patch contest](https://www.postgresql.org/message-id/CA%2BTgmob9NY6m0YNFTQ4nFH2d0iC9SQRruDYxfndGKKzh8OC80w%40mail.gmail.com) and [Tom Lane's reply](https://www.postgresql.org/message-id/646368.1787697184%40sss.pgh.pa.us); the [SQL/PGQ design issues](https://www.postgresql.org/message-id/CAAKRu_bEtjWYWhYxSo0o_t3DaZYRQd5PkC0abA0g9Mp4%2BovH0w%40mail.gmail.com); the [FOR PORTION OF thread](https://www.postgresql.org/message-id/flat/62bf70cc-dc33-4188-8070-a8c177bb61de%40eisentraut.org); [pg_get_*_ddl() needs a redesign](https://www.postgresql.org/message-id/20260827015242.54.noahmisch%40microsoft.com); [MERGE/SPLIT PARTITIONS issues](https://www.postgresql.org/message-id/CAN4CZFNCU%3Dt09M%3D%2Br2t9hHLJuujdM4oQ8hCK_Sx-GpfiwMAicw%40mail.gmail.com); and [The Register's report](https://www.theregister.com/databases/2026/10/16/postgres-19-delayed-after-ai-reviewers-find-more-bugs-than-humans-can-fix/5303471).
