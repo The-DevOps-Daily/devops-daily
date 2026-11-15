@@ -73,17 +73,19 @@ test('a terminal lab fills a tall window down to a small gap', async ({ page, is
   await page.goto('/games/kubernetes-terminal-simulator');
 
   // Scroll the game to the top of the window, as a player does, then measure
-  // the room left under the terminal's input.
+  // the room left under the terminal. The prompt follows the output inside it.
   const gapUnderInput = () =>
     page.evaluate(() => {
       const frame = document.querySelector('[data-sim-frame]');
-      const form = document.querySelector('input[aria-label="Terminal command"]')?.closest('form');
-      if (!frame || !form) return Number.NaN;
+      const terminal = document
+        .querySelector('input[aria-label="Terminal command"]')
+        ?.closest('.bg-terminal');
+      if (!frame || !terminal) return Number.NaN;
       // Instant: the site scrolls smoothly, and the measure must follow the scroll.
       const top = frame.getBoundingClientRect().top + window.scrollY - 12;
       window.scrollTo({ top, behavior: 'instant' });
       if (Math.abs(frame.getBoundingClientRect().top - 12) > 2) return Number.NaN;
-      return Math.round(window.innerHeight - form.getBoundingClientRect().bottom);
+      return Math.round(window.innerHeight - terminal.getBoundingClientRect().bottom);
     });
   // Polled until hydration: before it, the bar height is a default and the gap can be off.
   await expect

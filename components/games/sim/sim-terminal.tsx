@@ -15,6 +15,8 @@ export type SimTerminalLineType = 'input' | 'output' | 'error' | 'success' | 'wa
 export interface SimTerminalLine {
   type: SimTerminalLineType;
   content: string;
+  /** The prompt before this input line, when it differs from linePrompt. */
+  prompt?: string;
 }
 
 const LINE_CLASS: Record<SimTerminalLineType, string> = {
@@ -37,6 +39,7 @@ export function SimTerminalWindow({
   children,
   className,
   bodyClassName,
+  onMouseUp,
 }: {
   /** Left of the title bar, in mono: "~/repo", "$ terraform plan", "shop". */
   label: ReactNode;
@@ -45,9 +48,11 @@ export function SimTerminalWindow({
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  onMouseUp?: () => void;
 }) {
   return (
     <div
+      onMouseUp={onMouseUp}
       className={cn(
         'overflow-hidden rounded-lg border border-terminal-border bg-terminal text-terminal-foreground',
         className
@@ -92,10 +97,17 @@ export interface SimTerminalProps {
   className?: string;
   /**
    * The height of the output and input, under the title bar. The default
-   * fills a SimFrame's --sim-fill-h on lg. In a lab, LAB_TERMINAL_HEIGHT
+   * fills a SimFrame's --sim-fill-h on lg. In a lab, LAB_SHELL_HEIGHT
    * fills the lab's terminal column instead.
    */
   heightClassName?: string;
+  /**
+   * The prompt follows the output, like a real shell, and scrolls with it
+   * (with no placeholder); otherwise it is fixed under the output. A click anywhere in the window
+   * focuses it, and on lg, once the terminal is in view, the wheel over it
+   * never scrolls the page.
+   */
+  inline?: boolean;
 }
 
 /** The line a screen reader hears after a command: its result, not the whole log. */
@@ -125,9 +137,12 @@ export function SimTerminal({
   placeholder,
   className,
   heightClassName = 'h-[clamp(16rem,calc(100dvh-22rem),30rem)] lg:h-[max(16rem,calc(var(--sim-fill-h,32rem)-2.25rem))]',
+  inline = false,
 }: SimTerminalProps) {
   const ownInput = useRef<HTMLInputElement | null>(null);
   const ownLog = useRef<HTMLDivElement | null>(null);
+  // With an inline prompt, the box that scrolls the log and the prompt together.
+  const scroller = useRef<HTMLDivElement | null>(null);
 
   const setInput = (el: HTMLInputElement | null) => {
     ownInput.current = el;
@@ -147,9 +162,38 @@ export function SimTerminal({
   }, []);
 
   useEffect(() => {
-    const log = ownLog.current;
-    if (log) log.scrollTop = log.scrollHeight;
-  }, [lines]);
+    const box = inline ? scroller.current : ownLog.current;
+    if (box) box.scrollTop = box.scrollHeight;
+  }, [lines, inline]);
+
+  useEffect(() => {
+    // Typing brings an inline prompt back into view after scrolling up.
+    const box = scroller.current;
+    if (inline && box) box.scrollTop = box.scrollHeight;
+  }, [value, inline]);
+
+  useEffect(() => {
+    const box = scroller.current;
+    if (!inline || !box) return;
+    // On lg the wheel at the end of the log never moves the page while the
+    // whole terminal is in view. Until then it does, so a wheel over the
+    // terminal still brings the lab into view on a game page.
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || !window.matchMedia?.('(min-width: 1024px)').matches) return;
+      const atTop = box.scrollTop <= 0;
+      const atEnd = box.scrollTop + box.clientHeight >= box.scrollHeight - 1;
+      if (!((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atEnd))) return;
+      const { top, bottom } = box.getBoundingClientRect();
+      if (top >= 0 && bottom <= window.innerHeight + 1) event.preventDefault();
+    };
+    box.addEventListener('wheel', onWheel, { passive: false });
+    return () => box.removeEventListener('wheel', onWheel);
+  }, [inline]);
+
+  const focusOnClick = () => {
+    // A click puts the cursor back in the prompt, unless text was selected.
+    if (!window.getSelection()?.toString()) ownInput.current?.focus({ preventScroll: true });
+  };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     // An empty prompt lets Tab and Shift+Tab move focus on. Escape leaves the
@@ -162,6 +206,88 @@ export function SimTerminal({
     onKeyDown?.(event);
   };
 
+  const log = (
+    <div
+      ref={setLog}
+      role="log"
+      aria-label="Terminal output"
+      // The visible log is not read out line by line; the live region below reads the result.
+      aria-live="off"
+      className={
+        inline
+          ? undefined
+          : 'min-h-0 flex-1 overflow-auto overscroll-contain px-3 py-2 [scrollbar-width:thin]'
+      }
+      onMouseUp={inline ? undefined : focusOnClick}
+    >
+      {lines.map((line, i) => (
+        <div
+          key={i}
+          className={cn(
+            // Command output keeps its columns (tables, plans) and scrolls sideways;
+            // commands and messages wrap, so a phone never scrolls to read a sentence.
+            line.type === 'output'
+              ? 'whitespace-pre'
+              : 'whitespace-pre-wrap [overflow-wrap:anywhere]',
+            LINE_CLASS[line.type]
+          )}
+        >
+          {line.type === 'input' && (
+            <span className="select-none text-terminal-prompt" aria-hidden="true">
+              {line.prompt ?? linePrompt}{' '}
+            </span>
+          )}
+          {line.content || ' '}
+        </div>
+      ))}
+    </div>
+  );
+
+  const form = (
+    <form
+      className={cn(
+        'flex items-center',
+        // A long prompt (a deep directory on a phone) pushes the input onto the next line.
+        inline ? 'flex-wrap gap-x-[1ch]' : 'gap-2 border-t border-terminal-border px-3 py-2'
+      )}
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit(value);
+      }}
+    >
+      <span
+        className={cn(
+          'select-none text-terminal-prompt',
+          inline && 'max-w-full shrink-0 [overflow-wrap:anywhere]'
+        )}
+        aria-hidden="true"
+      >
+        {prompt}
+      </span>
+      <input
+        ref={setInput}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        onKeyDown={handleKeyDown}
+        aria-label="Terminal command"
+        autoComplete="off"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
+        disabled={disabled}
+        // An inline prompt has no placeholder: next to the prompt it reads as a typed command.
+        placeholder={inline ? undefined : placeholder}
+        className={cn(
+          'flex-1 bg-transparent text-terminal-input caret-terminal-prompt outline-none placeholder:text-terminal-muted focus-visible:outline-none',
+          // 16px on phones, so iOS does not zoom in on focus.
+          inline
+            ? 'min-w-[12ch] basis-0 p-0 text-base leading-relaxed sm:text-[13px]'
+            : 'min-w-0 text-base sm:text-sm'
+        )}
+      />
+    </form>
+  );
+
   return (
     <SimTerminalWindow
       label={label}
@@ -172,65 +298,23 @@ export function SimTerminal({
         className
       )}
       bodyClassName={cn('flex min-h-0 flex-col', heightClassName)}
+      onMouseUp={inline ? focusOnClick : undefined}
     >
-      <div
-        ref={setLog}
-        role="log"
-        aria-label="Terminal output"
-        // The visible log is not read out line by line; the live region below reads the result.
-        aria-live="off"
-        className="min-h-0 flex-1 overflow-auto overscroll-contain px-3 py-2 [scrollbar-width:thin]"
-        onMouseUp={() => {
-          // Clicking the output puts the cursor back in the prompt, unless text was selected.
-          if (!window.getSelection()?.toString()) ownInput.current?.focus({ preventScroll: true });
-        }}
-      >
-        {lines.map((line, i) => (
-          <div
-            key={i}
-            className={cn(
-              // Command output keeps its columns (tables, plans) and scrolls sideways;
-              // commands and messages wrap, so a phone never scrolls to read a sentence.
-              line.type === 'output'
-                ? 'whitespace-pre'
-                : 'whitespace-pre-wrap [overflow-wrap:anywhere]',
-              LINE_CLASS[line.type]
-            )}
-          >
-            {line.type === 'input' && (
-              <span className="select-none text-terminal-prompt" aria-hidden="true">
-                {linePrompt}{' '}
-              </span>
-            )}
-            {line.content || ' '}
-          </div>
-        ))}
-      </div>
-      <form
-        className="flex items-center gap-2 border-t border-terminal-border px-3 py-2"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSubmit(value);
-        }}
-      >
-        <span className="select-none text-terminal-prompt" aria-hidden="true">
-          {prompt}
-        </span>
-        <input
-          ref={setInput}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          onKeyDown={handleKeyDown}
-          aria-label="Terminal command"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          disabled={disabled}
-          placeholder={placeholder}
-          className="min-w-0 flex-1 bg-transparent text-base text-terminal-input caret-terminal-prompt outline-none placeholder:text-terminal-muted focus-visible:outline-none sm:text-sm"
-        />
-      </form>
+      {inline ? (
+        <div
+          ref={scroller}
+          // Touch scrolling stays in the log; on lg the wheel handler above decides.
+          className="min-h-0 flex-1 cursor-text overflow-auto overscroll-contain px-3 py-2 [scrollbar-width:thin] lg:overscroll-auto"
+        >
+          {log}
+          {form}
+        </div>
+      ) : (
+        <>
+          {log}
+          {form}
+        </>
+      )}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {resultLine(lines)}
       </p>

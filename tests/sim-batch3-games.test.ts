@@ -71,6 +71,10 @@ function name(button: HTMLButtonElement): string {
   return (button.getAttribute('aria-label') ?? button.textContent ?? '').trim();
 }
 
+function stepCard(): HTMLElement | null {
+  return container.querySelector('section[aria-label="Current step"]');
+}
+
 async function click(label: string, exact = false) {
   const button = [...container.querySelectorAll('button')].find(
     (candidate) =>
@@ -150,7 +154,7 @@ describe('Git Concepts on the kit', () => {
     expect(container.querySelector('[data-game-intro]')).toBeNull();
     expect(text()).not.toContain('// git mental model lab');
     expect(terminalInputs()).toHaveLength(1);
-    expect(text()).toContain(`Goal: ${LESSONS[0].commands[0].instruction.slice(0, 20)}`);
+    expect(stepCard()?.textContent).toContain(LESSONS[0].commands[0].instruction);
     await playToTheEnd(LESSONS, 500);
 
     await click('Keep exploring');
@@ -196,24 +200,24 @@ describe('Git Merge Conflict on the kit', () => {
     expect(container.querySelector('[data-game-intro]')).toBeNull();
     expect(text()).not.toContain('// CONFLICT (content)');
     expect(terminalInputs()).toHaveLength(1);
-    expect(text()).toContain('Goal: ');
+    expect(stepCard()?.textContent).toContain('Step 1 of');
 
+    const hasButton = (label: string) =>
+      [...container.querySelectorAll('button')].some(
+        (button) => !button.disabled && name(button).includes(label)
+      );
     for (let actions = 0; !text().includes('Lab complete') && actions < 200; actions++) {
-      if (
-        [...container.querySelectorAll('button')].some(
-          (button) => !button.disabled && name(button).includes('Next lesson')
-        )
-      ) {
+      if (hasButton('Next lesson')) {
+        // Between lessons the card says so and offers the next one.
+        expect(stepCard()?.textContent).toContain('Lesson done');
         await click('Next lesson');
-      } else if (
-        [...container.querySelectorAll('button')].some(
-          (button) => !button.disabled && name(button).includes('Show a solution')
-        )
-      ) {
-        await click('Show a solution');
+        continue;
+      }
+      // Show me types a command, or opens the editor with a solution for an edit step.
+      await click('Show me');
+      if (hasButton('Save')) {
         await click('Save', true);
       } else {
-        await click('Show me');
         await act(async () => {
           input().form?.requestSubmit();
         });

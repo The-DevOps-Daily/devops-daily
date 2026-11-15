@@ -4,7 +4,6 @@ import type { KeyboardEvent } from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
-  BookOpen,
   Eye,
   GitMerge,
   Layers,
@@ -12,7 +11,6 @@ import {
   RefreshCcw,
   Save,
   Split,
-  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,9 +18,9 @@ import {
   SIM_TONE,
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabCardButton,
+  SimLabMain,
+  SimLabTop,
   SimLabPanel,
   SimTerminal,
   useSimLab,
@@ -59,9 +57,9 @@ const LAB_LESSONS: SimLabLesson[] = LESSONS.map((l) => ({
   commands: l.steps,
 }));
 
-const EDITOR_HEIGHT = 'h-44 lg:h-[clamp(9rem,calc(var(--sim-fill-h)*0.4-2.5rem),24rem)]';
+const EDITOR_HEIGHT = 'h-32 lg:h-[clamp(9rem,calc(var(--sim-lab-h)*0.4-2.5rem),24rem)]';
 // On lg the editor takes about 40% of the lab and the terminal the rest.
-const TERMINAL_HEIGHT = 'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-auto lg:flex-1';
+const TERMINAL_HEIGHT = 'h-[clamp(10rem,calc(100dvh-38rem),18rem)] lg:h-auto lg:min-h-0 lg:flex-1';
 
 const STATUS_STYLE: Record<FileStatus, { label: string; className: string }> = {
   unmerged: {
@@ -305,9 +303,6 @@ export default function GitMergeConflictSimulator() {
     resetProgress: resetLab,
   };
   const ui = useSimLab(lab);
-  const lessonsDone = LESSONS.filter((l) =>
-    l.steps.every((_, i) => completed.has(`${l.id}-${i}`))
-  ).length;
   const opLabel =
     repo.op?.kind === 'merge'
       ? `Merging ${repo.op.other} into ${repo.branch}`
@@ -317,59 +312,25 @@ export default function GitMergeConflictSimulator() {
 
   return (
     <SimFrame>
-      <SimLabBar
+      <SimLabTop
         title="Git Merge Conflict Simulator"
         icon={GitMerge}
         lessons={LAB_LESSONS}
         lab={lab}
         ui={ui}
         unit="steps"
-        task={
-          step
-            ? step.instruction
-            : lessonIndex < LESSONS.length - 1
-              ? `Done with "${lesson.title}". The next lesson opens a new repository.`
-              : 'That was the last lesson.'
-        }
-        hint={step?.hint}
-        showMe={step?.kind === 'command' ? step.command : undefined}
         actions={
           !allDone && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-10 lg:h-8"
-                onClick={() => openLesson(lessonIndex)}
-              >
-                <RefreshCcw className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only sm:not-sr-only">Restart lesson</span>
-              </Button>
-              {step?.kind === 'edit' && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-10 lg:h-8"
-                  onClick={() => startEditing(step.solution)}
-                >
-                  <Wand2 className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only sm:not-sr-only">Show a solution</span>
-                </Button>
-              )}
-              {!step && lessonDone && lessonIndex < LESSONS.length - 1 && (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-10 lg:h-8"
-                  onClick={() => openLesson(lessonIndex + 1)}
-                >
-                  Next lesson
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Button>
-              )}
-            </>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 lg:h-8"
+              onClick={() => openLesson(lessonIndex)}
+            >
+              <RefreshCcw className="h-4 w-4" aria-hidden="true" />
+              <span className="sr-only sm:not-sr-only">Restart lesson</span>
+            </Button>
           )
         }
       />
@@ -393,8 +354,37 @@ export default function GitMergeConflictSimulator() {
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
           minHeight="lg:min-h-[28rem]"
+          lessons={LAB_LESSONS}
+          lab={lab}
+          ui={ui}
+          kicker={step ? undefined : 'Lesson done'}
+          task={
+            step
+              ? step.instruction
+              : lessonIndex < LESSONS.length - 1
+                ? `Done with "${lesson.title}". The next lesson opens a new repository.`
+                : 'That was the last lesson.'
+          }
+          hint={step?.hint}
+          showMe={
+            step?.kind === 'command'
+              ? step.command
+              : step?.kind === 'edit'
+                ? () => startEditing(step.solution)
+                : undefined
+          }
+          cardButtons={
+            !step &&
+            lessonDone &&
+            lessonIndex < LESSONS.length - 1 && (
+              <SimLabCardButton variant="default" onClick={() => openLesson(lessonIndex + 1)}>
+                Next lesson
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </SimLabCardButton>
+            )
+          }
           terminal={
             <div className="space-y-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
               <section
@@ -510,14 +500,16 @@ export default function GitMergeConflictSimulator() {
                 onKeyDown={handleKeyDown}
                 inputRef={inputRef}
                 placeholder={step?.kind === 'command' ? 'type a command, or help' : 'help'}
+                inline
                 heightClassName={TERMINAL_HEIGHT}
               />
             </div>
           }
-          aside={
+          panels={
             <>
               <SimLabPanel
                 title="Repository"
+                defaultOpen
                 icon={GitMerge}
                 summary={`${unmergedCount} unmerged, ${stagedCount} staged`}
               >
@@ -600,7 +592,7 @@ export default function GitMergeConflictSimulator() {
                   </ul>
                 </div>
               </SimLabPanel>
-              <SimLabPanel title="Index stages" icon={Layers} summary={file?.path}>
+              <SimLabPanel title="Index stages" icon={Layers} summary={file?.path} defaultOpen>
                 <IndexStages file={file} labels={labels} />
               </SimLabPanel>
               <SimLabPanel title="Ours and theirs" icon={Split}>
@@ -618,13 +610,6 @@ export default function GitMergeConflictSimulator() {
                     theirs="your commit being replayed"
                   />
                 </div>
-              </SimLabPanel>
-              <SimLabPanel
-                title="Lessons"
-                icon={BookOpen}
-                summary={`${lessonsDone} of ${LESSONS.length} done`}
-              >
-                <SimLabLessons lessons={LAB_LESSONS} lab={lab} ui={ui} />
               </SimLabPanel>
             </>
           }

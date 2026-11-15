@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import {
-  BookOpen,
   Database,
   Gauge,
   History,
@@ -18,18 +17,16 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  LAB_TERMINAL_HEIGHT,
+  LAB_SHELL_HEIGHT,
   SIM_TONE,
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabTop,
+  SimLabMain,
   SimLabPanel,
   SimTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
@@ -761,15 +758,12 @@ export default function PostgresTerminalSimulator() {
 
   return (
     <SimFrame>
-      <SimLabBar
+      <SimLabTop
         title="PostgreSQL Terminal Simulator"
         icon={Database}
         lessons={LESSONS}
         lab={lab}
         ui={ui}
-        task={currentCommand?.instruction}
-        hint={currentCommand?.hint}
-        showMe={expected}
       />
 
       {ui.showComplete ? (
@@ -786,7 +780,13 @@ export default function PostgresTerminalSimulator() {
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={expected}
           terminal={
             <SimTerminal
               label="psql"
@@ -804,7 +804,7 @@ export default function PostgresTerminalSimulator() {
                 },
                 {
                   type: 'muted',
-                  content: 'Type "\\?" for meta-command help, or follow the task above.',
+                  content: 'Type "\\?" for meta-command help, or follow the current step.',
                 },
               ])}
               value={inputValue}
@@ -814,13 +814,15 @@ export default function PostgresTerminalSimulator() {
               inputRef={inputRef}
               placeholder={'\\dt'}
               autoFocus
-              heightClassName={LAB_TERMINAL_HEIGHT}
+              inline
+              heightClassName={LAB_SHELL_HEIGHT}
             />
           }
-          aside={
+          panels={
             <>
               <SimLabPanel
                 title="Database"
+                defaultOpen
                 icon={Database}
                 summary={
                   pgState.inTransaction ? 'in a transaction' : `${indexNames.length} indexes`
@@ -903,9 +905,6 @@ export default function PostgresTerminalSimulator() {
                     })}
                   </ul>
                 </div>
-              </SimLabPanel>
-              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
               </SimLabPanel>
             </>
           }

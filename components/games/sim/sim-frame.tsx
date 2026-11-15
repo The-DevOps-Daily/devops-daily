@@ -9,6 +9,7 @@ import {
   type CSSProperties,
   type ReactNode,
   type Ref,
+  type RefObject,
 } from 'react';
 import { Lightbulb, RotateCcw, Target, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,18 @@ export function SimFrame({
       </div>
     </FrameContext.Provider>
   );
+}
+
+/** Reports a bar's height to its SimFrame, for --sim-bar-h. */
+export function useSimBarHeight(ref: RefObject<HTMLElement | null>): void {
+  const setBarHeight = useContext(FrameContext);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setBarHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, setBarHeight]);
 }
 
 export type SimStepStatus = 'todo' | 'started' | 'done' | 'perfect';
@@ -136,16 +149,8 @@ export function SimBar({
   children,
 }: SimBarProps) {
   const { embedded } = useEmbed();
-  const setBarHeight = useContext(FrameContext);
   const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setBarHeight(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [setBarHeight]);
+  useSimBarHeight(ref);
 
   const secondRow = progress || heading || meta || actions;
   const showTitle = embedded && title;
@@ -305,10 +310,13 @@ export function SimResetButton({
   onReset,
   label = 'Start over',
   confirmLabel = 'Start over?',
+  showLabel = false,
 }: {
   onReset: () => void;
   label?: string;
   confirmLabel?: string;
+  /** Shows the label next to the icon from sm up. */
+  showLabel?: boolean;
 }) {
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -333,7 +341,11 @@ export function SimResetButton({
       aria-label={confirming ? `Click again to ${label[0].toLowerCase()}${label.slice(1)}` : label}
     >
       <RotateCcw className="h-4 w-4" aria-hidden="true" />
-      {confirming && <span>{confirmLabel}</span>}
+      {confirming ? (
+        <span>{confirmLabel}</span>
+      ) : (
+        showLabel && <span className="hidden sm:inline">{label}</span>
+      )}
     </Button>
   );
 }

@@ -1,7 +1,7 @@
 // The shared simulator kit: SimFrame layout, SimComplete end card, SimFeedback
 // tones, SimTerminal, the terminal lab layout and missions for sandboxes.
 // terraform-puzzle.tsx and incident-commander-simulator.tsx are the reference
-// games built on it; linux-terminal.tsx is the reference terminal lab.
+// games built on it; linux-terminal.tsx is the reference terminal lab (SimLabTop and SimLabMain).
 export { SIM_TONE, SIM_CATEGORY, type SimTone, type SimCategory } from './tones';
 export {
   SimFrame,
@@ -11,6 +11,7 @@ export {
   SimHintButton,
   SimResetButton,
   SimStage,
+  useSimBarHeight,
   SimPhoneBar,
   SimTabBadge,
   revealTop,
@@ -31,18 +32,23 @@ export {
   type SimTerminalProps,
 } from './sim-terminal';
 export {
-  SimLabBar,
-  SimLabLayout,
+  SimLabTop,
+  SimLabMain,
+  SimLabRow,
+  SimLabSplit,
+  SimLabCard,
+  SimLabCardButton,
   SimLabPanel,
   SimLabLessons,
   useSimLab,
   labLines,
   labStats,
-  labSteps,
   lessonsSummary,
   focusTerminal,
-  LAB_TERMINAL_HEIGHT,
+  LAB_SHELL_HEIGHT,
+  type SimLabCommand,
   type SimLabLesson,
+  type SimLabRowItem,
   type SimLabState,
   type SimLabUi,
 } from './sim-lab';
