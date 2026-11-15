@@ -97,13 +97,13 @@ export interface SimTerminalProps {
   className?: string;
   /**
    * The height of the output and input, under the title bar. The default
-   * fills a SimFrame's --sim-fill-h on lg. In a lab, LAB_TERMINAL_HEIGHT
+   * fills a SimFrame's --sim-fill-h on lg. In a lab, LAB_SHELL_HEIGHT
    * fills the lab's terminal column instead.
    */
   heightClassName?: string;
   /**
-   * The prompt follows the output, like a real shell, and scrolls with it;
-   * otherwise it is fixed under the output. A click anywhere in the window
+   * The prompt follows the output, like a real shell, and scrolls with it
+   * (with no placeholder); otherwise it is fixed under the output. A click anywhere in the window
    * focuses it, and on lg, once the terminal is in view, the wheel over it
    * never scrolls the page.
    */
@@ -275,7 +275,8 @@ export function SimTerminal({
         autoCorrect="off"
         spellCheck={false}
         disabled={disabled}
-        placeholder={placeholder}
+        // An inline prompt has no placeholder: next to the prompt it reads as a typed command.
+        placeholder={inline ? undefined : placeholder}
         className={cn(
           'flex-1 bg-transparent text-terminal-input caret-terminal-prompt outline-none placeholder:text-terminal-muted focus-visible:outline-none',
           // 16px on phones, so iOS does not zoom in on focus.

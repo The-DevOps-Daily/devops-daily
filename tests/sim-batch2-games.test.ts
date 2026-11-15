@@ -307,7 +307,7 @@ describe('terminal labs on the kit', () => {
     await render(SqlTerminalSimulator);
     await playToTheEnd(SQL_LESSONS, 700);
     await click('Try the challenges');
-    expect(text()).toContain('Goal: ' + SQL_CHALLENGES[0].question);
+    expect(stepCard()?.textContent).toContain(SQL_CHALLENGES[0].question);
     await click('Lessons', true);
     expect(text()).not.toContain('Lab complete');
     expect(terminalInputs()).toHaveLength(1);

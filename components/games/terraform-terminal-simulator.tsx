@@ -1,29 +1,27 @@
 'use client';
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { BookOpen, Cloud, FileCode, Boxes, Pencil, RotateCcw, Server } from 'lucide-react';
+import { Cloud, FileCode, Boxes, Pencil, RotateCcw, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MotionConfig } from 'framer-motion';
 import {
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabTop,
+  SimLabMain,
   SimLabPanel,
   SimTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
   type SimLabState,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
 
 // The file editor sits above the terminal, so both share the lab's height (as in the git lab).
-const EDITOR_HEIGHT = 'h-40 lg:h-[clamp(9rem,calc(var(--sim-fill-h)*0.4-2.5rem),24rem)]';
+const EDITOR_HEIGHT = 'h-32 lg:h-[clamp(9rem,calc(var(--sim-lab-h)*0.4-2.5rem),24rem)]';
 // On lg the editor takes about 40% of the lab and the terminal the rest.
-const TERMINAL_HEIGHT = 'h-[clamp(11rem,calc(100dvh-36rem),20rem)] lg:h-auto lg:flex-1';
+const TERMINAL_HEIGHT = 'h-[clamp(10rem,calc(100dvh-38rem),18rem)] lg:h-auto lg:min-h-0 lg:flex-1';
 
 type FileName = 'main.tf' | 'variables.tf' | 'outputs.tf';
 
@@ -992,15 +990,12 @@ export default function TerraformTerminalSimulator() {
   return (
     <MotionConfig reducedMotion="user">
       <SimFrame>
-        <SimLabBar
+        <SimLabTop
           title="Terraform Terminal Simulator"
           icon={FileCode}
           lessons={LESSONS}
           lab={lab}
           ui={ui}
-          task={currentCommand?.instruction}
-          hint={currentCommand?.hint}
-          showMe={currentCommand?.expectedCommand[0]}
         />
 
         {ui.showComplete ? (
@@ -1017,8 +1012,13 @@ export default function TerraformTerminalSimulator() {
             playAgainLabel="Start over"
           />
         ) : (
-          <SimLabLayout
-            minHeight="lg:min-h-[28rem]"
+          <SimLabMain
+            lessons={LESSONS}
+            lab={lab}
+            ui={ui}
+            task={currentCommand?.instruction}
+            hint={currentCommand?.hint}
+            showMe={currentCommand?.expectedCommand[0]}
             terminal={
               <div className="space-y-2 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
                 <section
@@ -1103,13 +1103,14 @@ export default function TerraformTerminalSimulator() {
                   inputRef={inputRef}
                   placeholder="terraform init"
                   autoFocus
+                  inline
                   heightClassName={TERMINAL_HEIGHT}
                 />
               </div>
             }
-            aside={
+            panels={
               <>
-                <SimLabPanel title="Plan" icon={FileCode} summary={planSummary.label}>
+                <SimLabPanel title="Plan" icon={FileCode} summary={planSummary.label} defaultOpen>
                   <div className="space-y-2 font-mono text-xs">
                     <div className="flex gap-3">
                       <span className="text-correct-foreground">+{planSummary.adds}</span>
@@ -1125,7 +1126,12 @@ export default function TerraformTerminalSimulator() {
                     )}
                   </div>
                 </SimLabPanel>
-                <SimLabPanel title="State" icon={Server} summary={`${state.length} resources`}>
+                <SimLabPanel
+                  title="State"
+                  icon={Server}
+                  summary={`${state.length} resources`}
+                  defaultOpen
+                >
                   {state.length === 0 ? (
                     <p className="text-xs font-mono text-muted-foreground">
                       No resources in state.
@@ -1147,9 +1153,6 @@ export default function TerraformTerminalSimulator() {
                       ))}
                     </div>
                   )}
-                </SimLabPanel>
-                <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                  <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
                 </SimLabPanel>
               </>
             }

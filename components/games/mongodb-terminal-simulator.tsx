@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import {
   ArrowUpDown,
   BarChart3,
@@ -24,22 +24,22 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  LAB_TERMINAL_HEIGHT,
-  SimBar,
+  LAB_SHELL_HEIGHT,
   SimComplete,
-  SimFeedback,
   SimFrame,
   SimHowTo,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabCard,
+  SimLabCardButton,
+  SimLabMain,
   SimLabPanel,
+  SimLabRow,
+  SimLabSplit,
+  SimLabTop,
   SimResetButton,
   SimTerminal,
   focusTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
@@ -495,6 +495,8 @@ export default function MongodbTerminalSimulator() {
     setMode(next);
   };
 
+  const solutionId = useId();
+
   const modeToggle = (
     <div role="group" aria-label="Mode" className="flex items-center gap-1">
       {(
@@ -523,6 +525,7 @@ export default function MongodbTerminalSimulator() {
     <SimLabPanel
       title="Collections"
       icon={Database}
+      defaultOpen
       summary={`${COLLECTIONS.length} collections, ${TOTAL_DOCS} documents`}
     >
       <div className="space-y-2">
@@ -574,68 +577,31 @@ export default function MongodbTerminalSimulator() {
     const solved = solvedChallenges.has(activeChallenge);
     return (
       <SimFrame key="challenges">
-        <SimBar
+        <SimLabRow
           title="MongoDB Terminal Simulator"
           icon={Leaf}
           lead={modeToggle}
-          steps={CHALLENGES.map((c, i) => ({
+          noun="Challenge"
+          showTitle={false}
+          items={CHALLENGES.map((c, i) => ({
+            id: c.id,
             title: c.question,
-            status: solvedChallenges.has(i) ? 'done' : 'todo',
-            statusLabel: solvedChallenges.has(i) ? 'solved' : 'not solved yet',
+            done: solvedChallenges.has(i),
+            progress: solvedChallenges.has(i) ? 1 : 0,
           }))}
           current={activeChallenge}
-          onStep={selectChallenge}
-          stepNoun="Challenge"
-          stepsLabel="Challenges"
-          tools={
+          onPick={selectChallenge}
+          count={`${solvedCount}/${CHALLENGES.length} solved`}
+          reset={
             <SimResetButton
               onReset={resetChallenges}
               label="Reset challenges"
               confirmLabel="Reset challenges?"
+              showLabel
             />
           }
-          progress={{ current: activeChallenge + 1, total: CHALLENGES.length }}
-          heading={`Challenge ${activeChallenge + 1}`}
-          meta={
-            solved && (
-              <span className="inline-flex items-center gap-1 text-xs font-medium text-correct-foreground">
-                <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" /> Solved
-              </span>
-            )
-          }
-          actions={
-            <>
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {solvedCount}/{CHALLENGES.length} solved
-              </span>
-              {!revealed.has(activeChallenge) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-10 lg:h-8"
-                  onClick={revealSolution}
-                >
-                  <Lightbulb className="h-4 w-4" aria-hidden="true" />
-                  Show solution
-                </Button>
-              )}
-            </>
-          }
-          goal={challenge.question}
-        >
-          <SimHowTo summary="How challenges work" autoOpen={challengeHistory.length === 0}>
-            Write your own MongoDB command in the terminal and press Enter. Your result is graded
-            against the expected output.
-          </SimHowTo>
-          {revealed.has(activeChallenge) && (
-            <SimFeedback tone="hint" label="Reference solution" role="status">
-              <code className="block whitespace-pre-wrap break-words font-mono text-xs">
-                {challenge.solution}
-              </code>
-            </SimFeedback>
-          )}
-        </SimBar>
+          inputRef={challengeInputRef}
+        />
 
         {solvedCount === CHALLENGES.length && !challengesDismissed ? (
           <SimComplete
@@ -665,7 +631,49 @@ export default function MongodbTerminalSimulator() {
             playAgainLabel="Reset challenges"
           />
         ) : (
-          <SimLabLayout
+          <SimLabSplit
+            head={
+              <SimLabCard
+                kicker={
+                  <>
+                    Challenge {activeChallenge + 1} of {CHALLENGES.length}
+                    {solved && (
+                      <span className="ml-2 inline-flex items-center gap-1 normal-case tracking-normal text-correct-foreground">
+                        <CircleCheck className="h-3.5 w-3.5" aria-hidden="true" /> Solved
+                      </span>
+                    )}
+                  </>
+                }
+                task={challenge.question}
+                buttons={
+                  !revealed.has(activeChallenge) && (
+                    <SimLabCardButton
+                      aria-controls={solutionId}
+                      onClick={() => {
+                        revealSolution();
+                        focusTerminal(challengeInputRef.current);
+                      }}
+                    >
+                      <Lightbulb className="h-4 w-4" aria-hidden="true" />
+                      Show solution
+                    </SimLabCardButton>
+                  )
+                }
+                detail={
+                  revealed.has(activeChallenge) && (
+                    <>
+                      <p className="mb-1 text-xs font-medium text-muted-foreground">
+                        Reference solution
+                      </p>
+                      <code className="block whitespace-pre-wrap break-words font-mono text-xs">
+                        {challenge.solution}
+                      </code>
+                    </>
+                  )
+                }
+                detailId={solutionId}
+              />
+            }
             terminal={
               <SimTerminal
                 label="mongosh"
@@ -688,11 +696,16 @@ export default function MongodbTerminalSimulator() {
                 inputRef={challengeInputRef}
                 placeholder="db.products.find(...)"
                 autoFocus
-                heightClassName={LAB_TERMINAL_HEIGHT}
+                inline
+                heightClassName={LAB_SHELL_HEIGHT}
               />
             }
-            aside={
+            rest={
               <>
+                <SimHowTo summary="How challenges work" autoOpen={challengeHistory.length === 0}>
+                  Write your own MongoDB command in the terminal and press Enter. Your result is
+                  graded against the expected output.
+                </SimHowTo>
                 <SimLabPanel
                   title="Challenges"
                   icon={Target}
@@ -733,9 +746,9 @@ export default function MongodbTerminalSimulator() {
                     })}
                   </ol>
                 </SimLabPanel>
-                {collectionsPanel}
               </>
             }
+            panels={collectionsPanel}
           />
         )}
       </SimFrame>
@@ -744,16 +757,13 @@ export default function MongodbTerminalSimulator() {
 
   return (
     <SimFrame key="lessons">
-      <SimLabBar
+      <SimLabTop
         title="MongoDB Terminal Simulator"
         icon={Leaf}
         lead={modeToggle}
         lessons={LESSONS}
         lab={lab}
         ui={ui}
-        task={currentCommand?.instruction}
-        hint={currentCommand?.hint}
-        showMe={expected}
       />
 
       {ui.showComplete ? (
@@ -776,7 +786,13 @@ export default function MongodbTerminalSimulator() {
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={expected}
           terminal={
             <SimTerminal
               label="mongosh"
@@ -786,7 +802,7 @@ export default function MongodbTerminalSimulator() {
                 { type: 'success', content: 'Welcome to the MongoDB shell.' },
                 {
                   type: 'muted',
-                  content: 'Type "help", run "show collections", or follow the task above.',
+                  content: 'Type "help", run "show collections", or follow the current step.',
                 },
               ])}
               value={inputValue}
@@ -796,15 +812,13 @@ export default function MongodbTerminalSimulator() {
               inputRef={inputRef}
               placeholder="db.customers.find()"
               autoFocus
-              heightClassName={LAB_TERMINAL_HEIGHT}
+              inline
+              heightClassName={LAB_SHELL_HEIGHT}
             />
           }
-          aside={
+          panels={
             <>
               {collectionsPanel}
-              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
-              </SimLabPanel>
               {cheatSheet}
             </>
           }

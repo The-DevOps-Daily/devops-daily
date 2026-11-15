@@ -7,6 +7,8 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ComponentProps,
+  type CSSProperties,
   type Dispatch,
   type MouseEvent,
   type ReactNode,
@@ -14,7 +16,6 @@ import {
   type SetStateAction,
 } from 'react';
 import { Check, ChevronDown, CircleCheck, Eye, Lightbulb, type LucideIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,17 +24,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SimFeedback } from '@/components/games/sim/sim-feedback';
-import {
-  SimBar,
-  SimHintButton,
-  SimResetButton,
-  useSimBarHeight,
-  type SimStep,
-} from '@/components/games/sim/sim-frame';
+import { SimResetButton, useSimBarHeight } from '@/components/games/sim/sim-frame';
 import type { SimStat } from '@/components/games/sim/sim-complete';
 import type { SimTerminalLine, SimTerminalLineType } from '@/components/games/sim/sim-terminal';
-import { useSimGame } from '@/components/games/sim/sim-game';
 import { useEmbed } from '@/lib/games/embed-context';
 import { cn } from '@/lib/utils';
 
@@ -47,8 +40,8 @@ import { cn } from '@/lib/utils';
  *                     (inline prompt, rendered once) on the right; below lg the
  *                     step card, the terminal, then closed drawers
  *
- * SimLabBar and SimLabLayout are the older layout (a sticky bar with the task
- * as a goal line), still used by the labs not yet moved to SimLabMain.
+ * SimLabRow, SimLabSplit and SimLabCard are the pieces SimLabTop and
+ * SimLabMain are made of, for a lab mode without lessons (SQL challenges).
  *
  * The terminal never goes in a SimStage: the stage renders each panel twice
  * (columns and phone tabs), which would give the lab two inputs.
@@ -86,13 +79,6 @@ export interface SimLabState {
   resetProgress: () => void;
 }
 
-/**
- * The terminal's height in a lab: short enough on a phone that the input is
- * in the first screen under the bar. On lg it fills SimLabLayout's terminal
- * column, which is as tall as the screen under the bar.
- */
-export const LAB_TERMINAL_HEIGHT = 'h-[clamp(11rem,calc(100dvh-33rem),24rem)] lg:h-auto lg:flex-1';
-
 /** Focuses the terminal input without scrolling; on touch screens only when asked. */
 export function focusTerminal(el: HTMLInputElement | null, onTouch = false): void {
   if (!el || typeof window === 'undefined') return;
@@ -112,19 +98,6 @@ export function labLines(
 
 function lessonDone(lesson: SimLabLesson, index: number, lab: SimLabState): number {
   return lesson.commands.filter((_, c) => lab.isCommandDone(index, c)).length;
-}
-
-/** One SimBar pill per lesson. */
-export function labSteps(lessons: readonly SimLabLesson[], lab: SimLabState): SimStep[] {
-  return lessons.map((lesson, i) => {
-    const done = lessonDone(lesson, i, lab);
-    const total = lesson.commands.length;
-    return {
-      title: lesson.title,
-      status: done === total ? 'done' : done > 0 ? 'started' : 'todo',
-      statusLabel: `${done} of ${total} commands done`,
-    };
-  });
 }
 
 /**
@@ -147,9 +120,16 @@ export function useSimLab(lab: SimLabState) {
       if (!lab.showHint) setHinted((s) => new Set(s).add(key));
       lab.setShowHint((v) => !v);
     },
-    /** Types the expected command into the prompt; the player still runs it with Enter. */
-    showMe: (command: string) => {
+    /**
+     * Types the expected command into the prompt; the player still runs it
+     * with Enter. A function does the step's own "show me" (an edit step).
+     */
+    showMe: (command: string | (() => void)) => {
       setShown((s) => new Set(s).add(key));
+      if (typeof command === 'function') {
+        command();
+        return;
+      }
       lab.setInputValue(command);
       focusTerminal(lab.inputRef.current, true);
     },
@@ -166,8 +146,6 @@ export function useSimLab(lab: SimLabState) {
     },
   };
 }
-
-export type SimLabUi = ReturnType<typeof useSimLab>;
 
 /**
  * The end card's tiles: two, or four with "Show me", so they sit in one row
@@ -190,152 +168,6 @@ export function labStats(
   ];
 }
 
-export function SimLabBar({
-  title,
-  icon,
-  lead,
-  lessons,
-  lab,
-  ui,
-  task,
-  hint,
-  showMe,
-  actions,
-  unit = 'commands',
-  doneGoal = 'All lessons done. The terminal stays open for your own commands.',
-}: {
-  /** The short title, shown only in an embed. */
-  title: string;
-  icon?: LucideIcon;
-  lead?: ReactNode;
-  lessons: readonly SimLabLesson[];
-  lab: SimLabState;
-  ui: SimLabUi;
-  /** The current command's instruction: the goal line. */
-  task?: ReactNode;
-  hint?: ReactNode;
-  /** The command "Show me" types for the player. Leave undefined for no button. */
-  showMe?: string;
-  /** The game's own controls, placed before the Show me button. */
-  actions?: ReactNode;
-  /** The word after the completed count. */
-  unit?: string;
-  doneGoal?: ReactNode;
-}) {
-  const game = useSimGame();
-  const lesson = lessons[lab.currentLessonIndex];
-  const open = !lab.isComplete;
-  return (
-    <SimBar
-      title={title}
-      icon={icon}
-      lead={lead}
-      steps={labSteps(lessons, lab)}
-      current={lab.currentLessonIndex}
-      onStep={ui.pickLesson}
-      stepNoun="Lesson"
-      stepsLabel="Lessons"
-      tools={
-        <>
-          {open && hint && (
-            // Icon only on phones, so the pills and the tools share one row.
-            <SimHintButton onClick={ui.toggleHint} pressed={lab.showHint}>
-              <span className="sr-only sm:not-sr-only">Hint</span>
-            </SimHintButton>
-          )}
-          <SimResetButton onReset={ui.startOver} />
-        </>
-      }
-      progress={{ current: lab.currentLessonIndex + 1, total: lessons.length }}
-      heading={lesson?.title}
-      meta={
-        <>
-          {open && lesson && (
-            <Badge variant="secondary" className="tabular-nums">
-              Step {lab.currentCommandIndex + 1} of {lesson.commands.length}
-            </Badge>
-          )}
-          {game?.level && (
-            <Badge variant="outline" className="hidden sm:inline-flex">
-              {game.level}
-            </Badge>
-          )}
-        </>
-      }
-      actions={
-        <>
-          <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:inline">
-            {lab.completedCount}/{lab.totalCommands} {unit}
-          </span>
-          {actions}
-          {open && showMe !== undefined && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10 lg:h-8"
-              onClick={() => ui.showMe(showMe)}
-            >
-              <Eye className="h-4 w-4" aria-hidden="true" />
-              <span className="sr-only sm:not-sr-only">Show me</span>
-            </Button>
-          )}
-        </>
-      }
-      goal={open ? task : doneGoal}
-    >
-      {open && lab.showHint && hint && (
-        <SimFeedback
-          tone="hint"
-          role="status"
-          onDismiss={() => lab.setShowHint(false)}
-          dismissLabel="Close the hint"
-        >
-          <p>{hint}</p>
-        </SimFeedback>
-      )}
-    </SimBar>
-  );
-}
-
-/**
- * The terminal, rendered once, and the side panels. On lg the lab fills the
- * screen under the bar (--sim-fill-h): the terminal column is a flex column
- * whose SimTerminal (LAB_TERMINAL_HEIGHT) takes the free height, and the side
- * column scrolls on its own. Below lg the panels follow the terminal as
- * closed drawers, so the input stays near the top.
- */
-export function SimLabLayout({
-  terminal,
-  aside,
-  minHeight = 'lg:min-h-[18rem]',
-}: {
-  terminal: ReactNode;
-  aside?: ReactNode;
-  /** The lab's least height on lg, for a short window. */
-  minHeight?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        // minmax(0,1fr): the row is the lab's height, never the terminal's whole log.
-        'grid gap-2 lg:h-[var(--sim-fill-h)] lg:grid-rows-[minmax(0,1fr)]',
-        minHeight,
-        aside && 'lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_20rem]'
-      )}
-    >
-      <div className="min-w-0 lg:flex lg:flex-col">{terminal}</div>
-      {aside && (
-        <div className="min-w-0 lg:relative">
-          <div className="space-y-2 lg:absolute lg:inset-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
-            {aside}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 const LG = '(min-width: 1024px)';
 
 function subscribeLg(onChange: () => void) {
@@ -353,13 +185,13 @@ function useLg(): boolean {
   );
 }
 
-/** True inside SimLabMain, where panels can be closed on lg too. */
+/** True in SimLabSplit's panels, which can be closed on lg too. */
 const CollapsibleOnLg = createContext(false);
 
 /**
- * A side panel. On phones a closed drawer. On lg, in SimLabLayout, always
- * open; in SimLabMain a section that opens and closes, open at first when
- * `defaultOpen` (live state such as a file tree), closed otherwise.
+ * A side panel. On phones a closed drawer. On lg, in SimLabSplit's panels,
+ * a section that opens and closes, open at first when `defaultOpen` (live
+ * state such as a file tree), closed otherwise; elsewhere always open.
  */
 export function SimLabPanel({
   title,
@@ -372,7 +204,7 @@ export function SimLabPanel({
   icon?: LucideIcon;
   /** A few words after the title, such as "2 of 6 done" or "3 running". */
   summary?: ReactNode;
-  /** Open at first on lg, in SimLabMain. Phones always start closed. */
+  /** Open at first on lg, in SimLabSplit's panels. Phones always start closed. */
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
@@ -433,7 +265,7 @@ export function SimLabPanel({
   );
 }
 
-/** The lesson list with titles, for a SimLabPanel. The bar's pills are the short form. */
+/** The lesson list with titles, for the lessons drawer on phones. */
 export function SimLabLessons({
   lessons,
   lab,
@@ -502,40 +334,68 @@ export function lessonsSummary(lessons: readonly SimLabLesson[], lab: SimLabStat
  * terminal fills the lab's right column.
  */
 export const LAB_SHELL_HEIGHT =
-  'h-[clamp(11rem,calc(100dvh-24rem),26rem)] lg:h-auto lg:min-h-0 lg:flex-1';
+  'h-[clamp(11rem,calc(100dvh-29rem),26rem)] lg:h-auto lg:min-h-0 lg:flex-1';
 
-function lessonMeterFill(done: number, total: number): string {
-  return `${total > 0 ? Math.round((done / total) * 100) : 0}%`;
+/**
+ * The lab's height on lg, as --sim-lab-h: the screen under the top row, less
+ * what sits above the game (--sim-embed-top), the 8px gap and 24px of room.
+ */
+const LAB_HEIGHT = 'calc(100dvh - var(--sim-embed-top, 12px) - var(--sim-bar-h) - 2rem)';
+
+export interface SimLabRowItem {
+  id: string;
+  title: string;
+  done: boolean;
+  /** 0 to 1, for the item's bar. */
+  progress: number;
+  /** Right of the item in the picker, such as "2/6". */
+  meta?: string;
 }
 
-/** The top row: lesson n of m, progress, the lesson picker and start over. Not sticky. */
-export function SimLabTop({
+/**
+ * The top row: "Lesson n of m", a bar per item, a count, the picker and
+ * start over. Not sticky, so it never covers the terminal.
+ */
+export function SimLabRow({
   title,
   icon: Icon,
   lead,
-  lessons,
-  lab,
-  ui,
+  noun,
+  items,
+  current,
+  onPick,
+  showTitle = true,
+  count,
   actions,
-  unit = 'commands',
+  reset,
+  inputRef,
 }: {
   /** The short title, shown only in an embed. */
   title: string;
   icon?: LucideIcon;
   /** Always shown at the start (a mode toggle). */
   lead?: ReactNode;
-  lessons: readonly SimLabLesson[];
-  lab: SimLabState;
-  ui: SimLabUi;
-  /** The game's own controls, before the lesson picker. */
+  /** "Lesson" or "Challenge". */
+  noun: string;
+  items: readonly SimLabRowItem[];
+  current: number;
+  onPick: (index: number) => void;
+  /** The current item's title after "Lesson n of m", from md up. */
+  showTitle?: boolean;
+  /** "2/32 commands", from sm up. */
+  count?: ReactNode;
+  /** The game's own controls, before the picker. */
   actions?: ReactNode;
-  /** The word after the completed count. */
-  unit?: string;
+  /** A SimResetButton. */
+  reset: ReactNode;
+  /** The terminal's input, which keeps the cursor after a pick. */
+  inputRef: RefObject<HTMLInputElement | null>;
 }) {
   const { embedded } = useEmbed();
   const ref = useRef<HTMLDivElement>(null);
   useSimBarHeight(ref);
-  const lesson = lessons[lab.currentLessonIndex];
+  const item = items[current];
+  const position = `${noun} ${current + 1} of ${items.length}`;
   return (
     <div
       ref={ref}
@@ -549,113 +409,272 @@ export function SimLabTop({
       )}
       {lead}
       <p className="hidden text-sm text-muted-foreground sm:block">
-        <span className="tabular-nums">
-          Lesson {lab.currentLessonIndex + 1} of {lessons.length}
-        </span>
-        {lesson && <span className="hidden md:inline"> · {lesson.title}</span>}
+        <span className="tabular-nums">{position}</span>
+        {showTitle && item && <span className="hidden md:inline"> · {item.title}</span>}
       </p>
       <div className="flex items-center gap-1" aria-hidden="true">
-        {lessons.map((l, i) => {
-          const done = lessonDone(l, i, lab);
-          const total = l.commands.length;
-          const current = i === lab.currentLessonIndex;
-          return (
+        {items.map((it, i) => (
+          <span
+            key={it.id}
+            className={cn(
+              'h-1.5 w-3 overflow-hidden rounded-full sm:w-5',
+              i === current ? 'bg-hint/30' : 'bg-muted-foreground/20'
+            )}
+          >
             <span
-              key={l.id}
               className={cn(
-                'h-1.5 w-3 overflow-hidden rounded-full sm:w-5',
-                current ? 'bg-hint/30' : 'bg-muted-foreground/20'
+                'block h-full rounded-full',
+                it.done ? 'bg-correct' : i === current ? 'bg-hint' : 'bg-correct/70'
               )}
-            >
-              <span
-                className={cn(
-                  'block h-full rounded-full',
-                  done === total ? 'bg-correct' : current ? 'bg-hint' : 'bg-correct/70'
-                )}
-                style={{ width: lessonMeterFill(done, total) }}
-              />
-            </span>
-          );
-        })}
+              style={{ width: `${Math.round(it.progress * 100)}%` }}
+            />
+          </span>
+        ))}
       </div>
-      <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:inline">
-        {lab.completedCount}/{lab.totalCommands} {unit}
-      </span>
+      {count && (
+        <span className="hidden font-mono text-xs tabular-nums text-muted-foreground sm:inline">
+          {count}
+        </span>
+      )}
       <div className="ml-auto flex items-center gap-1">
         {actions}
-        <SimLabLessonPicker lessons={lessons} lab={lab} ui={ui} />
-        <SimResetButton onReset={ui.startOver} showLabel />
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="h-10 gap-1.5 lg:h-8">
+              <span className="tabular-nums sm:hidden">{position}</span>
+              <span className="hidden sm:inline">All {noun.toLowerCase()}s</span>
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="max-h-[min(28rem,70dvh)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto"
+            // A pick puts the cursor in the terminal; keep it there.
+            onCloseAutoFocus={(event) => {
+              if (document.activeElement === inputRef.current) event.preventDefault();
+            }}
+          >
+            <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+              {noun}s
+            </DropdownMenuLabel>
+            {items.map((it, i) => (
+              <DropdownMenuItem
+                key={it.id}
+                onSelect={() => onPick(i)}
+                className={cn(
+                  'min-h-10 items-start gap-2 lg:min-h-8',
+                  i === current && 'bg-hint/10 font-semibold'
+                )}
+              >
+                {it.done ? (
+                  <CircleCheck className="mt-0.5 text-correct-foreground" aria-hidden="true" />
+                ) : (
+                  <span
+                    className="mt-0.5 w-4 shrink-0 text-center font-mono text-xs text-muted-foreground"
+                    aria-hidden="true"
+                  >
+                    {i + 1}
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="sr-only">
+                    {noun} {i + 1}:{' '}
+                  </span>
+                  {it.title}
+                  {i === current && <span className="sr-only"> (current)</span>}
+                  {it.done && <span className="sr-only"> (done)</span>}
+                </span>
+                {it.meta && (
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                    {it.meta}
+                  </span>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {reset}
       </div>
     </div>
   );
 }
 
-/** "All lessons": the lesson list in a menu, to jump to any lesson. */
-function SimLabLessonPicker({
+/** SimLabRow for lessons: lesson n of m, commands done, "All lessons", start over. */
+export function SimLabTop({
+  title,
+  icon,
+  lead,
   lessons,
   lab,
   ui,
+  actions,
+  unit = 'commands',
 }: {
+  title: string;
+  icon?: LucideIcon;
+  lead?: ReactNode;
   lessons: readonly SimLabLesson[];
   lab: SimLabState;
   ui: SimLabUi;
+  actions?: ReactNode;
+  /** The word after the completed count. */
+  unit?: string;
 }) {
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="h-10 gap-1.5 lg:h-8">
-          <span className="tabular-nums sm:hidden">
-            Lesson {lab.currentLessonIndex + 1} of {lessons.length}
-          </span>
-          <span className="hidden sm:inline">All lessons</span>
-          <ChevronDown className="h-4 w-4" aria-hidden="true" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-[min(20rem,calc(100vw-2rem))]"
-        // A picked lesson puts the cursor in the terminal; keep it there.
-        onCloseAutoFocus={(event) => {
-          if (document.activeElement === lab.inputRef.current) event.preventDefault();
-        }}
+    <SimLabRow
+      title={title}
+      icon={icon}
+      lead={lead}
+      noun="Lesson"
+      items={lessons.map((lesson, i) => {
+        const done = lessonDone(lesson, i, lab);
+        const total = lesson.commands.length;
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          done: done === total,
+          progress: total > 0 ? done / total : 0,
+          meta: `${done}/${total}`,
+        };
+      })}
+      current={lab.currentLessonIndex}
+      onPick={ui.pickLesson}
+      count={`${lab.completedCount}/${lab.totalCommands} ${unit}`}
+      actions={actions}
+      reset={<SimResetButton onReset={ui.startOver} showLabel />}
+      inputRef={lab.inputRef}
+    />
+  );
+}
+
+/**
+ * The lab under the top row. On lg two columns that fill the screen under
+ * the row (--sim-lab-h): on the left `head` (the card) and, scrolling on its
+ * own, `rest` and the panels; on the right the terminal, whose size never
+ * changes. Below lg the same order stacks: head, terminal, rest, panels.
+ */
+export function SimLabSplit({
+  head,
+  terminal,
+  rest,
+  panels,
+  minHeight = 'lg:min-h-[28rem]',
+}: {
+  head: ReactNode;
+  /** The SimTerminal (inline, LAB_SHELL_HEIGHT), or a column with an editor above it. */
+  terminal: ReactNode;
+  rest?: ReactNode;
+  /** SimLabPanels, which open and close on lg too. */
+  panels?: ReactNode;
+  /** The lab's least height on lg, for a short window. */
+  minHeight?: string;
+}) {
+  return (
+    <div
+      style={{ '--sim-lab-h': LAB_HEIGHT } as CSSProperties}
+      className={cn(
+        'flex flex-col gap-2 lg:grid lg:h-[var(--sim-lab-h)] lg:gap-3',
+        'lg:grid-cols-[23rem_minmax(0,1fr)] xl:grid-cols-[25rem_minmax(0,1fr)]',
+        // The left column: the card as tall as it needs, the rest scrolls under it.
+        'lg:grid-rows-[minmax(0,auto)_minmax(0,1fr)]',
+        minHeight
+      )}
+    >
+      <div className="min-w-0 space-y-2 lg:space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
+        {head}
+      </div>
+      <div className="flex min-w-0 flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
+        {terminal}
+      </div>
+      <div className="min-w-0 space-y-2 lg:col-start-1 lg:row-start-2 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
+        {rest}
+        <CollapsibleOnLg.Provider value={true}>{panels}</CollapsibleOnLg.Provider>
+      </div>
+    </div>
+  );
+}
+
+// The card's buttons keep the cursor in the terminal when clicked with a mouse.
+const keepFocus = (event: MouseEvent) => event.preventDefault();
+
+/** A button in a SimLabCard: a mouse click leaves the cursor in the terminal. */
+export function SimLabCardButton({
+  className,
+  variant = 'outline',
+  ...props
+}: ComponentProps<typeof Button>) {
+  return (
+    <Button
+      type="button"
+      variant={variant}
+      size="sm"
+      onMouseDown={keepFocus}
+      className={cn('h-10 lg:h-8', variant === 'outline' && 'bg-background', className)}
+      {...props}
+    />
+  );
+}
+
+/**
+ * The current step: a kicker ("Step 3 of 6"), the task in large text, its
+ * buttons, and `detail` (a hint, a solution) inside the card, in a live
+ * region so it is read out when it opens.
+ */
+export function SimLabCard({
+  kicker,
+  task,
+  buttons,
+  detail,
+  detailId,
+  done = false,
+}: {
+  kicker?: ReactNode;
+  task: ReactNode;
+  buttons?: ReactNode;
+  detail?: ReactNode;
+  /** The id the detail's button points to with aria-controls. */
+  detailId?: string;
+  /** Green, with a check: the lab is done. */
+  done?: boolean;
+}) {
+  return (
+    <section
+      aria-label="Current step"
+      className={cn(
+        'rounded-xl border-2 p-3 lg:p-4',
+        done ? 'border-correct/60 bg-correct/5' : 'border-hint/70 bg-hint/5'
+      )}
+    >
+      {kicker && (
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-partial-foreground">
+          {kicker}
+        </p>
+      )}
+      <p
+        className={cn(
+          'font-semibold leading-snug [overflow-wrap:anywhere]',
+          done ? 'flex items-start gap-2' : 'text-base lg:text-lg'
+        )}
       >
-        <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-          Lessons
-        </DropdownMenuLabel>
-        {lessons.map((lesson, i) => {
-          const done = lessonDone(lesson, i, lab);
-          const total = lesson.commands.length;
-          const current = i === lab.currentLessonIndex;
-          return (
-            <DropdownMenuItem
-              key={lesson.id}
-              onSelect={() => ui.pickLesson(i)}
-              className={cn('min-h-10 gap-2 lg:min-h-8', current && 'bg-hint/10 font-semibold')}
-            >
-              {done === total ? (
-                <CircleCheck className="text-correct-foreground" aria-hidden="true" />
-              ) : (
-                <span
-                  className="w-4 shrink-0 text-center font-mono text-xs text-muted-foreground"
-                  aria-hidden="true"
-                >
-                  {i + 1}
-                </span>
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="sr-only">Lesson {i + 1}: </span>
-                {lesson.title}
-                {current && <span className="sr-only"> (current)</span>}
-              </span>
-              <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                {done}/{total}
-                <span className="sr-only"> {done === total ? 'done' : 'commands done'}</span>
-              </span>
-            </DropdownMenuItem>
-          );
-        })}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        {done && (
+          <CircleCheck
+            className="mt-0.5 h-5 w-5 shrink-0 text-correct-foreground"
+            aria-hidden="true"
+          />
+        )}
+        {task}
+      </p>
+      {buttons && <div className="mt-2.5 flex flex-wrap gap-2">{buttons}</div>}
+      {detailId && (
+        <div id={detailId} role="status">
+          {detail && (
+            <div className="mt-2.5 border-t border-dashed border-hint/50 pt-2.5 text-sm leading-relaxed">
+              {detail}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -665,117 +684,23 @@ function commandText(command: SimLabCommand | undefined): string | undefined {
   return (typeof expected === 'string' ? expected : expected?.[0]) ?? command.command;
 }
 
-/** The step before the current one, in lesson order, when it is done. */
+/**
+ * The step just done: the current one when it is done (the last step, or
+ * one waiting for the advance delay), otherwise the one before it.
+ */
 function lastDoneStep(lessons: readonly SimLabLesson[], lab: SimLabState) {
   let lessonIndex = lab.currentLessonIndex;
-  let commandIndex = lab.currentCommandIndex - 1;
-  // After the last command the lab stays on it: that one is the step just done.
-  if (lab.isComplete) commandIndex += 1;
-  if (commandIndex < 0) {
-    lessonIndex -= 1;
-    commandIndex = (lessons[lessonIndex]?.commands.length ?? 0) - 1;
+  let commandIndex = lab.currentCommandIndex;
+  if (!lab.isCommandDone(lessonIndex, commandIndex)) {
+    commandIndex -= 1;
+    if (commandIndex < 0) {
+      lessonIndex -= 1;
+      commandIndex = (lessons[lessonIndex]?.commands.length ?? 0) - 1;
+    }
   }
   const command = lessons[lessonIndex]?.commands[commandIndex];
   if (!command || !lab.isCommandDone(lessonIndex, commandIndex)) return undefined;
   return command;
-}
-
-// The step card's buttons keep the cursor in the terminal when clicked with a mouse.
-const keepFocus = (event: MouseEvent) => event.preventDefault();
-
-/** The current step: the task in large text, Hint and Show me, and the hint inside the card. */
-function SimLabStepCard({
-  lessons,
-  lab,
-  ui,
-  task,
-  hint,
-  showMe,
-  doneGoal,
-}: {
-  lessons: readonly SimLabLesson[];
-  lab: SimLabState;
-  ui: SimLabUi;
-  task?: ReactNode;
-  hint?: ReactNode;
-  showMe?: string;
-  doneGoal: ReactNode;
-}) {
-  const hintId = useId();
-  const lesson = lessons[lab.currentLessonIndex];
-  if (lab.isComplete) {
-    return (
-      <section
-        aria-label="Current step"
-        className="rounded-xl border-2 border-correct/60 bg-correct/5 p-3 lg:p-4"
-      >
-        <p className="flex items-start gap-2 font-semibold">
-          <CircleCheck
-            className="mt-0.5 h-5 w-5 shrink-0 text-correct-foreground"
-            aria-hidden="true"
-          />
-          {doneGoal}
-        </p>
-      </section>
-    );
-  }
-  return (
-    <section
-      aria-label="Current step"
-      className="rounded-xl border-2 border-hint/70 bg-hint/5 p-3 lg:p-4"
-    >
-      {lesson && (
-        <p className="text-xs font-semibold uppercase tracking-wide text-partial-foreground">
-          Step {lab.currentCommandIndex + 1} of {lesson.commands.length}
-        </p>
-      )}
-      <p className="mt-1 text-base font-semibold leading-snug [overflow-wrap:anywhere] lg:text-lg">
-        {task}
-      </p>
-      {(hint || showMe !== undefined) && (
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {hint && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10 bg-background lg:h-8"
-              aria-expanded={lab.showHint}
-              aria-controls={hintId}
-              onMouseDown={keepFocus}
-              onClick={ui.toggleHint}
-            >
-              <Lightbulb className="h-4 w-4" aria-hidden="true" />
-              {lab.showHint ? 'Hide hint' : 'Hint'}
-            </Button>
-          )}
-          {showMe !== undefined && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10 bg-background lg:h-8"
-              onMouseDown={keepFocus}
-              onClick={() => ui.showMe(showMe)}
-            >
-              <Eye className="h-4 w-4" aria-hidden="true" />
-              Show me
-            </Button>
-          )}
-        </div>
-      )}
-      {hint && (
-        // Always in the tree, so the hint is read out when it opens.
-        <div id={hintId} role="status">
-          {lab.showHint && (
-            <div className="mt-2.5 border-t border-dashed border-hint/50 pt-2.5 text-sm leading-relaxed">
-              {hint}
-            </div>
-          )}
-        </div>
-      )}
-    </section>
-  );
 }
 
 /** Every step of the current lesson, marked done, current or to do. */
@@ -820,13 +745,10 @@ function SimLabStepList({ lessons, lab }: { lessons: readonly SimLabLesson[]; la
 }
 
 /**
- * The lab under SimLabTop. On lg two columns that fill the screen under the
- * top row: on the left the lesson, the step card and, scrolling on its own,
- * the step just done, the step list and the game's panels; on the right the
- * terminal, whose size never changes. Below lg the same order stacks: the
- * step card, the terminal, then the rest as closed drawers.
- *
- * The terminal is rendered once, never in a SimStage.
+ * The lessons' lab: SimLabSplit with the lesson and its step card (Hint and
+ * Show me, the hint inside the card), then the step just done, the lesson's
+ * steps, the lessons (a drawer on phones; the top row's picker on lg) and the
+ * game's panels.
  */
 export function SimLabMain({
   lessons,
@@ -835,10 +757,12 @@ export function SimLabMain({
   task,
   hint,
   showMe,
+  kicker,
+  cardButtons,
   doneGoal = 'All lessons done. The terminal stays open for your own commands.',
   terminal,
   panels,
-  minHeight = 'lg:min-h-[28rem]',
+  minHeight,
 }: {
   lessons: readonly SimLabLesson[];
   lab: SimLabState;
@@ -846,86 +770,115 @@ export function SimLabMain({
   /** The current step's instruction. */
   task?: ReactNode;
   hint?: ReactNode;
-  /** The command "Show me" types for the player. Leave undefined for no button. */
-  showMe?: string;
+  /**
+   * The command "Show me" types for the player, or the step's own "show me"
+   * (an edit step). Leave undefined for no button.
+   */
+  showMe?: string | (() => void);
+  /** In place of "Step n of m", such as "Lesson done". */
+  kicker?: ReactNode;
+  /** More buttons in the card, after Hint and Show me ("Next lesson"). */
+  cardButtons?: ReactNode;
   /** The step card once every lesson is done. */
   doneGoal?: ReactNode;
-  /** The SimTerminal (inline, LAB_SHELL_HEIGHT), or a column with an editor above it. */
   terminal: ReactNode;
-  /** SimLabPanels: quick reference, live state. */
+  /** SimLabPanels: live state (defaultOpen), quick reference. */
   panels?: ReactNode;
-  /** The lab's least height on lg, for a short window. */
   minHeight?: string;
 }) {
+  const hintId = useId();
   const lesson = lessons[lab.currentLessonIndex];
   const done = lastDoneStep(lessons, lab);
   const doneCommand = commandText(done);
-  const stepsDone = lesson
-    ? lesson.commands.filter((_, i) => lab.isCommandDone(lab.currentLessonIndex, i)).length
-    : 0;
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-2 lg:grid lg:gap-3',
-        'lg:grid-cols-[23rem_minmax(0,1fr)] xl:grid-cols-[25rem_minmax(0,1fr)]',
-        // The left column: the step card as tall as it needs, the rest scrolls under it.
-        'lg:grid-rows-[minmax(0,auto)_minmax(0,1fr)]',
-        // The screen under the top row: what sits above the game, the row, 8px gap, 24px room.
-        'lg:h-[calc(100dvh-var(--sim-embed-top,12px)-var(--sim-bar-h)-2rem)]',
-        minHeight
-      )}
-    >
-      <div className="min-w-0 space-y-2 lg:space-y-3 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
-        {lesson && (
-          <div>
-            <p className="hidden text-xs font-medium uppercase tracking-wide text-muted-foreground lg:block">
-              Lesson {lab.currentLessonIndex + 1} of {lessons.length}
-            </p>
-            <h2 className="text-sm font-semibold lg:text-xl lg:tracking-tight">{lesson.title}</h2>
-            {lesson.description && (
-              <p className="hidden text-sm text-muted-foreground lg:block">{lesson.description}</p>
+  const stepsDone = lesson ? lessonDone(lesson, lab.currentLessonIndex, lab) : 0;
+  const card = lab.isComplete ? (
+    <SimLabCard done task={doneGoal} />
+  ) : (
+    <SimLabCard
+      kicker={
+        kicker ?? (lesson && `Step ${lab.currentCommandIndex + 1} of ${lesson.commands.length}`)
+      }
+      task={task}
+      buttons={
+        (hint || showMe !== undefined || cardButtons) && (
+          <>
+            {hint && (
+              <SimLabCardButton
+                aria-expanded={lab.showHint}
+                aria-controls={hintId}
+                onClick={ui.toggleHint}
+              >
+                <Lightbulb className="h-4 w-4" aria-hidden="true" />
+                {lab.showHint ? 'Hide hint' : 'Hint'}
+              </SimLabCardButton>
             )}
-          </div>
-        )}
-        <SimLabStepCard
-          lessons={lessons}
-          lab={lab}
-          ui={ui}
-          task={task}
-          hint={hint}
-          showMe={showMe}
-          doneGoal={doneGoal}
-        />
-      </div>
-
-      <div className="flex min-w-0 flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
-        {terminal}
-      </div>
-
-      <div className="min-w-0 space-y-2 lg:col-start-1 lg:row-start-2 lg:overflow-y-auto lg:overscroll-contain lg:pr-1 lg:[scrollbar-width:thin]">
-        {done && (
-          <div className="rounded-r-md border-l-2 border-correct bg-correct/5 px-3 py-2 text-sm">
-            <p className="font-semibold">
-              Done
-              {doneCommand && (
-                <>
-                  : <code className="font-mono text-[13px]">{doneCommand}</code>
-                </>
+            {showMe !== undefined && (
+              <SimLabCardButton onClick={() => ui.showMe(showMe)}>
+                <Eye className="h-4 w-4" aria-hidden="true" />
+                Show me
+              </SimLabCardButton>
+            )}
+            {cardButtons}
+          </>
+        )
+      }
+      detail={lab.showHint && hint}
+      detailId={hint ? hintId : undefined}
+    />
+  );
+  return (
+    <SimLabSplit
+      minHeight={minHeight}
+      head={
+        <>
+          {lesson && (
+            <div>
+              <p className="hidden text-xs font-medium uppercase tracking-wide text-muted-foreground lg:block">
+                Lesson {lab.currentLessonIndex + 1} of {lessons.length}
+              </p>
+              <h2 className="text-sm font-semibold lg:text-xl lg:tracking-tight">{lesson.title}</h2>
+              {lesson.description && (
+                <p className="hidden text-sm text-muted-foreground lg:block">
+                  {lesson.description}
+                </p>
               )}
-            </p>
-            {done.explanation && <p className="mt-0.5 text-muted-foreground">{done.explanation}</p>}
-          </div>
-        )}
-        <SimLabPanel title="Steps" summary={`${stepsDone} of ${lesson?.commands.length ?? 0} done`}>
-          <SimLabStepList lessons={lessons} lab={lab} />
-        </SimLabPanel>
-        <div className="lg:hidden">
-          <SimLabPanel title="Lessons" summary={lessonsSummary(lessons, lab)}>
-            <SimLabLessons lessons={lessons} lab={lab} ui={ui} />
+            </div>
+          )}
+          {card}
+        </>
+      }
+      terminal={terminal}
+      rest={
+        <>
+          {done && (
+            <div className="rounded-r-md border-l-2 border-correct bg-correct/5 px-3 py-2 text-sm">
+              <p className="font-semibold">
+                Done
+                {doneCommand && (
+                  <>
+                    : <code className="font-mono text-[13px]">{doneCommand}</code>
+                  </>
+                )}
+              </p>
+              {done.explanation && (
+                <p className="mt-0.5 text-muted-foreground">{done.explanation}</p>
+              )}
+            </div>
+          )}
+          <SimLabPanel
+            title="Steps"
+            summary={`${stepsDone} of ${lesson?.commands.length ?? 0} done`}
+          >
+            <SimLabStepList lessons={lessons} lab={lab} />
           </SimLabPanel>
-        </div>
-        <CollapsibleOnLg.Provider value={true}>{panels}</CollapsibleOnLg.Provider>
-      </div>
-    </div>
+          <div className="lg:hidden">
+            <SimLabPanel title="Lessons" summary={lessonsSummary(lessons, lab)}>
+              <SimLabLessons lessons={lessons} lab={lab} ui={ui} />
+            </SimLabPanel>
+          </div>
+        </>
+      }
+      panels={panels}
+    />
   );
 }

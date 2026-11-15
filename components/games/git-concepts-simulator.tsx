@@ -2,31 +2,20 @@
 
 import type { ReactNode } from 'react';
 import { useCallback, useRef, useState } from 'react';
-import {
-  BookOpen,
-  Cloud,
-  FileText,
-  GitBranch,
-  GitCommit,
-  GitFork,
-  GitMerge,
-  Send,
-} from 'lucide-react';
+import { Cloud, FileText, GitBranch, GitCommit, GitFork, GitMerge, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  LAB_TERMINAL_HEIGHT,
+  LAB_SHELL_HEIGHT,
   SIM_CATEGORY,
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabTop,
+  SimLabMain,
   SimLabPanel,
   SimTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
@@ -859,15 +848,12 @@ export default function GitConceptsSimulator() {
 
   return (
     <SimFrame>
-      <SimLabBar
+      <SimLabTop
         title="Git Concepts Simulator"
         icon={GitBranch}
         lessons={LESSONS}
         lab={lab}
         ui={ui}
-        task={currentCommand?.instruction}
-        hint={currentCommand?.hint}
-        showMe={expected}
       />
 
       {ui.showComplete ? (
@@ -884,7 +870,13 @@ export default function GitConceptsSimulator() {
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={expected}
           terminal={
             <SimTerminal
               label="~/repo"
@@ -893,7 +885,7 @@ export default function GitConceptsSimulator() {
                 { type: 'success', content: 'Welcome to the Git Concepts Lab.' },
                 {
                   type: 'muted',
-                  content: 'Type "help", run "git status", or follow the task above.',
+                  content: 'Type "help", run "git status", or follow the current step.',
                 },
               ])}
               prompt="$"
@@ -904,13 +896,15 @@ export default function GitConceptsSimulator() {
               inputRef={inputRef}
               placeholder="git status"
               autoFocus
-              heightClassName={LAB_TERMINAL_HEIGHT}
+              inline
+              heightClassName={LAB_SHELL_HEIGHT}
             />
           }
-          aside={
+          panels={
             <>
               <SimLabPanel
                 title="Repository"
+                defaultOpen
                 icon={Send}
                 summary={`${repo.currentBranch}, ${repo.staged.length} staged`}
               >
@@ -940,13 +934,11 @@ export default function GitConceptsSimulator() {
               </SimLabPanel>
               <SimLabPanel
                 title="Commit graph"
+                defaultOpen
                 icon={GitFork}
                 summary={`${repo.commits.length} commits`}
               >
                 <CommitGraph repo={repo} />
-              </SimLabPanel>
-              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
               </SimLabPanel>
             </>
           }

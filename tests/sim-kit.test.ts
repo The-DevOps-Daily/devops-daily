@@ -10,7 +10,6 @@ import GenericQuiz from '@/components/games/generic-quiz';
 import dockerQuiz from '@/content/quizzes/docker-quiz.json';
 import type { QuizConfig } from '@/lib/quiz-types';
 import { SimGameProvider } from '@/components/games/sim/sim-game';
-import { LAB_TERMINAL_HEIGHT, SimLabLayout } from '@/components/games/sim/sim-lab';
 import { SimTerminal, resultLine, type SimTerminalLine } from '@/components/games/sim/sim-terminal';
 import { missionProgress, passedMissions, useMissions } from '@/components/games/sim/use-missions';
 import { EmbedProvider, useEmbed, type EmbedInfo } from '@/lib/games/embed-context';
@@ -389,35 +388,6 @@ describe('SimStage', () => {
     expect(frame?.style.getPropertyValue('--sim-bar-h')).toMatch(/^\d+px$/);
     const grid = container.querySelector<HTMLElement>('.lg\\:grid');
     expect(grid?.className).toContain('max-h-[var(--sim-fill-h)]');
-  });
-});
-
-describe('SimLabLayout', () => {
-  it('fills the fill height on lg, with the terminal taking the free height', async () => {
-    await render(
-      createElement(
-        SimFrame,
-        null,
-        createElement(SimLabLayout, {
-          terminal: createElement(SimTerminal, {
-            label: 'kubectl',
-            lines: [],
-            value: '',
-            onChange: () => {},
-            onSubmit: () => {},
-            heightClassName: LAB_TERMINAL_HEIGHT,
-          }),
-          aside: 'side',
-        })
-      )
-    );
-    const lab = container.querySelector<HTMLElement>('[data-sim-frame] > .grid');
-    expect(lab?.className).toContain('lg:h-[var(--sim-fill-h)]');
-    // The row is the lab's height, so a long log scrolls instead of growing the lab.
-    expect(lab?.className).toContain('lg:grid-rows-[minmax(0,1fr)]');
-    expect(lab?.firstElementChild?.className).toContain('lg:flex-col');
-    // No fixed cap on lg: the terminal is as tall as the lab.
-    expect(LAB_TERMINAL_HEIGHT).toContain('lg:h-auto lg:flex-1');
   });
 });
 

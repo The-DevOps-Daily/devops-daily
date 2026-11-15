@@ -6,18 +6,16 @@ import { BookOpen, Boxes, Cloud, FileText, Network, Play, Server, Terminal } fro
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  LAB_TERMINAL_HEIGHT,
+  LAB_SHELL_HEIGHT,
   SIM_TONE,
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabTop,
+  SimLabMain,
   SimLabPanel,
   SimTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
@@ -1172,15 +1170,12 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
 
   return (
     <SimFrame>
-      <SimLabBar
+      <SimLabTop
         title="Kubernetes Terminal Simulator"
         icon={Boxes}
         lessons={LESSONS}
         lab={lab}
         ui={ui}
-        task={currentCommand?.instruction}
-        hint={currentCommand?.hint}
-        showMe={expected}
       />
 
       {ui.showComplete ? (
@@ -1197,7 +1192,13 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={expected}
           terminal={
             <SimTerminal
               label="kubectl"
@@ -1206,7 +1207,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                 { type: 'success', content: 'Welcome to the Kubernetes terminal lab.' },
                 {
                   type: 'muted',
-                  content: 'Type "help", run "ls", or follow the task above.',
+                  content: 'Type "help", run "ls", or follow the current step.',
                 },
               ])}
               value={inputValue}
@@ -1216,13 +1217,15 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
               inputRef={inputRef}
               placeholder="kubectl get pods"
               autoFocus
-              heightClassName={LAB_TERMINAL_HEIGHT}
+              inline
+              heightClassName={LAB_SHELL_HEIGHT}
             />
           }
-          aside={
+          panels={
             <>
               <SimLabPanel
                 title="Cluster"
+                defaultOpen
                 icon={Server}
                 summary={`${clusterState.pods.length} pods, ${clusterState.services.length} services`}
               >
@@ -1313,9 +1316,6 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                     ))}
                   </ul>
                 </div>
-              </SimLabPanel>
-              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
               </SimLabPanel>
               <SimLabPanel title="Manifests" icon={FileText}>
                 <div className="space-y-2">

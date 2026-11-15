@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, createElement, useState, type ReactElement } from 'react';
+import { act, createElement, useState, type ComponentType, type ReactElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimFrame } from '@/components/games/sim/sim-frame';
@@ -155,6 +155,9 @@ describe('SimTerminal with an inline prompt', () => {
   });
 });
 
+// SimLabPanel with its children passed after the props.
+const Panel = SimLabPanel as ComponentType<{ title: string; defaultOpen?: boolean }>;
+
 describe('SimLabMain', () => {
   const LESSONS = [
     {
@@ -228,17 +231,8 @@ describe('SimLabMain', () => {
         }),
         panels: withPanel
           ? [
-              createElement(SimLabPanel, {
-                key: 'ref',
-                title: 'Quick reference',
-                children: 'ref body',
-              }),
-              createElement(SimLabPanel, {
-                key: 'tree',
-                title: 'Files',
-                defaultOpen: true,
-                children: 'tree body',
-              }),
+              createElement(Panel, { key: 'ref', title: 'Quick reference' }, 'ref body'),
+              createElement(Panel, { key: 'tree', title: 'Files', defaultOpen: true }, 'tree body'),
             ]
           : undefined,
       })
@@ -248,8 +242,10 @@ describe('SimLabMain', () => {
   it('fills the screen under the top row on lg, with the terminal spanning both rows', async () => {
     await render(createElement(Lab));
     const lab = container.querySelector<HTMLElement>('[data-sim-frame] > .flex.flex-col')!;
-    expect(lab.className).toContain(
-      'lg:h-[calc(100dvh-var(--sim-embed-top,12px)-var(--sim-bar-h)-2rem)]'
+    // The screen under the top row, as --sim-lab-h for editors sized against it.
+    expect(lab.className).toContain('lg:h-[var(--sim-lab-h)]');
+    expect(lab.style.getPropertyValue('--sim-lab-h')).toBe(
+      'calc(100dvh - var(--sim-embed-top, 12px) - var(--sim-bar-h) - 2rem)'
     );
     expect(lab.className).toContain('lg:grid-rows-[minmax(0,auto)_minmax(0,1fr)]');
     // Card, terminal, rest: the phone order is the DOM order.
@@ -334,4 +330,36 @@ describe('SimLabMain', () => {
     // The step list is no drawer on lg.
     expect(buttonNamed('Steps').className).toContain('lg:hidden');
   });
+});
+
+describe('the 9 terminal labs on SimLabTop and SimLabMain', () => {
+  const LABS: [string, () => Promise<{ default: ComponentType }>][] = [
+    ['linux', () => import('@/components/games/linux-terminal')],
+    ['docker', () => import('@/components/games/docker-terminal-simulator')],
+    ['git concepts', () => import('@/components/games/git-concepts-simulator')],
+    ['git merge conflict', () => import('@/components/games/git-merge-conflict-simulator')],
+    ['kubernetes', () => import('@/components/games/kubernetes-terminal-simulator')],
+    ['mongodb', () => import('@/components/games/mongodb-terminal-simulator')],
+    ['postgres', () => import('@/components/games/postgres-terminal-simulator')],
+    ['sql', () => import('@/components/games/sql-terminal-simulator')],
+    ['terraform', () => import('@/components/games/terraform-terminal-simulator')],
+  ];
+
+  it.each(LABS)(
+    '%s: step card, one inline prompt, the top row',
+    async (_, load) => {
+      const { default: Lab } = await load();
+      await render(createElement(Lab));
+      expect(stepCard()?.textContent).toContain('Step 1 of');
+      expect(container.querySelectorAll('input[aria-label="Terminal command"]')).toHaveLength(1);
+      const log = container.querySelector('[role="log"]')!;
+      expect(log.nextElementSibling?.contains(input())).toBe(true);
+      expect(container.querySelector('button[aria-haspopup="menu"]')?.textContent).toContain(
+        'All lessons'
+      );
+      expect(buttonNamed('Show me', stepCard()!)).toBeTruthy();
+      expect(container.textContent).not.toContain('Goal: ');
+    },
+    30_000
+  );
 });

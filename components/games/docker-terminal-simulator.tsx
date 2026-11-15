@@ -2,7 +2,6 @@
 
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  BookOpen,
   Container,
   Cpu,
   Database,
@@ -17,17 +16,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-  LAB_TERMINAL_HEIGHT,
+  LAB_SHELL_HEIGHT,
   SimComplete,
   SimFrame,
-  SimLabBar,
-  SimLabLayout,
-  SimLabLessons,
+  SimLabTop,
+  SimLabMain,
   SimLabPanel,
   SimTerminal,
   labLines,
   labStats,
-  lessonsSummary,
   useSimLab,
 } from '@/components/games/sim';
 import { cn } from '@/lib/utils';
@@ -1343,24 +1340,21 @@ Network docker-sim_default  Removed`;
     handleKeyDown,
   } = lab;
   const ui = useSimLab(lab);
+  const expected = currentCommand
+    ? Array.isArray(currentCommand.expectedCommand)
+      ? currentCommand.expectedCommand[0]
+      : currentCommand.expectedCommand
+    : undefined;
 
   return (
     <SimFrame>
-      <SimLabBar
-        title="Docker Terminal Lab"
-        icon={Container}
-        lessons={LESSONS}
-        lab={lab}
-        ui={ui}
-        task={currentCommand?.instruction}
-        hint={currentCommand?.hint}
-      />
+      <SimLabTop title="Docker Terminal Lab" icon={Container} lessons={LESSONS} lab={lab} ui={ui} />
 
       {ui.showComplete ? (
         <SimComplete
           title="Lab complete"
           summary="You pulled and ran images, debugged containers, built an image, wired up a network and a volume, and ran a Compose stack. You can run the lab again or keep experimenting."
-          stats={labStats(lab, LESSONS, ui)}
+          stats={labStats(lab, LESSONS, ui, { showMe: true })}
           actions={
             <Button type="button" variant="outline" onClick={ui.keepExploring}>
               Keep exploring
@@ -1370,7 +1364,13 @@ Network docker-sim_default  Removed`;
           playAgainLabel="Start over"
         />
       ) : (
-        <SimLabLayout
+        <SimLabMain
+          lessons={LESSONS}
+          lab={lab}
+          ui={ui}
+          task={currentCommand?.instruction}
+          hint={currentCommand?.hint}
+          showMe={expected}
           terminal={
             <SimTerminal
               label="docker-lab ~/app"
@@ -1379,7 +1379,7 @@ Network docker-sim_default  Removed`;
                 { type: 'success', content: 'Welcome to Docker Terminal Lab.' },
                 {
                   type: 'muted',
-                  content: 'Type "help" for available commands, or follow the task above.',
+                  content: 'Type "help" for available commands, or follow the current step.',
                 },
               ])}
               value={inputValue}
@@ -1388,14 +1388,16 @@ Network docker-sim_default  Removed`;
               onKeyDown={handleKeyDown}
               inputRef={inputRef}
               autoFocus
-              heightClassName={LAB_TERMINAL_HEIGHT}
+              inline
+              heightClassName={LAB_SHELL_HEIGHT}
             />
           }
-          aside={
+          panels={
             <>
               <SimLabPanel
                 title="Docker daemon"
                 icon={Server}
+                defaultOpen
                 summary={`${dockerState.containers.length} containers`}
               >
                 <div className="space-y-3">
@@ -1528,9 +1530,6 @@ Network docker-sim_default  Removed`;
                     )}
                   </ul>
                 </div>
-              </SimLabPanel>
-              <SimLabPanel title="Lessons" icon={BookOpen} summary={lessonsSummary(LESSONS, lab)}>
-                <SimLabLessons lessons={LESSONS} lab={lab} ui={ui} />
               </SimLabPanel>
               <SimLabPanel title="Quick reference" icon={ListChecks}>
                 <dl className="grid gap-1.5 text-sm">
