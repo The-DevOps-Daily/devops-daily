@@ -103,6 +103,9 @@ describe('SimTerminal with an inline prompt', () => {
     expect(log.textContent).toContain('user@host:~$ cd docs');
     expect(log.textContent).toContain('user@host:~/docs$ ls');
     expect(input().getAttribute('aria-label')).toBe('Terminal command');
+    // A long prompt wraps the input onto its own line instead of squeezing it.
+    expect(input().form?.className).toContain('flex-wrap');
+    expect(input().className).toContain('min-w-[12ch]');
   });
 
   it('focuses the prompt on a click anywhere in the window', async () => {
@@ -259,14 +262,15 @@ describe('SimLabMain', () => {
     expect(stepCard()?.textContent).toContain('Print the directory.');
     const hint = buttonNamed('Hint', stepCard()!);
     const panel = document.getElementById(hint.getAttribute('aria-controls')!)!;
-    expect(panel.hidden).toBe(true);
+    // A live region, empty until the hint opens, so it is read out.
+    expect(panel.getAttribute('role')).toBe('status');
+    expect(panel.textContent).toBe('');
     // A mouse press on the button does not take focus from the terminal.
     const press = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
     hint.dispatchEvent(press);
     expect(press.defaultPrevented).toBe(true);
     await act(async () => hint.click());
     expect(hint.getAttribute('aria-expanded')).toBe('true');
-    expect(panel.hidden).toBe(false);
     expect(stepCard()!.contains(panel)).toBe(true);
     expect(panel.textContent).toBe('Use pwd');
   });

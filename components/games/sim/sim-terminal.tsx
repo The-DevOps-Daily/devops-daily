@@ -247,7 +247,8 @@ export function SimTerminal({
     <form
       className={cn(
         'flex items-center',
-        inline ? 'gap-[1ch]' : 'gap-2 border-t border-terminal-border px-3 py-2'
+        // A long prompt (a deep directory on a phone) pushes the input onto the next line.
+        inline ? 'flex-wrap gap-x-[1ch]' : 'gap-2 border-t border-terminal-border px-3 py-2'
       )}
       onSubmit={(event) => {
         event.preventDefault();
@@ -255,7 +256,10 @@ export function SimTerminal({
       }}
     >
       <span
-        className={cn('select-none text-terminal-prompt', inline && 'shrink-0')}
+        className={cn(
+          'select-none text-terminal-prompt',
+          inline && 'max-w-full shrink-0 [overflow-wrap:anywhere]'
+        )}
         aria-hidden="true"
       >
         {prompt}
@@ -273,9 +277,11 @@ export function SimTerminal({
         disabled={disabled}
         placeholder={placeholder}
         className={cn(
-          'min-w-0 flex-1 bg-transparent text-terminal-input caret-terminal-prompt outline-none placeholder:text-terminal-muted focus-visible:outline-none',
+          'flex-1 bg-transparent text-terminal-input caret-terminal-prompt outline-none placeholder:text-terminal-muted focus-visible:outline-none',
           // 16px on phones, so iOS does not zoom in on focus.
-          inline ? 'p-0 text-base leading-relaxed sm:text-[13px]' : 'text-base sm:text-sm'
+          inline
+            ? 'min-w-[12ch] basis-0 p-0 text-base leading-relaxed sm:text-[13px]'
+            : 'min-w-0 text-base sm:text-sm'
         )}
       />
     </form>

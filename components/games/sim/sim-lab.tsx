@@ -765,12 +765,13 @@ function SimLabStepCard({
         </div>
       )}
       {hint && (
-        <div
-          id={hintId}
-          hidden={!lab.showHint}
-          className="mt-2.5 border-t border-dashed border-hint/50 pt-2.5 text-sm leading-relaxed"
-        >
-          {hint}
+        // Always in the tree, so the hint is read out when it opens.
+        <div id={hintId} role="status">
+          {lab.showHint && (
+            <div className="mt-2.5 border-t border-dashed border-hint/50 pt-2.5 text-sm leading-relaxed">
+              {hint}
+            </div>
+          )}
         </div>
       )}
     </section>

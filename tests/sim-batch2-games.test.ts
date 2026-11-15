@@ -177,13 +177,12 @@ describe('terminal labs on the kit', () => {
     expect(hint.getAttribute('aria-expanded')).toBe('true');
     const panel = document.getElementById(hint.getAttribute('aria-controls')!);
     expect(stepCard()?.contains(panel)).toBe(true);
-    expect(panel?.hidden).toBe(false);
     expect(panel?.textContent).toContain('pwd');
 
     await run('pwd');
     expect(text()).toContain('Done: pwd');
     // The next step's hint starts closed.
-    expect(stepCard()?.querySelector('[id]')?.hasAttribute('hidden')).toBe(true);
+    expect(stepCard()?.querySelector('[role="status"]')?.textContent).toBe('');
     // The prompt follows the log, in the same scroll box, like a shell.
     const log = container.querySelector('[role="log"]')!;
     expect(log.contains(input())).toBe(false);
