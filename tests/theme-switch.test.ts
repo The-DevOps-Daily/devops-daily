@@ -43,7 +43,9 @@ function Toggle() {
 
 describe('theme switch', () => {
   it('turns transitions off for the switch with a class, not a style sheet', async () => {
-    await act(async () => root.render(createElement(SiteThemeProvider, null, createElement(Toggle))));
+    await act(async () =>
+      root.render(createElement(SiteThemeProvider, null, createElement(Toggle)))
+    );
     const html = document.documentElement;
     expect(html.classList.contains('light')).toBe(true);
     const sheets = document.head.querySelectorAll('style').length;
@@ -59,6 +61,18 @@ describe('theme switch', () => {
 
     await act(async () => container.querySelector('button')!.click());
     expect(html.classList.contains('light')).toBe(true);
+    expect(html.classList.contains('theme-switching')).toBe(true);
+  });
+
+  it('guards a theme that next-themes corrects on mount', async () => {
+    // The inline script ran with light; the saved theme is dark by hydration.
+    const html = document.documentElement;
+    html.classList.add('light');
+    localStorage.setItem('theme', 'dark');
+    await act(async () =>
+      root.render(createElement(SiteThemeProvider, null, createElement(Toggle)))
+    );
+    expect(html.classList.contains('dark')).toBe(true);
     expect(html.classList.contains('theme-switching')).toBe(true);
   });
 });

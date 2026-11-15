@@ -72,20 +72,24 @@ export function Header() {
   }, []);
   const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
 
-  // Close mobile menu on escape key
+  // Close mobile menu on Escape, and on Cmd/Ctrl+K, which opens search (z-50)
+  // that would otherwise sit under the open menu.
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
         setMobileMenuOpen(false);
       }
     };
 
     if (mobileMenuOpen) {
-      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
+      // Hides the cookie banner under the menu, so Tab cannot reach it (globals.css).
+      document.body.dataset.mobileMenu = 'open';
       return () => {
-        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('keydown', handleKeyDown);
         document.body.style.overflow = 'unset';
+        delete document.body.dataset.mobileMenu;
       };
     }
   }, [mobileMenuOpen]);
@@ -97,8 +101,8 @@ export function Header() {
         'bg-background/95 print:hidden',
         onSimulator ? 'relative' : 'sticky top-0',
         // The open mobile menu lives in the header's stacking context, so the
-        // header rises above other fixed layers (cookie banner, bottom bars)
-        // and drops back once the 200 ms slide-out is over.
+        // header rises above other fixed layers (bottom bars, popups) and
+        // drops back once the 200 ms slide-out is over.
         mobileMenuOpen ? 'z-[70]' : 'z-40 [transition:z-index_0s_200ms]'
       )}
     >

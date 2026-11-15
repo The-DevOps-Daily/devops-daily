@@ -1110,6 +1110,8 @@ const STYLES = `
 .pdiag .pd-conn .flow{ stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-dasharray:4 10; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @media (prefers-reduced-motion:reduce){ .pdiag .pd-node{ transition:none; } }
+/* No fades while the site theme switches (components/theme-provider.tsx). */
+.theme-switching .pdiag .pd-btn,.theme-switching .pdiag .pd-node,.theme-switching .pdiag .pd-leg,.theme-switching .pdiag .pd-edge{ transition:none !important; }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
 .pdiag .pd-loopwrap{ width:100%; min-width:0; margin:0 auto; }
 .pdiag .pd-loopwide-row{ display:grid; align-items:stretch; width:100%; gap:0; }

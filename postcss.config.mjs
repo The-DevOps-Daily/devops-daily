@@ -39,7 +39,8 @@ export const noTransitionsWhileThemeSwitches = () => ({
         if (p.type === 'atrule' && /keyframes$/i.test(p.name)) return;
       }
       const sets = rule.nodes?.some(
-        (n) => n.type === 'decl' && TRANSITION_PROP.test(n.prop) && !NO_TRANSITION.test(n.value.trim())
+        (n) =>
+          n.type === 'decl' && TRANSITION_PROP.test(n.prop) && !NO_TRANSITION.test(n.value.trim())
       );
       if (!sets) return;
       const selectors = rule.selectors.map((s) => {

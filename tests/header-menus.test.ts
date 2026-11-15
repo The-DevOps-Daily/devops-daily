@@ -5,9 +5,11 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DropdownTrigger } from '@/components/header/dropdown-trigger';
 import { MobileMenu } from '@/components/header/mobile-menu';
+import { Header } from '@/components/header';
 
 // The dropdown's code never arrives here, like a click during a slow download.
 vi.mock('next/dynamic', () => ({ default: () => () => null }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: ComponentProps<'a'>) =>
     createElement('a', { href, ...rest }, children),
@@ -117,5 +119,34 @@ describe('mobile menu', () => {
     expect(document.activeElement).toBe(menuButton);
     await afterPaint();
     expect(wrapper().contains(document.activeElement)).toBe(false);
+  });
+});
+
+describe('header with the mobile menu open', () => {
+  beforeEach(() => {
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+  });
+
+  it('rises above other fixed layers, hides the cookie banner and closes for search', async () => {
+    await act(async () => root.render(createElement(Header)));
+    const header = container.querySelector('header') as HTMLElement;
+    expect(header.classList.contains('z-40')).toBe(true);
+
+    const open = [...container.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Open main menu')
+    ) as HTMLButtonElement;
+    await act(async () => open.click());
+    expect(header.classList.contains('z-[70]')).toBe(true);
+    expect(document.body.dataset.mobileMenu).toBe('open');
+
+    // Cmd/Ctrl+K opens search, which must not end up under the menu.
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+    });
+    expect(header.classList.contains('z-40')).toBe(true);
+    expect(document.body.dataset.mobileMenu).toBeUndefined();
   });
 });

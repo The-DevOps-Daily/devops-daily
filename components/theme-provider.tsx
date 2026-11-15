@@ -42,11 +42,12 @@ export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
 /**
  * Keeps transitions off while the theme class on <html> changes, in place of
  * next-themes' disableTransitionOnChange (see postcss.config.mjs). The observer
- * runs before the next style update, and the class comes off after the switch
- * has been painted.
+ * runs in the same task as the class change, before the page is styled again,
+ * and the class comes off after the switch has been painted. A layout effect,
+ * so it is in place before next-themes applies the theme on mount.
  */
 function useNoTransitionsWhileThemeSwitches() {
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const root = document.documentElement;
     let dark = root.classList.contains('dark');
     let frame = 0;
