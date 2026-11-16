@@ -91,7 +91,7 @@ ghs_15368_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.<243-character payload>.<86-chara
   the base64url of {"alg":"ES256","typ":"JWT"}
 ```
 
-To look at the claims yourself, decode a token that has already expired in the [JWT decoder](/tools/jwt-decoder), which runs in your browser. Do not paste a live token into any website.
+To look at the claims yourself, take a token that has already expired, remove the `ghs_<app id>_` prefix and paste the rest into the [JWT decoder](/tools/jwt-decoder), which runs in your browser. Do not paste a live token into any website.
 
 A few things we did not expect:
 

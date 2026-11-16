@@ -90,7 +90,7 @@ SELECT uuidv7(shift => '-7 days'::interval);
 
 One useful detail: within a single backend session, PostgreSQL guarantees each `uuidv7()` it generates is strictly greater than the last, by spending some of the random bits on extra clock precision. So even a tight insert loop produces monotonic keys rather than occasionally colliding on the same millisecond.
 
-To compare the two versions outside a database, the [UUID generator](/tools/uuid-generator) makes v4 and v7 values in your browser. v7 values made a moment apart start with almost the same characters; v4 values have nothing in common.
+To compare the two versions outside a database, the [UUID generator](/tools/uuid-generator) makes v4 and v7 values in your browser. v7 values made a moment apart start with almost the same characters; v4 values are random and have no time order.
 
 ## The numbers
 
