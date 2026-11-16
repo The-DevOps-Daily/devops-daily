@@ -625,4 +625,6 @@ Alice has one post with comments and 120 views on it, not 2 posts and 240 views.
 
 You can now combine tables with inner, outer and self joins, filter with `EXISTS` and `NOT EXISTS`, structure long queries with CTEs, walk hierarchies with recursive CTEs, rank and compare rows with window functions, and pick the top rows per group with `LATERAL`.
 
+For practice on real data, [Advent of Postgres](/posts/advent-2026-postgres-and-devops-puzzles) has one SQL puzzle a day from 1 to 24 December, and the later ones use window functions and recursive queries.
+
 These queries are fast on a few rows. On millions of rows, they depend on indexes. Next, in [Indexes and Query Performance](/guides/introduction-to-postgres/07-indexes-and-performance), you will learn to read query plans and add the right indexes.
