@@ -16,7 +16,7 @@ tags:
   - JavaScript
   - Node.js
   - Event Loop
-  - Kubernetes
+  - Health Checks
   - Performance
   - Observability
 ---
