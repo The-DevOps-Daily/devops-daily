@@ -1,55 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="700" viewBox="0 0 600 700" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="t d">
   <title id="t">A handler attached too late</title>
   <desc id="d">Two promises start at 0 ms. The user promise resolves at 300 ms. The invoices promise rejects at 50 ms. The function is still awaiting user, so nothing handles the invoices rejection yet, and Node.js exits with code 1 at 50 ms. The await on invoices that would have handled it is never reached. Promise.all attaches a handler to both promises at once, so the error is caught.</desc>
-  <rect width="600" height="700" rx="20" fill="#fafafa"/>
+  <rect width="960" height="600" rx="20" fill="#fafafa"/>
   <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'DejaVu Sans', sans-serif">
-    <text x="30" y="52" font-size="27" font-weight="700" fill="#09090b">Handled later is not handled</text>
-    <text x="30" y="82" font-size="18" fill="#52525b">Two calls start together. The fast one fails first.</text>
+    <text x="30" y="58" font-size="40" font-weight="700" fill="#09090b">Handled later is not handled</text>
 
-    <!-- axis: x = 60 + ms * 1.6 -->
-    <g font-size="15" fill="#71717a" text-anchor="middle">
-      <path d="M60 128H540" stroke="#d4d4d8" stroke-width="2"/>
-      <path d="M60 122V134M140 122V134M220 122V134M380 122V134M540 122V134" stroke="#a1a1aa" stroke-width="2"/>
-      <text x="60" y="116">0 ms</text>
-      <text x="140" y="116">50</text>
-      <text x="220" y="116">100</text>
-      <text x="380" y="116">200</text>
-      <text x="540" y="116">300</text>
+    <!-- axis: x = 200 + ms * 2.4 -->
+    <g font-size="24" fill="#71717a" text-anchor="middle">
+      <path d="M200 126H920" stroke="#d4d4d8" stroke-width="2.5"/>
+      <path d="M200 118V134M320 118V134M440 118V134M680 118V134M920 118V134" stroke="#a1a1aa" stroke-width="2.5"/>
+      <text x="200" y="106">0 ms</text>
+      <text x="320" y="106">50</text>
+      <text x="440" y="106">100</text>
+      <text x="680" y="106">200</text>
+      <text x="920" y="106" text-anchor="end">300</text>
     </g>
 
-    <!-- crash line, drawn under the labels -->
-    <path d="M140 140V380" stroke="#dc2626" stroke-width="3"/>
+    <!-- crash line, under the bars -->
+    <path d="M320 138V352" stroke="#dc2626" stroke-width="4"/>
 
-    <!-- lane: user -->
-    <text x="60" y="172" font-size="16" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" fill="#09090b" stroke="#fafafa" stroke-width="7" paint-order="stroke">user = wait(300)</text>
-    <rect x="60" y="182" width="80" height="24" rx="6" fill="#a1a1aa"/>
-    <rect x="140" y="182" width="400" height="24" rx="6" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-dasharray="6 5"/>
-    <text x="530" y="199" font-size="15" fill="#71717a" text-anchor="end">would resolve here</text>
+    <!-- lanes -->
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="26" fill="#09090b">
+      <text x="30" y="183">user</text>
+      <text x="30" y="253">invoices</text>
+      <text x="30" y="323">function</text>
+    </g>
+    <rect x="200" y="158" width="120" height="36" rx="7" fill="#a1a1aa"/>
+    <rect x="322" y="158" width="598" height="36" rx="7" fill="none" stroke="#a1a1aa" stroke-width="2.5" stroke-dasharray="7 6"/>
+    <text x="906" y="185" font-size="24" fill="#71717a" text-anchor="end">would resolve here</text>
 
-    <!-- lane: invoices -->
-    <text x="60" y="246" font-size="16" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" fill="#09090b" stroke="#fafafa" stroke-width="7" paint-order="stroke">invoices = wait(50, 'invoices')</text>
-    <rect x="60" y="256" width="80" height="24" rx="6" fill="#dc2626"/>
-    <text x="156" y="274" font-size="16" font-weight="700" fill="#b91c1c">rejects</text>
+    <rect x="200" y="228" width="120" height="36" rx="7" fill="#dc2626"/>
+    <text x="338" y="256" font-size="26" font-weight="700" fill="#b91c1c">rejects at 50 ms</text>
 
-    <!-- lane: function -->
-    <text x="60" y="320" font-size="16" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" fill="#09090b" stroke="#fafafa" stroke-width="7" paint-order="stroke">await user</text>
-    <rect x="60" y="330" width="80" height="24" rx="6" fill="#fde68a"/>
-    <rect x="140" y="330" width="400" height="24" rx="6" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 5"/>
-    <text x="530" y="347" font-size="15" fill="#92400e" text-anchor="end">await invoices: never reached</text>
+    <rect x="200" y="298" width="120" height="36" rx="7" fill="#fde68a"/>
+    <rect x="322" y="298" width="598" height="36" rx="7" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="7 6"/>
+    <text x="906" y="325" font-size="24" fill="#92400e" text-anchor="end">await invoices: never reached</text>
 
-    <!-- crash line -->
-    <rect x="30" y="392" width="540" height="104" rx="14" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
-    <text x="48" y="424" font-size="19" font-weight="700" fill="#b91c1c">At 50 ms nobody handles the error</text>
-    <text x="48" y="452" font-size="17" fill="#3f3f46">The function is still waiting on <tspan font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace">user</tspan>.</text>
-    <text x="48" y="478" font-size="17" fill="#3f3f46">Node.js exits with code 1. The catch never runs.</text>
+    <!-- result -->
+    <rect x="30" y="376" width="900" height="88" rx="16" fill="#fef2f2" stroke="#dc2626" stroke-width="2.5"/>
+    <text x="52" y="416" font-size="28" font-weight="700" fill="#b91c1c">At 50 ms nothing handles the error.</text>
+    <text x="52" y="450" font-size="26" fill="#3f3f46">The function still waits on user. Node.js exits with code 1.</text>
 
-    <!-- fix -->
-    <rect x="30" y="516" width="540" height="140" rx="14" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
-    <text x="48" y="548" font-size="19" font-weight="700" fill="#15803d">Fix: hand both to Promise.all</text>
-    <text x="48" y="582" font-size="16" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" fill="#09090b">await Promise.all([user, invoices])</text>
-    <text x="48" y="612" font-size="17" fill="#3f3f46">It handles both promises right away, so</text>
-    <text x="48" y="636" font-size="17" fill="#3f3f46">the 50 ms rejection lands in your catch.</text>
-
-    <text x="570" y="684" font-size="13" text-anchor="end" fill="#a1a1aa">devops-daily.com</text>
+    <rect x="30" y="482" width="900" height="92" rx="16" fill="#f0fdf4" stroke="#16a34a" stroke-width="2.5"/>
+    <text x="52" y="522" font-size="28" font-weight="700" fill="#15803d">Fix: <tspan font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="26" fill="#09090b">await Promise.all([user, invoices])</tspan></text>
+    <text x="52" y="558" font-size="26" fill="#3f3f46">It handles both promises from the start.</text>
   </g>
 </svg>

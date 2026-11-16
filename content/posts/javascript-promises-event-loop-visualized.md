@@ -126,7 +126,8 @@ E
 Press play to follow it through the call stack and both queues, one step at a time.
 
 <figure>
-<video controls muted loop playsinline preload="none" width="1080" height="1500" poster="/images/posts/javascript-promises-event-loop-visualized/five-lines-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/five-lines.mp4" type="video/mp4"></video>
+<video class="post-video-wide" controls muted loop playsinline preload="none" width="1600" height="1000" poster="/images/posts/javascript-promises-event-loop-visualized/five-lines-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/five-lines.mp4" type="video/mp4"></video>
+<video class="post-video-tall" controls muted loop playsinline preload="none" width="1080" height="1500" poster="/images/posts/javascript-promises-event-loop-visualized/five-lines-portrait-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/five-lines-portrait.mp4" type="video/mp4"></video>
 <figcaption>Five lines through the call stack, the microtask queue and the task queue. The script prints A and B, the two microtasks print C and D, and only then does the timer callback print E.</figcaption>
 </figure>
 
@@ -294,7 +295,8 @@ The safe lesson: do not write code that depends on `nextTick` versus promise ord
 The last two lines of the `order.js` output need a warning too. On our machine, `setTimeout 0` came before `setImmediate` in 200 of 200 runs of both files. The [Node.js event loop docs](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick) say this order is not guaranteed in the main module, because it depends on how fast the process reaches the loop. Inside an I/O callback, the order is fixed. Press play to watch one turn of the loop:
 
 <figure>
-<video controls muted loop playsinline preload="none" width="1080" height="1560" poster="/images/posts/javascript-promises-event-loop-visualized/loop-turn-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/loop-turn.mp4" type="video/mp4"></video>
+<video class="post-video-wide" controls muted loop playsinline preload="none" width="1600" height="1000" poster="/images/posts/javascript-promises-event-loop-visualized/loop-turn-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/loop-turn.mp4" type="video/mp4"></video>
+<video class="post-video-tall" controls muted loop playsinline preload="none" width="1080" height="1560" poster="/images/posts/javascript-promises-event-loop-visualized/loop-turn-portrait-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/loop-turn-portrait.mp4" type="video/mp4"></video>
 <figcaption>A readFile callback runs in the poll phase and schedules four callbacks. The nextTick queue drains first, then promise microtasks, then the check phase runs setImmediate, and the timer waits until the loop wraps around to timers.</figcaption>
 </figure>
 
@@ -438,7 +440,8 @@ $ kill %1
 We ran each mode five times. The synchronous report took 2.3 to 2.5 seconds, and the probe failed in every run. With the worker, the probe that arrived during the report got its answer in 7 to 19 ms. The worker times include starting the worker and sending the result back.
 
 <figure>
-<video controls muted loop playsinline preload="none" width="1080" height="1350" poster="/images/posts/javascript-promises-event-loop-visualized/blocked-probe-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/blocked-probe.mp4" type="video/mp4"></video>
+<video class="post-video-wide" controls muted loop playsinline preload="none" width="1600" height="1000" poster="/images/posts/javascript-promises-event-loop-visualized/blocked-probe-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/blocked-probe.mp4" type="video/mp4"></video>
+<video class="post-video-tall" controls muted loop playsinline preload="none" width="1080" height="1350" poster="/images/posts/javascript-promises-event-loop-visualized/blocked-probe-portrait-poster.webp"><source src="/images/posts/javascript-promises-event-loop-visualized/blocked-probe-portrait.mp4" type="video/mp4"></video>
 <figcaption>The two measured runs above as a timeline. On the main thread, the report holds the event loop for 2.4 seconds and the probe gives up after 1 second. In a worker thread, the same report takes 2.2 seconds and /healthz answers in 7 ms.</figcaption>
 </figure>
 

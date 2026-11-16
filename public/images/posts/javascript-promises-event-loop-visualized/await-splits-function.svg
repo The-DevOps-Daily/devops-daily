@@ -1,57 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="676" viewBox="0 0 600 676" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="t d">
   <title id="t">await splits an async function in two</title>
-  <desc id="d">The code before await runs right away on the caller's stack. At the await, the function returns a pending promise and the caller keeps going. The code after await runs later as a microtask, once the stack is empty. The printed order is 1 script starts, 2 before await, 3 script ends, 4 after await.</desc>
-  <rect width="600" height="676" rx="20" fill="#fafafa"/>
+  <desc id="d">The code before await runs right away on the caller's stack. At the await, the function returns a pending promise and the caller keeps going. The code after await runs later as a microtask, once the stack is empty. The printed order is 1 script starts, 2 before, 3 script ends, 4 after.</desc>
+  <rect width="960" height="600" rx="20" fill="#fafafa"/>
   <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'DejaVu Sans', sans-serif">
-    <text x="30" y="52" font-size="27" font-weight="700" fill="#09090b">await splits a function in two</text>
-    <text x="30" y="82" font-size="18" fill="#52525b">The code after it waits for a microtask.</text>
+    <text x="30" y="58" font-size="40" font-weight="700" fill="#09090b">await splits a function in two</text>
 
     <!-- code panel -->
-    <rect x="30" y="104" width="540" height="214" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
-    <rect x="31" y="150" width="538" height="40" fill="#f4f4f5"/>
-    <rect x="31" y="232" width="538" height="40" fill="#fffbeb"/>
-    <rect x="31" y="192" width="538" height="38" fill="#ffffff"/>
-    <path d="M33 194V228" stroke="#d97706" stroke-width="4" stroke-linecap="round"/>
-    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="17" fill="#09090b">
-      <text x="48" y="136">async function handleRequest() {</text>
-      <text x="68" y="177">console.log('2. before');</text>
-      <text x="68" y="218">const user = <tspan font-weight="700" fill="#b45309">await</tspan> getUser();</text>
-      <text x="68" y="259">console.log('4. after', user.id);</text>
-      <text x="48" y="300">}</text>
-    </g>
-    <g font-size="15" font-weight="700" text-anchor="end">
-      <text x="556" y="176" fill="#52525b">RUNS NOW</text>
-      <text x="556" y="217" fill="#b45309">PAUSES HERE</text>
-      <text x="556" y="258" fill="#b45309">RUNS LATER</text>
+    <rect x="30" y="86" width="600" height="346" rx="16" fill="#ffffff" stroke="#d4d4d8" stroke-width="2"/>
+    <rect x="32" y="158" width="596" height="64" fill="#f4f4f5"/>
+    <rect x="32" y="222" width="596" height="64" fill="#ffffff"/>
+    <path d="M35 228V280" stroke="#d97706" stroke-width="6" stroke-linecap="round"/>
+    <rect x="32" y="286" width="596" height="64" fill="#fffbeb"/>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="26" fill="#09090b">
+      <text x="52" y="136">async function handleRequest() {</text>
+      <text x="84" y="200">console.log('2. before');</text>
+      <text x="84" y="264">const user = <tspan font-weight="700" fill="#b45309">await</tspan> getUser();</text>
+      <text x="84" y="328">console.log('4. after', user.id);</text>
+      <text x="52" y="398">}</text>
     </g>
 
-    <!-- timeline -->
-    <text x="30" y="362" font-size="16" font-weight="700" fill="#52525b" letter-spacing="1.5">WHAT PRINTS, IN ORDER</text>
-    <path d="M52 392V604" stroke="#d4d4d8" stroke-width="3"/>
+    <!-- legend -->
+    <rect x="30" y="456" width="34" height="34" rx="6" fill="#f4f4f5" stroke="#a1a1aa" stroke-width="1.5"/>
+    <text x="78" y="483" font-size="27" fill="#3f3f46">runs now, as part of the caller</text>
+    <rect x="30" y="510" width="34" height="34" rx="6" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="78" y="537" font-size="27" fill="#3f3f46">runs later, as a microtask</text>
 
-    <circle cx="52" cy="396" r="14" fill="#ffffff" stroke="#a1a1aa" stroke-width="2"/>
-    <text x="52" y="402" font-size="15" font-weight="700" text-anchor="middle" fill="#3f3f46">1</text>
-    <text x="80" y="394" font-size="18" font-weight="700" fill="#09090b">script starts</text>
-    <text x="80" y="416" font-size="16" fill="#71717a">main script, before the call</text>
+    <!-- what prints -->
+    <text x="664" y="118" font-size="26" font-weight="700" fill="#52525b">What prints</text>
+    <path d="M684 160V480" stroke="#d4d4d8" stroke-width="4"/>
+    <g font-size="28">
+      <circle cx="684" cy="166" r="20" fill="#ffffff" stroke="#a1a1aa" stroke-width="2.5"/>
+      <text x="684" y="175" font-size="22" font-weight="700" text-anchor="middle" fill="#3f3f46">1</text>
+      <text x="716" y="176" fill="#09090b">script starts</text>
 
-    <circle cx="52" cy="452" r="14" fill="#f4f4f5" stroke="#52525b" stroke-width="2"/>
-    <text x="52" y="458" font-size="15" font-weight="700" text-anchor="middle" fill="#09090b">2</text>
-    <text x="80" y="450" font-size="18" font-weight="700" fill="#09090b">before</text>
-    <text x="80" y="472" font-size="16" fill="#71717a">first half, same turn as the caller</text>
+      <circle cx="684" cy="246" r="20" fill="#f4f4f5" stroke="#52525b" stroke-width="2.5"/>
+      <text x="684" y="255" font-size="22" font-weight="700" text-anchor="middle" fill="#09090b">2</text>
+      <text x="716" y="256" font-weight="700" fill="#09090b">before</text>
 
-    <circle cx="52" cy="508" r="14" fill="#ffffff" stroke="#a1a1aa" stroke-width="2"/>
-    <text x="52" y="514" font-size="15" font-weight="700" text-anchor="middle" fill="#3f3f46">3</text>
-    <text x="80" y="506" font-size="18" font-weight="700" fill="#09090b">script ends</text>
-    <text x="80" y="528" font-size="16" fill="#71717a">the call returned a pending promise</text>
+      <circle cx="684" cy="326" r="20" fill="#ffffff" stroke="#a1a1aa" stroke-width="2.5"/>
+      <text x="684" y="335" font-size="22" font-weight="700" text-anchor="middle" fill="#3f3f46">3</text>
+      <text x="716" y="336" fill="#09090b">script ends</text>
 
-    <rect x="80" y="542" width="490" height="26" rx="6" fill="#18181b"/>
-    <text x="94" y="560" font-size="15" fill="#fbbf24">stack is empty, so microtasks run</text>
+      <rect x="708" y="366" width="222" height="46" rx="8" fill="#18181b"/>
+      <text x="722" y="397" font-size="24" fill="#fbbf24">stack empty</text>
 
-    <circle cx="52" cy="596" r="14" fill="#fffbeb" stroke="#d97706" stroke-width="2.5"/>
-    <text x="52" y="602" font-size="15" font-weight="700" text-anchor="middle" fill="#b45309">4</text>
-    <text x="80" y="594" font-size="18" font-weight="700" fill="#b45309">after</text>
-    <text x="80" y="616" font-size="16" fill="#71717a">second half, run as a microtask</text>
-
-    <text x="570" y="660" font-size="13" text-anchor="end" fill="#a1a1aa">devops-daily.com</text>
+      <circle cx="684" cy="460" r="20" fill="#fffbeb" stroke="#d97706" stroke-width="3"/>
+      <text x="684" y="469" font-size="22" font-weight="700" text-anchor="middle" fill="#b45309">4</text>
+      <text x="716" y="470" font-weight="700" fill="#b45309">after</text>
+    </g>
   </g>
 </svg>

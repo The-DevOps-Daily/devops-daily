@@ -475,6 +475,30 @@ body[data-mobile-menu='open'] [data-cookie-banner] {
   @apply h-auto w-full rounded-lg border border-border bg-black;
 }
 
+/* A post can ship two cuts of one animation: a 16:10 landscape video for wide
+   screens and a portrait one for phones. Both are capped so the whole frame
+   fits on the screen. Only posts that use these classes are affected. */
+.prose video.post-video-wide {
+  max-width: min(100%, calc(85vh * 1.6));
+  margin-inline: auto;
+}
+
+.prose video.post-video-tall {
+  display: none;
+  max-width: min(100%, calc(85vh * 0.69));
+  margin-inline: auto;
+}
+
+@media (max-width: 640px) {
+  .prose video.post-video-wide {
+    display: none;
+  }
+
+  .prose video.post-video-tall {
+    display: block;
+  }
+}
+
 .prose blockquote {
   @apply border-l-4 border-border pl-4 italic;
 }
