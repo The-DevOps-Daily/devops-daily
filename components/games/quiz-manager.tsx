@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { memo, useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { QuizFilters, DifficultyLevel, SortConfig, SortField, SortDirection } from '@/components/quiz-filters';
 import {
@@ -17,9 +16,7 @@ import {
   Star,
   Sparkles,
   Clock,
-  ArrowRight,
   AlertTriangle,
-  Play,
   Package,
   DollarSign,
   Database,
@@ -31,6 +28,7 @@ Shield,
   Network,
   Calculator,
   Cpu,
+  type LucideIcon,
 } from 'lucide-react';
 import { GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -237,10 +235,6 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     setSelectedDifficulty('all');
   };
 
-  const getQuizUrl = (quizId: string) => {
-    return `/quizzes/${quizId}`;
-  };
-
   const getDifficultyColor = (category: string) => {
     // Color mapping based on category/topic
     const colors: Record<string, string> = {
@@ -299,69 +293,13 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
           const quizDifficulty = getQuizDifficulty(quiz);
 
           return (
-            <Card
+            <QuizCard
               key={quiz.id}
-              className="flex flex-col h-full overflow-hidden transition-all duration-300 group hover:shadow-lg border-border/50"
-            >
-              {/* Color indicator bar */}
-              <div className={`h-2 w-full bg-linear-to-r ${gradientClass}`}></div>
-
-              <CardHeader className="pb-4">
-                <div className="flex items-start justify-between mb-4">
-                  <div
-                    className={`p-3 rounded-lg bg-linear-to-br ${gradientClass} text-white shadow-md`}
-                  >
-                    <IconComponent className="w-6 h-6" />
-                  </div>
-                  <Badge variant="outline" className="bg-background/50">
-                    {quiz.category}
-                  </Badge>
-                </div>
-
-                <CardTitle className="text-xl transition-colors group-hover:text-primary line-clamp-2">
-                  {quiz.title}
-                </CardTitle>
-                <CardDescription className="line-clamp-3">{quiz.description}</CardDescription>
-              </CardHeader>
-
-              <CardContent className="flex flex-col justify-between grow">
-                <div className="mb-4 space-y-3">
-                 <div className="flex items-center gap-2">
-                   <Badge variant="secondary" className="capitalize text-xs">
-                     {formatDifficultyLabel(quizDifficulty)}
-                   </Badge>
-                 </div>
-                 <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="w-4 h-4" />
-                      <span>{quiz.totalQuestions} questions</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4" />
-                      <span>{quiz.totalPoints} points</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>{quiz.estimatedTime}</span>
-                  </div>
-                </div>
-
-                <Button
-                  asChild
-                  className={`w-full bg-linear-to-r ${gradientClass} hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all`}
-                >
-                  <Link
-                    href={getQuizUrl(quiz.id)}
-                    className="flex items-center justify-center gap-2"
-                  >
-                    <Play className="w-4 h-4" />
-                    Start Quiz
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
+              quiz={quiz}
+              icon={IconComponent}
+              gradientClass={gradientClass}
+              difficultyLabel={formatDifficultyLabel(quizDifficulty)}
+            />
           );
         })}
       </div>
@@ -403,3 +341,57 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     </div>
   );
 }
+
+interface QuizCardProps {
+  quiz: QuizMetadata;
+  icon: LucideIcon;
+  gradientClass: string;
+  difficultyLabel: string;
+}
+
+// Every quiz is on the page, so each card keeps its markup small (see
+// .quiz-card in app/globals.css).
+const QuizCard = memo(function QuizCard({
+  quiz,
+  icon: IconComponent,
+  gradientClass,
+  difficultyLabel,
+}: QuizCardProps) {
+  return (
+    <div className="quiz-card group">
+      {/* Color indicator bar */}
+      <div className={`h-2 w-full bg-linear-to-r ${gradientClass}`}></div>
+
+      <div className="quiz-card-header">
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 rounded-lg bg-linear-to-br ${gradientClass} text-white shadow-md`}>
+            <IconComponent className="w-6 h-6" />
+          </div>
+          <div className="quiz-card-category">{quiz.category}</div>
+        </div>
+
+        <div className="quiz-card-title">{quiz.title}</div>
+        <div className="text-sm text-muted-foreground line-clamp-3">{quiz.description}</div>
+      </div>
+
+      <div className="quiz-card-body">
+        <div className="mb-4 space-y-3">
+          <div className="quiz-card-level">{difficultyLabel}</div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="quiz-card-meta quiz-card-questions">
+              {quiz.totalQuestions} questions
+            </div>
+            <div className="quiz-card-meta quiz-card-points">{quiz.totalPoints} points</div>
+          </div>
+          <div className="quiz-card-meta quiz-card-time text-sm text-muted-foreground">
+            {quiz.estimatedTime}
+          </div>
+        </div>
+
+        <Link href={`/quizzes/${quiz.id}`} className={`quiz-card-start ${gradientClass}`}>
+          Start Quiz
+        </Link>
+      </div>
+    </div>
+  );
+});
