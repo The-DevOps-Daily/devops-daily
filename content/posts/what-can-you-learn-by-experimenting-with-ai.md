@@ -34,7 +34,7 @@ The career question is real. Alongside it is a question you can test this week. 
 {
   "type": "flow",
   "nodes": [
-    { "label": "Pick a task", "sub": "One runbook step", "icon": "file", "tone": "blue" },
+    { "label": "Pick a task", "sub": "One runbook step", "icon": "server", "tone": "blue" },
     { "label": "Define success", "sub": "Name the right dashboard", "icon": "gear", "tone": "violet" },
     { "label": "Try AI", "sub": "Ask what a newcomer would miss", "icon": "cpu", "tone": "amber" },
     { "label": "Check the result", "sub": "Have a teammate follow it", "icon": "check", "tone": "green" }
@@ -47,10 +47,12 @@ The career question is real. Alongside it is a question you can test this week. 
 **Try it.** Pick a short runbook from your [on-call rotation](/posts/on-call-rotation-escalation-policy-guide). Remove sensitive details and give it to AI with this prompt.
 
 ```text
-Read this runbook as an engineer on a first on-call shift.
-Point out where the reader has to guess which dashboard to open,
-what healthy looks like, or when to stop and escalate.
-Quote the step that led to each question.
+You’re new to the on-call rotation.
+Read the runbook and flag where
+you’d have to guess what to check,
+what healthy looks like, or when
+to escalate. Quote the step that
+led to each question.
 ```
 
 **Check it.** Fix one gap and hand the runbook to a teammate. Can they find the right panel and tell whether the service is recovering? If AI suggests skipping a verification step, see whether the runbook explains why it’s there.
@@ -67,12 +69,12 @@ Try two approaches on the same set of notes. Time each one through to a draft yo
     {
       "label": "Draft the update",
       "lang": "text",
-      "code": "Draft a short project update from these notes.\nCover progress, blockers, and the next decision.\nFlag any missing dates or owners without guessing."
+      "code": "Draft a short project update.\nUse the notes to cover progress,\nblockers, and the next decision.\nFlag missing dates or owners."
     },
     {
       "label": "Outline the update",
       "lang": "text",
-      "code": "Suggest three ways to organize these notes for the team.\nFor each outline, say which point should lead and why.\nLeave the draft to the author."
+      "code": "Suggest three outlines for these\nnotes. For each, say which point\nshould lead and why.\nLeave the draft to the author."
     }
   ]
 }
@@ -94,9 +96,11 @@ Try two approaches on the same set of notes. Time each one through to a draft yo
 **Try it.** Describe a delayed migration using fictional details. Ask AI to play a colleague whose team was counting on the original date.
 
 ```text
-Your team planned its rollout around this migration.
-Ask one question at a time about what the delay means for you.
-If an answer is vague, ask for a date, an owner, or a fallback.
+Your team’s rollout depends on
+this migration. Ask one question
+at a time about the delay.
+If an answer is vague, ask for
+a date, an owner, or a fallback.
 ```
 
 **Check it.** Write down the first question you couldn’t answer. If it’s “What can our team ship while we wait?”, you now know who to talk to before the meeting.
