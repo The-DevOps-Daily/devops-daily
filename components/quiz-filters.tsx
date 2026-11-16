@@ -68,6 +68,9 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
   const [edges, setEdges] = useState({ up: false, down: false });
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
+  // The tap that opens the menu ends with a click on the new overlay, so the
+  // overlay only closes the menu when the press also started on it.
+  const overlayPressed = useRef(false);
   const current = options.find((option) => option.value === value)?.label ?? label;
 
   const updateEdges = useCallback(() => {
@@ -92,7 +95,14 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
   );
 
   return (
-    <DropdownMenu.Root modal={false} open={open} onOpenChange={setOpen}>
+    <DropdownMenu.Root
+      modal={false}
+      open={open}
+      onOpenChange={(next) => {
+        overlayPressed.current = false;
+        setOpen(next);
+      }}
+    >
       <DropdownMenu.Trigger
         aria-label={`${label}: ${current}`}
         className={cn(
@@ -108,7 +118,13 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
           <div
             ref={overlayRef}
             aria-hidden="true"
-            onClick={() => setOpen(false)}
+            onPointerDown={() => {
+              overlayPressed.current = true;
+            }}
+            onClick={() => {
+              if (overlayPressed.current) setOpen(false);
+              overlayPressed.current = false;
+            }}
             className="fixed inset-0 z-45"
           />,
           document.body
@@ -119,7 +135,6 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
           sideOffset={0}
           collisionPadding={10}
           onPointerDownOutside={(event) => {
-            // The overlay closes the menu on click, so the click lands on it.
             if (event.detail.originalEvent.target === overlayRef.current) event.preventDefault();
           }}
           className="relative z-50 flex max-h-96 min-w-(--radix-dropdown-menu-trigger-width) flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
