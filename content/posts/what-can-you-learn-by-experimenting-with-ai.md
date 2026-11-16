@@ -1,12 +1,12 @@
 ---
 title: 'What Can You Learn by Experimenting With AI?'
-excerpt: 'Try AI on a runbook, a project update, a Kubernetes lab, or a difficult meeting. See where it helps while taking the fear of job loss seriously.'
+excerpt: 'Give AI one small DevOps task and see what holds up. Try four experiments with a runbook, a status update, a Kubernetes lab, or a delayed migration.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-11-16'
 publishedAt: '2026-11-16T09:00:00Z'
-updatedAt: '2026-11-16T09:00:00Z'
+updatedAt: '2026-11-16T12:28:38Z'
 readingTime: '5 min read'
 author:
   name: 'DevOps Daily Team'
@@ -19,37 +19,94 @@ tags:
   - On-Call
 ---
 
-“Could AI replace part of your job?” is a reasonable question. If you’ve spent years learning how to troubleshoot systems, write reliable automation, or explain incidents, it can be unsettling to watch a tool produce something that looks like your work in seconds. A team might be expected to handle the same workload with fewer people. A client might stop paying for work they think they can do themselves. When your livelihood is involved, being told to “just embrace AI” can feel like someone is brushing off the question.
+It’s 3:07 a.m. The runbook says “check the dashboard.” There are six dashboards. Which one shows whether the fix worked?
 
-There’s another question you can investigate on a smaller scale. What could you learn by trying AI on a task you already know how to do?
+Ask AI to read that runbook as a new on-call engineer and it might spot the missing instruction in seconds. That’s useful. It can also be unsettling to watch a tool do a piece of work your team used to depend on you for. The same capability that helps an engineer can lead a company to pay for less of that engineer’s work.
+
+The career question is real. Alongside it is a question you can test this week. **Give AI one part of a job you know, then check whether it helped.** Here are four experiments worth trying.
 
 ## Prerequisites
 
-- An AI tool you can use for the task and a copy of the material with sensitive details removed.
-- A disposable Kubernetes environment if you want to try the readiness probe experiment.
+- A task you can check yourself and an AI tool you can use with sanitized or fictional inputs.
+- A disposable Kubernetes cluster if you pick the lab.
 
-## Review a runbook
+```diagram
+{
+  "type": "flow",
+  "nodes": [
+    { "label": "Pick a task", "sub": "One runbook step", "icon": "file", "tone": "blue" },
+    { "label": "Define success", "sub": "Name the right dashboard", "icon": "gear", "tone": "violet" },
+    { "label": "Try AI", "sub": "Ask what a newcomer would miss", "icon": "cpu", "tone": "amber" },
+    { "label": "Check the result", "sub": "Have a teammate follow it", "icon": "check", "tone": "green" }
+  ]
+}
+```
 
-Start with a runbook your team uses. Give AI a version with sensitive details removed and ask it to read the instructions as an engineer on their [first on-call shift](/posts/on-call-rotation-escalation-policy-guide). Where would they get stuck? It might flag that step three tells the reader to check a dashboard without saying which panel to open or what a healthy result looks like. It might also suggest combining two steps your team keeps separate so someone can verify the state of the system before moving on. Both responses give you something to work with. Add the missing detail, explain why the steps are separate, and ask a teammate who’s new to the rotation to try the revised runbook.
+## 1. Find the gaps in a runbook
 
-## Measure the time it takes to finish
+**Try it.** Pick a short runbook from your [on-call rotation](/posts/on-call-rotation-escalation-policy-guide). Remove sensitive details and give it to AI with this prompt.
 
-You can also test whether AI saves time on work that’s easy to underestimate. Take a project update you’d normally write from a page of rough notes. Ask AI for a draft and keep track of how long it takes to get to a version you’d actually send. Count the time spent checking dates, fixing the order of events, and rewriting sentences that imply more certainty than the team has. On the next update, ask for three possible outlines and write the text yourself. That comparison can tell you which part of the work you’d want help with next time.
+```text
+Read this runbook as an engineer on a first on-call shift.
+Point out where the reader has to guess which dashboard to open,
+what healthy looks like, or when to stop and escalate.
+Quote the step that led to each question.
+```
 
-## Test an explanation in a lab
+**Check it.** Fix one gap and hand the runbook to a teammate. Can they find the right panel and tell whether the service is recovering? If AI suggests skipping a verification step, see whether the runbook explains why it’s there.
 
-A small lab can help you learn something unfamiliar. Say you can read a Kubernetes manifest but still get tripped up by what happens when a [readiness probe fails](/guides/introduction-to-kubernetes/03-pods-and-containers-in-kubernetes). Use a disposable environment and ask AI to walk through a minimal example. Before changing anything, predict what you should see in the pod status and the [Service’s endpoints](/guides/introduction-to-kubernetes/05-services-and-networking). Then make the probe fail and check both. If the explanation falls apart, you have a specific discrepancy to look up in the documentation. If it holds up, you’ve got a reproducible example you can revisit the next time a pod is running but receiving no traffic.
+## 2. Time the work through the final draft
 
-## Rehearse a difficult conversation
+A project update takes thirty seconds to generate. If it takes twenty minutes to check the dates, put the events in order, and remove promises nobody made, you spent twenty minutes and thirty seconds.
 
-Some experiments are about getting practice you rarely get on the job. Before a meeting about a delayed migration, ask AI to play the part of a colleague whose team was counting on the original date. Have it ask one question at a time, and answer each as you would in the meeting. You might discover you can explain what caused the delay but have no answer for what the other team should do in the meantime. That gives you time to talk to the people involved and work out what can still move forward.
+Try two approaches on the same set of notes. Time each one through to a draft you’d actually send.
 
-## What changes when work gets automated
+```tabs
+{
+  "tabs": [
+    {
+      "label": "Draft the update",
+      "lang": "text",
+      "code": "Draft a short project update from these notes.\nCover progress, blockers, and the next decision.\nFlag any missing dates or owners without guessing."
+    },
+    {
+      "label": "Outline the update",
+      "lang": "text",
+      "code": "Suggest three ways to organize these notes for the team.\nFor each outline, say which point should lead and why.\nLeave the draft to the author."
+    }
+  ]
+}
+```
 
-The same capability can make AI useful to an engineer and make some of that engineer’s work easier to automate. A tool that helps write the first version of an [incident summary](/posts/the-postmortem-nobody-reads) may also lead a manager to assume summaries now take a few minutes. Assembling a timeline from notes is one part of the job. Figuring out why two timestamps disagree or checking what customers experienced can still take careful work. If the first pass was also how newer engineers learned to reconstruct an incident, the team has to decide where they’ll get that practice. Knowing how to use AI gives you more say in how you approach a task. Staffing decisions and training opportunities still depend on what the organization chooses to do.
+**Check it.** Compare the total time and the edits each approach needed. That tells you where to ask for help on the next update.
 
-## Pick one small experiment
+## 3. Test a Kubernetes explanation
 
-That’s a good reason to keep the experiments small enough to judge. Pick a task with a result you can check and leave room for the possibility that your usual process works better. If AI helps, get specific about where. “It caught a missing prerequisite in the runbook” is something a teammate can try for themselves. “It wrote the runbook in thirty seconds” tells them very little about whether they could follow it at 3 a.m.
+**Try it.** Ask AI to explain what happens when a [readiness probe fails](/guides/introduction-to-kubernetes/03-pods-and-containers-in-kubernetes). Before touching the lab, write down two predictions.
 
-The next time the question of being replaced comes up, it may still feel just as urgent. There’s room alongside it for a twenty-minute experiment. Pick one thing already on your list, decide what a good result would look like, and try a different way of getting there. By the end, you’ll have something concrete to go on when that task comes around again.
+- Will the container restart, or will the pod keep running?
+- What will the [Service’s EndpointSlice](/guides/introduction-to-kubernetes/05-services-and-networking) report about that pod?
+
+**Check it.** Make the readiness check fail in the lab and inspect the pod and its EndpointSlice. If the explanation says the container restarts, you’ve found a claim to investigate. Keep the smallest example that makes the behavior clear so you can rerun it later.
+
+## 4. Rehearse a conversation about a delay
+
+**Try it.** Describe a delayed migration using fictional details. Ask AI to play a colleague whose team was counting on the original date.
+
+```text
+Your team planned its rollout around this migration.
+Ask one question at a time about what the delay means for you.
+If an answer is vague, ask for a date, an owner, or a fallback.
+```
+
+**Check it.** Write down the first question you couldn’t answer. If it’s “What can our team ship while we wait?”, you now know who to talk to before the meeting.
+
+## What happens when the first draft gets cheap?
+
+AI can turn notes into an [incident summary](/posts/the-postmortem-nobody-reads). It still takes someone to resolve conflicting timestamps and find out what customers actually experienced. If assembling that timeline used to teach new engineers how to investigate an outage, the team has to decide how they’ll get that practice.
+
+Those choices matter. Knowing how to use AI can change how you do a task. It can’t decide whether your employer cuts a role, raises a quota, or invests in training.
+
+:::tip
+**Try one experiment in 20 minutes.** Pick a task already on your list, write down what a good result would look like, and give AI one part of the job. When time’s up, write down what you’d use again and what you’d check more carefully next time.
+:::
