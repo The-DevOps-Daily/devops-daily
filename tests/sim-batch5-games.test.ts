@@ -117,7 +117,8 @@ describe('PromQL Playground on the kit', () => {
       'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))'
     );
     const fraction = scalarValue();
-    expect(fraction).toBeCloseTo(percentage / 100, 4);
+    // Both values are shown with toFixed(4), so allow for that rounding.
+    expect(fraction).toBeCloseTo(percentage / 100, 3);
   }, 60_000);
 
   it('no hero, a goal, keys only in the editor', async () => {
