@@ -1,19 +1,102 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { X, SlidersHorizontal, ArrowUpDown, Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface FilterOption {
+  value: string;
+  label: string;
+}
+
+interface FilterSelectProps {
+  label: string;
+  value: string;
+  options: FilterOption[];
+  onValueChange: (value: string) => void;
+  className?: string;
+}
+
+// Looks like the Radix Select it replaces, but is not modal. A modal Select
+// sets an inherited CSS variable and pointer-events: none on <body>, so the
+// whole page restyles twice on open and twice on close. The overlay still
+// keeps an outside tap from reaching the page under the menu.
+function FilterSelect({ label, value, options, onValueChange, className }: FilterSelectProps) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((option) => option.value === value)?.label ?? label;
+
+  return (
+    <DropdownMenu.Root modal={false} open={open} onOpenChange={setOpen}>
+      <DropdownMenu.Trigger
+        aria-label={`${label}: ${current}`}
+        className={cn(
+          'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+          className
+        )}
+      >
+        <span>{current}</span>
+        <ChevronDown className="h-4 w-4 opacity-50" aria-hidden="true" />
+      </DropdownMenu.Trigger>
+      {open &&
+        createPortal(<div aria-hidden="true" className="fixed inset-0 z-45" />, document.body)}
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={0}
+          collisionPadding={10}
+          onOpenAutoFocus={(event) => {
+            const checked = (event.currentTarget as HTMLElement).querySelector<HTMLElement>(
+              '[aria-checked="true"]'
+            );
+            if (checked) {
+              event.preventDefault();
+              checked.focus();
+            }
+          }}
+          className="relative z-50 max-h-96 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
+        >
+          <DropdownMenu.Label className="py-1.5 pl-8 pr-2 text-sm font-semibold">
+            {label}
+          </DropdownMenu.Label>
+          <DropdownMenu.RadioGroup value={value} onValueChange={onValueChange}>
+            {options.map((option) => (
+              <DropdownMenu.RadioItem
+                key={option.value}
+                value={option.value}
+                className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50"
+              >
+                <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                  <DropdownMenu.ItemIndicator>
+                    <Check className="h-4 w-4" />
+                  </DropdownMenu.ItemIndicator>
+                </span>
+                {option.label}
+              </DropdownMenu.RadioItem>
+            ))}
+          </DropdownMenu.RadioGroup>
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}
+
+const DIFFICULTY_OPTIONS: FilterOption[] = [
+  { value: 'all', label: 'All Difficulties' },
+  { value: 'beginner', label: 'Beginner/Junior' },
+  { value: 'intermediate', label: 'Intermediate/Mid' },
+  { value: 'advanced', label: 'Advanced/Senior' },
+];
+
+const SORT_OPTIONS: FilterOption[] = [
+  { value: 'date', label: 'Date' },
+  { value: 'difficulty', label: 'Difficulty' },
+  { value: 'time', label: 'Time' },
+  { value: 'points', label: 'Points' },
+];
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'all';
 export type SortField = 'date' | 'difficulty' | 'time' | 'points';
@@ -91,38 +174,25 @@ export function QuizFilters({
       {/* Filter and Sort Dropdowns */}
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         {/* Category Filter */}
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Category</SelectLabel>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <FilterSelect
+          label="Category"
+          value={selectedCategory}
+          options={[
+            { value: 'all', label: 'All Categories' },
+            ...categories.map((category) => ({ value: category, label: category })),
+          ]}
+          onValueChange={onCategoryChange}
+          className="sm:w-[200px]"
+        />
 
         {/* Difficulty Filter */}
-       <Select value={selectedDifficulty} onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}>
-         <SelectTrigger className="w-full sm:w-[200px]">
-           <SelectValue placeholder="All Difficulties" />
-         </SelectTrigger>
-         <SelectContent>
-           <SelectGroup>
-            <SelectLabel>Difficulty</SelectLabel>
-            <SelectItem value="all">All Difficulties</SelectItem>
-            <SelectItem value="beginner">Beginner/Junior</SelectItem>
-            <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
-            <SelectItem value="advanced">Advanced/Senior</SelectItem>
-          </SelectGroup>
-       </SelectContent>
-      </Select>
+        <FilterSelect
+          label="Difficulty"
+          value={selectedDifficulty}
+          options={DIFFICULTY_OPTIONS}
+          onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}
+          className="sm:w-[200px]"
+        />
 
         {/* Sort By */}
         <div className="relative w-full sm:w-[200px]">
@@ -138,23 +208,13 @@ export function QuizFilters({
           >
             <ArrowUpDown className="w-4 h-4" />
           </button>
-          <Select 
-          value={sortConfig.field} 
-          onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
-          >
-            <SelectTrigger className="w-full pl-10">
-              <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Sort By</SelectLabel>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="difficulty">Difficulty</SelectItem>
-              <SelectItem value="time">Time</SelectItem>
-              <SelectItem value="points">Points</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-          </Select>
+          <FilterSelect
+            label="Sort By"
+            value={sortConfig.field}
+            options={SORT_OPTIONS}
+            onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
+            className="pl-10"
+          />
         </div>
 
         {/* Clear Filters Button */}
