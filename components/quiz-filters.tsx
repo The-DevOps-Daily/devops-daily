@@ -137,13 +137,13 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
           onPointerDownOutside={(event) => {
             if (event.detail.originalEvent.target === overlayRef.current) event.preventDefault();
           }}
-          className="relative z-50 flex max-h-96 min-w-(--radix-dropdown-menu-trigger-width) flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
+          className="relative z-50 flex max-h-96 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
         >
           {edges.up && <ScrollEdge direction={-1} viewport={viewportRef} />}
           <div
             ref={attachViewport}
             onScroll={updateEdges}
-            className="min-h-0 overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="min-h-0 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             <DropdownMenu.Label className="py-1.5 pl-8 pr-2 text-sm font-semibold">
               {label}
