@@ -213,6 +213,8 @@ sudo nsenter -t "$pid" -n ip addr         # step into the container's network na
 
 That last command drops you into the container's network stack from the host, without Docker involved at all. It is the clearest way to feel that "the container" is just a label for a process the kernel is keeping in a box. Destroy the droplet when you are done and you have paid for a few minutes of compute.
 
+Every container gets its own network namespace like this one, and Docker connects them through virtual networks. [Day 23 of Advent of DevOps: Container Networking Puzzle](/advent-of-devops/day-23) gives you a multi-container app whose containers cannot reach each other, to fix with custom networks and service discovery.
+
 :::tip
 Want it as an animation first? The [interactive simulator](https://devops-daily.com/games/docker-under-the-hood-simulator) steps down this exact stack, highlights the active layer, and shows the command at each stop. Great for building the mental model before you run the commands.
 :::

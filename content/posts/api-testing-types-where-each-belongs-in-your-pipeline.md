@@ -79,6 +79,8 @@ The tiers are not about importance. Fuzz testing is not less valuable than funct
 
 On a pull request you are interrupting a person who is waiting. The feedback has to arrive while they still have the change in their head, which in practice means minutes. After merge nobody is blocked, so twenty minutes is fine. Nightly, hours are fine, because the alternative is not running it at all.
 
+If a repository has no pull request tier yet, start there. [Day 3 of Advent of DevOps: Add GitHub Actions CI](/advent-of-devops/day-3) asks you to add a first workflow that runs the tests on every push and pull request and fails the build when a test fails.
+
 ## The pull request budget is the real constraint
 
 Here is the thing that governs everything else, and it is not a testing insight so much as a human one.

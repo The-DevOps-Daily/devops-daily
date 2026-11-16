@@ -205,6 +205,8 @@ TZ=America/New_York date -d "today 00:00" +%s   # midnight in New York
 
 On macOS, use `date -r 1704067200` for epoch to date, and `date -j -f "%Y-%m-%d %H:%M:%S" "2026-01-15 14:30:00" +%s` for a date to epoch.
 
+Without a shell at hand, the [Unix timestamp converter](/tools/timestamp-converter) converts in both directions and shows UTC, local time and ISO 8601.
+
 To get the modification time of a file as epoch seconds, use `stat -c %Y file` on Linux (`stat -f %m file` on macOS), or let `date` read it: `date -r file +%s`.
 
 ### Measure How Long Something Takes

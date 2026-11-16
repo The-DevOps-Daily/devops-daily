@@ -56,6 +56,8 @@ To see what every node in a cluster runs today:
 kubectl get nodes -o custom-columns=NAME:.metadata.name,RUNTIME:.status.nodeInfo.containerRuntimeVersion
 ```
 
+containerd is the part of each node that the kubelet asks to start containers, through the Container Runtime Interface (CRI). If that split is new to you, the [Kubernetes architecture chapter of our guide](/guides/introduction-to-kubernetes/01-kubernetes-architecture-and-components) explains what runs on each node and in the control plane.
+
 ## The experiment
 
 The demo runs three containerd versions one after the other, against the same `--root` and `--state` directories, the way an in-place node upgrade reuses the node's data. Each one starts with the same config, written the way many Kubernetes nodes were set up in the 1.x era:

@@ -63,6 +63,8 @@ A broken district looks broken. Smoke rises from its landmark, its lamps flicker
 
 Walk up to someone and press E, or tap Talk on a phone. They give you a task, such as "The disk is full" in Linux Lodge. The quest opens a simulator from our site in a panel: the Linux terminal, the [Fork Bomb Simulator](/games/fork-bomb-simulator), the [Container Security Challenge](/games/docker-escape), the [Kubernetes Scheduler Challenge](/games/k8s-scheduler) and more. When you finish, you answer three questions from our quiz bank. Two right answers pass the quest.
 
+If you want the same "it is broken, fix it" task in a real repository, try the [DevOps challenges](/challenges). You fork a broken setup, fix it, and CI grades your pull request.
+
 From Docker Docks on, each district ends with a boss. A boss quiz plays as a **live incident**: a status board with three systems that go from "Down" to "Fixed" as you answer.
 
 ![A boss quiz as a live incident: the container runtime is fixed while the host kernel and the image registry are still down](../../public/images/posts/opsville-free-devops-town-game/boss-incident.webp)

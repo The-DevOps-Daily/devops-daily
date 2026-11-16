@@ -39,7 +39,7 @@ Upgrade notes tell you what changed. They do not show you your next plan, or the
 - An OpenTofu 1.12.x codebase, or a Terraform codebase that you plan to move to OpenTofu
 - A CI job or shell that can run `tofu plan` with read access to your real state
 - `jq`, for the plan JSON recipe
-- The 1.13.1 zip for your platform from the [GitHub release page](https://github.com/opentofu/opentofu/releases/tag/v1.13.1), checked against its `SHA256SUMS` file
+- The 1.13.1 zip for your platform from the [GitHub release page](https://github.com/opentofu/opentofu/releases/tag/v1.13.1), checked against its `SHA256SUMS` file (`sha256sum --ignore-missing -c SHA256SUMS` does this, or the [hash and checksum generator](/tools/hash-generator) in your browser)
 
 ## How we tested
 

@@ -91,6 +91,8 @@ ghs_15368_eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.<243-character payload>.<86-chara
   the base64url of {"alg":"ES256","typ":"JWT"}
 ```
 
+To look at the claims yourself, decode a token that has already expired in the [JWT decoder](/tools/jwt-decoder), which runs in your browser. Do not paste a live token into any website.
+
 A few things we did not expect:
 
 - **377, not 520.** All 40 Actions tokens were exactly 377 characters. GitHub's "about 520" probably describes tokens for other apps, which carry more claims. We could not mint one, so we cannot confirm that. Plan for at least 520, as GitHub asks, and do not assume a fixed length either way.

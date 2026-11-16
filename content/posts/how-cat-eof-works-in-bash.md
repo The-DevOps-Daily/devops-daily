@@ -367,6 +367,8 @@ EOF
 echo "Docker Compose file created with random password"
 ```
 
+A file that a heredoc generates is easy to break with one wrong indent. Before you start the stack, check it with `docker compose config`, which fails on a YAML error, or with the [YAML / JSON formatter](/tools/yaml-json-formatter).
+
 ## Practical Example: Email Template
 
 Sending emails with templates:

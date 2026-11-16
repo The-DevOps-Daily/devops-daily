@@ -158,6 +158,8 @@ variable "environment" {
 }
 ```
 
+Input validation is a large part of the [Fix the Network Module challenge](/challenges/fix-the-network-module). A VPC module accepts any input and creates overlapping subnets, and you fix it until its tests and random plans pass, with no AWS account needed.
+
 ## Lists and objects: append, pick, iterate
 
 **Appending** is `concat()`, because lists are immutable values, not mutable arrays:

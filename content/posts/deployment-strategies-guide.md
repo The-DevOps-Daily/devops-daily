@@ -197,6 +197,8 @@ Final state (v2.0):
 
 Rolling deployment represents the default approach for most modern orchestration platforms. Kubernetes, ECS, and other container platforms implement rolling updates as their standard deployment mechanism.
 
+In Kubernetes, a Deployment runs the rollout for you: `maxSurge` and `maxUnavailable` decide how many pods change at once, and `kubectl rollout undo` goes back to the previous version. The [Kubernetes Deployments chapter of our guide](/guides/introduction-to-kubernetes/04-deployments-and-replicasets) shows a rolling update, a broken rollout and a rollback step by step.
+
 ### Resource Efficiency
 
 The primary advantage of rolling deployments is resource efficiency. At any given time, you're running approximately your normal instance count. If you have four instances and replace them one at a time, you briefly have five instances during each transition, but you never need double the infrastructure like blue-green requires.

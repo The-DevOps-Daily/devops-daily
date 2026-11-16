@@ -274,7 +274,7 @@ kubectl create --dry-run=client -f secret.yaml -o yaml
 error: error parsing secret.yaml: error converting YAML to JSON: yaml: line 8: could not find expected ':'
 ```
 
-The second line of the value landed at column 0, and YAML read it as a new key. In an env var or a CI variable the newline does not fail this loudly: it ends up inside the value. Turn wrapping off with `-w0`:
+The second line of the value landed at column 0, and YAML read it as a new key. A YAML linter such as the [YAML / JSON formatter](/tools/yaml-json-formatter) reports the same error with its line number before you run `kubectl`; use it with test values like this one, not real secrets. In an env var or a CI variable the newline does not fail this loudly: it ends up inside the value. Turn wrapping off with `-w0`:
 
 ```bash
 cat <<EOF > secret.yaml
@@ -447,7 +447,7 @@ echo "$TOKEN" | cut -d. -f1 | b64url_decode; echo
 
 In Python, `base64.urlsafe_b64decode(part + "=" * (-len(part) % 4))` does the same in one line.
 
-Anyone holding a signed JWT like this one can read its claims, because they are only base64url. The signature stops people from changing them, not from reading them, so never put a secret in a JWT payload. (Encrypted JWTs, JWE, are a different format with five parts.) For a quick look at a token, our [JWT decoder](/tools/jwt-decoder) runs in the browser, and the [base64 tool](/tools/base64) does the same for plain values.
+Anyone holding a signed JWT like this one can read its claims, because they are only base64url. The signature stops people from changing them, not from reading them, so never put a secret in a JWT payload. (Encrypted JWTs, JWE, are a different format with five parts.) For a quick look at a token, our [JWT decoder](/tools/jwt-decoder) runs in the browser, and the [base64 tool](/tools/base64) does the same for plain values. Both are part of our [free DevOps tools](/tools), which also include a hash generator and a UUID and secret generator, and none of them send your input to a server.
 
 ## Data URIs
 

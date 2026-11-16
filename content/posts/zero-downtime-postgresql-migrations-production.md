@@ -150,6 +150,8 @@ Drop it (also concurrently, so the drop does not block writes either) and fix yo
 DROP INDEX CONCURRENTLY idx_users_email;
 ```
 
+This section is about building an index without an outage. Choosing the right index is the other half of the job, and the [Speed Up the Slow Queries challenge](/challenges/speed-up-the-queries) lets you practise it on three slow PostgreSQL queries, one of which no index can fix.
+
 ## The expand-and-contract pattern
 
 Indexes are the easy case. The hard case is changing a column that the application already reads and writes. Renaming a column, changing its type, making it `NOT NULL`, or splitting it into two columns all break the running application the instant the schema changes, because the old code still expects the old shape.

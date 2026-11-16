@@ -123,6 +123,8 @@ COPY --from=builder /app/app /app
 CMD ["/app"]
 ```
 
+To practise this on a small Go app, try [Day 1 of Advent of DevOps: Build a Minimal Docker Image](/advent-of-devops/day-1). The goal is a working image under 25MB, and a scratch base can get it under 10MB.
+
 ## 3. Optimize Layer Caching
 
 Docker caches each layer. Order instructions from least to most frequently changing.
@@ -320,6 +322,8 @@ COPY --chown=nodejs:nodejs . .
 USER nodejs
 CMD ["node", "index.js"]
 ```
+
+For a graded exercise that combines size and a non-root user, try the [Shrink the Image challenge](/challenges/shrink-the-image). A small Flask app ships in an image of more than 1 GB that runs as root, and you rewrite the Dockerfile until the image is under 200 MB and runs as a normal user. CI checks your pull request.
 
 ### Scan for Vulnerabilities
 

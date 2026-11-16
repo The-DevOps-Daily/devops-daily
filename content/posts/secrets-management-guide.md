@@ -236,6 +236,8 @@ resource "aws_secretsmanager_secret_rotation" "database" {
 }
 ```
 
+To practise the whole flow, [Day 20 of Advent of DevOps: Secrets Management](/advent-of-devops/day-20) moves hardcoded credentials into AWS Secrets Manager, syncs them into Kubernetes with the External Secrets Operator and rotates them.
+
 ### ECS Integration
 
 ECS pulls secrets directly from Secrets Manager without any application code changes:

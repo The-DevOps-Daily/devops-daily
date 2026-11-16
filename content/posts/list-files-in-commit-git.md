@@ -347,6 +347,8 @@ git log --stat -- path/to/file
 git log --name-only -- path/to/file
 ```
 
+To search further back, by content with `git log -S` or by a range of lines with `git log -L`, see the [Git history chapter of our guide](/guides/introduction-to-git/08-history). It also covers `git blame`, `git bisect` and undoing commits.
+
 ## Practical Examples
 
 **Review what changed in last commit:**

@@ -441,6 +441,8 @@ kubectl get events --sort-by=.metadata.creationTimestamp | grep OOMKilled
 kubectl top pods --sort-by=memory --all-namespaces
 ```
 
+Requests that are too high fail the other way: the pod stays `Pending` with `Insufficient memory`, because no node has room for it. [Day 9 of Advent of DevOps: Fix a Failing Pod](/advent-of-devops/day-9) includes this case, together with a wrong probe port and a broken ConfigMap, for you to debug with `kubectl`.
+
 You can make VPA more conservative by setting higher safety margins:
 
 ```yaml

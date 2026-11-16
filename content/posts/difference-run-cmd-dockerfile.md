@@ -154,6 +154,8 @@ CMD ["node", "server.js"]
 
 The official `postgres` and `nginx` images use this pattern. `docker image inspect -f '{{json .Config.Entrypoint}} {{json .Config.Cmd}}' nginx:1.30` shows both values for any image.
 
+PID 1 also gets the stop signal. With the shell form, the app can run under `/bin/sh -c`, which does not pass `SIGTERM` on, so `docker stop` waits and then kills it. The [Docker best practices chapter of our guide](/guides/introduction-to-docker/09-docker-best-practices) covers clean shutdown, non-root users and other habits for production images.
+
 ## How Do You Run More Than One Command When a Container Starts?
 
 `CMD` starts one process. To run a setup step first, wrap the commands in a shell, and start the long-running process with `exec`:

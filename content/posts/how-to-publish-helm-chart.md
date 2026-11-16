@@ -30,6 +30,8 @@ Before you begin, make sure you have:
 - Access to your chosen hosting platform (GitHub, Docker Hub, etc.)
 - Basic familiarity with Helm chart structure
 
+If you do not have a chart yet, [Day 10 of Advent of DevOps: Wrap the App in a Helm Chart](/advent-of-devops/day-10) has you build one for a small app, with a values file for each environment.
+
 ## Understanding Helm Chart Repositories
 
 A Helm chart repository is simply an HTTP server that hosts packaged charts and an `index.yaml` file. The index file contains metadata about available charts, versions, and download URLs. When you run `helm repo add`, Helm fetches this index to know what charts are available.

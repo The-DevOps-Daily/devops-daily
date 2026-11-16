@@ -876,6 +876,8 @@ A controls matrix lists every asset against every layer and makes gaps visible. 
 
 Look for rows with one control and no test: that is where a single mistake becomes an incident.
 
+To practise the hardening part on a small setup, [Day 24 of Advent of DevOps: Harden a Config](/advent-of-devops/day-24) has you remove default credentials, apply least privilege and add security headers.
+
 ## Common Mistakes
 
 - **Layers that share a weakness**: one admin password for the WAF console, the cloud account and the database.

@@ -290,6 +290,8 @@ spec:
 
 The label and namespace are cluster conventions, so inspect your DNS Service and Pods before applying this unchanged. Test from a labeled client pod, first expecting a timeout, then allowing the target Service on its actual port and running `curl -sv "http://${SERVICE}.${NAMESPACE}.svc.cluster.local:${PORT}/"` with those three variables set to your target. Kubernetes defines NetworkPolicy as an API, but the chosen network plugin must enforce it. The [NetworkPolicy documentation](https://kubernetes.io/docs/concepts/services-networking/network-policies/) is the baseline for the API semantics.
 
+For a shorter drill with the same failures, [Day 14 of Advent of DevOps: Networking Debugging](/advent-of-devops/day-14) gives you a cluster with broken DNS lookups, unreachable Services and a blocking network policy to fix.
+
 Encryption is not proof of authorization. In this Cilium lab, confirm WireGuard with `cilium-dbg status | grep Encryption`, and capture on `cilium_wg0` from a Cilium pod if you need to see the tunnel. Cilium documents the status check, tunnel device, and the fact that same-node traffic is not encrypted in its [WireGuard guide](https://docs.cilium.io/en/stable/security/network/encryption-wireguard/).
 
 For pod-level identity, use a service mesh. An Istio `AuthorizationPolicy` can allow only a workload identity after mTLS identifies the caller. This is a compact policy drill, not a complete mesh install:

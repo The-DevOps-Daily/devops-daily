@@ -90,6 +90,8 @@ SELECT uuidv7(shift => '-7 days'::interval);
 
 One useful detail: within a single backend session, PostgreSQL guarantees each `uuidv7()` it generates is strictly greater than the last, by spending some of the random bits on extra clock precision. So even a tight insert loop produces monotonic keys rather than occasionally colliding on the same millisecond.
 
+To compare the two versions outside a database, the [UUID generator](/tools/uuid-generator) makes v4 and v7 values in your browser. v7 values made a moment apart start with almost the same characters; v4 values have nothing in common.
+
 ## The numbers
 
 The performance argument is not subtle. Credativ published a [detailed comparison on PostgreSQL 18](https://www.credativ.de/en/blog/postgresql-en/a-deeper-look-at-old-uuidv4-vs-new-uuidv7-in-postgresql-18/) using a single-column UUID primary key and 50 million rows. The initial bulk load is the headline:
@@ -156,7 +158,7 @@ The short version:
 
 ## The one real catch: v7 leaks creation time
 
-Because the timestamp sits in the high bits, anyone holding a v7 value can read roughly when it was generated. That is fine for an internal primary key. It is not fine if you expose the same value as a public identifier and the creation time is sensitive, for example a user id where signup time is private, or an order id where a competitor could infer your daily volume by diffing two ids.
+Because the timestamp sits in the high bits, anyone holding a v7 value can read roughly when it was generated. The first 12 hex digits, without the dash, are the Unix time in milliseconds: convert them to decimal and paste the number into the [Unix timestamp converter](/tools/timestamp-converter) to see the creation time. That is fine for an internal primary key. It is not fine if you expose the same value as a public identifier and the creation time is sensitive, for example a user id where signup time is private, or an order id where a competitor could infer your daily volume by diffing two ids.
 
 :::warning
 Do not assume a UUID is opaque just because it looks random. A `uuidv7()` embeds a millisecond timestamp you can decode in seconds. If an identifier is shown to users or third parties and its creation time is sensitive, keep `uuidv7()` as the internal primary key and expose a separate `uuidv4()` (or another opaque token) externally.

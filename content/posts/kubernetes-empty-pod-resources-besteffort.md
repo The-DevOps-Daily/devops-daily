@@ -525,7 +525,7 @@ We also kept a one-repetition smoke run on v1.36.5 (`results/_smoke-k3s-v1.36.5/
    ```
 
 2. **GitLab Runner 18.10.0 to 19.4.x: upgrade to 19.5.0 or later.** The job pods then go out without a pod-level block, and the class comes from the containers again.
-3. **If you cannot upgrade the runner yet, give the block real values.** Set `pod_cpu_request` and `pod_memory_request` (and the `_limit` keys if you want limits) under `[runners.kubernetes]`. The QoS class then comes from those values, like `plr-burstable` above. This is a behaviour change, not only a workaround: the pod cgroup then takes its limits from the pod-level values too, as it did for `plr-burstable`.
+3. **If you cannot upgrade the runner yet, give the block real values.** Set `pod_cpu_request` and `pod_memory_request` (and the `_limit` keys if you want limits) under `[runners.kubernetes]`. The QoS class then comes from those values, like `plr-burstable` above. This is a behaviour change, not only a workaround: the pod cgroup then takes its limits from the pod-level values too, as it did for `plr-burstable`. To choose starting values, the [Kubernetes resource calculator](/tools/k8s-resources) shows how requests and limits fit on your nodes.
 4. **Kubernetes 1.37 fixes it by default.** The fix sits behind a beta gate, so check that nobody turned `PodLevelResourcesFixKubeletQOSClass` off.
 5. **Check your own templates.** A Helm chart that renders a pod-level block from a value that defaults to `{}` produces the same bug. Render the key only when it has content:
 

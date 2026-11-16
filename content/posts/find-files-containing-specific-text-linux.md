@@ -55,6 +55,8 @@ grep -ri "ERROR" /var/log/
 
 This command finds "error", "Error", "ERROR", or any other case variation within log files, which is particularly useful when searching through application logs that might use inconsistent capitalization.
 
+Finding the error lines is the first step of log analysis. To go further, [Day 12 of Advent of DevOps: Log Parsing](/advent-of-devops/day-12) has you extract fields from JSON and plain-text logs, count errors and write useful log queries.
+
 ## Finding Files by Name and Content
 
 You can combine `find` with `grep` using the `-exec` option to search for text within files that match specific criteria. This command searches for "api_key" only in files with the `.conf` extension:
@@ -118,5 +120,7 @@ This single command searches for any of the three terms, which is efficient when
 ## Next Steps
 
 Now you can efficiently locate files containing specific text across your Linux system. Consider creating aliases for your most common searches, and explore `ripgrep` or `ag` (the silver searcher) as faster alternatives to grep for large codebases. You might also want to learn about regular expressions to make your text searches even more precise.
+
+After you can find lines, the next step is to count and summarize them. The [Script It challenge](/challenges/script-it) asks you to finish a Bash script that turns an nginx access log into a short report, and CI grades it.
 
 Good luck with your searches!

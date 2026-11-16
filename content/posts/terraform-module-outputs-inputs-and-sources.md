@@ -119,6 +119,8 @@ A few habits make outputs easier to live with:
 - **Mark secrets `sensitive = true`.** Terraform then hides the value in plan and apply output. The value is still stored in state, so that does not make it safe to share state.
 - **You can output a whole object when the caller genuinely needs many attributes:** `value = aws_instance.web` gives the caller `module.app.web.private_ip`, `module.app.web.arn` and so on, at the cost of a wider interface.
 
+To practise designing a small module interface, try [Day 6 of Advent of DevOps: Write a Small Terraform Module](/advent-of-devops/day-6). You turn copied S3 bucket code into one reusable module with inputs, secure defaults and useful outputs.
+
 ## Pass a resource into a module: inputs
 
 There is no way to hand a module "the resource" as a live link. You pass values through variables, and Terraform tracks the dependency for you.
