@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="776" viewBox="0 0 600 776" role="img" aria-labelledby="t d">
+  <title id="t">The parts that run JavaScript callbacks</title>
+  <desc id="d">A call stack runs one frame at a time. The host, Node.js or the browser, waits for timers, sockets and files off the stack. Promise callbacks wait in the microtask queue. Timer and I/O callbacks wait in the task queue. The event loop waits for an empty stack, runs every microtask, then runs one task and repeats.</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9z" fill="context-stroke"/>
+    </marker>
+  </defs>
+  <rect width="600" height="776" rx="20" fill="#fafafa"/>
+  <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'DejaVu Sans', sans-serif">
+    <text x="30" y="52" font-size="27" font-weight="700" fill="#09090b">Who runs your promise callbacks</text>
+    <text x="30" y="82" font-size="18" fill="#52525b">One thread runs your code. Callbacks wait in line.</text>
+
+    <!-- call stack -->
+    <rect x="30" y="108" width="262" height="226" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+    <text x="48" y="142" font-size="21" font-weight="700" fill="#09090b">Call stack</text>
+    <text x="48" y="167" font-size="17" fill="#71717a">the top frame runs now</text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="17">
+      <rect x="48" y="184" width="226" height="40" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+      <text x="62" y="210" fill="#09090b">console.log()</text>
+      <rect x="48" y="230" width="226" height="40" rx="8" fill="#f4f4f5" stroke="#d4d4d8"/>
+      <text x="62" y="256" fill="#3f3f46">handleRequest()</text>
+      <rect x="48" y="276" width="226" height="40" rx="8" fill="#f4f4f5" stroke="#d4d4d8"/>
+      <text x="62" y="302" fill="#3f3f46">main script</text>
+    </g>
+
+    <!-- host -->
+    <rect x="308" y="108" width="262" height="226" rx="14" fill="#ffffff" stroke="#d4d4d8" stroke-width="1.5"/>
+    <text x="326" y="142" font-size="21" font-weight="700" fill="#09090b">The host</text>
+    <text x="326" y="167" font-size="17" fill="#71717a">Node.js or the browser</text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="17" fill="#3f3f46">
+      <rect x="326" y="182" width="226" height="32" rx="8" fill="#f4f4f5" stroke="#e4e4e7"/>
+      <text x="340" y="204">timers</text>
+      <rect x="326" y="220" width="226" height="32" rx="8" fill="#f4f4f5" stroke="#e4e4e7"/>
+      <text x="340" y="242">sockets</text>
+      <rect x="326" y="258" width="226" height="32" rx="8" fill="#f4f4f5" stroke="#e4e4e7"/>
+      <text x="340" y="280">file reads</text>
+    </g>
+    <text x="326" y="316" font-size="17" fill="#71717a">then queues a callback</text>
+
+    <g transform="translate(0 -24)">
+    <!-- microtask queue -->
+    <rect x="30" y="378" width="540" height="112" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="48" y="411" font-size="21" font-weight="700" fill="#b45309">Microtask queue</text>
+    <text x="48" y="436" font-size="17" fill="#92400e">promise callbacks, the code after an await</text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="17" fill="#09090b">
+      <rect x="48" y="448" width="128" height="32" rx="8" fill="#ffffff" stroke="#f59e0b"/>
+      <text x="112" y="470" text-anchor="middle">.then(cb)</text>
+      <rect x="186" y="448" width="128" height="32" rx="8" fill="#ffffff" stroke="#f59e0b"/>
+      <text x="250" y="470" text-anchor="middle">.catch(cb)</text>
+      <rect x="324" y="448" width="196" height="32" rx="8" fill="#ffffff" stroke="#f59e0b"/>
+      <text x="422" y="470" text-anchor="middle">rest of async fn</text>
+    </g>
+
+    <!-- task queue -->
+    <rect x="30" y="504" width="540" height="112" rx="14" fill="#ffffff" stroke="#a1a1aa" stroke-width="1.5"/>
+    <text x="48" y="537" font-size="21" font-weight="700" fill="#09090b">Task queue</text>
+    <text x="48" y="562" font-size="17" fill="#71717a">timer callbacks, I/O callbacks</text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="17" fill="#09090b">
+      <rect x="48" y="574" width="170" height="32" rx="8" fill="#f4f4f5" stroke="#a1a1aa"/>
+      <text x="133" y="596" text-anchor="middle">setTimeout cb</text>
+      <rect x="228" y="574" width="150" height="32" rx="8" fill="#f4f4f5" stroke="#a1a1aa"/>
+      <text x="303" y="596" text-anchor="middle">socket data</text>
+    </g>
+
+    <!-- event loop rule -->
+    <rect x="30" y="636" width="540" height="132" rx="14" fill="#18181b"/>
+    <text x="48" y="666" font-size="16" font-weight="700" fill="#fbbf24" letter-spacing="1.5">THE EVENT LOOP, EVERY TURN</text>
+    <g font-size="18" fill="#f4f4f5">
+      <circle cx="61" cy="690" r="12" fill="#d97706"/>
+      <text x="61" y="696" text-anchor="middle" font-size="15" font-weight="700" fill="#09090b">1</text>
+      <text x="84" y="696">Wait until the call stack is empty.</text>
+      <circle cx="61" cy="719" r="12" fill="#d97706"/>
+      <text x="61" y="725" text-anchor="middle" font-size="15" font-weight="700" fill="#09090b">2</text>
+      <text x="84" y="725">Run <tspan font-weight="700" fill="#fbbf24">every</tspan> microtask, new ones too.</text>
+      <circle cx="61" cy="748" r="12" fill="#d97706"/>
+      <text x="61" y="754" text-anchor="middle" font-size="15" font-weight="700" fill="#09090b">3</text>
+      <text x="84" y="754">Run <tspan font-weight="700" fill="#fbbf24">one</tspan> task. Go back to 1.</text>
+    </g>
+    </g>
+    <text x="570" y="766" font-size="13" text-anchor="end" fill="#a1a1aa">devops-daily.com</text>
+  </g>
+</svg>

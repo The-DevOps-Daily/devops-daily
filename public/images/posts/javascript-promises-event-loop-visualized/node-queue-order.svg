@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="784" viewBox="0 0 600 784" role="img" aria-labelledby="t d">
+  <title id="t">What runs next in Node.js</title>
+  <desc id="d">In Node.js the current callback runs to the end. Then the process.nextTick queue drains, then the promise microtask queue drains, and this repeats until both are empty. Only then does the next callback run, from the same phase or the next phase of the event loop. A nextTick never interrupts a microtask drain that is already running. Measured on Node 24.22.3: in a CommonJS file the top-level nextTick runs before the promise callback; in an ES module, whose top level runs inside a microtask drain, the promise callback runs first.</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9z" fill="context-stroke"/>
+    </marker>
+  </defs>
+  <rect width="600" height="784" rx="20" fill="#fafafa"/>
+  <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'DejaVu Sans', sans-serif">
+    <text x="30" y="52" font-size="27" font-weight="700" fill="#09090b">What runs next in Node.js</text>
+    <text x="30" y="82" font-size="18" fill="#52525b">Two queues drain after every loop callback.</text>
+
+    <!-- 1 -->
+    <rect x="30" y="104" width="470" height="76" rx="14" fill="#ffffff" stroke="#a1a1aa" stroke-width="1.5"/>
+    <circle cx="62" cy="142" r="15" fill="#18181b"/>
+    <text x="62" y="148" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">1</text>
+    <text x="90" y="136" font-size="20" font-weight="700" fill="#09090b">The current callback</text>
+    <text x="90" y="162" font-size="17" fill="#71717a">runs to the end, nothing cuts in</text>
+    <path d="M265 182V204" stroke="#71717a" stroke-width="2.5" marker-end="url(#ah)"/>
+
+    <!-- 2 -->
+    <rect x="30" y="210" width="470" height="76" rx="14" fill="#ffffff" stroke="#18181b" stroke-width="2"/>
+    <circle cx="62" cy="248" r="15" fill="#18181b"/>
+    <text x="62" y="254" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">2</text>
+    <text x="90" y="242" font-size="20" font-weight="700" fill="#09090b" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace">process.nextTick</text>
+    <text x="90" y="268" font-size="17" fill="#71717a">this queue runs until it is empty</text>
+    <path d="M265 288V310" stroke="#71717a" stroke-width="2.5" marker-end="url(#ah)"/>
+
+    <!-- 3 -->
+    <rect x="30" y="316" width="470" height="76" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <circle cx="62" cy="354" r="15" fill="#d97706"/>
+    <text x="62" y="360" font-size="16" font-weight="700" fill="#09090b" text-anchor="middle">3</text>
+    <text x="90" y="348" font-size="20" font-weight="700" fill="#b45309">Promise microtasks</text>
+    <text x="90" y="374" font-size="17" fill="#92400e">then, catch, await: until empty</text>
+
+    <!-- repeat arc -->
+    <path d="M502 354H540V248H508" fill="none" stroke="#d97706" stroke-width="2.5" marker-end="url(#ah)"/>
+    <text x="548" y="290" font-size="15" fill="#92400e">new</text>
+    <text x="548" y="308" font-size="15" fill="#92400e">ticks?</text>
+    <text x="548" y="326" font-size="15" fill="#92400e">again</text>
+
+    <path d="M265 394V416" stroke="#71717a" stroke-width="2.5" marker-end="url(#ah)"/>
+
+    <!-- 4 -->
+    <rect x="30" y="422" width="470" height="76" rx="14" fill="#ffffff" stroke="#a1a1aa" stroke-width="1.5"/>
+    <circle cx="62" cy="460" r="15" fill="#18181b"/>
+    <text x="62" y="466" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle">4</text>
+    <text x="90" y="454" font-size="20" font-weight="700" fill="#09090b">The next callback</text>
+    <text x="90" y="480" font-size="17" fill="#71717a">same phase, or the next loop phase</text>
+
+    <!-- measured: CJS vs ESM -->
+    <text x="30" y="548" font-size="16" font-weight="700" fill="#52525b" letter-spacing="1.5">SAME FILE, TWO MODULE TYPES</text>
+    <text x="30" y="574" font-size="17" fill="#52525b">An ES module top level runs inside a microtask drain.</text>
+
+    <rect x="30" y="590" width="262" height="140" rx="14" fill="#18181b"/>
+    <text x="48" y="622" font-size="17" font-weight="700" fill="#f4f4f5">CommonJS <tspan fill="#a1a1aa" font-weight="400">(.js)</tspan></text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="16" fill="#d4d4d8">
+      <text x="48" y="656">sync code</text>
+      <text x="48" y="682" fill="#f4f4f5" font-weight="700">process.nextTick</text>
+      <text x="48" y="708" fill="#fbbf24">promise then</text>
+    </g>
+
+    <rect x="308" y="590" width="262" height="140" rx="14" fill="#18181b"/>
+    <text x="326" y="622" font-size="17" font-weight="700" fill="#f4f4f5">ES module <tspan fill="#a1a1aa" font-weight="400">(.mjs)</tspan></text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="16" fill="#d4d4d8">
+      <text x="326" y="656">sync code</text>
+      <text x="326" y="682" fill="#fbbf24">promise then</text>
+      <text x="326" y="708" fill="#f4f4f5" font-weight="700">process.nextTick</text>
+    </g>
+
+    <text x="570" y="768" font-size="13" text-anchor="end" fill="#a1a1aa">devops-daily.com</text>
+  </g>
+</svg>

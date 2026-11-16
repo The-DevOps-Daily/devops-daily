@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="700" viewBox="0 0 600 700" role="img" aria-labelledby="t d">
+  <title id="t">The three states of a promise</title>
+  <desc id="d">A promise starts pending. resolve with a plain value moves it to fulfilled and each then callback is queued as a microtask. reject or a throw moves it to rejected and each catch callback, or the try/catch around an await, is queued as a microtask. If a rejected promise has no handler, Node.js emits unhandledRejection and, since version 15, exits with code 1 by default. A promise settles only once.</desc>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M1 1L9 5L1 9z" fill="context-stroke"/>
+    </marker>
+  </defs>
+  <rect width="600" height="700" rx="20" fill="#fafafa"/>
+  <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'DejaVu Sans', sans-serif">
+    <text x="30" y="52" font-size="27" font-weight="700" fill="#09090b">A promise settles once</text>
+    <text x="30" y="82" font-size="18" fill="#52525b">Then the matching callbacks become microtasks.</text>
+
+    <!-- pending -->
+    <rect x="170" y="106" width="260" height="74" rx="37" fill="#ffffff" stroke="#a1a1aa" stroke-width="2" stroke-dasharray="7 5"/>
+    <text x="300" y="138" font-size="22" font-weight="700" fill="#09090b" text-anchor="middle">pending</text>
+    <text x="300" y="164" font-size="17" fill="#71717a" text-anchor="middle">no result yet</text>
+
+    <!-- arrows to settled states -->
+    <path d="M232 178L172 230" stroke="#16a34a" stroke-width="2.5" marker-end="url(#ah)"/>
+    <path d="M368 178L428 230" stroke="#dc2626" stroke-width="2.5" marker-end="url(#ah)"/>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="16">
+      <text x="30" y="204" fill="#15803d">resolve(value)</text>
+      <text x="570" y="200" fill="#b91c1c" text-anchor="end">reject(error)</text>
+      <text x="570" y="222" fill="#b91c1c" text-anchor="end">or throw</text>
+    </g>
+
+    <!-- fulfilled / rejected -->
+    <rect x="30" y="236" width="262" height="100" rx="14" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="48" y="270" font-size="21" font-weight="700" fill="#15803d">fulfilled</text>
+    <text x="48" y="296" font-size="17" fill="#3f3f46">it has a value</text>
+    <text x="48" y="320" font-size="17" fill="#3f3f46">for good</text>
+
+    <rect x="308" y="236" width="262" height="100" rx="14" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+    <text x="326" y="270" font-size="21" font-weight="700" fill="#b91c1c">rejected</text>
+    <text x="326" y="296" font-size="17" fill="#3f3f46">it has an error</text>
+    <text x="326" y="320" font-size="17" fill="#3f3f46">for good</text>
+
+    <path d="M161 338V368" stroke="#71717a" stroke-width="2.5" marker-end="url(#ah)"/>
+    <path d="M439 338V368" stroke="#71717a" stroke-width="2.5" marker-end="url(#ah)"/>
+
+    <!-- handlers -->
+    <rect x="30" y="374" width="262" height="112" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="48" y="406" font-size="18" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-weight="700" fill="#09090b">.then(cb)</text>
+    <text x="48" y="434" font-size="17" fill="#92400e">each callback is queued</text>
+    <text x="48" y="458" font-size="17" fill="#92400e">as a microtask</text>
+
+    <rect x="308" y="374" width="216" height="112" rx="14" fill="#fffbeb" stroke="#d97706" stroke-width="2"/>
+    <text x="326" y="406" font-size="18" font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-weight="700" fill="#09090b">.catch(cb)</text>
+    <text x="326" y="434" font-size="17" fill="#92400e">or try/catch</text>
+    <text x="326" y="458" font-size="17" fill="#92400e">around await</text>
+
+    <!-- no handler path -->
+    <path d="M570 300H584V546H576" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#ah)"/>
+    <rect x="30" y="510" width="540" height="112" rx="14" fill="#ffffff" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 5"/>
+    <circle cx="62" cy="546" r="15" fill="#dc2626"/>
+    <text x="62" y="553" font-size="20" font-weight="700" fill="#ffffff" text-anchor="middle">!</text>
+    <text x="90" y="552" font-size="20" font-weight="700" fill="#b91c1c">No handler at all?</text>
+    <text x="48" y="582" font-size="17" fill="#3f3f46">Node.js emits <tspan font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace">unhandledRejection</tspan>.</text>
+    <text x="48" y="606" font-size="17" fill="#3f3f46">Since v15 the default is to exit with code 1.</text>
+
+    <text x="30" y="660" font-size="17" fill="#52525b">A second <tspan font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace">resolve()</tspan> or <tspan font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace">reject()</tspan> call does nothing.</text>
+    <text x="570" y="690" font-size="13" text-anchor="end" fill="#a1a1aa">devops-daily.com</text>
+  </g>
+</svg>

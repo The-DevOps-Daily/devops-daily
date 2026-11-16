@@ -242,6 +242,10 @@
     {
       "label": "JavaScript Promises & Async/Await Simulator",
       "href": "/games/javascript-promises-async-await-simulator"
+    },
+    {
+      "label": "JavaScript Promises, Visualized: The Event Loop Behind Node.js",
+      "href": "/posts/javascript-promises-event-loop-visualized"
     }
   ]
 }
