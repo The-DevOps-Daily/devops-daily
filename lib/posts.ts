@@ -75,8 +75,8 @@ function mapPost(data: Partial<Post>, content: string, filename: string): Post {
 const loadPosts = createCachedLoader(async () => {
   const posts = await readMarkdownFiles<Post, Partial<Post>>(POSTS_DIR, mapPost);
   return posts.sort((a, b) => {
-    const dateA = new Date(a.date ?? a.publishedAt ?? 0);
-    const dateB = new Date(b.date ?? b.publishedAt ?? 0);
+    const dateA = new Date(a.publishedAt || a.date || 0);
+    const dateB = new Date(b.publishedAt || b.date || 0);
     return dateB.getTime() - dateA.getTime();
   });
 });
@@ -95,10 +95,7 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
   }
 
   try {
-    return await readMarkdownFile<Post, Partial<Post>>(
-      path.join(POSTS_DIR, `${slug}.md`),
-      mapPost
-    );
+    return await readMarkdownFile<Post, Partial<Post>>(path.join(POSTS_DIR, `${slug}.md`), mapPost);
   } catch (error) {
     if (isFileNotFound(error)) {
       return null;
@@ -136,13 +133,7 @@ export async function getPostsByTag(tag: string) {
 
 export async function getLatestPosts(limit = 6) {
   const posts = await getAllPosts();
-  return [...posts]
-    .sort(
-      (a, b) =>
-        new Date(b.publishedAt || b.date || '').getTime() -
-        new Date(a.publishedAt || a.date || '').getTime()
-    )
-    .slice(0, limit);
+  return posts.slice(0, limit);
 }
 
 export async function getFeaturedPosts(limit = 3): Promise<Post[]> {

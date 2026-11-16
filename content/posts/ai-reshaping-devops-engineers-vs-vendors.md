@@ -115,6 +115,8 @@ If you have not built anything AI-shaped into your workflow yet, pick one of the
 3. **Pick one chore and write a script.** Dependency triage, PR summarisation, incident notes, on-call schedule rotation explainers. Whatever takes 30 minutes of your week and is mostly the same each time. A 200-line wrapper around an LLM API will replace it for a one-time cost.
 4. **Set up a self-hosted PR review agent.** Not a vendor product. A script. Tune the prompt to your codebase's conventions. Run it as a GitHub Actions check. Iterate weekly.
 
+For a smaller starting point, try these [AI experiments for everyday DevOps work](/posts/what-can-you-learn-by-experimenting-with-ai).
+
 ## Where not to start this week
 
 Equally important. These are the corners where the hype is well ahead of the substance, and you will burn time you do not get back.
