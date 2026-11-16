@@ -169,6 +169,8 @@ Working with the developer to add business-specific metrics that would have caug
 
 With these metrics in place, new alerting rules are created that would have triggered within minutes of the morning's incident, giving time to respond before customers were affected.
 
+Alert rules that fire for real problems and stay quiet for short spikes take practice. The [Write the Alerts challenge](/challenges/write-the-alerts) lets you write four of them for a checkout service, and CI tests each rule.
+
 ## Afternoon Deployment Pipeline
 
 **🚀 Major Feature Release**
@@ -271,6 +273,8 @@ Option 2: Let Query Finish
 ```
 
 The choice is made to kill the query and create the missing database index. The index creation takes 45 minutes on the large table, but once it's complete, the batch job can restart and finish in just 20 minutes instead of hours.
+
+You can practise finding a missing index before it reaches production. The [Speed Up the Slow Queries challenge](/challenges/speed-up-the-queries) gives you three PostgreSQL queries that read whole tables, and CI checks that your fix returns the same rows while reading far fewer pages.
 
 > **Key Insight**: Sometimes you have to make tough decisions with incomplete information. The ability to quickly assess risk and choose the least harmful option matters in DevOps.
 

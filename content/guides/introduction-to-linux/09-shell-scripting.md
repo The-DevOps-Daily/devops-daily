@@ -704,6 +704,8 @@ echo "Deleted logs in $dir"
 
 Each warning has a code; `https://www.shellcheck.net/wiki/SC2164` explains SC2164, and so on. The `cd` warning is the dangerous one: if `cd` fails, the loop deletes `.log` files in whatever directory the script happens to be in. Run ShellCheck in your editor and in CI, so every script gets checked before it ships.
 
+For practice with a grader, the [Script It challenge](/challenges/script-it) gives you a half-written Bash script that summarizes an nginx access log. It has to be ShellCheck clean, handle the edge cases and stay fast on big logs, and CI checks all three.
+
 ## A Complete Script: Back Up the Lab Site
 
 This script puts the pieces together. It archives a directory into a timestamped `.tar.gz`, keeps only the newest N archives, logs what it does, and fails loudly. Part 10 runs it every night with a systemd timer.

@@ -54,6 +54,8 @@ Team Size:      1-15                       5-30                   20+
 
 The key insight: **moving right on this spectrum doesn't automatically make your infrastructure better**. It makes it more flexible and more expensive to operate.
 
+Serverless functions such as AWS Lambda sit to the left of managed platforms: no servers to manage, and with on-demand pricing no compute charge while no requests arrive. To try that model on a small API, [Day 17 of Advent of DevOps: Serverless Deploy](/advent-of-devops/day-17) deploys a Lambda function behind API Gateway with infrastructure as code.
+
 ## Decision Framework: What Matters More Than You Think
 
 Stop asking "should we use Kubernetes?" and start asking these questions:

@@ -235,6 +235,8 @@ On a GitHub Actions runner with Docker installed (Python 3.12):
 }
 ```
 
+The number after the slash is the prefix length. `10.1.1.41/20` is one host in the network `10.1.0.0/20`, which has 4,096 addresses; the [CIDR subnet calculator](/tools/cidr-calculator) shows the range and the usable host addresses for any prefix.
+
 `route.py` is the UDP trick with `192.0.2.1`. `docker0` is listed although it is down: it still has an address. To decide which addresses are private, use the `ipaddress` module, and note that the `100.64.0.0/10` range (carrier-grade NAT, also used by Tailscale) is neither private nor global (output from Python 3.11):
 
 ```python

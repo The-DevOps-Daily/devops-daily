@@ -302,6 +302,8 @@ echo "Backup script finished successfully."
 
 This script demonstrates multiple prompt styles: yes/no/cancel for confirmation, select for choosing backup type, and yes/no with default for the optional cleanup step.
 
+A deployment script needs the same care: checks before it starts, validated input and clear errors. [Day 15 of Advent of DevOps: Bash Scripting Day](/advent-of-devops/day-15) has you write one that checks its prerequisites, builds and pushes a Docker image, deploys it to Kubernetes and verifies the result.
+
 ## Handling Ctrl+C Gracefully
 
 Users might press Ctrl+C at any time during prompts. You can trap this signal to perform cleanup:

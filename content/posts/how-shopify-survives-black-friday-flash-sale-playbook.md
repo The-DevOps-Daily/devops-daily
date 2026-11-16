@@ -63,6 +63,8 @@ Three details worth copying at any scale:
 - **The burst, not just the volume.** A [2023 post](https://shopify.engineering/scale-performance-testing) lists a flash-sale flow in which "simulated users purchase a single product", plus an "abort switch" that stops every test at once.
 - **Written-down failure.** [Toxiproxy](https://github.com/Shopify/toxiproxy), Shopify's open source tool for simulating network conditions, injects failures during load tests, and findings go into a Resiliency Matrix of failure scenarios, recovery objectives and runbooks.
 
+If you have never run a load test, start smaller. [Day 19 of Advent of DevOps: Load Testing](/advent-of-devops/day-19) has you load test a web app, measure response times and throughput, and find its first bottleneck.
+
 ### Pick the load model before the tool
 
 What decides whether a load test can see a flash sale at all is the workload model. k6's page on [open and closed models](https://grafana.com/docs/k6/latest/using-k6/scenarios/concepts/open-vs-closed/) states the trap: "When the target system is stressed and starts to respond more slowly, a closed model load test will wait, resulting in increased iteration durations and a tapering off of the arrival rate of new VU iterations." A closed test slows down exactly when the system does and reports a calm result. Buyers at a drop do not wait for the previous buyer's page to load, so you need an open model, where arrivals follow a schedule whatever the server is doing.

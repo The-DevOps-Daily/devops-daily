@@ -374,6 +374,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/user/scr
 0 2 * * * /home/user/scripts/backup.sh
 ```
 
+`0 2 * * *` runs the job at 02:00 every day. To check a schedule before you save it, paste it into the [cron expression parser](/tools/cron-parser), which shows the next run times.
+
 Or set PATH inside the script itself:
 
 ```bash

@@ -235,7 +235,7 @@ order_id = str(uuid7())
 # '018f9b2a-7c3e-7def-8a1b-2c4d6e8f0a12'
 ```
 
-UUIDv4 works too, but random IDs fragment your B-tree indexes on large tables. Pick UUIDv7 or ULID for anything that grows.
+UUIDv4 works too, but random IDs fragment your B-tree indexes on large tables. Pick UUIDv7 or ULID for anything that grows. To see the difference, make a few of each in the [UUID generator](/tools/uuid-generator): v7 values sort by the time they were made, v4 values do not.
 
 ### Keep session state out of the app server
 

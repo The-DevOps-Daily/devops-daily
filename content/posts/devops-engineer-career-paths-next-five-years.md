@@ -81,7 +81,7 @@ Here are the five directions that re-sort is heading.
 
 **The honest trade-off:** You are one step removed from the product the company sells, and internal platforms can become political (whose standards win?). You have to fight the pull toward building infrastructure for its own sake instead of the paved road people actually adopt. A platform nobody uses is a very expensive hobby.
 
-**First concrete step:** Find the most-copied, most-error-prone setup task in your org, spinning up a new service, provisioning a database, getting a preview environment, and turn it into genuine self-service. One golden path that a developer can use without asking you is the entire discipline in miniature.
+**First concrete step:** Find the most-copied, most-error-prone setup task in your org, spinning up a new service, provisioning a database, getting a preview environment, and turn it into genuine self-service. One golden path that a developer can use without asking you is the entire discipline in miniature. A small first version is a template repository with CI, linting, Docker support and docs already in place; [Day 21 of Advent of DevOps: Create a Reusable Template Repo](/advent-of-devops/day-21) walks through one.
 
 ## Path 3: Site Reliability Engineering
 

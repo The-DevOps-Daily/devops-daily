@@ -698,6 +698,8 @@ A container that exits at startup cannot be reached with `exec`. Start a one-off
 
 The logs show the cause, and the shell lets you look at the files that the image actually contains. The last two commands fix the code and bring the service back. For a container that runs as a non-root user, `docker compose exec -u root web sh` opens a root shell. [How to access a Docker container's shell](/posts/how-to-access-docker-container-shell) covers the plain `docker exec` options.
 
+To practise this kind of debugging, try [Day 5 of Advent of DevOps: Debug a Broken Container](/advent-of-devops/day-5). The container crashes right after it starts, and you find the root cause, fix it and check that the health check passes.
+
 ## What down removes, and what it keeps
 
 `docker compose down` removes the containers and the network. Volumes stay unless you add `-v`, and volumes marked `external` are never removed:

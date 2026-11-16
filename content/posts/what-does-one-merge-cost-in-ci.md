@@ -151,7 +151,7 @@ That is a healthy ratio, and it is worth measuring because an unhealthy one is i
 
 Our numbers are small, so this section is from experience rather than from the data above. In rough order of how often it is the answer:
 
-**The cache is not being hit.** Not missing, _not hit_. Someone configured caching, it restores a key that no longer matches, and every build silently does a cold install. Check the cache-hit line in the logs rather than trusting that the step exists.
+**The cache is not being hit.** Not missing, _not hit_. Someone configured caching, it restores a key that no longer matches, and every build silently does a cold install. Check the cache-hit line in the logs rather than trusting that the step exists. To practise the fix, [Day 4 of Advent of DevOps: Speed Up CI with Caching](/advent-of-devops/day-4) gives you a slow GitHub Actions workflow and asks for 40% faster runs with dependency caching.
 
 **Docker layers rebuild from scratch.** A `COPY . .` before `RUN npm ci` invalidates every layer below it on any file change. Copy the lockfile, install, then copy the source.
 

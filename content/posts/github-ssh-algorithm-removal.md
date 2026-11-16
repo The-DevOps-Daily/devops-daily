@@ -72,6 +72,8 @@ ML-KEM needs nothing from you: older clients "should automatically fall back", G
 
 **HTTPS users are not.** In GitHub's words: "If your Git remotes start with https://, nothing here will affect you." For SSH users, there are two questions.
 
+`git remote -v` shows which kind a repository uses. To switch a remote between SSH and HTTPS with `git remote set-url`, or to set up either kind of authentication, see the [Git remotes chapter of our guide](/guides/introduction-to-git/06-remote-repositories).
+
 **1. Can your client sign with SHA-2?** As GitHub points out, `ssh-rsa` is both a key type and a signature type. Every RSA key has key type `ssh-rsa`, but it can sign with SHA-1 (`ssh-rsa`), SHA-256 (`rsa-sha2-256`) or SHA-512 (`rsa-sha2-512`). The client decides which signature it sends, so the key itself is fine.
 
 In 2021 GitHub [announced](https://github.blog/security/application-security/improving-git-protocol-security-github/) that from March 15, 2022, "RSA keys uploaded after the cut-off point above will work only with SHA-2 signatures", with November 2, 2021 as the cut-off. So if your RSA key was added after that date and works today, your client already signs with SHA-2. The keys at risk are RSA keys added before November 2, 2021, used by a client that still signs with SHA-1.

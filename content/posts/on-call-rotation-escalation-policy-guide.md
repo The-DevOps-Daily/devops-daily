@@ -212,6 +212,8 @@ groups:
       runbook: "https://runbooks.example.com/disk-space"
 ```
 
+The `for:` clause is what keeps a short blip from paging anyone. To practise writing rules like these, the [Write the Alerts challenge](/challenges/write-the-alerts) asks for four Prometheus alerts for a checkout service that page for real outages and stay quiet for blips, and CI tests them with `promtool`.
+
 Then route on severity in Alertmanager. `page` goes to PagerDuty, `ticket` opens a Jira issue, `info` posts to a Slack channel nobody is required to read:
 
 ```yaml

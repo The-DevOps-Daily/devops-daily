@@ -206,6 +206,8 @@ resource "aws_subnet" "private" {
 
 Map keys are always strings, so `each.key` is `"0"`, not `0`. Terraform converts it automatically where a number is required, but `tonumber(each.key)` makes the intent clear.
 
+`cidrsubnet(var.vpc_cidr, 8, i)` adds 8 bits to the prefix, so a `/16` VPC gives `/24` subnets. To see the exact ranges before you apply, split the VPC range in the [CIDR subnet calculator](/tools/cidr-calculator).
+
 ### Why for_each Has No Index
 
 `for_each` exists so that an instance does not depend on its position. Here is what happens with `count` when you remove the middle item of `["web", "api", "worker"]`, run on Terraform 1.15.8:

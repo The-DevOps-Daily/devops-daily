@@ -246,6 +246,8 @@ A cryptographic hash such as SHA-256 is a fingerprint of a file. Store it, recom
 }
 ```
 
+For a one-off check without a terminal, the [hash and checksum generator](/tools/hash-generator) computes the SHA-256 of a file in your browser and compares it with a published value.
+
 A checksum only proves that the file matches the checksum. If an attacker can replace the file on your download server, they can usually replace `SHA256SUMS` next to it. To prove **who** published a file you need a signature, made with a private key the attacker does not have. The [hashing part of the Cryptography Essentials guide](/guides/cryptography-essentials/02-hashing#h2-verifying-downloads-checksums-versus-signatures) verifies real releases with GPG and Sigstore.
 
 ### Anyone Can Write Any Author Name

@@ -77,6 +77,8 @@ docker build -t my-app .
 
 This command builds the image and excludes files specified in `.dockerignore`.
 
+A small build context is one part of a fast build. Instruction order is the other part. The example above copies the whole project before `npm install`, so every code change runs the install again. Copy `package.json` and the lockfile first, run the install, and then copy the rest. [Day 2 of Advent of DevOps: Fix the Slow Docker Build](/advent-of-devops/day-2) is a hands-on exercise in this: you rewrite a slow Dockerfile until rebuilds take less than half the time.
+
 ## Advanced Options
 
 ### Exclude Files Dynamically
@@ -108,6 +110,8 @@ CMD ["node", "app/dist/app.js"]
 
 - The `builder` stage installs dependencies and builds the application.
 - The final stage copies only the `dist` directory from the `builder` stage.
+
+To practise this, the [Shrink the Image challenge](/challenges/shrink-the-image) gives you a Flask app in an image of more than 1 GB. You get it under 200 MB with a better Dockerfile, and CI grades your pull request.
 
 ## Best Practices
 

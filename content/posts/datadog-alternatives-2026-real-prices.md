@@ -275,6 +275,8 @@ index 10%:  $30 ingest +  30 x $2.50 = $105 per month
 
 **The catch:** four systems to deploy, upgrade, scale and back up. If nobody owns them, they rot. For the metrics part of this decision, see [Prometheus vs Datadog](/comparisons/prometheus-vs-datadog).
 
+To try the metrics and dashboard part on a small scale first, [Day 11 of Advent of DevOps: Basic Observability](/advent-of-devops/day-11) has you deploy Prometheus and Grafana for a Kubernetes app and build basic dashboards.
+
 ## How to switch without a big-bang migration
 
 Do not move everything at once. The cheap, safe way is to send the same data to two places and compare:

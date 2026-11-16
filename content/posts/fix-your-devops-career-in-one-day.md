@@ -181,6 +181,8 @@ The difference is not writing skill, it is whether you kept the numbers. Go and 
 
 One honest note on scope. Say what *you* did. "We migrated to Kubernetes" tells a reader nothing about you. "I moved 12 of our 30 services, and wrote the migration guide the rest of the team used" does, and is checkable.
 
+The same rule works for side projects. If you learn by building, [Day 25 of Advent of DevOps: Write Your DevOps Journey](/advent-of-devops/day-25) is a prompt to organize the repositories you built, write up what you learned and publish it.
+
 ## 7. Decide what you are aiming at, 30 minutes
 
 DevOps splits into paths that look similar from inside and are quite different jobs: platform engineering, SRE, cloud infrastructure, security, and the generalist who does all of it at a smaller company.

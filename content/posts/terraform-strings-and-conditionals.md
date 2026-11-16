@@ -70,6 +70,8 @@ name = var.app_name        # do
 
 Current Terraform accepts it without a warning (`terraform validate` on 1.15.8 prints nothing), so use TFLint's `terraform_deprecated_interpolation` rule to find it. It is the single most common thing to clean up in an inherited codebase.
 
+To run TFLint on every commit, together with `terraform fmt`, `terraform validate` and generated docs, see [Day 7 of Advent of DevOps: Improve the Terraform Module](/advent-of-devops/day-7). It adds pre-commit hooks, a README and CI checks to a module.
+
 ### Build an Endpoint URL From Variables
 
 A URL is interpolation with a little cleanup, so that trailing or leading slashes in the input do not produce `//`. The validation block below only checks for an `https://` prefix, which catches the common mistake of a plain `http://` or a missing scheme. It is not full URL validation. This example sets the backend URL of an API Gateway HTTP integration:

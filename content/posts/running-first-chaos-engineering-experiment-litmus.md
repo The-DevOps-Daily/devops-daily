@@ -44,6 +44,8 @@ kind create cluster --name chaos-lab
 kubectl cluster-info --context kind-chaos-lab
 ```
 
+[Day 22 of Advent of DevOps: Run a Local Cluster](/advent-of-devops/day-22) covers this setup in more depth: a kind or minikube cluster, a test app and a local development workflow on your own machine.
+
 ## What Litmus Actually Is
 
 Litmus is a Kubernetes-native chaos platform. You write experiments as YAML, apply them with `kubectl`, and Litmus runs a chaos runner pod that injects the failure (kill a pod, hog CPU, drop network packets) against a target you select with labels.

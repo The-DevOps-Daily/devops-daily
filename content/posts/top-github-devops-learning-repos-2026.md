@@ -54,6 +54,8 @@ How to use it:
 - Use the quizzes for spaced retrieval. Repeat until you stop getting things wrong.
 - Submit a PR when you find something to improve. The maintainers (us) review fast and merge most of the time.
 
+If you learn best with a task and a grader, the [DevOps challenges](/challenges) on the site give you a broken Docker, Kubernetes, Terraform, Bash, Prometheus or PostgreSQL setup to fix in your fork, and CI grades your pull request. For small jobs between lessons, such as subnet math or reading a cron schedule, the [DevOps tools](/tools) run in your browser.
+
 Best for engineers who learn by doing, contributing, and seeing the underlying source of every lesson.
 
 ## 2. nilbuild/developer-roadmap

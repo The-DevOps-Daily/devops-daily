@@ -301,7 +301,7 @@ Key          Value
 plaintext    NDExMS0xMTExLTExMTEtMTExMQ==
 ```
 
-Base64-decode that and you are back to the card number. The `v1` prefix is the key version, which means you can rotate the key with `vault write -f transit/keys/orders-pii/rotate` and old ciphertext still decrypts while new writes use the fresh key. No key ever leaves Vault, so an app compromise leaks data the app could already see, not the key that protects all of it.
+Base64-decode that, with `base64 -d` or the [base64 decoder](/tools/base64), and you are back to the card number. The `v1` prefix is the key version, which means you can rotate the key with `vault write -f transit/keys/orders-pii/rotate` and old ciphertext still decrypts while new writes use the fresh key. No key ever leaves Vault, so an app compromise leaks data the app could already see, not the key that protects all of it.
 
 ## Least-privilege policies and the audit log
 

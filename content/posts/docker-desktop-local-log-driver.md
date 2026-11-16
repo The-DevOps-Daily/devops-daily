@@ -201,7 +201,7 @@ Or keep `json-file` for a file-tailing collector and give it a limit:
 }
 ```
 
-Restart the daemon, then recreate the containers so that they pick up the setting. As the measurements show, a size cap on `json-file` means the oldest lines are gone from disk. That is fine if a collector has already shipped them, and a loss if it has not.
+Restart the daemon, then recreate the containers so that they pick up the setting. For the other `daemon.json` settings a server needs, such as `live-restore` and address pools that do not overlap your network, see the [Docker in production chapter of our guide](/guides/introduction-to-docker/10-docker-in-production). As the measurements show, a size cap on `json-file` means the oldest lines are gone from disk. That is fine if a collector has already shipped them, and a loss if it has not.
 
 **On Docker Desktop**, you probably need to do nothing. `docker logs` works with both drivers, and tools that use the same API should too. If you run a file-tailing collector on your laptop, set `"log-driver": "json-file"` in Docker Desktop's daemon settings, or move the collector to a source that reads through the Docker API. We could not see where 4.94 sets its new default, so run the `docker info` check above after the upgrade.
 

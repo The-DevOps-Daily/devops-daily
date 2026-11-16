@@ -143,6 +143,8 @@ kubectl get pod pod-resize-demo -o yaml | yq '.status.resize'
 
 `status.resize` cycles through `Proposed` → `InProgress` → empty (success). The container `restartCount` does **not** increment. `kubectl describe pod` will print a `Resized` event with the old and new values.
 
+For the basics under this feature, such as requests, limits, the QoS classes they create and per-container resize, see the [requests, limits and autoscaling chapter of our Kubernetes guide](/guides/introduction-to-kubernetes/08-resource-management-and-scaling).
+
 ### When the resize is rejected
 
 The kubelet refuses the resize and surfaces an event when:

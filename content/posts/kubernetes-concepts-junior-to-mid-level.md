@@ -82,7 +82,7 @@ Three things nobody tells you:
 
 **Requests and limits are enforced by different systems.** Requests are bookkeeping for the scheduler: a node "fits" a pod if unreserved capacity covers the request. The pod can use more than it requested if the node has slack. Limits are enforced by the Linux kernel: exceed the CPU limit and you get **throttled** (the app gets slow); exceed the memory limit and you get **OOMKilled** (the app gets dead). Slow and dead are very different failure modes, and the asymmetry is deliberate: CPU is compressible, memory is not.
 
-**Requests drive autoscaling math.** The HPA's `averageUtilization: 80` means 80 percent _of requests_, not of the node or the limit. Set requests too high and the HPA never scales up because utilization looks low. Set them too low and it thrashes. Engineers debug "broken" autoscaling for days without knowing which number the percentage is relative to.
+**Requests drive autoscaling math.** The HPA's `averageUtilization: 80` means 80 percent _of requests_, not of the node or the limit. Set requests too high and the HPA never scales up because utilization looks low. Set them too low and it thrashes. Engineers debug "broken" autoscaling for days without knowing which number the percentage is relative to. To see this in a cluster, [Day 16 of Advent of DevOps: Autoscaling](/advent-of-devops/day-16) has you set up an HPA on CPU usage, load the app and watch the scaling events.
 
 **The combination defines your eviction priority.** Requests equal to limits gives the `Guaranteed` QoS class, evicted last under node pressure. No requests at all gives `BestEffort`, evicted first. That copy-pasted empty resources block is a decision about which pods die first, made by accident.
 
@@ -140,6 +140,8 @@ The junior instinct is that probes are good, so more probes are better, so copy 
 The two probes have opposite failure semantics. Readiness failing means "stop sending me traffic," which is reversible and safe. Liveness failing means "kill and restart me," which is destructive. Now run the tape on a common incident: the database gets slow, your health endpoint (which pings the database) starts timing out, and the kubelet begins restarting _every replica at once_, throwing away warm caches and in-flight work, while the restarts themselves stampede the recovering database. The cluster did exactly what you configured: it turned a slow dependency into a restart loop. Restarting also does nothing to fix a slow database, which is the other tell: liveness restarts only help for states a restart can cure, like a deadlocked process.
 
 The mid-level defaults: every serving container gets a readiness probe; liveness probes only where a restart genuinely un-sticks the process, never checking dependencies, with generous `failureThreshold`; slow-booting apps get a startup probe so liveness does not kill them mid-initialization. If a pod is restart-looping and the logs are empty, [the troubleshooting playbook in our Kubernetes guide](/guides/introduction-to-kubernetes/09-monitoring-and-logging-in-kubernetes#h2-a-troubleshooting-playbook) walks the diagnosis.
+
+To practise these defaults from the start, [Day 8 of Advent of DevOps: Deploy a Small App on Kubernetes](/advent-of-devops/day-8) has you deploy an app with a Deployment, a Service, a ConfigMap and liveness and readiness probes.
 
 ### Where Does the /healthz Convention Come From?
 

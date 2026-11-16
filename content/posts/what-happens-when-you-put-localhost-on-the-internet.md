@@ -70,6 +70,8 @@ server.listen(PORT, "127.0.0.1");
 
 Binding to `127.0.0.1` is the part that makes the measurement mean something. `cloudflared` runs on the same host and connects locally, so nothing can reach the server except through the tunnel.
 
+Containers need the same care. `docker run -p 8477:8477` publishes the port on every interface of the host, and Docker's own firewall rules let that traffic past `ufw`. The [Docker networking chapter of our guide](/guides/introduction-to-docker/07-networking-in-docker) shows how to publish a port on `127.0.0.1` only.
+
 Then:
 
 ```terminal
