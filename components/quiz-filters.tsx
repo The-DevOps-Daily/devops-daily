@@ -22,7 +22,8 @@ interface FilterSelectProps {
 }
 
 // Like the Select's scroll buttons: shown while the list can scroll that way,
-// and hovering one scrolls the list.
+// and hovering one scrolls the list. It keeps its own state, so scrolling does
+// not re-render the menu items.
 function ScrollEdge({
   direction,
   viewport,
@@ -30,20 +31,36 @@ function ScrollEdge({
   direction: 1 | -1;
   viewport: RefObject<HTMLDivElement | null>;
 }) {
+  const [visible, setVisible] = useState(false);
   const timer = useRef<number | undefined>(undefined);
-  useEffect(() => {
-    const t = timer;
-    return () => window.clearInterval(t.current);
+  const stop = useCallback(() => {
+    window.clearInterval(timer.current);
+    timer.current = undefined;
   }, []);
+
+  useEffect(() => {
+    const el = viewport.current;
+    if (!el) return;
+    const update = () => {
+      const canScroll =
+        direction < 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+      if (!canScroll) stop();
+      setVisible(canScroll);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', update);
+      stop();
+    };
+  }, [direction, viewport, stop]);
+
+  if (!visible) return null;
   const start = () => {
     timer.current ??= window.setInterval(
       () => viewport.current?.scrollBy({ top: direction * 32 }),
       50
     );
-  };
-  const stop = () => {
-    window.clearInterval(timer.current);
-    timer.current = undefined;
   };
   const Icon = direction > 0 ? ChevronDown : ChevronUp;
   return (
@@ -52,7 +69,10 @@ function ScrollEdge({
       onPointerDown={start}
       onPointerMove={start}
       onPointerLeave={stop}
-      className="flex cursor-default items-center justify-center py-1"
+      className={cn(
+        'flex cursor-default items-center justify-center py-1',
+        direction < 0 && 'order-first'
+      )}
     >
       <Icon className="h-4 w-4" />
     </div>
@@ -65,34 +85,25 @@ function ScrollEdge({
 // keeps an outside tap from reaching the page under the menu.
 function FilterSelect({ label, value, options, onValueChange, className }: FilterSelectProps) {
   const [open, setOpen] = useState(false);
-  const [edges, setEdges] = useState({ up: false, down: false });
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   // The tap that opens the menu ends with a click on the new overlay, so the
   // overlay only closes the menu when the press also started on it.
   const overlayPressed = useRef(false);
+  const openedWithKeys = useRef(false);
   const current = options.find((option) => option.value === value)?.label ?? label;
 
-  const updateEdges = useCallback(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-    const up = el.scrollTop > 0;
-    const down = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
-    setEdges((prev) => (prev.up === up && prev.down === down ? prev : { up, down }));
-  }, []);
-
-  // On open, focus the checked item, as the Select did.
-  const attachViewport = useCallback(
-    (node: HTMLDivElement | null) => {
-      viewportRef.current = node;
-      if (!node) return;
-      updateEdges();
+  // Opened with the keyboard, start on the checked item, as the Select did.
+  // A pointer open only highlights it with CSS: moving focus re-renders
+  // every item.
+  const attachViewport = useCallback((node: HTMLDivElement | null) => {
+    viewportRef.current = node;
+    if (node && openedWithKeys.current) {
       requestAnimationFrame(() =>
         node.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
       );
-    },
-    [updateEdges]
-  );
+    }
+  }, []);
 
   return (
     <DropdownMenu.Root
@@ -105,6 +116,12 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
     >
       <DropdownMenu.Trigger
         aria-label={`${label}: ${current}`}
+        onPointerDown={() => {
+          openedWithKeys.current = false;
+        }}
+        onKeyDown={(event) => {
+          if (['Enter', ' ', 'ArrowDown'].includes(event.key)) openedWithKeys.current = true;
+        }}
         className={cn(
           'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
           className
@@ -139,21 +156,26 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
           }}
           className="relative z-50 flex max-h-96 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
         >
-          {edges.up && <ScrollEdge direction={-1} viewport={viewportRef} />}
           <div
             ref={attachViewport}
-            onScroll={updateEdges}
             className="min-h-0 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             <DropdownMenu.Label className="py-1.5 pl-8 pr-2 text-sm font-semibold">
               {label}
             </DropdownMenu.Label>
-            <DropdownMenu.RadioGroup value={value} onValueChange={onValueChange}>
+            <DropdownMenu.RadioGroup
+              value={value}
+              onValueChange={(next) => {
+                // Close in the same render as the value change.
+                setOpen(false);
+                onValueChange(next);
+              }}
+            >
               {options.map((option) => (
                 <DropdownMenu.RadioItem
                   key={option.value}
                   value={option.value}
-                  className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50"
+                  className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [[role=menu]:not(:has([data-highlighted]))_&[data-state=checked]]:bg-accent [[role=menu]:not(:has([data-highlighted]))_&[data-state=checked]]:text-accent-foreground"
                 >
                   <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                     <DropdownMenu.ItemIndicator>
@@ -165,7 +187,8 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
               ))}
             </DropdownMenu.RadioGroup>
           </div>
-          {edges.down && <ScrollEdge direction={1} viewport={viewportRef} />}
+          <ScrollEdge direction={-1} viewport={viewportRef} />
+          <ScrollEdge direction={1} viewport={viewportRef} />
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
