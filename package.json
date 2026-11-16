@@ -136,12 +136,12 @@
     "eslint-config-next": "16.4.5",
     "fast-glob": "^3.3.3",
     "postcss": "^8.5.32",
-    "prettier": "^3.9.10",
+    "prettier": "^3.10.1",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.5",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vite": "8.3.6",
+    "vite": "8.3.8",
     "vitest": "^5.1.0"
   },
   "pnpm": {
