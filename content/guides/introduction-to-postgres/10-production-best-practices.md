@@ -634,6 +634,8 @@ Things to know for an upgrade to PostgreSQL 18:
 
 Test the upgrade on a copy of production first (a restored backup works), and make sure you have a fresh backup before you start. For near-zero downtime, upgrade with logical replication instead: replicate into a new PostgreSQL 18 cluster and switch over.
 
+The upgrade from 18 to 19 has its own blockers and changed defaults, such as btree_gist `inet` indexes that `pg_upgrade` refuses and removed settings that stop the server from starting. [What to Check Before You Upgrade to PostgreSQL 19](/posts/postgresql-19-upgrade-checklist) goes through them.
+
 ## Disaster Recovery Runbooks
 
 Write runbooks for the failures you can predict:
