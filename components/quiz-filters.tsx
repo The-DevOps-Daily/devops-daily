@@ -175,6 +175,11 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
                 <DropdownMenu.RadioItem
                   key={option.value}
                   value={option.value}
+                  onPointerDown={(event) => {
+                    // A tap would focus the item first, and Radix re-renders
+                    // every item on a focus change. The click still selects.
+                    if (event.pointerType !== 'mouse') event.preventDefault();
+                  }}
                   className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [[role=menu]:not(:has([data-highlighted]))_&[data-state=checked]]:bg-accent [[role=menu]:not(:has([data-highlighted]))_&[data-state=checked]]:text-accent-foreground"
                 >
                   <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
