@@ -208,8 +208,6 @@ Everything so far works the same in browsers and Node.js. Node.js adds two sched
 {
   "type": "loop",
   "title": "The Node.js event loop phases",
-  "goal": "after every callback: drain process.nextTick, then promise microtasks",
-  "loopTop": "one turn of the loop",
   "loopBack": "back to timers",
   "nodes": [
     { "label": "timers", "sub": "setTimeout, setInterval", "variant": "soft" },
