@@ -74,7 +74,7 @@ const CHANNELS = [
     description:
       '1,500 engineers get a curated DevOps digest every Monday. Sponsored slot with copy you control.',
     icon: Newspaper,
-    metric: '45%+ open rate',
+    metric: '5% click rate',
   },
   {
     title: 'Interactive Simulators',
