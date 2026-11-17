@@ -1,19 +1,235 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import { createPortal } from 'react-dom';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
+import { X, SlidersHorizontal, ArrowUpDown, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface FilterOption {
+  value: string;
+  label: string;
+}
+
+interface FilterSelectProps {
+  label: string;
+  value: string;
+  options: FilterOption[];
+  onValueChange: (value: string) => void;
+  className?: string;
+}
+
+// Like the Select's scroll buttons: shown while the list can scroll that way,
+// and hovering one scrolls the list. It keeps its own state, so scrolling does
+// not re-render the menu items.
+function ScrollEdge({
+  direction,
+  viewport,
+}: {
+  direction: 1 | -1;
+  viewport: RefObject<HTMLDivElement | null>;
+}) {
+  const [visible, setVisible] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  const stop = useCallback(() => {
+    window.clearInterval(timer.current);
+    timer.current = undefined;
+  }, []);
+
+  useEffect(() => {
+    const el = viewport.current;
+    if (!el) return;
+    const update = () => {
+      const canScroll =
+        direction < 0 ? el.scrollTop > 0 : el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+      if (!canScroll) stop();
+      setVisible(canScroll);
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', update);
+      stop();
+    };
+  }, [direction, viewport, stop]);
+
+  if (!visible) return null;
+  const start = () => {
+    timer.current ??= window.setInterval(
+      () => viewport.current?.scrollBy({ top: direction * 32 }),
+      50
+    );
+  };
+  const Icon = direction > 0 ? ChevronDown : ChevronUp;
+  return (
+    <div
+      aria-hidden="true"
+      onPointerDown={start}
+      onPointerMove={start}
+      onPointerLeave={stop}
+      className={cn(
+        'flex cursor-default items-center justify-center py-1',
+        direction < 0 && 'order-first'
+      )}
+    >
+      <Icon className="h-4 w-4" />
+    </div>
+  );
+}
+
+// Looks like the Radix Select it replaces, but is not modal. A modal Select
+// sets an inherited CSS variable and pointer-events: none on <body>, so the
+// whole page restyles twice on open and twice on close. The overlay still
+// keeps an outside tap from reaching the page under the menu.
+function FilterSelect({ label, value, options, onValueChange, className }: FilterSelectProps) {
+  const [open, setOpen] = useState(false);
+  // The picked value shows at once; the parent's update (filtering the
+  // list) runs in a transition after the menu has closed.
+  const [shownValue, setShownValue] = useOptimistic(value);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  // The tap that opens the menu ends with a click on the new overlay, so the
+  // overlay only closes the menu when the press also started on it.
+  const overlayPressed = useRef(false);
+  const openedWithKeys = useRef(false);
+  const current = options.find((option) => option.value === shownValue)?.label ?? label;
+
+  // Open scrolled to the checked item, as the Select did. Only a keyboard
+  // open moves focus to it; a pointer open highlights it with CSS, because
+  // moving focus re-renders every item.
+  const attachViewport = useCallback((node: HTMLDivElement | null) => {
+    viewportRef.current = node;
+    const checked = node?.querySelector<HTMLElement>('[aria-checked="true"]');
+    if (!node || !checked) return;
+    // A frame later the down chevron is in place; the up chevron (24 px)
+    // appears once the list scrolls.
+    requestAnimationFrame(() => {
+      const bottom = checked.offsetTop + checked.offsetHeight + 4;
+      if (bottom > node.clientHeight) node.scrollTop = bottom - node.clientHeight + 24;
+      if (openedWithKeys.current) checked.focus();
+    });
+  }, []);
+
+  return (
+    <DropdownMenu.Root
+      modal={false}
+      open={open}
+      onOpenChange={(next) => {
+        overlayPressed.current = false;
+        setOpen(next);
+      }}
+    >
+      <DropdownMenu.Trigger
+        aria-label={`${label}: ${current}`}
+        onPointerDown={() => {
+          openedWithKeys.current = false;
+        }}
+        onKeyDown={(event) => {
+          if (['Enter', ' ', 'ArrowDown'].includes(event.key)) openedWithKeys.current = true;
+        }}
+        className={cn(
+          'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1',
+          className
+        )}
+      >
+        <span>{current}</span>
+        <ChevronDown className="h-4 w-4 opacity-50" aria-hidden="true" />
+      </DropdownMenu.Trigger>
+      {open &&
+        createPortal(
+          <div
+            ref={overlayRef}
+            aria-hidden="true"
+            onPointerDown={() => {
+              overlayPressed.current = true;
+            }}
+            onClick={() => {
+              if (overlayPressed.current) setOpen(false);
+              overlayPressed.current = false;
+            }}
+            className="fixed inset-0 z-45"
+          />,
+          document.body
+        )}
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content
+          align="start"
+          sideOffset={0}
+          collisionPadding={10}
+          onPointerDownOutside={(event) => {
+            if (event.detail.originalEvent.target === overlayRef.current) event.preventDefault();
+          }}
+          className="relative z-50 flex max-h-96 flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
+        >
+          <div
+            ref={attachViewport}
+            className="relative min-h-0 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            <DropdownMenu.Label className="py-1.5 pl-8 pr-2 text-sm font-semibold">
+              {label}
+            </DropdownMenu.Label>
+            <DropdownMenu.RadioGroup
+              value={shownValue}
+              onValueChange={(next) => {
+                setOpen(false);
+                startTransition(() => {
+                  setShownValue(next);
+                  onValueChange(next);
+                });
+              }}
+            >
+              {options.map((option) => (
+                <DropdownMenu.RadioItem
+                  key={option.value}
+                  value={option.value}
+                  onPointerDown={(event) => {
+                    // A tap would focus the item first, and Radix re-renders
+                    // every item on a focus change. The click still selects.
+                    if (event.pointerType !== 'mouse') event.preventDefault();
+                  }}
+                  className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [[role=menu]:not(:has([data-highlighted]))_&[data-state=checked]]:bg-accent [[role=menu]:not(:has([data-highlighted]))_&[data-state=checked]]:text-accent-foreground"
+                >
+                  <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                    <DropdownMenu.ItemIndicator>
+                      <Check className="h-4 w-4" />
+                    </DropdownMenu.ItemIndicator>
+                  </span>
+                  {option.label}
+                </DropdownMenu.RadioItem>
+              ))}
+            </DropdownMenu.RadioGroup>
+          </div>
+          <ScrollEdge direction={-1} viewport={viewportRef} />
+          <ScrollEdge direction={1} viewport={viewportRef} />
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}
+
+const DIFFICULTY_OPTIONS: FilterOption[] = [
+  { value: 'all', label: 'All Difficulties' },
+  { value: 'beginner', label: 'Beginner/Junior' },
+  { value: 'intermediate', label: 'Intermediate/Mid' },
+  { value: 'advanced', label: 'Advanced/Senior' },
+];
+
+const SORT_OPTIONS: FilterOption[] = [
+  { value: 'date', label: 'Date' },
+  { value: 'difficulty', label: 'Difficulty' },
+  { value: 'time', label: 'Time' },
+  { value: 'points', label: 'Points' },
+];
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'all';
 export type SortField = 'date' | 'difficulty' | 'time' | 'points';
@@ -91,38 +307,25 @@ export function QuizFilters({
       {/* Filter and Sort Dropdowns */}
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         {/* Category Filter */}
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Category</SelectLabel>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <FilterSelect
+          label="Category"
+          value={selectedCategory}
+          options={[
+            { value: 'all', label: 'All Categories' },
+            ...categories.map((category) => ({ value: category, label: category })),
+          ]}
+          onValueChange={onCategoryChange}
+          className="sm:w-[200px]"
+        />
 
         {/* Difficulty Filter */}
-       <Select value={selectedDifficulty} onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}>
-         <SelectTrigger className="w-full sm:w-[200px]">
-           <SelectValue placeholder="All Difficulties" />
-         </SelectTrigger>
-         <SelectContent>
-           <SelectGroup>
-            <SelectLabel>Difficulty</SelectLabel>
-            <SelectItem value="all">All Difficulties</SelectItem>
-            <SelectItem value="beginner">Beginner/Junior</SelectItem>
-            <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
-            <SelectItem value="advanced">Advanced/Senior</SelectItem>
-          </SelectGroup>
-       </SelectContent>
-      </Select>
+        <FilterSelect
+          label="Difficulty"
+          value={selectedDifficulty}
+          options={DIFFICULTY_OPTIONS}
+          onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}
+          className="sm:w-[200px]"
+        />
 
         {/* Sort By */}
         <div className="relative w-full sm:w-[200px]">
@@ -138,23 +341,13 @@ export function QuizFilters({
           >
             <ArrowUpDown className="w-4 h-4" />
           </button>
-          <Select 
-          value={sortConfig.field} 
-          onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
-          >
-            <SelectTrigger className="w-full pl-10">
-              <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Sort By</SelectLabel>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="difficulty">Difficulty</SelectItem>
-              <SelectItem value="time">Time</SelectItem>
-              <SelectItem value="points">Points</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-          </Select>
+          <FilterSelect
+            label="Sort By"
+            value={sortConfig.field}
+            options={SORT_OPTIONS}
+            onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
+            className="pl-10"
+          />
         </div>
 
         {/* Clear Filters Button */}

@@ -702,7 +702,7 @@ export function SearchPageClient() {
 
           {/* Results Grid */}
           {results.length > 0 && (
-            <div className="grid gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {results.map((result, index) => (
                 <SearchResultCard
                   key={result.id}

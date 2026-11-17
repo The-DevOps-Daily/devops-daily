@@ -2,6 +2,14 @@
 
 @config "../tailwind.config.ts";
 
+/* Radix scroll lock (react-remove-scroll-bar) sets this on <body>. Nothing here
+   reads it, and as an inherited variable it made every element restyle when a
+   dialog or select opened and closed. */
+@property --removed-body-scroll-bar-size {
+  syntax: '*';
+  inherits: false;
+}
+
 /* Accessibility: Visible focus indicators */
 @layer base {
   /* Enhanced focus styles for keyboard navigation */
