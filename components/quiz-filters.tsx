@@ -104,16 +104,16 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
   const openedWithKeys = useRef(false);
   const current = options.find((option) => option.value === shownValue)?.label ?? label;
 
-  // Opened with the keyboard, start on the checked item, as the Select did.
-  // A pointer open only highlights it with CSS: moving focus re-renders
-  // every item.
+  // Open scrolled to the checked item, as the Select did. Only a keyboard
+  // open moves focus to it; a pointer open highlights it with CSS, because
+  // moving focus re-renders every item.
   const attachViewport = useCallback((node: HTMLDivElement | null) => {
     viewportRef.current = node;
-    if (node && openedWithKeys.current) {
-      requestAnimationFrame(() =>
-        node.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
-      );
-    }
+    const checked = node?.querySelector<HTMLElement>('[aria-checked="true"]');
+    if (!node || !checked) return;
+    const bottom = checked.offsetTop + checked.offsetHeight + 4;
+    if (bottom > node.clientHeight) node.scrollTop = bottom - node.clientHeight;
+    if (openedWithKeys.current) requestAnimationFrame(() => checked.focus());
   }, []);
 
   return (
@@ -169,7 +169,7 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
         >
           <div
             ref={attachViewport}
-            className="min-h-0 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="relative min-h-0 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             <DropdownMenu.Label className="py-1.5 pl-8 pr-2 text-sm font-semibold">
               {label}
