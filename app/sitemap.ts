@@ -295,6 +295,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/hacktoberfest',
     '/comparisons',
     '/newsletters',
+    '/cli',
   ].map((path) => ({
     url: `${baseUrl}${path}`,
     ...withLastModified(
