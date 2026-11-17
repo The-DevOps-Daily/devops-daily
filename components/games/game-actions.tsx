@@ -73,7 +73,8 @@ export function GameActions({ gameSlug, gameTitle }: GameActionsProps) {
 
       {/* Share Dropdown. Not modal: a modal menu changes inherited styles on
           <body>, so the whole page restyles on open and close. The overlay
-          keeps an outside tap from reaching the page, as the modal menu did. */}
+          sits above the header, cookie banner and back-to-top button, so an
+          outside click closes the menu without reaching the page, as before. */}
       <DropdownMenu modal={false} open={shareOpen} onOpenChange={setShareOpen}>
         <DropdownMenuTrigger asChild>
           <Button ref={shareTriggerRef} variant="outline" size="sm" className="gap-2">
@@ -82,9 +83,10 @@ export function GameActions({ gameSlug, gameTitle }: GameActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         {shareOpen &&
-          createPortal(<div aria-hidden="true" className="fixed inset-0 z-45" />, document.body)}
+          createPortal(<div aria-hidden="true" className="fixed inset-0 z-55" />, document.body)}
         <DropdownMenuContent
           align="end"
+          className="z-56"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
             shareTriggerRef.current?.focus();
