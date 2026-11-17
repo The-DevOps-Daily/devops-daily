@@ -1,6 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, type RefObject } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Badge } from '@/components/ui/badge';
@@ -85,13 +93,16 @@ function ScrollEdge({
 // keeps an outside tap from reaching the page under the menu.
 function FilterSelect({ label, value, options, onValueChange, className }: FilterSelectProps) {
   const [open, setOpen] = useState(false);
+  // The picked value shows at once; the parent's update (filtering the
+  // list) runs in a transition after the menu has closed.
+  const [shownValue, setShownValue] = useOptimistic(value);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   // The tap that opens the menu ends with a click on the new overlay, so the
   // overlay only closes the menu when the press also started on it.
   const overlayPressed = useRef(false);
   const openedWithKeys = useRef(false);
-  const current = options.find((option) => option.value === value)?.label ?? label;
+  const current = options.find((option) => option.value === shownValue)?.label ?? label;
 
   // Opened with the keyboard, start on the checked item, as the Select did.
   // A pointer open only highlights it with CSS: moving focus re-renders
@@ -164,11 +175,13 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
               {label}
             </DropdownMenu.Label>
             <DropdownMenu.RadioGroup
-              value={value}
+              value={shownValue}
               onValueChange={(next) => {
-                // Close in the same render as the value change.
                 setOpen(false);
-                onValueChange(next);
+                startTransition(() => {
+                  setShownValue(next);
+                  onValueChange(next);
+                });
               }}
             >
               {options.map((option) => (
