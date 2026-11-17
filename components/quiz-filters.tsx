@@ -111,11 +111,13 @@ function FilterSelect({ label, value, options, onValueChange, className }: Filte
     viewportRef.current = node;
     const checked = node?.querySelector<HTMLElement>('[aria-checked="true"]');
     if (!node || !checked) return;
-    // Leave room for the scroll chevrons (24 px each), which appear later.
-    const bottom = checked.offsetTop + checked.offsetHeight + 4;
-    const room = node.clientHeight - 24;
-    if (bottom > room) node.scrollTop = bottom - room + 24;
-    if (openedWithKeys.current) requestAnimationFrame(() => checked.focus());
+    // A frame later the down chevron is in place; the up chevron (24 px)
+    // appears once the list scrolls.
+    requestAnimationFrame(() => {
+      const bottom = checked.offsetTop + checked.offsetHeight + 4;
+      if (bottom > node.clientHeight) node.scrollTop = bottom - node.clientHeight + 24;
+      if (openedWithKeys.current) checked.focus();
+    });
   }, []);
 
   return (
