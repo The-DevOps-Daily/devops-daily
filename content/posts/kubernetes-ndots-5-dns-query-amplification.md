@@ -33,7 +33,8 @@ This post shows the resolver rule, reproduces the count, and gives you a safe wa
 - Start with the names your workload actually resolves, then measure CoreDNS requests and NXDOMAIN responses. For external configuration, an absolute FQDN with a trailing dot is the narrowest change. For a Pod-wide change, test `ndots: "2"` against every short and cross-namespace Service name it uses.
 
 <figure>
-<video controls muted loop playsinline preload="none" width="1200" height="1640" poster="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries-poster.webp"><source src="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries.mp4" type="video/mp4"></video>
+<video class="post-video-wide" controls muted loop playsinline preload="none" width="1600" height="1000" poster="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries-wide-poster.webp"><source src="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries-wide.mp4" type="video/mp4"></video>
+<video class="post-video-tall" controls muted loop playsinline preload="none" width="1200" height="1640" poster="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries-poster.webp"><source src="/images/posts/kubernetes-ndots-5-dns-query-amplification/ten-queries.mp4" type="video/mp4"></video>
 <figcaption>Press play to watch one lookup of api.example.com from a Pod with four search suffixes: five names, each asked as A and AAAA, so ten queries reach CoreDNS and eight of them ask for names that do not exist. A trailing dot or ndots:2 takes it down to two.</figcaption>
 </figure>
 
