@@ -48,16 +48,16 @@ On the server, the OAuth part is two imports and two calls on top of the same co
 
 In July we built [a Postgres-backed MCP server on Neon Functions](/posts/neon-functions-postgres-mcp-server) with an optional shared token: with `MCP_TOKEN` set, a request without the matching bearer token got a 401, and with it unset the demo was open. A shared token works, but everyone who has it is the same user, it never expires, and you rotate it by editing every client config.
 
-|                         | Static token (July)                 | OAuth with Neon Auth (this post)                                                   |
-| ----------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- |
-| Auth code in the server | 8 lines of Hono middleware          | 2 imports, `createMcpAuth()` and `app.use(honoMcp(...))`                           |
-| Extra code              | none                                | a login page and a consent page, 146 lines of HTML and script                      |
-| Setup                   | deploy, set `MCP_TOKEN`             | deploy twice, add a trusted domain, enable the OAuth server, create users          |
-| What the user does      | pastes a token into a client config | pastes the URL, signs in, presses Allow                                            |
-| Who is calling          | unknown, one shared identity        | each user, from the token's `sub`                                                  |
-| Data isolation          | none, everyone sees every contact   | reads, updates and deletes filter on `owner_id = sub`; inserts set it from `sub`   |
-| Token lifetime          | forever                             | 1-hour access token, 30-day rotating refresh token                                 |
-| Stop one client         | rotate the token for everyone       | revoke that client's refresh token; its current access token runs until it expires |
+|                         | Static token (July)                 | OAuth with Neon Auth (this post)                                                 |
+| ----------------------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| Auth code in the server | 8 lines of Hono middleware          | 2 imports, `createMcpAuth()` and `app.use(honoMcp(...))`                         |
+| Extra code              | none                                | a login page and a consent page, 146 lines of HTML and script                    |
+| Setup                   | deploy, set `MCP_TOKEN`             | deploy twice, add a trusted domain, enable the OAuth server, create users        |
+| What the user does      | pastes a token into a client config | pastes the URL, signs in, presses Allow                                          |
+| Who is calling          | unknown, one shared identity        | each user, from the token's `sub`                                                |
+| Data isolation          | none, everyone sees every contact   | reads, updates and deletes filter on `owner_id = sub`; inserts set it from `sub` |
+| Token lifetime          | forever                             | 1-hour access token, 30-day rotating refresh token                               |
+| Stop renewal            | rotate the token for everyone       | revoke that refresh token; issued access tokens stay valid until they expire     |
 
 The function file grew from 173 to 223 lines, plus 146 lines for the pages. About 45 of the function's lines log page views and MCP calls to a table, so we could see which client did what during the tests. You can delete them.
 
@@ -159,7 +159,7 @@ export default app;
 
 `createMcpAuth()` checks three things on each token: the EdDSA signature against the branch's JWKS, `iss` equal to your branch's Auth URL, and your `/mcp` URL in `aud`. We test each of these below. The `contacts` table has an `owner_id text NOT NULL` column that stores the token's `sub`. That is the ID of the user row in the `neon_auth` schema, in the same Lakebase Postgres database, which is the point we made in [the Neon Auth post](/posts/neon-auth-without-a-separate-service).
 
-`db/schema.sql` creates a fresh database. If you upgrade the July database instead, you need a migration that adds `owner_id`, assigns the existing shared contacts to users you choose, and only then sets `NOT NULL` and adds the index.
+`db/schema.sql` creates the demo tables in a new, empty database. If you upgrade the July database instead, you need a migration that adds `owner_id`, assigns the existing shared contacts to users you choose, and only then sets `NOT NULL` and adds the index.
 
 ## The login and consent pages
 
@@ -229,7 +229,7 @@ Neon's guide notes that a new deployment can take a few minutes to serve traffic
 
 ## The client matrix
 
-We tested every client we could run on our own machines. Claude Code and Codex ran on a Raspberry Pi. MCP Inspector, the scripted client and a headless Chromium ran on a small Linux server. For the browser step, a script opened the authorize URL in headless Chromium, signed in on our login page, read the consent page and pressed Allow. Claude Code and Codex ran on a different machine than the browser, so we used their `--no-browser` login and pasted the redirect URL back, which both CLIs support. We did not test their usual flow, where the browser sends the code to the CLI's local listener. Inspector and the scripted client ran next to the browser, and the browser called their listener directly.
+We tested every client we could run on our own machines. Claude Code and Codex ran on a Raspberry Pi. MCP Inspector, the scripted client and a headless Chromium ran on a small Linux server. For the browser step, a script opened the authorize URL in headless Chromium, signed in on our login page, read the consent page and pressed Allow. Claude Code and Codex ran on a different machine than the browser, so we used their `--no-browser` login and pasted the redirect URL back, which both CLIs support. We did not test their usual flow, where the browser sends the code to the CLI's local listener. Inspector ran next to the browser, which called its local listener directly. The scripted client caught the redirect in the browser and passed the code to the MCP SDK.
 
 | Client                                            | How it identified itself                                    | DCR off (default)                                      | DCR on                 |
 | ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------ | ---------------------- |
@@ -281,7 +281,7 @@ The tools need neither `profile` nor `email`. But scopes on Neon Auth are fixed,
 
 ## Security: what we checked
 
-`scripts/attacks.ts` runs 20 checks against the deployed server. Each check compares the HTTP status, and the OAuth error code where there is one, with an exact expected value. A section that throws counts as a failed check. All 20 passed. The script also records one observation that is not counted: what Neon Auth says when you try to revoke an access token.
+`scripts/attacks.ts` makes 20 assertions against the deployed server: expected HTTP statuses, response values, and the OAuth error code on refresh failures. A section that throws counts as a failed check. All 20 passed. The script also records one observation that is not counted: what Neon Auth says when you try to revoke an access token.
 
 | Check                                                 | Expected                     | Got                               |
 | ----------------------------------------------------- | ---------------------------- | --------------------------------- |
@@ -323,7 +323,7 @@ So revoking a refresh token stops renewal for that grant. It does not end a toke
 
 ### Refresh rotation and the 30-second window
 
-Every refresh returns a new refresh token. With an MCP resource set, Neon's docs describe a 30-second reuse window, so a client that sends the same refresh request twice gets the same answer. Our sequential test matched that: reusing the old refresh token at once returned 200 and the same new refresh token as the first call. After 35 seconds, the old refresh token failed with `invalid_grant`, and the token the first refresh had returned also failed with `invalid_grant`. A client with a bug in its token storage loses its refresh token this way, and the user has to sign in through that client again.
+Every refresh returns a new refresh token. With an MCP resource set, Neon's docs describe a 30-second reuse window, so a client that sends the same refresh request twice gets the same answer. Our sequential test matched that: reusing the old refresh token at once returned 200 and the same new refresh token as the first call. After 35 seconds, the old refresh token failed with `invalid_grant`, and the token the first refresh had returned also failed with `invalid_grant`. A client with a bug in its token storage loses its refresh token this way and needs a new authorization. The user's browser session and stored consent may make that quick.
 
 ### Open DCR and consent phishing
 
@@ -331,7 +331,7 @@ With DCR on, anyone can register a client with a name they choose and any redire
 
 ![Consent page for a self-registered client named Claude, showing the code goes to attacker.example and that the app could change contacts](../../public/images/posts/neon-mcp-server-oauth/consent-dcr-lookalike.webp)
 
-This is consent phishing. The attacker starts the flow with their own client, so PKCE does not help: they hold the verifier. If the user presses Allow, the attacker's server gets a code and then tokens for that user. The name says "Claude". The only true facts on the screen are the random client ID and the host that gets the code. A consent page that shows only the client name would look like the real Claude Code screen above.
+This is consent phishing. The attacker starts the flow with their own client, so PKCE does not help: they hold the verifier. If the user presses Allow, the attacker's server gets a code and then tokens for that user. The name says "Claude". That name is self-chosen. The useful facts are the random client ID, the host that gets the code, the scopes, the resource and what the app can do. A consent page that shows only the client name would look like the real Claude Code screen above.
 
 CIMD does not stop an attacker from choosing a name either. We hosted a document that called itself "ChatGPT", and Neon Auth accepted it. But the client ID is then a URL, so the consent page can show where the document lives, which was our test host and not `chatgpt.com`. That tells the user where the metadata came from. It does not prove which program is using a public client ID.
 
@@ -357,7 +357,7 @@ The consent screen is the last check for the user, not the only one. Keeping DCR
 
 ## What we could not test
 
-- **Claude.ai and ChatGPT.** Both need a person to sign in through a browser on their side. The server logs each client's `client_id` and user agent, so we can check those connections when someone runs them. Until then, we make no claim about them.
+- **Claude.ai and ChatGPT.** Neither was tested, so their compatibility is unknown. The server logs each client's `client_id` and user agent, so we can check those connections when someone runs them. Until then, we make no claim about them.
 - **Cursor and other desktop clients.** Not tested.
 - **Interactive browsers.** Our browser step was headless Chromium on Linux, and the CLI runs used the paste-back flow. We did not test Safari, a person clicking through, or a custom domain.
 - **Load.** One user at a time, a handful of calls each.
@@ -372,6 +372,6 @@ The README starts with the deploy commands. `results/` has the client transcript
 
 ## Wrapping up
 
-Moving an MCP server on Neon from a shared token to OAuth took one Neon Auth setting, two calls from `@neon/oauth` in the function, a per-user filter on every query and two small web pages. In return, each user signs in with their own account, every tool call carries their ID, and their rows stay theirs. The default settings were the right ones for the clients we could run: Claude Code and Codex connected with CIMD and no dynamic registration.
+Moving an MCP server on Neon from a shared token to OAuth took one Neon Auth setting, two calls from `@neon/oauth` in the function, an owner check on every contact query and two small web pages. In return, each user signs in with their own account, every tool call carries their ID, and their rows stay theirs. The default settings were the right ones for the clients we could run: Claude Code and Codex connected with CIMD and no dynamic registration.
 
 The parts that need your attention are not in the token flow. They are the consent page, where a user decides whether a client with a self-chosen name gets in, and the issuer check, which on Neon separates `main` from every branch that shares its keys.
