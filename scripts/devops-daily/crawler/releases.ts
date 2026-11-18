@@ -1,7 +1,7 @@
 import Parser from 'rss-parser';
 import { ProjectReleases, ReleaseEntry, ReleaseSource } from './types.js';
 import { cleanUrl } from '../utils/normalize.js';
-import { htmlToText } from '../utils/text.js';
+import { titleText } from '../utils/text.js';
 
 const parser = new Parser({ timeout: 10000 });
 
@@ -13,7 +13,7 @@ const GITHUB_TITLE =
 
 /** The version in a GitHub release title, without a leading "v". */
 export function parseGithubReleaseTitle(title: string): string | null {
-  const match = htmlToText(title).match(GITHUB_TITLE);
+  const match = titleText(title).match(GITHUB_TITLE);
   return match ? match[1] : null;
 }
 
@@ -35,7 +35,7 @@ const PG_PART = /^(\d+(?:\.\d+)?)(?:\s+(rc|beta)\s*(\d+))?$/i;
  * released", "PostgreSQL JDBC 42.7.5 Released") return null.
  */
 export function parsePostgresReleaseTitle(title: string): string | null {
-  const match = htmlToText(title).match(/^PostgreSQL\s+(.+?)\s+Released!?$/i);
+  const match = titleText(title).match(/^PostgreSQL\s+(.+?)\s+Released!?$/i);
   if (!match) return null;
   const parts = match[1]
     .split(/\s*,\s*(?:and\s+)?|\s+and\s+/i)

@@ -1,21 +1,28 @@
 import { NewsItem } from '../crawler/types.js';
 
 /**
+ * Which of two copies of the same story to keep: the better source tier
+ * first (an official blog over a vendor repost), then the more recent one.
+ * Ranking runs later, so this choice must not depend on feed order.
+ */
+function preferred(existing: NewsItem, candidate: NewsItem): NewsItem {
+  const tierA = existing.tier ?? 3;
+  const tierB = candidate.tier ?? 3;
+  if (tierA !== tierB) return tierB < tierA ? candidate : existing;
+  return new Date(candidate.publishedAt) > new Date(existing.publishedAt) ? candidate : existing;
+}
+
+/**
  * Remove duplicate items based on URL
  */
 export function deduplicateByUrl(items: NewsItem[]): NewsItem[] {
-  const seen = new Set<string>();
-  const unique: NewsItem[] = [];
-
+  const byUrl = new Map<string, NewsItem>();
   for (const item of items) {
-    const normalizedUrl = normalizeUrl(item.url);
-    if (!seen.has(normalizedUrl)) {
-      seen.add(normalizedUrl);
-      unique.push(item);
-    }
+    const key = normalizeUrl(item.url);
+    const existing = byUrl.get(key);
+    byUrl.set(key, existing ? preferred(existing, item) : item);
   }
-
-  return unique;
+  return Array.from(byUrl.values());
 }
 
 /**
@@ -50,14 +57,7 @@ export function deduplicate(items: NewsItem[]): NewsItem[] {
     const normalized = normalizeTitle(item.title);
     const existing = titleMap.get(normalized);
 
-    if (!existing) {
-      titleMap.set(normalized, item);
-    } else {
-      // Keep the one with more recent date
-      if (new Date(item.publishedAt) > new Date(existing.publishedAt)) {
-        titleMap.set(normalized, item);
-      }
-    }
+    titleMap.set(normalized, existing ? preferred(existing, item) : item);
   }
 
   return Array.from(titleMap.values());

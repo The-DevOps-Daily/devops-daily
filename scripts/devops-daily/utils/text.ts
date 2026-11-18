@@ -56,20 +56,30 @@ export function decodeEntities(text: string): string {
 function collapse(text: string): string {
   // \s also matches U+2028/U+2029 and NBSP; strip other control characters.
   // The digest uses no em dashes, so one in feed text becomes " - ".
-  return (
-    text
-      .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
-      .replace(/\s*\u2014\s*/g, ' - ')
-      .replace(/\s+/g, ' ')
-      .trim()
-  );
+  return text
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '')
+    .replace(/\s*\u2014\s*/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const INLINE_TAG = /<\/?(a|b|i|em|strong|code|span|br|sup|sub|mark|small|u|s)\b[^>]*>/gi;
+
+/**
+ * Plain text from a feed title. Titles are text, not HTML: "<T>" in
+ * "Use <T> generics" stays. Only inline formatting tags are removed, and
+ * entities are decoded (some feeds encode titles twice).
+ */
+export function titleText(input: unknown): string {
+  if (typeof input !== 'string') return '';
+  return collapse(decodeEntities(input.replace(INLINE_TAG, '')));
 }
 
 /**
  * Feed title as plain text, without "Blog: " prefixes or " | Brand" suffixes.
  */
 export function cleanTitle(title: unknown): string {
-  let text = htmlToText(title);
+  let text = titleText(title);
   text = text.replace(/^(blog|news|post)\s*:\s+/i, '');
   const suffix = text.match(/\s+\|\s+[^|]{1,40}$/);
   if (suffix && suffix.index !== undefined && suffix.index >= 15) {
@@ -79,11 +89,13 @@ export function cleanTitle(title: unknown): string {
 }
 
 /**
- * Excerpt as plain text, without feed boilerplate. A truncation marker from
- * the feed ("[…]") becomes "...".
+ * Excerpt without feed boilerplate. The input is already plain text (the
+ * crawler runs htmlToText once); parsing it as HTML again would drop text
+ * such as "<namespace>". A truncation marker from the feed ("[…]") becomes
+ * "...".
  */
 export function cleanExcerpt(excerpt: unknown, title = ''): string {
-  let text = htmlToText(excerpt);
+  let text = typeof excerpt === 'string' ? collapse(excerpt) : '';
   text = text
     .replace(/\s*The post .{1,300}? appeared first on .{1,120}?\.?\s*$/i, '')
     .replace(

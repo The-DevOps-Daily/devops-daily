@@ -15,12 +15,9 @@ import { SourcesConfig } from './crawler/types.js';
 import { crawlRssFeeds } from './crawler/rss.js';
 import { crawlWebSources } from './crawler/web.js';
 import { crawlReleases, selectReleases } from './crawler/releases.js';
-import { normalizeItems } from './utils/normalize.js';
-import { deduplicate } from './utils/dedupe.js';
 import { resolveWindow } from './utils/date.js';
-import { classifyItems } from './pipeline/classify.js';
-import { selectItems } from './pipeline/rank.js';
-import { assembleDigest, printStats } from './pipeline/assemble.js';
+import { printStats } from './pipeline/assemble.js';
+import { buildDigest } from './pipeline/build.js';
 import { loadOwnPosts, selectOwnPosts } from './pipeline/own-posts.js';
 import { generateMarkdown } from './pipeline/template.js';
 import { buildPrBody } from './pipeline/pr-body.js';
@@ -77,29 +74,7 @@ async function main() {
     );
     console.log(`  ✓ ${releases.length} projects with releases in the window\n`);
 
-    // 3. Normalize, dedupe, keep the window
-    console.log('🔧 Normalizing and deduplicating...');
-    const until = Math.min(window.end.getTime(), now.getTime());
-    const releaseUrls = new Set(releases.flatMap((p) => p.releases.map((r) => r.url)));
-    let allItems = deduplicate(normalizeItems([...rssItems, ...webItems])).filter((item) => {
-      const t = new Date(item.publishedAt).getTime();
-      // A release post listed under Releases is not repeated as news.
-      return t >= window.start.getTime() && t < until && !releaseUrls.has(item.url);
-    });
-    console.log(`  ✓ ${allItems.length} unique items in the window\n`);
-
-    if (allItems.length === 0) {
-      console.log('⚠️  No items found in the window. Exiting...');
-      return;
-    }
-
-    // 4. Classify, rank and pick
-    console.log('🔤 Classifying and ranking...');
-    allItems = classifyItems(allItems);
-    const picked = selectItems(allItems, { end: window.end });
-    console.log(`  ✓ ${picked.length} items picked\n`);
-
-    // 5. Our own posts from the same window
+    // 3. Our own posts from the same window
     const ownPosts = selectOwnPosts(
       await loadOwnPosts(path.join(process.cwd(), 'content', 'posts')),
       window.start,
@@ -107,16 +82,26 @@ async function main() {
       now
     );
 
-    // 6. Assemble and render
-    console.log('📝 Assembling digest...');
-    const digest = assembleDigest({
-      items: picked,
+    // 4. Clean, dedupe, rank, pick and assemble
+    console.log('📝 Building digest...');
+    const digest = buildDigest({
+      rawItems: [...rssItems, ...webItems],
       releases,
       ownPosts,
-      week: window.week,
-      year: window.year,
-      date: window.date,
+      window,
+      now,
     });
+    if (!digest) {
+      console.log('⚠️  No news, releases or posts in the window. No digest written.');
+      if (prBodyPath) {
+        await fs.writeFile(
+          prBodyPath,
+          `No news, releases or posts for week ${window.week}, ${window.year}. No digest was written.\n`,
+          'utf-8'
+        );
+      }
+      process.exit(0);
+    }
     printStats(digest);
 
     const markdown = generateMarkdown(digest);
@@ -125,7 +110,7 @@ async function main() {
       console.warn(`⚠️  Found ${duplicateUrls.length} duplicate URLs:`, duplicateUrls);
     }
 
-    // 7. Write file
+    // 5. Write file
     console.log('\n💾 Writing file...');
     const newsDir = path.join(process.cwd(), 'content', 'news', window.year.toString());
     await fs.mkdir(newsDir, { recursive: true });
@@ -153,7 +138,7 @@ async function main() {
       console.log(`  ✓ PR description written to: ${prBodyPath}\n`);
     }
 
-    // 8. Validate markdown
+    // 6. Validate markdown
     console.log('✅ Validating markdown...');
     const isValid = await validateMarkdown(filePath);
     if (!isValid) {

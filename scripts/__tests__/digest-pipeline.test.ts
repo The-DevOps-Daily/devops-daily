@@ -8,7 +8,9 @@ import {
   firstSentence,
   htmlToText,
 } from '../devops-daily/utils/text';
-import { cleanUrl } from '../devops-daily/utils/normalize';
+import { cleanUrl, normalizeItems } from '../devops-daily/utils/normalize';
+import { extractExcerpt } from '../devops-daily/crawler/rss';
+import { buildDigest } from '../devops-daily/pipeline/build';
 import { escapeMarkdown, markdownLink, markdownUrl } from '../devops-daily/utils/markdown';
 import { isNearDuplicate } from '../devops-daily/utils/dedupe';
 import { isPromo, pickTop, relevanceScore, selectItems } from '../devops-daily/pipeline/rank';
@@ -111,7 +113,7 @@ describe('feed text cleaning', () => {
     expect(cleanExcerpt('Follow a deployment failure to root cause. | Blog')).toBe(
       'Follow a deployment failure to root cause.'
     );
-    expect(cleanExcerpt('Teams waste hours resolving conflicts [&#8230;]')).toBe(
+    expect(cleanExcerpt('Teams waste hours resolving conflicts […]')).toBe(
       'Teams waste hours resolving conflicts...'
     );
     expect(cleanExcerpt('Learn what is new in 1.146 Read the full article')).toBe(
@@ -165,6 +167,9 @@ describe('Markdown escaping of feed text', () => {
     ':::warning',
     '> quote',
     '===',
+    'see https://evil.example/x now',
+    'www.evil.example',
+    'mail a@evil.example',
   ];
 
   it('keeps every hostile string as plain text when rendered', () => {
@@ -584,3 +589,117 @@ describe('rendered digest', () => {
     expect(body).toContain('Review: Claude adds the intro and merges on Monday.');
   });
 });
+
+describe('full pipeline after crawling', () => {
+  const window = resolveWindow(['--week', '2026-W47']);
+  const now = new Date('2026-11-18T09:00:00Z');
+  const raw = (overrides: Partial<NewsItem>): NewsItem => ({
+    title: 'Kubernetes v1.38.0 released',
+    url: 'https://kubernetes.io/blog/v1-38',
+    excerpt: 'The release has 40 enhancements.',
+    source: 'Kubernetes Blog',
+    publishedAt: '2026-11-12T10:00:00Z',
+    category: 'Kubernetes',
+    tier: 1,
+    ...overrides,
+  });
+
+  it('parses feed HTML once, so literal <tags> in text survive', () => {
+    const excerpt = extractExcerpt({
+      description: '<p>Use &lt;namespace&gt; and &lt;pod&gt;.</p>',
+    });
+    const [cleaned] = normalizeItems([
+      raw({ title: 'Use &lt;T&gt; generics <em>now</em>', excerpt }),
+    ]);
+    expect(cleaned.excerpt).toBe('Use <namespace> and <pod>.');
+    expect(cleaned.title).toBe('Use <T> generics now');
+    const html = parseMarkdown(escapeMarkdown(cleaned.excerpt));
+    expect(html).toContain('Use &lt;namespace&gt; and &lt;pod&gt;.');
+  });
+
+  it('keeps the official copy of a story even when a vendor repost comes first', () => {
+    const vendor = raw({ source: 'Vendor Blog', tier: 3, url: 'https://vendor.example/k8s-138' });
+    const official = raw({});
+    const digest = buildDigest({
+      rawItems: [vendor, official],
+      releases: [],
+      ownPosts: [],
+      window,
+      now,
+    });
+    expect(digest?.topPicks.map((i) => i.source)).toEqual(['Kubernetes Blog']);
+
+    const sameUrl = raw({ source: 'Vendor Blog', tier: 3 });
+    const again = buildDigest({
+      rawItems: [sameUrl, official],
+      releases: [],
+      ownPosts: [],
+      window,
+      now,
+    });
+    expect(again?.topPicks.map((i) => i.source)).toEqual(['Kubernetes Blog']);
+  });
+
+  it('keeps releases and our posts when there is no news, and returns null when all are empty', () => {
+    const releases = [
+      {
+        project: 'Istio',
+        releases: [
+          {
+            project: 'Istio',
+            version: '1.32.0',
+            url: 'https://github.com/istio/istio/releases/tag/1.32.0',
+            publishedAt: '2026-11-09T19:07:47Z',
+          },
+        ],
+      },
+    ];
+    const posts = [{ slug: 'disk-full', title: 'Disk Full', publishedAt: '2026-11-12T07:00:00Z' }];
+
+    const releaseOnly = buildDigest({ rawItems: [], releases, ownPosts: [], window, now });
+    expect(releaseOnly?.releases).toHaveLength(1);
+    expect(releaseOnly?.topPicks).toHaveLength(0);
+    const markdown = generateMarkdown(releaseOnly!);
+    expect(markdown).toContain('## 🚀 Releases');
+    expect(markdown).not.toContain('This week in short');
+    expect(matter(markdown).data.summary).toBe('DevOps news, releases and updates from week 47.');
+
+    const postsOnly = buildDigest({ rawItems: [], releases: [], ownPosts: posts, window, now });
+    expect(generateMarkdown(postsOnly!)).toContain('[Disk Full](/posts/disk-full)');
+
+    const outside = raw({ publishedAt: '2026-11-17T10:00:00Z' });
+    expect(
+      buildDigest({ rawItems: [outside], releases: [], ownPosts: [], window, now })
+    ).toBeNull();
+  });
+
+  it('does not repeat a release post as news', () => {
+    const post = raw({
+      title: 'PostgreSQL 18.7 and 19 RC 2 Released!',
+      url: 'https://www.postgresql.org/about/news/pg-187/',
+      source: 'PostgreSQL News',
+      tier: 2,
+    });
+    const releases = [
+      {
+        project: 'PostgreSQL',
+        releases: [
+          {
+            project: 'PostgreSQL',
+            version: '18.7 and 19 RC 2',
+            url: 'https://www.postgresql.org/about/news/pg-187/',
+            publishedAt: '2026-11-12T00:00:00Z',
+          },
+        ],
+      },
+    ];
+    const digest = buildDigest({ rawItems: [post], releases, ownPosts: [], window, now });
+    expect(digest?.topPicks).toHaveLength(0);
+    expect(checkUrlsOnce(generateMarkdown(digest!))).toBe(true);
+  });
+});
+
+function checkUrlsOnce(markdown: string): boolean {
+  const urls = [...markdown.matchAll(/\]\((https?:[^)]+)\)/g)].map((m) => m[1]);
+  return new Set(urls).size === urls.length;
+}

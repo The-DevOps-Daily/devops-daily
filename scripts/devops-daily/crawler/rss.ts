@@ -30,11 +30,25 @@ export function absoluteUrl(link: string, feedUrl: string): string {
   }
 }
 
+/**
+ * One retry for a timeout or server error. A 4xx (blocked, gone) will not
+ * change in two seconds.
+ */
+async function parseFeed(url: string) {
+  try {
+    return await parser.parseURL(url);
+  } catch (error) {
+    if (/Status code 4\d\d/.test(String(error))) throw error;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    return parser.parseURL(url);
+  }
+}
+
 export async function crawlRssFeed(source: Source, failures?: string[]): Promise<NewsItem[]> {
   try {
     console.log(`Crawling RSS: ${source.name} (${source.url})`);
 
-    const feed = await parser.parseURL(source.url);
+    const feed = await parseFeed(source.url);
     const items: NewsItem[] = [];
 
     for (const item of feed.items) {

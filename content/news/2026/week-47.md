@@ -7,7 +7,7 @@ summary: "Deprecating the Collector Batch Processor and Git security vulnerabili
 ## 📌 This week in short
 
 <!-- editor-intro: 2-4 plain lines from the editor go between these markers. Empty renders nothing. -->
-KubeCon NA took place this week, so CNCF news leads: CloudNativePG and Open Cluster Management are now incubating projects, and OpenShell joined as a sandbox project.
+KubeCon NA took place this week, so CNCF news leads: CloudNativePG is now an incubating project, and OpenShell joined as a sandbox project.
 If you run the OpenTelemetry Collector, remove the batch processor from your pipelines and turn on batching in the exporters. The processor goes away in v0.177.0 (May 2027).
 Git has new releases that fix six security issues, so update Git on your build machines and servers.
 <!-- /editor-intro -->
@@ -48,6 +48,10 @@ Distributed AI training workloads impose complex scheduling requirements that Ku
 CNCF Blog · Nov 10
 Today at KubeCon + CloudNativeCon North America, the Cloud Native Computing Foundation (CNCF) welcomes OpenShell as a Sandbox project.
 
+**[What's new in Pyroscope: profile more of your workflows, troubleshoot with AI agents, and more](https://grafana.com/blog/whats-new-in-pyroscope-profile-more-of-your-workflows-troubleshoot-with-ai-agents-and-more/)**
+Grafana Blog · Nov 13
+When an application slows down or memory usage keeps climbing, knowing which code is responsible can help you find a fix faster.
+
 ## 🔄 CI/CD
 
 **[GitHub availability report: October 2026](https://github.blog/news-insights/company-news/github-availability-report-october-2026/)**
@@ -74,10 +78,6 @@ Aurora PostgreSQL now supports express configuration in AWS CloudFormation for i
 PostgreSQL News · Nov 15
 Datasentinel 2026.10, the new release of our PostgreSQL monitoring and troubleshooting platform, is now available. It introduces AI Connector, which connects Datasentinel metrics to the AI assistant your team already uses.
 
-**[New AI agent observability and governance across BigQuery and Looker](https://cloud.google.com/blog/products/data-analytics/enterprise-ai-agent-observability-with-bigquery-and-looker/)**
-Google Cloud Blog · Nov 13
-As enterprises move AI agents from experimental prototypes into production, data and platform teams are discovering that deploying an agent is only half the battle - you also need to see how it reasons, which data it touches, and what...
-
 **[Building an Agent Harness for OTel Instrumentation with GenAI Semantic Conventions and Weaver](https://opentelemetry.io/blog/2026/agent-harness-genai-instrumentation/)**
 OpenTelemetry Blog · Nov 12
 Instrumenting a GenAI framework means finding suitable extension points, mapping its operations to OpenTelemetry semantic conventions, testing the result, and maintaining it as the framework changes.
@@ -85,6 +85,10 @@ Instrumenting a GenAI framework means finding suitable extension points, mapping
 **[What’s New in Zabbix 8.0 LTS](https://blog.zabbix.com/whats-new-in-zabbix-8-0-lts/33755/)**
 Zabbix Blog · Nov 11
 Zabbix 8.0 LTS might just be the largest Zabbix update yet. With a focus on application performance monitoring, new event processing workflows, scalability improvements, and MCP server for connecting Zabbix to your AI agents, Zabbix 8.0...
+
+**[When Missing Telemetry Is the Signal](https://opentelemetry.io/blog/2026/when-missing-telemetry-is-the-signal/)**
+OpenTelemetry Blog · Nov 10
+An empty dashboard can mean that nothing happened. It can also mean that the system stopped reporting what happened. On a dashboard, they look the same. One needs no action. The other means you are missing the information you need to act.
 
 ## 🔐 Security
 
@@ -102,10 +106,6 @@ AI-orchestrated penetration testing platforms like ARTEX have become increasingl
 
 ## 💾 Databases
 
-**[From OLAP to OLTP: How Copel Simplified Reverse ETL Using BigQuery's Native Export to AlloyDB](https://cloud.google.com/blog/products/data-analytics/reverse-etl-bigquery-exports-to-alloydb/)**
-Google Cloud Blog · Nov 13
-Bridging the gap between analytical systems (OLAP) and transactional databases (OLTP) is notoriously complex.
-
 **[Amazon Aurora and RDS now support Graviton5-based R9g database instances](https://aws.amazon.com/about-aws/whats-new/2026/11/amazon-aurora-rds-postgresql-mysql-mariadb-r9g-instances/)**
 AWS What's New · Nov 12
 AWS Graviton5-based R9g database instances are now generally available for Amazon Aurora with PostgreSQL compatibility and MySQL compatibility, and for Amazon RDS for PostgreSQL, MySQL, and MariaDB.
@@ -113,6 +113,10 @@ AWS Graviton5-based R9g database instances are now generally available for Amazo
 **[How a broken release name overloaded our symbolication database](https://blog.sentry.io/broken-release-database-load/)**
 Sentry Blog · Nov 9
 An unexpanded env var filled one release with 44M URL index rows. Capping lookups cut database CPU from 76% to 19% and symbolication timeouts by 98%.
+
+**[Throwing Out The Phonebook](https://fly.io/blog/throwing-out-the-phonebook/)**
+Fly.io Blog · Nov 13
+There’s really only one hard problem in software engineering: synchronization. OK, maybe two: cache invalidation and synchronization.
 
 ## 🌐 Platforms
 
@@ -123,10 +127,6 @@ Kitesurf, our experimental browser engine for AI agents, is now open source. Ins
 **[QM, Y Combinator's Open-Source Agent Harness, Now Deploys in One Click on DigitalOcean](https://www.digitalocean.com/blog/qm-ycombinator-digitalocean-one-click)**
 DigitalOcean Blog · Nov 10
 Y Combinator built QM, a multiplayer agent harness for Slack and the web, to run agents across its own teams, from accounting and legal to engineering. In July, YC open-sourced it so any startup could do the same.
-
-**[Where supercomputing meets agentic AI: What’s new in Google Cloud HPC and AI at SC26](https://cloud.google.com/blog/topics/hpc/whats-new-in-hpc-and-ai-at-sc26/)**
-Google Cloud Blog · Nov 13
-Computational scientists and HPC engineers have always been among the earliest adopters of new computing paradigms, and agents are no exception.
 
 **[Introducing Spend Management: Spending limits and alerts for Cloudflare](https://blog.cloudflare.com/spend-management/)**
 Cloudflare Blog · Nov 13

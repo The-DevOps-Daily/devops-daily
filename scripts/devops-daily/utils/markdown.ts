@@ -1,8 +1,8 @@
 /**
  * Feed titles and excerpts are untrusted. Everything that goes into the
  * digest passes through these helpers, so feed text stays text: no raw HTML,
- * no emphasis or links of its own, and no line that turns into a heading,
- * list or fence.
+ * no emphasis or links of its own (also no autolinked URLs or emails), and
+ * no line that turns into a heading, list or fence.
  */
 
 /**
@@ -19,7 +19,11 @@ export function escapeMarkdown(text: string, atLineStart = true): string {
     .replace(/&(?=#?[a-z0-9]+;)/gi, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/([`*_[\]~|])/g, '\\$1');
+    .replace(/([`*_[\]~|])/g, '\\$1')
+    // GFM turns bare URLs, "www." and emails into links. Break the patterns.
+    .replace(/:(?=\/\/)/g, '\\:')
+    .replace(/\b(www)\./gi, '$1\\.')
+    .replace(/@/g, '\\@');
   if (!atLineStart) return inline;
   // Block syntax only counts at the start of a line.
   return inline.replace(/^([#+=:-])/, '\\$1').replace(/^(\d+)([.)])/, '$1\\$2');
