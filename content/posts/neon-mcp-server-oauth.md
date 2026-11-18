@@ -1,6 +1,6 @@
 ---
 title: 'OAuth for MCP Servers on Neon: Claude Code and Codex Connect Without DCR'
-excerpt: 'Neon Auth can be the OAuth 2.1 server for an MCP server on Neon Functions. In our tests, Claude Code and Codex connected with Client ID Metadata Documents while dynamic client registration was off; MCP Inspector needed either a metadata URL or DCR. Here is the build, the client tests, and the token checks that matter, including one that exists because Neon branches share signing keys.'
+excerpt: 'Neon Auth can be the OAuth 2.1 server for an MCP server on Neon Functions. In our tests, Claude Code, Codex and the Claude.ai connector connected with Client ID Metadata Documents while dynamic client registration was off; MCP Inspector needed either a metadata URL or DCR. Here is the build, the client tests, and the token checks that matter, including one that exists because Neon branches share signing keys.'
 category:
   name: 'DevOps'
   slug: 'devops'
@@ -23,7 +23,7 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
-We replaced the static bearer token on our Neon MCP server with OAuth 2.1 from Neon Auth, then connected real MCP clients to it. With Client ID Metadata Documents on and dynamic client registration (DCR) off, **Claude Code 2.1.327 and Codex CLI 0.167.0 both signed in and called tools**. MCP Inspector 2.16.0 with its defaults did not connect, because it registers itself with DCR. It connected when we gave it a metadata document URL, and also when we turned DCR on.
+We replaced the static bearer token on our Neon MCP server with OAuth 2.1 from Neon Auth, then connected real MCP clients to it. With Client ID Metadata Documents on and dynamic client registration (DCR) off, **Claude Code 2.1.327, Codex CLI 0.167.0 and a Claude.ai custom connector all signed in and called tools**. MCP Inspector 2.16.0 with its defaults did not connect, because it registers itself with DCR. It connected when we gave it a metadata document URL, and also when we turned DCR on.
 
 On the server, the OAuth part is two imports and two calls on top of the same contact tools from [our static-token version](/posts/neon-functions-postgres-mcp-server). The rest of the work is two web pages: login and consent. Neon does not host them for you, and the consent page is where the user decides whether to trust a client. We also ran 20 checks against the deployed server. One of them shows why your resource server must check the token issuer on Neon: a token from a child branch has a valid signature on the parent.
 
@@ -35,7 +35,7 @@ On the server, the OAuth part is two imports and two calls on top of the same co
 - Scopes are fixed: `openid`, `profile`, `email`, `offline_access`. Claude Code and MCP Inspector sent no `scope` parameter, and the consent screen then asked for all four. You cannot define a scope such as `contacts:write`.
 - Access tokens are EdDSA JWTs with a 1-hour lifetime. Neon Auth refused to revoke one ("JWT access tokens are self-contained and cannot be revoked server-side"), and the token still worked at `/mcp` right after we revoked its refresh token.
 - All branches of a project share signing keys. A token from a `preview` branch passed a verifier that checked only the signature and audience, with the same user ID as on `main`. `@neon/oauth` refused it, because it checks `iss`.
-- Claude.ai and ChatGPT were not tested. Their compatibility is unknown.
+- A Claude.ai custom connector also used CIMD, with its callback on `claude.ai`, and worked with DCR off. ChatGPT was not tested yet.
 
 ## Prerequisites
 
@@ -231,15 +231,15 @@ Neon's guide notes that a new deployment can take a few minutes to serve traffic
 
 We tested every client we could run on our own machines. Claude Code and Codex ran on a Raspberry Pi. MCP Inspector, the scripted client and a headless Chromium ran on a small Linux server. For the browser step, a script opened the authorize URL in headless Chromium, signed in on our login page, read the consent page and pressed Allow. Claude Code and Codex ran on a different machine than the browser, so we used their `--no-browser` login and pasted the redirect URL back, which both CLIs support. We did not test their usual flow, where the browser sends the code to the CLI's local listener. Inspector ran next to the browser, which called its local listener directly. The scripted client caught the redirect in the browser and passed the code to the MCP SDK.
 
-| Client                                            | How it identified itself                                    | DCR off (default)                                      | DCR on                 |
-| ------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------ | ---------------------- |
-| Claude Code 2.1.327                               | CIMD, `https://claude.ai/oauth/claude-code-client-metadata` | Connected, 2 tool calls                                | not tested             |
-| Codex CLI 0.167.0                                 | CIMD, `https://chatgpt.com/oauth/codex/client.json`         | Connected, 2 tool calls                                | not tested             |
-| MCP Inspector CLI 2.16.0, defaults                | DCR                                                         | Failed: "does not support dynamic client registration" | Connected, 1 tool call |
-| MCP Inspector CLI 2.16.0, `--client-metadata-url` | CIMD, a document we hosted                                  | Connected, listed tools                                | not tested             |
-| Our scripted client, MCP TypeScript SDK 1.32.2    | CIMD or DCR, by flag                                        | CIMD connected; DCR failed as expected                 | DCR connected          |
-| Claude.ai custom connector                        | not tested                                                  | unknown                                                | unknown                |
-| ChatGPT app (developer mode)                      | not tested                                                  | unknown                                                | unknown                |
+| Client                                              | How it identified itself                                    | DCR off (default)                                      | DCR on                 |
+| --------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------ | ---------------------- |
+| Claude Code 2.1.327                                 | CIMD, `https://claude.ai/oauth/claude-code-client-metadata` | Connected, 2 tool calls                                | not tested             |
+| Codex CLI 0.167.0                                   | CIMD, `https://chatgpt.com/oauth/codex/client.json`         | Connected, 2 tool calls                                | not tested             |
+| MCP Inspector CLI 2.16.0, defaults                  | DCR                                                         | Failed: "does not support dynamic client registration" | Connected, 1 tool call |
+| MCP Inspector CLI 2.16.0, `--client-metadata-url`   | CIMD, a document we hosted                                  | Connected, listed tools                                | not tested             |
+| Our scripted client, MCP TypeScript SDK 1.32.2      | CIMD or DCR, by flag                                        | CIMD connected; DCR failed as expected                 | DCR connected          |
+| Claude.ai custom connector (a person, in a browser) | CIMD, `https://claude.ai/oauth/mcp-oauth-client-metadata`   | Connected, 2 tool calls                                | not tested             |
+| ChatGPT app (developer mode)                        | not tested yet                                              | unknown                                                | unknown                |
 
 Claude Code, with a `--no-browser` login:
 
@@ -267,15 +267,19 @@ mcp: neon-contacts/create_contact (completed)
 
 Codes and states in these transcripts are redacted. Both CLIs signed in as the same demo user, so Codex's `search_contacts` returned the contact Claude Code had created a few minutes earlier, and not the contact a second user had created. The rows belong to the user, not to the client.
 
+The Claude.ai connector was the one test a person ran by hand, in a desktop browser, with DCR still off. They added the function URL as a custom connector, signed in on our login page and pressed Allow. Our log shows the client ID `https://claude.ai/oauth/mcp-oauth-client-metadata`, the callback `https://claude.ai/api/mcp/auth_callback`, and then MCP calls with the user agent `Claude-User`: `tools/list`, one `create_contact` and one `search_contacts` that found the new contact. Because the callback is an `https` URL on `claude.ai` and not `localhost`, the consent page names that host and shows no localhost warning:
+
+![Consent page for the Claude.ai connector: name Claude marked unverified, metadata document at claude.ai, code sent to claude.ai](../../public/images/posts/neon-mcp-server-oauth/consent-claude-ai.webp)
+
 Three details from the matrix are worth knowing before you choose settings:
 
-- **Both CLI clients use CIMD.** Their `client_id` is a URL on their vendor's domain, so Neon Auth fetched the document from `claude.ai` and `chatgpt.com`, and our consent page could say so. Neither needed DCR.
+- **Every third-party client that connected used CIMD.** Their `client_id` is a URL on their vendor's domain, so Neon Auth fetched the document from `claude.ai` and `chatgpt.com`, and our consent page could say so. None of them needed DCR.
 - **Loopback ports can change between logins.** Our runs used `localhost:57501` and `localhost:65309` for Claude Code and `127.0.0.1:40273` for Codex. For CIMD clients, Neon Auth matches a loopback redirect URI on any port, so this works. A managed client you create yourself has to match exactly, port included.
 - **Inspector's defaults need DCR.** Without `--client-metadata-url`, Inspector 2.16.0 tried to register and stopped with "Incompatible auth server: does not support dynamic client registration". With a metadata URL, it connected. If you leave DCR off, users of clients that only do DCR will see this error.
 
 ### What the clients asked for
 
-We compared each client's authorize URL with the scopes Neon Auth passed on to our consent page. Our scripted client requested `openid offline_access`: `openid` for identity and `offline_access` for a refresh token. Claude Code and MCP Inspector sent no `scope` parameter, and the consent page received all four scopes, so the user was asked for their name, picture, email and 30 days of offline access. Codex requested all four itself.
+We compared each client's authorize URL with the scopes Neon Auth passed on to our consent page. Our scripted client requested `openid offline_access`: `openid` for identity and `offline_access` for a refresh token. Claude Code and MCP Inspector sent no `scope` parameter, and the consent page received all four scopes, so the user was asked for their name, picture, email and 30 days of offline access. Codex requested all four itself. The Claude.ai consent page also received all four; we did not capture its authorize URL, so we cannot say whether it asked for them.
 
 The tools need neither `profile` nor `email`. But scopes on Neon Auth are fixed, and the server cannot define narrower ones such as `contacts:read`. Every client that gets a token in this demo can search, create, update and delete the user's contacts. If you need read-only users or read-only clients, keep that rule in your own code, for example as a role column next to `owner_id`.
 
@@ -357,9 +361,9 @@ The consent screen is the last check for the user, not the only one. Keeping DCR
 
 ## What we could not test
 
-- **Claude.ai and ChatGPT.** Neither was tested, so their compatibility is unknown. The server logs each client's `client_id` and user agent, so we can check those connections when someone runs them. Until then, we make no claim about them.
+- **ChatGPT.** Not tested yet, so its compatibility is unknown. The server logs each client's `client_id` and user agent, so we can check the connection when someone runs it.
 - **Cursor and other desktop clients.** Not tested.
-- **Interactive browsers.** Our browser step was headless Chromium on Linux, and the CLI runs used the paste-back flow. We did not test Safari, a person clicking through, or a custom domain.
+- **Interactive browsers.** Our browser step was headless Chromium on Linux, and the CLI runs used the paste-back flow. Apart from the one Claude.ai run, we did not test a person clicking through, Safari, or a custom domain.
 - **Load.** One user at a time, a handful of calls each.
 
 ## The repo
@@ -372,6 +376,6 @@ The README starts with the deploy commands. `results/` has the client transcript
 
 ## Wrapping up
 
-Moving an MCP server on Neon from a shared token to OAuth took one Neon Auth setting, two calls from `@neon/oauth` in the function, an owner check on every contact query and two small web pages. In return, each user signs in with their own account, every tool call carries their ID, and their rows stay theirs. The default settings were the right ones for the clients we could run: Claude Code and Codex connected with CIMD and no dynamic registration.
+Moving an MCP server on Neon from a shared token to OAuth took one Neon Auth setting, two calls from `@neon/oauth` in the function, an owner check on every contact query and two small web pages. In return, each user signs in with their own account, every tool call carries their ID, and their rows stay theirs. The default settings were the right ones for the clients we ran: Claude Code, Codex and Claude.ai connected with CIMD and no dynamic registration.
 
 The parts that need your attention are not in the token flow. They are the consent page, where a user decides whether a client with a self-chosen name gets in, and the issuer check, which on Neon separates `main` from every branch that shares its keys.
