@@ -23,25 +23,25 @@ tags:
 sponsorCampaign: 'digitalocean'
 ---
 
-During an incident, the fastest thing to try is to paste the whole log into a model and ask what broke. The usual advice is not to: models "lose things in the middle" of long inputs, so you should cut the log down first. We gave that advice ourselves in our [CI log triage post](/posts/ci-log-triage-digitalocean-inference), where we threw away 92 percent of a job log before sending it.
+During an incident, a quick thing to try is to paste the whole log into a model and ask what broke. The usual advice is not to: models "lose things in the middle" of long inputs, so you should cut the log down first. We gave that advice ourselves in our [CI log triage post](/posts/ci-log-triage-digitalocean-inference), where we threw away 92 percent of a job log before sending it.
 
 So we measured it. We built 75 incident logs from 10,000 to 200,000 tokens, each with one planted line that started the outage, and asked six models on DigitalOcean Serverless Inference for that line. We expected the answers to get worse as the logs got longer. For the good models, they did not. **DeepSeek V4 Flash found the exact line in all 75 logs**, including all 15 at 200k tokens, for **$0.029 per 200k-token paste**. GLM-5.3 Flash also found all 75. DeepSeek V4 Pro found 49 of 50 at about ten times the price, and its one miss quoted the right line with a line number one off.
 
-The two models that failed did not fail because of length. `gpt-oss-120b` and Ministral 3 14B already missed 4 of 15 logs at 10k tokens. When `gpt-oss-120b` missed, it blamed the outage itself: all 27 of its misses pointed at a line from after the outage began, and 20 of them at the very first one.
+The two models that failed were failing already at the shortest length: `gpt-oss-120b` and Ministral 3 14B each missed 4 of 15 logs at 10k tokens. `gpt-oss-120b` also got worse as the logs grew, though 60 logs can only just show that. When `gpt-oss-120b` missed, it blamed the outage itself: all 27 of its misses pointed at a line from after the outage began, and 20 of them at the very first one.
 
 ## TL;DR
 
 - Exact line found: DeepSeek V4 Flash 75 of 75, GLM-5.3 Flash 75 of 75, DeepSeek V4 Pro 49 of 50, Nemotron 3.5 Super VL 44 of 45 (it stops at 50k), Ministral 3 14B 41 of 60 and `gpt-oss-120b` 33 of 60 (both stop at 100k).
-- For the four strong models, length made no difference we could measure, up to 200k tokens. For `gpt-oss-120b`, accuracy fell from 11 of 15 at 10k to 6 of 15 at 100k, a trend at the edge of what 60 logs can show (p = 0.049).
+- For the four strong models we saw no drop with length, across the lengths each one could take (200k for three of them, 50k for Nemotron). For `gpt-oss-120b`, accuracy fell from 11 of 15 at 10k to 6 of 15 at 100k, a trend at the edge of what 60 logs can show (p = 0.049).
 - The weak models did best when the cause sat right before the outage (10 of 12 for `gpt-oss-120b`) and worst when it sat in the middle of the log (16 of 36). They failed almost every time when the cause was an info line: a paused queue consumer, 0 of 12 and 2 of 12.
 - A 200k-token paste cost $0.029 on DeepSeek V4 Flash and $0.276 on DeepSeek V4 Pro, with the first token after 7.6 and 11.9 seconds at the median. Ministral 3 14B took 71 seconds at the median for a 100k log.
-- Cutting the log first did not beat pasting it into a strong model. A grep for errors dropped the cause in 4 of 5 shapes. A grep that also kept change lines (a best case: we picked the words knowing the causes) lifted `gpt-oss-120b` from 6 to 13 of 15 at 100k. Chunking lifted it to 11 of 15, but on DeepSeek V4 Flash it was slower, dearer and lost one log.
+- Cutting the log first: a grep for errors dropped the cause in 4 of 5 shapes. A grep that also kept change lines matched the whole log on DeepSeek V4 Flash at a seventh of the cost and lifted `gpt-oss-120b` from 6 to 13 of 15 at 100k, but we picked its words knowing the causes. Our chunking setup helped `gpt-oss-120b` and was slower and dearer on DeepSeek V4 Flash.
 
 ## Prerequisites
 
 - A [DigitalOcean account](https://m.do.co/c/2a9bba940f39) (referral link) with a Serverless Inference model access key
 - Node.js 22 or later (the scripts have no dependencies)
-- About $0.85 of inference to rerun one cheap model on all 75 logs; our whole run, pilots and baselines included, cost about $12.10 by our own count
+- About $0.85 of inference to rerun one cheap model on all 75 logs; our whole run, pilots and baselines included, came to about $12.13 in recorded usage
 
 ```github
 https://github.com/The-DevOps-Daily/incident-log-needle
@@ -54,10 +54,10 @@ A seeded generator writes the combined log of a small shop on Kubernetes: nginx 
 Each log has five kinds of lines, in time order:
 
 - **Background**: requests, jobs, checkpoints, autovacuum, Redis saves, batch-job events, controller reads.
-- **Harmless noise**, about 2.5 percent of lines: a retry that succeeds two lines later, deprecation warnings, a job that fails and passes on retry, a Redis reconnect, a slow query, a `FailedScheduling` that is scheduled a few lines later.
+- **Harmless noise**, about 3.7 percent of lines: a retry that succeeds a few lines later, deprecation warnings, a job that fails and passes on retry, a Redis reconnect, a slow query, a `FailedScheduling` that is scheduled a few lines later.
 - **Harmless changes** of the same kind as the cause: another PgBouncer pool resized, another certificate renewed, another HPA raised, a search-api deploy.
 - **The root cause**: one line, somewhere before the outage.
-- **The outage**: symptoms from a fixed start time, plus one **decoy**, a loud line a few seconds after the start that looks like a cause and is a consequence.
+- **The outage**: symptoms from a fixed start time, plus one **decoy**, a loud line a few seconds after the start that looks like a cause and is meant as a consequence of it.
 
 There are five incident shapes, and each one appears three times at every length and every depth:
 
@@ -110,7 +110,7 @@ This is the real output of both checks on the final logs:
 
 Moving a line also moves the cause by one line, so some breaks report a depth problem first. Each break is counted as caught only if the specific problem it plants is in the list.
 
-That reading found things the checker could not. The first version renewed the same certificate twice in an hour, resized the `analytics` pool "from 10 to 14" right after "from 10 to 16", and logged a Redis startup warning a dozen times in one afternoon. None of that changed which line was the cause, but a reader who knows these systems would stop trusting the log. We fixed all three before the main run.
+That reading found things the checker could not. The first version renewed the same certificate twice in an hour, resized the `analytics` pool "from 10 to 14" right after "from 10 to 16", and logged a Redis startup warning a dozen times in one afternoon. None of that changed which line was the cause, but a reader who knows these systems would stop trusting the log. We fixed the first two and made the third much rarer before the main run; it still shows up three to five times in some 200k logs.
 
 ## Six models, and the context they really accept
 
@@ -170,12 +170,14 @@ Only the exact line number counts as found. If the quote is the right line and t
 
 What stands out:
 
-- **Length did not hurt the strong models.** The four strong models got 243 of 245 calls exactly right, and both misses were near misses. DeepSeek V4 Pro quoted the right line and gave its number as 435 instead of 436. Nemotron found the right line on a 10k log, then went back and forth over two timestamps until it ran out of its 16,384-token output budget without an answer.
+- **We saw no drop with length for the strong models.** The four strong models got 243 of 245 calls exactly right, and both misses were near misses. DeepSeek V4 Pro quoted the right line and gave its number as 435 instead of 436. Nemotron found the right line on a 10k log, then went back and forth over two timestamps until it ran out of its 16,384-token output budget without an answer.
 - **We cannot rank the strong models.** On the logs they both saw, any two of them differ on at most one log (sign test p = 1.0 for every pair). We cannot rank the two weak ones either: `gpt-oss-120b` got 3 logs that Ministral missed, and Ministral got 11 that `gpt-oss-120b` missed (p = 0.057).
 - **The weak models were weak at 10k.** `gpt-oss-120b` and Ministral 3 14B each missed 4 of 15 logs at the shortest length. `gpt-oss-120b` then fell to 6 of 15 at 100k. A trend test puts that at p = 0.049, but 10k against 100k on its own could be chance (Fisher p = 0.14). Ministral went 11, 11, 11, 8 (no clear trend, p = 0.26).
-- **For the weak models, distance mattered more than length.** With the cause just before the outage, `gpt-oss-120b` got 10 of 12 and Ministral 11 of 12. With the cause at 25 to 75 percent of the log, they got 16 of 36 and 22 of 36 (Fisher p = 0.023 and 0.073).
-- **The shape of the cause mattered most.** The only error-level cause, the failed certificate renewal, was the easiest: 10 of 12 for `gpt-oss-120b`, 12 of 12 for Ministral. The paused queue consumer, an info line, was the hardest: 0 of 12 and 2 of 12. The four strong models found it in 48 of 49 logs, and the one miss was Nemotron running out of output budget after it had found the line.
+- **For the weak models, the position of the cause mattered.** With the cause just before the outage, `gpt-oss-120b` got 10 of 12 and Ministral 11 of 12. With the cause at 25 to 75 percent of the log, they got 16 of 36 and 22 of 36 (Fisher p = 0.023 and 0.073).
+- **So did the shape of the cause.** The only error-level cause, the failed certificate renewal, was the easiest: 10 of 12 for `gpt-oss-120b`, 12 of 12 for Ministral. The paused queue consumer, an info line, was the hardest: 0 of 12 and 2 of 12. The four strong models found it in 48 of 49 logs, and the one miss was Nemotron running out of output budget after it had found the line.
 - **The decoy fooled only `gpt-oss-120b`,** 4 times in 60.
+
+The p-values above are exploratory: we ran several tests and did not correct for that. Nemotron wrote invalid JSON 6 times (for example a `reason` without quotes). The scorer reads the line number with a fallback in that case, and in all 6 the quoted line was the right one.
 
 The numbers for each cell, each model and each miss are in [`results/summary.md`](https://github.com/The-DevOps-Daily/incident-log-needle/blob/main/results/summary.md), and the tests behind the p-values are in [`results/stats.md`](https://github.com/The-DevOps-Daily/incident-log-needle/blob/main/results/stats.md).
 
@@ -193,7 +195,7 @@ The first error is line 426. So answer line 426.
 
 It asked the right question. It found the two harmless pool changes, checked them, and correctly set them aside. It never found line 319, which sits between them and the outage, so it fell back to the first error.
 
-**Ministral 3 14B blames a deploy.** Seven of its 19 misses named the same kind of harmless change: a deploy of search-api, which has nothing to do with checkout. Its reason for one of them:
+**Ministral 3 14B blames a deploy.** Seven of its 19 misses named the same kind of harmless change: a deploy of search-api, which nothing in the log ties to checkout. Its reason for one of them:
 
 ```json
 {
@@ -205,7 +207,7 @@ It asked the right question. It found the two harmless pool changes, checked the
 
 "What deployed last?" is a good first question during an incident. It is not an answer.
 
-**A right quote with a wrong line number.** Three times a model quoted the root-cause line and gave the wrong number. DeepSeek V4 Pro was off by one. Ministral 3 14B said line 820 for a cause on line 430, and line 1464 for one on line 864. If you act on the number, you open the wrong place in the log. If your tool asks for both, check that the quote is really on that line before you show it to anyone. Our scorer counts these three as misses.
+**A right quote with a wrong line number.** Three times a model quoted the root-cause line and gave the wrong number. DeepSeek V4 Pro was off by one. Ministral 3 14B said line 820 for a cause on line 430, and line 1464 for one on line 864. If you act on the number, you open the wrong place in the log. If your tool asks for both, check that the quote is really on that line before you show it to anyone. Our scorer counts these three as misses. Once it went the other way: Ministral gave the right number, 1293, with the quote of a harmless Redis change, and the scorer counts that as found because it scores the number.
 
 ## What a paste costs, and how long you wait
 
@@ -259,11 +261,11 @@ All prices are list prices times the tokens the API reported, with every prompt 
 
 Prompt tokens are medians as each model counted them.
 
-- **The money does not matter.** Even DeepSeek V4 Pro costs 28 cents for a 200k paste. Ten pastes per incident on DeepSeek V4 Flash cost less than 30 cents. What you pay for is the wait.
+- **The cost per paste is small.** Even DeepSeek V4 Pro costs 28 cents for a 200k paste. Ten pastes per incident on DeepSeek V4 Flash cost less than 30 cents. What you pay for is the wait.
 - **The wait grows with the log.** Time to the first token grew with the prompt on every model: DeepSeek V4 Flash went from 0.8 seconds at 10k to 7.6 at 200k. Ministral 3 14B was the slowest by far: 40.6 seconds before the first token of a 100k log, and 71 seconds for an answer of about 100 tokens.
 - **GLM-5.3 Flash was busy.** It answered HTTP 529 "Platform overloaded" 45 times. 27 of its 77 calls needed at least one retry, and two failed all four attempts and were run again later. Its p90 for the whole answer at 100k was 68 seconds, even with the retry waits left out. No other model returned an HTTP error.
 
-**The pilot warmed the cache for eight calls.** Our pilot sent four of the 75 logs to every model about an hour before the main run. When the main run sent the same logs again, eight calls were served from DigitalOcean's [prompt cache](/posts/digitalocean-inference-prompt-caching-measured). DeepSeek V4 Flash started answering a 200k log after 0.7 seconds instead of about 7.6. A pasted incident log is new text, so we priced those eight calls as if nothing was cached and left them out of the latency numbers. Both corrections make the numbers worse, not better. The answers did not change: each of the eight got the same verdict as the pilot's answer on the same log. The cache is still useful during an incident: if you keep the log first and unchanged and ask follow-up questions after it, the follow-ups can skip most of the wait and most of the input price.
+**The pilot warmed the cache for eight calls.** Our pilot sent four of the 75 logs to the models (fewer to the ones with short context limits) a few minutes to a quarter of an hour before the same logs came up in the main run. When the main run sent the same logs again, eight calls were served from DigitalOcean's [prompt cache](/posts/digitalocean-inference-prompt-caching-measured). DeepSeek V4 Flash started answering a 200k log after 0.7 seconds instead of about 7.6. A pasted incident log is new text, so we priced those eight calls as if nothing was cached and left them out of the latency numbers. Both corrections make the numbers worse, not better. The verdicts did not change: each of the eight got the same verdict as the pilot's answer on the same log. The cache can still help during an incident. It works on the shared start of the prompt ([we measured that here](/posts/digitalocean-inference-prompt-caching-measured)), so a follow-up question asked after the same unchanged log should get the same benefit. We did not test follow-ups in this run.
 
 ## The cheaper alternatives: grep first, or chunk
 
@@ -277,9 +279,9 @@ The usual advice is to cut the log down before you send it. We tried three ways 
 {
   "type": "flow",
   "nodes": [
-    { "label": "200k-token log", "sub": "10 parts of ~20k", "icon": "database", "tone": "slate" },
+    { "label": "200k-token log", "sub": "11 parts of ~20k", "icon": "database", "tone": "slate" },
     { "label": "Map", "sub": "up to 3 candidates per part", "icon": "cpu", "tone": "blue" },
-    { "label": "Candidates", "sub": "real line text, ~20 lines", "icon": "queue", "tone": "violet" },
+    { "label": "Candidates", "sub": "the real text of each line", "icon": "queue", "tone": "violet" },
     { "label": "Reduce", "sub": "candidates + last 40 lines", "icon": "cpu", "tone": "blue" },
     { "label": "One line", "sub": "same JSON as the main test", "icon": "check", "tone": "green" }
   ]
@@ -307,33 +309,37 @@ The usual advice is to cut the log down before you send it. We tried three ways 
 
 - **An error filter throws the cause away.** It kept the root-cause line only in the certificate shape, the one cause logged as an error, so no model could find more than 3 of 15, and both found exactly those 3. With the cause gone, DeepSeek V4 Flash kept reasoning until it hit its 8,192-token output budget in 9 of 30 calls, which is why it was slower on less text. (The baseline gave it 8,192 output tokens, half of the main run's budget; it cannot change the exact count, because the cause was not in the text.)
 - **A filter that keeps changes works, if you know what your changes look like.** It lifted `gpt-oss-120b` from 6 of 15 to 13 of 15 at 100k: 7 logs right only with the filter, none right only with the whole log (sign test p = 0.016). It cost DeepSeek V4 Flash about 7 times less than the whole 200k log and answered in 2.6 seconds instead of 9.1. But we chose those words knowing our five causes. Your changes may be logged as "rolled out", "set", "updated" or not at all, and the filter is one more thing to keep up to date.
-- **Chunking helped the weak model and cost the strong one.** `gpt-oss-120b` went from 6 to 11 of 15 at 100k (5 logs right only with chunks, none the other way, p = 0.063: likely, not proven). DeepSeek V4 Flash dropped from 15 to 14 of 15 at both lengths, paid 1.6 times as much (the map calls reason too) and took 43 to 69 seconds instead of 5 to 9.
-- **The chunk pass loses quiet causes.** When the cause reached the final call, the final call picked it every time (28 of 28 for DeepSeek V4 Flash, 14 of 14 for `gpt-oss-120b`). It was lost in the map step, and 5 of the 6 losses were the paused queue consumer. A part of the log far from the outage has no symptoms in it, and "consumer paused by operator" does not look like a cause until you know the queue filled up.
+- **Chunking helped the weak model and cost the strong one.** `gpt-oss-120b` went from 6 to 11 of 15 at 100k (5 logs right only with chunks, none the other way, p = 0.063: an improvement with a lot of uncertainty). DeepSeek V4 Flash dropped from 15 to 14 of 15 at both lengths, paid 1.6 times as much and took 43 to 69 seconds instead of 5 to 9.
+- **Our chunk setup has a weak spot.** 105 of DeepSeek V4 Flash's 255 map calls reasoned until they used the whole 8,192-token output budget and returned nothing. That is half of the main run's budget, and it is part of why its chunk runs were slow and expensive. So read the chunk rows as a result for this setup, not for chunking in general. When the cause did reach the final call, the final call picked it every time (28 of 28 for DeepSeek V4 Flash, 14 of 14 for `gpt-oss-120b`).
+- **The losses were mostly the quiet cause.** 5 of the 6 causes lost in the map step were the paused queue consumer. `gpt-oss-120b` lost three of them with no truncated map call, which fits a simple explanation: a part of the log far from the outage has no symptoms in it, and "consumer paused by operator" does not look like a cause until you know the queue filled up. For DeepSeek V4 Flash we cannot tell that apart from the budget problem.
+- **Two machines.** Our client machine restarted during the baselines, so the DeepSeek V4 Flash chunk runs ran from a second machine with the same code. Their wall times are not from the same client as the other rows.
 - **`gpt-oss-120b` hit a daily limit.** At 200k, our account got HTTP 429 `Rate limit exceeded: tokens_per_day` after about 6.9 million recorded `gpt-oss-120b` tokens that day, with 3 of the 15 chunked logs done (all 3 right). We left that row out. If you plan to paste large logs into one model many times a day, find out its daily token limit before an incident does.
 
 ## What 75 logs cannot tell you
 
+- **It is a planted, deliberately clear cause.** The checker makes sure exactly one line matches each shape's cause, and the harmless changes touch other resources. So the task is closer to finding one unambiguous line than to a full root-cause analysis.
+- **The clock is not always realistic.** At depth 100 percent the change lands seconds before the outage, and some symptom lines quote waits longer than that, such as a 27.5-second wait 2 seconds after the pool shrank. A careful reader, or model, could notice. The strong models found every one of those causes anyway.
 - **The links in our logs are clear.** In every shape, the symptoms name the thing that changed: the `orders` pool, the certificate's expiry time, the replica limit, `maxmemory`, the `payment-confirmations` queue. Real incidents can be much less direct, with a cause in one system and the first error three systems away. A model that follows a clear link at 200k tokens may still miss a faint one at 10k.
 - **One cause per log.** Real outages often have two or three contributing changes. We scored one line.
 - **The logs are ours.** One made-up shop, five shapes, a fixed set of services and our own wording. The queue result in particular may be partly about how our worker phrases a pause.
 - **Line numbers were in the paste.** Most people paste raw logs. Without numbers, ask for the quote instead and search for it yourself.
-- **The sample is small.** 15 logs per model per length and 3 per cell. "75 of 75" still allows a true miss rate of up to 5 percent. DeepSeek V4 Pro had 2 logs per cell instead of 3 to stay inside our $14 budget.
+- **The sample is small.** 15 logs per model per length and 3 per cell. Within this synthetic test, "75 of 75" still allows a true miss rate of up to 5 percent; it says nothing about logs we did not generate. DeepSeek V4 Pro had 2 logs per cell instead of 3 to stay inside our $14 budget.
 - **"200k" is in DeepSeek tokens.** The same log is 0.99 to 1.37 times as many tokens on the other models, so a cell is the same text for every model, not the same token count.
 - **One prompt, one day, temperature 0.** The models DigitalOcean served on 18 November 2026. We did not try a prompt that makes the model list every change before the outage first. That might help the weak models a lot, and we have not measured it.
-- **Open-weight models only.** On 18 November our key could also call GPT and Claude models, which returned HTTP 403 for this account in October. They are not in this test.
+- **Open-weight models only.** On 18 November our key could also call GPT and Claude models, which returned HTTP 403 for this account in October ([the October check](https://github.com/The-DevOps-Daily/alert-triage-bench/blob/main/results/model-access-2026-10-14.txt)). They are not in this test.
 
 ## What we would do during an incident
 
 - **Paste the whole window into a strong model.** On our logs, DeepSeek V4 Flash and GLM-5.3 Flash did not get worse up to 200k tokens, and a 200k paste cost about 3 cents. Length was not the problem. The model was.
-- **Do not grep for errors first.** Four of our five causes were not errors, and an error filter threw them away every time. If you filter, keep the changes: config reloads, audit patches, deploys, scaling, pauses. Better, keep the log whole.
-- **Know which model you are asking.** `gpt-oss-120b` and Ministral 3 14B missed between a third and a half of the logs, already at 10k, mostly by naming the first error of the outage or an unrelated deploy. That is the answer a tired engineer reaches without help.
+- **Do not grep for errors first.** Four of our five causes were not errors, and an error filter threw them away every time. A filter that also keeps changes (config reloads, audit patches, deploys, scaling, pauses) matched the whole log on DeepSeek V4 Flash for a seventh of the price, but only because we knew what our changes look like. Without a filter you have tested on your own incidents, keep the log whole.
+- **Know which model you are asking.** `gpt-oss-120b` and Ministral 3 14B missed 27 and 19 of 60 logs, 4 of 15 each already at 10k, mostly by naming the first error of the outage or an unrelated deploy.
 - **Ask for the line and the quote, and check that they match.** Three answers quoted the right line with the wrong number. A tool that shows the number should first check that the quoted text is really on that line.
-- **Keep the log first and unchanged when you ask follow-ups.** The second question about the same log can come from the prompt cache, which made DeepSeek V4 Flash start answering a 200k log in 0.7 seconds instead of 7.6.
-- **Test it on your own postmortems before you rely on it.** Our logs are clean, and the links in them are clear. Yours are not. And keep the model on the investigation side: finding the line is the part [AI SRE tools do well](/posts/ai-sre-agents-what-they-fix-and-break), and acting on it is still yours.
+- **Keep the log first and unchanged when you ask follow-ups.** The prompt cache works on the shared start of the prompt. A repeated 200k log made DeepSeek V4 Flash start answering in 0.7 seconds instead of 7.6; we did not test changed follow-up questions.
+- **Test it on your own postmortems before you rely on it.** Our logs are clean, and the links in them are clear. Yours may not be. And keep the model on the investigation side: finding the line is the part [AI SRE tools do well](/posts/ai-sre-agents-what-they-fix-and-break), and acting on it is still yours.
 
 ## Run it on your own logs
 
-Each stage writes a file that the next one reads. Every recorded call is stamped with a hash of the runner, the prompt, the model settings, the generator and the truth file, and the scorer refuses unstamped, mixed or stale files. The runner stops before its own count of spend passes a cap ($14 by default).
+Each stage writes a file that the next one reads. Every recorded call is stamped with a hash of the runner, the prompt, the model settings, the generator and the truth file, and the scorers refuse unstamped, mixed or stale files. The runners stop before their own estimate of spend passes a cap ($14 by default). It is an estimate from the prompt size, not a hard limit.
 
 ```bash
 git clone https://github.com/The-DevOps-Daily/incident-log-needle
@@ -343,7 +349,7 @@ cp .env.example .env                          # add your model access key
 node scripts/01-build-haystacks.mjs           # 75 logs + data/truth.jsonl
 node scripts/02-check-haystacks.mjs           # check every log against the truth file
 node scripts/02b-break-checker.mjs            # prove the checker catches 8 planted bugs
-mv results/raw ../raw-ours                    # keep our run outside results/
+mkdir ../ours && mv results/raw results/two-step ../ours/   # keep our run outside results/
 node scripts/03-run-models.mjs --models deepseek-v4-flash-0731
 node scripts/04-score.mjs                     # results/summary.md
 node scripts/05-two-step.mjs --models deepseek-v4-flash-0731 --methods chunks
