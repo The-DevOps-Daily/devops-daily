@@ -5,8 +5,8 @@ category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-11-19'
-publishedAt: '2026-11-19T09:00:00Z'
-updatedAt: '2026-11-19T09:00:00Z'
+publishedAt: '2026-11-19T11:00:00Z'
+updatedAt: '2026-11-19T11:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
