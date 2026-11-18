@@ -332,6 +332,10 @@
     {
       "label": "Datadog Alternatives in 2026: 12 Tools, Their Real Prices, and What 300 GB of Logs Costs on Each",
       "href": "/posts/datadog-alternatives-2026-real-prices"
+    },
+    {
+      "label": "Paste the Whole Incident Log: Where Do Models Stop Seeing the Error?",
+      "href": "/posts/incident-log-root-cause-long-context-digitalocean-inference"
     }
   ]
 }
