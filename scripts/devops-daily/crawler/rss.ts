@@ -1,6 +1,6 @@
 import Parser from 'rss-parser';
 import { NewsItem, Source } from './types.js';
-import { fetchWithRetry } from './fetch.js';
+import { htmlToText } from '../utils/text.js';
 
 const parser = new Parser({
   timeout: 10000,
@@ -30,11 +30,25 @@ export function absoluteUrl(link: string, feedUrl: string): string {
   }
 }
 
-export async function crawlRssFeed(source: Source): Promise<NewsItem[]> {
+/**
+ * One retry for a timeout or server error. A 4xx (blocked, gone) will not
+ * change in two seconds.
+ */
+async function parseFeed(url: string) {
+  try {
+    return await parser.parseURL(url);
+  } catch (error) {
+    if (/Status code 4\d\d/.test(String(error))) throw error;
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    return parser.parseURL(url);
+  }
+}
+
+export async function crawlRssFeed(source: Source, failures?: string[]): Promise<NewsItem[]> {
   try {
     console.log(`Crawling RSS: ${source.name} (${source.url})`);
 
-    const feed = await parser.parseURL(source.url);
+    const feed = await parseFeed(source.url);
     const items: NewsItem[] = [];
 
     for (const item of feed.items) {
@@ -52,8 +66,12 @@ export async function crawlRssFeed(source: Source): Promise<NewsItem[]> {
         url: absoluteUrl(item.link, source.url),
         excerpt: extractExcerpt(item),
         source: source.name,
-        publishedAt: item.pubDate || item.isoDate || new Date().toISOString(),
+        // No date means the item cannot be placed in a week. Leave it empty
+        // so normalize drops it, instead of dating it "now" and putting an
+        // old post into every digest.
+        publishedAt: item.isoDate || item.pubDate || '',
         category: source.category,
+        tier: source.tier ?? 3,
       });
     }
 
@@ -61,29 +79,26 @@ export async function crawlRssFeed(source: Source): Promise<NewsItem[]> {
     return items;
   } catch (error) {
     console.error(`  ✗ Error crawling ${source.name}:`, error);
+    failures?.push(source.name);
     return [];
   }
 }
 
 /**
- * Extract excerpt from RSS item
+ * Extract excerpt from RSS item. The summary or description is the best
+ * excerpt; the full content is the fallback. HTML is turned into text here,
+ * so block tags become spaces and entities are decoded.
  */
-function extractExcerpt(item: any): string {
-  // Try different fields for content
-  const content =
-    item.contentSnippet ||
-    item.content ||
-    item.contentEncoded ||
-    item.description ||
-    item.summary ||
-    '';
-
-  // Clean HTML tags and limit length
-  return content
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .substring(0, 500);
+export function extractExcerpt(item: object): string {
+  const { summary, description, content, contentEncoded, contentSnippet } = item as Record<
+    string,
+    unknown
+  >;
+  for (const field of [summary, description, content, contentEncoded, contentSnippet]) {
+    const text = htmlToText(field);
+    if (text) return text.substring(0, 2000);
+  }
+  return '';
 }
 
 /**
@@ -91,7 +106,8 @@ function extractExcerpt(item: any): string {
  */
 export async function crawlRssFeeds(
   sources: Source[],
-  concurrency: number = 5
+  concurrency: number = 5,
+  failures?: string[]
 ): Promise<NewsItem[]> {
   const rssFeeds = sources.filter((s) => s.type === 'rss');
   const allItems: NewsItem[] = [];
@@ -99,7 +115,7 @@ export async function crawlRssFeeds(
   // Process in batches to avoid overwhelming servers
   for (let i = 0; i < rssFeeds.length; i += concurrency) {
     const batch = rssFeeds.slice(i, i + concurrency);
-    const results = await Promise.all(batch.map(crawlRssFeed));
+    const results = await Promise.all(batch.map((source) => crawlRssFeed(source, failures)));
     allItems.push(...results.flat());
   }
 

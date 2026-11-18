@@ -50,19 +50,26 @@ describe('News Content Validation', () => {
       });
 
       it('links every source with an absolute URL', () => {
-        // Only the "Read more" links, which always point at an outside
-        // source. Our own internal links such as /news and /feed.xml are
-        // relative on purpose and resolve fine.
+        // Outside sources must be absolute. Our own internal links (/news,
+        // /feed.xml, /posts/<slug> in "From DevOps Daily this week") are
+        // relative on purpose; a /posts/ link must name a post that exists.
         //
         // A feed that publishes relative links put one of these in the week
         // 33 digest as `/2026/08/05/...`. The link checker read it as a
         // broken internal link, which is what it was, and the build failed
         // on main for every open PR until it was fixed.
-        const sourceLinks = [...content.matchAll(/\[\*\*🔗 Read more\*\*\]\(([^)]+)\)/g)].map(
-          (m) => m[1],
-        );
-        const notAbsolute = sourceLinks.filter((url) => !/^https?:\/\//.test(url));
-        expect(notAbsolute, `non-absolute source links in ${file}`).toEqual([]);
+        const links = [...content.matchAll(/\]\(([^)\s]+)\)/g)].map((m) => m[1]);
+        const internal = /^\/(news|feed\.xml)$|^\/posts\/[a-z0-9-]+$/;
+        const bad = links.filter((url) => !/^https?:\/\//.test(url) && !internal.test(url));
+        expect(bad, `non-absolute source links in ${file}`).toEqual([]);
+        const missingPosts = links
+          .filter((url) => url.startsWith('/posts/'))
+          .filter((url) => !fs.existsSync(path.join(process.cwd(), 'content', `${url}.md`)));
+        expect(missingPosts, `links to missing posts in ${file}`).toEqual([]);
+      });
+
+      it('keeps the summary short enough for a meta description', () => {
+        expect(data.summary.length).toBeLessThanOrEqual(160);
       });
     });
   });

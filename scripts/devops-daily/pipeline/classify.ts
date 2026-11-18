@@ -1,26 +1,12 @@
 import { NewsItem, Classification } from '../crawler/types.js';
+import { cutExcerpt } from '../utils/text.js';
 
 /**
- * Keyword-based classification: pick a category from the title and excerpt,
- * and drop event announcements.
+ * Keyword-based classification: pick a category from the title and excerpt.
+ * Events and promotion are dropped later, in rank.ts.
  */
-function classifyItem(item: NewsItem): Classification {
-  const titleLower = item.title.toLowerCase();
-  const excerptLower = item.excerpt.toLowerCase();
-  const combined = `${titleLower} ${excerptLower}`;
-
-  // Exclude event announcements
-  if (
-    titleLower.includes('is coming!') ||
-    titleLower.match(/\b(conference|event|meetup)\s+\d{4}\b/)
-  ) {
-    return {
-      include: false,
-      category: 'Misc',
-      tags: ['event'],
-      summary: item.excerpt.substring(0, 200),
-    };
-  }
+export function classifyItem(item: NewsItem): Classification {
+  const combined = `${item.title} ${item.excerpt}`.toLowerCase();
 
   let category = item.category || 'Misc';
 
@@ -30,7 +16,7 @@ function classifyItem(item: NewsItem): Classification {
     category = 'Cloud Native';
   } else if (combined.match(/\b(ci\/cd|cicd|github actions|gitlab|jenkins|argo|flux)\b/)) {
     category = 'CI/CD';
-  } else if (combined.match(/\b(terraform|pulumi|ansible|iac|infrastructure as code)\b/)) {
+  } else if (combined.match(/\b(terraform|opentofu|pulumi|ansible|iac|infrastructure as code)\b/)) {
     category = 'IaC';
   } else if (
     combined.match(/\b(monitoring|observability|prometheus|grafana|datadog|logging|tracing)\b/)
@@ -48,27 +34,21 @@ function classifyItem(item: NewsItem): Classification {
     include: true,
     category,
     tags: [],
-    summary: item.excerpt.substring(0, 200),
+    summary: cutExcerpt(item.excerpt),
   };
 }
 
 /**
- * Classify all items and drop the ones marked as excluded.
+ * Classify all items.
  */
 export function classifyItems(items: NewsItem[]): NewsItem[] {
-  const classified = items.map((item) => {
+  return items.map((item) => {
     const classification = classifyItem(item);
     return {
       ...item,
       category: classification.category,
       tags: classification.tags,
       summary: classification.summary,
-      include: classification.include,
     };
   });
-
-  const included = classified.filter((item) => item.include !== false);
-  console.log(`  ✓ ${included.length}/${items.length} items included after classification`);
-
-  return included;
 }

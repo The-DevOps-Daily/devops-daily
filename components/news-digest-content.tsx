@@ -23,7 +23,7 @@ export function NewsDigestContent({ html }: NewsDigestContentProps) {
       // Create a wrapper div for the section
       const sectionWrapper = document.createElement('div');
       sectionWrapper.className =
-        'news-section-box mb-8 py-2 pl-12 pr-6 border rounded-lg bg-card hover:border-primary/30 transition-all';
+        'news-section-box mb-8 py-2 pl-5 pr-4 sm:pl-12 sm:pr-6 border rounded-lg bg-card hover:border-primary/30 transition-all';
 
       // Get all elements between this h2 and the next h2 (or end of content)
       const elementsInSection: Element[] = [];
