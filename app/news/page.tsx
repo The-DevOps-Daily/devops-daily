@@ -47,10 +47,10 @@ export default async function NewsPage() {
       <PageHero
         icon={Newspaper}
         title="DevOps Weekly Digest"
-        description="Curated weekly updates from 250+ DevOps sources covering the latest in Kubernetes, cloud native, CI/CD, and more."
+        description="Curated weekly updates from 70+ DevOps sources covering the latest in Kubernetes, cloud native, CI/CD, and more."
         breadcrumbs={[{ label: 'News' }]}
         stats={[
-          { label: 'Sources', value: '250+' },
+          { label: 'Sources', value: '70+' },
           { label: news.length === 1 ? 'Digest' : 'Digests', value: news.length },
           { label: 'Updates', value: 'Weekly' },
         ]}
@@ -161,7 +161,7 @@ export default async function NewsPage() {
               <div className="bg-card border rounded-lg p-5">
                 <h3 className="font-semibold text-base mb-2.5">About the Digest</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                  Weekly DevOps news from 250+ trusted sources.
+                  Weekly DevOps news from 70+ trusted sources.
                 </p>
                 <div className="space-y-1.5 text-sm">
                   <div className="flex items-start gap-2">

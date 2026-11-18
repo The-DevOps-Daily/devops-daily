@@ -1,335 +1,128 @@
 # DevOps Daily Digest Generator
 
-An automated system for generating weekly DevOps news digests from 250+ sources including Kubernetes, CNCF projects, cloud providers, CI/CD tools, and more.
+Builds the weekly DevOps digest (`content/news/<year>/week-<N>.md`) from 74 news feeds and 13 release feeds listed in `data/sources.yaml`.
 
-## Overview
+It makes no AI or other paid API calls. Ranking, excerpts and the summary come from the feed text and simple rules.
 
-This script automatically:
+## What it does
 
-- Crawls 250+ DevOps RSS feeds and web sources
-- Extracts, normalizes, and deduplicates content
-- Classifies items by keyword and uses their excerpts as summaries
-- Groups content by category
-- Generates markdown digest files
+1. Crawls the RSS/Atom feeds and the web sources (a web source is a page where the crawler looks for a feed).
+2. Reads the release feeds: GitHub release Atom feeds and the PostgreSQL news feed.
+3. Cleans every item: plain-text titles and excerpts, entities decoded, feed boilerplate removed ("The post X appeared first on Y", "| Blog", "Read more"), tracking parameters removed from links, only http(s) links kept, undated items dropped.
+4. Keeps the items from the digest window and removes duplicates (same URL, same title).
+5. Classifies each item into a category by keyword.
+6. Ranks and picks about 25 items (see below).
+7. Writes the digest and checks its frontmatter.
 
-Git operations (branching, commits, PR creation) are handled separately by GitHub Actions.
-
-## Directory Structure
-
-```
-scripts/devops-daily/
-├── index.ts                       # Main entry point
-├── crawler/
-│   ├── types.ts                   # TypeScript types
-│   ├── fetch.ts                   # HTTP fetching with retry
-│   ├── rss.ts                     # RSS feed crawler
-│   └── web.ts                     # Web scraper with RSS discovery
-├── pipeline/
-│   ├── classify.ts                # Keyword-based classification
-│   ├── assemble.ts                # Digest assembly
-│   ├── validate.ts                # Markdown validation
-│   └── template.ts                # Markdown generation
-├── utils/
-│   ├── date.ts                    # Date utilities
-│   ├── dedupe.ts                  # Deduplication logic
-│   ├── normalize.ts               # Data normalization
-│   └── limit.ts                   # Rate limiting
-├── data/
-│   ├── sources.yaml               # 250+ source definitions
-│   └── news.schema.json           # Validation schema
-└── README.md                      # This file
-```
-
-**Note:** The `git/` directory contains helper modules for git operations but is no longer used by the main script. Git operations are now handled by GitHub Actions.
-
-## Installation
-
-Dependencies are already installed in the main project. If you need to install them separately:
-
-```bash
-pnpm add rss-parser axios js-yaml cheerio date-fns gray-matter
-pnpm add -D @types/js-yaml
-```
-
-## Configuration
-
-### Sources Configuration
-
-Edit `scripts/devops-daily/data/sources.yaml` to add/remove sources:
-
-```yaml
-sources:
-  - name: 'Kubernetes Blog'
-    type: 'rss'
-    url: 'https://kubernetes.io/feed.xml'
-    category: 'Kubernetes'
-    priority: 'high'
-```
+Git work (branch, commit, pull request) is done by `.github/workflows/generate-digest.yml`.
 
 ## Usage
 
-### Run Locally
-
-Generate a digest manually:
-
 ```bash
-# Make sure you have Node.js 20+ installed
-pnpm devops-daily:generate-news
+pnpm devops-daily:generate-news                     # the current week
+pnpm devops-daily:generate-news --week 2026-W47 --force   # rebuild a past week
+pnpm devops-daily:generate-news --until 2026-11-16  # the 7 days before a date
+pnpm devops-daily:generate-news --pr-body /tmp/body.md    # also write the PR description
 ```
 
-The script will:
+- `--force` replaces a digest file that already exists.
+- Feeds only keep their latest items, so a rebuild of an old week can miss items from busy feeds.
 
-1. Crawl all configured sources
-2. Process and filter items from the last 7 days
-3. Classify items by keyword and drop event announcements
-4. Use each item's excerpt as its summary
-5. Generate markdown file in `content/news/YYYY/week-N.md`
-6. Validate the generated file
+### The digest window
 
-It makes no AI or other paid API calls.
+The digest for ISO week N covers the 7 days before Monday 00:00 UTC of week N. The workflow runs on Monday at 05:43 UTC; if GitHub starts it hours late, the window stays the same.
 
-The script **only generates the markdown file** - it does not commit or create PRs. You can then:
+## Ranking
 
-- Manually commit and push the file
-- Or let the GitHub Action handle it automatically
+Each source in `sources.yaml` has a `tier`:
 
-### Run via GitHub Actions
+- `1`: official project blogs and release notes (Kubernetes, CNCF, GitHub, Google Cloud, AWS What's New, Cloudflare, OpenTelemetry, ...)
+- `2`: engineering blogs and tech news (The New Stack, Grafana, GitLab, Fly.io, Sentry, ...)
+- `3`: vendor marketing blogs
 
-The digest can be generated and published automatically via GitHub Actions:
+`pipeline/rank.ts` scores every item:
 
-1. **Manual trigger**: Go to Actions → Generate DevOps Weekly Digest → Run workflow
-2. **Scheduled**: Runs every Monday at 9:00 AM UTC
+```
+score = tier base (6, 4 or 2) + relevance (-4 to +5) + recency (0 to 1)
+```
 
-The GitHub Action will:
+Relevance comes from keywords: releases and versions, security fixes, deprecations, incidents and project milestones score up; a core DevOps topic adds 1; customer stories, ROI claims, awards, recaps and weekly hub pages score down. Events, webinars and other promotion are dropped.
 
-1. Run the generation script
-2. Create a new branch (`devops-digest/week-N-YYYY`)
-3. Commit the generated file
-4. Create a pull request automatically
+Picks are made best first under these limits:
 
-### Required GitHub Secrets
-
-None beyond the `GITHUB_TOKEN` that GitHub Actions provides automatically.
+- 25 items in total, at most 5 per category
+- per source: 3 for tier 1, 2 for tier 2, 1 for tier 3
+- nothing below a score of 4.5
+- a title that is a near duplicate of a picked one is skipped, so the better-ranked copy of a story wins
 
 ## Output
 
-### File Location
-
-Generated files are saved to:
-
-```
-content/news/
-└── 2025/
-    ├── week-1.md
-    ├── week-2.md
-    └── ...
-```
-
-### Markdown Format
-
 ```markdown
 ---
-title: 'DevOps Weekly Digest - Week 47, 2025'
-date: '2025-11-16'
-summary: 'Curated updates from Kubernetes, cloud native tooling, CI/CD, IaC, observability, and security.'
+title: 'DevOps Weekly Digest - Week 47, 2026'
+date: '2026-11-16'
+summary: 'Headline one and headline two, plus 23 more DevOps updates from week 47.'
 ---
 
-> Handpicked by DevOps Daily.
+## 📌 This week in short
 
-## Kubernetes
+<!-- editor-intro: ... -->
+<!-- /editor-intro -->
 
-- **Title**
-  Summary of the article...
-  _Source: Source Name - Nov 16, 2025_
-  [Read more →](https://example.com)
+**[Top item title](https://example.com/a)**
+Source · Nov 11
+First sentence of the excerpt.
 
-## Cloud Native
+## 🚀 Releases
 
-...
+- **Istio** [1.32.0](https://github.com/istio/istio/releases/tag/1.32.0)
+
+## ⚓ Kubernetes
+
+**[Item title](https://example.com/b)**
+Source · Nov 12
+Excerpt that ends at a full sentence, about 160 to 240 characters.
+
+## ✍️ From DevOps Daily this week
+
+- [Post title](/posts/post-slug)
 ```
 
-## Categories
+- The title keeps the `DevOps Weekly Digest - Week N, YYYY` pattern: URLs, covers and the series rely on it. The summary changes every week: the top headlines, the item count and the week, at most 155 characters.
+- "This week in short" holds the 3 best items from different sources. They are not repeated in their category.
+- The editor adds 2-4 lines between the `editor-intro` markers on review. Left empty, the markers render nothing.
+- "Releases" lists stable releases from the window, one line per project. Alphas, betas and RCs are skipped, except x.y.0 RCs for projects with `majorRc: true` (Kubernetes, PostgreSQL). A release post listed there is not repeated as news.
+- "From DevOps Daily this week" lists up to 6 posts from `content/posts` published in the window.
+- Feed text is untrusted. Titles and excerpts are escaped for Markdown (`utils/markdown.ts`), so they cannot add HTML, links, headings or lists.
 
-Content is organized into these categories:
-
-- **Kubernetes**: K8s core, distributions, tools
-- **Cloud Native**: CNCF projects, containers, service mesh
-- **CI/CD**: Continuous integration/deployment, GitOps
-- **IaC**: Infrastructure as Code (Terraform, Pulumi, etc.)
-- **Observability**: Monitoring, logging, tracing
-- **Security**: Container security, secrets management
-- **Databases**: SQL, NoSQL, data stores
-- **Platforms**: Cloud providers, PaaS
-- **Misc**: Everything else
-
-## Limits
-
-To maintain quality:
-
-- Max 4 items per source
-- Max 12 items per category
-- Only items from last 7 days
-- Event announcements are filtered out
-
-## Validation
-
-Generated digests are validated for:
-
-- ✅ Front matter format
-- ✅ Date format (YYYY-MM-DD)
-- ✅ Title format
-- ✅ Valid URLs
-- ✅ No duplicate URLs
-
-GitHub Actions also run:
-
-- `markdownlint` - Markdown style checking
-- `link-check` - URL validation
-
-## Classification
-
-`pipeline/classify.ts` matches keywords in each item's title and excerpt to pick a category, drops event announcements, and uses the first 200 characters of the excerpt as the summary. Items that match no keyword keep the category from `sources.yaml`, or `Misc`.
-
-## Workflow
-
-### Script Workflow
-
-```
-┌─────────────────┐
-│ Load Sources    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Crawl RSS Feeds │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Crawl Web Pages │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Normalize Items │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Deduplicate     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Filter by Date  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Classify        │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Apply Limits    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Generate MD     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Validate        │
-└─────────────────┘
-```
-
-### GitHub Action Workflow
-
-After the script completes, GitHub Actions handles:
-
-```
-┌─────────────────┐
-│ Run Script      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Create Branch   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Commit File     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Push to Remote  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Create PR       │
-└─────────────────┘
-```
-
-## Troubleshooting
-
-### RSS Feed Errors
-
-If a feed fails:
-
-- Check if the URL is still valid
-- Verify the feed format (RSS 2.0 or Atom)
-- Check for network/firewall issues
-
-### GitHub Action Failures
-
-If the GitHub Action fails:
-
-- Verify the action has `contents: write` and `pull-requests: write` permissions
-- Check action logs for specific error messages
-
-## Development
-
-### Adding New Sources
-
-Edit `data/sources.yaml`:
+## Configuration
 
 ```yaml
-- name: 'New Source'
-  type: 'rss' # or "web"
-  url: 'https://example.com/feed.xml'
-  category: 'CI/CD'
-  priority: 'medium' # high, medium, or low
+sources:
+  - name: 'New Source'
+    type: 'rss' # or "web"
+    url: 'https://example.com/feed.xml'
+    category: 'CI/CD'
+    priority: 'medium'
+    tier: 2
+
+releases:
+  - name: 'Kubernetes'
+    github: 'kubernetes/kubernetes'
+    majorRc: true
+  - name: 'Prometheus'
+    github: 'prometheus/prometheus'
+    skip: '^0\.' # ignore these tags
 ```
 
-### Modifying Categories
+Categories live in `pipeline/classify.ts` (keywords), `pipeline/assemble.ts` (order) and `pipeline/template.ts` (emoji).
 
-Update category list in:
+## Pull request
 
-- `pipeline/classify.ts` - Category keywords
-- `pipeline/assemble.ts` - Category grouping
-- `data/news.schema.json` - Validation schema
+With `--pr-body`, the generator writes the PR description: the source counts from `sources.yaml`, the item counts, the feeds that failed, the top 3 headlines and the review line. Headlines are in code spans, so a feed title cannot mention a GitHub user.
 
-### Customizing Templates
-
-Edit `pipeline/template.ts` to modify markdown output format.
-
-## Testing
-
-Run a test locally:
+## Tests
 
 ```bash
-pnpm devops-daily:generate-news
+pnpm vitest run scripts/__tests__/digest-pipeline.test.ts tests/news-validation.test.ts
 ```
-
-This will generate the digest file in `content/news/YYYY/week-N.md` without committing or creating a PR.
-
-Check the generated file manually before committing.
-
-## License
-
-Part of the DevOps Daily project.

@@ -50,7 +50,7 @@ export async function discoverRssFeed(url: string): Promise<string | null> {
 /**
  * Crawl a web source (discover RSS and crawl it)
  */
-export async function crawlWebSource(source: Source): Promise<NewsItem[]> {
+export async function crawlWebSource(source: Source, failures?: string[]): Promise<NewsItem[]> {
   try {
     console.log(`Crawling web: ${source.name} (${source.url})`);
 
@@ -65,13 +65,15 @@ export async function crawlWebSource(source: Source): Promise<NewsItem[]> {
         type: 'rss',
         url: rssFeedUrl,
       };
-      return await crawlRssFeed(rssSource);
+      return await crawlRssFeed(rssSource, failures);
     } else {
       console.log(`  ✗ No RSS feed found for ${source.name}`);
+      failures?.push(source.name);
       return [];
     }
   } catch (error) {
     console.error(`  ✗ Error crawling web source ${source.name}:`, error);
+    failures?.push(source.name);
     return [];
   }
 }
@@ -81,7 +83,8 @@ export async function crawlWebSource(source: Source): Promise<NewsItem[]> {
  */
 export async function crawlWebSources(
   sources: Source[],
-  concurrency: number = 3
+  concurrency: number = 3,
+  failures?: string[]
 ): Promise<NewsItem[]> {
   const webSources = sources.filter((s) => s.type === 'web');
   const allItems: NewsItem[] = [];
@@ -89,7 +92,7 @@ export async function crawlWebSources(
   // Process in batches (slower for web scraping)
   for (let i = 0; i < webSources.length; i += concurrency) {
     const batch = webSources.slice(i, i + concurrency);
-    const results = await Promise.all(batch.map(crawlWebSource));
+    const results = await Promise.all(batch.map((source) => crawlWebSource(source, failures)));
     allItems.push(...results.flat());
   }
 

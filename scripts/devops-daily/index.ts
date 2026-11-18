@@ -1,26 +1,49 @@
 #!/usr/bin/env node
 
+/**
+ * Options:
+ *   --force            replace a digest file that already exists
+ *   --week 2026-W47    rebuild the window of a past week
+ *   --until 2026-11-16 the 7 days before this date
+ *   --pr-body <file>   also write the pull request description to <file>
+ */
+
 import fs from 'fs/promises';
 import path from 'path';
 import * as yaml from 'js-yaml';
-import { SourcesConfig, NewsItem } from './crawler/types.js';
+import { SourcesConfig } from './crawler/types.js';
 import { crawlRssFeeds } from './crawler/rss.js';
 import { crawlWebSources } from './crawler/web.js';
+import { crawlReleases, selectReleases } from './crawler/releases.js';
 import { normalizeItems } from './utils/normalize.js';
 import { deduplicate } from './utils/dedupe.js';
-import { applyLimits } from './utils/limit.js';
-import { isWithinLastDays, getIsoWeekAndYear } from './utils/date.js';
+import { resolveWindow } from './utils/date.js';
 import { classifyItems } from './pipeline/classify.js';
-import { assembleDigest } from './pipeline/assemble.js';
+import { selectItems } from './pipeline/rank.js';
+import { assembleDigest, printStats } from './pipeline/assemble.js';
+import { loadOwnPosts, selectOwnPosts } from './pipeline/own-posts.js';
 import { generateMarkdown } from './pipeline/template.js';
+import { buildPrBody } from './pipeline/pr-body.js';
 import { validateMarkdown, checkDuplicateUrls } from './pipeline/validate.js';
-import { printStats } from './pipeline/assemble.js';
+
+function argValue(name: string): string | undefined {
+  const args = process.argv;
+  const index = args.findIndex((arg) => arg === name || arg.startsWith(`${name}=`));
+  if (index === -1) return undefined;
+  const arg = args[index];
+  return arg.includes('=') ? arg.slice(arg.indexOf('=') + 1) : args[index + 1];
+}
 
 async function main() {
   console.log('🚀 DevOps Daily Digest Generator\n');
 
-  // --force allows replacing a digest file that already exists
   const force = process.argv.includes('--force');
+  const prBodyPath = argValue('--pr-body');
+  const now = new Date();
+  const window = resolveWindow(process.argv.slice(2), now);
+  console.log(
+    `🗓️  Week ${window.week}, ${window.year}: ${window.start.toISOString()} to ${window.end.toISOString()}\n`
+  );
 
   try {
     // 1. Load sources
@@ -28,86 +51,109 @@ async function main() {
     const sourcesPath = path.join(process.cwd(), 'scripts/devops-daily/data/sources.yaml');
     const sourcesContent = await fs.readFile(sourcesPath, 'utf-8');
     const sourcesConfig = yaml.load(sourcesContent) as SourcesConfig;
-    console.log(`  ✓ Loaded ${sourcesConfig.sources.length} sources\n`);
+    const releaseSources = sourcesConfig.releases ?? [];
+    console.log(
+      `  ✓ Loaded ${sourcesConfig.sources.length} news sources and ${releaseSources.length} release feeds\n`
+    );
 
-    // 2. Crawl RSS feeds
+    // 2. Crawl feeds
+    const failures: string[] = [];
     console.log('🔍 Crawling RSS feeds...');
-    const rssItems = await crawlRssFeeds(sourcesConfig.sources, 5);
+    const rssItems = await crawlRssFeeds(sourcesConfig.sources, 5, failures);
     console.log(`  ✓ Found ${rssItems.length} items from RSS feeds\n`);
 
-    // 3. Crawl web sources
     console.log('🌐 Crawling web sources...');
-    const webItems = await crawlWebSources(sourcesConfig.sources, 3);
+    const webItems = await crawlWebSources(sourcesConfig.sources, 3, failures);
     console.log(`  ✓ Found ${webItems.length} items from web sources\n`);
 
-    // 4. Combine and normalize
-    console.log('🔧 Normalizing items...');
-    let allItems = [...rssItems, ...webItems];
-    allItems = normalizeItems(allItems);
-    console.log(`  ✓ Normalized ${allItems.length} items\n`);
+    console.log('🚀 Reading release feeds...');
+    const releaseEntries = await crawlReleases(releaseSources, failures);
+    const releases = selectReleases(
+      releaseEntries,
+      releaseSources.map((s) => s.name),
+      window.start,
+      window.end,
+      now
+    );
+    console.log(`  ✓ ${releases.length} projects with releases in the window\n`);
 
-    // 5. Remove duplicates
-    console.log('🗑️  Removing duplicates...');
-    allItems = deduplicate(allItems);
-    console.log(`  ✓ ${allItems.length} unique items\n`);
-
-    // 6. Filter by date (last 7 days)
-    console.log('📅 Filtering by date (last 7 days)...');
-    allItems = allItems.filter((item) => isWithinLastDays(item.publishedAt, 7));
-    console.log(`  ✓ ${allItems.length} items from last 7 days\n`);
+    // 3. Normalize, dedupe, keep the window
+    console.log('🔧 Normalizing and deduplicating...');
+    const until = Math.min(window.end.getTime(), now.getTime());
+    const releaseUrls = new Set(releases.flatMap((p) => p.releases.map((r) => r.url)));
+    let allItems = deduplicate(normalizeItems([...rssItems, ...webItems])).filter((item) => {
+      const t = new Date(item.publishedAt).getTime();
+      // A release post listed under Releases is not repeated as news.
+      return t >= window.start.getTime() && t < until && !releaseUrls.has(item.url);
+    });
+    console.log(`  ✓ ${allItems.length} unique items in the window\n`);
 
     if (allItems.length === 0) {
-      console.log('⚠️  No items found from the last 7 days. Exiting...');
+      console.log('⚠️  No items found in the window. Exiting...');
       return;
     }
 
-    // 7. Classify items
-    console.log('🔤 Classifying items with keywords...');
+    // 4. Classify, rank and pick
+    console.log('🔤 Classifying and ranking...');
     allItems = classifyItems(allItems);
-    console.log(`  ✓ Classified ${allItems.length} items\n`);
+    const picked = selectItems(allItems, { end: window.end });
+    console.log(`  ✓ ${picked.length} items picked\n`);
 
-    // 8. Apply limits
-    console.log('📊 Applying limits...');
-    allItems = applyLimits(allItems, 4, 12);
-    console.log(`  ✓ ${allItems.length} items after limits\n`);
+    // 5. Our own posts from the same window
+    const ownPosts = selectOwnPosts(
+      await loadOwnPosts(path.join(process.cwd(), 'content', 'posts')),
+      window.start,
+      window.end,
+      now
+    );
 
-    // 9. Summaries are the item excerpts, set during classification
-
-    // 10. Assemble digest
+    // 6. Assemble and render
     console.log('📝 Assembling digest...');
-    const { week, year } = getIsoWeekAndYear();
-    const digest = assembleDigest(allItems, week, year);
+    const digest = assembleDigest({
+      items: picked,
+      releases,
+      ownPosts,
+      week: window.week,
+      year: window.year,
+      date: window.date,
+    });
     printStats(digest);
 
-    // 11. Generate markdown
-    console.log('\n📄 Generating markdown...');
     const markdown = generateMarkdown(digest);
-
-    // Check for duplicate URLs
     const duplicateUrls = checkDuplicateUrls(markdown);
     if (duplicateUrls.length > 0) {
       console.warn(`⚠️  Found ${duplicateUrls.length} duplicate URLs:`, duplicateUrls);
     }
 
-    // 12. Write file
+    // 7. Write file
     console.log('\n💾 Writing file...');
-    const newsDir = path.join(process.cwd(), 'content', 'news', year.toString());
+    const newsDir = path.join(process.cwd(), 'content', 'news', window.year.toString());
     await fs.mkdir(newsDir, { recursive: true });
-    const filePath = path.join(newsDir, `week-${week}.md`);
+    const filePath = path.join(newsDir, `week-${window.week}.md`);
     const exists = await fs
       .access(filePath)
       .then(() => true)
       .catch(() => false);
     if (exists && !force) {
-      console.error(
-        `❌ ${filePath} already exists. Re-run with --force to replace that issue.`
-      );
+      console.error(`❌ ${filePath} already exists. Re-run with --force to replace that issue.`);
       process.exit(1);
     }
     await fs.writeFile(filePath, markdown, 'utf-8');
     console.log(`  ✓ Written to: ${filePath}\n`);
 
-    // 13. Validate markdown
+    if (prBodyPath) {
+      const body = buildPrBody({
+        digest,
+        window,
+        newsSources: sourcesConfig.sources.length,
+        releaseSources: releaseSources.length,
+        failedSources: failures,
+      });
+      await fs.writeFile(prBodyPath, body, 'utf-8');
+      console.log(`  ✓ PR description written to: ${prBodyPath}\n`);
+    }
+
+    // 8. Validate markdown
     console.log('✅ Validating markdown...');
     const isValid = await validateMarkdown(filePath);
     if (!isValid) {
@@ -115,11 +161,8 @@ async function main() {
       process.exit(1);
     }
 
-    console.log(`\n✨ Success! Generated digest for Week ${week}, ${year}`);
+    console.log(`\n✨ Success! Generated digest for Week ${window.week}, ${window.year}`);
     console.log(`📄 File: ${filePath}`);
-    console.log(
-      `\n💡 Tip: Commit and push the file, then create a PR via GitHub Action or manually.`
-    );
 
     // Force exit to prevent hanging on open connections
     process.exit(0);
