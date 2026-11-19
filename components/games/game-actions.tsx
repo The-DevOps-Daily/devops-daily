@@ -9,7 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface GameActionsProps {
   gameSlug: string;
@@ -21,6 +22,8 @@ interface GameActionsProps {
  */
 export function GameActions({ gameSlug, gameTitle }: GameActionsProps) {
   const [copied, setCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareTriggerRef = useRef<HTMLButtonElement>(null);
 
   const shareUrl = typeof window !== 'undefined'
     ? window.location.href
@@ -68,15 +71,27 @@ export function GameActions({ gameSlug, gameTitle }: GameActionsProps) {
       {/* Embed Button */}
       <EmbedCodeModal gameSlug={gameSlug} gameTitle={gameTitle} />
 
-      {/* Share Dropdown */}
-      <DropdownMenu>
+      {/* Share Dropdown. Not modal: a modal menu changes inherited styles on
+          <body>, so the whole page restyles on open and close. The overlay
+          sits above the header, cookie banner and back-to-top button, so an
+          outside click closes the menu without reaching the page, as before. */}
+      <DropdownMenu modal={false} open={shareOpen} onOpenChange={setShareOpen}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2">
+          <Button ref={shareTriggerRef} variant="outline" size="sm" className="gap-2">
             <Share2 size={16} />
             {copied ? 'Copied!' : 'Share'}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        {shareOpen &&
+          createPortal(<div aria-hidden="true" className="fixed inset-0 z-55" />, document.body)}
+        <DropdownMenuContent
+          align="end"
+          className="z-56"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            shareTriggerRef.current?.focus();
+          }}
+        >
           <DropdownMenuItem onClick={() => handleShare('copy')}>
             Copy Link
           </DropdownMenuItem>

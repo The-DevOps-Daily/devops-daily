@@ -1,5 +1,11 @@
 # DevOps Daily News Sources
-# Comprehensive list of RSS feeds and web sources for DevOps content
+#
+# tier ranks a source (see pipeline/rank.ts):
+#   1 = official project blogs and release notes
+#   2 = engineering blogs and tech news
+#   3 = vendor marketing blogs
+# PostgreSQL News is tier 2: the official PostgreSQL releases go to the
+# Releases block below, and the rest of that feed is third-party tool news.
 
 sources:
   # Kubernetes & Container Orchestration
@@ -8,24 +14,28 @@ sources:
     url: "https://kubernetes.io/feed.xml"
     category: "Kubernetes"
     priority: "high"
+    tier: 1
 
   - name: "CNCF Blog"
     type: "rss"
     url: "https://www.cncf.io/blog/feed/"
     category: "Cloud Native"
     priority: "high"
+    tier: 1
 
   - name: "Kubernetes Podcast"
     type: "rss"
     url: "https://kubernetespodcast.com/feeds/audio.xml"
     category: "Kubernetes"
     priority: "medium"
+    tier: 2
 
   - name: "OpenShift Blog"
     type: "rss"
     url: "https://www.redhat.com/en/rss/blog/channel/red-hat-openshift"
     category: "Kubernetes"
     priority: "medium"
+    tier: 3
 
   # Cloud Providers
   - name: "AWS DevOps Blog"
@@ -33,36 +43,42 @@ sources:
     url: "https://aws.amazon.com/blogs/devops/feed/"
     category: "CI/CD"
     priority: "high"
+    tier: 2
 
   - name: "AWS Containers Blog"
     type: "rss"
     url: "https://aws.amazon.com/blogs/containers/feed/"
     category: "Kubernetes"
     priority: "high"
+    tier: 2
 
   - name: "Google Cloud Blog"
     type: "rss"
     url: "https://cloudblog.withgoogle.com/rss/"
     category: "Platforms"
     priority: "high"
+    tier: 1
 
   - name: "Azure DevOps Blog"
     type: "rss"
     url: "https://devblogs.microsoft.com/devops/feed/"
     category: "CI/CD"
     priority: "high"
+    tier: 1
 
   - name: "DigitalOcean Blog"
     type: "rss"
     url: "https://www.digitalocean.com/rss/blog.atom"
     category: "Platforms"
     priority: "medium"
+    tier: 2
 
   - name: "Linode Blog"
     type: "rss"
     url: "https://www.linode.com/blog/feed/"
     category: "Platforms"
     priority: "low"
+    tier: 3
 
   # CI/CD & Automation
   - name: "GitLab Blog"
@@ -70,30 +86,35 @@ sources:
     url: "https://about.gitlab.com/atom.xml"
     category: "CI/CD"
     priority: "high"
+    tier: 2
 
   - name: "GitHub Blog"
     type: "rss"
     url: "https://github.blog/feed/"
     category: "CI/CD"
     priority: "high"
+    tier: 1
 
   - name: "ArgoCD Blog"
     type: "web"
     url: "https://blog.argoproj.io/"
     category: "CI/CD"
     priority: "medium"
+    tier: 1
 
   - name: "Flux CD Blog"
     type: "web"
     url: "https://fluxcd.io/blog/"
     category: "CI/CD"
     priority: "medium"
+    tier: 1
 
   - name: "Harness Blog"
     type: "rss"
     url: "https://www.harness.io/blog/rss.xml"
     category: "CI/CD"
     priority: "medium"
+    tier: 3
 
   # Infrastructure as Code
   - name: "Terraform Blog"
@@ -101,18 +122,23 @@ sources:
     url: "https://www.hashicorp.com/blog/products/terraform/feed.xml"
     category: "IaC"
     priority: "high"
+    tier: 1
 
   - name: "Pulumi Blog"
     type: "rss"
     url: "https://www.pulumi.com/blog/rss.xml"
     category: "IaC"
     priority: "high"
+    tier: 2
 
-  - name: "CloudFormation Updates"
-    type: "web"
-    url: "https://aws.amazon.com/cloudformation/resources/templates/"
-    category: "IaC"
-    priority: "low"
+  # This was "CloudFormation Updates", a web source whose discovered feed
+  # is the AWS What's New feed (all AWS launches), so name it for what it is.
+  - name: "AWS What's New"
+    type: "rss"
+    url: "https://aws.amazon.com/about-aws/whats-new/recent/feed/"
+    category: "Platforms"
+    priority: "high"
+    tier: 1
 
   # Observability & Monitoring
   - name: "Grafana Blog"
@@ -120,18 +146,21 @@ sources:
     url: "https://grafana.com/blog/index.xml"
     category: "Observability"
     priority: "high"
+    tier: 2
 
   - name: "New Relic Blog"
     type: "rss"
     url: "https://blog.newrelic.com/feed/"
     category: "Observability"
     priority: "medium"
+    tier: 3
 
   - name: "OpenTelemetry Blog"
     type: "web"
     url: "https://opentelemetry.io/blog/"
     category: "Observability"
     priority: "high"
+    tier: 1
 
   # Security
   - name: "Aqua Security Blog"
@@ -139,18 +168,21 @@ sources:
     url: "https://blog.aquasec.com/rss.xml"
     category: "Security"
     priority: "high"
+    tier: 3
 
   - name: "Snyk Blog"
     type: "rss"
     url: "https://snyk.io/blog/feed/"
     category: "Security"
     priority: "high"
+    tier: 3
 
   - name: "Falco Blog"
     type: "web"
     url: "https://falco.org/blog/"
     category: "Security"
     priority: "high"
+    tier: 1
 
   # Service Mesh & Networking
   - name: "Istio Blog"
@@ -158,12 +190,14 @@ sources:
     url: "https://istio.io/latest/blog/feed.xml"
     category: "Cloud Native"
     priority: "high"
+    tier: 1
 
   - name: "Cilium Blog"
     type: "rss"
     url: "https://cilium.io/blog/rss.xml"
     category: "Cloud Native"
     priority: "high"
+    tier: 1
 
   # Databases
   - name: "PostgreSQL News"
@@ -171,24 +205,28 @@ sources:
     url: "https://www.postgresql.org/news.rss"
     category: "Databases"
     priority: "medium"
+    tier: 2
 
   - name: "MongoDB Blog"
     type: "rss"
     url: "https://www.mongodb.com/blog/rss"
     category: "Databases"
     priority: "medium"
+    tier: 3
 
   - name: "Redis Blog"
     type: "rss"
     url: "https://redis.io/blog/feed/"
     category: "Databases"
     priority: "medium"
+    tier: 3
 
   - name: "ScyllaDB Blog"
     type: "rss"
     url: "https://www.scylladb.com/feed/"
     category: "Databases"
     priority: "low"
+    tier: 3
 
   # Container Runtimes & Tools
   - name: "Docker Blog"
@@ -196,6 +234,7 @@ sources:
     url: "https://www.docker.com/blog/feed/"
     category: "Cloud Native"
     priority: "high"
+    tier: 1
 
   # Package Management & Helm
   - name: "Helm Blog"
@@ -203,6 +242,7 @@ sources:
     url: "https://helm.sh/blog/"
     category: "Kubernetes"
     priority: "high"
+    tier: 1
 
   # Serverless & FaaS
   - name: "OpenFaaS Blog"
@@ -210,6 +250,7 @@ sources:
     url: "https://www.openfaas.com/blog/"
     category: "Cloud Native"
     priority: "low"
+    tier: 2
 
   # Edge Computing
   - name: "k0s Blog"
@@ -217,6 +258,7 @@ sources:
     url: "https://blog.k0sproject.io/"
     category: "Kubernetes"
     priority: "low"
+    tier: 1
 
   # Industry News & Aggregators
   - name: "DevOps.com"
@@ -224,12 +266,14 @@ sources:
     url: "https://devops.com/feed/"
     category: "Misc"
     priority: "medium"
+    tier: 2
 
   - name: "The New Stack"
     type: "rss"
     url: "https://thenewstack.io/feed/"
     category: "Misc"
     priority: "high"
+    tier: 2
 
   # Additional CNCF Projects
   - name: "etcd Blog"
@@ -237,24 +281,28 @@ sources:
     url: "https://etcd.io/blog/"
     category: "Cloud Native"
     priority: "low"
+    tier: 1
 
   - name: "CoreDNS Blog"
     type: "web"
     url: "https://coredns.io/blog/"
     category: "Cloud Native"
     priority: "low"
+    tier: 1
 
   - name: "Fluentd Blog"
     type: "web"
     url: "https://www.fluentd.org/blog/"
     category: "Observability"
     priority: "low"
+    tier: 1
 
   - name: "NATS Blog"
     type: "rss"
     url: "https://nats.io/blog/index.xml"
     category: "Cloud Native"
     priority: "low"
+    tier: 1
 
   # AI/ML Ops
   - name: "Kubeflow Blog"
@@ -262,12 +310,14 @@ sources:
     url: "https://blog.kubeflow.org/"
     category: "Cloud Native"
     priority: "low"
+    tier: 1
 
   - name: "MLflow Blog"
     type: "web"
     url: "https://mlflow.org/blog"
     category: "Misc"
     priority: "low"
+    tier: 1
 
   # Development Tools
   - name: "JetBrains Blog"
@@ -275,12 +325,14 @@ sources:
     url: "https://blog.jetbrains.com/feed/"
     category: "Misc"
     priority: "low"
+    tier: 3
 
   - name: "VS Code Blog"
     type: "rss"
     url: "https://code.visualstudio.com/feed.xml"
     category: "Misc"
     priority: "low"
+    tier: 1
 
   # Additional Tools
   - name: "Cloudflare Blog"
@@ -288,18 +340,21 @@ sources:
     url: "https://blog.cloudflare.com/rss/"
     category: "Platforms"
     priority: "medium"
+    tier: 1
 
   - name: "Fly.io Blog"
     type: "rss"
     url: "https://fly.io/blog/feed.xml"
     category: "Platforms"
     priority: "medium"
+    tier: 2
 
   - name: "Railway Blog"
     type: "rss"
     url: "https://blog.railway.app/rss.xml"
     category: "Platforms"
     priority: "low"
+    tier: 3
 
   # Linux & OS
   - name: "Ubuntu Blog"
@@ -307,24 +362,28 @@ sources:
     url: "https://ubuntu.com/blog/feed"
     category: "Misc"
     priority: "low"
+    tier: 3
 
   - name: "Red Hat Blog"
     type: "rss"
     url: "https://www.redhat.com/en/rss/blog"
     category: "Misc"
     priority: "medium"
+    tier: 3
 
   - name: "SUSE Blog"
     type: "rss"
     url: "https://www.suse.com/c/feed/"
     category: "Misc"
     priority: "low"
+    tier: 3
 
   - name: "Canonical Blog"
     type: "rss"
     url: "https://canonical.com/blog/feed"
     category: "Misc"
     priority: "low"
+    tier: 3
 
   # Community & Events
   - name: "KubeCon Updates"
@@ -332,12 +391,14 @@ sources:
     url: "https://events.linuxfoundation.org/kubecon-cloudnativecon-north-america/"
     category: "Misc"
     priority: "low"
+    tier: 3
 
   - name: "DevOpsDays"
     type: "web"
     url: "https://devopsdays.org/"
     category: "Misc"
     priority: "low"
+    tier: 3
 
   # Additional IaC Tools
   - name: "CDK Blog"
@@ -345,6 +406,7 @@ sources:
     url: "https://aws.amazon.com/blogs/developer/category/developer-tools/aws-cloud-development-kit/"
     category: "IaC"
     priority: "low"
+    tier: 2
 
   # Multi-Cloud
   - name: "Anthos Blog"
@@ -352,6 +414,7 @@ sources:
     url: "https://cloud.google.com/blog/products/containers-kubernetes"
     category: "Platforms"
     priority: "medium"
+    tier: 1
 
   # Cost Management
   - name: "Kubecost Blog"
@@ -359,12 +422,14 @@ sources:
     url: "https://blog.kubecost.com/rss/"
     category: "Cloud Native"
     priority: "medium"
+    tier: 3
 
   - name: "OpenCost Blog"
     type: "web"
     url: "https://www.opencost.io/blog"
     category: "Cloud Native"
     priority: "low"
+    tier: 1
 
   # Additional Observability
   - name: "Sentry Blog"
@@ -372,6 +437,7 @@ sources:
     url: "https://blog.sentry.io/feed.xml"
     category: "Observability"
     priority: "low"
+    tier: 2
 
   # Development Environments
   - name: "Tilt Blog"
@@ -379,6 +445,7 @@ sources:
     url: "https://blog.tilt.dev/"
     category: "Misc"
     priority: "low"
+    tier: 2
 
   # Additional Databases
   - name: "Yugabyte Blog"
@@ -386,12 +453,14 @@ sources:
     url: "https://blog.yugabyte.com/feed/"
     category: "Databases"
     priority: "low"
+    tier: 3
 
   - name: "TiDB Blog"
     type: "rss"
     url: "https://www.pingcap.com/blog/feed/"
     category: "Databases"
     priority: "low"
+    tier: 3
 
   # WebAssembly
   - name: "Spin Blog"
@@ -399,6 +468,7 @@ sources:
     url: "https://www.fermyon.com/blog"
     category: "Cloud Native"
     priority: "low"
+    tier: 3
 
   # Configuration Management
   - name: "Kustomize Blog"
@@ -406,6 +476,7 @@ sources:
     url: "https://kubectl.docs.kubernetes.io/blog/"
     category: "Kubernetes"
     priority: "low"
+    tier: 1
 
   # Local Development
   - name: "kind Blog"
@@ -413,12 +484,14 @@ sources:
     url: "https://kind.sigs.k8s.io/"
     category: "Kubernetes"
     priority: "low"
+    tier: 1
 
   - name: "minikube Blog"
     type: "web"
     url: "https://minikube.sigs.k8s.io/docs/"
     category: "Kubernetes"
     priority: "low"
+    tier: 1
 
   # Multi-tenancy
   - name: "vcluster Blog"
@@ -426,6 +499,7 @@ sources:
     url: "https://www.vcluster.com/blog"
     category: "Kubernetes"
     priority: "medium"
+    tier: 3
 
   # Additional Git Tools
   - name: "Gitea Blog"
@@ -433,6 +507,7 @@ sources:
     url: "https://blog.gitea.io/"
     category: "CI/CD"
     priority: "low"
+    tier: 1
 
   # Documentation Tools
   - name: "Docusaurus Blog"
@@ -440,6 +515,7 @@ sources:
     url: "https://docusaurus.io/blog/rss.xml"
     category: "Misc"
     priority: "low"
+    tier: 1
 
   # Additional Monitoring
   - name: "Zabbix Blog"
@@ -447,12 +523,14 @@ sources:
     url: "https://blog.zabbix.com/feed/"
     category: "Observability"
     priority: "low"
+    tier: 2
 
   - name: "Nagios Blog"
     type: "web"
     url: "https://www.nagios.com/articles/"
     category: "Observability"
     priority: "low"
+    tier: 3
 
   # Cloud-Native Registry
   - name: "Harbor Blog"
@@ -460,6 +538,7 @@ sources:
     url: "https://goharbor.io/blog/"
     category: "Cloud Native"
     priority: "medium"
+    tier: 1
 
   # Additional Build Tools
   - name: "Bazel Blog"
@@ -467,6 +546,7 @@ sources:
     url: "https://blog.bazel.build/feed.xml"
     category: "CI/CD"
     priority: "low"
+    tier: 1
 
   # Feature Flags
   - name: "LaunchDarkly Blog"
@@ -474,9 +554,46 @@ sources:
     url: "https://launchdarkly.com/blog/feed/"
     category: "CI/CD"
     priority: "low"
+    tier: 3
 
   - name: "Flagsmith Blog"
     type: "web"
     url: "https://flagsmith.com/blog/"
     category: "CI/CD"
     priority: "low"
+    tier: 3
+
+# Releases block: stable releases from GitHub release feeds, plus the
+# official PostgreSQL release posts. Alphas, betas and RCs are skipped,
+# except x.y.0 RCs where majorRc is set.
+releases:
+  - name: "Kubernetes"
+    github: "kubernetes/kubernetes"
+    majorRc: true
+  - name: "PostgreSQL"
+    feed: "https://www.postgresql.org/news.rss"
+    majorRc: true
+  - name: "Terraform"
+    github: "hashicorp/terraform"
+  - name: "OpenTofu"
+    github: "opentofu/opentofu"
+  - name: "Docker Compose"
+    github: "docker/compose"
+  - name: "Moby (Docker Engine)"
+    github: "moby/moby"
+  - name: "Helm"
+    github: "helm/helm"
+  - name: "Argo CD"
+    github: "argoproj/argo-cd"
+  - name: "Prometheus"
+    github: "prometheus/prometheus"
+    # v0.3xx tags are the Go module versions of the 3.x releases.
+    skip: "^0\\."
+  - name: "Grafana"
+    github: "grafana/grafana"
+  - name: "Istio"
+    github: "istio/istio"
+  - name: "Cilium"
+    github: "cilium/cilium"
+  - name: "containerd"
+    github: "containerd/containerd"

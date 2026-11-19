@@ -1,54 +1,67 @@
 import { NewsItem } from '../crawler/types.js';
+import { cleanExcerpt, cleanTitle } from './text.js';
 
 /**
  * Normalize a news item
  */
 export function normalizeItem(item: NewsItem): NewsItem {
+  const title = cleanTitle(item.title);
   return {
     ...item,
-    title: normalizeTitle(item.title),
-    url: normalizeUrl(item.url),
-    excerpt: item.excerpt ? normalizeExcerpt(item.excerpt) : '',
+    title,
+    url: cleanUrl(item.url),
+    excerpt: item.excerpt ? cleanExcerpt(item.excerpt, title) : '',
     publishedAt: normalizeDate(item.publishedAt),
   };
 }
 
 /**
- * Normalize multiple items
+ * Normalize multiple items. Items without a title, a web link or a date are
+ * dropped: an undated item cannot be placed in a week.
  */
 export function normalizeItems(items: NewsItem[]): NewsItem[] {
-  return items.map(normalizeItem);
+  return items.map(normalizeItem).filter((item) => item.title && item.url && item.publishedAt);
 }
 
-/**
- * Normalize title
- */
-function normalizeTitle(title: string): string {
-  // Feed titles are untrusted and end up in markdown: strip any tags and
-  // keep angle brackets encoded so they stay text when rendered.
-  return title
-    .trim()
-    .replace(/<[^>]*>/g, '')
-    .replace(/\s+/g, ' ')           // Normalize whitespace
-    .replace(/\n/g, ' ')            // Remove newlines
-    .replace(/&amp;/g, '&')         // Decode HTML entities
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\[.*?\]/g, '')        // Remove [tags]
-    .trim();
-}
+const TRACKING_PARAMS = new Set([
+  'ref',
+  'fbclid',
+  'gclid',
+  'mc_cid',
+  'mc_eid',
+  '_hsenc',
+  '_hsmi',
+  'mkt_tok',
+  'sc_channel',
+  'sc_campaign',
+  'sc_medium',
+  'sc_content',
+  'sc_country',
+  'sc_geo',
+  'sc_outcome',
+  'sc_publisher',
+  'trk',
+]);
 
 /**
- * Normalize URL
+ * Only http(s) links, without tracking parameters. Anything else would be a
+ * live javascript:/data: link in the digest, so it becomes ''.
  */
-function normalizeUrl(url: string): string {
+export function cleanUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    // Only web links are followed; anything else would become a live
-    // javascript:/data: link in the digest.
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+    for (const key of [...parsed.searchParams.keys()]) {
+      const lower = key.toLowerCase();
+      const value = parsed.searchParams.get(key) ?? '';
+      if (
+        lower.startsWith('utm_') ||
+        TRACKING_PARAMS.has(lower) ||
+        (lower === 'source' && /^rss/i.test(value))
+      ) {
+        parsed.searchParams.delete(key);
+      }
+    }
     return parsed.toString();
   } catch {
     return '';
@@ -56,34 +69,12 @@ function normalizeUrl(url: string): string {
 }
 
 /**
- * Normalize excerpt/description
- */
-function normalizeExcerpt(excerpt: string): string {
-  return excerpt
-    .trim()
-    .replace(/\s+/g, ' ')           // Normalize whitespace
-    .replace(/\n/g, ' ')            // Remove newlines
-    .replace(/<[^>]*>/g, '')        // Remove HTML tags
-    .replace(/&amp;/g, '&')         // Decode HTML entities
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .substring(0, 500)              // Limit length
-    .trim();
-}
-
-/**
- * Normalize date to ISO format
+ * Normalize date to ISO format, or '' when there is no valid date.
  */
 function normalizeDate(date: string | Date): string {
-  try {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(d.getTime())) {
-      return new Date().toISOString();
-    }
-    return d.toISOString();
-  } catch {
-    return new Date().toISOString();
-  }
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return isNaN(d.getTime()) ? '' : d.toISOString();
 }
 
 /**
