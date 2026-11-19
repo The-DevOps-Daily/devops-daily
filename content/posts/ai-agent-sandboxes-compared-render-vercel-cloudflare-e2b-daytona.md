@@ -6,7 +6,7 @@ category:
   slug: 'cloud'
 date: '2026-11-16'
 publishedAt: '2026-11-16T15:00:00Z'
-updatedAt: '2026-11-16T15:00:00Z'
+updatedAt: '2026-11-19T06:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
@@ -54,7 +54,7 @@ The four dimensions in the table below are deliberately operational: how long th
 
 Checked against official docs on 2026-11-11; prices in USD, list prices.
 
-All five expose a programmatic sandbox, but their isolation differs where documented: Render and Vercel use [Firecracker microVMs](https://render.com/blog/introducing-render-sandboxes) and [Firecracker microVMs](https://vercel.com/docs/sandbox) respectively, E2B uses a [Firecracker microVM with its own kernel](https://e2b.dev/security), and Cloudflare describes a container instance as a Linux VM. [Daytona publishes container, Linux VM, Windows, and GPU sandbox classes.](https://www.daytona.io/docs/sandboxes) SDK coverage differs too: Render and Vercel document TypeScript and Python SDKs, and Daytona documents [Python, TypeScript, Ruby, Go, and Java](https://www.daytona.io/docs/sandboxes). Render is [Oregon-only](https://render.com/docs/sandboxes-limits) during the beta, Daytona documents `us` and `eu` targets, and Vercel lists its sandbox regions on its [pricing page](https://vercel.com/docs/sandbox/pricing).
+All five expose a programmatic sandbox, but their isolation differs where documented: Render and Vercel use [Firecracker microVMs](https://render.com/blog/introducing-render-sandboxes) and [Firecracker microVMs](https://vercel.com/docs/sandbox) respectively, E2B uses a [Firecracker microVM with its own kernel](https://e2b.dev/security), and Cloudflare describes a container instance as a Linux VM. [Daytona publishes container, Linux VM, Windows, and GPU sandbox classes.](https://www.daytona.io/docs/sandboxes) On 18 November 2026 it added [macOS sandboxes at $0.0082 per core-hour](https://www.daytona.io/pricing). SDK coverage differs too: Render and Vercel document TypeScript and Python SDKs, and Daytona documents [Python, TypeScript, Ruby, Go, and Java](https://www.daytona.io/docs/sandboxes). Render is [Oregon-only](https://render.com/docs/sandboxes-limits) during the beta, Daytona documents `us` and `eu` targets, and Vercel lists its sandbox regions on its [pricing page](https://vercel.com/docs/sandbox/pricing).
 
 ## Render: a runtime snapshot is a real checkpoint
 
