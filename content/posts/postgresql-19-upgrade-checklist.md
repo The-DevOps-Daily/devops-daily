@@ -27,7 +27,7 @@ This post sorts those changes by when they affect you. It gives you queries to r
 ## TLDR
 
 - **pg_upgrade refuses three things:** btree_gist indexes on `inet` or `cidr` columns; database, role or tablespace names that contain a carriage return or line feed; and databases in the `MULE_INTERNAL` encoding. Fix them on 18.
-- **The 19 server does not start** if a config file still sets `io_workers` or `escape_string_warning`, sets `standard_conforming_strings = off`, or if `pg_hba.conf` uses `radius`. The same settings stored with `ALTER ROLE ... SET` pass `pg_upgrade --check` and then make the real `pg_upgrade` run fail.
+- **The 19 server does not start** if a config file still sets `io_workers` or `escape_string_warning`, sets `standard_conforming_strings = off`, or if `pg_hba.conf` uses `radius`. A per-role or per-database `escape_string_warning` or `standard_conforming_strings = off` passes `pg_upgrade --check` and then makes the real `pg_upgrade` run fail.
 - **Defaults change:** JIT is off, `max_locks_per_transaction` is 128 and a custom value now holds about half as many locks as before, `log_lock_waits` is on, TOAST compression is lz4 where the build has it, and `wal_compression = on` picks zstd first.
 - **Results change after the upgrade:** some text search, pg_trgm and fuzzystrmatch indexes need a rebuild, several Snowball stemmers produce different stems, and `JSON_ARRAY(query)` returns `[]` instead of NULL when the query returns no rows.
 - **Monitoring queries break** on renamed objects: `pg_stat_subscription_stats.sync_error_count`, the `BufferPin` wait event type and event, and the `BufferContent` wait event.
@@ -40,7 +40,7 @@ This post sorts those changes by when they affect you. It gives you queries to r
 - The PostgreSQL 19 binaries and a 19 build of every extension you use, for `pg_upgrade --check`
 - `standard_conforming_strings = on` in the session that runs the queries (the default; run `SET standard_conforming_strings = on;` first if your cluster turns it off)
 
-We tested this post on release day. On a throwaway Ubuntu 24.04 server we installed PostgreSQL 18.7 from the PGDG packages and built 19.0 from the `REL_19_0` tag with lz4, zstd and ICU, because no 19.0 packages or Docker image were published yet. We built an 18 cluster that has each problem in this post, ran every check query on it, ran `pg_upgrade --check` and `pg_upgrade --link` to 19.0, and then ran the post-upgrade steps, the config and login checks, and the logical replication cutover. The outputs and errors quoted below come from those runs.
+We tested this post on release day. On a throwaway Ubuntu 24.04 server we installed PostgreSQL 18.7 from the PGDG packages and built 19.0 from the `REL_19_0` tag with lz4, zstd and ICU, because no 19.0 packages or Docker image were published yet. We built an 18 cluster with the upgrade blockers and most of the behavior changes in this post, ran every check query on it, ran `pg_upgrade --check` and `pg_upgrade --link` to 19.0, and then ran the post-upgrade steps, the config and login checks, and the logical replication cutover. The outputs and errors quoted below come from those runs.
 
 ## What is not in 19
 
@@ -257,7 +257,7 @@ ORDER BY jit_ms_per_call DESC
 LIMIT 20;
 ```
 
-These numbers show what JIT cost, not what it saved. A query where `jit_ms_per_call` is a large part of `mean_ms` is likely to gain from the new default, and a long analytical query may lose. Time both kinds on your 19 copy with JIT on and off before you decide. One known bug can skew the JIT side: with JIT on, hash joins and hash aggregates on more than one key could get many hash collisions and run slowly. It affects 18 and 19.0, and the [fix](https://github.com/postgres/postgres/commit/0c6d95e134) was committed after 19.0 was stamped, so it ships in the next minor releases (11 February 2027 on the [roadmap](https://www.postgresql.org/developer/roadmap/)).
+These numbers show what JIT cost, not what it saved. A query where `jit_ms_per_call` is a large part of `mean_ms` is likely to gain from the new default, and a long analytical query may lose. Time both kinds on your 19 copy with JIT on and off before you decide. One known bug can skew the JIT side: with JIT on, hash joins and hash aggregates on more than one key could get many hash collisions and run slowly. It affects 18 and 19.0, and the [fix](https://github.com/postgres/postgres/commit/0c6d95e134) was committed after 19.0 was stamped, so it should ship in the next minor releases (11 February 2027 on the [roadmap](https://www.postgresql.org/developer/roadmap/)).
 
 **[`log_lock_waits`](https://www.postgresql.org/docs/19/runtime-config-logging.html#GUC-LOG-LOCK-WAITS) is on by default.** The server logs a line each time a session waits longer than `deadlock_timeout` (1 second by default) for a lock. That is useful when you look for blocked migrations or long transactions, but it adds log volume on a busy cluster. Make sure your log shipping and alerting can take it, or set it to `off`.
 
