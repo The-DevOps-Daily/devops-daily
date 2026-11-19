@@ -167,6 +167,8 @@ app.use('/mcp', async (c, next) => {
 
 Most MCP clients can send custom headers, so the agent side is one config line (`Authorization: Bearer <token>`). I verified the gate directly against the app: no header and a wrong token both get a 401, the right token passes through to the transport, and with `MCP_TOKEN` unset the endpoint behaves exactly as before.
 
+A shared token means every client is the same user and the token never expires. For per-user sign-in with Neon Auth as the OAuth server, tested with Claude Code and Codex, see [OAuth for MCP servers on Neon](/posts/neon-mcp-server-oauth).
+
 ## Wire up a client and watch it work
 
 Any MCP client that speaks streamable HTTP can connect to `/mcp`. Here are three ways: a CLI, the SDK, and adding it to an agent.
