@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-10-17'
 publishedAt: '2026-10-17T09:00:00Z'
-updatedAt: '2026-11-15T09:00:00Z'
+updatedAt: '2026-11-19T15:30:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,8 @@ tags:
 ---
 
 :::note
+**Updated 19 November 2026:** PostgreSQL 19.0 is out ([announcement](https://www.postgresql.org/about/news/postgresql-19-released-3449/)). Before you upgrade, see [PostgreSQL 19 Is Out: What to Check Before You Upgrade](/posts/postgresql-19-upgrade-checklist).
+
 **Updated 15 November 2026:** RC2 was stamped on 9 November and released on 12 November together with the minor releases, and general availability is still planned for 19 November. Since the first version of this post, one more release-note feature was reverted (the libpq `servicefile` option, on 18 October), and so was a beta behavior change that affects expression indexes built on JSON constructors (on 6 November). The counts are refreshed at the 14 November branch head.
 :::
 
@@ -242,7 +244,7 @@ The `REPACK` reference page lists `max_repack_replication_slots` (default 5) as 
 
 - **Test on RC2 now.** It came out on 12 November with the minor-release fixes, and the announcement says it "will be mostly identical to the initial release of PostgreSQL 19". A few more fixes have landed on the branch since RC2 and will be in 19.0.
 - **Rehearse the upgrade on a copy of your data.** The pulled features are easy to find with the script; the changes that did ship are where an upgrade surprises you, and [What to Check Before You Upgrade to PostgreSQL 19](/posts/postgresql-19-upgrade-checklist) goes through them with queries for your 18 cluster. If you run on Neon, a branch gives you a copy-on-write copy of production in seconds, so you can clean up beta-era migrations and test the queries the script flags against real data without touching the primary. A major version upgrade on Neon is a move to a new project on the new version, and Neon's [major version upgrade guide](https://neon.com/docs/postgresql/postgres-upgrade) covers the Import Data Assistant (for databases under 10 GB), dump and restore, and logical replication. Check which major versions Neon offers before you pick a date.
-- **General availability is planned for 19 November.** The next scheduled minor release after that is 11 February 2027, per the project's roadmap. If your policy is to wait for the first minor release, that is when 19.1 is due, unless an out-of-cycle release comes first.
+- **General availability was released on 19 November.** The next scheduled minor release after that is 11 February 2027, per the project's roadmap. If your policy is to wait for the first minor release, that is when 19.1 is due, unless an out-of-cycle release comes first.
 - **Do not plan on a pulled feature returning in a 19.x minor release.** Minor releases carry fixes, not new features, so the earliest any of them can return is 20.
 
 ## Summary
