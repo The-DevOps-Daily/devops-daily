@@ -7,7 +7,7 @@ category:
 date: '2026-11-19'
 publishedAt: '2026-11-19T15:00:00Z'
 updatedAt: '2026-11-19T15:00:00Z'
-readingTime: '20 min read'
+readingTime: '22 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -20,14 +20,14 @@ tags:
   - Monitoring
 ---
 
-PostgreSQL 19.0 was released on 19 November 2026. Most of its new features change nothing until you use them: `REPACK`, parallel autovacuum, logical replication of sequences, `WAIT FOR` on standbys. The changes that cause trouble during an upgrade are in one section of the release notes, [Migration to Version 19](https://www.postgresql.org/docs/19/release-19.html#RELEASE-19-MIGRATION), and in a few items elsewhere in the notes. Some of them make `pg_upgrade --check` fail. Some stop the new server from starting. Others change query results, log volume or dashboards after the upgrade is done.
+PostgreSQL 19.0 was released on 19 November 2026 ([release notes](https://www.postgresql.org/docs/19/release-19.html), [`REL_19_0` tag](https://github.com/postgres/postgres/tree/REL_19_0)). Most of its new features change nothing until you use them: `REPACK`, parallel autovacuum, logical replication of sequences, `WAIT FOR` on standbys. The changes that cause trouble during an upgrade are in one section of the release notes, [Migration to Version 19](https://www.postgresql.org/docs/19/release-19.html#RELEASE-19-MIGRATION), and in a few items elsewhere in the notes. Some of them make `pg_upgrade --check` fail. Some stop the new server from starting. Others change query results, log volume or dashboards after the upgrade is done.
 
 This post sorts those changes by when they affect you. It gives you queries to run on your PostgreSQL 18 cluster now, and it ends with an upgrade path for `pg_upgrade` and for logical replication. Each change links to its release note item or documentation page, so you can check it yourself.
 
 ## TLDR
 
 - **pg_upgrade refuses three things:** btree_gist indexes on `inet` or `cidr` columns; database, role or tablespace names that contain a carriage return or line feed; and databases in the `MULE_INTERNAL` encoding. Fix them on 18.
-- **The 19 server does not start** if a config file still sets `io_workers` or `escape_string_warning`, sets `standard_conforming_strings = off`, or if `pg_hba.conf` uses `radius`.
+- **The 19 server does not start** if a config file still sets `io_workers` or `escape_string_warning`, sets `standard_conforming_strings = off`, or if `pg_hba.conf` uses `radius`. The same settings stored with `ALTER ROLE ... SET` pass `pg_upgrade --check` and then make the real `pg_upgrade` run fail.
 - **Defaults change:** JIT is off, `max_locks_per_transaction` is 128 and a custom value now holds about half as many locks as before, `log_lock_waits` is on, TOAST compression is lz4 where the build has it, and `wal_compression = on` picks zstd first.
 - **Results change after the upgrade:** some text search, pg_trgm and fuzzystrmatch indexes need a rebuild, several Snowball stemmers produce different stems, and `JSON_ARRAY(query)` returns `[]` instead of NULL when the query returns no rows.
 - **Monitoring queries break** on renamed objects: `pg_stat_subscription_stats.sync_error_count`, the `BufferPin` wait event type and event, and the `BufferContent` wait event.
@@ -40,7 +40,7 @@ This post sorts those changes by when they affect you. It gives you queries to r
 - The PostgreSQL 19 binaries and a 19 build of every extension you use, for `pg_upgrade --check`
 - `standard_conforming_strings = on` in the session that runs the queries (the default; run `SET standard_conforming_strings = on;` first if your cluster turns it off)
 
-We ran the check queries, the index swap and the sequence copy on PGlite 0.5.10, which is PostgreSQL 18.6 compiled to WebAssembly, against a test schema that contains each problem. The RADIUS, locale provider and JIT checks returned no rows there, because that setup has no such configuration. We did not run a 19 server. What 19 does with the results comes from the release notes, the 19 documentation and the source code of the `REL_19_STABLE` branch.
+We tested this post on release day. On a throwaway Ubuntu 24.04 server we installed PostgreSQL 18.7 from the PGDG packages and built 19.0 from the `REL_19_0` tag with lz4, zstd and ICU, because no 19.0 packages or Docker image were published yet. We built an 18 cluster that has each problem in this post, ran every check query on it, ran `pg_upgrade --check` and `pg_upgrade --link` to 19.0, and then ran the post-upgrade steps, the config and login checks, and the logical replication cutover. The outputs and errors quoted below come from those runs.
 
 ## What is not in 19
 
@@ -163,7 +163,7 @@ For each extension that does not ship with PostgreSQL, check that its project li
 
 ## Step 2: Clean up the configuration
 
-At startup, PostgreSQL treats any error in its configuration files as fatal ([the check in guc.c](https://github.com/postgres/postgres/blob/7f40ddf3cf6e89eecb225e374928ce3991d45012/src/backend/utils/misc/guc.c#L603-L611)). An unknown parameter is an error, and so is a value that a parameter rejects. A failed load of `pg_hba.conf` also stops the server at startup. So four changes in 19 can stop the server from starting:
+At startup, PostgreSQL treats any error in its configuration files as fatal ([the check in guc.c](https://github.com/postgres/postgres/blob/REL_19_0/src/backend/utils/misc/guc.c#L603-L611)). An unknown parameter is an error, and so is a value that a parameter rejects. A failed load of `pg_hba.conf` also stops the server at startup. So four changes in 19 can stop the server from starting:
 
 - **`io_workers` is removed.** It is replaced by [`io_min_workers` and `io_max_workers`](https://www.postgresql.org/docs/19/runtime-config-resource.html#GUC-IO-MIN-WORKERS) (defaults 2 and 8), plus `io_worker_idle_timeout` and `io_worker_launch_interval`. With `io_method = worker`, the pool now grows and shrinks on its own between the two limits. Delete the old line. If you had set `io_workers` above 8, set `io_max_workers` to that value.
 - **`escape_string_warning` is removed.** It did nothing while `standard_conforming_strings` was on.
@@ -198,7 +198,14 @@ FROM pg_hba_file_rules
 WHERE auth_method = 'radius';
 ```
 
-Remove the per-role and per-database settings too, with `ALTER ROLE ... RESET`, `ALTER DATABASE ... RESET`, or `ALTER ROLE ... IN DATABASE ... RESET` for a setting that is scoped to both. They name a parameter that 19 does not have or a value that it rejects. Move RADIUS users to another method before the upgrade.
+Remove the per-role and per-database settings too, with `ALTER ROLE ... RESET`, `ALTER DATABASE ... RESET`, or `ALTER ROLE ... IN DATABASE ... RESET` for a setting that is scoped to both. They name a parameter that 19 does not have or a value that it rejects, and `pg_upgrade --check` does not look at them. In our test, an 18 cluster with `ALTER ROLE app_user SET escape_string_warning = off` passed the check with "Clusters are compatible", and the real run then stopped at "Restoring global objects in the new cluster":
+
+```text
+ALTER ROLE "app_user" SET "escape_string_warning" TO 'off';
+ERROR:  unrecognized configuration parameter "escape_string_warning"
+```
+
+After that failure you must run `initdb` for the new cluster again. On 19, `ALTER ROLE ... SET standard_conforming_strings = off` fails too, with `non-standard string literals are not supported`, so a per-role `off` breaks the restore in the same way. Move RADIUS users to another method before the upgrade.
 
 ### Defaults that change
 
@@ -250,13 +257,13 @@ ORDER BY jit_ms_per_call DESC
 LIMIT 20;
 ```
 
-These numbers show what JIT cost, not what it saved. A query where `jit_ms_per_call` is a large part of `mean_ms` is likely to gain from the new default, and a long analytical query may lose. Time both kinds on your 19 copy with JIT on and off before you decide.
+These numbers show what JIT cost, not what it saved. A query where `jit_ms_per_call` is a large part of `mean_ms` is likely to gain from the new default, and a long analytical query may lose. Time both kinds on your 19 copy with JIT on and off before you decide. One known bug can skew the JIT side: with JIT on, hash joins and hash aggregates on more than one key could get many hash collisions and run slowly. It affects 18 and 19.0, and the [fix](https://github.com/postgres/postgres/commit/0c6d95e134) was committed after 19.0 was stamped, so it ships in the next minor releases (11 February 2027 on the [roadmap](https://www.postgresql.org/developer/roadmap/)).
 
 **[`log_lock_waits`](https://www.postgresql.org/docs/19/runtime-config-logging.html#GUC-LOG-LOCK-WAITS) is on by default.** The server logs a line each time a session waits longer than `deadlock_timeout` (1 second by default) for a lock. That is useful when you look for blocked migrations or long transactions, but it adds log volume on a busy cluster. Make sure your log shipping and alerting can take it, or set it to `off`.
 
 **Autovacuum logging is split.** [`log_autovacuum_min_duration`](https://www.postgresql.org/docs/19/runtime-config-logging.html#GUC-LOG-AUTOVACUUM-MIN-DURATION) now covers only vacuum runs. Analyze runs by autovacuum have their own setting, [`log_autoanalyze_min_duration`](https://www.postgresql.org/docs/19/runtime-config-logging.html#GUC-LOG-AUTOANALYZE-MIN-DURATION), with a default of 10 minutes. If you set the first one to 0 to log every autovacuum action, set the second one to 0 too.
 
-**`wal_compression = on` now picks the best method in the build.** In 18, `on` meant pglz. In 19 it selects the first of zstd, lz4 and pglz that the build supports ([docs](https://www.postgresql.org/docs/19/runtime-config-wal.html#GUC-WAL-COMPRESSION)). That changes CPU use and WAL size. If you want the 18 behavior, set `wal_compression = pglz`. The default is still `off`.
+**`wal_compression = on` now picks the best method in the build.** In 18, `on` meant pglz. In 19 it selects the first of zstd, lz4 and pglz that the build supports ([docs](https://www.postgresql.org/docs/19/runtime-config-wal.html#GUC-WAL-COMPRESSION)). That changes CPU use and WAL size. If you want the 18 behavior, set `wal_compression = pglz`. The default is still `off`. After `SET wal_compression = on`, `SHOW wal_compression` returns the method that was picked: `zstd` on our build.
 
 **TOAST compression defaults to lz4** when PostgreSQL was built with lz4, and to pglz otherwise ([`default_toast_compression`](https://www.postgresql.org/docs/19/runtime-config-client.html#GUC-DEFAULT-TOAST-COMPRESSION)). This only affects values written after the upgrade. Values already stored with pglz stay as they are and read fine. Run `SHOW default_toast_compression;` on the new cluster to see which one you got.
 
@@ -296,7 +303,19 @@ These changes do not stop the upgrade. They change what queries return or what i
 
 **fuzzystrmatch.** `dmetaphone()` and `dmetaphone_alt()` now upper-case their input with the database's default collation, and `soundex()`, `metaphone()` and `difference()` treat only ASCII letters as letters. Reindex indexes that use these functions after the upgrade.
 
-**Snowball stemmers.** The Dutch stemmer uses a new algorithm in 19, and the old one is still available as `dutch_porter`. The English, French, German, Lithuanian, Norwegian, Spanish, Swedish and Turkish stemmers were also updated and produce different stems for some words ([release notes, Functions](https://www.postgresql.org/docs/19/release-19.html), [stemmer list](https://www.postgresql.org/docs/19/textsearch-dictionaries.html#TEXTSEARCH-SNOWBALL-DICTIONARY)). A `tsvector` stored or indexed on 18 keeps the stems that 18 produced, while a query on 19 stems its words with the new rules. If you use these configurations, rebuild the same list of indexes and columns.
+**Snowball stemmers.** The Dutch stemmer uses a new algorithm in 19. The English, French, German, Lithuanian, Norwegian, Spanish, Swedish and Turkish stemmers were also updated and produce different stems for some words ([release notes, Functions](https://www.postgresql.org/docs/19/release-19.html), [stemmer list](https://www.postgresql.org/docs/19/textsearch-dictionaries.html#TEXTSEARCH-SNOWBALL-DICTIONARY)). A `tsvector` stored or indexed on 18 keeps the stems that 18 produced, while a query on 19 stems its words with the new rules. On 18.7, `to_tsvector('english', 'organization')` gives `'organ'`. On 19.0 it gives `'organiz'`, so `to_tsquery('english', 'organization')` on 19 does not match the `'organ'` stored on 18. If you use these configurations, rebuild the same list of indexes and columns.
+
+The old Dutch algorithm is still available as the Snowball language `dutch_porter`, but 19 has no ready-made configuration for it. The built-in `dutch` configuration uses the new stemmer. To keep the old stems, create a dictionary and a configuration and use that configuration in your queries and indexes:
+
+```sql
+CREATE TEXT SEARCH DICTIONARY dutch_porter_stem (TEMPLATE = snowball, LANGUAGE = dutch_porter);
+CREATE TEXT SEARCH CONFIGURATION dutch_porter (COPY = dutch);
+ALTER TEXT SEARCH CONFIGURATION dutch_porter
+  ALTER MAPPING FOR asciiword, word, hword, hword_part, asciihword, hword_asciipart
+  WITH dutch_porter_stem;
+```
+
+On 19.0, `to_tsvector('dutch_porter', 'lichamelijk mogelijkheden')` returns `'licham':1 'mogelijk':2`, the same as `dutch` on 18. The new `dutch` configuration returns `'lichamelijk':1 'molijk':2`.
 
 These queries find candidates. Run the first one once and the others in each database. A database with the ICU or builtin provider is only a candidate, because the change matters where its locale and `LC_CTYPE` classify characters differently. The index query matches function names in index expressions, so it does not find an index that calls these functions through a wrapper function of your own.
 
@@ -339,9 +358,9 @@ On 19, rebuild each index with `REINDEX INDEX CONCURRENTLY <name>;` so writes ke
 - For a stored generated column, an `UPDATE` that sets its source column to itself (`SET body = body`) computes it again. On a large table, do it in batches.
 - For a materialized view, run `REFRESH MATERIALIZED VIEW`.
 
-**`JSON_ARRAY(query)` on an empty result.** When the subquery returns no rows, [`JSON_ARRAY()`](https://www.postgresql.org/docs/19/functions-json.html) now returns an empty JSON array. Before, it returned NULL. We checked the 18 side: `SELECT JSON_ARRAY(SELECT 1 WHERE false) IS NULL;` returns `true` on 18.6. Code that wraps the call in `coalesce(..., '[]')` keeps working, but code that tests for NULL to mean "no rows" does not.
+**`JSON_ARRAY(query)` on an empty result.** When the subquery returns no rows, [`JSON_ARRAY()`](https://www.postgresql.org/docs/19/functions-json.html) now returns an empty JSON array. Before, it returned NULL. `SELECT JSON_ARRAY(SELECT 1 WHERE false);` returns NULL on 18.7 and `[]` on 19.0. Code that wraps the call in `coalesce(..., '[]')` keeps working, but code that tests for NULL to mean "no rows" does not.
 
-**postgres_fdw and read-only transactions.** Transactions now pass their `READ ONLY` and `DEFERRABLE` status to [postgres_fdw](https://www.postgresql.org/docs/19/postgres-fdw.html) sessions. A `READ ONLY` transaction that used to change rows through a foreign table now fails.
+**postgres_fdw and read-only transactions.** Transactions now pass their `READ ONLY` and `DEFERRABLE` status to [postgres_fdw](https://www.postgresql.org/docs/19/postgres-fdw.html) sessions. A direct `INSERT` into a foreign table was already rejected in a `READ ONLY` transaction. What changes is remote work that writes. In our test, a foreign table pointed at a remote view that calls a function which inserts an audit row. Inside `BEGIN READ ONLY`, a `SELECT` on it returned its rows and wrote the audit rows on 18.7. On 19.0 the same `SELECT` fails with `cannot execute INSERT in a read-only transaction`, raised by the remote server.
 
 **Smaller items.** `COPY FROM ... WHERE` no longer accepts system columns. The GB18030 encoding moves from the 2000 to the 2022 version of the standard, which changes the mapping of 18 characters. If you use GB18030 as a client encoding, read the [commit message](https://github.com/postgres/postgres/commit/5334620eef8f7b429594e6cf9dc97331eda2a8bd) for the exact code points.
 
@@ -380,7 +399,7 @@ The [Introduction to PostgreSQL guide](/guides/introduction-to-postgres/10-produ
 2. Run the queries in this post and fix what they find.
 3. Install the 19 binaries and the 19 builds of your extensions. Create the new cluster with `initdb` options that match the old one (encoding, locale, data checksums).
 4. Bring your settings over, without `io_workers` and `escape_string_warning`, with `max_locks_per_transaction` doubled if you had changed it, and with a decision about JIT.
-5. Run `pg_upgrade --check` with the 19 binaries. It reports problems and does not change your data.
+5. Run `pg_upgrade --check` with the 19 binaries. It reports problems and does not change your data. It stops at the first check that fails: on our test cluster it reported only the `MULE_INTERNAL` database, not the role name with a line feed or the btree_gist indexes. So fix everything the queries find before you run it, or expect several rounds. It also does not check per-role settings (see Step 2).
 6. Stop the old cluster and run `pg_upgrade` for real. `--link`, `--clone` and `--swap` are much faster than the default copy mode, and the [pg_upgrade docs](https://www.postgresql.org/docs/19/pgupgrade.html) explain what each one means for going back to the old cluster.
 
 ```bash
@@ -465,4 +484,4 @@ psql -h pg19.internal -d app -v ON_ERROR_STOP=1 -f setval.sql
 - **In monitoring:** rename `sync_error_count` and the buffer wait events in dashboards and alerts.
 - **If you replicate to upgrade:** copy sequence values at cutover, because 19 only synchronizes sequences from a publisher that already runs 19.
 
-Sources: the [PostgreSQL 19 release notes](https://www.postgresql.org/docs/19/release-19.html) and the 19 documentation pages linked above, the `REL_19_STABLE` branch at commit `7f40ddf3cf` (16 November 2026) for configuration defaults and `pg_upgrade` checks, the commits linked in each section, and the [18.7 and 19 RC2 announcement](https://www.postgresql.org/about/news/postgresql-187-1712-1616-1520-1425-and-19-rc-2-released-3442/).
+Sources: the [PostgreSQL 19 release notes](https://www.postgresql.org/docs/19/release-19.html) and the 19 documentation pages linked above, the [`REL_19_0` tag](https://github.com/postgres/postgres/tree/REL_19_0) (commit `5c839a2a08`, stamped 16 November 2026) for configuration defaults and `pg_upgrade` checks, the commits linked in each section, and the [18.7 and 19 RC2 announcement](https://www.postgresql.org/about/news/postgresql-187-1712-1616-1520-1425-and-19-rc-2-released-3442/).
