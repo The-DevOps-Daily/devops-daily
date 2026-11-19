@@ -113,7 +113,7 @@ Pick one provider and learn it well; the ideas carry over to the others. Learn r
 
 **You know it when you can** build a VPC with a public and a private subnet, put a server in the private one that can still reach the internet, and say what the setup costs per month before the bill arrives.
 
-Practice in the [AWS VPC simulator](/games/aws-vpc-simulator) and the [cloud cost optimizer](/games/cloud-cost-optimizer). The [Introduction to AWS](/guides/introduction-to-aws) and [FinOps for DevOps engineers](/guides/finops-for-devops-engineers) guides explain the parts and the costs.
+Practice in the [AWS VPC simulator](/games/aws-vpc-simulator). The [Introduction to AWS](/guides/introduction-to-aws) and [FinOps for DevOps engineers](/guides/finops-for-devops-engineers) guides explain the parts and the costs.
 
 ### 7. Infrastructure as code
 
