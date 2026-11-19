@@ -165,7 +165,7 @@ It is infrastructure work with a new failure surface: latency you do not control
 
 ## What this means for the table stakes
 
-None of this makes the standard list optional. You still need it. The point is what you do with it once you have it.
+None of this makes the standard list optional. You still need it, and our [DevOps knowledge map](/posts/devops-knowledge-map) puts it in a learning order. The point is what you do with it once you have it.
 
 Take Terraform. Having it on your CV clears a filter. What creates an opening is being the person who can walk into an organisation where three teams share one state file and nobody dares run apply on a Friday, and fix that. The provider is not the skill. Every platform publishes one, DigitalOcean's included, and the resource reference is a web page. The skill is the operating model around it.
 
