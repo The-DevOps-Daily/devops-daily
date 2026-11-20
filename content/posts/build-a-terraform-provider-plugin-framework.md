@@ -324,6 +324,8 @@ Everything above is real code from an open-source provider for the [SMTPfast](ht
 https://github.com/smtpfast/terraform-provider-smtpfast
 ```
 
+For a provider built against an API we do not own, see [our Terraform provider for Inngest and what the real API taught us](/posts/inngest-terraform-provider): missing enum values, credentials that cannot read keys, and a destroy that has to archive.
+
 ## Summary
 
 - A Terraform provider is a Go binary that translates between Terraform's state and your API. Use the **Plugin Framework**.
