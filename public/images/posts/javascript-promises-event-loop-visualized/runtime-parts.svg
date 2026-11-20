@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-labelledby="t d">
+  <title id="t">The parts that run JavaScript callbacks</title>
+  <desc id="d">A call stack runs one frame at a time. The host, Node.js or the browser, waits for timers, sockets and files off the stack. Promise callbacks wait in the microtask queue. Timer and I/O callbacks wait in the task queue. The event loop waits for an empty stack, runs every microtask, then runs one task and repeats.</desc>
+  <rect width="960" height="600" rx="20" fill="#fafafa"/>
+  <g font-family="Inter, 'Segoe UI', system-ui, -apple-system, 'DejaVu Sans', sans-serif">
+    <text x="30" y="58" font-size="40" font-weight="700" fill="#09090b">Who runs your promise callbacks</text>
+
+    <!-- call stack -->
+    <rect x="30" y="86" width="330" height="352" rx="16" fill="#ffffff" stroke="#d4d4d8" stroke-width="2"/>
+    <text x="52" y="128" font-size="30" font-weight="700" fill="#09090b">Call stack</text>
+    <text x="52" y="162" font-size="26" fill="#71717a">top frame runs now</text>
+    <g font-family="ui-monospace, 'SF Mono', Menlo, 'DejaVu Sans Mono', monospace" font-size="26">
+      <rect x="52" y="186" width="286" height="62" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="2.5"/>
+      <text x="70" y="226" fill="#09090b">console.log()</text>
+      <rect x="52" y="260" width="286" height="62" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5"/>
+      <text x="70" y="300" fill="#3f3f46">handleRequest()</text>
+      <rect x="52" y="334" width="286" height="62" rx="10" fill="#f4f4f5" stroke="#d4d4d8" stroke-width="1.5"/>
+      <text x="70" y="374" fill="#3f3f46">main script</text>
+    </g>
+
+    <!-- host -->
+    <rect x="384" y="86" width="546" height="102" rx="16" fill="#ffffff" stroke="#d4d4d8" stroke-width="2"/>
+    <text x="406" y="128" font-size="30" font-weight="700" fill="#09090b">Host: Node.js or the browser</text>
+    <text x="406" y="166" font-size="26" fill="#71717a">waits for timers, sockets, files</text>
+
+    <!-- microtask queue -->
+    <rect x="384" y="210" width="546" height="102" rx="16" fill="#fffbeb" stroke="#d97706" stroke-width="2.5"/>
+    <text x="406" y="252" font-size="30" font-weight="700" fill="#b45309">Microtask queue</text>
+    <text x="406" y="290" font-size="26" fill="#92400e">then, catch, code after await</text>
+
+    <!-- task queue -->
+    <rect x="384" y="336" width="546" height="102" rx="16" fill="#ffffff" stroke="#a1a1aa" stroke-width="2"/>
+    <text x="406" y="378" font-size="30" font-weight="700" fill="#09090b">Task queue</text>
+    <text x="406" y="416" font-size="26" fill="#71717a">timer and I/O callbacks</text>
+
+    <!-- event loop rule -->
+    <rect x="30" y="462" width="900" height="112" rx="16" fill="#18181b"/>
+    <text x="52" y="500" font-size="24" font-weight="700" fill="#fbbf24" letter-spacing="2">THE EVENT LOOP, EVERY TURN</text>
+    <g font-size="28" fill="#f4f4f5">
+      <circle cx="68" cy="542" r="17" fill="#d97706"/>
+      <text x="68" y="551" text-anchor="middle" font-size="22" font-weight="700" fill="#09090b">1</text>
+      <text x="96" y="551">stack empty</text>
+      <text x="300" y="551" fill="#a1a1aa">&#8594;</text>
+      <circle cx="362" cy="542" r="17" fill="#d97706"/>
+      <text x="362" y="551" text-anchor="middle" font-size="22" font-weight="700" fill="#09090b">2</text>
+      <text x="390" y="551"><tspan font-weight="700" fill="#fbbf24">every</tspan> microtask</text>
+      <text x="658" y="551" fill="#a1a1aa">&#8594;</text>
+      <circle cx="720" cy="542" r="17" fill="#d97706"/>
+      <text x="720" y="551" text-anchor="middle" font-size="22" font-weight="700" fill="#09090b">3</text>
+      <text x="748" y="551"><tspan font-weight="700" fill="#fbbf24">one</tspan> task</text>
+      <text x="918" y="553" font-size="34" font-weight="700" fill="#fbbf24" text-anchor="end">&#8635;</text>
+    </g>
+  </g>
+</svg>
