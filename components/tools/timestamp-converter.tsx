@@ -121,7 +121,9 @@ export function TimestampConverter() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex items-center justify-between rounded-md bg-muted/40 px-4 py-3">
             <span className="text-xs font-mono text-muted-foreground">seconds</span>
-            <span className="font-mono text-lg tabular-nums">{now === null ? '…' : Math.floor(now / 1000)}</span>
+            <span className="font-mono text-lg tabular-nums">
+              {now === null ? '…' : Math.floor(now / 1000)}
+            </span>
           </div>
           <div className="flex items-center justify-between rounded-md bg-muted/40 px-4 py-3">
             <span className="text-xs font-mono text-muted-foreground">milliseconds</span>
