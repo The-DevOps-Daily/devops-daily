@@ -80,15 +80,15 @@ function OutputRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const LOCAL_TZ =
-  typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'local';
-
 export function TimestampConverter() {
   const [input, setInput] = useUrlState('t', '');
-  const [now, setNow] = useState<number>(() => Date.now());
+  // Clock and time zone start empty so the static HTML matches the first client render.
+  const [now, setNow] = useState<number | null>(null);
+  const [localTz, setLocalTz] = useState('local');
 
-  // Live clock
   useEffect(() => {
+    setLocalTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -112,7 +112,7 @@ export function TimestampConverter() {
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xs font-mono text-muted-foreground">// now</span>
           <button
-            onClick={() => setInput(String(Math.floor(now / 1000)))}
+            onClick={() => setInput(String(Math.floor((now ?? Date.now()) / 1000)))}
             className="text-xs font-mono text-muted-foreground transition-colors hover:text-primary"
           >
             use now &rarr;
@@ -121,11 +121,11 @@ export function TimestampConverter() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="flex items-center justify-between rounded-md bg-muted/40 px-4 py-3">
             <span className="text-xs font-mono text-muted-foreground">seconds</span>
-            <span className="font-mono text-lg tabular-nums">{Math.floor(now / 1000)}</span>
+            <span className="font-mono text-lg tabular-nums">{now === null ? '…' : Math.floor(now / 1000)}</span>
           </div>
           <div className="flex items-center justify-between rounded-md bg-muted/40 px-4 py-3">
             <span className="text-xs font-mono text-muted-foreground">milliseconds</span>
-            <span className="font-mono text-lg tabular-nums">{now}</span>
+            <span className="font-mono text-lg tabular-nums">{now ?? '…'}</span>
           </div>
         </div>
       </div>
@@ -181,7 +181,7 @@ export function TimestampConverter() {
             <OutputRow label="unix milliseconds" value={String(date.getTime())} />
             <OutputRow label="iso 8601 (utc)" value={date.toISOString()} />
             <OutputRow label="utc" value={date.toUTCString()} />
-            <OutputRow label={`local (${LOCAL_TZ})`} value={date.toLocaleString()} />
+            <OutputRow label={`local (${localTz})`} value={date.toLocaleString()} />
             <OutputRow label="relative" value={relativeTime(date)} />
             <OutputRow
               label="weekday"
