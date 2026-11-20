@@ -383,7 +383,7 @@ Error from server (Forbidden): persistentvolumeclaims "cache-data" is forbidden:
 "persistentvolumeclaims" in API group "" in the namespace "shop"
 ```
 
-### A security review found four more
+### Three security reviews found more
 
 After the runs, an automated security review of the demo repo found four ways around the gate as it was when we measured:
 
@@ -392,9 +392,23 @@ After the runs, an automated security review of the demo repo found four ways ar
 3. **File flags we had not listed**: `--patch-file`, `--template`, `--profile-output`, `--cache-dir` and `-o go-template-file=...` can read or write files on the host.
 4. **The replica limit read only one path.** A JSON patch that replaced `/spec`, or the whole object, set replicas without touching `/spec/replicas`.
 
-We rewrote the gate as a **deny-by-default parser**, and that is the design choice we would keep. Every flag must be on a list with a known arity, only `-n`/`--namespace` may come before the verb, and anything else is refused before kubectl sees it. A gate that reads a command differently from kubectl can be steered through the difference, by the model or by whoever wrote the text the model reads. The guarded harness now also asks the dry run for the object a change would produce (`-o json`) and checks replicas and memory on that object, which also closes the JSON-patch memory hole above. kubectl runs from an empty working directory. A second review of those fixes found three more: the dry run dropped `-o` from the command and could check different arguments than the real run, `-n` and `--namespace` were read separately and could disagree, and a removed memory limit or a large memory request went unchecked. The gate now refuses `-o` on changes so both runs use one argument list, treats short and long spellings as one option with the last value winning (as kubectl does), and checks memory requests and removed limits. Each bypass from both reviews has a test in `scripts/03-break-the-gate.mjs`.
+We rewrote the gate as a **deny-by-default parser**. If you write a gate like this at all, that is the only way to write it. Every flag must be on a list with a known arity, only `-n`/`--namespace` may come before the verb, and anything else is refused before kubectl sees it. A gate that reads a command differently from kubectl can be steered through the difference, by the model or by whoever wrote the text the model reads. The guarded harness now also asks the dry run for the object a change would produce (`-o json`) and checks replicas and memory on that object, which also closes the JSON-patch memory hole above. kubectl runs from an empty working directory. A second review of those fixes found three more: the dry run dropped `-o` from the command and could check different arguments than the real run, `-n` and `--namespace` were read separately and could disagree, and a removed memory limit or a large memory request went unchecked. The gate now refuses `-o` on changes so both runs use one argument list, treats short and long spellings as one option with the last value winning (as kubectl does), and checks memory requests and removed limits. A third review found the memory check still failed open: some quantity forms (`1e10`, `1Pi`, `1E`) did not parse and passed, and a renamed or newly added container was not compared. Now every quantity form parses, anything unparseable needs approval, and every container in the result must keep a memory limit within the cap. Each bypass from all three reviews has a test in `scripts/03-break-the-gate.mjs`.
 
 Did it change the results? `scripts/05-replay-guard.mjs` replays all 3,207 recorded kubectl commands through the new gate. 60 commands that ran during the measurement would be refused now, and 57 of those had failed anyway: typo flags and subcommands that do not exist. The other three are `kubectl set probe --help` and two patches written as single-quoted YAML in one Ministral guarded run on incident 4, which kubectl accepts and the new gate does not; that run was already scored as a wrong fix. Twelve commands the dry run refused at the time would now get past the parser and reach the same dry run. None of the 172 change commands that ran in the guarded arm set replicas or memory outside the limits, so the new result check would have refused none of them. We re-ran that Ministral incident three times with the hardened gate on a fresh kind cluster: one right fix and two escalations after changes that did not fix it, against two wrong fixes and one escalation in the original three. Three runs of one incident is not enough to call that a change in either direction. Six Claude Haiku 5.5 incidents run as a smoke test with the hardened gate were all right fixes, with no refusals. Those re-runs used the gate after the first review; replaying their 111 commands through the final gate changes no decision. The scored data in this post is from the gate as it was, and these re-runs are kept in their own file.
+
+Here is the plain lesson from those three rounds: **a hand-written kubectl argument parser is a weak security boundary.** Every round found a new way around ours, and we stopped extending it after the third. The controls that should carry the weight are RBAC with least privilege, which held in every run here, and server-side policy that judges the object a request would produce, whatever syntax produced it. The demo repo now includes the replica cap as a [ValidatingAdmissionPolicy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) that applies only to the agent's service account. We attacked it with plain kubectl as the agent, no harness gate in the way (output shortened):
+
+```text
+deny   agent: scale worker to 50                     ValidatingAdmissionPolicy 'agent-replica-cap' ... denied
+deny   agent: merge patch spec.replicas 50           ValidatingAdmissionPolicy 'agent-replica-cap' ... denied
+deny   agent: JSON patch replacing /spec/replicas    ValidatingAdmissionPolicy 'agent-replica-cap' ... denied
+deny   agent: scale web to 0                         ValidatingAdmissionPolicy 'agent-replica-cap' ... denied
+allow  agent: scale worker to 5
+allow  admin (not the agent): scale web to 0
+all checks held
+```
+
+The memory cap fits the same pattern, in CEL or in Kyverno or OPA Gatekeeper. Keep a gate in the harness for what policy cannot see, such as the kill switch, the change budget and the audit log, but do not make it the thing that stops a bad change. The admission policy was not part of the 360 measured runs.
 
 ## Bugs in our own method
 
@@ -439,7 +453,7 @@ If you want to try this on your own on-call:
 
 1. Write your top incidents as tests first: the break, the check for broken, the check for fixed, and the plausible wrong fix.
 2. Run candidate models against them in a throwaway cluster, guarded and unguarded, before any of them gets near production.
-3. Give the agent its own scoped identity, a gate outside the model, and a kill switch the model cannot reach, even if the model never needs them.
+3. Give the agent its own least-privilege identity, put hard limits in server-side admission policy, and keep a kill switch and an audit log in the harness, outside the model's reach, even if the model never needs them.
 4. Verify outcomes in the harness. Never take the agent's report as the result.
 5. Track "asked a human" as a cost. A gate that turns every hard incident into a page is safe, but it is not saving anyone's night.
 
