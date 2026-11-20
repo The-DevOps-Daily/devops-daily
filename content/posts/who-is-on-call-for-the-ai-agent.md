@@ -185,7 +185,7 @@ redis-cli --tls -h agent-control --user incident-control --askpass \
   DEL agent:deploy-agent-prod:paused
 ```
 
-Test all four layers in a monthly game day. Start a harmless, repeatable test action, pause the agent while it is active, revoke its identity, exhaust a test gateway budget, and verify that egress policy blocks the target. Record time to containment and any action that escaped after the first stop signal. A kill switch that only exists in documentation is not a control.
+Test all four layers in a monthly game day. Start a harmless, repeatable test action, pause the agent while it is active, revoke its identity, exhaust a test gateway budget, and verify that egress policy blocks the target. Record time to containment and any action that escaped after the first stop signal. A kill switch that only exists in documentation is not a control. In our [measured AgentOps runbook test](/posts/agentops-agent-runs-on-call-runbook-measured), a switch checked by the tool runner held for all three models we paged, and a scoped gate turned seven damaging runs from a small model into zero.
 
 ## Scope the identity, then bound the work
 
