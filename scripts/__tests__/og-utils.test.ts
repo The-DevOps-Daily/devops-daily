@@ -200,13 +200,18 @@ describe('cover background selection', () => {
   });
 
   it.each([
-    ['devops', 'general'],
+    ['devops', 'devops-loop'],
     ['docker', 'containers'],
     ['git', 'git'],
     ['terraform', 'infrastructure-as-code'],
     ['linux', 'linux-terminal'],
     ['bash', 'linux-terminal'],
-    ['python', 'general'],
+    ['python', 'programming'],
+    ['JavaScript', 'programming'],
+    ['Monitoring', 'observability'],
+    ['OpenTelemetry', 'observability'],
+    ['SRE', 'incident-oncall'],
+    ['Incident Response', 'incident-oncall'],
     ['networking', 'linux-networking'],
     ['security', 'security'],
     ['cloud', 'cloud'],
@@ -245,7 +250,9 @@ describe('cover background selection', () => {
     expect(
       selectCoverBackground({ type: 'post', slug: 'x', category: 'Linux', tags: ['Shell', 'DNS'] })
     ).toBe('linux-networking');
-    expect(selectCoverBackground({ type: 'post', slug: 'x', category: 'python' })).toBe('general');
+    expect(selectCoverBackground({ type: 'post', slug: 'x', category: 'Something New' })).toBe(
+      'general'
+    );
   });
 
   it('uses tags only when the category is generic', () => {
@@ -281,6 +288,14 @@ describe('cover background selection', () => {
     ).toBe('containers');
     expect(
       selectCoverBackground({ type: 'interview', slug: 'x', category: 'SRE', tags: ['scheduling'] })
+    ).toBe('incident-oncall');
+    expect(
+      selectCoverBackground({
+        type: 'interview',
+        slug: 'x',
+        category: 'Misc',
+        tags: ['scheduling'],
+      })
     ).toBe('general');
   });
 

@@ -53,17 +53,21 @@ export const COVER_BACKGROUNDS = [
   'comparison',
   'containers',
   'databases',
+  'devops-loop',
   'general',
   'git',
   'git-alt',
+  'incident-oncall',
   'infrastructure-as-code',
   'kubernetes',
   'kubernetes-alt',
   'linux-networking',
   'linux-terminal',
   'news',
+  'observability',
   'postgres',
   'postgres-alt',
+  'programming',
   'quiz',
   'security',
   'security-alt',
@@ -95,7 +99,8 @@ const COVER_FONT_OPTIONS = {
  * 3. Category: the first TOPIC_RULES entry that matches the category.
  * 4. Tags: when the category matched nothing (DevOps, Linux, Bash, Python,
  *    SRE, unknown...), the first tag in frontmatter order that matches a rule.
- * 5. Linux, Bash, shell or terminal in the category or a tag -> linux-terminal.
+ * 5. Linux, Bash, shell or terminal in the category or a tag -> linux-terminal;
+ *    DevOps or platform engineering -> devops-loop.
  * 6. Otherwise general.
  *
  * Kubernetes, Postgres, security and git covers alternate between two
@@ -134,18 +139,31 @@ const TOPIC_RULES: ReadonlyArray<readonly [CoverBackground, RegExp]> = [
     /\b(security|devsecops|secrets?|vulnerabilit(y|ies)|cve|identity|iam|tls|ssl|supply chain)\b/,
   ],
   ['databases', /\b(databases?|sql|mysql|mariadb|redis|mongodb|sqlite|nosql|caching)\b/],
+  [
+    'incident-oncall',
+    /\b(incidents?|incident response|on ?call|sre|site reliability|postmortems?|pagerduty|runbooks?)\b/,
+  ],
+  [
+    'observability',
+    /\b(observability|monitoring|opentelemetry|otel|tracing|distributed tracing|logging|prometheus|grafana|metrics)\b/,
+  ],
   ['cloud', /\b(cloud|aws|azure|gcp|google cloud|serverless|digitalocean|lambda)\b/],
   [
     'linux-networking',
     /\b(networking|network|dns|tcp|udp|http|ssh|openssh|load balanc(ing|er)|reverse proxy|cdn|nginx)\b/,
   ],
   ['automation', /\b(automation|ansible|configuration management|puppet|chef|cron)\b/],
+  [
+    'programming',
+    /\b(programming|python|javascript|typescript|node ?js|golang|go|rust|java|coding)\b/,
+  ],
 ];
 
 // Checked after TOPIC_RULES on the category and on every tag, so a Linux post
 // tagged DNS still gets linux-networking.
 const FALLBACK_RULES: ReadonlyArray<readonly [CoverBackground, RegExp]> = [
   ['linux-terminal', /\b(linux|bash|shell|zsh|terminal|command line|unix|sysadmin)\b/],
+  ['devops-loop', /\b(devops|platform engineering|dora|devops career)\b/],
 ];
 
 function normalizeTopic(value: unknown): string {
