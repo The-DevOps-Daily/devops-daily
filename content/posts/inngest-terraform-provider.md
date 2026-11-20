@@ -33,7 +33,7 @@ This post shows how to use it, and then the more interesting part: what changed 
 - Install it from the Registry with `source = "The-DevOps-Daily/inngest"` and `version = "~> 0.1"`. It reads `INNGEST_API_KEY`.
 - What the real API taught us: new environments and production both come back without a `type`, API keys cannot read event or signing keys, and webhook lists need the `X-Inngest-Env` header. Two limits came from the spec itself: environments cannot be deleted (so destroy archives), and keys cannot be created or rotated through the API.
 - Webhook updates and deletes go through the v1 API, which takes the environment's **signing key**, not an API key. You copy that key from the dashboard once and give it to the provider.
-- Tests: unit tests and real `terraform` runs against a fake API on pushes to main and on pull requests, a weekly real-API run that never runs on pull requests, `govulncheck`, and GPG-signed releases.
+- Tests: unit tests and real `terraform` runs against a fake API on pushes to main and on pull requests, a real-API acceptance suite that passes in `production` and runs weekly (never on pull requests), `govulncheck`, and GPG-signed releases.
 
 ## Prerequisites
 
@@ -327,7 +327,7 @@ When the lookup gets a 403, the error tells you what to do instead of showing a 
 inngest API keys cannot read signing keys. Set signing_key on the provider or the webhook (or INNGEST_SIGNING_KEY) to the environment's signing key from the Inngest dashboard
 ```
 
-The provider tries a supplied key as given, then in the hashed form the Inngest SDKs send (the prefix, then the SHA-256 of the decoded rest). A wrong supplied key fails; it does not fall back to a lookup that cannot work.
+The provider tries a supplied key as given, then in the hashed form the Inngest SDKs send (the prefix, then the SHA-256 of the decoded rest). In the real-API runs, the dashboard key worked as given. A wrong supplied key fails; it does not fall back to a lookup that cannot work.
 
 Two practical notes:
 
@@ -392,20 +392,23 @@ We ran the whole suite on the same machine (4 vCPUs, Go 1.27.4, Terraform 1.17.2
 
 The whole run, including compiling, took 1 minute 20 seconds of wall time. The provider package's 27.8 seconds is mostly Terraform starting up for each plan and apply.
 
-**Weekly real-API acceptance tests.** The `TestAcc*` tests use a real Inngest account, random `tf-acc-` names, and clean up after themselves. The [Acceptance workflow](https://github.com/The-DevOps-Daily/terraform-provider-inngest/actions/workflows/acceptance.yml) runs them every Monday at 06:00 UTC and on manual dispatch, with the API key and signing key stored as repository secrets. It has no `pull_request` trigger, so code from a fork never runs with those secrets. If the secrets are missing, the job skips with a notice instead of failing.
+**Weekly real-API acceptance tests.** The `TestAcc*` tests use a real Inngest account, random `tf-acc-` names, and clean up after themselves. The [Acceptance workflow](https://github.com/The-DevOps-Daily/terraform-provider-inngest/actions/workflows/acceptance.yml) runs them every Monday at 06:00 UTC and on manual dispatch (the [2026-11-20 manual run](https://github.com/The-DevOps-Daily/terraform-provider-inngest/actions/runs/44768827231) passed all four tests in 13.1 seconds), with the API key and signing key stored as repository secrets. It has no `pull_request` trigger, so code from a fork never runs with those secrets. If the secrets are missing, the job skips with a notice instead of failing.
 
 **Supply chain checks.** Every pull request and every push to main runs `govulncheck`, `golangci-lint`, `gofmt`, a check that the generated docs are committed, and `terraform validate` on every example. Actions are pinned to commit SHAs. Dependabot opens dependency updates, and on release day `govulncheck` caught advisories in `google.golang.org/grpc` and `golang.org/x/net` that we bumped before tagging. Releases are built by GoReleaser and the checksum file is GPG-signed, which the Terraform Registry checks when you run `terraform init`.
 
 ## Limits and what is next
 
-Be clear about what has and has not been proven against the real API. From GAPS.md:
+Here is what has been proven against the real API, and what has not.
+
+After the fixes, the real-API acceptance suite passed twice on 2026-11-20 in the `production` environment: once in a local `TF_ACC=1` run, and once in the [Acceptance workflow, started by hand](https://github.com/The-DevOps-Daily/terraform-provider-inngest/actions/runs/44768827231). All four tests passed: `TestAccEnvironment`, `TestAccWebhook`, `TestAccDataSources` and `TestAccKeysDenied`. `TestAccWebhook` creates a webhook, renames it and changes its transform through `PUT /v1/webhooks/{id}` (the URL stays the same), imports it, replaces it with an event filter and a response, deletes it outside Terraform and recreates it, and destroys it. So v1 updates and deletes with a dashboard signing key work. The key worked as given, without the hashed fallback.
 
 :::warning
-**Webhook updates and deletes with a supplied signing key are covered by the fake API only.** The 2026-11-20 run failed earlier, at the signing key lookup (lesson 2), so it did not reach the v1 calls. The provider now accepts a dashboard signing key and tries it raw and hashed, but `PUT` and `DELETE /v1/webhooks/{id}` with that key, rename behaviour, and `X-Inngest-Env` on v1 for custom and branch environments still need a real-API confirmation. The weekly acceptance run exercises v1 updates and deletes in the production environment only. It does not test custom or branch environments, or whether a rename keeps the other fields.
+**Webhook updates and deletes are confirmed in `production` only.** Custom and branch environments, where branch deploys share one signing key, are not tested yet. The test also changes the name and the transform together, so whether a rename alone keeps an existing event filter and response is not tested.
 :::
 
 Other open points in GAPS.md:
 
+- v1 webhook calls in custom and branch environments
 - Whether archived environments stay in `GET /v2/envs`, and whether archiving reliably frees an active-environment slot
 - Duplicate names, reuse of archived names, and names with capitals or spaces
 - How empty event filters and transform whitespace come back from the real API
@@ -427,7 +430,7 @@ If you run Inngest and try the provider, we would like to hear what breaks. [Ope
 - `The-DevOps-Daily/inngest` 0.1.0 manages Inngest custom environments and webhooks from Terraform, with data sources for environments, apps, webhooks and keys, and import for both resources.
 - Inngest's two APIs take two credentials: an API key for v2, and the environment's signing key for v1 webhook updates and deletes. API keys cannot read signing keys, so you copy that key from the dashboard.
 - The real API differed from our reading of the spec in three places: missing types, key access, and the environment header. Two more limits came from the spec itself: archive instead of delete, and keys that only the dashboard manages. All five changed the design.
-- The three real-API findings are now regression tests and part of the fake API, so CI tests against the observed behaviour, and a weekly run checks the real API itself.
+- The three real-API findings are now regression tests and part of the fake API, so CI tests against the observed behaviour. The real-API acceptance suite, including webhook updates and deletes through v1, passes in `production` and runs weekly.
 - If you want to practise the plan, apply and destroy loop before you point it at a real account, try the [Terraform basics simulator](/games/terraform-terminal-simulator).
 
 The provider is on the [Terraform Registry](https://registry.terraform.io/providers/The-DevOps-Daily/inngest/latest), and the source, issues and GAPS.md are at [github.com/The-DevOps-Daily/terraform-provider-inngest](https://github.com/The-DevOps-Daily/terraform-provider-inngest).
