@@ -1,6 +1,6 @@
 ---
 title: 'Terraform Drift Detection, Measured: What a Scheduled Plan and a Cloud Inventory Each Miss'
-excerpt: 'We made 12 kinds of drift on a real DigitalOcean stack, the way people make them: a console edit, a DNS hotfix, a deleted tag, resources created by hand. A scheduled refresh-only plan caught 7, a cloud inventory diff caught 6, and together they caught 10. One change got past both for good, and one for up to ten minutes. Here is what each method misses, how long detection takes, what import blocks do with the leftovers, and a drift budget to finish with.'
+excerpt: 'We made 12 kinds of drift on a real DigitalOcean stack, the way people make them: a console edit, a DNS hotfix, a deleted tag, resources created by hand. A scheduled refresh-only plan caught 7, a cloud inventory diff caught 6, and together they caught 10. One change got past both for good, and one for about ten minutes. Here is what each method misses, how long detection takes, what import blocks do with the leftovers, and a drift budget to finish with.'
 category:
   name: 'Terraform'
   slug: 'terraform'
@@ -23,26 +23,27 @@ tags:
 
 We made 12 kinds of drift on a small DigitalOcean stack managed by Terraform, the way people make it: a firewall rule opened during an incident, a DNS record repointed in a hurry, a tag removed in a cleanup, records, firewalls and droplets created by hand. Then we checked each change with Terraform, OpenTofu and a cloud inventory, and measured what each one reported.
 
-A scheduled `terraform plan -refresh-only -detailed-exitcode` caught 7 of the 12. A cloud inventory diff, the approach driftctl made popular, caught 6. Together they caught 10. Two changes got past both: a droplet created by hand with no tags, which nothing ever reported, and backups switched on outside Terraform, which the plan only showed 4 to 10 minutes later, because the API field it reads lags behind. OpenTofu 1.13 gave the same answer as Terraform 1.17 on every one.
+A scheduled `terraform plan -refresh-only -detailed-exitcode` caught 7 of the 12 for the right reason (an eighth only through a side effect on a counter). A cloud inventory diff, the approach driftctl made popular, caught 6. Three of those overlap, so together they caught 10. Two changes got past both: a droplet created by hand with no tags, which nothing ever reported, and backups switched on outside Terraform, which the plan only showed 4 to just over 10 minutes later, because the API field it reads lags behind. OpenTofu 1.13 gave the same answer as Terraform 1.17 on every one.
 
 This post shows which drift each method sees, why, how long detection takes on a schedule, what import blocks do with the leftovers, and ends with a drift budget: what to revert automatically, what to import, and what to send to a person.
 
 ## TL;DR
 
 - **The plan sees edits to what it owns.** Firewall rules, DNS values, tags, deletes and project moves all showed up in a refresh-only plan within one run. It cannot see anything that is not in state: a hand-made DNS record in a managed zone, a second firewall on the managed droplet, a debug droplet. Those three were invisible to every plan we ran.
-- **The inventory sees what the plan cannot, and nothing else.** Comparing resource IDs in DigitalOcean with IDs in state found every resource created or deleted by hand inside its scope. It missed every attribute change, because it compares IDs only, and the untagged droplet, because it was outside the scope.
+- **The inventory sees what the plan cannot.** Comparing resource IDs in DigitalOcean with IDs in state found every resource created or deleted by hand inside its scope; the deletes and the new tag the plan saw too. It missed every attribute change, because it compares IDs only, and the untagged droplet, because it was outside the scope.
 - **A clean stack can exit 2.** `plan -refresh-only -detailed-exitcode` exited 2 on a stack with no drift after 5 of 23 revert applies, because counters like a tag's `droplets_count` change after an apply. Dropping drift that touches only computed attributes, using the provider schema, removed 3 of those 5 false alarms.
 - **Removing a tag removed the firewall.** The firewall targets droplets by tag. 30 seconds after someone removed the tag, port 22 on the droplet answered from another server. The plan's only planned change was the droplet's tag list; the firewall showed nothing but computed status fields.
 - **Import blocks adopt cleanly in Terraform, not yet in OpenTofu.** `-generate-config-out` produced config for a droplet, a firewall, a record and a tag that planned with zero changes in Terraform. OpenTofu wrote `tag = ""` for the DNS record, which fails validation until you delete that line.
-- **Some settings reach the plan late.** The provider reads `backups` from the droplet's `features` list, which caught up 4 to 10 minutes after each toggle in five measurements. The backup policy endpoint was right at the first poll every time we checked it.
+- **Some settings reach the plan late.** The provider reads `backups` from the droplet's `features` list, which caught up 4 to just over 10 minutes after each toggle in five measurements. The backup policy endpoint was right at the first poll every time we checked it.
 - **Time to detect is your schedule.** With a plan every 10 minutes and an inventory every 2 for an hour, drift the inventory owns was reported 17 and 40 seconds after it landed, drift only the plan sees after 3 to 10 minutes. The untagged droplet was never reported.
 
 ## Prerequisites
 
-- Terraform 1.5 or later for import blocks (we used 1.17.2) or OpenTofu 1.6 or later (we used 1.13.9)
+- For the techniques: Terraform 1.5 or later (import blocks and `-generate-config-out`) or OpenTofu 1.6 or later
+- For the lab: Terraform 1.6 or later and OpenTofu (we used 1.17.2 and 1.13.9; the scripts run both), doctl (2.7.0) and Python 3.10 or later
 - A DigitalOcean token with read and write access to droplets, firewalls, tags, domains, projects and SSH keys, if you want to run the lab
 - A zone name under a domain you control; the lab never delegates it, so no real DNS changes
-- About $0.006 an hour for the droplet while the lab runs
+- About $0.006 an hour for the droplet while the lab runs, plus DigitalOcean's $0.01 minimum for each droplet the scenarios create
 
 ## The lab
 
@@ -78,7 +79,7 @@ The [companion repository](https://github.com/The-DevOps-Daily/terraform-drift-l
 
 If `-detailed-exitcode`, `-refresh-only` and `ignore_changes` are new to you, [how to find out state no longer matches reality](/posts/who-owns-the-terraform-state-file#h2-question-3-how-do-you-find-out-state-no-longer-matches-reality) explains them on a local example. This post is about what those checks miss on a real cloud.
 
-`matrix.py` runs each drift on its own. It checks that the lab is clean (a normal plan and a refresh-only plan both exit 0, the inventory finds nothing), makes one change with `doctl`, waits five seconds and runs four detectors: Terraform refresh-only, a normal Terraform plan, OpenTofu refresh-only against a copy of the same state, and `inventory.py`. Then it deletes whatever was made by hand, applies, and starts the next one. We ran all 12 twice. We wrote down what we expected before the first measured run and committed it first (`results/predictions-matrix.md`).
+`matrix.py` runs each drift on its own. It checks that the lab is clean (a normal plan and a refresh-only plan both exit 0, the inventory finds nothing), makes one change with `doctl`, waits five seconds and then runs four detectors one after the other, about 10 seconds in all: Terraform refresh-only, a normal Terraform plan, OpenTofu refresh-only against a copy of the same state, and `inventory.py`. Then it deletes whatever was made by hand, applies, and starts the next one. We ran eleven of them twice and `backups-enabled` once, for reasons the backups section explains. We wrote down what we expected before the first measured run and committed it first (`results/predictions-matrix.md`).
 
 ```github
 https://github.com/The-DevOps-Daily/terraform-drift-lab
@@ -103,7 +104,7 @@ https://github.com/The-DevOps-Daily/terraform-drift-lab
 
 ## What the plan catches
 
-This is what each detector reported. "Yes" means the detector flagged the drift, with the resource and the attributes it named. The verdicts were the same in both rounds; the extra computed attributes that some rounds also listed are covered in the next section.
+This is what each detector reported. "Yes" means the detector flagged the drift, with the resource and the attributes it named. The verdicts were the same in both rounds. Some runs also listed extra computed attributes (covered in the next section), and in round 2 the plans for `record-deleted` also showed the backups change left over from the scenario before it.
 
 | Scenario                 | refresh-only plan (Terraform and OpenTofu)           | normal plan                 | inventory               |
 | ------------------------ | ---------------------------------------------------- | --------------------------- | ----------------------- |
@@ -120,7 +121,7 @@ This is what each detector reported. "Yes" means the detector flagged the drift,
 | project-moved            | yes: `project.lab` (`resources`)                     | yes: update `project.lab`   | no                      |
 | firewall-deleted         | yes: `firewall.web` deleted                          | yes: create `firewall.web`  | yes: missing firewall   |
 
-The pattern is simple once you see it. A plan refreshes the resources in state and nothing else. For each one it asks the provider to read the object back and compares. An edit to anything the provider reads back shows up: a rule, a value, a tag list, the list of resources in a project. A resource that is not in state never gets read, so a plan cannot report it. That is why `record-created`, `firewall-created` and both hand-made droplets left every plan at exit 0. The zone resource does not list its records, and the droplet resource does not list the firewalls that apply to it.
+The pattern is simple once you see it. A plan refreshes the resources in state and nothing else. For each one it asks the provider to read the object back and compares. An edit to anything the provider reads back shows up: a rule, a value, a tag list, the list of resources in a project. A resource that is not in state never gets read, so a plan cannot report it. That is why `record-created`, `firewall-created` and both hand-made droplets never appeared in a plan as resources. Two refresh-only plans still exited 2 next to them, for side effects: the tagged droplet raised a tag counter, and in round 2 the new firewall moved the managed firewall's computed `status`. The zone resource does not list its records, and the droplet resource does not list the firewalls that apply to it.
 
 Our predictions got two of the twelve wrong. We expected the plan to catch `backups-enabled` (it did not, within five seconds) and to miss `droplet-created-tagged` (the refresh-only plan caught it by accident, because the new droplet raised the `dl-web` tag's `droplets_count` from 1 to 2). A normal plan does not count that as a change, and the filter in the next section removes it on purpose, so do not count on it.
 
@@ -143,7 +144,7 @@ Terraform created the tags before the droplet, wrote their counters (0) to state
 - 1 after `droplet-created-tagged`: the firewall's `status` and `pending_changes`, while DigitalOcean applied the firewall to one droplet fewer.
 - 2 after `firewall-deleted`: `droplet_ids` on the recreated firewall.
 
-A scheduled check that pages on exit 2 would have paged on all five. Two fixes work. Run `terraform apply -refresh-only` at the end of every deploy, so state starts from what the API reports, or filter the plan. The provider publishes which attributes are computed-only (`terraform providers schema -json`: `computed` true, `optional` and `required` false). `check.py` in the repo drops a drifted resource when every attribute that changed is one of those. That removes the counters and the firewall status, 3 of the 5. It does not remove `droplet_ids`, an optional argument the code does not set, so 2 of the 5 false alarms still get through. Filter, then look at what is left.
+A scheduled check that pages on exit 2 would have paged on all five. There are two ways to quiet it. One is to run `terraform apply -refresh-only` right after every deploy, so state starts from what the API reports. Be careful with it: it accepts everything it finds into state, real drift included, so read its plan first, and accept it only when the only changes are the counters the apply just caused. After that, a refresh-only check compares reality with the new state, not with your code. The last three baselines in our matrix show the result: refresh-only exited 0 while a normal plan still exited 2 for the backups change, because a revert apply had been followed by `apply -refresh-only`. The other way is to filter the plan. The provider publishes which attributes are computed-only (`terraform providers schema -json`: `computed` true, `optional` and `required` false). `check.py` in the repo drops a drifted resource when every attribute that changed is one of those. That removes the counters and the firewall status, 3 of the 5. It does not remove `droplet_ids`, an optional argument the code does not set, so 2 of the 5 false alarms still get through. Filter, then look at what is left.
 
 ## Removing a tag removed the firewall
 
@@ -199,7 +200,7 @@ On the scenarios, that scope caught every resource created or deleted by hand th
 
 `backups-enabled` was the surprise. The `enable_backups` action completed at 12:00:57, and the plan five seconds later reported nothing. The DigitalOcean provider sets `backups` from the droplet's `features` list (`d.Set("backups", slices.Contains(features, "backups"))` in the read function), and `features` did not include `backups` yet. Between 12:05:08 and 12:05:28 it did, and every plan from then on showed `backups = true -> false`.
 
-That made us measure the lag directly. `backups_lag.py` switches backups on or off with doctl and polls the droplet every 15 seconds until `features` agrees, and checks the backup policy endpoint at each poll (`results/backups-lag-20261120T133125Z.jsonl`):
+That made us measure the lag directly. `backups_lag.py` switches backups on or off with doctl and polls the droplet about every 15 seconds until `features` agrees, and checks the backup policy endpoint at each poll. The times count from the start of the doctl action to the end of the poll that saw the change, so each is up to one poll interval late. The matrix row is inferred from two plans 20 seconds apart, not from a dedicated measurement (`results/backups-lag-20261120T133125Z.jsonl`):
 
 | Run             | Action  | `features` agreed after | Backup policy endpoint   |
 | --------------- | ------- | ----------------------- | ------------------------ |
@@ -209,7 +210,7 @@ That made us measure the lag directly. `backups_lag.py` switches backups on or o
 | 2               | enable  | 10m 17s                 | agreed at the first poll |
 | 2               | disable | 10m 0s                  | agreed at the first poll |
 
-So for 4 to 10 minutes after a toggle, the plan reports the old value, and after a revert apply it keeps asking to revert something that is already reverted. In round 2 of the matrix the revert apply sent `disable_backups`, the next plan still saw `true`, and the baseline check applied again: four `disable_backups` actions in under two minutes, all of them "completed", before `matrix.py` gave up. A scheduled job that auto-reverts would loop the same way.
+So for 4 to just over 10 minutes after a toggle, the plan reports the old value, and after a revert apply it keeps asking to revert something that is already reverted. In round 2 of the matrix the revert apply sent `disable_backups`, the next plan still saw `true`, and the baseline check applied again: four `disable_backups` actions in under two minutes, all of them "completed", before `matrix.py` gave up. A scheduled job that auto-reverts would loop the same way.
 
 The lesson is not specific to backups. A plan only knows what the provider reads, from the field the provider reads it from. When that field is eventually consistent, the plan is too. For settings that cost money or that an auditor asks about, read the authoritative API directly in a separate check, here the backup policy endpoint, which was right at every poll.
 
@@ -217,26 +218,25 @@ The lesson is not specific to backups. A plan only knows what the provider reads
 
 The matrix ran each detector five seconds after the change. A real check runs on a schedule, so the delay is mostly the wait for the next run. `watch.py` ran the two detectors on their own schedules for an hour, a refresh-only plan every 10 minutes and the inventory every 2 minutes, and injected six drifts at seeded random times without reverting any of them (`results/watch-20261120T123001Z.jsonl`):
 
-| Drift                    | Landed at | Caught by | Time to detect  |
-| ------------------------ | --------- | --------- | --------------- |
-| record-created           | 7m 24s    | inventory | 40 s            |
-| dns-hotfix               | 10m 26s   | plan      | 9m 38s          |
-| droplet-created-untagged | 12m 26s   | nothing   | not in the hour |
-| firewall-created         | 21m 47s   | inventory | 17 s            |
-| firewall-rule-added      | 22m 48s   | plan      | 7m 15s          |
-| tag-removed              | 26m 59s   | plan      | 3m 5s           |
+| Drift                    | Landed at | Caught by | Time to detect                      |
+| ------------------------ | --------- | --------- | ----------------------------------- |
+| record-created           | 7m 24s    | inventory | 40 s                                |
+| dns-hotfix               | 10m 26s   | plan      | 9m 38s                              |
+| droplet-created-untagged | 12m 26s   | nothing   | not in the hour                     |
+| firewall-created         | 21m 47s   | inventory | 17 s                                |
+| firewall-rule-added      | 22m 48s   | plan      | 7m 15s, by address only (see below) |
+| tag-removed              | 26m 59s   | plan      | 3m 5s                               |
 
 ```chart
 {
   "type": "bar",
   "title": "Time from the change to the first run that reported it",
   "unit": "s",
-  "caption": "watch.py, seed 23, 2026-11-20. Plan every 10 min, inventory every 2 min. The untagged droplet was never reported and is not shown.",
+  "caption": "watch.py, seed 23, 2026-11-20. Plan every 10 min, inventory every 2 min. The untagged droplet was never reported, and the firewall rule is left out because its detection rests on the address alone (see below).",
   "rows": [
     { "label": "record-created", "value": 40.1, "series": "inventory" },
     { "label": "firewall-created", "value": 16.9, "series": "inventory" },
     { "label": "tag-removed", "value": 184.7, "series": "plan" },
-    { "label": "firewall-rule-added", "value": 435.4, "series": "plan" },
     { "label": "dns-hotfix", "value": 578.2, "series": "plan" }
   ],
   "series": [
@@ -248,7 +248,7 @@ The matrix ran each detector five seconds after the change. A real check runs on
 
 Nothing here is surprising, and that is the point: with a check every N minutes, a change waits up to N minutes plus one run, which is about 3 seconds for the plan and 4 for the inventory at this size. So the schedule is the number to choose, and you can choose it per method. The inventory is cheap enough to run every few minutes. The plan costs at least one request per resource, so on a large state it runs less often, and the drift it alone can see (edits to managed resources, which includes the firewall rule) waits longer.
 
-Two more things showed up in that hour. The plan at the 10-minute mark flagged `digitalocean_firewall.web` although nobody had touched the firewall yet. `watch.py` records only the addresses, so we cannot say which attribute moved; in the matrix runs the same resource reported changes to its computed `status` and `pending_changes`. An unfiltered check would have raised a false alarm there, and the firewall stayed on the list for the rest of the hour. So when the real firewall rule landed at 22 minutes, the plan that caught it showed the same resource name as the false alarm before it; only the attributes tell them apart. And the inventory reported the hand-made record in 27 runs in a row, every two minutes, for as long as nobody acted on it. Decide up front whether a finding alerts once or on every run.
+Two more things showed up in that hour. The plan at the 10-minute mark flagged `digitalocean_firewall.web` although nobody had touched the firewall yet. `watch.py` records only the addresses, so we cannot say which attribute moved; in the matrix runs the same resource reported changes to its computed `status` and `pending_changes`. An unfiltered check would have raised a false alarm there, and the firewall stayed on the list for the rest of the hour. So when the real firewall rule landed at 22 minutes, the plan after it showed the same resource name as the false alarm before it. Our 7m 15s for that row is the time to the first plan after the change that listed the address; `watch.py` did not record whether that plan showed `inbound_rule`. The matrix shows a plan does catch that rule within seconds, but in this run only the attributes would have told the two apart. And the inventory reported the hand-made record in 27 runs in a row, every two minutes, for as long as nobody acted on it. Decide up front whether a finding alerts once or on every run.
 
 ## What the checks cost
 
@@ -261,13 +261,13 @@ On the clean lab, ten runs of each, interleaved (`results/bench-20261120T122351Z
 | `tofu plan -refresh-only`      | 2.40 s | 2.02 to 2.63 s | 11                   |
 | `inventory.py`                 | 3.59 s | 3.19 to 3.96 s | 9                    |
 
-At this size both are cheap. They grow differently. A plan sends at least one read per resource in state. The inventory lists the zone's records 200 at a time and makes one call per tag and per droplet in scope, so 200 records cost it one request. On 202 DNS records, a full plan sent 202 requests and took 9.5 seconds, and two full plans within a minute went over DigitalOcean's 250 requests per minute ([-minimal-refresh, measured](/posts/terraform-1-17-minimal-refresh-measured)). DigitalOcean also allows 5,000 requests an hour per token, which decides how often you can afford to plan a large state. And do not switch on `-minimal-refresh` in the drift job: it skips the refresh of anything without a config change, which is everything a drift check is looking for.
+At this size both are cheap. They grow differently. A plan sends at least one read per resource in state. The inventory lists the zone's records 200 at a time, so 200 records cost it one request, but it makes two calls per tag (the tag and its droplets) and one per droplet in scope, and it lists every firewall in the account before it filters them. So its cost follows the size of the account, not only the stack, and each run here was slower than a plan (3.59 against 2.30 seconds). Our script also reads only the first 200 resources of the project, a limit a large project would hit. On a zone with 200 TXT records and a CNAME (202 resources), a full plan sent 202 requests and took 9.5 seconds, and two full plans within a minute went over DigitalOcean's 250 requests per minute ([-minimal-refresh, measured](/posts/terraform-1-17-minimal-refresh-measured)). DigitalOcean also allows 5,000 requests an hour per token, which decides how often you can afford to plan a large state. And do not switch on `-minimal-refresh` in the drift job: it skips the refresh of anything without a config change, which is everything a drift check is looking for.
 
 ## Adopting what the inventory finds: import blocks
 
 Some unmanaged resources should stay. The hotfix firewall may be needed, the debug record may be the fix. Since Terraform 1.5 (OpenTofu 1.6), an `import` block brings an existing object under management through a normal plan, and `-generate-config-out` writes the resource block for you. Both docs still call config generation experimental.
 
-`adopt.py` creates a debug record, a hotfix firewall and a tagged debug droplet with a new tag, runs the inventory, writes one import block per unmanaged resource and plans in a copy of the working directory:
+`adopt.py` is a recorded demonstration, not an adoption you can continue from. It creates a debug record, a hotfix firewall and a tagged debug droplet with a new tag, runs the inventory, writes one import block per unmanaged resource, and plans in copies of the working directory under `.lab/adopt-terraform` and `.lab/adopt-tofu`. Nothing is applied, and the script deletes the four resources when it finishes. The import blocks it wrote looked like this:
 
 ```hcl
 import {
@@ -282,7 +282,7 @@ import {
 ```
 
 ```bash
-terraform plan -generate-config-out=generated.tf   # writes the resource blocks
+terraform plan -generate-config-out=generated.tf   # writes the resource blocks; the file must not exist yet
 terraform plan -detailed-exitcode                  # plans again with them
 ```
 
@@ -300,22 +300,22 @@ Error: expected tag to be one of [issue issuewild iodef], got
 
 Terraform wrote `tag = null` for the A record; OpenTofu wrote `tag = ""`. The field belongs to CAA records, and when it is set the provider accepts only `issue`, `issuewild` or `iodef`. After deleting that one line, the OpenTofu plan matched Terraform's: `4 to import, 0 to add, 0 to change, 0 to destroy` (`results/adopt-20261120T133020Z/`).
 
-Even the clean output is a starting point, not finished code. The generated firewall says `droplet_ids = [621604794]` where your own code would say `[digitalocean_droplet.web.id]`. The generated droplet has `ssh_keys = null`, so if anything forced a replacement, the new droplet would come up without a key. Both docs say to review generated config before you commit it, and these are the reasons. Move each block into the right file, replace literal IDs with references, then apply the import and delete the `import` blocks (or keep them as a record; they do nothing once the resource is in state).
+Even the clean output is a starting point, not finished code. The generated firewall says `droplet_ids = [621604794]` where your own code would say `[digitalocean_droplet.web.id]`. The generated droplet has `ssh_keys = null`, so if anything forced a replacement, the new droplet would come up without a key. Both docs say to review generated config before you commit it, and these are the reasons. For a real adoption, run the same two plans in your own working directory with the live IDs the inventory reports, move each generated block into the right file, replace literal IDs with references, then apply the import and delete the `import` blocks (or keep them as a record; they do nothing once the resource is in state).
 
 ## The drift budget
 
 Not every drift deserves the same response, and "revert everything" breaks the on-call engineer who opened a port to fix an outage. Sort drift into classes before it happens, and decide once what each class gets. This is the budget we would set for a stack like the lab, with the detector that catches each class in our runs:
 
-| Class                                                      | Lab examples                                                        | Caught by           | Response                                                                                                                                                                   |
-| ---------------------------------------------------------- | ------------------------------------------------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A managed resource widened or detached from its protection | firewall-rule-added, tag-removed                                    | plan                | Page now. Revert automatically after a short grace period (we would use 30 minutes) unless someone claims it in the alert.                                                 |
-| A managed resource deleted                                 | record-deleted, firewall-deleted                                    | plan and inventory  | Recreate automatically: the code is the record of what should exist, and the apply only creates. Alert so someone learns why it went.                                      |
-| A managed value changed on purpose                         | dns-hotfix, project-moved                                           | plan                | Alert, never auto-revert: reverting a failover is a second outage. The owner either moves the change into code (edit, then `apply -refresh-only` if needed) or reverts it. |
-| Something new attached to the stack                        | record-created, firewall-created, droplet-created-tagged, tag-added | inventory           | Alert with an owner and a deadline. Adopt it with an import block or delete it. Do not delete automatically: you do not know what depends on it.                           |
-| Something new with no link to any state                    | droplet-created-untagged                                            | nothing in this lab | Handle at account level: a tag policy, a billing alert, an account-wide inventory against all states.                                                                      |
-| A setting the provider reads late or not at all            | backups-enabled                                                     | plan, minutes later | A direct API check for the settings that cost money or that an auditor asks about.                                                                                         |
-| Computed counters and status                               | tag `droplets_count`, firewall `status`                             | plan (noise)        | Ignore: filter with the provider schema, and run `apply -refresh-only` after each deploy.                                                                                  |
-| Values another system owns                                 | an autoscaler's size                                                | plan (noise)        | `ignore_changes`, with a comment naming the owner ([how to ignore one attribute](/posts/who-owns-the-terraform-state-file#h3-how-do-i-ignore-changes-to-one-attribute)).   |
+| Class                                                      | Lab examples                                                        | Caught by           | Response                                                                                                                                                                                                                                                                                   |
+| ---------------------------------------------------------- | ------------------------------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A managed resource widened or detached from its protection | firewall-rule-added, tag-removed                                    | plan                | Page now. Revert automatically after a short grace period (we would use 30 minutes) unless someone claims it in the alert.                                                                                                                                                                 |
+| A managed resource deleted                                 | record-deleted, firewall-deleted                                    | plan and inventory  | Recreate automatically, but only from a saved plan that contains nothing except those creates. In round 2 the plan that restored the deleted record also tried to change backups. Alert so someone learns why it went.                                                                     |
+| A managed value changed on purpose                         | dns-hotfix, project-moved                                           | plan                | Alert, never auto-revert: reverting a failover is a second outage. The owner either moves the change into code (edit, then `apply -refresh-only` if needed) or reverts it.                                                                                                                 |
+| Something new attached to the stack                        | record-created, firewall-created, droplet-created-tagged, tag-added | inventory           | Alert with an owner and a deadline. Adopt it with an import block or delete it. Do not delete automatically: you do not know what depends on it.                                                                                                                                           |
+| Something new with no link to any state                    | droplet-created-untagged                                            | nothing in this lab | Handle at account level: a tag policy, a billing alert, an account-wide inventory against all states.                                                                                                                                                                                      |
+| A setting the provider reads late or not at all            | backups-enabled                                                     | plan, minutes later | A direct API check for the settings that cost money or that an auditor asks about.                                                                                                                                                                                                         |
+| Computed counters and status                               | tag `droplets_count`, firewall `status`                             | plan (noise)        | Ignore: filter with the provider schema, and run `apply -refresh-only` after each deploy.                                                                                                                                                                                                  |
+| Values another system owns                                 | an autoscaler's size                                                | plan (noise)        | `ignore_changes`, with a comment naming the owner ([how to ignore one attribute](/posts/who-owns-the-terraform-state-file#h3-how-do-i-ignore-changes-to-one-attribute)). That stops the plan from reverting it, but a refresh-only check still reports it, so exclude it in the check too. |
 
 Two rules make the budget work. First, every alert says which class it is, so the person who opens it does not have to work that out at 3 a.m. Second, any automatic revert or recreate goes through the same pipeline as a normal change, with a saved plan and the same review rules. A plan gate like the one in [Gate Your Terraform Plans](/posts/terraform-plan-gate-digitalocean-inference), which fails the job on changes that risk data loss or public exposure, can stop an automatic revert that would do more than undo.
 
@@ -339,8 +339,8 @@ Every run below is kept in the repository; the discarded ones carry a note on th
 
 ## Summary
 
-A scheduled refresh-only plan and a cloud inventory diff look at different halves of drift. On 12 changes made the way people make them, the plan caught the 7 edits and deletes to resources in its state, and nothing that lived outside it. The inventory caught the 6 resources created or deleted by hand inside its scope, and none of the edits. Run both, on separate schedules: in our hour, the 2-minute inventory reported its drift within 40 seconds, and the 10-minute plan took up to almost 10 minutes.
+A scheduled refresh-only plan and a cloud inventory diff look at different halves of drift. On 12 changes made the way people make them, the plan caught the 7 edits and deletes to resources in its state, and nothing that lived outside it. The inventory caught the 6 changes that created or deleted something inside its scope (a new tag counts), and none of the attribute edits. Three of them, the two deletes and the new tag, showed up in both. Run both, on separate schedules: in our hour, the 2-minute inventory reported its drift within 40 seconds, and the 10-minute plan took up to almost 10 minutes.
 
-Expect noise and plan for it. A refresh-only plan exited 2 with nothing drifted after 5 of 23 applies, from counters and status fields; filtering computed-only attributes with the provider schema and running `apply -refresh-only` after each deploy removes most of it. Read tag changes as security changes when firewalls select by tag: removing one opened SSH on our droplet in 30 seconds. Treat settings the provider reads late, like backups, as their own check. Adopt what should stay with import blocks, review the generated config before you commit it, and on OpenTofu 1.13 expect to fix `tag = ""` on DNS records by hand. Then write the drift budget down, so the alert already says what happens next.
+Expect noise and plan for it. A refresh-only plan exited 2 with nothing drifted after 5 of 23 applies, from counters and status fields; filtering computed-only attributes with the provider schema removed 3 of those 5, and an `apply -refresh-only` after each deploy helps only if you read what it accepts. Read tag changes as security changes when firewalls select by tag: removing one opened SSH on our droplet in 30 seconds. Treat settings the provider reads late, like backups, as their own check. Adopt what should stay with import blocks, review the generated config before you commit it, and on OpenTofu 1.13 expect to fix `tag = ""` on DNS records by hand. Then write the drift budget down, so the alert already says what happens next.
 
-The scripts, the raw results and the predictions are in [terraform-drift-lab](https://github.com/The-DevOps-Daily/terraform-drift-lab). The lab ran for about two and a half hours: one droplet the whole time, ten extra droplets the scenarios made by hand (most for a few minutes, one for 48), and under an hour of droplet backups. At the per-hour droplet price that is about $0.02, and at most $0.08 if every partial hour rounds up. Everything was destroyed at the end, and a check for anything named `dl-` found nothing left. If you are new to state and refresh, start with [Terraform state management](/guides/introduction-to-terraform/05-state-management) and practice the plan and apply loop in the [Terraform simulator](/games/terraform-terminal-simulator).
+The scripts, the raw results and the predictions are in [terraform-drift-lab](https://github.com/The-DevOps-Daily/terraform-drift-lab). The lab ran for about two and a half hours: one droplet the whole time, ten extra droplets the scenarios made by hand (most for a few minutes, one for 48), and under an hour of droplet backups. DigitalOcean bills droplets per second with a minimum of 60 seconds or $0.01, whichever is higher, so the ten extra droplets cost at least $0.10 and the main one about $0.014: roughly $0.12 in all, plus the backups, which are priced as a share of the droplet price. Everything was destroyed at the end, and a check for anything named `dl-` found nothing left. If you are new to state and refresh, start with [Terraform state management](/guides/introduction-to-terraform/05-state-management) and practice the plan and apply loop in the [Terraform simulator](/games/terraform-terminal-simulator).
