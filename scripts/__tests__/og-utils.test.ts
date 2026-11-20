@@ -204,8 +204,8 @@ describe('cover background selection', () => {
     ['docker', 'containers'],
     ['git', 'git'],
     ['terraform', 'infrastructure-as-code'],
-    ['linux', 'general'],
-    ['bash', 'general'],
+    ['linux', 'linux-terminal'],
+    ['bash', 'linux-terminal'],
     ['python', 'general'],
     ['networking', 'linux-networking'],
     ['security', 'security'],
@@ -221,17 +221,31 @@ describe('cover background selection', () => {
     ['Configuration Management', 'automation'],
     ['Something New', 'general'],
   ])('maps category %s to %s', (category, background) => {
-    expect(selectCoverBackground({ type: 'post', slug: 'example', category })).toBe(background);
+    const picked = selectCoverBackground({ type: 'post', slug: 'example', category });
+    expect(picked.replace(/-alt$/, '')).toBe(background);
   });
 
-  it('alternates Kubernetes illustrations by slug, deterministically', () => {
+  it.each([
+    ['kubernetes', 'kubernetes'],
+    ['postgres', 'postgres'],
+    ['security', 'security'],
+    ['git', 'git'],
+  ])('alternates %s illustrations by slug, deterministically', (category, background) => {
     const picks = ['a', 'b', 'c', 'd', 'e', 'f'].map((slug) =>
-      selectCoverBackground({ type: 'post', slug, category: 'kubernetes' })
+      selectCoverBackground({ type: 'post', slug, category })
     );
-    expect(new Set(picks)).toEqual(new Set(['kubernetes', 'kubernetes-alt']));
-    expect(selectCoverBackground({ type: 'post', slug: 'a', category: 'kubernetes' })).toBe(
-      picks[0]
-    );
+    expect(new Set(picks)).toEqual(new Set([background, `${background}-alt`]));
+    expect(selectCoverBackground({ type: 'post', slug: 'a', category })).toBe(picks[0]);
+  });
+
+  it('gives Linux and Bash content the terminal illustration unless a tag is more specific', () => {
+    expect(
+      selectCoverBackground({ type: 'post', slug: 'x', category: 'devops', tags: ['Bash'] })
+    ).toBe('linux-terminal');
+    expect(
+      selectCoverBackground({ type: 'post', slug: 'x', category: 'Linux', tags: ['Shell', 'DNS'] })
+    ).toBe('linux-networking');
+    expect(selectCoverBackground({ type: 'post', slug: 'x', category: 'python' })).toBe('general');
   });
 
   it('uses tags only when the category is generic', () => {
@@ -274,11 +288,11 @@ describe('cover background selection', () => {
     for (const tag of ['PostgreSQL', 'neon', 'Lakebase', 'pgvector', 'postgres-18']) {
       expect(
         selectCoverBackground({ type: 'post', slug: 'x', category: 'devops', tags: [tag] })
-      ).toBe('postgres');
+      ).toMatch(/^postgres(-alt)?$/);
     }
     expect(
       selectCoverBackground({ type: 'post', slug: 'x', category: 'docker', tags: ['PostgreSQL'] })
-    ).toBe('postgres');
+    ).toMatch(/^postgres(-alt)?$/);
     expect(
       selectCoverBackground({
         type: 'post',

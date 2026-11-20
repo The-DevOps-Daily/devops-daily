@@ -55,14 +55,18 @@ export const COVER_BACKGROUNDS = [
   'databases',
   'general',
   'git',
+  'git-alt',
   'infrastructure-as-code',
   'kubernetes',
   'kubernetes-alt',
   'linux-networking',
+  'linux-terminal',
   'news',
   'postgres',
+  'postgres-alt',
   'quiz',
   'security',
+  'security-alt',
   'simulator',
 ] as const;
 
@@ -91,10 +95,11 @@ const COVER_FONT_OPTIONS = {
  * 3. Category: the first TOPIC_RULES entry that matches the category.
  * 4. Tags: when the category matched nothing (DevOps, Linux, Bash, Python,
  *    SRE, unknown...), the first tag in frontmatter order that matches a rule.
- * 5. Otherwise general.
+ * 5. Linux, Bash, shell or terminal in the category or a tag -> linux-terminal.
+ * 6. Otherwise general.
  *
- * Kubernetes covers alternate between two illustrations by a hash of the slug,
- * so the same item always gets the same one.
+ * Kubernetes, Postgres, security and git covers alternate between two
+ * illustrations by a hash of the slug, so the same item always gets the same one.
  */
 const TYPE_BACKGROUNDS: Partial<Record<ContentCoverType, CoverBackground>> = {
   quiz: 'quiz',
@@ -137,6 +142,12 @@ const TOPIC_RULES: ReadonlyArray<readonly [CoverBackground, RegExp]> = [
   ['automation', /\b(automation|ansible|configuration management|puppet|chef|cron)\b/],
 ];
 
+// Checked after TOPIC_RULES on the category and on every tag, so a Linux post
+// tagged DNS still gets linux-networking.
+const FALLBACK_RULES: ReadonlyArray<readonly [CoverBackground, RegExp]> = [
+  ['linux-terminal', /\b(linux|bash|shell|zsh|terminal|command line|unix|sysadmin)\b/],
+];
+
 function normalizeTopic(value: unknown): string {
   return cleanOgText(value)
     .toLowerCase()
@@ -152,6 +163,13 @@ function matchTopic(value: string): CoverBackground | null {
   return null;
 }
 
+function matchFallback(values: readonly string[]): CoverBackground | null {
+  for (const [background, pattern] of FALLBACK_RULES) {
+    if (values.some((value) => value && pattern.test(value))) return background;
+  }
+  return null;
+}
+
 function stableHash(value: string): number {
   // FNV-1a: stable across Node versions and machines.
   let hash = 0x811c9dc5;
@@ -161,6 +179,13 @@ function stableHash(value: string): number {
   }
   return hash;
 }
+
+const ALTERNATE_BACKGROUNDS: Partial<Record<CoverBackground, CoverBackground>> = {
+  kubernetes: 'kubernetes-alt',
+  postgres: 'postgres-alt',
+  security: 'security-alt',
+  git: 'git-alt',
+};
 
 export interface CoverTopic {
   type: ContentCoverType;
@@ -179,9 +204,14 @@ export function selectCoverBackground(topic: CoverTopic): CoverBackground {
   if ([category, ...tags].some((value) => POSTGRES_PATTERN.test(value))) {
     background = 'postgres';
   } else {
-    background = matchTopic(category) ?? tags.map(matchTopic).find(Boolean) ?? 'general';
+    background =
+      matchTopic(category) ??
+      tags.map(matchTopic).find(Boolean) ??
+      matchFallback([category, ...tags]) ??
+      'general';
   }
-  if (background === 'kubernetes' && stableHash(topic.slug) % 2 === 1) return 'kubernetes-alt';
+  const alternate = ALTERNATE_BACKGROUNDS[background];
+  if (alternate && stableHash(topic.slug) % 2 === 1) return alternate;
   return background;
 }
 
