@@ -476,6 +476,8 @@ psql -h pg19.internal -d app -v ON_ERROR_STOP=1 -f setval.sql
 
 [`pg_get_sequence_data()`](https://www.postgresql.org/docs/19/functions-sequence.html#FUNC-PG-GET-SEQUENCE-DATA) exists in 18 and is documented from 19 on. It returns both `last_value` and `is_called`, so a sequence that was restarted or never used gets the same next value on 19 as it would have on 18. It returns NULL for a sequence that you cannot read, so run the query as a superuser.
 
+Once both sides run 19, logical replication can copy sequence values for you. Our [PostgreSQL 19 Field Notes](/guides/postgresql-19-field-notes) guide covers that and the other new features you get after the upgrade, each tested on 19.0.
+
 ## Summary
 
 - **Before the upgrade, on 18:** patch to 18.7 and do its post-update steps, replace btree_gist `inet`/`cidr` indexes with `inet_ops`, rename objects with CR or LF in their names, move `MULE_INTERNAL` databases to UTF8, remove RADIUS, and get a 19 build of every extension.
