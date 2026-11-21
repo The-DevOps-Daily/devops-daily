@@ -1,5 +1,6 @@
 ---
 title: 'Install Ansible and Run Your First Commands'
+navTitle: 'Install and first commands'
 description: 'Install ansible-core 2.21 with pipx, set up SSH access to two Ubuntu servers, write an inventory and ansible.cfg, and run your first ad-hoc commands.'
 order: 1
 ---

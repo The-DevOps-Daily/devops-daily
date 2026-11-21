@@ -1,5 +1,6 @@
 ---
 title: 'Autovacuum Priority Scores and Parallel Index Vacuuming'
+navTitle: 'Autovacuum priority'
 description: 'PostgreSQL 19 autovacuum processes the most urgent table first and can vacuum indexes in parallel. How scores work, the new view, and how to enable parallel workers.'
 order: 4
 ---

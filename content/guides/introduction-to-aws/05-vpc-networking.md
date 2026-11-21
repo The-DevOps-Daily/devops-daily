@@ -1,5 +1,6 @@
 ---
 title: 'VPC: Build Your Private Network'
+navTitle: 'VPC networking'
 description: 'Design an AWS VPC: plan CIDR ranges, create public and private subnets in two AZs, set up route tables, NAT gateways, security groups and VPC endpoints.'
 order: 5
 ---

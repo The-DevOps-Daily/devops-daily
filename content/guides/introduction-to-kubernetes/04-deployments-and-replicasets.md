@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Deployments: Rolling Updates, Rollbacks and Scaling'
+navTitle: 'Deployments'
 description: 'Run a Kubernetes Deployment: scale it, roll out a new version, watch a broken rollout stop safely, roll back, and run Jobs, CronJobs and DaemonSets.'
 order: 4
 ---

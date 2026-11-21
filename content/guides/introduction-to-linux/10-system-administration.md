@@ -1,5 +1,6 @@
 ---
 title: 'Linux System Administration Basics: systemd, Logs, Updates and Security'
+navTitle: 'System administration'
 description: 'Run services and timers with systemd, read logs with journalctl, automate updates, back up with rsync, harden SSH and fix full disks and failed boots.'
 order: 10
 ---

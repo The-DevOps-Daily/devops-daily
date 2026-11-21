@@ -1,5 +1,6 @@
 ---
 title: 'A09:2025 Security Logging and Alerting Failures'
+navTitle: 'A09 Logging failures'
 description: 'A09:2025 Security Logging and Alerting Failures: which events to log, JSON logs without secrets, log injection, and alert rules that reach a person.'
 order: 10
 ---

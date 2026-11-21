@@ -1,5 +1,6 @@
 ---
 title: 'A08:2025 Software or Data Integrity Failures'
+navTitle: 'A08 Integrity failures'
 description: 'A08:2025 Software or Data Integrity Failures: mass assignment, unsafe deserialization, Subresource Integrity, signed updates and build provenance.'
 order: 9
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Building a Cost-Conscious Engineering Culture'
+navTitle: 'Cost-conscious culture'
 description: 'Make teams own their cloud costs: showback before chargeback, a fair split of shared costs, unit costs, weekly reviews, and cost in design and code review.'
 order: 6
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Python Variables and Data Types: Numbers, Strings, bytes and None'
+navTitle: 'Variables and data types'
 description: 'Python variables and types for scripts: int and float traps, string methods and f-strings, bytes vs str, truthiness, and reading settings from env vars.'
 order: 2
 ---

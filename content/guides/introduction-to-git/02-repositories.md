@@ -1,5 +1,6 @@
 ---
 title: 'Create a Git Repository: git init, .gitignore, clone'
+navTitle: 'Create a repository'
 description: 'Start a Git repository with git init, make your first commit, keep build output and secrets out with .gitignore, and clone with --branch and --depth.'
 order: 2
 ---

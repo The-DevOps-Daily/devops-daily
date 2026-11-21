@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Persistent Volumes, PVCs and StatefulSets'
+navTitle: 'Persistent storage'
 description: 'Keep data when pods restart: PersistentVolumeClaims, StorageClasses, access modes, StatefulSets with volumeClaimTemplates, volume expansion and backups.'
 order: 7
 ---

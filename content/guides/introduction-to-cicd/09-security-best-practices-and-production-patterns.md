@@ -1,5 +1,6 @@
 ---
 title: 'Securing GitHub Actions Workflows'
+navTitle: 'Securing workflows'
 description: 'Harden GitHub Actions: least-privilege GITHUB_TOKEN, no script injection, safe pull request triggers, SHA-pinned actions, zizmor and runner rules.'
 order: 9
 ---

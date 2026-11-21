@@ -1,5 +1,6 @@
 ---
 title: 'Linux Networking Commands: ip, ss, DNS and Troubleshooting'
+navTitle: 'Networking commands'
 description: 'Learn Linux networking hands-on: ip, ss, ping, dig, curl and tcpdump in a practice network, then firewalls, static IPs and a troubleshooting checklist.'
 order: 8
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Debugging and Speeding Up Workflows'
+navTitle: 'Debugging and speed'
 description: 'Find out why a GitHub Actions run failed with gh run view, annotations and debug logs, write job summaries, and make runs faster and cheaper.'
 order: 8
 ---

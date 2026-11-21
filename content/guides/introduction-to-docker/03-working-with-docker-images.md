@@ -1,5 +1,6 @@
 ---
 title: 'Docker Images: Pull, Tag, Inspect and Clean Up'
+navTitle: 'Images'
 description: 'Work with Docker images: how names, tags and digests work, pull and list images, inspect layers and configs, pick a base image variant and free disk space.'
 order: 3
 ---

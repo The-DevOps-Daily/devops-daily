@@ -1,5 +1,6 @@
 ---
 title: 'S3: Cloud Object Storage'
+navTitle: 'S3 storage'
 description: 'Learn Amazon S3: buckets and objects, the secure defaults for new buckets, storage classes, lifecycle rules, versioning and presigned URLs.'
 order: 4
 ---

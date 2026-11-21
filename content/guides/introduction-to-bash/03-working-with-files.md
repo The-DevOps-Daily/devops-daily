@@ -1,5 +1,6 @@
 ---
 title: 'Working With Files in Bash: Globs, Safe Loops and Temp Files'
+navTitle: 'Working with files'
 description: 'Handle files safely in Bash: glob patterns and shopt options, names with spaces or dashes, find -print0 loops, file tests, reading lines, temp files, CRLF.'
 order: 3
 ---

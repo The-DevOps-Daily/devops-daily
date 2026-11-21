@@ -1,5 +1,6 @@
 ---
 title: 'DREAD Risk Scoring and What to Use Instead'
+navTitle: 'DREAD scoring'
 description: 'How DREAD scores threats (sum or average), why Microsoft stopped using it, and what teams use now: likelihood x impact, CVSS 4.0 and a bug bar.'
 order: 2
 ---

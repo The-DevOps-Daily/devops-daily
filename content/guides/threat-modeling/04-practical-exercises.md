@@ -1,5 +1,6 @@
 ---
 title: 'Threat Modeling Exercises with Solutions'
+navTitle: 'Exercises with solutions'
 description: 'Six threat modeling exercises with solutions: STRIDE on an API, prioritizing findings, an attack tree, LINDDUN, an AI assistant and a model review.'
 order: 4
 ---

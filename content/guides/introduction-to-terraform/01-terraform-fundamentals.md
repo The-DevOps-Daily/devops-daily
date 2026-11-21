@@ -1,5 +1,6 @@
 ---
 title: 'What Is Terraform? Core Concepts and Workflow'
+navTitle: 'What is Terraform?'
 description: 'How Terraform works: providers, resources, data sources, state, the dependency graph and the init, plan and apply workflow, with a real plan explained.'
 order: 1
 ---

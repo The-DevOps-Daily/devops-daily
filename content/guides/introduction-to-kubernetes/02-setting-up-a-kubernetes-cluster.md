@@ -1,5 +1,6 @@
 ---
 title: 'Set Up a Kubernetes Cluster with kind, minikube or a Cloud Service'
+navTitle: 'Set up a cluster'
 description: 'Install kubectl, kind and Helm, create a three-node Kubernetes 1.37 cluster locally, use contexts and namespaces, or create a DOKS, EKS or kubeadm cluster.'
 order: 2
 ---

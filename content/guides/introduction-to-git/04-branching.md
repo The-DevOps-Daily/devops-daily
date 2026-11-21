@@ -1,5 +1,6 @@
 ---
 title: 'Git Branches: Create, Switch, Stash and Delete'
+navTitle: 'Branches'
 description: 'How Git branches work: create and switch with git switch, carry or stash uncommitted work, detached HEAD, list, rename and delete branches safely.'
 order: 4
 ---

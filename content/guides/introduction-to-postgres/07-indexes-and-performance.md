@@ -1,5 +1,6 @@
 ---
 title: Indexes and Query Performance
+navTitle: 'Indexes and performance'
 description: 'Speed up PostgreSQL queries: read EXPLAIN ANALYZE plans and pick the right index (B-tree, GIN, GiST, BRIN, partial, expression or covering).'
 order: 7
 ---

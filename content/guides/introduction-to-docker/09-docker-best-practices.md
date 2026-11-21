@@ -1,5 +1,6 @@
 ---
 title: 'Docker Best Practices: Secure, Small and Maintainable Containers'
+navTitle: 'Best practices'
 description: 'Docker best practices for 2026: lint Dockerfiles, pin images by digest, run as non-root, drop capabilities, scan and sign images, and rotate logs.'
 order: 9
 ---

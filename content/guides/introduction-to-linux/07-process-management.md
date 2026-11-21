@@ -1,5 +1,6 @@
 ---
 title: 'Linux Process Management: ps, top, kill, systemd and cgroups'
+navTitle: 'Processes'
 description: 'See what runs on Linux with ps and top, stop processes with signals, change priorities, read load and memory, and manage services with systemd.'
 order: 7
 ---

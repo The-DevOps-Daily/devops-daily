@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Variables and Outputs'
+navTitle: 'Variables and outputs'
 description: 'Declare Terraform variables with types, defaults and validation, set them with tfvars files, -var or TF_VAR_ variables, and read outputs as text or JSON.'
 order: 6
 ---

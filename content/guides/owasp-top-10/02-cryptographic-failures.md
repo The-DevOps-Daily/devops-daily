@@ -1,5 +1,6 @@
 ---
 title: 'A04:2025 Cryptographic Failures'
+navTitle: 'A04 Cryptographic failures'
 description: 'A04:2025 Cryptographic Failures: Argon2id password hashing, AES-GCM with key rotation, secure randomness and TLS with post-quantum key exchange in Node.js.'
 order: 5
 ---

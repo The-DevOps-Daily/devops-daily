@@ -1,5 +1,6 @@
 ---
 title: 'IAM: Users, Roles and Policies'
+navTitle: 'IAM'
 description: 'Learn AWS IAM: how policies are evaluated, how to sign in without long-lived access keys (aws login, IAM Identity Center), and how to use roles.'
 order: 2
 ---

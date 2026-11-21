@@ -1,5 +1,6 @@
 ---
 title: Writing Your First Packer Template
+navTitle: 'Your first template'
 description: 'Write a Packer HCL2 template that builds an Nginx web server AMI on Ubuntu 24.04, then validate it, build it, test the image and clean up after yourself.'
 order: 3
 ---

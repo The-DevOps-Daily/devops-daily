@@ -1,5 +1,6 @@
 ---
 title: 'CodeQL Tutorial: Code Scanning Setup, CLI and Custom Queries'
+navTitle: 'CodeQL'
 description: 'Set up CodeQL code scanning on GitHub with default or advanced setup, run the CodeQL CLI locally, and write and test custom queries. CodeQL 2.27.'
 order: 4
 ---

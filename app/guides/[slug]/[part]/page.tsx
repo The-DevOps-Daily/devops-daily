@@ -109,6 +109,7 @@ export default async function GuidePartPage({
   const nextPart =
     currentPartIndex < guide.parts.length - 1 ? guide.parts[currentPartIndex + 1] : undefined;
 
+  const guideNav = toGuideNav(guide);
   const relatedGuides = await getRelatedGuides(guide.slug, guide.category?.slug || '', 3);
 
   // Breadcrumb items
@@ -150,15 +151,9 @@ export default async function GuidePartPage({
         keywords={guide.tags}
       />
       <ReadingProgressBar />
-      <GuideMobileNav
-        guide={toGuideNav(guide)}
-        activePart={partSlug}
-        previousPart={previousPart && { title: previousPart.title, slug: previousPart.slug }}
-        nextPart={nextPart && { title: nextPart.title, slug: nextPart.slug }}
-      />
+      <GuideMobileNav guide={guideNav} activePart={partSlug} />
 
-      {/* Room for the fixed bottom bar on small screens */}
-      <div className="container px-4 pt-8 pb-24 mx-auto lg:pb-8">
+      <div className="container px-4 py-8 mx-auto">
         <Breadcrumb items={breadcrumbItems} />
 
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
@@ -167,7 +162,7 @@ export default async function GuidePartPage({
             <div className="flex flex-col gap-8 lg:flex-row">
               {/* Guide Navigation Sidebar */}
               <aside className="hidden shrink-0 lg:block lg:w-80">
-                <GuideSidebar guide={toGuideNav(guide)} activePart={partSlug} />
+                <GuideSidebar guide={guideNav} activePart={partSlug} />
               </aside>
 
               {/* Article Content */}
@@ -185,14 +180,30 @@ export default async function GuidePartPage({
                   </header>
                 )}
 
-                <div className="dark:prose-invert max-w-none">
+                {/* Headings clear the sticky header, plus the chapter bar below lg */}
+                <div
+                  data-guide-body
+                  className="dark:prose-invert max-w-none [&_:is(h2,h3,h4)]:scroll-mt-[calc(var(--site-header-h,5rem)+4rem)] lg:[&_:is(h2,h3,h4)]:scroll-mt-[calc(var(--site-header-h,5rem)+1.5rem)]"
+                >
                   <GuideContent content={currentPart.content} />
                 </div>
 
                 {/* Navigation buttons */}
                 <GuidePartNavigation
-                  previousPart={previousPart}
-                  nextPart={nextPart}
+                  previousPart={
+                    previousPart && {
+                      slug: previousPart.slug,
+                      title: previousPart.title,
+                      number: currentPartIndex,
+                    }
+                  }
+                  nextPart={
+                    nextPart && {
+                      slug: nextPart.slug,
+                      title: nextPart.title,
+                      number: currentPartIndex + 2,
+                    }
+                  }
                   guideSlug={guide.slug}
                 />
 
@@ -261,7 +272,10 @@ export default async function GuidePartPage({
                 </div>
 
                 {/* Giscus Discussions */}
-                <GiscusComments className="mt-12" title={`${currentPart?.title} - ${guide.title}`} />
+                <GiscusComments
+                  className="mt-12"
+                  title={`${currentPart?.title} - ${guide.title}`}
+                />
 
                 {/* Related Guides */}
                 {relatedGuides.length > 0 && (

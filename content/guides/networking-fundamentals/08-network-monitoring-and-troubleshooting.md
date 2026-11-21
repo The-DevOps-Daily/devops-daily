@@ -1,5 +1,6 @@
 ---
 title: 'Network Troubleshooting: ping, mtr, tcpdump, ss and netem'
+navTitle: 'Troubleshooting'
 description: 'A layer-by-layer troubleshooting method on a lab network: simulate latency and loss with tc netem, find MTU problems, read SYN retries, probe endpoints.'
 order: 8
 ---

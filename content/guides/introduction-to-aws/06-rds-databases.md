@@ -1,5 +1,6 @@
 ---
 title: 'RDS: Managed Databases'
+navTitle: 'RDS databases'
 description: 'Run PostgreSQL or MySQL on Amazon RDS: create a private database, connect over TLS, keep the password in Secrets Manager, and use backups and Multi-AZ.'
 order: 6
 ---

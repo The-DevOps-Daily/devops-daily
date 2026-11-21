@@ -1,5 +1,6 @@
 ---
 title: 'Async I/O Workers That Scale Themselves: io_min_workers and io_max_workers'
+navTitle: 'Async I/O workers'
 description: 'PostgreSQL 19 replaces io_workers with a pool that grows and shrinks between io_min_workers and io_max_workers. What the ceiling is worth, and when io_method = sync wins.'
 order: 3
 ---

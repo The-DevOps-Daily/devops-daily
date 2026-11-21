@@ -1,5 +1,6 @@
 ---
 title: 'How to Write a Dockerfile and Build a Docker Image'
+navTitle: 'Write a Dockerfile'
 description: 'Write a Dockerfile for a Python API, build it with BuildKit, order layers for caching, lint with hadolint, and use multi-stage builds and a non-root user.'
 order: 5
 ---

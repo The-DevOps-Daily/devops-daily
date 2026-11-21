@@ -1,5 +1,6 @@
 ---
 title: 'What Is Bash? Versions, Startup Files and Your First Script'
+navTitle: 'What is Bash?'
 description: 'What Bash is, which version you have and why it matters (5.2, 5.3, macOS 3.2), sh versus Bash, which startup files load when, and your first script.'
 order: 1
 ---

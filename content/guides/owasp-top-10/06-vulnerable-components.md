@@ -1,5 +1,6 @@
 ---
 title: 'A03:2025 Software Supply Chain Failures'
+navTitle: 'A03 Supply chain failures'
 description: 'A03:2025 Software Supply Chain Failures: vulnerable and malicious dependencies, SBOMs, npm audit and Trivy, release-age delays and a hardened CI workflow.'
 order: 4
 ---

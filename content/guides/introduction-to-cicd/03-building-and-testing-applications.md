@@ -1,5 +1,6 @@
 ---
 title: 'Build and Test an Application'
+navTitle: 'Build and test'
 description: 'Lint, test and build an app on every pull request with GitHub Actions: setup-node, npm ci, a Node.js version matrix, service containers, Python and Go.'
 order: 3
 ---

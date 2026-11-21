@@ -1,5 +1,6 @@
 ---
 title: 'Security Gates in CI/CD: GitHub Actions and GitLab CI'
+navTitle: 'Gates in CI/CD'
 description: 'Run security gates in GitHub Actions and GitLab CI: SHA-pinned actions, actionlint and zizmor, code scanning, signed provenance and SBOM attestations.'
 order: 4
 ---

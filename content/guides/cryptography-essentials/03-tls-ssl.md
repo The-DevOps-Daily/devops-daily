@@ -1,5 +1,6 @@
 ---
 title: 'TLS in Practice: Handshakes, Post-Quantum Key Exchange and Server Setup'
+navTitle: 'TLS in practice'
 description: 'How TLS 1.3 works, post-quantum key exchange with X25519MLKEM768, an nginx config tested with openssl s_client, HSTS, mTLS and certificate monitoring.'
 order: 3
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Defense in Depth: Layered Security You Can Test'
+navTitle: 'Defense in depth'
 description: 'Defense in depth, tested: one SQL injection followed through the WAF, code, database roles, NetworkPolicies, SSH and AIDE on hosts, encryption and alerts.'
 order: 2
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'A Complete Pipeline and Next Steps'
+navTitle: 'A complete pipeline'
 description: 'The finished GitHub Actions pipeline for the example app, how a change moves through it, release and infrastructure patterns, and what to learn next.'
 order: 10
 ---

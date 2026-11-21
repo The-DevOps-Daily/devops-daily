@@ -1,5 +1,6 @@
 ---
 title: 'Linux Command Line Basics: Essential Terminal Commands'
+navTitle: 'Command line basics'
 description: 'Learn the Linux terminal: move around with cd and ls, manage files, read logs with less and tail, search with find and grep, and chain commands with pipes.'
 order: 3
 ---

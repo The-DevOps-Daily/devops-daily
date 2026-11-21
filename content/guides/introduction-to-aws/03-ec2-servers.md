@@ -1,5 +1,6 @@
 ---
 title: 'EC2: Launch Your First Virtual Server'
+navTitle: 'EC2 servers'
 description: 'Launch an Amazon EC2 instance step by step: pick an instance type (Graviton or x86) and AMI, use user data, connect without SSH keys, and require IMDSv2.'
 order: 3
 ---

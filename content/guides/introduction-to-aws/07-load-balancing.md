@@ -1,5 +1,6 @@
 ---
 title: 'Load Balancing and Auto Scaling'
+navTitle: 'Load balancing and scaling'
 description: 'Put an AWS Application Load Balancer in front of an EC2 Auto Scaling group: launch templates, health checks, target tracking and free HTTPS with ACM.'
 order: 7
 ---

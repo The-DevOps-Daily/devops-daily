@@ -1,5 +1,6 @@
 ---
 title: 'Bash Text Processing: printf, Here Docs, awk, sed and jq'
+navTitle: 'Text processing'
 description: 'Text and data tools for Bash scripts: printf versus echo, here documents, command and process substitution, awk, sed, jq, xargs, curl and dates.'
 order: 9
 ---

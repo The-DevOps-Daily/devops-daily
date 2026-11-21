@@ -1,5 +1,6 @@
 ---
 title: Backup, Recovery, and Replication
+navTitle: 'Backup and replication'
 description: 'Back up PostgreSQL with pg_dump and pg_basebackup, restore with pg_restore, archive WAL for point-in-time recovery, and stream to a replica.'
 order: 9
 ---

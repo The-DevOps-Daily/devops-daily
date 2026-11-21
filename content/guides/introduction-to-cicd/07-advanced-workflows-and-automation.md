@@ -1,5 +1,6 @@
 ---
 title: 'Matrix Builds, Reusable Workflows and Merge Queues'
+navTitle: 'Matrix and reusable workflows'
 description: 'Scale GitHub Actions: an OS and version matrix, composite actions, reusable workflows, one required check, a merge queue and the new parallel steps.'
 order: 7
 ---

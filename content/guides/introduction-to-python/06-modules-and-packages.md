@@ -1,5 +1,6 @@
 ---
 title: 'Python Modules, Packages and Virtual Environments with uv and pip'
+navTitle: 'Modules and packages'
 description: 'Python imports and packages, the standard library for ops, virtual environments, PEP 668, uv projects and lock files, and PEP 723 single-file scripts.'
 order: 6
 ---

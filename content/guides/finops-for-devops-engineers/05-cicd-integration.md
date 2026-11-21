@@ -1,5 +1,6 @@
 ---
 title: 'Integrating FinOps into CI/CD Pipelines'
+navTitle: 'FinOps in CI/CD'
 description: 'Add cost checks to pull requests: Infracost estimates, OPA policies on Terraform plans, reviews for size changes, and cleanup of preview environments.'
 order: 5
 ---

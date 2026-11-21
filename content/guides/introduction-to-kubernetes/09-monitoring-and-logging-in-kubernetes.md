@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Monitoring, Logging and Troubleshooting'
+navTitle: 'Monitoring and logging'
 description: 'Debug Kubernetes with logs, events and kubectl debug, fix ImagePullBackOff, CrashLoopBackOff and Pending pods, and add Prometheus alerts with Helm 4.'
 order: 9
 ---

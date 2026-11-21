@@ -1,5 +1,6 @@
 ---
 title: Production Best Practices and Operations
+navTitle: 'Production operations'
 description: 'Run PostgreSQL in production: scram-sha-256 and TLS, memory tuning, PgBouncer, monitoring, autovacuum, Patroni failover and major upgrades.'
 order: 10
 ---

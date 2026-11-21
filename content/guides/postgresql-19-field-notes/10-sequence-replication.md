@@ -1,5 +1,6 @@
 ---
 title: 'Sequence Replication and Safe Failover'
+navTitle: 'Sequence replication'
 description: 'PostgreSQL 19 logical replication can copy sequence values with ALL SEQUENCES and REFRESH SEQUENCES. When values move, the duplicate key it prevents, and the cutover order.'
 order: 10
 ---

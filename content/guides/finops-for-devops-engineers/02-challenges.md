@@ -1,5 +1,6 @@
 ---
 title: 'Common Cloud Cost Challenges for DevOps Teams'
+navTitle: 'Cloud cost challenges'
 description: 'Where cloud money leaks: oversized instances, idle resources, missing or inconsistent tags, always-on dev, NAT and data transfer, logs, Kubernetes and AI.'
 order: 2
 ---

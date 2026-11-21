@@ -1,5 +1,6 @@
 ---
 title: 'Bash Shell Scripting Basics for Beginners'
+navTitle: 'Shell scripting'
 description: 'Bash shell scripting basics with tested examples: variables, quoting, if and case, loops, functions, arguments, exit codes, error handling and ShellCheck.'
 order: 9
 ---

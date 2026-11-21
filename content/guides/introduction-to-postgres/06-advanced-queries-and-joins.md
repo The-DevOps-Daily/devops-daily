@@ -1,5 +1,6 @@
 ---
 title: Advanced Queries and Joins
+navTitle: 'Queries and joins'
 description: 'Combine PostgreSQL tables with INNER, LEFT, RIGHT and FULL joins, and answer reporting questions with subqueries, CTEs, window functions and LATERAL.'
 order: 6
 ---

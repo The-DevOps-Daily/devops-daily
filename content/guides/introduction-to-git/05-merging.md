@@ -1,5 +1,6 @@
 ---
 title: 'Git Merge and Rebase: Resolve Merge Conflicts'
+navTitle: 'Merge and rebase'
 description: 'Merge Git branches (fast-forward, merge commit, squash), resolve merge conflicts step by step, rebase onto main, and pick merge or rebase.'
 order: 5
 ---

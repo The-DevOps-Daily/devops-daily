@@ -1,5 +1,6 @@
 ---
 title: 'REPACK CONCURRENTLY: Shrink a Bloated Table Without a Long Lock'
+navTitle: 'REPACK CONCURRENTLY'
 description: 'PostgreSQL 19 adds REPACK and REPACK (CONCURRENTLY). Measured locks, disk, WAL and the writer stall at the end, the eligibility rules, and how it compares with pg_repack.'
 order: 5
 ---

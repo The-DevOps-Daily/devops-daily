@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Services, DNS and Gateway API Explained'
+navTitle: 'Services and DNS'
 description: 'Give pods a stable address with Kubernetes Services and DNS, compare ClusterIP, NodePort and LoadBalancer, and route HTTP with Gateway API, not Ingress.'
 order: 5
 ---

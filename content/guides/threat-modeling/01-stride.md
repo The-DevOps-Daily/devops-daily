@@ -1,5 +1,6 @@
 ---
 title: 'STRIDE: Threat Categories with Examples and Mitigations'
+navTitle: 'STRIDE'
 description: 'The six STRIDE threat categories with examples and mitigations, applied to a data flow diagram with trust boundaries for a ticket shop with payments.'
 order: 1
 ---

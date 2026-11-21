@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes ConfigMaps and Secrets: Configure Apps Without Rebuilds'
+navTitle: 'ConfigMaps and Secrets'
 description: 'Configure apps with Kubernetes ConfigMaps, mount TLS keys from Secrets, see why Secrets do not belong in env vars, and roll out config changes safely.'
 order: 6
 ---

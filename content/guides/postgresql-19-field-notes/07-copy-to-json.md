@@ -1,5 +1,6 @@
 ---
 title: 'COPY TO JSON: Native JSON Exports'
+navTitle: 'COPY TO JSON'
 description: 'PostgreSQL 19 adds COPY TO (FORMAT json) and FORCE_ARRAY. It matches the row_to_json pipeline byte for byte on plain data, runs faster, and differs on escaping and generated columns.'
 order: 7
 ---

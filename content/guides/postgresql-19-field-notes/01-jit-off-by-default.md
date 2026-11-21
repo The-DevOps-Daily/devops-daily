@@ -1,5 +1,6 @@
 ---
 title: 'JIT Is Off by Default: What It Costs and How to Turn It Back On'
+navTitle: 'JIT off by default'
 description: 'PostgreSQL 19 sets jit = off. What JIT was worth on an analytics query, which queries lose with it, and how to enable it per role, session or transaction.'
 order: 1
 ---

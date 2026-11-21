@@ -1,5 +1,6 @@
 ---
 title: 'Getting Started: Install Linux in a VM, WSL, the Cloud or on Hardware'
+navTitle: 'Install Linux'
 description: 'Get a Linux system to practise on: a virtual machine, WSL on Windows, a cloud server, a live USB or a dual boot, and the first steps after installing.'
 order: 2
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'What Is Packer? Core Concepts and Workflow'
+navTitle: 'What is Packer?'
 description: 'What HashiCorp Packer is and how it builds images: sources, builders, provisioners, post-processors, plugins and data sources, and what packer build does.'
 order: 1
 ---

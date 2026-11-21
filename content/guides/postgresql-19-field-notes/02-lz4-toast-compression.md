@@ -1,5 +1,6 @@
 ---
 title: 'LZ4 TOAST Compression by Default, and Why Your Old Rows Stay pglz'
+navTitle: 'LZ4 TOAST by default'
 description: 'PostgreSQL 19 compresses new TOAST values with lz4. What it saves, why VACUUM FULL, CLUSTER and REPACK keep old pglz values, and how to find and convert them.'
 order: 2
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Python Control Flow: if, match, for and while Loops with Retries'
+navTitle: 'Control flow'
 description: 'Python if, elif and match, for loops over hosts and batches, while loops with deadlines, and exponential backoff with jitter, with real output.'
 order: 3
 ---

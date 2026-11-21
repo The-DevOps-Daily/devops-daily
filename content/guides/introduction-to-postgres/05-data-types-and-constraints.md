@@ -1,5 +1,6 @@
 ---
 title: Data Types and Constraints in PostgreSQL
+navTitle: 'Data types and constraints'
 description: 'Pick PostgreSQL data types (bigint, numeric, text, timestamptz, jsonb, uuid, arrays) and enforce rules with NOT NULL, UNIQUE, CHECK and defaults.'
 order: 5
 ---

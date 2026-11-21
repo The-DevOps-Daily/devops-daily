@@ -1,5 +1,6 @@
 ---
 title: 'Write Your First Ansible Playbook'
+navTitle: 'Your first playbook'
 description: 'Build a playbook that installs nginx on two servers, publishes a page and tests it, then add conditions, loops, tags and error handling. Real output.'
 order: 3
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'pg_plan_advice: Hold a Query Plan Without Changing the SQL'
+navTitle: 'pg_plan_advice'
 description: 'PostgreSQL 19 ships pg_plan_advice and pg_stash_advice. Capture the planner decisions as text, apply them per session or by query ID, and avoid the setup traps.'
 order: 8
 ---

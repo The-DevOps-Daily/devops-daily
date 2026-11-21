@@ -1,5 +1,6 @@
 ---
 title: 'A07:2025 Authentication Failures'
+navTitle: 'A07 Authentication failures'
 description: 'A07:2025 Authentication Failures: credential stuffing, rate limits, breached-password checks, NIST password rules, sessions, JWTs, MFA and passkeys.'
 order: 8
 ---

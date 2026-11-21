@@ -1,5 +1,6 @@
 ---
 title: 'Advanced Ansible: Dynamic Inventory, Plugins and Next Steps'
+navTitle: 'Plugins and next steps'
 description: 'Build dynamic inventories, write a custom module and filter plugin, change the output format, build execution environments, and see where AAP and AWX fit.'
 order: 10
 ---

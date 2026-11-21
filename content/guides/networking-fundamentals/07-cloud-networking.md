@@ -1,5 +1,6 @@
 ---
 title: 'Cloud Networking: VPCs, Subnets, Security Groups and NAT'
+navTitle: 'Cloud networking'
 description: 'Map a lab network onto an AWS VPC: subnets across zones, route tables, NAT gateways, security groups vs NACLs, endpoints, peering, flow logs and costs.'
 order: 7
 ---

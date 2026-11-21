@@ -1,5 +1,6 @@
 ---
 title: 'A06:2025 Insecure Design'
+navTitle: 'A06 Insecure design'
 description: 'A06:2025 Insecure Design: business logic flaws, threat modeling, abuse cases turned into tests, safe recovery flows and paved roads for secure defaults.'
 order: 7
 ---

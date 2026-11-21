@@ -120,7 +120,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
               {/* Add navigation buttons */}
               {firstPart && (
                 <GuidePartNavigation
-                  nextPart={firstPart}
+                  nextPart={{ slug: firstPart.slug, title: firstPart.title, number: 1 }}
                   guideSlug={guide.slug}
                   isOverview={true}
                 />
@@ -131,8 +131,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
                 <div className="flex items-center text-sm text-muted-foreground">
                   {guide.updatedAt ? (
                     <span>
-                      Last updated:{' '}
-                      <time dateTime={guide.updatedAt}>{guide.updatedAt}</time>
+                      Last updated: <time dateTime={guide.updatedAt}>{guide.updatedAt}</time>
                     </span>
                   ) : (
                     <span>Last updated: Recently</span>
@@ -168,28 +167,28 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
               {/* Report Issue Component */}
               <div className="mt-8">
-              <ReportIssue title={guide.title} type="guide" slug={guide.slug} variant="compact" />
-            </div>
+                <ReportIssue title={guide.title} type="guide" slug={guide.slug} variant="compact" />
+              </div>
 
-            {/* Giscus Discussions */}
-            <GiscusComments className="mt-12" title={guide.title} />
+              {/* Giscus Discussions */}
+              <GiscusComments className="mt-12" title={guide.title} />
 
-            {/* Related Guides */}
-            {relatedGuides.length > 0 && (
-              <RelatedPosts
-                posts={relatedGuides.map((g) => ({
-                  title: g.title,
-                  slug: g.slug,
-                  date: g.publishedAt || '',
-                  readingTime: g.readingTime || '',
-                  category: g.category || { name: '', slug: '' },
-                }))}
-                title="Related Guides"
-                linkPrefix="/guides"
-                className="mt-12"
-              />
-            )}
-          </article>
+              {/* Related Guides */}
+              {relatedGuides.length > 0 && (
+                <RelatedPosts
+                  posts={relatedGuides.map((g) => ({
+                    title: g.title,
+                    slug: g.slug,
+                    date: g.publishedAt || '',
+                    readingTime: g.readingTime || '',
+                    category: g.category || { name: '', slug: '' },
+                  }))}
+                  title="Related Guides"
+                  linkPrefix="/guides"
+                  className="mt-12"
+                />
+              )}
+            </article>
           </div>
         </div>
       </div>

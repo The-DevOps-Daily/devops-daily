@@ -13,6 +13,8 @@ const GUIDES_DIR = path.join(process.cwd(), 'content', 'guides');
 
 export type GuidePart = {
   title: string;
+  /** Short label for the chapter list when the title is too long to scan. */
+  navTitle?: string;
   slug: string;
   order?: number;
   content: string;
@@ -29,18 +31,30 @@ export function toGuideSummary(guide: Guide): GuideSummary {
   return { ...rest, parts: parts.map(({ content: _c, ...part }) => part) };
 }
 
-/** Just what the client-side guide sidebar needs: titles and slugs, no bodies. */
+/** Minutes to read a chapter, at 200 words per minute. */
+export function partReadingMinutes(content: string): number {
+  return Math.ceil(content.split(/\s+/).length / 200);
+}
+
+export type GuideNavPart = { title: string; navTitle?: string; slug: string; minutes: number };
+
+/** Just what the client-side guide navigation needs: labels and slugs, no bodies. */
 export type GuideNav = {
   title: string;
   slug: string;
-  parts: Array<{ title: string; slug: string }>;
+  parts: GuideNavPart[];
 };
 
 export function toGuideNav(guide: Guide): GuideNav {
   return {
     title: guide.title,
     slug: guide.slug,
-    parts: guide.parts.map(({ title, slug }) => ({ title, slug })),
+    parts: guide.parts.map(({ title, navTitle, slug, content }) => ({
+      title,
+      ...(navTitle ? { navTitle } : {}),
+      slug,
+      minutes: partReadingMinutes(content),
+    })),
   };
 }
 
@@ -129,11 +143,10 @@ async function loadGuide(slug: string): Promise<Guide | null> {
         );
         parts.sort((a, b) => (a.order || 0) - (b.order || 0));
         const partsCount = parts.length;
-        const readingTime = parts.reduce((total, part) => {
-          const words = part.content.split(/\s+/).length;
-          // Assuming an average reading speed of 200 wpm
-          return total + Math.ceil(words / 200);
-        }, 0);
+        const readingTime = parts.reduce(
+          (total, part) => total + partReadingMinutes(part.content),
+          0
+        );
 
         return {
           ...data,

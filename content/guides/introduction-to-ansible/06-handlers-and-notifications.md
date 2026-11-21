@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Handlers: Restart Services Only When Needed'
+navTitle: 'Handlers'
 description: 'Use handlers to reload nginx only when its configuration changes, test the config before a reload, and avoid the traps of failed runs and handler order.'
 order: 6
 ---

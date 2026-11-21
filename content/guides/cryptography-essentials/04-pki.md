@@ -1,5 +1,6 @@
 ---
 title: 'PKI: Certificate Authorities, Trust Chains and a Private CA'
+navTitle: 'PKI and a private CA'
 description: 'How PKI decides what to trust: chains and cross-signing, trust stores, revocation, a private CA with name constraints, mTLS, the step CLI and signing.'
 order: 4
 ---

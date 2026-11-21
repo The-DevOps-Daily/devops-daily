@@ -1,5 +1,6 @@
 ---
 title: 'Semgrep Tutorial: Custom Rules, Taint Mode and CI/CD'
+navTitle: 'Semgrep'
 description: 'Scan code with Semgrep: registry rules, custom YAML rules and tests, taint mode, diff-aware scans, SARIF, and CI/CD with GitHub Actions and GitLab.'
 order: 3
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'What Is Docker? Containers, Images and How Docker Works'
+navTitle: 'What is Docker?'
 description: 'Learn what Docker is and how it works: containers vs virtual machines, images, layers and registries, and the path from docker run to containerd and runc.'
 order: 1
 ---

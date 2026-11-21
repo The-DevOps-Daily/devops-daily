@@ -1,5 +1,6 @@
 ---
 title: 'Docker Compose Tutorial: compose.yaml, Services and Commands'
+navTitle: 'Docker Compose'
 description: 'Run an app and Postgres from one compose.yaml: services, networks, volumes, secrets, health checks, profiles and watch, checked with docker compose config.'
 order: 8
 ---

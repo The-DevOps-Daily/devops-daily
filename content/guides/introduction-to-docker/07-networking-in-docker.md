@@ -1,5 +1,6 @@
 ---
 title: 'Docker Networking: Bridge Networks, Port Publishing and DNS'
+navTitle: 'Networking'
 description: 'Connect containers with Docker networks: user-defined bridges with DNS, port publishing and its firewall trap, host and none networks, and debugging.'
 order: 7
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'FinOps Metrics and a 90-Day Plan for DevOps Teams'
+navTitle: 'Metrics and a 90-day plan'
 description: 'Track FinOps next to DORA with a few clear metrics, read the pricing mix in your bill, plan for AI and sustainability, and roll out this guide in 90 days.'
 order: 7
 ---

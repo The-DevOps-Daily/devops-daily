@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Inventory: Hosts, Groups, Variables and Patterns'
+navTitle: 'Inventory'
 description: 'Write Ansible inventories in INI and YAML, group hosts by role and environment, set group_vars and host_vars, and target hosts with patterns.'
 order: 4
 ---

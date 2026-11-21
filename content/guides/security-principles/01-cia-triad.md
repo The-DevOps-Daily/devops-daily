@@ -1,5 +1,6 @@
 ---
 title: 'The CIA Triad: Confidentiality, Integrity and Availability'
+navTitle: 'The CIA triad'
 description: 'The CIA triad with examples: secrets leaking through process lists and Git history, forged commit authors, checksums, probes, zone spread and rate limits.'
 order: 1
 ---

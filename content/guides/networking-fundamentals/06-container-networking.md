@@ -1,5 +1,6 @@
 ---
 title: 'Container Networking: Docker Bridges, Ports and Kubernetes'
+navTitle: 'Container networking'
 description: 'Build a Docker-style bridge network by hand, then see what Docker and Kubernetes do: container DNS, published ports, Services and NetworkPolicies.'
 order: 6
 ---

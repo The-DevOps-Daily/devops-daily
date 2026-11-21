@@ -1,181 +1,116 @@
 'use client';
 
-import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle, BookOpen, ChevronRight } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
+import { GuideChapterList, completedKey } from '@/components/guide-chapter-list';
+import { useChapterHeadings } from '@/hooks/use-chapter-headings';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-
-interface GuidePart {
-  title: string;
-  slug: string;
-  description?: string;
-}
-
-interface Guide {
-  title: string;
-  slug: string;
-  parts: GuidePart[];
-}
+import type { GuideNav } from '@/lib/guides';
 
 interface GuideSidebarProps {
-  guide: Guide;
+  guide: GuideNav;
   activePart?: string;
 }
 
 export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
-  // Track completed parts, persisted per guide
+  const id = useId();
   const [completedParts, setCompletedParts] = useLocalStorage<string[]>(
-    `guide-${guide.slug}-completed`,
+    completedKey(guide.slug),
     []
   );
+  const { headings, activeId } = useChapterHeadings(activePart);
+  const listRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLLIElement>(null);
+  // A chapter the reader set by hand is not marked again by the timer.
+  const setByHand = useRef<string | null>(null);
 
-  // Mark current part as completed when navigating away
+  // A chapter counts as done after 30 seconds on it.
   useEffect(() => {
-    if (activePart && !completedParts.includes(activePart)) {
-      // Add a small delay to mark as complete once user has spent time on the page
+    if (activePart && setByHand.current !== activePart && !completedParts.includes(activePart)) {
       const timer = setTimeout(() => {
-        setCompletedParts((prev) => [...prev, activePart]);
-      }, 30000); // Mark as complete after 30 seconds
+        setCompletedParts((prev) => (prev.includes(activePart) ? prev : [...prev, activePart]));
+      }, 30000);
 
       return () => clearTimeout(timer);
     }
-  }, [activePart, completedParts]);
+  }, [activePart, completedParts, setCompletedParts]);
 
-  // Toggle completion status manually
-  const toggleCompletion = (slug: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // Bring the current chapter into view in the list, without scrolling the page.
+  useEffect(() => {
+    const list = listRef.current;
+    const item = activeItemRef.current;
+    if (!list || !item) return;
+    const top = item.offsetTop;
+    if (top < list.scrollTop || top + 48 > list.scrollTop + list.clientHeight) {
+      list.scrollTop = Math.max(0, top - list.clientHeight / 3);
+    }
+  }, [activePart]);
 
+  const doneCount = guide.parts.filter((p) => completedParts.includes(p.slug)).length;
+  const activeDone = !!activePart && completedParts.includes(activePart);
+
+  const toggleActive = () => {
+    if (!activePart) return;
+    setByHand.current = activePart;
     setCompletedParts((prev) =>
-      prev.includes(slug) ? prev.filter((p) => p !== slug) : [...prev, slug]
+      prev.includes(activePart) ? prev.filter((p) => p !== activePart) : [...prev, activePart]
     );
   };
 
   return (
-    <Card className="sticky top-8 flex flex-col max-h-[calc(100vh-100px)]">
-      <CardHeader className="border-b py-3 shrink-0">
-        <CardTitle className="text-base font-medium">Guide Contents</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 flex flex-col overflow-hidden">
-        <div className="grow flex flex-col overflow-hidden">
-          <Link
-            href={`/guides/${guide.slug}`}
-            className={cn(
-              'flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors shrink-0',
-              !activePart && 'bg-muted font-medium'
-            )}
-          >
-            <BookOpen className="mr-2 h-4 w-4 text-primary" />
-            <span>Overview</span>
-          </Link>
+    <nav
+      aria-label="Guide contents"
+      className="sticky top-[calc(var(--site-header-h,5rem)+1rem)] flex max-h-[calc(100vh-var(--site-header-h,5rem)-2rem)] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm"
+    >
+      <p className="shrink-0 border-b px-4 py-3 text-base font-medium">Guide Contents</p>
 
-          <div className="mt-2 border-t">
-            <div className="px-4 py-2 text-xs uppercase tracking-wider font-medium text-muted-foreground sticky top-0 bg-card z-10 border-b">
-              Sections
-            </div>
+      <div
+        ref={listRef}
+        className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain py-2"
+      >
+        <GuideChapterList
+          guide={guide}
+          activePart={activePart}
+          completedParts={completedParts}
+          headings={headings}
+          activeHeadingId={activeId}
+          activeItemRef={activeItemRef}
+        />
+      </div>
 
-            <div className="max-h-[calc(100vh-240px)] overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30 scrollbar-track-transparent">
-              {guide.parts.map((part, index) => {
-                const isActive = activePart === part.slug;
-                const isCompleted = completedParts.includes(part.slug);
-
-                return (
-                  <div
-                    key={part.slug}
-                    id={`section-${part.slug}`}
-                    className={cn('relative transition-all', isActive && 'bg-muted/70')}
-                  >
-                    <Link
-                      href={`/guides/${guide.slug}/${part.slug}`}
-                      className="flex items-center group px-4 py-2 hover:bg-muted/50 transition-colors"
-                    >
-                      {/* Number indicator */}
-                      <div
-                        className={cn(
-                          'shrink-0 w-6 h-6 flex items-center justify-center rounded-full mr-2 text-xs font-medium',
-                          isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : isCompleted
-                              ? 'bg-green-500/20 text-green-600 dark:bg-green-500/30 dark:text-green-400'
-                              : 'bg-secondary text-secondary-foreground'
-                        )}
-                      >
-                        {index + 1}
-                      </div>
-
-                      {/* Title */}
-                      <span
-                        className={cn(
-                          'text-sm flex-1 transition-colors line-clamp-1',
-                          isActive && 'font-medium text-foreground',
-                          isCompleted && !isActive && 'text-muted-foreground',
-                          isCompleted &&
-                            !isActive &&
-                            'line-through decoration-slate-400 decoration-1'
-                        )}
-                      >
-                        {part.title}
-                      </span>
-
-                      {/* Status icons */}
-                      <div className="shrink-0 ml-2">
-                        {isCompleted ? (
-                          <button
-                            onClick={(e) => toggleCompletion(part.slug, e)}
-                            className="opacity-60 hover:opacity-100 transition-opacity"
-                            title="Mark as not completed"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={(e) => toggleCompletion(part.slug, e)}
-                            className="opacity-0 group-hover:opacity-50 hover:opacity-100 transition-opacity"
-                            title="Mark as completed"
-                          >
-                            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Active indicator */}
-                      {isActive && (
-                        <ChevronRight className="h-4 w-4 ml-1 text-primary shrink-0" />
-                      )}
-                    </Link>
-
-                    {/* Active left border */}
-                    {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      <div className="shrink-0 border-t px-4 py-3">
+        <div className="mb-1.5 flex items-center justify-between text-xs">
+          <span id={`${id}-progress`} className="text-muted-foreground">
+            Your progress
+          </span>
+          <span className="font-medium tabular-nums">
+            {doneCount}/{guide.parts.length}
+          </span>
         </div>
-
-        <div className="p-3 border-t shrink-0">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-muted-foreground">Your progress</span>
-            <Badge variant="outline" className="px-2 py-0 h-5 text-xs font-normal">
-              {completedParts.length}/{guide.parts.length}
-            </Badge>
-          </div>
-
-          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{
-                width: `${Math.round((completedParts.length / guide.parts.length) * 100)}%`,
-              }}
+        <div
+          role="progressbar"
+          aria-labelledby={`${id}-progress`}
+          aria-valuemin={0}
+          aria-valuemax={guide.parts.length}
+          aria-valuenow={doneCount}
+          className="h-1.5 overflow-hidden rounded-full bg-muted"
+        >
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${Math.round((doneCount / guide.parts.length) * 100)}%` }}
+          />
+        </div>
+        {activePart && (
+          <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
+            <input
+              type="checkbox"
+              checked={activeDone}
+              onChange={toggleActive}
+              className="h-4 w-4 accent-primary"
             />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+            I finished this chapter
+          </label>
+        )}
+      </div>
+    </nav>
   );
 }

@@ -1,5 +1,6 @@
 ---
 title: 'FinOps Principles and the Operating Model'
+navTitle: 'FinOps principles'
 description: 'The FinOps Framework in engineering terms: six principles, the Inform, Optimize and Operate phases, the cost columns on a bill, and a first FOCUS query.'
 order: 1
 ---

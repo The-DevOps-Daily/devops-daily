@@ -1,5 +1,6 @@
 ---
 title: 'Practical FinOps: Tags, Budgets and Alerts as Code'
+navTitle: 'Tags, budgets and alerts'
 description: 'Terraform for FinOps: a validated tag schema, the gaps in default_tags, environment sizes, office hours, budgets and an anomaly alert per service.'
 order: 4
 ---

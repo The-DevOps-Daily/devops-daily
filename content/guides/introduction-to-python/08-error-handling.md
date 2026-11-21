@@ -1,5 +1,6 @@
 ---
 title: 'Python Error Handling: Exceptions, Logging, subprocess and HTTP Retries'
+navTitle: 'Errors and retries'
 description: 'Python exceptions and tracebacks, logging, exit codes and SIGTERM, safe subprocess calls, and HTTP APIs with timeouts and retries, with real output.'
 order: 8
 ---

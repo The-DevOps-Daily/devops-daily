@@ -1,5 +1,6 @@
 ---
 title: 'Python Functions: Arguments, Type Hints, Generators and Decorators'
+navTitle: 'Functions'
 description: 'Write Python functions for ops scripts: keyword-only arguments, type hints checked by mypy, the mutable default trap, generators and a retry decorator.'
 order: 4
 ---

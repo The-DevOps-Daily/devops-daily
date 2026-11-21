@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Remote Backends: S3 Native Locking and Team Workflows'
+navTitle: 'Remote backends'
 description: 'Store Terraform state in S3 with native locking (use_lockfile), Azure, GCS, Postgres or HCP Terraform, migrate state between backends, and run plans in CI.'
 order: 9
 ---

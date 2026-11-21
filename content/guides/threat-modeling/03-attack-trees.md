@@ -1,5 +1,6 @@
 ---
 title: 'Attack Trees: Map How an Attacker Reaches a Goal'
+navTitle: 'Attack trees'
 description: 'Build an attack tree with AND and OR nodes for a real system, annotate the leaves, find the cheapest attack path and see which fix raises it most.'
 order: 3
 ---
