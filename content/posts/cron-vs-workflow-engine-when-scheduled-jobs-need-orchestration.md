@@ -287,7 +287,8 @@ The slot never came back by itself. Prefect hands out concurrency slots with a l
 - **Tested: flow retries do not cover this.** With `@flow(retries=1)`, a run whose process exited with 137 still ended `Crashed` after one attempt.
 - **Not tested: a lease store that survives a restart.** `PREFECT_SERVER_CONCURRENCY_LEASE_STORAGE` selects it (default: the in-memory store); the `prefect-redis` integration ships a Redis one.
 - **Not tested: `collision_strategy: CANCEL_NEW`.** It cancels runs that cannot get a slot instead of queueing them, which avoids a backlog like our 45 runs but not the stall.
-  :::
+
+:::
 
 ## The machine is down while schedules pass
 
