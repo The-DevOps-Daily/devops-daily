@@ -433,6 +433,18 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Azure Monitor',
+    description:
+      'Azure observability service for collecting, querying, visualizing, and alerting on metrics, logs, and traces across applications and infrastructure.',
+    href: 'https://azure.microsoft.com/products/monitor',
+    category: 'monitoring',
+    icon: Activity,
+    badges: [
+      { text: 'Observability', variant: 'outline' },
+      { text: 'Azure', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
