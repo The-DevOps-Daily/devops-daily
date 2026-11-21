@@ -159,6 +159,7 @@ const PACKAGES = [
       'Dedicated newsletter slot (weekly)',
       'One sponsored tutorial or tool spotlight post',
       'Simulator/game inline mention on 3 pages',
+      'Weekly AI visibility check in your report (experimental)',
       'Priority response over email',
     ],
     popular: true,
@@ -183,7 +184,8 @@ const PACKAGES = [
 const STEPS = [
   {
     title: 'Pick a package',
-    description: 'Tell us about your product and who you want to reach. We suggest the package and the content that fit.',
+    description:
+      'Tell us about your product and who you want to reach. We suggest the package and the content that fit.',
   },
   {
     title: 'Check your kickoff page',
@@ -197,7 +199,8 @@ const STEPS = [
   },
   {
     title: 'Watch the numbers',
-    description: 'Your live report starts on day one and updates every day, for as long as the content keeps working.',
+    description:
+      'Your live report starts on day one and updates every day, for as long as the content keeps working.',
   },
 ];
 
@@ -217,7 +220,7 @@ const FAQ = [
   },
   {
     q: 'Will our content show up in AI answers?',
-    a: 'Nobody can promise a spot in an AI answer. What we do: write pages AI assistants like to cite (clear structure, measured numbers, sources), and show you how often their crawlers read each one.',
+    a: 'Nobody can promise a spot in an AI answer. What we do: write pages AI assistants like to cite (clear structure, measured numbers, sources), and show you how often their crawlers read each one. Professional and Enterprise sponsors also get a weekly AI visibility check (experimental): we ask AI models with web search the questions your buyers ask, and the report shows how often the answers cite our pieces and name you, next to your competitors.',
   },
   {
     q: 'Who reads DevOps Daily?',
@@ -228,12 +231,12 @@ const FAQ = [
     a: "Only if there's a clear fit with our audience (e.g. developer tools, cloud infra, observability, security). We don't run general tech or consumer ads.",
   },
   {
-    q: "What kind of copy / creative do you need?",
+    q: 'What kind of copy / creative do you need?',
     a: 'Very little. Your logo (SVG), a sign-up URL, and for the newsletter an optional banner of about 1200 x 630 px. We can write the newsletter copy and the sponsored posts from your brief, or edit your draft for house voice. Your kickoff page is filled in from your website, so most of it is a check, not a form.',
   },
   {
     q: 'What is in the report?',
-    a: 'Clicks on your links per placement and per day, logo impressions (on screen for at least 1 second) with the click rate, page views and readers on the pages we write for you, newsletter recipients, opens and clicks per issue, and every piece we published with its numbers on DevOps Daily, dev.to and daily.dev. It updates every day, and you can download the data as CSV.',
+    a: 'Clicks on your links per placement and per day, logo impressions (on screen for at least 1 second) with the click rate, page views and readers on the pages we write for you, newsletter recipients, opens and clicks per issue, and every piece we published with its numbers on DevOps Daily, dev.to and daily.dev. It updates every day, and you can download the data as CSV. Professional and Enterprise reports add the weekly AI visibility check: citation rate, share of voice and the mentions others give your pieces.',
   },
   {
     q: 'Is there a minimum commitment?',
@@ -250,9 +253,9 @@ const FAQ = [
         >
           info@devops-daily.com
         </a>{' '}
-        with a sentence about your product and the audience you want to reach. We respond within
-        24h and send a media kit + available slots. Once you pick a package, you get your kickoff
-        page and your live report link.
+        with a sentence about your product and the audience you want to reach. We respond within 24h
+        and send a media kit + available slots. Once you pick a package, you get your kickoff page
+        and your live report link.
       </>
     ),
   },
@@ -342,7 +345,10 @@ export default function SponsorshipPage() {
       <div className="container mx-auto px-4">
         {/* Brands we have worked with */}
         <section className="mx-auto my-14 max-w-5xl" aria-labelledby="past-sponsors">
-          <p id="past-sponsors" className="mb-10 text-center text-[13px] tracking-[0.01em] text-muted-foreground">
+          <p
+            id="past-sponsors"
+            className="mb-10 text-center text-[13px] tracking-[0.01em] text-muted-foreground"
+          >
             Brands that have sponsored DevOps Daily
           </p>
           <ul className="mx-auto grid grid-cols-3 items-center gap-x-8 gap-y-10 sm:gap-x-12 lg:flex lg:flex-wrap lg:justify-center lg:gap-x-14">
@@ -510,7 +516,9 @@ export default function SponsorshipPage() {
                     most popular
                   </span>
                 )}
-                <p className="text-xs font-mono text-muted-foreground mb-1">// {pkg.name.toLowerCase()}</p>
+                <p className="text-xs font-mono text-muted-foreground mb-1">
+                  // {pkg.name.toLowerCase()}
+                </p>
                 <h3 className="text-xl font-bold mb-1">{pkg.name}</h3>
                 <p className="text-sm text-muted-foreground mb-4">{pkg.description}</p>
                 <div className="mb-5 font-mono tabular-nums">
@@ -530,11 +538,7 @@ export default function SponsorshipPage() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  asChild
-                  variant={pkg.popular ? 'default' : 'outline'}
-                  className="w-full"
-                >
+                <Button asChild variant={pkg.popular ? 'default' : 'outline'} className="w-full">
                   <a
                     href={`mailto:info@devops-daily.com?subject=Sponsorship Inquiry - ${pkg.name}`}
                   >
@@ -545,7 +549,8 @@ export default function SponsorshipPage() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground text-center mt-6 font-mono">
-            All packages include a private live report, updated every day: clicks, logo impressions, page views and newsletter numbers.
+            All packages include a private live report, updated every day: clicks, logo impressions,
+            page views and newsletter numbers.
           </p>
         </section>
 
@@ -561,7 +566,9 @@ export default function SponsorshipPage() {
           <ol className="grid gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-2 lg:grid-cols-4">
             {STEPS.map((s, i) => (
               <li key={s.title} className="bg-card p-5">
-                <p className="mb-2 font-mono text-xs text-primary tabular-nums">{String(i + 1).padStart(2, '0')}</p>
+                <p className="mb-2 font-mono text-xs text-primary tabular-nums">
+                  {String(i + 1).padStart(2, '0')}
+                </p>
                 <h3 className="mb-1 font-semibold">{s.title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{s.description}</p>
               </li>
@@ -570,12 +577,19 @@ export default function SponsorshipPage() {
 
           <div className="mt-8 grid items-center gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
             <div>
-              <p className="mb-1 font-mono text-xs text-muted-foreground">{'// your live report'}</p>
-              <h3 className="mb-3 text-xl font-bold tracking-tight">Numbers you can check yourself</h3>
+              <p className="mb-1 font-mono text-xs text-muted-foreground">
+                {'// your live report'}
+              </p>
+              <h3 className="mb-3 text-xl font-bold tracking-tight">
+                Numbers you can check yourself
+              </h3>
               <ul className="space-y-2.5">
                 {REPORT_POINTS.map((p) => (
                   <li key={p} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={1.5} />
+                    <CheckCircle2
+                      className="mt-0.5 h-4 w-4 shrink-0 text-primary"
+                      strokeWidth={1.5}
+                    />
                     <span>{p}</span>
                   </li>
                 ))}
@@ -641,10 +655,7 @@ export default function SponsorshipPage() {
               a media kit and available slots.
             </p>
             <Button asChild size="lg">
-              <a
-                href="mailto:info@devops-daily.com?subject=Sponsorship Inquiry"
-                className="group"
-              >
+              <a href="mailto:info@devops-daily.com?subject=Sponsorship Inquiry" className="group">
                 <Mail className="mr-2 h-4 w-4" strokeWidth={1.5} />
                 info@devops-daily.com
                 <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
