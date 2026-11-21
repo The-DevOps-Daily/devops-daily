@@ -236,6 +236,10 @@
       "href": "/posts/istio-traffic-management-routing-retries-circuit-breaking"
     },
     {
+      "label": "Do You Still Need Sidecars? Service Mesh Overhead, Measured",
+      "href": "/posts/service-mesh-sidecars-vs-ambient-overhead-measured"
+    },
+    {
       "label": "Service Mesh Traffic Simulator",
       "href": "/games/service-mesh-simulator"
     },
