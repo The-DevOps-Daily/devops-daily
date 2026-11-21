@@ -1,5 +1,6 @@
 ---
 title: 'How to Install Docker on Ubuntu, Debian, Fedora, macOS and Windows'
+navTitle: 'Install Docker'
 description: 'Install Docker Engine 29 on Ubuntu, Debian, Fedora or RHEL from the official repository, or Docker Desktop on macOS and Windows, then test and fix errors.'
 order: 2
 ---

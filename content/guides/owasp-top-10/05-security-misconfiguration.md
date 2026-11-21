@@ -1,5 +1,6 @@
 ---
 title: 'A02:2025 Security Misconfiguration'
+navTitle: 'A02 Misconfiguration'
 description: 'A02:2025 Security Misconfiguration: default credentials, stack traces, missing headers, and Kubernetes and cloud settings, checked with ZAP and Trivy.'
 order: 3
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'How to Install Terraform and Run Your First Apply'
+navTitle: 'Install and first apply'
 description: 'Install Terraform 1.17 on Linux, macOS or Windows, verify the download, set up cloud credentials, and run init, plan, apply and destroy on a first project.'
 order: 2
 ---

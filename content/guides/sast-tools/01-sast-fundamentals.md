@@ -1,5 +1,6 @@
 ---
 title: 'SAST Fundamentals: How Static Analysis Finds Vulnerabilities'
+navTitle: 'SAST fundamentals'
 description: 'How SAST tools find vulnerabilities: parsing, pattern rules, taint analysis, false positives, SARIF, and where to run scans in your CI/CD pipeline.'
 order: 1
 ---

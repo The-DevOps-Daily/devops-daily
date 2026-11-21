@@ -1,5 +1,6 @@
 ---
 title: 'Docker Volumes and Bind Mounts: Persist Container Data'
+navTitle: 'Volumes and bind mounts'
 description: 'Keep data when containers are removed: Docker named volumes, bind mounts and tmpfs, a Postgres 18 database on a volume, backups, permissions and cleanup.'
 order: 6
 ---

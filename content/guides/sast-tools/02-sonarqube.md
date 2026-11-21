@@ -1,5 +1,6 @@
 ---
 title: 'SonarQube SAST: Setup, Security Rules and Quality Gates'
+navTitle: 'SonarQube'
 description: 'Use SonarQube for SAST: editions, Docker setup, project scans, taint analysis, quality gates, and CI/CD with GitHub Actions, GitLab and Jenkins.'
 order: 2
 ---

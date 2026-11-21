@@ -1,5 +1,6 @@
 ---
 title: 'Python File Handling: pathlib, Logs, JSON, YAML, TOML and Safe Writes'
+navTitle: 'Files, JSON and YAML'
 description: 'Python file handling with pathlib: encodings, gzipped logs, JSON, YAML and TOML traps, atomic writes, file permissions and safe tar extraction.'
 order: 7
 ---

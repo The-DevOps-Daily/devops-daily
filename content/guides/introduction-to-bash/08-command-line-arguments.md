@@ -1,5 +1,6 @@
 ---
 title: 'Bash Script Arguments: $@, shift, getopts and Long Options'
+navTitle: 'Script arguments'
 description: 'Handle Bash script arguments: "$@" versus $*, check and validate input (numbers, ports, IP addresses), shift, getopts, long options, stdin and exit codes.'
 order: 8
 ---

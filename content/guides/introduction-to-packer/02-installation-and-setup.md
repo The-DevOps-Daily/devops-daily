@@ -1,5 +1,6 @@
 ---
 title: How to Install Packer on Linux, macOS and Windows
+navTitle: 'Install Packer'
 description: 'Install HashiCorp Packer 1.16 on Ubuntu, RHEL, macOS or Windows, check it with packer version, add plugins with packer init, and set up cloud credentials.'
 order: 2
 ---

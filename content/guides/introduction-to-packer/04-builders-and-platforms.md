@@ -1,5 +1,6 @@
 ---
 title: 'Packer Builders: AWS, Azure, Google Cloud, Docker and More'
+navTitle: 'Builders'
 description: 'Configure the Packer amazon-ebs, azure-arm, googlecompute, docker, digitalocean and virtualbox-iso builders, and build one image for several platforms.'
 order: 4
 ---

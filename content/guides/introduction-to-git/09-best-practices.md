@@ -1,5 +1,6 @@
 ---
 title: 'Git Best Practices: Commits, Hooks and Signing'
+navTitle: 'Best practices'
 description: 'Git habits that pay off: clear commit messages, small commits, .gitattributes, keeping secrets out, hooks, SSH commit signing and useful settings.'
 order: 9
 ---

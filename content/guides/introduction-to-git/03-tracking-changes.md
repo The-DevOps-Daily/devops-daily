@@ -1,5 +1,6 @@
 ---
 title: 'Git Add, Commit and Diff: Track and Undo Changes'
+navTitle: 'Add, commit and diff'
 description: 'The everyday Git loop: git status, git diff, git add (and add -p), git commit, git log, renaming files, undoing changes with restore and amend, and tags.'
 order: 3
 ---

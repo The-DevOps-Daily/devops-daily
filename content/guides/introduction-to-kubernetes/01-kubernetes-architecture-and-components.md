@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Architecture Explained: Control Plane and Nodes'
+navTitle: 'Architecture'
 description: 'How Kubernetes works: the API server, etcd, scheduler and controllers, the kubelet and container runtime, and how one kubectl command flows through them.'
 order: 1
 ---

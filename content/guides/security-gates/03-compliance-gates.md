@@ -1,5 +1,6 @@
 ---
 title: 'Compliance Gates for Terraform: CIS, PCI DSS and SOC 2'
+navTitle: 'Compliance gates'
 description: 'Check Terraform against CIS, PCI DSS and SOC 2 controls with Checkov in CI: map checks to controls, write custom checks, handle skips, keep evidence.'
 order: 3
 ---

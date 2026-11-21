@@ -1,5 +1,6 @@
 ---
 title: 'Linux Package Management: apt, dnf, Snap and Flatpak'
+navTitle: 'Package management'
 description: 'Install, update and remove software on Ubuntu, Debian, Fedora and RHEL with apt and dnf, add third-party repositories safely, and use Snap and Flatpak.'
 order: 5
 ---

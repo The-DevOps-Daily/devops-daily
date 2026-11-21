@@ -1,5 +1,6 @@
 ---
 title: 'A10:2025 Mishandling of Exceptional Conditions'
+navTitle: 'A10 Exceptional conditions'
 description: 'A10:2025 Mishandling of Exceptional Conditions, new in 2025: fail closed, roll back partial transactions, handle errors in one place, limit everything.'
 order: 11
 ---

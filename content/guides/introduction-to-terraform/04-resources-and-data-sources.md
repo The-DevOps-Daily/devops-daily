@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Resources, Data Sources and Meta-Arguments'
+navTitle: 'Resources and data sources'
 description: 'Create Terraform resources, read data sources, set dependencies, and use count, for_each and lifecycle rules such as prevent_destroy and ignore_changes.'
 order: 4
 ---

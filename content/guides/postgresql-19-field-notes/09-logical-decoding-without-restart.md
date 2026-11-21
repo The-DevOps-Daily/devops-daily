@@ -1,5 +1,6 @@
 ---
 title: 'Logical Decoding Without a Restart: effective_wal_level'
+navTitle: 'Logical decoding, no restart'
 description: 'PostgreSQL 19 raises the WAL level to logical when you create the first logical slot. How to start CDC on a wal_level = replica server, and what to monitor.'
 order: 9
 ---

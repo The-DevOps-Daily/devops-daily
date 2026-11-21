@@ -1,5 +1,6 @@
 ---
 title: 'Managing Your AWS Costs'
+navTitle: 'Managing costs'
 description: 'Keep your AWS bill predictable: budgets, Cost Explorer, anomaly detection, the usual surprise charges, Savings Plans, Spot and a cleanup checklist.'
 order: 10
 ---

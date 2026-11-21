@@ -1,5 +1,6 @@
 ---
 title: 'How to Make a Bash Script Executable and Run It (chmod +x)'
+navTitle: 'Make a script executable'
 description: 'Make a Bash script executable with chmod +x, pick a shebang, run it from anywhere, and fix Permission denied, bad interpreter and command not found.'
 order: 7
 ---

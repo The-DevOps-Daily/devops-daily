@@ -1,5 +1,6 @@
 ---
 title: 'Git Remotes: Push, Fetch, Pull and Tracking Branches'
+navTitle: 'Remotes'
 description: 'Connect a Git repository to a remote, push and pull, fix rejected pushes, set a pull strategy, track branches, force-push safely and set up SSH keys.'
 order: 6
 ---

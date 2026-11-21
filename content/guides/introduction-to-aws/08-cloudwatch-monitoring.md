@@ -1,5 +1,6 @@
 ---
 title: 'CloudWatch: Monitoring Your Applications'
+navTitle: 'CloudWatch monitoring'
 description: 'Monitor AWS with CloudWatch: built-in metrics, the CloudWatch agent for memory and logs, alarms with SNS email, Logs Insights queries and log retention.'
 order: 8
 ---

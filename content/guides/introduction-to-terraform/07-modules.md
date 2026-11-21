@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Modules: Write, Use and Version Them'
+navTitle: 'Modules'
 description: 'Build reusable Terraform modules: inputs and outputs, for_each on modules, registry and Git sources, version pinning, and moving resources into modules.'
 order: 7
 ---

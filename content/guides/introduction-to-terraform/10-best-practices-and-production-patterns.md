@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Best Practices for Production'
+navTitle: 'Production best practices'
 description: 'Terraform best practices for production: layout, version pinning, lock files, linting, terraform test, ephemeral secrets, CI checks and drift detection.'
 order: 10
 ---

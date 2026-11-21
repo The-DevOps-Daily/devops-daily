@@ -1,5 +1,6 @@
 ---
 title: 'Git History: Log, Blame, Bisect, Revert and Reflog'
+navTitle: 'History and reflog'
 description: 'Search Git history by message, file and content, find who changed a line, bisect a bug, undo with reset, revert and the reflog, and remove a leaked secret.'
 order: 8
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Roles and Collections: Structure a Real Project'
+navTitle: 'Roles and collections'
 description: 'Turn a playbook into reusable Ansible roles, validate role arguments, install pinned collections with requirements.yml, and lay out a project for a team.'
 order: 8
 ---

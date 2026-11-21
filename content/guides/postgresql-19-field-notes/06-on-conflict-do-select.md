@@ -1,5 +1,6 @@
 ---
 title: 'ON CONFLICT DO SELECT: Get-or-Create in One Statement'
+navTitle: 'ON CONFLICT DO SELECT'
 description: 'PostgreSQL 19 adds INSERT ... ON CONFLICT DO SELECT. How it beats the no-op upsert and the CTE pattern, the race it removes, and what to check before you refactor.'
 order: 6
 ---

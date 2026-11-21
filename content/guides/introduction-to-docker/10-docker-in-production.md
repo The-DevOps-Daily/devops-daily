@@ -1,5 +1,6 @@
 ---
 title: 'Docker in Production: Deploy, Update and Monitor Containers'
+navTitle: 'Docker in production'
 description: 'Run Docker in production: build and push images in CI, deploy with Compose behind a TLS proxy, roll back, tune the daemon, and know when to use Kubernetes.'
 order: 10
 ---

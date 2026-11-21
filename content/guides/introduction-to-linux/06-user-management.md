@@ -1,5 +1,6 @@
 ---
 title: 'Linux User and Group Management: useradd, sudo and SSH Keys'
+navTitle: 'Users and groups'
 description: 'Create and manage Linux users and groups with useradd and usermod, read /etc/passwd and /etc/shadow, set up sudo safely, and log in with SSH keys.'
 order: 6
 ---

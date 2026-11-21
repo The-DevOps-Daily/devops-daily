@@ -1,5 +1,6 @@
 ---
 title: 'Encryption: AES-GCM, Key Pairs and Post-Quantum Keys'
+navTitle: 'Encryption'
 description: 'Symmetric and asymmetric encryption for DevOps engineers: AES-GCM, nonces, key pairs, age and SOPS for secrets, post-quantum ML-KEM, and key management.'
 order: 1
 ---

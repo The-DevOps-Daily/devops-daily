@@ -1,5 +1,6 @@
 ---
 title: 'SSRF: Server-Side Request Forgery (A01:2025)'
+navTitle: 'SSRF (part of A01)'
 description: 'Server-side request forgery in the OWASP Top 10:2025: why URL checks fail, a Node.js fetch that checks the address it connects to, and network controls.'
 order: 2
 ---

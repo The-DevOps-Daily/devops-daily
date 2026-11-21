@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Requests, Limits, Autoscaling and Scheduling'
+navTitle: 'Resources and autoscaling'
 description: 'Set CPU and memory requests and limits, resize pods in place, add LimitRanges and quotas, autoscale with HPA, and drain nodes safely with taints and PDBs.'
 order: 8
 ---

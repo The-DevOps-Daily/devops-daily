@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Variables, Facts and Precedence'
+navTitle: 'Variables and facts'
 description: 'See where Ansible variables come from and which value wins, use facts and magic variables, register results, add custom facts and shape data with filters.'
 order: 5
 ---

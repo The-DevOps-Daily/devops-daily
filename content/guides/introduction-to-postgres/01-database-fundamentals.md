@@ -1,5 +1,6 @@
 ---
 title: Understanding Database Fundamentals
+navTitle: 'Database fundamentals'
 description: 'How relational databases like PostgreSQL work: tables, keys, relationships, ACID transactions, the write-ahead log, and how a query is planned and run.'
 order: 1
 ---

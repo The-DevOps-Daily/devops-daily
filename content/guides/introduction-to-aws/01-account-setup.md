@@ -1,5 +1,6 @@
 ---
 title: 'Getting Started with Your AWS Account'
+navTitle: 'Your AWS account'
 description: 'Create an AWS account, choose the free or paid plan, secure the root user with MFA, set a budget alert, pick a Region and install the AWS CLI v2.'
 order: 1
 ---

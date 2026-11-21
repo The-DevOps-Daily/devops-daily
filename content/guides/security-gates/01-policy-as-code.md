@@ -1,5 +1,6 @@
 ---
 title: 'Policy as Code with OPA, Conftest and Kyverno'
+navTitle: 'Policy as code'
 description: 'Write Rego v1 policies, test them with opa test and Conftest in CI, and enforce them in Kubernetes with ValidatingAdmissionPolicy, Kyverno or Gatekeeper.'
 order: 1
 ---

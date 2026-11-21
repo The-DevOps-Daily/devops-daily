@@ -1,5 +1,6 @@
 ---
 title: SQL Basics and CRUD Operations
+navTitle: 'SQL basics and CRUD'
 description: 'Hands-on PostgreSQL SQL tutorial: SELECT, WHERE, ORDER BY and LIMIT, INSERT with RETURNING and upserts, UPDATE, DELETE and GROUP BY, with real output.'
 order: 3
 ---

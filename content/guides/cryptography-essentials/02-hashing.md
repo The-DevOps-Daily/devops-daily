@@ -1,5 +1,6 @@
 ---
 title: 'Hashing: Checksums, Signed Releases, HMAC and Passwords'
+navTitle: 'Hashing and HMAC'
 description: 'Hash functions for DevOps: SHA-256 and BLAKE3, verifying releases with checksums, GPG and Sigstore, content digests, HMAC webhooks and Argon2id passwords.'
 order: 2
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Bash Variables: Parameter Expansion, Arithmetic and Arrays'
+navTitle: 'Variables and arrays'
 description: 'Bash variables in depth: unset versus empty, default values, parameter expansion, arithmetic traps, special variables, arrays and associative arrays.'
 order: 4
 ---

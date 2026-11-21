@@ -1,5 +1,6 @@
 ---
 title: 'Terraform State Management: Commands, Drift and Locking'
+navTitle: 'State management'
 description: 'Inspect and change Terraform state safely: state list, show, mv and rm, moved, removed and import blocks, refresh-only plans for drift, and state locks.'
 order: 5
 ---

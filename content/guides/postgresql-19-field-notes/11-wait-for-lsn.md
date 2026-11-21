@@ -1,5 +1,6 @@
 ---
 title: 'Read-Your-Writes on Standbys with WAIT FOR LSN'
+navTitle: 'Read-your-writes (WAIT FOR LSN)'
 description: 'PostgreSQL 19 adds the WAIT FOR LSN command: a read on a standby can wait until it has replayed the user last write. The pattern, the timeouts, and the rules that reject it.'
 order: 11
 ---

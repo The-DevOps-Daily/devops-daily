@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Basics: Modules, Tasks, Plays and Playbooks'
+navTitle: 'Modules, tasks and plays'
 description: 'See what Ansible does on every run, what modules, collections, tasks, plays and playbooks are, and why running a playbook twice is safe. With real output.'
 order: 2
 ---

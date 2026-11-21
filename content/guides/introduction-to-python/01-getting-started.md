@@ -1,5 +1,6 @@
 ---
 title: 'Install Python 3.14 with uv on Linux, macOS and Windows'
+navTitle: 'Install Python with uv'
 description: 'Pick a Python version for October 2026, install it with uv or your OS, avoid the PEP 668 "externally managed" error, and run your first script.'
 order: 1
 ---

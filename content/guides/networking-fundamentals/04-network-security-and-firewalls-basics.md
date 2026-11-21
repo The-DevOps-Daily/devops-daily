@@ -1,5 +1,6 @@
 ---
 title: 'Firewalls and Network Security: nftables, Segmentation, mTLS'
+navTitle: 'Firewalls and security'
 description: 'Write stateful nftables rules, see drop vs reject from the client side, segment a network into zones, then add mTLS and rate limiting to a proxy in a lab.'
 order: 4
 ---

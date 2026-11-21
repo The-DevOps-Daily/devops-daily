@@ -1,5 +1,6 @@
 ---
 title: 'Zero Trust Architecture: Identity on Every Request'
+navTitle: 'Zero trust'
 description: 'Zero trust in practice: why labels and IPs are not identity, mTLS and identity policy with Istio ambient, JWTs at the edge, devices and OIDC for CI/CD.'
 order: 4
 ---

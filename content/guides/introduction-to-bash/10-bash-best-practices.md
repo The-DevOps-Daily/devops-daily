@@ -1,5 +1,6 @@
 ---
 title: 'Bash Best Practices: Strict Mode, Traps, ShellCheck and Tests'
+navTitle: 'Best practices'
 description: 'Write reliable Bash: set -euo pipefail and where it fails, traps for cleanup and signals, ShellCheck and shfmt, bats-core tests, CI and macOS portability.'
 order: 10
 ---

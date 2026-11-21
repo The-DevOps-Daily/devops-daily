@@ -1,5 +1,6 @@
 ---
 title: Database Design and Schema Modeling
+navTitle: 'Schema design'
 description: 'Design a PostgreSQL schema: primary keys (identity or UUIDv7), foreign keys, one-to-many and many-to-many relationships, normalization and schemas.'
 order: 4
 ---

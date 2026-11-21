@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Best Practices: Vault, Linting, Testing and CI'
+navTitle: 'Vault, linting and CI'
 description: 'Keep secrets in Ansible Vault, roll out changes a few hosts at a time, speed up runs, lint with ansible-lint, test roles and run every change through CI.'
 order: 9
 ---

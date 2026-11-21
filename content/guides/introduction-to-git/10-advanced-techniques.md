@@ -1,5 +1,6 @@
 ---
 title: 'Advanced Git: Worktrees, Sparse Clones, Submodules'
+navTitle: 'Advanced Git'
 description: 'Advanced Git with real examples: objects and refs, SHA-256 and reftable, worktrees, partial clones and sparse checkout, rerere, submodules, bundles.'
 order: 10
 ---

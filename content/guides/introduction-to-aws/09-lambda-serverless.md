@@ -1,5 +1,6 @@
 ---
 title: 'Lambda: Serverless Functions'
+navTitle: 'Lambda'
 description: 'Learn AWS Lambda: write a Python function, trigger it from S3 uploads, test it locally, and understand cold starts, limits, retries and pricing.'
 order: 9
 ---

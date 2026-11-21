@@ -1,5 +1,6 @@
 ---
 title: 'A05:2025 Injection'
+navTitle: 'A05 Injection'
 description: 'A05:2025 Injection: SQL, OS command and cross-site scripting in Node.js, parameterized queries and output encoding, and Semgrep rules that catch them.'
 order: 6
 ---

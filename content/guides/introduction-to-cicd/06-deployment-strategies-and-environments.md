@@ -1,5 +1,6 @@
 ---
 title: 'Deployments, Environments and Rollbacks'
+navTitle: 'Deployments and rollbacks'
 description: 'Deploy with GitHub Actions through a protected environment with a required reviewer, run one deployment at a time, smoke test it, and roll back.'
 order: 6
 ---

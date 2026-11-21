@@ -1,5 +1,6 @@
 ---
 title: 'Bash Basics: How Bash Reads and Runs a Command Line'
+navTitle: 'How Bash runs a command'
 description: 'How Bash turns a line into a command: command types, exit codes, the order of expansions, quoting, pipelines, subshells and redirection.'
 order: 2
 ---

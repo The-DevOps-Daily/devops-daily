@@ -1,5 +1,6 @@
 ---
 title: 'Network Automation: Firewalls, Terraform and Ansible in CI'
+navTitle: 'Network automation'
 description: 'Network as code: firewall changes that roll back on their own, Ansible with validated nftables, a Terraform VPC with a real plan, and a reviewed pipeline.'
 order: 9
 ---

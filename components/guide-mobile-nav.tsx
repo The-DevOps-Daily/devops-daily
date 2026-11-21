@@ -1,157 +1,142 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { BookOpen, CheckCircle, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '@/components/ui/drawer';
+import { useEffect, useId, useRef, useState } from 'react';
+import { BookOpen, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GuideChapterList, completedKey } from '@/components/guide-chapter-list';
+import { useChapterHeadings } from '@/hooks/use-chapter-headings';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import type { GuideNav } from '@/lib/guides';
 import { cn } from '@/lib/utils';
 
-interface GuidePart {
-  title: string;
-  slug: string;
+interface GuideMobileNavProps {
+  guide: GuideNav;
+  activePart: string;
 }
 
-interface GuideMobileNavProps {
-  guide: {
-    title: string;
-    slug: string;
-    parts: GuidePart[];
-  };
-  activePart: string;
-  previousPart?: GuidePart;
-  nextPart?: GuidePart;
-}
+const iconLink = 'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors';
 
 /**
- * Bottom bar for guide parts on small screens: previous, contents and next
- * stay one tap away instead of only at the end of a long page. Hidden from lg
- * up, where the sidebar does the same job.
+ * Sticky bar under the site header on phones and tablets: where the reader is
+ * ("Chapter 3 of 11: ...") and a menu with every chapter and the sections of
+ * this one. Hidden from lg up, where the sidebar does the same job.
  */
-export function GuideMobileNav({ guide, activePart, previousPart, nextPart }: GuideMobileNavProps) {
-  const [open, setOpen] = useState(false);
-  // Same key as GuideSidebar, so the checkmarks match.
-  const [completedParts] = useLocalStorage<string[]>(`guide-${guide.slug}-completed`, []);
+export function GuideMobileNav({ guide, activePart }: GuideMobileNavProps) {
+  // Open for one chapter only, so moving to another chapter closes the menu.
+  const [openFor, setOpenFor] = useState<string | null>(null);
+  const open = openFor === activePart;
+  const setOpen = (value: boolean) => setOpenFor(value ? activePart : null);
+  const [completedParts] = useLocalStorage<string[]>(completedKey(guide.slug), []);
+  const { headings, activeId } = useChapterHeadings(activePart);
+  const panelId = useId();
+  const rootRef = useRef<HTMLElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const activeItemRef = useRef<HTMLLIElement>(null);
 
   const index = guide.parts.findIndex((p) => p.slug === activePart);
-  const previousHref = previousPart
-    ? `/guides/${guide.slug}/${previousPart.slug}`
-    : `/guides/${guide.slug}`;
+  const current = guide.parts[index];
+  const previous = index > 0 ? guide.parts[index - 1] : undefined;
+  const next = guide.parts[index + 1];
+
+  useEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    const item = activeItemRef.current;
+    if (panel && item) panel.scrollTop = Math.max(0, item.offsetTop - panel.clientHeight / 3);
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpenFor(null);
+        buttonRef.current?.focus();
+      }
+    };
+    const onPointer = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpenFor(null);
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPointer);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPointer);
+    };
+  }, [open]);
+
+  if (!current) return null;
+  const label = current.navTitle ?? current.title;
 
   return (
     <nav
-      aria-label="Guide navigation"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden"
+      ref={rootRef}
+      aria-label="Guide chapters"
+      className="sticky top-[var(--site-header-h,0px)] z-30 border-b border-border bg-background lg:hidden print:hidden"
     >
-      <div className="mx-auto grid h-14 max-w-screen-sm grid-cols-[auto_1fr_auto] items-center gap-2 px-3">
+      <div className="mx-auto flex h-12 max-w-screen-md items-center gap-1 px-2">
         <Link
-          href={previousHref}
-          className="flex h-10 items-center gap-1 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label={previousPart ? `Prev: ${previousPart.title}` : 'Guide overview'}
+          href={previous ? `/guides/${guide.slug}/${previous.slug}` : `/guides/${guide.slug}`}
+          aria-label={previous ? `Previous chapter: ${previous.title}` : 'Guide overview'}
+          className={cn(iconLink, 'text-muted-foreground hover:bg-muted hover:text-foreground')}
         >
-          <ChevronLeft className="h-4 w-4" />
-          <span>{previousPart ? 'Prev' : 'Overview'}</span>
+          {previous ? <ChevronLeft className="h-5 w-5" /> : <BookOpen className="h-4 w-4" />}
         </Link>
 
-        <Drawer open={open} onOpenChange={setOpen} shouldScaleBackground={false}>
-          <DrawerTrigger asChild>
-            <button
-              type="button"
-              className="flex h-10 min-w-0 flex-col items-center justify-center rounded-md px-2 transition-colors hover:bg-muted"
-            >
-              <span className="text-xs font-medium tabular-nums">
-                Part {index + 1} of {guide.parts.length}
-              </span>
-              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                Contents
-                <ChevronUp className="h-3 w-3" />
-              </span>
-            </button>
-          </DrawerTrigger>
-          <DrawerContent className="max-h-[80vh]">
-            <DrawerHeader className="text-left">
-              <DrawerTitle>{guide.title}</DrawerTitle>
-              <DrawerDescription>
-                Part {index + 1} of {guide.parts.length}
-              </DrawerDescription>
-            </DrawerHeader>
-            <div className="overflow-y-auto px-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <Link
-                href={`/guides/${guide.slug}`}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 rounded-md px-3 py-3 text-sm hover:bg-muted"
-              >
-                <BookOpen className="h-4 w-4 text-primary" />
-                <span>Overview</span>
-              </Link>
-              <ol>
-                {guide.parts.map((part, i) => {
-                  const isActive = part.slug === activePart;
-                  const isCompleted = completedParts.includes(part.slug);
-                  return (
-                    <li key={part.slug}>
-                      <Link
-                        href={`/guides/${guide.slug}/${part.slug}`}
-                        onClick={() => setOpen(false)}
-                        aria-current={isActive ? 'page' : undefined}
-                        className={cn(
-                          'flex items-center gap-3 rounded-md px-3 py-3 text-sm hover:bg-muted',
-                          isActive && 'bg-muted font-medium'
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium',
-                            isActive
-                              ? 'bg-primary text-primary-foreground'
-                              : isCompleted
-                                ? 'bg-green-500/20 text-green-600 dark:bg-green-500/30 dark:text-green-400'
-                                : 'bg-secondary text-secondary-foreground'
-                          )}
-                        >
-                          {i + 1}
-                        </span>
-                        <span className="flex-1">{part.title}</span>
-                        {isCompleted && !isActive && (
-                          <CheckCircle
-                            className="h-4 w-4 shrink-0 text-green-500"
-                            aria-label="Completed"
-                          />
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ol>
-            </div>
-          </DrawerContent>
-        </Drawer>
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen(!open)}
+          className="flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 text-left text-sm transition-colors hover:bg-muted"
+        >
+          <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
+            <span className="shrink-0 text-xs tabular-nums text-foreground/70 sm:text-sm">
+              Chapter {index + 1} of {guide.parts.length}
+              <span className="hidden sm:inline">:</span>
+            </span>
+            <span className="truncate font-medium leading-tight text-foreground">{label}</span>
+          </span>
+          <ChevronDown
+            aria-hidden
+            className={cn(
+              'ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none',
+              open && 'rotate-180'
+            )}
+          />
+        </button>
 
-        {nextPart ? (
-          <Link
-            href={`/guides/${guide.slug}/${nextPart.slug}`}
-            className="flex h-10 items-center gap-1 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            aria-label={`Next: ${nextPart.title}`}
-          >
-            <span>Next</span>
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        ) : (
-          <Link
-            href={`/guides/${guide.slug}`}
-            className="flex h-10 items-center gap-1 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <BookOpen className="h-4 w-4" />
-            <span>Overview</span>
-          </Link>
-        )}
+        <Link
+          href={next ? `/guides/${guide.slug}/${next.slug}` : `/guides/${guide.slug}`}
+          aria-label={next ? `Next chapter: ${next.title}` : 'Guide overview'}
+          className={cn(
+            iconLink,
+            next
+              ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )}
+        >
+          {next ? <ChevronRight className="h-5 w-5" /> : <BookOpen className="h-4 w-4" />}
+        </Link>
+      </div>
+
+      <div
+        ref={panelRef}
+        id={panelId}
+        hidden={!open}
+        data-guide-menu-open={open || undefined}
+        className="relative max-h-[calc(100dvh-var(--site-header-h,0px)-3rem)] overflow-y-auto overscroll-contain border-t border-border bg-background pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-1 shadow-lg"
+      >
+        <div className="mx-auto max-w-screen-md">
+          <GuideChapterList
+            guide={guide}
+            activePart={activePart}
+            completedParts={completedParts}
+            headings={headings}
+            activeHeadingId={activeId}
+            activeItemRef={activeItemRef}
+            onNavigate={() => setOpen(false)}
+            nestSections
+          />
+        </div>
       </div>
     </nav>
   );

@@ -1,5 +1,6 @@
 ---
 title: 'Network Fundamentals: Layers, IP, TCP, UDP and Ports'
+navTitle: 'Layers, IP, TCP and UDP'
 description: 'How a request crosses a network: TCP/IP layers, IP addresses, ports and sockets, TCP vs UDP, HTTP and TLS, traced with curl and tcpdump in a practice lab.'
 order: 1
 ---

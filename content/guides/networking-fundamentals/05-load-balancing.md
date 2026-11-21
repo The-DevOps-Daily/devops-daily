@@ -1,5 +1,6 @@
 ---
 title: 'Load Balancing: nginx, HAProxy, Health Checks and Failover'
+navTitle: 'Load balancing'
 description: "Load balance three servers with nginx and HAProxy, compare algorithms, see health checks handle dead and hung servers, and keep the client's IP address."
 order: 5
 ---

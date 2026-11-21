@@ -27,14 +27,7 @@ describe('Markdown Content Validation', () => {
         });
 
         it('should have required fields', () => {
-          const requiredFields = [
-            'title',
-            'excerpt',
-            'publishedAt',
-            'author',
-            'category',
-            'tags',
-          ];
+          const requiredFields = ['title', 'excerpt', 'publishedAt', 'author', 'category', 'tags'];
 
           requiredFields.forEach((field) => {
             expect(data[field]).toBeDefined();
@@ -109,6 +102,20 @@ describe('Markdown Content Validation', () => {
               .readdirSync(guideDir)
               .filter((f) => f !== 'index.md' && f.endsWith('.md'));
             expect(partFiles.length).toBeGreaterThan(0);
+          });
+
+          // navTitle is the short label in the chapter list; it has to fit one line there.
+          it('should have short navTitles on its parts', () => {
+            const partFiles = fs
+              .readdirSync(guideDir)
+              .filter((f) => f !== 'index.md' && f.endsWith('.md'));
+            for (const file of partFiles) {
+              const { data: part } = matter(fs.readFileSync(path.join(guideDir, file), 'utf-8'));
+              if (part.navTitle === undefined) continue;
+              expect(typeof part.navTitle, file).toBe('string');
+              expect(part.navTitle.trim().length, file).toBeGreaterThan(0);
+              expect(part.navTitle.length, file).toBeLessThanOrEqual(32);
+            }
           });
 
           it('should have content in index.md', () => {

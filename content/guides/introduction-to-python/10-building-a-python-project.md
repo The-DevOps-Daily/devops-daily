@@ -1,5 +1,6 @@
 ---
 title: 'Build a Python CLI Tool: uv, argparse, pytest, Ruff, mypy and CI'
+navTitle: 'Build a CLI tool'
 description: 'Package a Python CLI with uv: src layout, pyproject.toml, argparse, threads, pytest, Ruff, mypy --strict, tests on 3.12 to 3.15, boto3 and CI.'
 order: 10
 ---

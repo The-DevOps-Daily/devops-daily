@@ -1,5 +1,6 @@
 ---
 title: 'Packer Variables, Var Files and Best Practices'
+navTitle: 'Variables and best practices'
 description: 'Use Packer variables, locals, .pkrvars.hcl and auto var files, PKR_VAR_ environment variables and sensitive values, then test and build images in CI.'
 order: 6
 ---

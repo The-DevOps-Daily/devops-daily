@@ -1,5 +1,6 @@
 ---
 title: 'Linux File System Hierarchy and File Permissions Explained'
+navTitle: 'Files and permissions'
 description: 'What lives in /etc, /var, /usr and /proc, how Linux file permissions and chmod work, plus links, inodes, disk usage and mounting file systems.'
 order: 4
 ---

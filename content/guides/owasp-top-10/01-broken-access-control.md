@@ -1,5 +1,6 @@
 ---
 title: 'A01:2025 Broken Access Control'
+navTitle: 'A01 Broken access control'
 description: 'A01:2025 Broken Access Control: IDOR, missing role checks, CORS, path traversal and CSRF, with Express fixes and tests that prove every check.'
 order: 1
 ---

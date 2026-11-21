@@ -1,5 +1,6 @@
 ---
 title: 'Git Fundamentals: How Git Works and First Setup'
+navTitle: 'How Git works'
 description: 'How Git stores your work in snapshots, the working tree, staging area and repository, how to install Git 2.56, and the settings to configure first.'
 order: 1
 ---

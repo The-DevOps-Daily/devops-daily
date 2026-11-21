@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Security Best Practices for Production'
+navTitle: 'Security best practices'
 description: 'Harden Kubernetes: RBAC, Pod Security Admission, non-root read-only pods, NetworkPolicies, admission policies, encrypted Secrets and signed images.'
 order: 10
 ---

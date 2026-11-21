@@ -1,5 +1,6 @@
 ---
 title: 'Workflow Syntax: Triggers, Jobs, Steps and Expressions'
+navTitle: 'Workflow syntax'
 description: 'How a GitHub Actions workflow file works: triggers and filters, manual inputs, jobs and needs, job outputs, contexts, expressions and if conditions.'
 order: 2
 ---

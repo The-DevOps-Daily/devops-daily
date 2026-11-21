@@ -1,5 +1,6 @@
 ---
 title: 'Run Your First Docker Container: docker run, ps, logs and exec'
+navTitle: 'Your first container'
 description: 'Run your first Docker container with docker run: publish ports, run in the background, read logs, open a shell with exec, set restart policies and limits.'
 order: 4
 ---

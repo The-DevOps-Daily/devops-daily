@@ -1,5 +1,6 @@
 ---
 title: 'Advanced Networking: WireGuard, Service Mesh, eBPF, HTTP/3'
+navTitle: 'WireGuard, mesh and eBPF'
 description: 'Build a WireGuard tunnel, then see what service meshes, zero trust, Gateway API, eBPF and HTTP/3 solve, with configs checked against the real CRDs.'
 order: 10
 ---

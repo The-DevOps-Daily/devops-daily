@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Configuration Language (HCL) Basics'
+navTitle: 'HCL basics'
 description: 'Learn HCL: blocks, types, references, string templates, conditionals, for expressions, dynamic blocks and functions, tested in terraform console.'
 order: 3
 ---

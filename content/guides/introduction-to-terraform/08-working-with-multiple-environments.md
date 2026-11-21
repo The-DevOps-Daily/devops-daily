@@ -1,5 +1,6 @@
 ---
 title: 'Managing Multiple Environments with Terraform'
+navTitle: 'Multiple environments'
 description: 'Run dev, staging and prod from one Terraform codebase: workspaces, a directory per environment, per-environment tfvars and backends, and Terragrunt.'
 order: 8
 ---

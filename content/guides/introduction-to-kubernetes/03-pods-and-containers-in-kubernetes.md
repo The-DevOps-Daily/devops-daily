@@ -1,5 +1,6 @@
 ---
 title: 'Kubernetes Pods: Create, Inspect, Debug and Add Sidecars'
+navTitle: 'Pods'
 description: 'Run a Kubernetes pod, inspect it with describe, events and logs, reach it with port-forward and exec, and add probes, an init container and a sidecar.'
 order: 3
 ---

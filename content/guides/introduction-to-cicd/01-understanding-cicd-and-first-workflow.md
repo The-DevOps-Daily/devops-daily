@@ -1,5 +1,6 @@
 ---
 title: 'What Is CI/CD? Your First GitHub Actions Workflow'
+navTitle: 'What is CI/CD?'
 description: 'What continuous integration, delivery and deployment mean, how GitHub Actions runs a workflow, and how to push your first workflow and read its logs.'
 order: 1
 ---

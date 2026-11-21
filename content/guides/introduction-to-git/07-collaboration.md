@@ -1,5 +1,6 @@
 ---
 title: 'Git Workflows: Pull Requests, GitHub Flow, Gitflow'
+navTitle: 'Workflows and pull requests'
 description: 'How teams work with Git: the pull request flow, merge methods, range-diff, stacked branches with --update-refs, release backports, and picking a workflow.'
 order: 7
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Essential FinOps Tools for DevOps Teams'
+navTitle: 'FinOps tools'
 description: 'Native cost tools on AWS, Azure and Google Cloud, FOCUS exports with DuckDB, Infracost, OpenCost and Cloud Custodian, and how to pick the ones you need.'
 order: 3
 ---

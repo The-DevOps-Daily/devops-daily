@@ -1,5 +1,6 @@
 ---
 title: 'Bash Functions: Arguments, Return Values, Scope and Libraries'
+navTitle: 'Functions'
 description: 'Bash functions done right: arguments, exit status versus output, namerefs, local and dynamic scope, sourcing libraries, a retry helper and export -f.'
 order: 6
 ---

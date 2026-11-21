@@ -1,5 +1,6 @@
 ---
 title: 'Environment Variables, Secrets and OIDC'
+navTitle: 'Variables, secrets and OIDC'
 description: 'Keep configuration in GitHub Actions variables and credentials in secrets, see how masking works, and replace long-lived cloud keys with OIDC tokens.'
 order: 5
 ---

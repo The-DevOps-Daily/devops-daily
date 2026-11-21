@@ -1,5 +1,6 @@
 ---
 title: 'DNS Explained: Records, TTLs, Caching and Troubleshooting'
+navTitle: 'DNS'
 description: 'How DNS resolution works from the root down: run a DNS server and a resolver, read each record type, watch TTL caching, and debug NXDOMAIN and SERVFAIL.'
 order: 3
 ---

@@ -1,5 +1,6 @@
 ---
 title: How to Install PostgreSQL 18 and psql
+navTitle: 'Install PostgreSQL 18'
 description: 'Install PostgreSQL 18 on Ubuntu, Debian, RHEL, macOS, Windows or Docker, or only the psql client. Add psql to your PATH and create your first database.'
 order: 2
 ---

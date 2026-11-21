@@ -1,5 +1,6 @@
 ---
 title: Transactions and Concurrency Control
+navTitle: 'Transactions'
 description: 'PostgreSQL transactions explained: BEGIN, COMMIT and ROLLBACK, savepoints, isolation levels, MVCC, row locks, SKIP LOCKED queues and deadlocks.'
 order: 8
 ---

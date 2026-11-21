@@ -1,5 +1,6 @@
 ---
 title: 'IP Addressing and Subnetting: CIDR, Private Ranges, NAT and IPv6'
+navTitle: 'IP addressing and subnets'
 description: 'Read CIDR prefixes, split a network into subnets, avoid overlaps with Docker, Kubernetes and VPNs, watch NAT translate a connection, and use IPv6 in a lab.'
 order: 2
 ---

@@ -1,5 +1,6 @@
 ---
 title: 'Caching Dependencies and Sharing Artifacts'
+navTitle: 'Caching and artifacts'
 description: 'Speed up GitHub Actions with the npm cache and actions/cache, and pass build output between jobs with upload-artifact v7 and download-artifact v8.'
 order: 4
 ---

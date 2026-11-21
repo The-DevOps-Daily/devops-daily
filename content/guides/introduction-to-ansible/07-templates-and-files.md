@@ -1,5 +1,6 @@
 ---
 title: 'Ansible Templates and Files with Jinja2'
+navTitle: 'Templates and files'
 description: 'Build config files with Jinja2 templates, manage files, links and permissions, edit lines safely, validate files before they go live and preview changes.'
 order: 7
 ---

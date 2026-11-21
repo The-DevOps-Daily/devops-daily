@@ -1,5 +1,6 @@
 ---
 title: 'Least Privilege: Databases, Linux, Kubernetes and Cloud IAM'
+navTitle: 'Least privilege'
 description: 'Least privilege, tested: Postgres grants, systemd sandboxing, a Kubernetes RBAC escalation, Pod Security, linted IAM policies and just-in-time access.'
 order: 3
 ---

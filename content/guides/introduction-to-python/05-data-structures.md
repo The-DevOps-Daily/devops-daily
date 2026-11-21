@@ -1,5 +1,6 @@
 ---
 title: 'Python Data Structures: Lists, Dicts, Sets and collections'
+navTitle: 'Data structures'
 description: 'Python lists, tuples, dicts and sets for inventories and config: comprehensions, Counter and defaultdict, deep copies, and a drift report.'
 order: 5
 ---

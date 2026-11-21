@@ -1,5 +1,6 @@
 ---
 title: 'What Is Linux? The Kernel, Distributions and Their History'
+navTitle: 'What is Linux?'
 description: 'What Linux is: the kernel and the software around it, how distributions differ, a short history from Unix to Linux 7, and how to choose a distribution.'
 order: 1
 ---

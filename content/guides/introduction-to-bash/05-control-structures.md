@@ -1,5 +1,6 @@
 ---
 title: 'Bash if, case and Loops: [[ ]] vs [ ], Tests and Loop Pitfalls'
+navTitle: 'if, case and loops'
 description: 'Bash conditions and loops: if, [ ] versus [[ ]], regex and glob matching, case, for, while, until, select, and the subshell and stdin traps.'
 order: 5
 ---

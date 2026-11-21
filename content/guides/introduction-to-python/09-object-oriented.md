@@ -1,5 +1,6 @@
 ---
 title: 'Python Classes and Dataclasses: Object-Oriented Code for Ops Tools'
+navTitle: 'Classes and dataclasses'
 description: 'Python classes for real tools: dataclasses, enums, properties, special methods, Protocols vs inheritance, and an API client class, with real runs and mypy.'
 order: 9
 ---
