@@ -86,12 +86,15 @@ export function GuideMobileNav({ guide, activePart }: GuideMobileNavProps) {
           aria-expanded={open}
           aria-controls={panelId}
           onClick={() => setOpen(!open)}
-          className="flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 text-left text-sm transition-colors hover:bg-muted"
+          className="flex h-10 min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 text-left text-sm transition-colors hover:bg-muted"
         >
-          <span className="shrink-0 tabular-nums text-muted-foreground">
-            Chapter {index + 1} of {guide.parts.length}:
+          <span className="flex min-w-0 flex-col sm:flex-row sm:items-baseline sm:gap-1.5">
+            <span className="shrink-0 text-xs tabular-nums text-foreground/70 sm:text-sm">
+              Chapter {index + 1} of {guide.parts.length}
+              <span className="hidden sm:inline">:</span>
+            </span>
+            <span className="truncate font-medium leading-tight text-foreground">{label}</span>
           </span>
-          <span className="min-w-0 truncate font-medium text-foreground">{label}</span>
           <ChevronDown
             aria-hidden
             className={cn(
@@ -119,6 +122,7 @@ export function GuideMobileNav({ guide, activePart }: GuideMobileNavProps) {
         ref={panelRef}
         id={panelId}
         hidden={!open}
+        data-guide-menu-open={open || undefined}
         className="relative max-h-[calc(100dvh-var(--site-header-h,0px)-3rem)] overflow-y-auto overscroll-contain border-t border-border bg-background pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-1 shadow-lg"
       >
         <div className="mx-auto max-w-screen-md">
@@ -130,6 +134,7 @@ export function GuideMobileNav({ guide, activePart }: GuideMobileNavProps) {
             activeHeadingId={activeId}
             activeItemRef={activeItemRef}
             onNavigate={() => setOpen(false)}
+            nestSections
           />
         </div>
       </div>

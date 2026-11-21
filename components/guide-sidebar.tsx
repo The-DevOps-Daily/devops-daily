@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef } from 'react';
-import { GuideChapterList, completedKey } from '@/components/guide-chapter-list';
+import { ChapterSections, GuideChapterList, completedKey } from '@/components/guide-chapter-list';
 import { useChapterHeadings } from '@/hooks/use-chapter-headings';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import type { GuideNav } from '@/lib/guides';
@@ -20,6 +20,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
   const { headings, activeId } = useChapterHeadings(activePart);
   const listRef = useRef<HTMLDivElement>(null);
   const activeItemRef = useRef<HTMLLIElement>(null);
+  const sectionsRef = useRef<HTMLDivElement>(null);
   // A chapter the reader set by hand is not marked again by the timer.
   const setByHand = useRef<string | null>(null);
 
@@ -45,6 +46,17 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
     }
   }, [activePart]);
 
+  // Keep the section being read visible in the On this page list.
+  useEffect(() => {
+    const box = sectionsRef.current;
+    const link = box?.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!box || !link) return;
+    const top = link.offsetTop;
+    if (top < box.scrollTop || top + link.offsetHeight > box.scrollTop + box.clientHeight) {
+      box.scrollTop = Math.max(0, top - box.clientHeight / 3);
+    }
+  }, [activeId]);
+
   const doneCount = guide.parts.filter((p) => completedParts.includes(p.slug)).length;
   const activeDone = !!activePart && completedParts.includes(activePart);
 
@@ -65,7 +77,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
 
       <div
         ref={listRef}
-        className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain py-2"
+        className="relative min-h-36 shrink overflow-y-auto overscroll-contain py-2"
       >
         <GuideChapterList
           guide={guide}
@@ -76,6 +88,27 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
           activeItemRef={activeItemRef}
         />
       </div>
+
+      {headings.length > 0 && (
+        <div className="flex min-h-28 shrink-[4] flex-col border-t">
+          <p
+            id={`${id}-sections`}
+            className="shrink-0 px-4 pb-1 pt-3 text-xs font-medium uppercase tracking-wider text-muted-foreground"
+          >
+            On this page
+          </p>
+          <div
+            ref={sectionsRef}
+            className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-3"
+          >
+            <ChapterSections
+              headings={headings}
+              activeHeadingId={activeId}
+              labelledBy={`${id}-sections`}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="shrink-0 border-t px-4 py-3">
         <div className="mb-1.5 flex items-center justify-between text-xs">

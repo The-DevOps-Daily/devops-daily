@@ -7,10 +7,8 @@ import { usePathname } from 'next/navigation';
 export function BackToTop() {
   const [visible, setVisible] = useState(false);
   const pathname = usePathname() ?? '';
-  // Guide parts and the book page have a fixed bottom bar on small screens; sit above it.
-  const aboveBottomBar =
-    /^\/guides\/[^/]+\/[^/]+/.test(pathname) ||
-    /^\/books\/devops-survival-guide\/?$/.test(pathname);
+  // The book page has a fixed bottom bar on small screens; sit above it.
+  const aboveBottomBar = /^\/books\/devops-survival-guide\/?$/.test(pathname);
   // On phones the button covers the On-Call game's answer buttons. Below lg it is also
   // hidden whenever a simulator's fixed phone bar is on the page (see the class list).
   const hidden = /^\/games\/on-call\/?$/.test(pathname);
@@ -52,6 +50,7 @@ export function BackToTop() {
       className={`
        fixed ${aboveBottomBar ? 'bottom-20 lg:bottom-8' : 'bottom-8'} right-8 z-50
        [body:has([data-sim-phone-bar])_&]:hidden lg:[body:has([data-sim-phone-bar])_&]:block
+       [body:has([data-guide-menu-open])_&]:hidden
        p-3 rounded-full
        bg-primary text-primary-foreground
        shadow-lg hover:shadow-xl

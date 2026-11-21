@@ -18,11 +18,14 @@ interface GuideChapterListProps {
   activeHeadingId: string | null;
   activeItemRef?: Ref<HTMLLIElement>;
   onNavigate?: () => void;
+  /** Show the current chapter's sections under it (the mobile menu). */
+  nestSections?: boolean;
 }
 
 /**
- * Overview link, the numbered chapters and, under the current chapter, its
- * H2 sections. Shared by the desktop sidebar and the mobile chapter menu.
+ * Overview link and the numbered chapters, optionally with the current
+ * chapter's H2 sections under it. Shared by the desktop sidebar and the
+ * mobile chapter menu.
  */
 export function GuideChapterList({
   guide,
@@ -32,6 +35,7 @@ export function GuideChapterList({
   activeHeadingId,
   activeItemRef,
   onNavigate,
+  nestSections = false,
 }: GuideChapterListProps) {
   const id = useId();
   const rowClass = (active: boolean) =>
@@ -114,7 +118,7 @@ export function GuideChapterList({
                 </span>
               </Link>
 
-              {isActive && headings.length > 0 && (
+              {nestSections && isActive && headings.length > 0 && (
                 <div className="pb-2 pl-12 pr-3 pt-1">
                   <p
                     id={`${id}-sections`}
@@ -122,28 +126,12 @@ export function GuideChapterList({
                   >
                     On this page
                   </p>
-                  <ul aria-labelledby={`${id}-sections`} className="border-l">
-                    {headings.map((heading) => {
-                      const current = heading.id === activeHeadingId;
-                      return (
-                        <li key={heading.id}>
-                          <a
-                            href={`#${heading.id}`}
-                            onClick={onNavigate}
-                            aria-current={current ? 'location' : undefined}
-                            className={cn(
-                              '-ml-px block border-l-2 py-1 pl-3 text-[13px] leading-snug transition-colors',
-                              current
-                                ? 'border-primary font-medium text-foreground'
-                                : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-                            )}
-                          >
-                            {heading.text}
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <ChapterSections
+                    headings={headings}
+                    activeHeadingId={activeHeadingId}
+                    labelledBy={`${id}-sections`}
+                    onNavigate={onNavigate}
+                  />
                 </div>
               )}
             </li>
@@ -151,5 +139,45 @@ export function GuideChapterList({
         })}
       </ol>
     </>
+  );
+}
+
+interface ChapterSectionsProps {
+  headings: ChapterHeading[];
+  activeHeadingId: string | null;
+  labelledBy: string;
+  onNavigate?: () => void;
+}
+
+/** The H2 sections of the current chapter, with the one being read marked. */
+export function ChapterSections({
+  headings,
+  activeHeadingId,
+  labelledBy,
+  onNavigate,
+}: ChapterSectionsProps) {
+  return (
+    <ul aria-labelledby={labelledBy} className="border-l">
+      {headings.map((heading) => {
+        const current = heading.id === activeHeadingId;
+        return (
+          <li key={heading.id}>
+            <a
+              href={`#${heading.id}`}
+              onClick={onNavigate}
+              aria-current={current ? 'location' : undefined}
+              className={cn(
+                '-ml-px block border-l-2 py-1 pl-3 text-[13px] leading-snug transition-colors',
+                current
+                  ? 'border-primary font-medium text-foreground'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+              )}
+            >
+              {heading.text}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
