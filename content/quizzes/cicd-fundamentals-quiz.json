@@ -4,7 +4,7 @@
   "description": "Master the basics of Continuous Integration and Continuous Deployment, including pipelines, version control, automated testing, and deployment strategies",
   "category": "CI/CD",
   "icon": "GitBranch",
-  "totalPoints": 100,
+  "totalPoints": 115,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-500",
@@ -14,7 +14,7 @@
     "estimatedTime": "15-20 minutes",
     "difficultyLevels": {
       "beginner": 18,
-      "intermediate": 0,
+      "intermediate": 1,
       "advanced": 0
     },
     "createdDate": "2024-12-08"
@@ -325,6 +325,23 @@
       "hint": "Think about developer experience and feedback loops.",
       "difficulty": "beginner",
       "points": 5
+    },
+    {
+      "id": "federated-cloud-auth",
+      "title": "Short-Lived Cloud Authentication",
+      "description": "How should a CI job authenticate to a cloud provider without storing a long-lived access key?",
+      "situation": "A deployment workflow currently reads a permanent cloud access key from the repository's encrypted secrets. The team wants to reduce the impact of a secret leak.",
+      "options": [
+        "Keep the permanent key and rotate it once a year",
+        "Use OIDC federation to exchange the job identity for a short-lived, scoped cloud credential",
+        "Base64-encode the permanent key before storing it in the workflow",
+        "Reuse a developer's access key so there is only one credential to manage"
+      ],
+      "correctAnswer": 1,
+      "explanation": "OIDC federation lets the cloud provider verify the workflow's identity and issue a credential with a short lifetime and narrowly scoped permissions. No reusable cloud key needs to live in the repository or CI settings, which reduces both exposure time and rotation work.",
+      "hint": "Prefer an identity exchange that expires automatically over a stored secret.",
+      "difficulty": "intermediate",
+      "points": 15
     }
   ]
 }
