@@ -31,7 +31,7 @@ Out of 34 nightly partitions, before anyone touched anything:
 - **Hardened cron** left 6 missing. The dead-man switch alerted on 2 of the 4 incidents behind them.
 - **The Kubernetes CronJob** left 4 missing. After the reboot, a retried pod loaded the wrong day, and both Jobs involved said `Complete`.
 - **Kestra** left 1 missing (the poison record). It needed no help otherwise, but a reboot froze its schedule for 6.5 minutes in one run and 11 in the other, before it caught up on its own.
-- **Prefect** left 18 missing. The process crash was not retried, and after the reboot a run that no longer existed kept the deployment's only concurrency slot. Nothing ran for 42 minutes, until we forced that run to `Crashed`. A second reboot did the same.
+- **Prefect** left 18 missing. The process crash was not retried, and after the reboot a run that no longer existed kept the deployment's only concurrency slot. Nothing ran for 42 minutes, until we forced that run to `Crashed`. A second reboot did the same. With the zombie-run automation from Prefect's docs added, a re-test of the reboot was back to normal 90 seconds later.
 
 So an orchestrator is not automatically safer. What the orchestrators gave us was a record of every run, retries per step, and catch-up and backfill by the scheduled date. What decided whether the data was right was something else: whether the load and the report could be repeated safely. After the repairs, every setup with idempotent writes passed every check our scorer makes: the expected number of rows per day, no order loaded twice, and one report per day. The two without them needed a delete before every rerun, and had sent duplicate reports that nobody can take back.
 
@@ -47,7 +47,7 @@ https://github.com/The-DevOps-Daily/cron-vs-workflow-lab
 - `flock`, `timeout`, retries and a dead-man ping fix a lot, but `flock -n` turns an overlap into a silently skipped day, and a dead-man check misses a killed run when the next run succeeds.
 - A Kubernetes CronJob retries pods and records Jobs, but a pod that computes "yesterday" from the clock loads the wrong day when it is retried late. After downtime it starts only the most recent missed schedule.
 - Kestra recovered every missed schedule with the right date, queued overlaps and duplicates, and has a backfill API. Its weak spot was a reboot mid-run: after the graceful shutdown, it waited out the termination grace period before it resubmitted the stuck task.
-- Prefect's task retries do not cover a process crash, and with a deployment concurrency limit, a run orphaned by a reboot blocked every later run until a person intervened.
+- Prefect's task and flow retries do not cover a process crash, and with a deployment concurrency limit, a run orphaned by a reboot blocked every later run until a person intervened. The zombie-run automation from Prefect's docs fixed the stall in our re-test.
 - Idempotent writes are what kept the data right in every setup. No scheduler fixes a poison record.
 
 ## Prerequisites
@@ -132,7 +132,7 @@ Setup 3b exists for one reason: to show what Kubernetes retries do to a write th
 
 Waiting for real nights was not an option, so the lab compresses time: every setup runs on `* * * * *`, and the run at minute T loads the partition for minute T-1, the same way a nightly job loads yesterday. Each failure is programmed against a partition, so all six setups hit it on the same tick. A normal run takes 3 to 11 seconds. (If you want to check what a schedule expression really does, the [cron expression simulator](/games/cron-expression-simulator) shows the next run times.)
 
-Compression changes one thing you should keep in mind. In real life, a run that starts two minutes late still loads the right day. Here it can load the wrong one. We point this out where it matters.
+One caveat: in real life a run that starts two minutes late still loads the right day; here it can load the wrong one. We point this out where it matters.
 
 ## The results
 
@@ -154,6 +154,8 @@ This is the state after the failures, before anyone helped. The full per-partiti
   ]
 }
 ```
+
+These are the defaults, plus the settings in the table above. Each tool has settings that change some of these outcomes: on Prefect, an automation that marks orphaned runs `Crashed` (we re-tested that one, see the reboot section); on Kestra, the termination grace period, which decides how long a reboot blocks the schedule; on the CronJob, passing the scheduled time into the pod instead of reading the clock; on cron, a systemd timer with `Persistent=true` for one catch-up run after downtime.
 
 The count hides more than it shows, because the failures are not equal. Here is what each setup did on its own, failure by failure, including the second run described further down:
 
@@ -268,7 +270,7 @@ No execution found, schedule is blocked since '2026-11-20T17:19:00.490197Z'
 
 `systemctl reboot` shuts services down gracefully, and Kestra logged `Shutdown signal received. Initiating graceful shutdown.` at 17:19:28. Per the [server lifecycle docs](https://kestra.io/docs/administrator-guide/server-lifecycle), the tasks of a worker that stopped this way are resubmitted only after the termination grace period, so that a worker that comes back does not run them twice. Kestra logged `Resubmit WorkerTask` at 17:29:17, the blocked execution loaded its partition at 17:30:23, and then the trigger worked through every schedule it had missed: 13 partitions in 80 seconds, all with the right dates, no duplicates. In this run the wait overlapped with the power-off below, so the second run (further down) measures the reboot on its own.
 
-**Prefect** is where the reboot did the most damage. The flow run that was executing stayed `Running`, because nothing was left to report that it died. Prefect calls this a zombie run, and its docs describe the fix: flow-run heartbeats (on by default in current clients) plus an automation that marks runs `Crashed` when the heartbeats stop. On Prefect Cloud that is a built-in policy. Self-hosted, you write the automation yourself ([Prefect docs](https://www.prefect.io/docs/v3/advanced/detect-zombie-flows)). We had not.
+**Prefect** is where the reboot did the most damage. The flow run that was executing stayed `Running`, because nothing was left to report that it died. Prefect calls this a zombie run. On Prefect Cloud a built-in policy catches it; self-hosted, you add an automation yourself (see the box below). We had not.
 
 On its own that would cost one partition. Combined with the deployment concurrency limit, it cost everything after it. The zombie held the deployment's only slot, and every later run went to `AwaitingConcurrencySlot`:
 
@@ -277,6 +279,15 @@ prefect.runner.state_proposer - Aborted submission of flow run '01a1f9f9-...': S
 ```
 
 The slot never came back by itself. Prefect hands out concurrency slots with a lease that the running process renews, and an expired lease releases the slot. Our reading of what happened: this server kept its leases in memory (`PREFECT_SERVER_CONCURRENCY_LEASE_STORAGE` defaults to the in-memory store), the server had rebooted too, so the lease that should have expired was gone, while the database still said `active_slots: 1`. We left it alone until 17:56, 37 minutes after the reboot, then started the repair described below. No run started between 17:19 and 18:01.
+
+:::tip
+**How to avoid this in Prefect.** The stall above is Prefect 3.9.4 with defaults, and Prefect documents the fix. We re-ran only this failure on a fresh box, once with and once without it ([`results/prefect-reboot-*.txt`](https://github.com/The-DevOps-Daily/cron-vs-workflow-lab/tree/main/results)):
+
+- **Tested: the zombie-run automation.** Flow runs send heartbeats by default (`PREFECT_FLOWS_HEARTBEAT_FREQUENCY`, 180 s). The [docs' automation](https://www.prefect.io/docs/v3/advanced/detect-zombie-flows) marks a run `Crashed` when no flow-run event follows a heartbeat in time; it is in the repo as `setups/5-prefect/zombie-automation.py`. With 30-second heartbeats and the docs' 90-second window, a run orphaned by a reboot at 13:54:50 was marked `Crashed` at 13:56:00, which released the slot, and the next run started at 13:56:20. The orphaned day itself was still lost. In the control run on the same box, with default heartbeats and the automation paused, the slot was still held 13 minutes after the reboot, when we stopped watching. With the default 180-second heartbeat, the docs suggest a 540-second window, which would mean a stall of up to about 9 minutes (not tested).
+- **Tested: flow retries do not cover this.** With `@flow(retries=1)`, a run whose process exited with 137 still ended `Crashed` after one attempt.
+- **Not tested: a lease store that survives a restart.** `PREFECT_SERVER_CONCURRENCY_LEASE_STORAGE` selects it (default: the in-memory store); the `prefect-redis` integration ships a Redis one.
+- **Not tested: `collision_strategy: CANCEL_NEW`.** It cancels runs that cannot get a slot instead of queueing them, which avoids a backlog like our 45 runs but not the stall.
+  :::
 
 ## The machine is down while schedules pass
 
@@ -308,7 +319,7 @@ The reboot on its own:
 - **Kestra** logged `Resubmit WorkerTask` at 18:43:34, 5 minutes and 9 seconds after the reboot, which fits the 5-minute default termination grace period. The schedule was blocked from 18:38:00 until 18:44:39, then it caught up 8 partitions by 18:45:23. Nothing was lost.
 - **Prefect** deadlocked again, the same way. When the run ended 15 minutes later, `active_slots` was still 1 and 15 partitions were missing.
 
-Two samples are not a distribution, but the pattern held in both: the CronJob's wrong-day load, Kestra's block-then-catch-up, and Prefect's stuck slot all happened twice.
+Two samples are not a distribution, but all three patterns (the CronJob's wrong-day load, Kestra's block-then-catch-up, Prefect's stuck slot) happened twice.
 
 ## Backfilling three missed days
 
@@ -349,17 +360,11 @@ After the first run, the cron setups were missing the three outage partitions an
 
 Kestra had recovered those three partitions on its own, so we ran its backfill over them anyway to see what it does. It created three executions 5 seconds apart, with `trigger.date` set to 17:26, 17:27 and 17:28 (so the end date is inclusive), and labelled them. The docs warn that a backfill "also replays intervals that already succeeded", which is why it needs idempotent loads. Here the upsert left the rows as they were and the report claim stopped three duplicate reports. The [Kestra docs](https://kestra.io/docs/concepts/backfill) also describe the same backfill from the UI.
 
-The CronJob part is the one people search for. Our post on [triggering a Kubernetes CronJob manually](/posts/trigger-kubernetes-scheduled-job-manually) covers `kubectl create job --from`. A backfill also needs the date, which means patching the rendered Job, as above, or giving the script a parameter it reads from somewhere you can set.
+For the CronJob, our post on [triggering a Kubernetes CronJob manually](/posts/trigger-kubernetes-scheduled-job-manually) covers `kubectl create job --from`; a backfill also needs the date, so patch the rendered Job as above.
 
 ## What a person had to do
 
-Finding the damage was the first job, and it was not equal either. Our scorer compares every partition with the source, which most teams do not have. Without it:
-
-- **Plain cron** gives you a log file without timestamps and nothing else. One partly loaded day and one doubled day look like any other day.
-- **Hardened cron** pointed at 2 of its 4 incidents (the poison record and the outage). The overlap left a `skipping` line in the log. The killed run left a `/start` without a success, which you only see if you read the ping history.
-- **The CronJob** showed the poison record as a `Failed` Job. The reboot loss and the outage loss showed up as nothing: missing Jobs, and a Job that succeeded on the wrong day.
-- **Kestra** showed one `FAILED` execution, which was the only problem it had.
-- **Prefect** showed a `Crashed` run, a `Failed` run, a run still in `Running` from before the reboot, and a queue of runs waiting for a slot.
+Finding the damage was the first job. Our scorer compares every partition with the source, which most teams do not have. Without it, plain cron shows nothing at all, hardened cron points at 2 of its 4 incidents, and the CronJob shows only the poison record as a `Failed` Job: its reboot and outage losses are missing Jobs and a Job that succeeded on the wrong day. Kestra and Prefect show every run and its state, so the damage is visible in their UIs.
 
 Then the repairs, all in [`lab/recover.sh`](https://github.com/The-DevOps-Daily/cron-vs-workflow-lab/blob/main/lab/recover.sh), with what went wrong along the way. We stood in for "the upstream fixed the bad record" by clearing the poison fault.
 
@@ -371,7 +376,7 @@ Then the repairs, all in [`lab/recover.sh`](https://github.com/The-DevOps-Daily/
 | Kestra        | restart the failed execution                                   | Restarting from the failed task reused the extracted file, which still held the poison record, so it failed a fourth time. A new execution with the partition as input fixed it. (The single-execution `restart` endpoint answered 404 `Requested Flow is not found` on 2.0.10; the bulk `restart/by-ids` endpoint worked.)                                                                                                          |
 | Prefect       | free the slot, rerun 3 partitions with `--param partition=...` | `prefect flow-run cancel` moved the zombie to `Cancelling`, and it was still there 4 minutes later, because no process was left to cancel. Forcing it to `Crashed` (`set_flow_run_state(..., force=True)`) released the slot. The 45 queued runs then drained one at a time over 22 minutes (a waiting run retries for the slot every 30 seconds by default), each with its own scheduled date, so they loaded the right partitions. |
 
-Two lessons came out of this that we did not expect. First, on cron the repair is a second source of the same failures: the backfill shares the lock and the scratch files with the schedule, so it either collides with the next run or makes it skip. Second, on an orchestrator the repair is easier only if you know the tool's specific trap. "Restart from the failed task" is the obvious button, and it reused bad input. "Cancel" is the obvious command, and it did nothing for a run whose process was gone.
+The surprise: on cron, the repair is a second source of the same failures, because the backfill shares the lock and the scratch files with the schedule. On the orchestrators, the obvious buttons misled us: "restart from the failed task" reused bad input, and "cancel" did nothing for a run whose process was gone.
 
 ## What each setup costs
 
@@ -387,7 +392,7 @@ The other side of the trade is what you have to run. We measured the anonymous (
 
 Two notes on the numbers. Kestra's figure is mostly the JVM with its default heap settings, and it includes Kestra's own Postgres. Prefect's serving process was idle during the sample (it was stuck from the second reboot); a run adds a Python process while it executes. The shared upstream and the warehouse are not in any row.
 
-Memory is the smaller cost. The bigger one showed up in the repair section: each tool had its own failure that a person needed to understand before the data was right again. For cron, that is knowledge of your own script. For an orchestrator, it is knowledge of the orchestrator: its restart strategy, its lease store, which endpoint really restarts an execution. Both are real work. Only one of them is documented by someone else.
+Memory is the smaller cost. The bigger one showed up in the repairs: for cron, you need to know your own script; for an orchestrator, you need to know the orchestrator's restart behavior, lease store and recovery endpoints. Only the second is documented by someone else.
 
 ## When cron is enough, and when to move
 
@@ -419,24 +424,24 @@ Move to an orchestrator when any of these is true:
 
 If you already run Kubernetes, the CronJob sits in between: you get retries, history and a concurrency policy for free, but you still need the partition passed in, idempotent writes, and alerts on failed Jobs and on Jobs that never got created.
 
-And before you trust an orchestrator, run the failure that hurt both of ours: **reboot the box in the middle of a run** and watch what happens to that run, to the schedule, and to any concurrency limit. On Kestra, look at the termination grace period (`kestra.server.terminationGracePeriod`). On self-hosted Prefect, set up the zombie-run automation from the docs, and check where concurrency leases are stored.
+And before you trust an orchestrator, run the failure that hurt both of ours: **reboot the box in the middle of a run** and watch what happens to that run, to the schedule, and to any concurrency limit. On Kestra, look at the termination grace period (`kestra.server.terminationGracePeriod`). On self-hosted Prefect, set up the zombie-run automation from the docs (it turned a 42-minute stall into 90 seconds in our re-test), and check where concurrency leases are stored.
 
 Request-driven work (a signup, a payment) is a different problem. Durable execution engines such as Temporal and Inngest are built for it, and we covered them in [Running a Background Job That Must Not Be Lost](/posts/running-a-background-job-that-must-not-be-lost).
 
 ## What we could not conclude
 
 - **Time is compressed.** One night is one minute. A run that starts a minute late lands in the wrong partition here, which with real nights only happens near midnight. The CronJob's wrong-day load is real, but compression makes it far more likely than it would be in production.
-- **One box.** Every setup shared one VM, so the reboot and the power-off hit them all at once, and the dead-man switch ran on the same box and could only alert after boot. A hosted check would have alerted during the outage.
-- **Single-node k3s.** The reboot took down the control plane and the node together. On a multi-node cluster, a pod on a failed worker is replaced after the node is declared unreachable, which takes minutes by default. We did not test that.
+- **One box.** The reboot and the power-off hit every setup at once, and the dead-man switch, on the same box, could only alert after boot.
+- **Single-node k3s.** The reboot took down the control plane and the node together. A multi-node cluster replaces pods from a failed worker only after the node is declared unreachable; we did not test that.
 - **Two samples at most.** Each failure ran once in the first run, and the reboot and the power-off ran again in the second. Timings such as Kestra's 11-minute block will vary.
-- **Mostly defaults.** We set the obvious options (retries, concurrency limits, deadlines) and left the rest at defaults. A shorter Kestra termination grace period, or Prefect with the zombie automation, a Redis lease store, or workers instead of `serve()`, would behave differently. We did not test those, so we do not claim how. (Kestra's `workerTaskRestartStrategy: IMMEDIATELY` would probably not have helped: the docs say a worker that terminates gracefully, as in a reboot, still gets the full grace period.)
-- **Two orchestrators out of four.** We picked Kestra and Prefect because they were the quickest to self-host: one server plus Postgres for Kestra, and a server, Postgres and one serving process for Prefect. Dagster's documented Docker deployment has four long-running services (Postgres, a user code server, the webserver and the daemon that creates scheduled runs), and Windmill's compose file has six (Postgres, server, two kinds of workers, an extra service for the editor, and Caddy). That is a statement about setup effort, not about features. Dagster's partitions and backfills in particular deserve their own test.
+- **Mostly defaults.** We set the obvious options (retries, concurrency limits, deadlines) and left the rest at defaults. Apart from Prefect's zombie-run automation (re-tested once, above), we did not test the settings that would change the outcomes: a shorter Kestra termination grace period, a Redis lease store or workers instead of `serve()` for Prefect, the scheduled-timestamp annotation for the CronJob. (Kestra's `workerTaskRestartStrategy: IMMEDIATELY` would probably not have helped: the docs say a worker that terminates gracefully, as in a reboot, still gets the full grace period.)
+- **Two orchestrators out of four.** We picked Kestra and Prefect because they were the quickest to self-host: one server plus Postgres for Kestra, and a server, Postgres and one serving process for Prefect. Dagster's documented Docker deployment has four long-running services (Postgres, a user code server, the webserver and the daemon that creates scheduled runs), and Windmill's compose file has six (Postgres, server, two kinds of workers, an extra service for the editor, and Caddy). That is about setup effort, not features; Dagster's partitions and backfills deserve their own test.
 - **Versions.** Kestra 2.0.10, Prefect 3.9.4, k3s v1.37.2, Postgres 17.6, Ubuntu 24.04 cron.
 
 ## Summary
 
 Cron starts a command at a time and forgets about it. Everything that makes a nightly job dependable (knowing the date it is for, retrying a step, not overlapping, catching up, being backfilled, telling someone) is either your script's job or a scheduler's job, and cron leaves all of it to the script.
 
-The hardened script closes most of the gap, but each fix has an edge: the lock skips days, the dead-man check misses a killed run, and a backfill can collide with the schedule. The CronJob adds retries and history, and quietly loads the wrong day if the pod computes its own date. Kestra and Prefect remember every run and its scheduled date, which made catch-up and backfill correct, and both still had one failure, a reboot mid-run, that a person had to understand before the data was right again.
+The hardened script closes most of the gap, but the lock skips days, the dead-man check misses a killed run, and a backfill can collide with the schedule. The CronJob adds retries and history, and quietly loads the wrong day if the pod computes its own date. Kestra and Prefect remember every run and its scheduled date, which made catch-up and backfill correct, and both needed a setting or a person after a reboot mid-run.
 
 So the question is not cron or orchestrator. It is how many of the checklist items above you are willing to own in shell. Pass the partition in, make every write repeatable, alert on silence from somewhere else, and then decide whether you want a scheduler that remembers. Everything here, including the raw logs and the scoring, is in the [cron-vs-workflow-lab repository](https://github.com/The-DevOps-Daily/cron-vs-workflow-lab), so you can rerun it against your own choices.
