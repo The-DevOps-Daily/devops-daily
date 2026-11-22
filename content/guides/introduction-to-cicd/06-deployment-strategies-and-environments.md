@@ -403,3 +403,4 @@ In [Part 7](/guides/introduction-to-cicd/07-advanced-workflows-and-automation) y
 - [Production Deployment Checklist](/checklists/production-deployment)
 - [Interview question: blue-green deployment](/interview-questions/topic/cicd#cicd-blue-green-deployment)
 - [Preview Environment Simulator](/games/preview-environment-simulator)
+- [A Postgres database per pull request, deleted after merge](/posts/postgres-database-per-pull-request-preview)

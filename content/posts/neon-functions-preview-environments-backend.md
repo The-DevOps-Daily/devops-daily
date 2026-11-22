@@ -123,6 +123,8 @@ jobs:
         run: npx neon branches delete "$BRANCH"
 ```
 
+For the database part on its own, with schema diff comments, an orphan sweep and measured timings, see [how to give every pull request its own Postgres database](/posts/postgres-database-per-pull-request-preview).
+
 Now the frontend preview and the backend preview live and die together. Reviewers click a preview that is running that PR's real code against that PR's own database, seeded from a real copy of production data, and none of it can affect anyone else.
 
 ## Shared staging vs a branch per PR
