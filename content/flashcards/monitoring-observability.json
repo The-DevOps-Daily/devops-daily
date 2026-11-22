@@ -6,7 +6,7 @@
   "icon": "Activity",
   "difficulty": "intermediate",
   "estimatedTime": "18 minutes",
-  "cardCount": 16,
+  "cardCount": 17,
   "theme": {
     "primaryColor": "cyan",
     "gradientFrom": "from-cyan-500",
@@ -124,6 +124,13 @@
       "back": "Rotate on-call schedules, provide escalation paths, maintain runbooks, post-incident reviews (blameless), compensate on-call time, limit alert volume, automate common fixes, establish response SLOs, practice incident response, use incident commanders for major outages.",
       "category": "Operations",
       "tags": ["on-call", "incident-response", "sre"]
+    },
+    {
+      "id": "missing-telemetry-alert",
+      "front": "How do you alert when a scheduled job stops emitting metrics entirely?",
+      "back": "Use a dead-man switch: emit a heartbeat or last-success timestamp on every run, then alert when it is absent or too old. A normal threshold cannot fire when no samples arrive. In Prometheus, absent_over_time(job_heartbeat[15m]) detects a missing series; comparing time() with a last-success gauge also catches stale pipelines.",
+      "category": "Alerting",
+      "tags": ["dead-man-switch", "heartbeat", "prometheus", "pipelines"]
     }
   ]
 }
