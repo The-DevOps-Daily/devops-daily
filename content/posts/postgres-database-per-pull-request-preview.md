@@ -37,6 +37,7 @@ https://github.com/The-DevOps-Daily/postgres-per-pr
 - **Real data catches real bugs.** A unique index passed on an empty `postgres:18` container and failed on the branch, because production had 2,000 duplicates that differ only in case.
 - **Storage follows the writes.** Three previews that each look like the full 309 MB database stored about 99 MB together, a little less than the 109 MB of indexes their migrations built.
 - **On a paid plan, the first limit is compute, not branches.** At 25 branches, 20 preview computes answered and 4 failed with `exceeded the limit of concurrently active endpoints`.
+- **Cheap to test.** The whole test, 47 branches over three hours, used 1,577 CU-seconds of compute and 13 extra branch-hours on Neon, about 13 cents.
 - **Backstops matter.** `expires_at` plus a daily sweep deleted the orphans we planted and kept the open pull request's branch.
 - **Mask first.** Never branch real personal data into previews: branch from a checked anonymized branch, or use a schema-only branch.
 
@@ -383,13 +384,13 @@ Each preview branch looks like a full copy. Inside Postgres, `pg_database_size` 
 
 Neon's consumption API reports child branch storage per hour, as byte-months. For 08:00 to 09:00 UTC, when these three were the project's only child branches, it reported 133,665 byte-months. The root branch figure for the same hour, 447,906, times 744 hours gives back `main`'s logical size of 333 MB, so the same factor puts the three children at about **99 MB together**. That is about a tenth of three full copies, and a little less than the 109 MB of new indexes we measured inside Postgres. We did not find out why it is lower, and the figure does not split by branch. Neon's [usage docs](https://neon.com/docs/introduction/usage-calculations) explain the 744-hour month.
 
-At the $0.35 per GB-month storage price on Launch and Scale, 99 MB costs about 3.5 cents a month. Compute costs more than storage here: the whole test, with 34 bench branches, 7 workflow runs on preview branches and every migration, used 1,463 CU-seconds by 09:10 UTC per the consumption API, about 0.41 CU-hours or 9 cents at the Scale rate.
+At the $0.35 per GB-month storage price on Launch and Scale, 99 MB costs about 3.5 cents a month. Compute costs more than storage here. The whole test, with 34 bench branches, 9 workflow runs on preview branches and every migration, used 1,577 CU-seconds between 07:00 and 10:00 UTC by the consumption API, about 0.44 CU-hours or 10 cents at the Scale rate. Extra branches added about 2.6 cents more, for a reason explained in [the limits section](#h2-the-limits-you-hit-first).
 
 The rule of thumb: **a preview branch costs about what its pull request writes.** A column added with no default changed no relation size in our test, so it adds very little. An index on a big table adds about the size of the index. We did not test a migration that rewrites a whole table, such as a column type change, but by the same logic it writes, and so stores, about the size of the table. `branch-objects.mjs` only compares relation sizes, so small writes into existing pages do not show in that table.
 
 ### Cleanup, checked
 
-Over the test we created 34 branches with the benches and 9 more through pull requests and by hand. All of them were deleted, and the project ended with `main` only. The full list, with what deleted each branch, is in [`results/cleanup-proof.md`](https://github.com/The-DevOps-Daily/postgres-per-pr/blob/main/results/cleanup-proof.md).
+Over the test we created 34 branches with the benches and 13 more through pull requests and by hand. All of them were deleted, and the project ended with `main` only. The full list, with what deleted each branch, is in [`results/cleanup-proof.md`](https://github.com/The-DevOps-Daily/postgres-per-pr/blob/main/results/cleanup-proof.md).
 
 - **Merge and close.** We merged #1 and closed #2 and #3 without merging. All three `preview-db-cleanup` runs deleted the branch, and the "Check it is gone" step confirmed it. The merge also ran `deploy-migrations.yml`, which applied `003_bookmarks_archived_at.sql` to `main` in 81 ms.
 - **Reopen.** Reopening #2 made a new branch from the updated `main`, which now had `003`, so only the index migration ran: 1,952 ms. The comment said "created by this run".
@@ -422,7 +423,9 @@ All 25 branches were created. 20 of the 24 new computes answered within the firs
 53000 You have exceeded the limit of concurrently active endpoints. Please suspend some endpoints and try again.
 ```
 
-The project then had 21 active computes: `main` plus 20 previews. That matches Neon's [compute docs](https://neon.com/docs/manage/endpoints) (updated 2026-11-10): "The default limit is 20 concurrently active computes per project," computes on the default branch and suspended computes do not count, and Scale plan users can request a higher limit from the console. We stopped at 25 branches on purpose, because a 26th would have been an extra billed branch.
+The project then had 21 active computes: `main` plus 20 previews. That matches Neon's [compute docs](https://neon.com/docs/manage/endpoints) (updated 2026-11-10): "The default limit is 20 concurrently active computes per project," computes on the default branch and suspended computes do not count, and Scale plan users can request a higher limit from the console. We stopped at 25 branches on purpose, to stay inside the 25 included in Scale.
+
+That did not keep the extra-branch line of the bill at zero. Neon's [usage docs](https://neon.com/docs/introduction/usage-calculations) count extra branches in branch-hours: all child branches per hour, minus the allowance (24 child branches on Scale, 9 on Launch). For 07:00 to 08:00 UTC the consumption API reported 37 branch-hours. That is exactly every child branch that existed in that hour: the 10 timing branches, the 24 limit branches and the 3 previews, although no more than 24 existed at the same time. 13 branch-hours above the allowance come to about 2.6 cents at $1.50 per branch-month. Small, but it means **short-lived branches count per hour, not only at their peak**: a CI that makes more than 24 branches within one hour pays for extra branches even if it deletes each one after a minute.
 
 What this means for the workflow:
 
@@ -471,7 +474,7 @@ The demo's `main` is synthetic, so this post could branch it freely.
 - **Creates in a row, not at once.** The 10 timed creates ran one after another. The limits test created 24 branches back to back and they took 0.6 to 2.4 seconds each, but we did not time many pull requests opening in the same second.
 - **Storage from one billing hour.** The 99 MB is Neon's billing figure for one hour and three branches together, converted from byte-months. It does not split by branch. The index sizes inside Postgres are a separate measurement of similar size, and we did not find out why the billed figure is a little lower.
 - **Other vendors from their docs only.** We did not run Prisma Postgres, Supabase branching or PlanetScale. Their rows in the table are what their docs said on 2026-11-22, and docs change.
-- **Not a cost model for your team.** Our test used few computes for a few minutes. A team with long-lived previews that people click through all day pays for compute while they are active, and that depends on traffic and the suspend timeout, which we did not model.
+- **Not a cost model for your team.** Our whole test cost about 13 cents of compute and extra branches, and it used few computes for a few minutes. A team with long-lived previews that people click through all day pays for compute while they are active, and that depends on traffic and the suspend timeout, which we did not model.
 - **A synthetic production.** The 2,000 case duplicates were planted on purpose to show what an empty database misses. Your data will have its own surprises, and the point is that the branch finds them, not that it finds these.
 
 ## FAQ
