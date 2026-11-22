@@ -50,7 +50,7 @@ GitHub [announced the deprecation](https://github.blog/changelog/2025-09-19-depr
 2. **June 16, 2026:** runners started using Node 24 by default. `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true` let you opt back into Node 20.
 3. **September 23, 2026:** Node 20 was removed, and that opt-out stopped working.
 
-The September 23 post says: "This is the final notification that Node 20 is no longer available on GitHub Actions runners. Runners now use Node 24 for JavaScript actions. The temporary ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION opt-out is no longer available." It applies to github.com and GitHub with Data Residency. Maintainers should set `runs.using` to `node24` and release; workflow authors should move to versions that support Node 24.
+The September 23 post says: "This is the final notification that Node 20 is no longer available on GitHub Actions runners. Runners now use Node 24 for JavaScript actions. The temporary `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION` opt-out is no longer available." It applies to github.com and GitHub with Data Residency. Maintainers should set `runs.using` to `node24` and release; workflow authors should move to versions that support Node 24.
 
 ### What happens to a node20 action now
 

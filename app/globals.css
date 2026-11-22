@@ -410,6 +410,14 @@ body[data-mobile-menu='open'] [data-cookie-banner] {
   @apply absolute top-0 right-0 z-10;
 }
 
+/* Long words in running text (env var names like
+ * ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION, long hashes) have no break
+ * points and made posts scroll sideways on phones. break-word only breaks a
+ * word when it would not fit on its own line, so normal text is unchanged. */
+.prose {
+  overflow-wrap: break-word;
+}
+
 /* Inline code */
 .prose :not(pre) > code {
   @apply bg-muted px-1.5 py-0.5 rounded-md text-sm font-mono text-primary;
