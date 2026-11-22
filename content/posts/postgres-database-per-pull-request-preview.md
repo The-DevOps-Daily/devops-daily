@@ -37,7 +37,7 @@ https://github.com/The-DevOps-Daily/postgres-per-pr
 - **Real data catches real bugs.** A unique index passed on an empty `postgres:18` container and failed on the branch, because production had 2,000 duplicates that differ only in case.
 - **Storage follows the writes.** Three previews that each look like the full 309 MB database stored about 99 MB together, a little less than the 109 MB of indexes their migrations built.
 - **On a paid plan, the first limit is compute, not branches.** At 25 branches, 20 preview computes answered and 4 failed with `exceeded the limit of concurrently active endpoints`.
-- **Cheap to test.** The whole test, 47 branches over three hours, used 1,577 CU-seconds of compute and 13 extra branch-hours on Neon, about 13 cents.
+- **Cheap to test.** The whole test, 47 branches in about two hours, used 1,577 CU-seconds of compute and 13 extra branch-hours on Neon, about 13 cents.
 - **Backstops matter.** `expires_at` plus a daily sweep deleted the orphans we planted and kept the open pull request's branch.
 - **Mask first.** Never branch real personal data into previews: branch from a checked anonymized branch, or use a schema-only branch.
 
