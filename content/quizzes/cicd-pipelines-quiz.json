@@ -4,7 +4,7 @@
   "description": "Test your CI/CD pipeline knowledge with scenarios covering build stages, artifact promotion, environment strategy, deployment patterns, and rollbacks.",
   "category": "CI/CD",
   "icon": "Code",
-  "totalPoints": 110,
+  "totalPoints": 123,
   "theme": {
     "primaryColor": "emerald",
     "gradientFrom": "from-emerald-500",
@@ -14,7 +14,7 @@
     "estimatedTime": "15-20 minutes",
     "difficultyLevels": {
       "beginner": 3,
-      "intermediate": 3,
+      "intermediate": 4,
       "advanced": 2
     },
     "createdDate": "2024-02-20"
@@ -161,6 +161,23 @@
       "hint": "What techniques can reduce redundant work while maintaining all quality checks?",
       "difficulty": "advanced",
       "points": 18
+    },
+    {
+      "id": "artifact-integrity-vs-safety",
+      "title": "What a Package Checksum Verifies",
+      "description": "An npm tarball's SHA-512 checksum matches the integrity value in a trusted, reviewed lockfile. What does this check establish?",
+      "situation": "Your pipeline verifies the downloaded archive before running any package code. The lockfile was reviewed and committed before this download. No provenance verification or vulnerability scanning has run.",
+      "options": [
+        "The package was published by an authorized maintainer from the expected source repository",
+        "The downloaded archive matches the expected digest, but its code may still contain vulnerabilities or malicious behavior",
+        "The package and all of its transitive dependencies have no known vulnerabilities",
+        "The package's install scripts have been checked and are safe to execute"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Comparing the archive's SHA-512 checksum with a trusted expected value checks byte integrity: the downloaded artifact matches that digest. A malicious or vulnerable package can still have a matching checksum. Publisher and build provenance, dependency vulnerability scanning, and reviewing lifecycle scripts address different questions; a checksum check does not replace them.",
+      "hint": "Separate checking the downloaded bytes from evaluating who produced them and what their code does.",
+      "difficulty": "intermediate",
+      "points": 13
     }
   ]
 }
