@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Trophy, Target, Zap, Award, RotateCcw } from 'lucide-react';
 import { useAdventProgress } from './advent-progress-provider';
 
@@ -86,8 +87,14 @@ export function AdventProgressStats() {
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            You&apos;ve completed all 25 Advent of DevOps challenges! Share your achievement with
-            the community!
+            You&apos;ve completed all 25 Advent of DevOps challenges!{' '}
+            <Link
+              href="/advent-of-devops/certificate"
+              className="font-medium text-primary hover:underline"
+            >
+              Get your certificate
+            </Link>{' '}
+            and enter the giveaway.
           </p>
         </div>
       )}

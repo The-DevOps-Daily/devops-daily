@@ -146,12 +146,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Post routes
   // noindex posts stay online but are kept out of the sitemap.
-  const postRoutes = posts.filter((post) => !post.noindex).map((post) => ({
-    url: `${baseUrl}/posts/${post.slug}`,
-    ...withLastModified(postLastModified(post)),
-    changeFrequency: 'monthly' as const,
-    priority: 0.7,
-  }));
+  const postRoutes = posts
+    .filter((post) => !post.noindex)
+    .map((post) => ({
+      url: `${baseUrl}/posts/${post.slug}`,
+      ...withLastModified(postLastModified(post)),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    }));
 
   // Category routes
   const categoryRoutes = categories.map((category) => ({
@@ -291,7 +293,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/challenges',
     '/interview-questions',
     '/advent-of-devops',
+    '/advent-of-devops/certificate',
     '/advent-of-postgres',
+    '/advent-of-postgres/certificate',
+    '/advent-giveaway',
     '/hacktoberfest',
     '/comparisons',
     '/newsletters',
