@@ -153,22 +153,23 @@ export default async function GuidePartPage({
       <ReadingProgressBar />
       <GuideMobileNav guide={guideNav} activePart={partSlug} />
 
-      {/* Wider on large screens: the sidebars get the extra room and the
-          article stays at a readable line length, centered between them. */}
+      {/* Wider on large screens (the header matches, see components/header.tsx):
+          the sidebars get the extra room and the article keeps a readable line
+          length (about 80 characters), centered between them. */}
       <div className="container px-4 py-8 mx-auto 2xl:max-w-[1680px]">
         <Breadcrumb items={breadcrumbItems} />
 
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_21rem] 2xl:gap-10">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:gap-10">
           {/* Main Content Area */}
           <div className="min-w-0">
             <div className="flex flex-col gap-8 lg:flex-row 2xl:gap-10">
               {/* Guide Navigation Sidebar */}
-              <aside className="hidden shrink-0 lg:block lg:w-80 2xl:w-[21rem]">
+              <aside className="hidden shrink-0 lg:block lg:w-80 2xl:w-[22rem]">
                 <GuideSidebar guide={guideNav} activePart={partSlug} />
               </aside>
 
               {/* Article Content */}
-              <article className="flex-1 min-w-0 prose 2xl:mx-auto 2xl:max-w-[50rem]">
+              <article className="flex-1 min-w-0 prose 2xl:mx-auto 2xl:max-w-[48rem]!">
                 {currentPart && (
                   <header className="mb-8">
                     <h1 className="text-3xl font-bold tracking-tight break-words md:text-4xl">

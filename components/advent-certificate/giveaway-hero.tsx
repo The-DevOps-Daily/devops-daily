@@ -105,11 +105,11 @@ export function GiveawayHero() {
               <div
                 role="group"
                 aria-labelledby="giveaway-certificate-cta"
-                className="inline-flex items-stretch overflow-hidden rounded-md border border-border bg-background"
+                className="grid w-full grid-cols-2 overflow-hidden rounded-md border border-border bg-background sm:inline-flex sm:w-auto"
               >
                 <span
                   id="giveaway-certificate-cta"
-                  className="inline-flex items-center gap-2 px-3 py-3 font-medium sm:px-4"
+                  className="col-span-2 inline-flex items-center justify-center gap-2 border-b border-border bg-muted/40 px-4 py-3 font-medium sm:border-b-0"
                 >
                   <Award className="h-4 w-4 text-primary" aria-hidden="true" />
                   Get your certificate
@@ -117,21 +117,21 @@ export function GiveawayHero() {
                 <Link
                   href={certificatePath(ADVENTS.devops)}
                   aria-label="Advent of DevOps certificate"
-                  className="inline-flex items-center border-l border-border px-3 font-mono text-sm transition-colors hover:bg-muted hover:text-primary sm:px-4"
+                  className="inline-flex items-center justify-center px-4 py-3 font-mono text-sm transition-colors hover:bg-muted hover:text-primary sm:border-l sm:border-border"
                 >
                   DevOps
                 </Link>
                 <Link
                   href={certificatePath(ADVENTS.postgres)}
                   aria-label="Advent of Postgres certificate"
-                  className="inline-flex items-center border-l border-border px-3 font-mono text-sm transition-colors hover:bg-muted hover:text-primary sm:px-4"
+                  className="inline-flex items-center justify-center border-l border-border px-4 py-3 font-mono text-sm transition-colors hover:bg-muted hover:text-primary"
                 >
                   Postgres
                 </Link>
               </div>
               <a
                 href="#enter"
-                className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
               >
                 <Gift className="h-4 w-4" aria-hidden="true" />
                 Enter the giveaway
@@ -164,7 +164,7 @@ export function GiveawayHero() {
               {/* The second advent's certificate peeks out behind the first. */}
               <div
                 aria-hidden="true"
-                className="absolute inset-x-4 top-6 rotate-3 overflow-hidden rounded-md border border-border bg-white opacity-90 shadow-sm sm:inset-x-6"
+                className="absolute inset-x-4 top-2 translate-x-3 translate-y-6 rotate-[4deg] overflow-hidden rounded-md border border-border bg-white opacity-90 shadow-sm sm:inset-x-6"
               >
                 <CertificateCanvas advent={ADVENTS.postgres} data={SAMPLE_POSTGRES} />
               </div>
