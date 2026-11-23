@@ -1,28 +1,18 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import {
-  Award,
-  BookOpen,
-  CalendarClock,
-  Gift,
-  GraduationCap,
-  Mail,
-  Share2,
-  Trophy,
-} from 'lucide-react';
-import { Linkedin } from '@/components/icons/social-icons';
+import { Award, Mail, Share2, Trophy } from 'lucide-react';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { SectionSeparator } from '@/components/section-separator';
 import { AdventSectionHeader } from '@/components/advent-hero';
 import { GiveawayEntryForm } from '@/components/advent-certificate/giveaway-entry-form';
 import { EntryConfirmedNotice } from '@/components/advent-certificate/entry-confirmed-notice';
+import { GiveawayHero } from '@/components/advent-certificate/giveaway-hero';
 import {
   ADVENTS,
   GIVEAWAY_DEADLINE_TEXT,
   GIVEAWAY_DRAW_TEXT,
   GIVEAWAY_PATH,
-  LINKEDIN_PAGE_URL,
   certificatePath,
 } from '@/lib/advent-certificate';
 
@@ -43,28 +33,6 @@ export const metadata: Metadata = {
   openGraph: { type: 'website', title, description, url: GIVEAWAY_PATH, images: [image] },
   twitter: { card: 'summary_large_image', title, description, images: [image.url] },
 };
-
-const PRIZES = [
-  {
-    icon: GraduationCap,
-    count: '3 winners',
-    name: 'DevOps Daily Pro for 1 year',
-    text: 'AI mock interviews with feedback, hands-on labs on a real Postgres database, and exam practice at learning.devops-daily.com.',
-  },
-  {
-    icon: Mail,
-    count: '3 winners',
-    name: 'SMTPfast Growth plan for 12 months',
-    text: 'An email API for your apps and side projects: transactional email, broadcasts, signup forms and inbound email.',
-  },
-  {
-    icon: BookOpen,
-    count: 'Every finisher who enters',
-    name: 'The DevOps Survival Guide ebook',
-    text: 'Our ebook on practical DevOps in the age of AI agents. We email it to every confirmed entry after the draw.',
-    href: '/books/devops-survival-guide',
-  },
-];
 
 const RULES = [
   'DevOps Daily runs this giveaway. It is free and open worldwide, and you do not need to buy anything.',
@@ -115,84 +83,7 @@ export default function AdventGiveawayPage() {
         <EntryConfirmedNotice />
       </Suspense>
 
-      <div className="container mx-auto px-4 py-12 sm:py-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="mb-3 font-mono text-xs text-muted-foreground">{'// advent-giveaway'}</p>
-          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
-            Finish an advent, <span className="text-primary">win a prize</span>
-          </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-            Complete{' '}
-            <Link href={ADVENTS.devops.path} className="font-medium text-primary hover:underline">
-              Advent of DevOps
-            </Link>{' '}
-            or{' '}
-            <Link href={ADVENTS.postgres.path} className="font-medium text-primary hover:underline">
-              Advent of Postgres
-            </Link>
-            , share your certificate on LinkedIn and enter the draw. Every finisher who enters gets
-            our ebook.
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 font-mono text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <CalendarClock className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              Entries close 31 Dec 2026
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Gift className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              Draw on 5 Jan 2027
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Trophy className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              Free, worldwide
-            </span>
-          </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a
-              href="#enter"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-6 py-3 font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Enter the giveaway
-            </a>
-            <a
-              href={LINKEDIN_PAGE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-md bg-[#0A66C2] px-6 py-3 font-medium text-white hover:bg-[#0A66C2]/90"
-            >
-              <Linkedin className="h-4 w-4" aria-hidden="true" />
-              Follow on LinkedIn
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8">
-        <SectionSeparator command="cat prizes.md" />
-        <section aria-labelledby="prizes" className="mx-auto max-w-5xl">
-          <AdventSectionHeader id="prizes" label="prizes" title="Prizes" />
-          <ul className="grid gap-4 md:grid-cols-3">
-            {PRIZES.map(({ icon: Icon, count, name, text, href }) => (
-              <li key={name} className="flex flex-col rounded-md border border-border bg-card p-5">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-muted/40">
-                  <Icon className="h-5 w-5 text-primary" strokeWidth={1.5} aria-hidden="true" />
-                </div>
-                <p className="font-mono text-xs text-muted-foreground">{count}</p>
-                <h3 className="mt-1 text-lg font-semibold">{name}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{text}</p>
-                {href && (
-                  <Link
-                    href={href}
-                    className="mt-3 text-sm font-medium text-primary hover:underline"
-                  >
-                    About the book
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
+      <GiveawayHero />
 
       <div className="container mx-auto px-4 py-8">
         <SectionSeparator command="cat how-to-enter.md" />

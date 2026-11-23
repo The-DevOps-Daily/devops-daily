@@ -10,6 +10,8 @@ export interface Sponsor {
   darkLogo?: string;
   url: string;
   tagline?: string;
+  /** Two to four words for the sidebar tile, where the tagline does not fit on one line. */
+  shortTagline?: string;
   description?: string;
   /** Base className for logo (colors, fill, etc.) - used everywhere */
   className?: string;
@@ -69,6 +71,7 @@ export const sponsors: Sponsor[] = [
     url: 'https://bitrise.io/platform/build-hub',
     goSlug: 'bitrise',
     tagline: 'Managed runners for GitHub Actions',
+    shortTagline: 'Managed CI runners',
     description:
       'Bitrise Build Hub runs your GitHub Actions jobs on M4 Macs and AMD Linux machines. Change runs-on and keep your workflows, secrets and logs on GitHub.',
   },
@@ -79,6 +82,7 @@ export const sponsors: Sponsor[] = [
     url: 'https://plakar.io/',
     goSlug: 'plakar',
     tagline: 'Open-source backup and restore',
+    shortTagline: 'Open-source backups',
     description:
       'Encrypted, deduplicated snapshots with instant browsing and restore, across clouds and on-prem. Open source, with developer-friendly tooling.',
   },
@@ -89,6 +93,7 @@ export const sponsors: Sponsor[] = [
     url: 'https://atomsized.com/',
     goSlug: 'atomsized',
     tagline: 'AWS platform engineering and GitOps',
+    shortTagline: 'AWS platform engineering',
     description:
       'Design and automation for reliable AWS and Kubernetes platforms, safer delivery workflows, and preview and UAT environments your engineers can understand and own.',
   },
@@ -98,17 +103,19 @@ export const sponsors: Sponsor[] = [
     url: 'https://m.do.co/c/2a9bba940f39',
     goSlug: 'digitalocean',
     tagline: 'Cloud infrastructure for developers',
+    shortTagline: 'Cloud infrastructure',
     description: 'Simple, reliable cloud computing designed for developers',
   },
   {
     name: 'DevDojo',
-    logo: '/devdojo.svg?height=60&width=120',
+    logo: '/devdojo-brand.svg',
+    darkLogo: '/devdojo-brand-light.svg',
     url: 'https://devdojo.com',
     goSlug: 'devdojo',
     ownProduct: true,
     tagline: 'Developer community & tools',
+    shortTagline: 'Developer community',
     description: 'Join a community of developers sharing knowledge and tools',
-    className: 'fill-current text-red-500',
   },
   {
     name: 'SMTPfast',
@@ -117,6 +124,7 @@ export const sponsors: Sponsor[] = [
     goSlug: 'smtpfast',
     ownProduct: true,
     tagline: 'Developer-first email API',
+    shortTagline: 'Email API for developers',
     description:
       'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
     sidebarClassName: 'translate-x-2',
@@ -128,6 +136,7 @@ export const sponsors: Sponsor[] = [
     goSlug: 'quizapi',
     ownProduct: true,
     tagline: 'Developer-first quiz platform',
+    shortTagline: 'Quiz API',
     description:
       'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
     sidebarClassName: 'translate-x-2',

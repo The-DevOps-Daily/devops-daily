@@ -69,7 +69,7 @@ export function GuideMobileNav({ guide, activePart }: GuideMobileNavProps) {
     <nav
       ref={rootRef}
       aria-label="Guide chapters"
-      className="sticky top-[var(--site-header-h,0px)] z-30 border-b border-border bg-background lg:hidden print:hidden"
+      className="sticky top-[var(--site-header-h,0px)] z-30 transition-[top] duration-200 motion-reduce:transition-none border-b border-border bg-background lg:hidden print:hidden"
     >
       <div className="mx-auto flex h-12 max-w-screen-md items-center gap-1 px-2">
         <Link

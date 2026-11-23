@@ -71,7 +71,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
   return (
     <nav
       aria-label="Guide contents"
-      className="sticky top-[calc(var(--site-header-h,5rem)+1rem)] flex max-h-[calc(100vh-var(--site-header-h,5rem)-2rem)] flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm"
+      className="sticky top-[calc(var(--site-header-h,5rem)+1rem)] flex max-h-[calc(100vh-var(--site-header-h,5rem)-2rem)] flex-col transition-[top,max-height] duration-200 motion-reduce:transition-none overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm"
     >
       <p className="shrink-0 border-b px-4 py-3 text-base font-medium">Guide Contents</p>
 

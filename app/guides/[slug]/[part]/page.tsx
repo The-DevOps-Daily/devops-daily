@@ -1,6 +1,7 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { guideLayout } from '@/components/guide-layout';
 import { getGuideBySlug, getAllGuides, getRelatedGuides, toGuideNav } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
@@ -153,20 +154,20 @@ export default async function GuidePartPage({
       <ReadingProgressBar />
       <GuideMobileNav guide={guideNav} activePart={partSlug} />
 
-      <div className="container px-4 py-8 mx-auto">
+      <div className={guideLayout.container}>
         <Breadcrumb items={breadcrumbItems} />
 
-        <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
+        <div className={guideLayout.grid}>
           {/* Main Content Area */}
-          <div className="xl:col-span-9">
-            <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="min-w-0">
+            <div className={guideLayout.row}>
               {/* Guide Navigation Sidebar */}
-              <aside className="hidden shrink-0 lg:block lg:w-80">
+              <aside className={`hidden lg:block ${guideLayout.nav}`}>
                 <GuideSidebar guide={guideNav} activePart={partSlug} />
               </aside>
 
               {/* Article Content */}
-              <article className="flex-1 min-w-0 prose">
+              <article className={guideLayout.article}>
                 {currentPart && (
                   <header className="mb-8">
                     <h1 className="text-3xl font-bold tracking-tight break-words md:text-4xl">
@@ -297,10 +298,8 @@ export default async function GuidePartPage({
           </div>
 
           {/* Sponsor Sidebar */}
-          <aside className="xl:col-span-3">
-            <div className="sticky top-8">
-              <SponsorSidebar />
-            </div>
+          <aside className="min-w-0">
+            <SponsorSidebar className={guideLayout.sponsors} />
           </aside>
         </div>
       </div>
