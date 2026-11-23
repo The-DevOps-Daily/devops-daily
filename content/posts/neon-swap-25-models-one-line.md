@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-18'
 publishedAt: '2026-07-18T09:00:00Z'
-updatedAt: '2026-07-18T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** when this post was written, the AI Gateway only ran in `us-east-2`. It has been [generally available](https://neon.com/blog/neon-backend-is-ga) since 17 September 2026, works on any plan with prepaid credits, and now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The results below are from the original run.
+:::
+
 Picking a model usually feels like a decision you have to live with. You install that provider's SDK, wire in its key, learn its quirks, and the choice is baked into your code. Switching later is a small migration, so most teams pick one model and stick with it even when a cheaper or better one would suit a given task.
 
 Through an AI gateway, the model is just a string in the request. The gateway exposes around 25 models across OpenAI, Anthropic, and Google, and moving between any of them is a one-token change with the same code and the same credential. That matters more than convenience, because the catalog spans a roughly 100x price range. When swapping is free, model choice stops being a one-time architecture decision and becomes a per-task cost lever. This post shows the swap, the price spread that makes it worth caring about, and a real run across several models. The [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) is at the end.
@@ -35,7 +39,7 @@ Through an AI gateway, the model is just a string in the request. The gateway ex
 
 ## Prerequisites
 
-- A Neon project with the AI gateway enabled (`us-east-2`)
+- A Neon project in a region that runs the AI Gateway (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`), with the gateway enabled
 - Familiarity with chat-completions requests
 
 ## The swap is one line

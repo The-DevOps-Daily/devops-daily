@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-04'
 publishedAt: '2026-07-04T09:00:00Z'
-updatedAt: '2026-07-04T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,6 +21,10 @@ tags:
   - serverless
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the output below is from then. On 17 September 2026 [Object Storage became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free (5 GB per project). It is no longer limited to new `us-east-2` projects: it now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The demo pins `region: 'us-east-2'` because the preview runtime injected an `AWS_REGION` the SDK rejected. Neon's [Object Storage quickstart](https://neon.com/docs/storage/get-started) now reads `AWS_REGION` from the environment, so check it before you copy the pin.
+:::
 
 Database branching solved a real problem: you can fork your database at a point in time, get an isolated copy with all the rows, and run something risky against it without touching production. Preview databases and safe migrations came out of that.
 
@@ -37,7 +41,7 @@ Neon's object storage branches with the database. You declare a bucket as part o
 
 ## Prerequisites
 
-- A Neon project on the platform preview (object storage on new `us-east-2` projects)
+- A Neon project in a region that runs Object Storage (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`)
 - The Neon CLI (`npm i -g neon`, then `neon login`)
 - Familiarity with Postgres and S3-style object storage
 
@@ -159,7 +163,7 @@ The branch came up with a copy of the three files, the upload landed only on the
 The payoff is that a branch is a faithful copy of your whole state, not just the database half. A preview environment shows the rows and the exact files those rows point at. A bug that only reproduces when a specific record references a specific uploaded object can be reproduced by branching, because branching brings the object. And a migration that rewrites how files are referenced can be tested against a real copy of both the rows and the files before it goes near production.
 
 :::note
-This is Neon's platform preview: object storage is available on new `us-east-2` projects. One thing to know when you wire up the S3 client: pin `region: 'us-east-2'`. The runtime injects the storage endpoint and credentials, but the injected `AWS_REGION` is the storage-cell host, which the AWS SDK will not accept as a region.
+When we built this on the July 2026 preview, object storage was only on new `us-east-2` projects, and the S3 client needed `region: 'us-east-2'` pinned: the runtime injected the storage endpoint and credentials, but the injected `AWS_REGION` was the storage-cell host, which the AWS SDK would not accept as a region. Object Storage is now generally available in four AWS regions, and Neon's [quickstart](https://neon.com/docs/storage/get-started) reads `AWS_REGION` from the environment.
 :::
 
 ## The repo

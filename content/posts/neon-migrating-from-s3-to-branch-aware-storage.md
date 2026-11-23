@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-10'
 publishedAt: '2026-07-10T09:00:00Z'
-updatedAt: '2026-07-10T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,13 +22,17 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the output below is from then. On 17 September 2026 [Object Storage became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free (5 GB per project). It is no longer limited to new `us-east-2` projects: it now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The demo pins `region: 'us-east-2'` because the preview runtime injected an `AWS_REGION` the SDK rejected. Neon's [Object Storage quickstart](https://neon.com/docs/storage/get-started) now reads `AWS_REGION` from the environment, so check it before you copy the pin.
+:::
+
 If your files already live in Amazon S3, the pitch for storage that branches with your database is appealing but the word "migration" makes it sound like a project. It mostly is not. Neon's object storage speaks the S3 API, so the code you already wrote, the AWS SDK calls and presigned URLs, keeps working. What changes is how you point the client and where the bucket comes from, and that is a small, mechanical diff. The actual data move is a copy loop you can run once. The one thing to do up front is confirm the object operations your app actually relies on: the demo here exercises `PutObject`, `GetObject`, listing, and presigned URLs, and I flag the S3 features you should check for yourself further down.
 
 This post is the practical version: what stays identical, the exact config that changes, a script to copy the objects across, and an honest list of the S3 features that do not have an equivalent so you know what to check before you commit. The [repo](https://github.com/The-DevOps-Daily/neon-storage-demo) with the working client is at the end.
 
 ## TL;DR
 
-- Neon object storage is S3-compatible. Your `@aws-sdk/client-s3` code for the common operations, `PutObject`, `GetObject`, `getSignedUrl`, listing, works unchanged (these are what the demo verifies). Confirm anything beyond that, like multipart for large objects, against the current preview.
+- Neon object storage is S3-compatible. Your `@aws-sdk/client-s3` code for the common operations, `PutObject`, `GetObject`, `getSignedUrl`, listing, works unchanged (these are what the demo verifies). Confirm anything beyond that, like multipart for large objects, against Neon's S3 API support page.
 - The diff is the client config: point `endpoint` at the Neon storage endpoint, pin `region: 'us-east-2'`, set `forcePathStyle: true`. The bucket is declared in `neon.ts` instead of created in the console, and credentials are injected per branch.
 - Move the data with a list-and-copy loop between two S3 clients (source AWS, destination Neon).
 - What does not carry over: S3 bucket policies, event notifications and Lambda triggers, storage classes and Glacier transitions, and cross-region replication. Object CRUD and presigning do.
@@ -37,7 +41,7 @@ This post is the practical version: what stays identical, the exact config that 
 ## Prerequisites
 
 - An existing S3 bucket and credentials that can read it
-- A Neon project on the platform preview with a declared bucket (`us-east-2`)
+- A Neon project in a region that runs Object Storage (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`) and a declared bucket
 - The AWS SDK (`@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner`)
 
 ## What stays the same
@@ -131,20 +135,20 @@ Two things to verify before you cut over. First, if your database stores full S3
 
 ## What does not carry over
 
-Being honest about the edges saves you a surprise in production. The core object operations port cleanly (these are the ones the demo exercises); the larger-object and S3 platform features around them you should confirm against the preview before you rely on them, since this is an early preview and the surface is still filling in:
+Being honest about the edges saves you a surprise in production. The core object operations port cleanly (these are the ones the demo exercises); the larger-object and S3 platform features around them you should confirm against Neon's [S3 API support](https://neon.com/docs/storage/s3-compatibility) page before you rely on them:
 
 | Feature | Carries over? |
 | --- | --- |
 | `PutObject` / `GetObject` / `DeleteObject` | Yes (verified in the demo) |
 | Presigned URLs (`getSignedUrl`) | Yes (verified in the demo) |
 | List, prefixes, pagination | Yes (verified in the demo) |
-| Multipart upload | Part of the S3 API; verify for your large-object uploads |
-| Bucket policies / ACLs | Check; model differs |
-| Event notifications, Lambda triggers | No direct equivalent |
+| Multipart upload | Supported (up to 10 GiB per object); not exercised in the demo |
+| Bucket policies / ACLs | No; set access levels in the Neon Console or API |
+| Event notifications, Lambda triggers | No S3 notifications; Function Triggers can run a function on an upload |
 | Storage classes, Glacier transitions | No |
-| Cross-region replication | No (single region preview) |
+| Cross-region replication | No |
 
-If your app leans on S3 events to kick off processing, you will replace that with the function doing the work inline or enqueueing it after the write. If you depend on Glacier tiering, this is not that. For the common case, upload, store, serve, and now branch, the port is the config change above plus the copy loop.
+If your app leans on S3 events to kick off processing, you can do the work inline in the function, enqueue it after the write, or, since September 2026, use a [Function Trigger](https://neon.com/docs/compute/functions/triggers/overview) that runs a function when a file lands in Object Storage. If you depend on Glacier tiering, this is not that. For the common case, upload, store, serve, and now branch, the port is the config change above plus the copy loop.
 
 ## The repo
 

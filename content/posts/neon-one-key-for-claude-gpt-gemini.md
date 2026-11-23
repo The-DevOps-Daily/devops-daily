@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-12'
 publishedAt: '2026-07-12T09:00:00Z'
-updatedAt: '2026-07-12T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the responses below are from then. On 17 September 2026 [the AI Gateway became generally available](https://neon.com/blog/neon-backend-is-ga). It works on any plan with prepaid credits and now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), not only `us-east-2`.
+:::
+
 The moment an app talks to more than one model provider, the plumbing multiplies. OpenAI wants its key and its SDK. Anthropic wants a different key and a different SDK. Google wants a third of each. Now you have three secrets to store and rotate, three client libraries to keep updated, three billing relationships to reconcile, and conditional code that picks the right one. None of that is your product; it is the cost of wanting a choice of models.
 
 The AI gateway pattern removes it. You talk to one endpoint with one credential, and the gateway routes to whichever model you name. Because the endpoint is OpenAI-compatible, the code you already wrote for OpenAI reaches Claude and Gemini too, just by changing the `model` string. On Neon, the gateway credential is injected straight into your function, so there is not even a key to manage. To make sure this is real and not a diagram, I sent the same request through a Neon Function to three providers and watched all three answer. The [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) is at the end.
@@ -35,7 +39,7 @@ The AI gateway pattern removes it. You talk to one endpoint with one credential,
 
 ## Prerequisites
 
-- A Neon project on the platform preview with the AI gateway enabled (`us-east-2`)
+- A Neon project in a region that runs the AI Gateway (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`), with the gateway enabled
 - The Neon CLI (`npm i -g neon`, then `neon login`)
 - Basic familiarity with calling an LLM chat-completions API
 

@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-16'
 publishedAt: '2026-07-16T09:00:00Z'
-updatedAt: '2026-07-16T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** when this post was written, the AI Gateway only ran in `us-east-2`. It has been [generally available](https://neon.com/blog/neon-backend-is-ga) since 17 September 2026, works on any plan with prepaid credits, and now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The results below are from the original run.
+:::
+
 AI spend is hard to see. In most setups the same gateway credential is used by production, every preview environment, CI, and whatever load test someone ran on Friday. All of that lands in one undifferentiated number. You cannot answer "what did that preview cost," you cannot cap a specific environment, and you find out a CI job went into a retry loop against an expensive model when the monthly invoice arrives, not when it happens.
 
 The reason is that spend is attributed to a key, and the key is shared. Neon changes what is shared: each branch is its own deployment, and if you log usage to Postgres, that ledger lives on the branch too. So a preview or CI branch records its own spend in its own ledger, and none of it moves production's numbers. I tested it by running calls on a CI branch and watching production's ledger stay flat. The [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) is at the end.
@@ -35,7 +39,7 @@ The reason is that spend is attributed to a key, and the key is shared. Neon cha
 
 ## Prerequisites
 
-- A Neon project with the AI gateway enabled (`us-east-2`)
+- A Neon project in a region that runs the AI Gateway (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`), with the gateway enabled
 - A usage table in Postgres (the demo logs every call), and branches for your environments
 
 ## The shared-key problem

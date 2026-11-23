@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-06'
 publishedAt: '2026-07-06T09:00:00Z'
-updatedAt: '2026-07-06T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the output below is from then. On 17 September 2026 [Object Storage became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free (5 GB per project). It is no longer limited to new `us-east-2` projects: it now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The demo pins `region: 'us-east-2'` because the preview runtime injected an `AWS_REGION` the SDK rejected. Neon's [Object Storage quickstart](https://neon.com/docs/storage/get-started) now reads `AWS_REGION` from the environment, so check it before you copy the pin.
+:::
+
 The naive way to accept file uploads is to POST them to your API, let the server read the bytes, and write them to object storage. It works until the files get large or the traffic gets real. Now every upload crosses your infrastructure twice, once from the client to your server and once from your server to storage, and your server holds the whole file in memory or on disk while it does. On a serverless function it is worse, because functions have request-size and duration limits that a big upload runs straight into.
 
 Presigned URLs are the standard fix, and they predate serverless by a decade. Your server does not move the bytes; it hands the client a short-lived, pre-authorized URL and the client uploads directly to object storage. The server only issues permission and records metadata. On a Neon Function this is the same AWS S3 SDK you already use, pointed at the branch's storage endpoint. This post builds it and tests the whole round trip. The [repo](https://github.com/The-DevOps-Daily/neon-storage-demo) is at the end.
@@ -36,7 +40,7 @@ Presigned URLs are the standard fix, and they predate serverless by a decade. Yo
 
 ## Prerequisites
 
-- A Neon project on the platform preview with a declared bucket (object storage, `us-east-2`)
+- A Neon project in a region that runs Object Storage (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`) and a declared bucket
 - The AWS SDK: `@aws-sdk/client-s3` and `@aws-sdk/s3-request-presigner`
 - Familiarity with S3-style object storage and HTTP `PUT`
 

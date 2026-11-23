@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-02'
 publishedAt: '2026-07-02T15:00:00Z'
-updatedAt: '2026-07-02T15:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,6 +21,10 @@ tags:
   - serverless
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the runs below are from then. On 17 September 2026 [Neon Functions became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free. The `us-east-2`, new-projects-only limit is gone: Functions now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)).
+:::
 
 Open a pull request and your frontend host hands you a preview URL. Vercel, Netlify, Cloudflare Pages all do it: every PR gets its own isolated build you can click through before merging. It is one of the genuinely great DevOps conveniences of the last decade.
 
@@ -38,7 +42,7 @@ Neon changes what a "branch" contains. A branch is not just a copy of your schem
 
 ## Prerequisites
 
-- A Neon project on the platform preview (Functions, `us-east-2`) with a deployed function
+- A Neon project in a region that runs Functions (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`) and a deployed function
 - The Neon CLI (`npm i -g neon`, then `neon login`)
 - A CI system that can run CLI commands on pull-request events (the example uses GitHub Actions)
 
