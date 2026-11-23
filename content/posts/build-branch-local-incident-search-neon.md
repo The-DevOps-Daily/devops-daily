@@ -1,12 +1,12 @@
 ---
 title: 'Deploy a Complete AI Incident Backend on One Neon Branch'
-excerpt: 'Build and verify a disposable incident-search backend with Neon Auth, Object Storage, Functions, AI Gateway, and Lakebase Postgres—then remove the complete environment with one guarded command.'
+excerpt: 'Build and verify a disposable incident-search backend with Managed Better Auth, Object Storage, Functions, AI Gateway, and Lakebase Postgres, then remove the complete environment with one guarded command.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-09-24'
 publishedAt: '2026-09-24T09:00:00Z'
-updatedAt: '2026-09-24T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,6 +21,10 @@ tags:
   - incident-response
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** Neon Auth is now called Managed Better Auth, and this post uses the new name. Commands and recorded output keep `neon-auth` and "Neon Auth" where the tools printed them at the time.
+:::
 
 A preview environment is only isolated if all of its state follows the preview. Giving a pull request its own application deployment and database branch does not help much when its writes still reach production identity, file, or model services.
 
@@ -46,7 +50,7 @@ npm run demo:down
 They exercise five Neon backend primitives:
 
 - **Lakebase Postgres** stores incident metadata and the search index.
-- **Neon Auth**, Neon's **Managed Better Auth** service, signs the operator in.
+- **Managed Better Auth**, Neon's auth service, signs the operator in.
 - **Object Storage** keeps the original report in a private bucket.
 - A **Neon Function** named **Incident Atlas** exposes the backend API.
 - **Neon AI Gateway** gives the Function branch-scoped access to the configured model.
@@ -55,7 +59,7 @@ The important feature is their shared lifecycle. After a branch is created, chan
 
 A branch on Neon is not necessarily empty. A normal child exposes the parent's database rows and schema immediately through copy-on-write storage, and existing Auth and Object Storage state branches with it. Later child writes do not change the parent. This tutorial assumes that the default branch belongs to a new, demo-safe project; use the schema-only option described in Neon's [database branching workflow primer](https://neon.com/docs/get-started-with-neon/workflow-primer) when a preview must not inherit sensitive rows.
 
-Object Storage, Functions, Neon Auth, and AI Gateway are generally available. The [Neon backend GA announcement](https://neon.com/blog/neon-backend-is-ga) describes the current product set and Free Plan allowances.
+Object Storage, Functions, Managed Better Auth, and AI Gateway are generally available. The [Neon backend GA announcement](https://neon.com/blog/neon-backend-is-ga) describes the current product set and Free Plan allowances.
 
 ## Prerequisites
 
@@ -94,7 +98,7 @@ The demo consumes metered resources and AI Gateway credits. Charges depend on yo
 
 **Neon Functions** is the product name. This project deploys a single Function whose display name is **Incident Atlas**. “One Function” is not a Neon product or service name.
 
-Neon Auth does not invoke the Function. The browser first creates an Auth session, then requests a JWT and carries that token to the protected backend routes:
+Managed Better Auth does not invoke the Function. The browser first creates an Auth session, then requests a JWT and carries that token to the protected backend routes:
 
 ```diagram
 {
@@ -102,14 +106,14 @@ Neon Auth does not invoke the Function. The browser first creates an Auth sessio
   "title": "How a protected request reaches the Incident Atlas Function",
   "nodes": [
     { "label": "React app", "sub": "1. submit sign-in", "icon": "globe", "tone": "slate" },
-    { "label": "Neon Auth", "sub": "2. create session", "icon": "lock", "tone": "green" },
+    { "label": "Managed Better Auth", "sub": "2. create session", "icon": "lock", "tone": "green" },
     { "label": "React app", "sub": "3. request JWT", "icon": "shield", "tone": "green" },
     { "label": "Incident Atlas Function", "sub": "4. verify JWT + run route", "icon": "gear", "tone": "blue" }
   ]
 }
 ```
 
-For each protected API call, the React client sends a credentialed request to Neon Auth's `/token` route to obtain a bearer token from the current session. The Function verifies the JWT signature and issuer against the branch's Auth JWKS before accessing user data.
+For each protected API call, the React client sends a credentialed request to Managed Better Auth's `/token` route to obtain a bearer token from the current session. The Function verifies the JWT signature and issuer against the branch's Auth JWKS before accessing user data.
 
 The Function has seven routes. `GET /health` is intentionally public so deployment automation can detect the running release; the other six require a valid JWT.
 
@@ -185,7 +189,7 @@ npm run demo:up
 The deployment performs four stages:
 
 1. It creates `incident-atlas-demo-<timestamp>` from the project's default branch and gives it a six-hour expiry.
-2. It plans and deploys Neon Auth, the private bucket, the Incident Atlas Function, and AI Gateway.
+2. It plans and deploys Managed Better Auth, the private bucket, the Incident Atlas Function, and AI Gateway.
 3. It allows localhost and registers `http://localhost:5173` as an Auth domain.
 4. It installs Lakebase Search's `lakebase_text` extension through the direct database connection, then creates the table and BM25 index. The migration explicitly uses `sslmode=verify-full`, so the Postgres driver continues to verify the certificate and hostname when its defaults change.
 
@@ -205,7 +209,7 @@ npm run demo:open
 
 Open `http://localhost:5173`, then follow one path:
 
-1. Create an account through Neon Auth.
+1. Create an account through Managed Better Auth.
 2. Upload `fixtures/checkout-timeout-postmortem.md`.
 3. Wait for the status to move through `queued` and `processing` to `ready`.
 4. Search for `checkout 504`.
@@ -268,7 +272,7 @@ The smoke test:
 
 1. waits for the expected Function release;
 2. proves a protected route rejects an anonymous request;
-3. creates a Neon Auth session and verifies its JWT against the branch JWKS;
+3. creates a Managed Better Auth session and verifies its JWT against the branch JWKS;
 4. uploads the real fixture and proves an unsigned read is denied;
 5. repeats upload confirmation and proves it returns the same incident;
 6. confirms the Function reads the object and completes AI enrichment;

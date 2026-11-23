@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-08-04'
 publishedAt: '2026-08-04T09:00:00Z'
-updatedAt: '2026-08-04T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '19 min read'
 author:
   name: 'DevOps Daily Team'
@@ -95,7 +95,7 @@ Everything else is relational and lives in one place. Users mirrored from Auth, 
 
 ## Authentication, behind an abstraction
 
-Neon Auth is the identity source of truth. The Next.js app proxies auth calls through a catch-all route:
+Managed Better Auth is the identity source of truth. The Next.js app proxies auth calls through a catch-all route:
 
 ```typescript
 // src/app/api/auth/[...path]/route.ts

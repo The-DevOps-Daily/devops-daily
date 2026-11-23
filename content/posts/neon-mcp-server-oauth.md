@@ -1,12 +1,12 @@
 ---
 title: 'OAuth for MCP Servers on Neon: 4 AI Clients Connect Without DCR'
-excerpt: 'Neon Auth can be the OAuth 2.1 server for an MCP server on Neon Functions. In our tests, Claude Code, Codex, Claude.ai and ChatGPT all connected with Client ID Metadata Documents while dynamic client registration was off; MCP Inspector needed either a metadata URL or DCR. Here is the build, the client tests, and the token checks that matter, including one that exists because Neon branches share signing keys.'
+excerpt: 'Managed Better Auth can be the OAuth 2.1 server for an MCP server on Neon Functions. In our tests, Claude Code, Codex, Claude.ai and ChatGPT all connected with Client ID Metadata Documents while dynamic client registration was off; MCP Inspector needed either a metadata URL or DCR. Here is the build, the client tests, and the token checks that matter, including one that exists because Neon branches share signing keys.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-11-19'
 publishedAt: '2026-11-19T11:00:00Z'
-updatedAt: '2026-11-19T11:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,17 +23,21 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
-We replaced the static bearer token on our Neon MCP server with OAuth 2.1 from Neon Auth, then connected real MCP clients to it. With Client ID Metadata Documents on and dynamic client registration (DCR) off, **Claude Code 2.1.327, Codex CLI 0.167.0, a Claude.ai custom connector and a ChatGPT custom MCP plugin all signed in and called tools**. MCP Inspector 2.16.0 with its defaults did not connect, because it registers itself with DCR. It connected when we gave it a metadata document URL, and also when we turned DCR on.
+:::note
+**Updated 23 November 2026:** Neon Auth is now called Managed Better Auth, and this post uses the new name. Commands and recorded output keep `neon-auth` and "Neon Auth" where the tools printed them at the time.
+:::
+
+We replaced the static bearer token on our Neon MCP server with OAuth 2.1 from Managed Better Auth, then connected real MCP clients to it. With Client ID Metadata Documents on and dynamic client registration (DCR) off, **Claude Code 2.1.327, Codex CLI 0.167.0, a Claude.ai custom connector and a ChatGPT custom MCP plugin all signed in and called tools**. MCP Inspector 2.16.0 with its defaults did not connect, because it registers itself with DCR. It connected when we gave it a metadata document URL, and also when we turned DCR on.
 
 On the server, the OAuth part is two imports and two calls on top of the same contact tools from [our static-token version](/posts/neon-functions-postgres-mcp-server). The rest of the work is two web pages: login and consent. Neon does not host them for you, and the consent page is where the user decides whether to trust a client. We also ran 20 checks against the deployed server. One of them shows why your resource server must check the token issuer on Neon: a token from a child branch has a valid signature on the parent.
 
 ## TL;DR
 
-- Neon Auth's OAuth provider plugin turns the auth server in your Neon project into an OAuth 2.1 authorization server. With `@neon/oauth`, the MCP side is `createMcpAuth()` plus one Hono middleware.
+- Managed Better Auth's OAuth provider plugin turns the auth server in your Neon project into an OAuth 2.1 authorization server. With `@neon/oauth`, the MCP side is `createMcpAuth()` plus one Hono middleware.
 - You must host a login page and a consent page. We served both from the same Neon Function as the MCP server, so the whole thing is one function, one Postgres branch and one auth server.
 - Claude Code and Codex identify themselves with Client ID Metadata Documents (CIMD), and both connected with DCR off. MCP Inspector uses DCR unless you pass `--client-metadata-url`.
 - Scopes are fixed: `openid`, `profile`, `email`, `offline_access`. Claude Code and MCP Inspector sent no `scope` parameter, and the consent screen then asked for all four. You cannot define a scope such as `contacts:write`.
-- Access tokens are EdDSA JWTs with a 1-hour lifetime. Neon Auth refused to revoke one ("JWT access tokens are self-contained and cannot be revoked server-side"), and the token still worked at `/mcp` right after we revoked its refresh token.
+- Access tokens are EdDSA JWTs with a 1-hour lifetime. Managed Better Auth refused to revoke one ("JWT access tokens are self-contained and cannot be revoked server-side"), and the token still worked at `/mcp` right after we revoked its refresh token.
 - All branches of a project share signing keys. A token from a `preview` branch passed a verifier that checked only the signature and audience, with the same user ID as on `main`. `@neon/oauth` refused it, because it checks `iss`.
 - Claude.ai and ChatGPT also used CIMD, with their callbacks on `claude.ai` and `chatgpt.com`, and worked with DCR off.
 
@@ -48,7 +52,7 @@ On the server, the OAuth part is two imports and two calls on top of the same co
 
 In July we built [a Postgres-backed MCP server on Neon Functions](/posts/neon-functions-postgres-mcp-server) with an optional shared token: with `MCP_TOKEN` set, a request without the matching bearer token got a 401, and with it unset the demo was open. A shared token works, but everyone who has it is the same user, it never expires, and you rotate it by editing every client config.
 
-|                         | Static token (July)                 | OAuth with Neon Auth (this post)                                                 |
+|                         | Static token (July)                 | OAuth with Managed Better Auth (this post)                                                 |
 | ----------------------- | ----------------------------------- | -------------------------------------------------------------------------------- |
 | Auth code in the server | 8 lines of Hono middleware          | 2 imports, `createMcpAuth()` and `app.use(honoMcp(...))`                         |
 | Extra code              | none                                | a login page and a consent page, 146 lines of HTML and script                    |
@@ -68,7 +72,7 @@ The function file grew from 173 to 223 lines, plus 146 lines for the pages. Abou
   "type": "flow",
   "nodes": [
     { "label": "MCP client", "sub": "calls /mcp, gets 401", "icon": "cpu", "tone": "slate" },
-    { "label": "Metadata", "sub": "RFC 9728 points to Neon Auth", "icon": "globe", "tone": "blue" },
+    { "label": "Metadata", "sub": "RFC 9728 points to Managed Better Auth", "icon": "globe", "tone": "blue" },
     { "label": "Login page", "sub": "on the function", "icon": "lock", "tone": "violet" },
     { "label": "Consent page", "sub": "user presses Allow", "icon": "shield", "tone": "amber" },
     { "label": "Token", "sub": "PKCE S256, EdDSA JWT", "icon": "check", "tone": "green" },
@@ -78,9 +82,9 @@ The function file grew from 173 to 223 lines, plus 146 lines for the pages. Abou
 ```
 
 1. The client calls `/mcp` with no token. The function answers `401` with `WWW-Authenticate: Bearer ... resource_metadata="<function>/.well-known/oauth-protected-resource/mcp"`.
-2. That document (RFC 9728) names the branch's Neon Auth URL as the authorization server. The client reads the server metadata from there.
-3. The client identifies itself. With CIMD, its `client_id` is an `https` URL that serves a JSON document, and Neon Auth fetches it. With DCR, it first registers at `/oauth2/register`.
-4. Neon Auth sends the browser to your login page, then to your consent page.
+2. That document (RFC 9728) names the branch's Managed Better Auth URL as the authorization server. The client reads the server metadata from there.
+3. The client identifies itself. With CIMD, its `client_id` is an `https` URL that serves a JSON document, and Managed Better Auth fetches it. With DCR, it first registers at `/oauth2/register`.
+4. Managed Better Auth sends the browser to your login page, then to your consent page.
 5. The client gets a code at its redirect URI, swaps it for tokens with the PKCE verifier, and calls `/mcp` with the access token.
 
 This is the protected resource metadata the deployed server returned, from `results/metadata/` in the repo:
@@ -157,20 +161,20 @@ app.all('/mcp', async (c) => {
 export default app;
 ```
 
-`createMcpAuth()` checks three things on each token: the EdDSA signature against the branch's JWKS, `iss` equal to your branch's Auth URL, and your `/mcp` URL in `aud`. We test each of these below. The `contacts` table has an `owner_id text NOT NULL` column that stores the token's `sub`. That is the ID of the user row in the `neon_auth` schema, in the same Lakebase Postgres database, which is the point we made in [the Neon Auth post](/posts/neon-auth-without-a-separate-service).
+`createMcpAuth()` checks three things on each token: the EdDSA signature against the branch's JWKS, `iss` equal to your branch's Auth URL, and your `/mcp` URL in `aud`. We test each of these below. The `contacts` table has an `owner_id text NOT NULL` column that stores the token's `sub`. That is the ID of the user row in the `neon_auth` schema, in the same Lakebase Postgres database, which is the point we made in [the Managed Better Auth post](/posts/neon-auth-without-a-separate-service).
 
 `db/schema.sql` creates the demo tables in a new, empty database. If you upgrade the July database instead, you need a migration that adds `owner_id`, assigns the existing shared contacts to users you choose, and only then sets `NOT NULL` and adds the index.
 
 ## The login and consent pages
 
-Neon Auth does not ship these pages. You host both, on an `https` origin you add as a trusted domain. We put them on the same function, at `/auth/sign-in` and `/auth/consent`, so the function URL is the trusted domain. Neon accepted a Neon Function URL for this.
+Managed Better Auth does not ship these pages. You host both, on an `https` origin you add as a trusted domain. We put them on the same function, at `/auth/sign-in` and `/auth/consent`, so the function URL is the trusted domain. Neon accepted a Neon Function URL for this.
 
 Each page gets the authorization request as a signed query string and sends it back unchanged as `oauth_query`:
 
-- The login page posts the email and password to `<issuer>/sign-in/email` with `oauth_query`. Neon Auth answers with the next URL, usually the consent page.
+- The login page posts the email and password to `<issuer>/sign-in/email` with `oauth_query`. Managed Better Auth answers with the next URL, usually the consent page.
 - The consent page loads the client name from `<issuer>/oauth2/public-client`, shows what the user is approving, and posts `{ accept, oauth_query }` to `<issuer>/oauth2/consent`. The answer is the client's redirect URI with a code.
 
-The function and the Neon Auth host are different origins under `neon.tech`. `neon.tech` is not on the Public Suffix List, so the two hosts are the same site. Our page script calls Neon Auth with `credentials: 'include'`, and Neon Auth allows the trusted page origin, so the session cookie goes with those calls. If you move the pages to your own domain, the hosts are no longer the same site; the Next.js setup in [Neon's guide](https://neon.com/docs/compute/functions/mcp-server) proxies the auth calls through the app instead.
+The function and the Managed Better Auth host are different origins under `neon.tech`. `neon.tech` is not on the Public Suffix List, so the two hosts are the same site. Our page script calls Managed Better Auth with `credentials: 'include'`, and Managed Better Auth allows the trusted page origin, so the session cookie goes with those calls. If you move the pages to your own domain, the hosts are no longer the same site; the Next.js setup in [Neon's guide](https://neon.com/docs/compute/functions/mcp-server) proxies the auth calls through the app instead.
 
 The consent page is where you decide what the user learns about the client. Ours shows:
 
@@ -271,23 +275,23 @@ The Claude.ai connector was the first of two tests a person ran by hand, in a de
 
 ![Consent page for the Claude.ai connector: name Claude marked unverified, metadata document at claude.ai, code sent to claude.ai](../../public/images/posts/neon-mcp-server-oauth/consent-claude-ai.webp)
 
-ChatGPT was the second test a person ran by hand, about 25 minutes later, again with DCR off. In the chatgpt.com web UI the path was **Plugins > Add plugin > Add custom MCP server**, with the function URL and **OAuth** as the authentication. The dialog has an "Advanced OAuth settings" section for reviewing the discovered settings, but the defaults worked, and the account did not need a developer mode switch. Our log shows the client ID `https://chatgpt.com/oauth/client.json`, the callback `https://chatgpt.com/connector_platform_oauth_redirect`, and then MCP calls with the user agent `openai-mcp/1.0.0`: `initialize`, `tools/list` and one `search_contacts`. There is no login page row, because the browser still had a Neon Auth session from the Claude.ai test, so Neon Auth went straight to the consent page. Registration and token requests go to Neon Auth, not to our function, so our log cannot show them; the URL client ID shows that ChatGPT used CIMD.
+ChatGPT was the second test a person ran by hand, about 25 minutes later, again with DCR off. In the chatgpt.com web UI the path was **Plugins > Add plugin > Add custom MCP server**, with the function URL and **OAuth** as the authentication. The dialog has an "Advanced OAuth settings" section for reviewing the discovered settings, but the defaults worked, and the account did not need a developer mode switch. Our log shows the client ID `https://chatgpt.com/oauth/client.json`, the callback `https://chatgpt.com/connector_platform_oauth_redirect`, and then MCP calls with the user agent `openai-mcp/1.0.0`: `initialize`, `tools/list` and one `search_contacts`. There is no login page row, because the browser still had a Managed Better Auth session from the Claude.ai test, so Managed Better Auth went straight to the consent page. Registration and token requests go to Managed Better Auth, not to our function, so our log cannot show them; the URL client ID shows that ChatGPT used CIMD.
 
 Three details from the matrix are worth knowing before you choose settings:
 
-- **Every third-party client that connected used CIMD.** Their `client_id` is a URL on their vendor's domain, so Neon Auth fetched the document from `claude.ai` and `chatgpt.com`, and our consent page could say so. None of them needed DCR.
-- **Loopback ports can change between logins.** Our runs used `localhost:57501` and `localhost:65309` for Claude Code and `127.0.0.1:40273` for Codex. For CIMD clients, Neon Auth matches a loopback redirect URI on any port, so this works. A managed client you create yourself has to match exactly, port included.
+- **Every third-party client that connected used CIMD.** Their `client_id` is a URL on their vendor's domain, so Managed Better Auth fetched the document from `claude.ai` and `chatgpt.com`, and our consent page could say so. None of them needed DCR.
+- **Loopback ports can change between logins.** Our runs used `localhost:57501` and `localhost:65309` for Claude Code and `127.0.0.1:40273` for Codex. For CIMD clients, Managed Better Auth matches a loopback redirect URI on any port, so this works. A managed client you create yourself has to match exactly, port included.
 - **Inspector's defaults need DCR.** Without `--client-metadata-url`, Inspector 2.16.0 tried to register and stopped with "Incompatible auth server: does not support dynamic client registration". With a metadata URL, it connected. If you leave DCR off, users of clients that only do DCR will see this error.
 
 ### What the clients asked for
 
-We compared each client's authorize URL with the scopes Neon Auth passed on to our consent page. Our scripted client requested `openid offline_access`: `openid` for identity and `offline_access` for a refresh token. Claude Code and MCP Inspector sent no `scope` parameter, and the consent page received all four scopes, so the user was asked for their name, picture, email and 30 days of offline access. Codex requested all four itself. The Claude.ai and ChatGPT consent pages also received all four; we did not capture their authorize URLs, so we cannot say whether they asked for them.
+We compared each client's authorize URL with the scopes Managed Better Auth passed on to our consent page. Our scripted client requested `openid offline_access`: `openid` for identity and `offline_access` for a refresh token. Claude Code and MCP Inspector sent no `scope` parameter, and the consent page received all four scopes, so the user was asked for their name, picture, email and 30 days of offline access. Codex requested all four itself. The Claude.ai and ChatGPT consent pages also received all four; we did not capture their authorize URLs, so we cannot say whether they asked for them.
 
-The tools need neither `profile` nor `email`. But scopes on Neon Auth are fixed, and the server cannot define narrower ones such as `contacts:read`. Every client that gets a token in this demo can search, create, update and delete the user's contacts. If you need read-only users or read-only clients, keep that rule in your own code, for example as a role column next to `owner_id`.
+The tools need neither `profile` nor `email`. But scopes on Managed Better Auth are fixed, and the server cannot define narrower ones such as `contacts:read`. Every client that gets a token in this demo can search, create, update and delete the user's contacts. If you need read-only users or read-only clients, keep that rule in your own code, for example as a role column next to `owner_id`.
 
 ## Security: what we checked
 
-`scripts/attacks.ts` makes 20 assertions against the deployed server: expected HTTP statuses, response values, and the OAuth error code on refresh failures. A section that throws counts as a failed check. All 20 passed. The script also records one observation that is not counted: what Neon Auth says when you try to revoke an access token.
+`scripts/attacks.ts` makes 20 assertions against the deployed server: expected HTTP statuses, response values, and the OAuth error code on refresh failures. A section that throws counts as a failed check. All 20 passed. The script also records one observation that is not counted: what Managed Better Auth says when you try to revoke an access token.
 
 | Check                                                 | Expected                     | Got                               |
 | ----------------------------------------------------- | ---------------------------- | --------------------------------- |
@@ -323,9 +327,9 @@ If you do want a working MCP server on a child branch, more than the resource UR
 
 ### Revocation and token lifetime
 
-Access tokens are EdDSA JWTs with a 3,600-second lifetime, and the server verifies them locally with the JWKS. That is fast, but the server does not see revocations. We revoked a refresh token, and the next refresh with it failed with `invalid_grant`. When we sent the access token to the revocation endpoint, Neon Auth answered `400 unsupported_token_type` with "JWT access tokens are self-contained and cannot be revoked server-side". The access token still worked at `/mcp` right after that, and local JWT verification will keep accepting it until it expires.
+Access tokens are EdDSA JWTs with a 3,600-second lifetime, and the server verifies them locally with the JWKS. That is fast, but the server does not see revocations. We revoked a refresh token, and the next refresh with it failed with `invalid_grant`. When we sent the access token to the revocation endpoint, Managed Better Auth answered `400 unsupported_token_type` with "JWT access tokens are self-contained and cannot be revoked server-side". The access token still worked at `/mcp` right after that, and local JWT verification will keep accepting it until it expires.
 
-So revoking a refresh token stops renewal for that grant. It does not end a token that was already issued, and it does not stop the user from signing in again. Token lifetimes are not configurable on Neon Auth. If you need to cut a user off at once, keep a `disabled` flag in your own database and check it on each tool call.
+So revoking a refresh token stops renewal for that grant. It does not end a token that was already issued, and it does not stop the user from signing in again. Token lifetimes are not configurable on Managed Better Auth. If you need to cut a user off at once, keep a `disabled` flag in your own database and check it on each tool call.
 
 ### Refresh rotation and the 30-second window
 
@@ -339,7 +343,7 @@ With DCR on, anyone can register a client with a name they choose and any redire
 
 This is consent phishing. The attacker starts the flow with their own client, so PKCE does not help: they hold the verifier. If the user presses Allow, the attacker's server gets a code and then tokens for that user. The name says "Claude". That name is self-chosen. The useful facts are the random client ID, the host that gets the code, the scopes, the resource and what the app can do. A consent page that shows only the client name would look like the real Claude Code screen above.
 
-CIMD does not stop an attacker from choosing a name either. We hosted a document that called itself "ChatGPT", and Neon Auth accepted it. But the client ID is then a URL, so the consent page can show where the document lives, which was our test host and not `chatgpt.com`. That tells the user where the metadata came from. It does not prove which program is using a public client ID.
+CIMD does not stop an attacker from choosing a name either. We hosted a document that called itself "ChatGPT", and Managed Better Auth accepted it. But the client ID is then a URL, so the consent page can show where the document lives, which was our test host and not `chatgpt.com`. That tells the user where the metadata came from. It does not prove which program is using a public client ID.
 
 Turning DCR off later does not remove clients that registered while it was on. Neon's docs say so, and we saw it: after we turned DCR off, the "Claude" client above still reached the consent screen.
 
@@ -377,6 +381,6 @@ The README starts with the deploy commands. `results/` has the client transcript
 
 ## Wrapping up
 
-Moving an MCP server on Neon from a shared token to OAuth took one Neon Auth setting, two calls from `@neon/oauth` in the function, an owner check on every contact query and two small web pages. In return, each user signs in with their own account, every tool call carries their ID, and their rows stay theirs. The default settings were the right ones for the clients we ran: Claude Code, Codex, Claude.ai and ChatGPT connected with CIMD and no dynamic registration.
+Moving an MCP server on Neon from a shared token to OAuth took one Managed Better Auth setting, two calls from `@neon/oauth` in the function, an owner check on every contact query and two small web pages. In return, each user signs in with their own account, every tool call carries their ID, and their rows stay theirs. The default settings were the right ones for the clients we ran: Claude Code, Codex, Claude.ai and ChatGPT connected with CIMD and no dynamic registration.
 
 The parts that need your attention are not in the token flow. They are the consent page, where a user decides whether a client with a self-chosen name gets in, and the issuer check, which on Neon separates `main` from every branch that shares its keys.

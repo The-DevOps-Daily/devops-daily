@@ -276,7 +276,7 @@ It writes `public/images/posts/<slug>.jpg` (1200x630 JPEG) from the post title, 
 
 Neon publishes its own terminology reference at [neondatabase/website](https://github.com/neondatabase/website/blob/main/.claude/neon-terminology.md). That document is scoped to Neon's own docs and changelog, so do not apply it wholesale to our editorial. The rules below are the parts that transfer.
 
-**Naming.** Since Neon joined Databricks, the database product is **Lakebase Postgres**; "Neon" is the brand and the access path. Neon-owned names keep "Neon": Neon Console, Neon CLI, Neon Auth, Neon MCP Server, Neon Serverless Driver, Data API. Avoid "Neon Postgres", "the Neon platform" (Neon is part of the Databricks platform), and "the Neon architecture" (the category term is lowercase "lakebase architecture").
+**Naming.** Since Neon joined Databricks, the database product is **Lakebase Postgres**; "Neon" is the brand and the access path. Neon-owned names keep "Neon": Neon Console, Neon CLI, Neon MCP Server, Neon Serverless Driver, Data API. The auth product is **Managed Better Auth** (formerly Neon Auth). Neon describes itself as "a complete backend from Databricks, built on Lakebase Postgres", so do not call it a "serverless Postgres platform". Avoid "Neon Postgres", "the Neon platform" (Neon is part of the Databricks platform), and "the Neon architecture" (the category term is lowercase "lakebase architecture").
 
 **Do not mass-rename.** Readers search for "Neon", and our comparison content ranks on it. Keep titles, slugs, and the "Neon vs Supabase" framing as they are. Use "Lakebase Postgres" where the database itself is being named, and plain "on Neon" in procedural text ("create a project on Neon"), which reads better than the full product name.
 

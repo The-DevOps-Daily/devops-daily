@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-02'
 publishedAt: '2026-07-02T09:00:00Z'
-updatedAt: '2026-07-02T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -39,7 +39,7 @@ Neon Functions let you skip that. You deploy the MCP server as a function that l
 ## Prerequisites
 
 - Node.js 20+ and the Neon CLI (`npm i -g neon`, then `neon login`)
-- A Neon account with the platform preview enabled (Functions, new `us-east-2` projects)
+- A Neon project in a region that runs Functions (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`). Functions are generally available since September 2026 and on every plan.
 - Basic familiarity with Postgres and TypeScript
 - Optional: an MCP client to point at it, such as `mcporter`, Claude, or Cursor
 
@@ -167,7 +167,7 @@ app.use('/mcp', async (c, next) => {
 
 Most MCP clients can send custom headers, so the agent side is one config line (`Authorization: Bearer <token>`). I verified the gate directly against the app: no header and a wrong token both get a 401, the right token passes through to the transport, and with `MCP_TOKEN` unset the endpoint behaves exactly as before.
 
-A shared token means every client is the same user and the token never expires. For per-user sign-in with Neon Auth as the OAuth server, tested with Claude Code and Codex, see [OAuth for MCP servers on Neon](/posts/neon-mcp-server-oauth).
+A shared token means every client is the same user and the token never expires. For per-user sign-in with Managed Better Auth as the OAuth server, tested with Claude Code and Codex, see [OAuth for MCP servers on Neon](/posts/neon-mcp-server-oauth).
 
 ## Wire up a client and watch it work
 
