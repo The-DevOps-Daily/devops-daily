@@ -240,4 +240,6 @@ Then:
 
 The short version: in our tests, the clients with ARI enabled renewed on Let's Encrypt's window, and that window was the same share of the lifetime at 45, 64 and 90 days. If it does not, find out what number it renews on, because that number was chosen for 90 days.
 
+For the CA/Browser Forum's own schedule (200, 100 and 47 days), a scan of what the top 10,000 sites serve, and which alert and renewal defaults fail at each step, read [TLS Certificates Are Going to 47 Days: What Breaks First in Your Renewal Automation](/posts/tls-certificates-47-days-what-breaks-first).
+
 For an expiry check that tests what your servers actually present, with a threshold set relative to the certificate's lifetime, read [Monitor Certificate Expiry](/guides/cryptography-essentials/03-tls-ssl#h2-monitor-certificate-expiry) in our Cryptography Essentials guide.
