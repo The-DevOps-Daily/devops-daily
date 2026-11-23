@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-10'
 publishedAt: '2026-06-10T18:30:00Z'
-updatedAt: '2026-06-10T21:45:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,6 +21,10 @@ tags:
   - benchmarks
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** the timings in this post were measured in June 2026 and stay as measured. What changed since is Neon's Free plan: database storage went from 0.5 GB to 1 GB per project on 2 October 2026, and every Free project now also gets Managed Better Auth, Object Storage, Functions, and the Data API, which became generally available in September 2026. The limits table and the "which free tier" section below reflect that.
+:::
 
 Pick any "Neon vs Supabase" thread on the internet and you will find the same spec-sheet ping pong: one side quotes storage limits, the other quotes monthly active users, and nobody has actually timed anything. Both platforms hand out free Postgres, both claim to be fast, and both free tiers have sharp edges that only show up when you run real operations against them.
 
@@ -485,28 +489,28 @@ None of these are dealbreakers. All three are the kind of thing you want to know
 
 ## The limits, side by side
 
-The measured behavior above, plus the caps that matter, as of June 2026:
+The measured behavior above (June 2026), plus the caps that matter. Plan limits verified on 23 November 2026 against [Neon's pricing page](https://neon.com/pricing) and [Supabase's pricing page](https://supabase.com/pricing):
 
 | | Neon free | Supabase free |
 | --- | --- | --- |
-| Database storage | 0.5 GB per project | 500 MB |
+| Database storage | 1 GB per project (20 GB across projects) | 500 MB |
 | Projects | up to 100 | 2 active |
-| Compute | 100 CU-hours/project/month, autoscaling to 2 CU | dedicated Nano instance, always on |
+| Compute | 100 CU-hours/project/month, autoscaling to 2 CU | shared-CPU Nano instance, always on until paused |
 | Idle behavior | scales to zero after 5 min, auto-wakes in ~570 ms | project pauses after 7 days, manual restore |
 | Branching | 10 branches/project, data included, ~2.2 s | not available |
 | Restore window | 6 hours | none (daily backups start on Pro) |
-| Extras | | Auth (50K MAU), storage (1 GB), edge functions (500K), realtime |
+| Extras | Managed Better Auth (60K MAU per project), Object Storage (5 GB per project), Functions (1M invocations per project), Data API, Realtime (public beta) | Auth (50K MAU), storage (1 GB), edge functions (500K), realtime |
 | Direct connection | IPv4 + IPv6 | IPv6 only (pooler for IPv4) |
 
 ## Which free tier should you pick?
 
 The latency tie makes this refreshingly simple: pick on shape, not speed.
 
-**Pick Neon's free tier when the database is the product.** Side projects with irregular traffic (auto-wake beats manual restore), anything that needs many databases (100 projects vs 2), CI and preview environments (branching with data is free-tier-exclusive), and agent or automation workflows that create and destroy databases programmatically.
+**Pick Neon's free tier when the database is the product.** Side projects with irregular traffic (auto-wake beats manual restore), anything that needs many databases (100 projects vs 2), CI and preview environments (branching with data is free-tier-exclusive), and agent or automation workflows that create and destroy databases programmatically. Since September 2026 it also covers a small app, not just its database: auth, file storage, and functions come with every project and branch with it.
 
-**Pick Supabase's free tier when you are shipping an app, not a database.** The bundled auth, storage, realtime, and auto-generated APIs replace three or four other free tiers you would otherwise stitch together, and 50K monthly active users of free auth is genuinely hard to beat. Just put a calendar reminder somewhere if the project might go quiet for a week.
+**Pick Supabase's free tier when you want the longer-running bundle.** Its auth, storage, realtime, and auto-generated APIs have been in production for years, the client SDKs are mature, and Realtime is out of beta. Just put a calendar reminder somewhere if the project might go quiet for a week.
 
-One forward-looking note: in June 2026 Neon announced S3-compatible object storage that branches with the database, serverless functions, and an AI gateway, all marked coming soon. If those ship, the bundled-stack gap narrows; we will rerun this comparison when they do.
+When we ran these benchmarks, Neon had only announced its S3-compatible object storage, functions, and AI gateway. They shipped: [Object Storage](https://neon.com/docs/storage/overview), [Functions](https://neon.com/docs/compute/functions/overview), and the AI Gateway have been generally available since September 2026, and the first two are on the Free plan. The bundled-stack gap is now about maturity, not about what exists. We have not benchmarked those services here.
 
 And if you are still torn, the structural differences run deeper than the free tiers: we maintain a full [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture, pricing models, PITR, and the paid features side by side.
 

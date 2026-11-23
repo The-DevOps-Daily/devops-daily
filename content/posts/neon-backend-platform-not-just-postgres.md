@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-26'
 publishedAt: '2026-06-26T09:00:00Z'
-updatedAt: '2026-06-26T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,23 +21,27 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post describes the June 2026 private preview. On 17 September 2026 [Functions, Object Storage, the AI Gateway, and Managed Better Auth (called Neon Auth in this post) became generally available](https://neon.com/blog/neon-backend-is-ga), on every plan including Free. They are no longer limited to `us-east-2` or to new projects: Functions, Object Storage, and the AI Gateway run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore), and Managed Better Auth in all of Neon's AWS regions ([availability by region](https://neon.com/docs/introduction/regions)). Functions also gained cron and upload triggers. The limits section below is marked with what changed.
+:::
+
 For most of its life, Neon had a one-sentence pitch: serverless Postgres that branches like Git. You got a database that scaled to zero, forked in milliseconds, and charged you for what you used. Everything else (your compute, your file storage, your AI calls, your auth) you wired up somewhere else and pointed at the connection string.
 
-In June 2026 that sentence got longer. Neon shipped a private preview that adds three new surfaces around the database: serverless **Functions**, S3-compatible **Storage**, and an **AI Gateway** for model calls. A fourth, **Neon Auth**, shows up in the templates. None of these is novel on its own. Functions look like Lambda, storage looks like S3, an AI gateway looks like a dozen other AI gateways. The reason it is worth a closer look is the through-line connecting them, and that through-line is the same primitive Neon already built its name on: branching.
+In June 2026 that sentence got longer. Neon shipped a private preview that adds three new surfaces around the database: serverless **Functions**, S3-compatible **Object Storage**, and an **AI Gateway** for model calls. A fourth, **Neon Auth**, shows up in the templates. None of these is novel on its own. Functions look like Lambda, storage looks like S3, an AI gateway looks like a dozen other AI gateways. The reason it is worth a closer look is the through-line connecting them, and that through-line is the same primitive Neon already built its name on: branching.
 
 This is an analysis of what actually shipped, what it replaces, and where it is still clearly a preview. I created a new project and deployed against it while writing this, so the specifics below are from the real thing, not the marketing page.
 
 ## What shipped
 
-Four pieces, all in private preview, all in AWS `us-east-2`, all for new projects only.
+At launch: four pieces, all in private preview, all in AWS `us-east-2`, all for new projects only. (Since September 2026 they are generally available in more regions; see the note at the top.)
 
-**Neon Functions** are Node.js compute deployed onto a database branch. You declare them in a `neon.ts` config file, write a standard Fetch-API handler (Hono is the recommended framework), and run `neonctl deploy`. Each branch gets its own function URL, the `DATABASE_URL` is injected automatically, and the function runs in the same region as the branch, so there is no cross-region hop to the database. They support streaming and long-lived connections (WebSockets, server-sent events), which is the deliberate split from request-scoped serverless: these are not for background jobs, they are for request/response and real-time work.
+**Neon Functions** are Node.js compute deployed onto a database branch. You declare them in a `neon.ts` config file, write a standard Fetch-API handler (Hono is the recommended framework), and run `neonctl deploy`. Each branch gets its own function URL, the `DATABASE_URL` is injected automatically, and the function runs in the same region as the branch, so there is no cross-region hop to the database. They support streaming and long-lived connections (WebSockets, server-sent events), which is the deliberate split from request-scoped serverless: these are not a job queue, they are for request/response and real-time work. Scheduled and upload-triggered runs arrived later with [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview).
 
-**Neon Storage** is S3-compatible object storage. Your existing AWS SDK, boto3, or `aws` CLI talk to it unchanged. The twist is that storage is scoped to a branch, so when you fork a database branch, its files fork with it.
+**Neon Object Storage** is S3-compatible. Your existing AWS SDK, boto3, or `aws` CLI talk to it unchanged. The twist is that storage is scoped to a branch, so when you fork a database branch, its files fork with it.
 
 **Neon AI Gateway** is a single credential that fronts models from Anthropic, OpenAI, Google, and a few open-source providers. The OpenAI and Anthropic SDKs work without code changes; you point them at a per-branch gateway endpoint. The published catalog lists around 25 models, priced per million tokens at what look like each provider's own list rates (Claude Haiku 4.5 at $1/$5 in/out, GPT-5 Nano at $0.05/$0.40, Gemini 2.5 Flash at $0.30/$2.50).
 
-**Neon Auth** rounds it out with authentication that does not require standing up a separate identity service, used in the realtime-chat template alongside Next.js.
+**Neon Auth** (now Managed Better Auth) rounds it out with authentication that does not require standing up a separate identity service, used in the realtime-chat template alongside Next.js.
 
 ## The through-line is branching
 
@@ -75,15 +79,15 @@ There is a second, quieter tax it removes: distance. Because functions run in th
 
 ## Where the seams still show
 
-This is a private preview, and it reads like one. Worth being clear-eyed about the limits before you plan anything around it.
+In June 2026 this was a private preview, and it read like one. These were the limits then, with what has changed since.
 
 :::warning
-**One region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created after the preview opened. Your existing Neon projects will not grow these features in place, which matters if you were hoping to bolt functions onto a production project.
+**One region, new projects only (June 2026).** Everything was in AWS `us-east-2` and only worked on projects created after the preview opened. That limit is gone: Functions, Object Storage, and the AI Gateway now run in four AWS regions, and Neon's [region docs](https://neon.com/docs/introduction/regions) no longer restrict them to new projects. Check that your project's region is one of the four, because a project's region cannot be changed.
 :::
 
-- **Functions are not a job runner.** They are explicitly request/response and real-time, not background jobs. Queued, retryable, cancellable work still belongs to something like QStash or Inngest. That is an honest scoping decision, but it means "move my whole backend here" is not yet on the table.
-- **Fixed function sizing.** Memory is fixed (2048 MiB at preview), so this is not a knob-for-everything compute platform yet.
-- **Billing is half-documented.** The per-model token prices are public and look like pass-through, but Neon has not publicly spelled out whether there is a markup or preview credits on the AI Gateway. For a side project that is noise; for a budget forecast it is a question to ask before you commit.
+- **Functions are not a job queue.** This still holds after GA. Neon's [Functions docs](https://neon.com/docs/compute/functions/overview) say they fit request/response work, "including scheduled runs with Function Triggers", but queued, retryable, cancellable work still needs a queue such as Upstash QStash or Inngest. Since September 2026 [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) run a function on a cron schedule or when a file lands in Object Storage, so simple scheduled work no longer needs an external scheduler. Neon says a native job queue and workflow engine is coming as a separate product.
+- **Fixed function sizing.** Memory is fixed at 2048 MiB (still true in the [runtime limits](https://neon.com/docs/compute/functions/reference/runtime-limits)), so this is not a knob-for-everything compute platform yet.
+- **Billing was half-documented at preview.** That is answered now: Neon's [plans page](https://neon.com/docs/introduction/plans) says AI Gateway prices match each provider's list prices with no markup, drawn from prepaid credits you buy in the Console.
 - **Lock-in is the real trade.** The whole pitch is integration: one config file, one credential, everything branching together. That convenience is also coupling. An S3-compatible API and standard SDKs keep the exit ramps wider than a fully proprietary stack would, but a `neon.ts` that declares your functions, buckets, and gateway is, by design, Neon-shaped.
 
 ## Who should actually care
@@ -100,4 +104,4 @@ The honest framing is that Neon is making a bet: that the database, not the comp
 
 For now, the thing to internalize is that "Neon" no longer means "a Postgres host." It means a database with compute, storage, and model access growing out of it, all sharing the one trick Neon was already good at. If you have only ever evaluated it as a place to put a connection string, it is worth a second look on those terms.
 
-We benchmark the database side in depth in our [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks), and keep a running [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture and pricing side by side. As these platform features leave preview, we will put them through the same treatment: real projects, real numbers, and the harness published so you can argue with our data instead of someone's vibes.
+We benchmark the database side in depth in our [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks), and keep a running [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture and pricing side by side. These features left preview in September 2026, and we are putting them through the same treatment: real projects, real numbers, and the harness published so you can argue with our data instead of someone's vibes.

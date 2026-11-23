@@ -1,12 +1,12 @@
 ---
 title: 'Auth for a Postgres App, Without a Separate Service'
-excerpt: 'The usual way to add auth is to run a second system next to your database and spend forever keeping the two in sync. Neon Auth puts the auth server in the same project as Postgres: one line in a config file, one deploy, and the user who signs in is a row you can join to your own tables. Here is how it works and why the reconciliation tax disappears.'
+excerpt: 'The usual way to add auth is to run a second system next to your database and spend forever keeping the two in sync. Managed Better Auth puts the auth server in the same project as Postgres: one line in a config file, one deploy, and the user who signs in is a row you can join to your own tables. Here is how it works and why the reconciliation tax disappears.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-08-11'
 publishedAt: '2026-08-11T09:00:00Z'
-updatedAt: '2026-08-11T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,13 +22,17 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** Neon Auth, as this post first called it, is now **Managed Better Auth**. It became [generally available on 17 September 2026](https://neon.com/blog/neon-backend-is-ga), and it is no longer tied to the `us-east-2` preview: it runs in all of Neon's AWS regions and is on every plan, up to 60,000 monthly active users per project on Free and up to 1M on paid plans ([auth docs](https://neon.com/docs/auth/about)). The prose below uses the new name; the recorded CLI output keeps what the CLI printed at the time.
+:::
+
 Adding authentication to an app usually means running a second system. You already have Postgres for your data, and now you stand up an auth service next to it: a hosted one like Auth0, Clerk, or Cognito, or a self-hosted stack like Keycloak or Ory. Either way you now have two sources of truth. The auth service knows who your users are; your database knows what they own. And you spend a surprising amount of engineering keeping those two pictures in agreement: a webhook to copy new users into your `users` table, a nightly job to catch the webhooks that failed, a foreign key that points at an id living in someone else's system.
 
-Neon Auth takes a different position: the auth server runs in the same project as your database. You turn it on with one line of config, and after a deploy the user who signs in is a row in your Postgres, in a schema you can query and join against your own tables. This post walks through how that works, what you actually get, and why the sync layer you are used to writing simply goes away. There is a working [repo](https://github.com/The-DevOps-Daily/neon-auth-demo) at the end.
+Managed Better Auth takes a different position: the auth server runs in the same project as your database. You turn it on with one line of config, and after a deploy the user who signs in is a row in your Postgres, in a schema you can query and join against your own tables. This post walks through how that works, what you actually get, and why the sync layer you are used to writing simply goes away. There is a working [repo](https://github.com/The-DevOps-Daily/neon-auth-demo) at the end.
 
 ## TL;DR
 
-- Neon Auth is an auth server that lives inside your Neon project. Enable it with `auth: true` in `neon.ts` and provision it with one `neon deploy`.
+- Managed Better Auth is an auth server that lives inside your Neon project. Enable it with `auth: true` in `neon.ts` and provision it with one `neon deploy`.
 - It issues signed JWTs and publishes a JWKS endpoint, so any backend verifies a token with public-key crypto and no shared secret.
 - User, session, and account data live in a `neon_auth` schema in the same Postgres. The id in the token is the primary key of `neon_auth.user`, so it is a real foreign key for your tables, no webhook sync required.
 - Because auth state lives in Postgres, it branches with your database: a preview branch gets its own isolated set of users.
@@ -36,7 +40,7 @@ Neon Auth takes a different position: the auth server runs in the same project a
 
 ## Prerequisites
 
-- A [Neon](https://neon.com) project on the platform preview (`us-east-2`, new projects)
+- A [Neon](https://neon.com) project in any AWS region, on any plan (Free included)
 - The Neon CLI (`npm i -g neon`) and a linked project
 - Familiarity with JWTs at the level of "a signed token with claims"
 
@@ -56,7 +60,7 @@ Auth service                     Your database
 
 None of that glue is business logic. It exists only because identity lives in one place and your data lives in another, and the two have to be reconciled. When they drift, you get the classic bugs: an order row whose `user_id` points at a user your database never heard about, or a user who can sign in but has no profile because the webhook that was supposed to create it got a 500 and never retried.
 
-Neon Auth removes the two-systems problem by putting the auth server in the same project as the database.
+Managed Better Auth removes the two-systems problem by putting the auth server in the same project as the database.
 
 ## Turn it on
 
@@ -66,7 +70,7 @@ The whole configuration is one property. In `neon.ts`, the file that declares wh
 import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
-  // Provisions a Neon Auth server on this branch. Postgres is on by default.
+  // Provisions a Managed Better Auth server on this branch. Postgres is on by default.
   auth: true,
 });
 ```
@@ -89,7 +93,7 @@ That is the entire setup. There is no second project to create, no separate dash
 
 ## What you get: a token and a way to trust it
 
-Neon Auth is built on Better Auth, so the HTTP surface is the standard set of endpoints under the base URL: `/sign-up/email`, `/sign-in/email`, `/get-session`, `/token`, and the JWKS at `/.well-known/jwks.json`. A signed-in session exchanges for a JWT at `/token`. Decoded, that token carries the claims you would expect:
+Managed Better Auth is built on Better Auth, so the HTTP surface is the standard set of endpoints under the base URL: `/sign-up/email`, `/sign-in/email`, `/get-session`, `/token`, and the JWKS at `/.well-known/jwks.json`. A signed-in session exchanges for a JWT at `/token`. Decoded, that token carries the claims you would expect:
 
 ```json
 {
@@ -117,7 +121,7 @@ async function verify(token: string) {
 }
 ```
 
-`createRemoteJWKSet` fetches and caches the public keys, so this does not hit the network on every request. Nothing here is Neon-specific cryptography; it is standard JWT verification against a JWKS, which is exactly the point. Your backend does not need a Neon SDK to trust a Neon Auth token.
+`createRemoteJWKSet` fetches and caches the public keys, so this does not hit the network on every request. Nothing here is Neon-specific cryptography; it is standard JWT verification against a JWKS, which is exactly the point. Your backend does not need a Neon SDK to trust a Managed Better Auth token.
 
 On the frontend you do not hand-roll any of this. The `@neondatabase/auth` package gives you a client and server helper, and `@neondatabase/auth-ui` ships the sign-in and sign-up screens, so a Next.js app wires up with a provider and a catch-all route rather than a login form you build yourself. The demo repo has the full wiring.
 
@@ -128,14 +132,14 @@ On the frontend you do not hand-roll any of this. The `@neondatabase/auth` packa
   "type": "graph",
   "title": "the user is a row you can join to, no sync glue",
   "columns": [
-    [ { "id": "auth", "label": "neon_auth.user", "sub": "identity, same Postgres", "icon": "lock", "tone": "accent", "detail": "Neon Auth stores user, session, and account data in a neon_auth schema inside the same database. The token's id is this table's primary key." } ],
+    [ { "id": "auth", "label": "neon_auth.user", "sub": "identity, same Postgres", "icon": "lock", "tone": "accent", "detail": "Managed Better Auth stores user, session, and account data in a neon_auth schema inside the same database. The token's id is this table's primary key." } ],
     [ { "id": "app", "label": "your tables", "sub": "orders, profiles ...", "icon": "database", "tone": "blue", "detail": "Point a user_id foreign key straight at neon_auth.user. No webhook to copy users, no nightly job to reconcile them." } ]
   ],
   "edges": [["app", "auth", "foreign key"]]
 }
 ```
 
-This is where the single-project design pays off. Neon Auth stores its data in a `neon_auth` schema inside the same Postgres as your app. It is not hidden behind an API; it is tables you can query:
+This is where the single-project design pays off. Managed Better Auth stores its data in a `neon_auth` schema inside the same Postgres as your app. It is not hidden behind an API; it is tables you can query:
 
 ```terminal
 {
@@ -180,19 +184,19 @@ With a separate auth service this is genuinely hard. You either point every prev
 
 ## Where this does not fit
 
-The single-project design has a cost, and it is worth being straight about it before you build on this.
+The single-project design has costs, and it is worth being straight about them before you build on this.
 
-**It is beta, and the region is fixed.** The platform preview this uses is [available only in AWS US East (Ohio)](https://neon.com/docs/compute/functions/overview), `aws-us-east-2`. If your data has to live in the EU, this is not a decision you can make yet.
+**AWS only, for now.** When we wrote this in August 2026, the auth server was a beta in `aws-us-east-2` only. Since September it is generally available in every Neon AWS region, Frankfurt included, so EU data residency is no longer a blocker. [Azure is not supported yet](https://neon.com/docs/auth/about), and it does not work on projects with IP Allow or Private Networking turned on.
 
 **Coupling identity to your database provider is a real trade.** The usual argument for a separate auth service is that it is separate: you can move your database without touching your login flow. Here the two move together. That is exactly what removes the sync layer, and it is also what you give up. The mitigating detail is that it is [Better Auth](https://www.better-auth.com/) underneath with a standard schema, so an exit is a Postgres migration rather than a re-implementation, but it is still work you would not otherwise do.
 
 **Standard JWT caveats still apply.** Verification is stateless, so a token stays valid until it expires. If you need a sign-out that takes effect immediately everywhere, you need a check against session state on the requests that matter, the same as with any JWT setup.
 
-None of these are reasons not to use it. They are the questions to answer first, and "we are in one AWS region and we are staying on Postgres" makes most of them go away.
+None of these are reasons not to use it. They are the questions to answer first, and "we are on AWS and we are staying on Postgres" makes most of them go away.
 
 ## The repo
 
-A full working example, a Next.js app with Neon Auth plus a WebSocket chat backend that verifies these tokens, is here:
+A full working example, a Next.js app with Managed Better Auth plus a WebSocket chat backend that verifies these tokens, is here:
 
 ```github
 https://github.com/The-DevOps-Daily/neon-auth-demo
@@ -202,4 +206,4 @@ The next post in this series, [realtime chat with auth](/posts/neon-realtime-cha
 
 ## Wrapping up
 
-Most auth setups carry a hidden cost that has nothing to do with authentication: the work of keeping a separate identity system in sync with your database. Neon Auth removes that cost by not having a separate system. One line of config provisions an auth server in your project; it issues standard JWTs you verify against a JWKS with no shared secret; and the users it manages are rows in a `neon_auth` schema you can join to your own tables. The identity that signs in and the data it owns live in the same Postgres, and branch together. That is a smaller, more boring architecture than the two-system norm, which is exactly what you want from the auth layer.
+Most auth setups carry a hidden cost that has nothing to do with authentication: the work of keeping a separate identity system in sync with your database. Managed Better Auth removes that cost by not having a separate system. One line of config provisions an auth server in your project; it issues standard JWTs you verify against a JWKS with no shared secret; and the users it manages are rows in a `neon_auth` schema you can join to your own tables. The identity that signs in and the data it owns live in the same Postgres, and branch together. That is a smaller, more boring architecture than the two-system norm, which is exactly what you want from the auth layer.
