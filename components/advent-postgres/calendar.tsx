@@ -262,6 +262,23 @@ function PostgresProgressStats({ solved, onReset }: { solved: number; onReset: (
           <div className="text-xs text-muted-foreground">Progress</div>
         </div>
       </div>
+      {solved >= TOTAL_DAYS && (
+        <div className="mt-4 rounded-lg border border-green-500/30 bg-linear-to-r from-green-500/20 to-blue-500/20 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <Award className="h-5 w-5 text-green-500" />
+            <span className="font-semibold text-green-600 dark:text-green-500">All 24 solved!</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            <Link
+              href="/advent-of-postgres/certificate"
+              className="font-medium text-primary hover:underline"
+            >
+              Get your certificate
+            </Link>{' '}
+            and enter the giveaway.
+          </p>
+        </div>
+      )}
       {solved > 0 && (
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
           <span className="font-mono text-xs text-muted-foreground">

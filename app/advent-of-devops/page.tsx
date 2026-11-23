@@ -5,6 +5,7 @@ import { AdventLandingClient } from '@/components/advent-landing-client';
 import { AdventHeroProgress } from '@/components/advent-hero-progress';
 import { SectionSeparator } from '@/components/section-separator';
 import { AdventHero } from '@/components/advent-hero';
+import { GiveawayBanner } from '@/components/advent-certificate/giveaway-banner';
 import { Github } from '@/components/icons/social-icons';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { ADVENT_YEAR } from '@/lib/advent-schedule';
@@ -71,6 +72,8 @@ export default async function AdventOfDevOpsPage() {
         cta={{ href: '#challenges', label: 'Start Challenge' }}
         progress={<AdventHeroProgress />}
       />
+
+      <GiveawayBanner adventKey="devops" />
 
       {/* Introduction Section */}
       {indexContent && (

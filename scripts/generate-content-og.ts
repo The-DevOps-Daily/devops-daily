@@ -157,6 +157,41 @@ async function collectItems(): Promise<CoverItem[]> {
       ogSuffix: false,
     });
   }
+  // Advent pages that are not a day: the two certificate pages and the giveaway.
+  for (const page of [
+    {
+      slug: 'advent-of-devops-certificate',
+      title: 'Advent of DevOps 2026 Certificate of Completion',
+      category: 'Certificate',
+      topicCategory: 'DevOps',
+      typeLabel: 'Advent of DevOps',
+    },
+    {
+      slug: 'advent-of-postgres-certificate',
+      title: 'Advent of Postgres 2026 Certificate of Completion',
+      category: 'Certificate',
+      topicCategory: 'PostgreSQL',
+      typeLabel: 'Advent of Postgres',
+    },
+    {
+      slug: 'advent-giveaway',
+      title: 'Finish an Advent, Win a Prize',
+      category: 'Giveaway',
+      topicCategory: 'DevOps',
+      typeLabel: 'Advent 2026',
+    },
+  ]) {
+    items.push({
+      type: 'advent',
+      slug: page.slug,
+      title: page.title,
+      category: page.category,
+      topicCategory: page.topicCategory,
+      typeLabel: page.typeLabel,
+      directory: 'advent',
+      ogSuffix: false,
+    });
+  }
   for (const game of games) {
     if (game.isComingSoon) continue;
     items.push({

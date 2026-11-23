@@ -4,6 +4,7 @@ import { Calendar, Database, Target } from 'lucide-react';
 import { getPostgresAdventDays, isPreviewBuild, summarize } from '@/lib/advent-postgres';
 import { AdventHero, AdventSectionHeader } from '@/components/advent-hero';
 import { SectionSeparator } from '@/components/section-separator';
+import { GiveawayBanner } from '@/components/advent-certificate/giveaway-banner';
 import {
   PostgresAdventCalendar,
   PostgresHeroProgress,
@@ -80,6 +81,8 @@ export default async function AdventOfPostgresPage() {
         cta={{ href: '#calendar', label: 'See the calendar' }}
         progress={<PostgresHeroProgress days={days} preview={preview} />}
       />
+
+      <GiveawayBanner adventKey="postgres" />
 
       <div className="container mx-auto px-4 py-8">
         <SectionSeparator command="cat how-it-works.md" />
