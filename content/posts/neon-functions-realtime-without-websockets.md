@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-02'
 publishedAt: '2026-07-02T17:00:00Z'
-updatedAt: '2026-07-02T17:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the runs below are from then. On 17 September 2026 [Neon Functions became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free. The `us-east-2`, new-projects-only limit is gone: Functions now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)).
+:::
+
 The moment a feature needs to update live, a live counter, a presence indicator, a "new message" badge, an activity feed, the reflex is to reach for a websocket service. Pusher, Ably, a Socket.IO server, a stateful Node process parked next to your stateless app. That is one more thing to deploy, scale, secure, and pay for, and it exists mostly to move small events from one place to a bunch of connected browsers.
 
 If your data already lives in Postgres, you already have a message bus for that. Postgres ships with `LISTEN` and `NOTIFY`, a lightweight publish/subscribe system built into the database. Pair it with server-sent events from a serverless function and you can fan realtime updates out to every connected client without standing up any realtime infrastructure at all. In this post I build exactly that on a Neon Function, explain the one part that is subtle on serverless, and prove it works with two live subscribers. The [repo](https://github.com/The-DevOps-Daily/neon-realtime-demo) is at the end.
@@ -36,7 +40,7 @@ If your data already lives in Postgres, you already have a message bus for that.
 
 ## Prerequisites
 
-- A Neon project on the platform preview (Functions, `us-east-2`)
+- A Neon project in a region that runs Functions (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`)
 - The Neon CLI (`npm i -g neon`, then `neon login`)
 - Familiarity with Postgres and with SSE / `EventSource` on the client
 

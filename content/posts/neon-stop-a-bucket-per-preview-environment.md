@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-08'
 publishedAt: '2026-07-08T09:00:00Z'
-updatedAt: '2026-07-08T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the output below is from then. On 17 September 2026 [Object Storage became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free (5 GB per project). It is no longer limited to new `us-east-2` projects: it now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The demo pins `region: 'us-east-2'` because the preview runtime injected an `AWS_REGION` the SDK rejected. Neon's [Object Storage quickstart](https://neon.com/docs/storage/get-started) now reads `AWS_REGION` from the environment, so check it before you copy the pin.
+:::
+
 If your app stores files and you want real preview environments, you eventually hit the same wall: each preview needs its own storage, so you start provisioning a bucket per environment. That sounds cheap until you write it down. For every ephemeral environment you create a bucket, attach a policy, mint an IAM role or access keys, set CORS, add a lifecycle rule so it eventually cleans up, wire the credentials into the preview's config, and register a teardown step for when the PR closes. Then you find the orphaned buckets the teardown missed, months later, still billing.
 
 The reason this is painful is that the bucket is a separate resource from the database, so it needs its own lifecycle. Neon collapses that: the bucket is declared as part of the branch, so it is created and destroyed with the branch and needs no per-environment provisioning at all. This post compares the two approaches and shows the branch version working with no bucket-management code in sight. The [repo](https://github.com/The-DevOps-Daily/neon-storage-demo) is at the end.
@@ -35,7 +39,7 @@ The reason this is painful is that the bucket is a separate resource from the da
 
 ## Prerequisites
 
-- A Neon project on the platform preview (object storage, `us-east-2`)
+- A Neon project in a region that runs Object Storage (N. Virginia, Ohio, Frankfurt or Singapore; we used `us-east-2`)
 - The Neon CLI, and a CI system that opens/closes preview environments
 - Familiarity with S3 buckets and IAM if you have done the manual version
 
