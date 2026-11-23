@@ -19,7 +19,7 @@ tags:
   - Neon
   - Preview Environments
   - Database Branching
-sponsorCampaign: 'neon'
+trackCampaign: 'neon'
 ---
 
 **Short answer:** give each pull request a database branch. In GitHub Actions, create a Neon branch of `main` named `preview/pr-<number>` when the pull request opens, run your migrations, seed and tests against its connection string, and delete the branch when the pull request closes. Set an expiry on every branch and run a daily sweep, so a failed cleanup job cannot leave branches behind.
