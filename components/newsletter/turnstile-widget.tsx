@@ -75,7 +75,8 @@ export function TurnstileWidget({ className }: { className?: string }) {
           if (cancelled || !ref.current) return;
           widgetId = turnstile.render(ref.current, {
             sitekey: SITE_KEY,
-            action: 'newsletter',
+            // smtpfast accepts a form token only for this action (and the page's hostname).
+            action: 'smtpfast-form',
             appearance: 'interaction-only',
             theme: 'auto',
             size: 'flexible',
