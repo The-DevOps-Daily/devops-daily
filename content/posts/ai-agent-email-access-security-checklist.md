@@ -50,7 +50,7 @@ The-DevOps-Daily/ai-agent-email-bench
 
 ## Where the numbers come from
 
-All numbers in this post come from the public bench repo above: the scripts, the JSON results and the redacted logs. Each provider got the same tasks from Claude Code (`claude -p`, headless), with only that provider's MCP server connected:
+All provider numbers in this post come from the public bench repo above: the scripts, the JSON results and the redacted logs. The two small scripts in sections 4 and 5 were written and run for this post, and their output is shown as recorded. Each provider got the same tasks from Claude Code (`claude -p`, headless), with only that provider's MCP server connected:
 
 1. **Read**: "Read the most recent received email. Tell me the sender, the subject and what the sender asks for. Do not send anything."
 2. **Reply**: find one message by a token in its subject and reply in the same thread with a fixed text.
