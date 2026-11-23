@@ -23,7 +23,7 @@ tags:
   - FinOps
 ---
 
-Teams leave RDS for three reasons: the bill, the time it takes to get a copy of production for a test, and the major version upgrade they keep putting off. We checked all three across RDS and ten alternatives, and the first result surprised us. Once you compare plans that include a standby, RDS is not the expensive one. Google Cloud SQL, Crunchy Bridge, DigitalOcean and Azure all land within 10% of it at both sizes we priced with high availability. Most of the much cheaper options are cheaper because they sell you one node.
+Teams leave RDS for three reasons: the bill, the time it takes to get a copy of production for a test, and the major version upgrade they keep putting off. We checked all three across RDS and ten alternatives, and the first result surprised us. Once you compare plans that include a standby, RDS is not the expensive one. Google Cloud SQL, Crunchy Bridge, DigitalOcean and Azure all land between 8% below and about 10% above it at both sizes we priced with high availability. Most of the much cheaper options are cheaper because they sell you one node.
 
 The differences that decide the choice are the other two. A Neon branch of a 1.58 GB database was queryable in 2.7 seconds, the same as a branch of a 0.16 GB one. On RDS, the same request is "restore a snapshot into a new instance". And a major version upgrade is four different procedures depending on where you run, with downtime that ranges from seconds to however long a dump and restore of your database takes.
 
@@ -31,8 +31,8 @@ This post has the prices at three sizes, the measured branch and upgrade times, 
 
 ## TLDR
 
-- **Price.** With a standby that takes over on its own, a 2 vCPU / 8 GB / 200 GB database costs $266 to $319 a month on Cloud SQL, RDS, Crunchy Bridge, DigitalOcean and Azure (RDS: $292). An 8 vCPU / 32 GB / 1 TB one costs $1,126 to $1,275 on the same five (RDS: $1,214). If Crunchy Bridge bills HA storage twice, its rows rise to $320 and $1,320, still within 10% of RDS.
-- **Cheaper rows mostly have no standby.** Supabase ($150 and $549) and Neon ($225 and $969, always on) are one compute. Xata with one replica comes to $196 and $841, but it does not publish a replica price, so that row rests on our assumption. Aurora costs 1.4 to 1.95 times RDS, depending on how much I/O you do.
+- **Price.** With a standby that takes over on its own, a 2 vCPU / 8 GB / 200 GB database costs $266 to $319 a month on Cloud SQL, RDS, Crunchy Bridge, DigitalOcean and Azure (RDS: $289). An 8 vCPU / 32 GB / 1 TB one costs $1,126 to $1,275 on the same five (RDS: $1,198). If Crunchy Bridge bills HA storage twice, its rows rise to $320 and $1,320, about 10% above RDS.
+- **Cheaper rows mostly have no standby.** Supabase ($150 and $549) and Neon ($225 and $969, always on) are one compute. Xata with one replica comes to $196 and $841, but it does not publish a replica price, so that row rests on our assumption. Aurora costs 1.4 to 2 times RDS, depending on how much I/O you do.
 - **Branching.** Neon branches carried the parent's data and were queryable in a median 2.70 and 2.72 seconds at 0.16 GB and 1.58 GB. A Supabase Free project refused to branch (HTTP 402, Pro plan only), and Supabase branches are data-less by default. RDS, Azure, DigitalOcean, Aiven and Crunchy Bridge clone by restoring a backup into a new, fully billed instance.
 - **Upgrades.** On our own server, stopping Postgres 17, running `pg_upgrade --link` and starting 18 took 3.4 seconds on a 4.71 GB database, and 15.8 seconds in copy mode. A dump and restore of the same data took 3 minutes 34 seconds. Neon and PlanetScale have no in-place upgrade; Supabase has one, but our new project had no target to upgrade to.
 - **Statistics.** After a Postgres 17 to 18 `pg_upgrade`, the planner statistics were there. After `pg_dump`/`pg_restore` with default flags they were not, until we ran `ANALYZE` or added `--statistics` to `pg_dump`.
@@ -61,7 +61,7 @@ We could only time services we could run for free or on accounts we already pay 
 2. **Measured on our own server:** three of the four ways managed services do a major version upgrade (`pg_upgrade`, dump and restore, logical replication), with the same data, on Postgres 17.12 and 18.7 from the official Docker images. This shows what the upgrade step costs before a provider wraps it in snapshots and restarts. The fourth way, `pg_upgrade` on a hidden standby followed by a failover, we did not build.
 3. **Read, not measured:** RDS, Aurora, Cloud SQL, Azure Flexible Server, DigitalOcean, Crunchy Bridge, Aiven, PlanetScale and Xata. Prices come from their price lists and pricing APIs, and mechanics from their docs, all fetched on 23 November 2026. Every price in the repo carries its URL and a one-line quote.
 
-All stages ran one after the other on the same droplet, so no two measurements shared it. The dataset is one pgbench-style `accounts` table with a primary key and an 84-character filler of md5 hex, generated on the server: 1 million rows (0.16 GB), 10 million (1.58 GB) and 30 million (4.71 GB). A real schema has many more tables and indexes, and `pg_upgrade` time grows with the number of objects, so read our upgrade times as a lower bound for a small schema.
+All stages ran one after the other on the same droplet, so no two measurements shared it. The dataset is one pgbench-style `accounts` table with a primary key and an 84-character filler of md5 hex, generated on the server: 1 million rows (0.16 GB), 10 million (1.58 GB) and 30 million (4.71 GB). A real schema has many more tables and indexes, and `pg_upgrade` time grows with the number of objects, so read our upgrade times as illustrative measurements for this host and a one-table schema.
 
 ## What you pay at three sizes
 
@@ -84,7 +84,7 @@ The rule for every provider: the smallest plan with at least that many vCPUs and
     { "label": "Xata (replica price assumed)", "value": 196, "series": "With standby" },
     { "label": "Neon Launch (one compute, always on)", "value": 225, "series": "One node" },
     { "label": "Cloud SQL", "value": 266, "series": "With standby" },
-    { "label": "RDS Multi-AZ", "value": 292, "series": "RDS" },
+    { "label": "RDS Multi-AZ", "value": 289, "series": "RDS" },
     { "label": "Crunchy Bridge", "value": 300, "series": "With standby" },
     { "label": "DigitalOcean", "value": 304, "series": "With standby" },
     { "label": "Azure Flexible Server", "value": 319, "series": "With standby" },
@@ -104,7 +104,7 @@ The rule for every provider: the smallest plan with at least that many vCPUs and
 | Provider                     | S, one node | M, with standby |  L, with standby | Standby takes over on its own  |
 | ---------------------------- | ----------: | --------------: | ---------------: | ------------------------------ |
 | Cloud SQL                    |         $89 |            $266 |           $1,126 | Yes                            |
-| RDS                          |         $53 |            $292 |           $1,214 | Yes                            |
+| RDS                          |         $53 |            $289 |           $1,198 | Yes                            |
 | Crunchy Bridge               |         $75 |    $300 to $320 | $1,220 to $1,320 | Yes                            |
 | DigitalOcean                 |         $61 |            $304 |           $1,256 | Yes                            |
 | Azure Flexible Server        |         $57 |            $319 |           $1,275 | Yes                            |
@@ -121,7 +121,7 @@ What the table hides is how much each row is not like the others:
 - **Aurora** has no 8 GB instance class in this family, so its M row is an r7g.large with 16 GB, and its L row has 64 GB. Aurora Standard adds $0.20 per million I/O requests on top of the price shown; I/O-Optimized has no I/O charge and becomes the cheaper of the two above about 731 million requests a month at M and about 3 billion at L.
 - **Neon** couples CPU and memory: 1 CU is 1 vCPU and 4 GB, so 2 vCPU comes with 8 GB, which is why its S row is the most expensive. These are always-on prices on the Launch plan; a database that idles scales to zero and costs a fraction of this. Launch has no uptime SLA; on the Scale plan, which has one, M is $394 and L is $1,646. Restore history ($0.20 per GB-month of changes) is not included. Storage is $0.35 per GB-month, so $350 of the $969 at L is storage.
 - **Xata** replicas "provide high availability, automated failover", per its docs, but the pricing page lists no replica price. We assumed a replica costs the same as the primary and counted storage once. Xata is also joining ClickHouse and says it will eventually move its customers to ClickHouse's managed Postgres.
-- **Aiven** has no 8 CPU / 32 GB plan. Its L row is business-64 with 61 GB; business-32 (4 CPUs, 30 GB) plus storage would be $1,640.
+- **Aiven** has no 8 CPU / 32 GB plan. Its L row is business-64 with 61 GB; business-32 (4 CPUs, 30 GB) plus storage would be about $1,580.
 - **Crunchy Bridge** says HA "doubles the cluster price" and does not say whether that includes storage, so its M and L rows are ranges. Its S row is Hobby-4, which Crunchy's docs list with 2 burstable cores and its pricing page with 1; with 2 dedicated cores (Standard-8, 8 GB) S is $145.
 - **PlanetScale** ties 8 GB of RAM to each vCPU, and its HA plans always run a primary and two replicas, with storage billed on all three (less 10 GB each).
 - **Azure** Premium SSD comes in fixed sizes, so 50 GB bills as 64 GiB and 200 GB as 256 GiB, and those disks provision 240 and 1,100 IOPS, below the 3,000 IOPS baseline of gp3 on RDS.
@@ -377,7 +377,7 @@ Three free tiers have no end date: Neon's, Supabase's and Aiven's. They are diff
 
 - **No managed in-place upgrade was timed.** Neon has no in-place upgrade (we timed its dump-and-restore path), our Supabase Free project had no eligible target, and the other providers were not benchmarked. The local numbers show the `pg_upgrade` step on one host, not a managed service's downtime.
 - **No branch or clone on RDS, Aurora, Cloud SQL, Azure, DigitalOcean, Crunchy Bridge, Aiven, PlanetScale or Xata was timed.** The table describes them from their docs.
-- **Price is list price only.** No egress, no reserved or committed-use discounts, no support plans, no backup storage beyond the free allowance. A one-year RDS reservation changes the RDS row; we did not model it.
+- **Price is list price only.** No egress, no reserved or committed-use discounts, no support plans, no separately billed backup storage or restore history. A one-year RDS reservation changes the RDS row; we did not model it.
 - **One region, one day.** The Neon numbers come from one session in aws-eu-central-1. The branch times were tight (2.6 to 3.5 seconds across all 20 runs), but another region or another day can differ.
 - **One table.** Upgrade times grow with the number of tables and indexes, which our dataset does not have.
 - **Sizes do not match exactly.** Every mismatch is in the notes above and in `prices/plans.mjs`.
@@ -388,7 +388,7 @@ We also threw away a first full run. A security review of the repo found that `p
 
 - **You want RDS without RDS:** Cloud SQL, Crunchy Bridge, DigitalOcean and Azure cost about the same with a standby. Pick on the cloud you already use and on how the upgrade works. On Crunchy Bridge, writes stop while `pg_upgrade` runs on a hidden standby and during the failover, and if the upgrade fails they resume on the original server. DigitalOcean's in-place upgrade has no rollback once it starts.
 - **You want branches with data for every pull request:** Neon and Xata do copy-on-write, and so does Aurora up to 15 clones per source. On Supabase and PlanetScale, plan for data-less branches or restores.
-- **You are cost-bound and can live without a standby:** Supabase costs about half the RDS HA total at M and L, and the always-on Neon Launch configuration 77% to 80% of it, before restore history, and less when it scales to zero. Know what happens when the one node fails, and test it.
+- **You are cost-bound and can live without a standby:** Supabase costs about half the RDS HA total at M and L, and the always-on Neon Launch configuration 78% to 81% of it, before restore history, and less when it scales to zero. Know what happens when the one node fails, and test it.
 - **You are on an old major version:** price the Extended Support months on RDS, Cloud SQL or Azure against an upgrade you will have to do anyway.
 
 Whichever you pick, rehearse the next major upgrade before you need it. That is the operation the price list does not show, and the one most likely to decide whether you move again.
