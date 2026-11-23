@@ -19,10 +19,10 @@ import {
   type AdventKey,
 } from '@/lib/advent-certificate';
 
-// The SMTPfast signup form for the giveaway, in its own SMTPfast team so entries
-// never join the newsletter list. Empty until the form exists: the page then
-// says the form opens soon.
-export const GIVEAWAY_FORM_ID = '';
+// The SMTPfast signup form for the giveaway. It signs people up to the
+// "Advent giveaway" topic only; the newsletter goes to its own "Newsletter"
+// topic, so entries never join the newsletter list. Empty: "opens soon".
+export const GIVEAWAY_FORM_ID = 'cmwtcg1r0001f5xutjnkj671u';
 const SUBMIT_TIMEOUT_MS = 10_000;
 
 const KEYS: AdventKey[] = ['devops', 'postgres'];
