@@ -119,4 +119,6 @@ Whatever you connect, remember what you are handing over: `send_email` in an age
 3. **On SendGrid or SES with agent plans?** This is a real gap in those platforms right now. Community servers exist, but you are taking on unofficial code with your sending credentials, which deserves a security review, not a shrug.
 4. **Building agent-first products?** Look at AgentMail's inbox-per-agent model; it solves receiving, which sending-focused APIs mostly do not.
 
+Whichever server you connect, lock it down before the agent reads real mail: a tool allowlist per task, the narrowest key, and a check before every send. The [security checklist for giving an AI agent a mailbox](/posts/ai-agent-email-access-security-checklist) covers each step, tested on five providers.
+
 The protocol layer of AI tooling is consolidating quickly, and email is ahead of most infrastructure categories: four hosted servers is more than databases or DNS can claim today. The gap between "has an MCP story" and "runs one for you" is where the next year of this table gets decided.
