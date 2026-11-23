@@ -36,7 +36,7 @@ export function InlineSponsors({
               <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
             </div>
             <p className="text-xs text-muted-foreground text-center mb-4">
-              We earn commissions when you shop through the links below.
+              The companies that keep DevOps Daily free. Some links are referral links.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
@@ -142,7 +142,7 @@ export function InlineSponsors({
               <span className="text-sm font-semibold text-foreground">Proudly Sponsored By</span>
             </div>
             <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
-              We earn commissions when you shop through the links below.
+              The companies that keep DevOps Daily free. Some links are referral links.
             </p>
           </div>
 

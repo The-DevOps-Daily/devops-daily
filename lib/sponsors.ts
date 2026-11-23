@@ -102,13 +102,13 @@ export const sponsors: Sponsor[] = [
   },
   {
     name: 'DevDojo',
-    logo: '/devdojo.svg?height=60&width=120',
+    logo: '/devdojo-brand.svg',
+    darkLogo: '/devdojo-brand-light.svg',
     url: 'https://devdojo.com',
     goSlug: 'devdojo',
     ownProduct: true,
     tagline: 'Developer community & tools',
     description: 'Join a community of developers sharing knowledge and tools',
-    className: 'fill-current text-red-500',
   },
   {
     name: 'SMTPfast',

@@ -35,8 +35,8 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="font-semibold text-sm">Our Sponsors</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              We earn commissions when you shop through the links below.
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              The companies that keep DevOps Daily free. Some links are referral links.
             </p>
           </div>
 
@@ -50,7 +50,8 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 data-go={sponsorGoKey(sponsor, 'sidebar')}
                 title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
                 className={cn(
-                  'group relative isolate flex h-16 min-w-0 items-center justify-center bg-card/90 px-3 transition-all',
+                  // An odd last tile spans both columns, so the grid has no empty cell.
+                  'group relative isolate flex h-16 min-w-0 items-center justify-center bg-card/90 px-3 transition-all last:odd:col-span-2',
                   sponsor.featured
                     ? 'bg-linear-to-b from-[#2c70ff]/[0.08] to-card/90 shadow-[inset_0_2px_0_rgba(44,112,255,0.55)] hover:from-[#2c70ff]/[0.12]'
                     : 'hover:bg-muted/70'

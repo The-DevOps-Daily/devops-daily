@@ -9,6 +9,11 @@ import { cn } from '@/lib/utils';
 import { Menu, Search } from 'lucide-react';
 import { DesktopNavigation } from './header/desktop-navigation';
 import { MobileMenu } from './header/mobile-menu';
+import { useHeadroom } from '@/hooks/use-headroom';
+
+// Pages where the header slides away while reading down and comes back on the
+// first scroll up. Add a pattern here to opt more pages in.
+const HEADROOM_PAGES = [/^\/guides\/[^/]+/];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -19,11 +24,14 @@ export function Header() {
   // On a simulator page the header scrolls away with the page instead of sticking,
   // so it never covers or shifts the game.
   const onSimulator = /^\/games\/[^/]+/.test(pathname ?? '');
+  const headroom = HEADROOM_PAGES.some((re) => re.test(pathname ?? ''));
+  const hidden = useHeadroom(headerRef, { enabled: headroom, pinned: mobileMenuOpen });
 
   // Sticky elements below the header read its height from --site-header-h.
   // --site-header-visible is the part of the header on screen: on a simulator
   // page it shrinks to 0 as the header scrolls away, and the simulator stage
-  // (components/games/sim) leaves room for it.
+  // (components/games/sim) leaves room for it. While the headroom header is
+  // hidden both are 0, so sticky sidebars move up into the freed space.
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
@@ -32,10 +40,11 @@ export function Header() {
     const update = () => {
       frame = 0;
       const height = el.offsetHeight;
+      const shown = hidden ? 0 : height;
       const visible = onSimulator
         ? Math.min(height, Math.max(0, Math.round(el.getBoundingClientRect().bottom)))
-        : height;
-      root.style.setProperty('--site-header-h', onSimulator ? '0px' : `${height}px`);
+        : shown;
+      root.style.setProperty('--site-header-h', onSimulator ? '0px' : `${shown}px`);
       root.style.setProperty('--site-header-visible', `${visible}px`);
     };
     const onScroll = () => {
@@ -50,7 +59,7 @@ export function Header() {
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(frame);
     };
-  }, [onSimulator]);
+  }, [onSimulator, hidden]);
 
   // Render the hidden mobile menu once the page is idle, so a tap on the menu
   // button only has to show it (INP on mobile). As a transition the render
@@ -107,10 +116,19 @@ export function Header() {
       className={cn(
         'bg-background/95 print:hidden',
         onSimulator ? 'relative' : 'sticky top-0',
+        hidden && '-translate-y-full',
         // The open mobile menu lives in the header's stacking context, so the
         // header rises above other fixed layers (bottom bars, popups) and
-        // drops back once the 200 ms slide-out is over.
-        mobileMenuOpen ? 'z-[70]' : 'z-40 [transition:z-index_0s_200ms]'
+        // drops back once the 200 ms slide-out is over. A headroom header also
+        // slides, unless the reader prefers reduced motion.
+        mobileMenuOpen
+          ? cn(
+              'z-[70]',
+              headroom && 'transition-transform duration-200 motion-reduce:transition-none'
+            )
+          : headroom
+            ? 'z-40 [transition:transform_200ms_ease-out,z-index_0s_200ms] motion-reduce:[transition:z-index_0s_200ms]'
+            : 'z-40 [transition:z-index_0s_200ms]'
       )}
     >
       <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
