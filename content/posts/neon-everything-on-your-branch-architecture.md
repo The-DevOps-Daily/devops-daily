@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-02'
 publishedAt: '2026-07-02T19:00:00Z'
-updatedAt: '2026-07-02T19:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,11 +22,15 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on Neon's June 2026 preview. Since 17 September 2026 the backend it describes is [generally available](https://neon.com/blog/neon-backend-is-ga): Neon is now a complete backend built on Lakebase Postgres, and Object Storage, Functions, and the AI Gateway run in four AWS regions instead of `us-east-2` only. The demo output below is from the original run.
+:::
+
 Database branching is one of the best ideas serverless Postgres brought to the mainstream. Fork the database at a point in time, get an isolated copy with all the data, run something risky against it, throw it away. It made preview databases and safe migrations feel routine.
 
 But a real application is not just a database. It is a database, plus the files it stores in object storage, plus the backend code that serves it, plus, increasingly, the model and gateway config it calls for AI. When you branch only the database, those other three stay shared. Your "branch" points at the same S3 bucket, the same deployed backend, and the same AI configuration as everything else. So it is half a copy, and the half it leaves out is where a lot of the interesting bugs and the scary migrations live.
 
-Neon's platform preview changes what a branch contains. A branch now forks the database and its data, the object storage and its files, the functions that run your backend, and the AI gateway config, all at the same point in time, all isolated. A branch stops being a database copy and becomes a whole environment. To make sure that is a real claim and not a diagram, I took a full-stack project, branched it, and checked every layer. Here is what happened.
+Neon's backend changes what a branch contains. A branch now forks the database and its data, the object storage and its files, the functions that run your backend, and the AI gateway config, all at the same point in time, all isolated. A branch stops being a database copy and becomes a whole environment. To make sure that is a real claim and not a diagram, I took a full-stack project, branched it, and checked every layer. Here is what happened.
 
 ## TL;DR
 
@@ -38,7 +42,7 @@ Neon's platform preview changes what a branch contains. A branch now forks the d
 
 ## Prerequisites
 
-- A Neon project on the platform preview (Functions, object storage, AI gateway; `us-east-2`)
+- A Neon project in a region that runs Functions, Object Storage, and the AI Gateway (N. Virginia, Ohio, Frankfurt or Singapore; see [availability by region](https://neon.com/docs/introduction/regions))
 - The Neon CLI (`npm i -g neon`, then `neon login`)
 - Comfort with Postgres, S3-style object storage, and serverless functions
 
@@ -55,7 +59,7 @@ Teams paper over this with scripts: a bucket-prefix-per-branch convention, a bes
 
 ## What a Neon branch forks now
 
-On Neon's platform preview, one branch carries the whole stack:
+On Neon, one branch carries the whole stack:
 
 ```diagram
 {
@@ -128,7 +132,7 @@ Once a branch is the whole stack, a few things that used to need real infrastruc
 The useful reframe is to stop thinking of a branch as "a copy of my database" and start thinking of it as "a copy of my environment." Because storage and database are copy-on-write, that environment does not duplicate anything on disk until it diverges, and because functions scale to zero, an idle branch costs almost nothing. That combination is what makes it reasonable to spin up a full environment per pull request, per experiment, or per agent task and delete it without a second thought.
 
 :::note
-This is Neon's platform preview: object storage, functions, and the AI gateway are available on new `us-east-2` projects. The database-branching half works everywhere; the "everything else branches too" half is what the preview adds.
+The database-branching half works in every Neon region. The "everything else branches too" half, Object Storage, Functions, and the AI Gateway, is generally available since September 2026 in four AWS regions so far: N. Virginia, Ohio, Frankfurt, and Singapore ([availability by region](https://neon.com/docs/introduction/regions)).
 :::
 
 ## The repo

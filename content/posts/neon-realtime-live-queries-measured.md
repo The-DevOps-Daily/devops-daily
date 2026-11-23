@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-10-19'
 publishedAt: '2026-10-19T09:00:00Z'
-updatedAt: '2026-10-19T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '24 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
   - Benchmarks
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** Neon Auth is now called Managed Better Auth, and this post uses the new name. Commands and recorded output keep `neon-auth` and "Neon Auth" where the tools printed them at the time.
+:::
 
 In July we built realtime for a Neon app by hand: a Neon Function holding one server-sent events stream per browser, a Postgres `LISTEN` connection per function isolate, and a `pg_notify` call after every write. It kept one counter in sync. In August we did it again for a chat, with WebSockets in place of SSE and the same `LISTEN`/`NOTIFY` underneath.
 
@@ -90,11 +94,11 @@ With Realtime, the subscription is the query the screen shows. There is no funct
 }
 ```
 
-The browser never sees SQL. The API builds the query with the user id from a verified Neon Auth token, and `realtime.seal()` encrypts the SQL, the parameters and the database name into a capability that expires after 60 seconds. The client can subscribe to it but cannot read or change it, and it renews by asking the API again.
+The browser never sees SQL. The API builds the query with the user id from a verified Managed Better Auth token, and `realtime.seal()` encrypts the SQL, the parameters and the database name into a capability that expires after 60 seconds. The client can subscribe to it but cannot read or change it, and it renews by asking the API again.
 
 ## Setup
 
-Realtime is enabled per branch. In `neon.ts` it sits next to Neon Auth, which the board uses for sign-in:
+Realtime is enabled per branch. In `neon.ts` it sits next to Managed Better Auth, which the board uses for sign-in:
 
 ```ts
 import { defineConfig } from '@neon/config/v1';
@@ -113,7 +117,7 @@ One deploy applied both and wrote the variables the app needs:
 
 ```terminal
 {
-  "title": "one deploy enables Neon Auth and Realtime on the branch",
+  "title": "one deploy enables Managed Better Auth and Realtime on the branch",
   "prompt": "$",
   "steps": [
     {
@@ -467,7 +471,7 @@ The last row is the documented catch: **a sealed query is a bearer token.** Anyo
 
 ## Scoping per user without row-level security
 
-Realtime has no row-level security yet. Neon's guidance is to authorize in the request handler and put the authorization inside the query: take the user id from a verified token, and join through the membership table so the query itself only matches rows that user may see. We tested that against two weaker designs, through the board's API, with real Neon Auth users. These runs used a version of the API that also looked the user up in `store_members` before sealing, which is why renewals were refused after a removal; the board in the repo now skips that lookup (see the next two sections) and seals a query whose membership join simply returns nothing for a non-member:
+Realtime has no row-level security yet. Neon's guidance is to authorize in the request handler and put the authorization inside the query: take the user id from a verified token, and join through the membership table so the query itself only matches rows that user may see. We tested that against two weaker designs, through the board's API, with real Managed Better Auth users. These runs used a version of the API that also looked the user up in `store_members` before sealing, which is why renewals were refused after a removal; the board in the repo now skips that lookup (see the next two sections) and seals a query whose membership join simply returns nothing for a non-member:
 
 | Design                                                                    | After the user lost access                                                                                                                                           |
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -481,7 +485,7 @@ One more consequence of the full-result rule: the obvious ways to write that acc
 
 ## The board
 
-The live order board in the repo is a Vite and React app with a Hono API, Drizzle for the schema and the queries, and Neon Auth for sign-in. Its first version used the three-table join from the measurements, which re-sends every order on every write. The version in the repo subscribes to three queries instead, each scoped by a join to `store_members` on the user id from the verified token:
+The live order board in the repo is a Vite and React app with a Hono API, Drizzle for the schema and the queries, and Managed Better Auth for sign-in. Its first version used the three-table join from the measurements, which re-sends every order on every write. The version in the repo subscribes to three queries instead, each scoped by a join to `store_members` on the user id from the verified token:
 
 ```typescript
 // Open orders: incremental. The customer name is not joined in here.
@@ -518,7 +522,7 @@ export function statusCountsQuery(db: Db, userId: string, storeId: number) {
 
 The browser joins the first two with a `Map` from customer id to name, and sorts on its own side, because `ORDER BY` in the live query would re-send everything. Status changes are optimistic: the card moves at once with React's `useOptimistic`, the API's `UPDATE ... RETURNING pg_current_xact_id()` returns the transaction id, and `awaitTxId()` on the live query holds the optimistic state until that transaction arrives.
 
-The API's seal endpoint verifies the Neon Auth token and seals, and that is all: sealing is local crypto, so a renewal never touches Postgres. It does not look the user up in `store_members` first. That lookup would only turn a non-member's empty board into a 403, because the join inside each query is what keeps them out, and it would cost a database query on every renewal of every subscription. The next section shows what that does to scale to zero.
+The API's seal endpoint verifies the Managed Better Auth token and seals, and that is all: sealing is local crypto, so a renewal never touches Postgres. It does not look the user up in `store_members` first. That lookup would only turn a non-member's empty board into a 403, because the join inside each query is what keeps them out, and it would cost a database query on every renewal of every subscription. The next section shows what that does to scale to zero.
 
 A scripted run through the same API and SDK calls the app makes (`scripts/board-check.ts`) passed every check. A new order appeared on the board 99 ms after the POST was sent, moving it to `preparing` showed up in 70 ms, and marking it `done` took it off the board in 54 ms, each measured to the moment `awaitTxId` resolved. A user from another store got an empty board from the same endpoint, and a 403 when adding an order to it.
 
@@ -543,7 +547,7 @@ So an open subscription costs no compute while nothing writes, and it survives t
 | Looks the user up in `store_members` on every seal        | Never suspended in 300 s. 18 renewals, each one a database query. |
 | Seals without touching Postgres (the version in the repo) | Suspended 75 s after the board opened.                            |
 
-The membership lookup looks harmless, and it cost scale to zero entirely: with it, each open tab made three database queries roughly every 50 seconds while its renewals succeeded, one every 17 seconds on average, and that kept the compute awake for the whole 300 seconds we watched. Keep the renew path free of database calls. Signing in, and refreshing the Neon Auth token (it lasts about 15 minutes), go through Neon Auth, which keeps its tables in the same database; we did not measure whether a token refresh wakes the compute.
+The membership lookup looks harmless, and it cost scale to zero entirely: with it, each open tab made three database queries roughly every 50 seconds while its renewals succeeded, one every 17 seconds on average, and that kept the compute awake for the whole 300 seconds we watched. Keep the renew path free of database calls. Signing in, and refreshing the Managed Better Auth token (it lasts about 15 minutes), go through Managed Better Auth, which keeps its tables in the same database; we did not measure whether a token refresh wakes the compute.
 
 ## Writes on the primary, with and without 100 live queries
 

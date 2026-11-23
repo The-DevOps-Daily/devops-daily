@@ -1,12 +1,12 @@
 ---
 title: 'The No-Backend Backend: Neon Data API, RLS and 27 Attacks'
-excerpt: 'A team task board with no server code: static React, Neon Auth, and the Neon Data API with row-level security as the only guard. A signed-in attacker tried 27 ways in. What held, the four mistakes we tried, and the 15-minute gap.'
+excerpt: 'A team task board with no server code: static React, Managed Better Auth, and the Neon Data API with row-level security as the only guard. A signed-in attacker tried 27 ways in. What held, the four mistakes we tried, and the 15-minute gap.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-09-25'
 publishedAt: '2026-09-25T09:00:00Z'
-updatedAt: '2026-09-27T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,7 +23,11 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
-We built a multi-tenant team task board with no backend. The browser loads static files, signs in with Neon Auth, and reads and writes through the Neon Data API. There is no API server, no serverless function and no middleware. Who belongs to which team is Neon Auth's job; what a signed-in user may read or write is decided in Postgres, by row-level security policies, column grants and one carefully written function.
+:::note
+**Updated 23 November 2026:** Neon Auth is now called Managed Better Auth, and this post uses the new name. Commands and recorded output keep `neon-auth` and "Neon Auth" where the tools printed them at the time.
+:::
+
+We built a multi-tenant team task board with no backend. The browser loads static files, signs in with Managed Better Auth, and reads and writes through the Neon Data API. There is no API server, no serverless function and no middleware. Who belongs to which team is Managed Better Auth's job; what a signed-in user may read or write is decided in Postgres, by row-level security policies, column grants and one carefully written function.
 
 Then we gave a second team's owner, eve, a valid account and a script, and had her try 25 ways into the first team, plus two tries from the wrong role inside it: crafted filters, embedded joins, aggregate counts, forged tokens, `alg: none`, a token signed with her own key, bulk updates, upserts over the other team's ids. **All 27 were refused.** We then broke the security layer four realistic ways, one at a time. Three of them let specific attacks through, and the suite caught each one. The fourth, a sloppy `WITH CHECK (true)`, did nothing on its own, because a second layer stopped it.
 
@@ -35,17 +39,17 @@ The-DevOps-Daily/neon-data-api-rls
 
 ## TLDR
 
-- **The architecture:** static React, Neon Auth organizations for teams, the Neon Data API for every query, and Postgres (policies, grants, one function) as the authorization layer. Zero server code.
-- **The tenant comes from a signed token.** Neon Auth puts the active organization in the JWT, and `auth.organization_id()` reads it inside Postgres. Every policy is `org_id = auth.organization_id()`.
+- **The architecture:** static React, Managed Better Auth organizations for teams, the Neon Data API for every query, and Postgres (policies, grants, one function) as the authorization layer. Zero server code.
+- **The tenant comes from a signed token.** Managed Better Auth puts the active organization in the JWT, and `auth.organization_id()` reads it inside Postgres. Every policy is `org_id = auth.organization_id()`.
 - **27 attacks, 27 refused.** Each attack has to return exactly the expected answer, and every column of the victim's rows is compared before and after, so a "refusal" that quietly changed data would have failed.
 - **Column grants are the second wall.** A policy with `WITH CHECK (true)` let nothing through, because the client is never granted the `org_id` column. Adding table-wide grants on top is what opened it.
-- **Removal is not instant.** Right after being removed, a member's old token still read, wrote and called the RPC, and it kept reading for its full 900 seconds plus 28. Checking Neon Auth's member table inside the policies cut it off at once; reads and writes stayed within a millisecond, the RPC was 5 ms slower.
+- **Removal is not instant.** Right after being removed, a member's old token still read, wrote and called the RPC, and it kept reading for its full 900 seconds plus 28. Checking Managed Better Auth's member table inside the policies cut it off at once; reads and writes stayed within a millisecond, the RPC was 5 ms slower.
 - **Fast enough not to notice.** A Data API request took 41 to 44 ms at p50; a plain TCP connect to the same address took 40 ms.
 
 ## Prerequisites
 
-- A Neon project with Neon Auth enabled on the branch. Its organization plugin, which this uses for teams, is on by default.
-- The Data API provisioned on the same branch with Neon Auth as the provider, in the Console or with `neon data-api create`.
+- A Neon project with Managed Better Auth enabled on the branch. Its organization plugin, which this uses for teams, is on by default.
+- The Data API provisioned on the same branch with Managed Better Auth as the provider, in the Console or with `neon data-api create`.
 - Node.js 20 or later for the scripts, and the repository above.
 - Some familiarity with Postgres row-level security. [Your Tenant Isolation Is One Forgotten WHERE Clause Away](/posts/postgres-row-level-security-multi-tenant) covers the model this builds on.
 
@@ -67,7 +71,7 @@ Here, three managed pieces replace it:
       "tone": "slate"
     },
     {
-      "label": "Neon Auth",
+      "label": "Managed Better Auth",
       "sub": "signs the team token",
       "icon": "lock",
       "tone": "violet"
@@ -88,13 +92,13 @@ Here, three managed pieces replace it:
 }
 ```
 
-The Data API is PostgREST-compatible: `GET /tasks?select=id,title&done=eq.false` is a query, `POST /rpc/org_summary` calls a function. It checks the JWT on every request against Neon Auth's keys and runs the query as the `authenticated` role, with the token's claims available inside Postgres through the `auth` functions.
+The Data API is PostgREST-compatible: `GET /tasks?select=id,title&done=eq.false` is a query, `POST /rpc/org_summary` calls a function. It checks the JWT on every request against Managed Better Auth's keys and runs the query as the `authenticated` role, with the token's claims available inside Postgres through the `auth` functions.
 
 So the whole authorization story fits in two SQL files. Everything below is about whether those two files hold.
 
 ## The tenant is a signed claim
 
-A team is a Neon Auth organization. When a user picks one, Neon Auth issues a token that names it in an `o` claim, and it only does that for an organization the user belongs to. Asking to make someone else's team active returns `403 User is not a member of the organization`, which is attack T7 below.
+A team is a Managed Better Auth organization. When a user picks one, Managed Better Auth issues a token that names it in an `o` claim, and it only does that for an organization the user belongs to. Asking to make someone else's team active returns `403 User is not a member of the organization`, which is attack T7 below.
 
 Inside Postgres, `auth.organization_id()` returns that claim. The tables default their tenant column to it, and every policy compares against it:
 
@@ -125,7 +129,7 @@ create policy tasks_delete on tasks for delete
   );
 ```
 
-If you read [our earlier RLS post](/posts/postgres-row-level-security-multi-tenant), this is the same shape as its `tenant_id = current_tenant()`. The difference is where the tenant comes from. There, the application server wrote it into a session setting before each query, and a bug in that server could set it wrong. Here there is no server; the tenant arrives in a token that Neon Auth signed and the Data API verified.
+If you read [our earlier RLS post](/posts/postgres-row-level-security-multi-tenant), this is the same shape as its `tenant_id = current_tenant()`. The difference is where the tenant comes from. There, the application server wrote it into a session setting before each query, and a bug in that server could set it wrong. Here there is no server; the tenant arrives in a token that Managed Better Auth signed and the Data API verified.
 
 The primary key is `(org_id, id)` for the reason that post gives: with a globally unique id, a failed insert could tell eve that an id exists in another team. Scoped to the tenant, her copy of an id lands in her own team.
 
@@ -193,9 +197,9 @@ A few of these are worth reading closely.
 
 **T1 to T6 never reached Postgres.** No token, an edited claim, `alg: none` with and without the real key id, and a token signed with eve's own key were all rejected at the Data API with `400`: `missing authentication credentials`, `signature error`, `missing key id` and `signature algorithm not supported`.
 
-**T8 asked Neon Auth to change her role claim.** The Data API picks the Postgres role from the token's `role` claim, so a user who could set it would pick their own database role. Neon Auth refused the update with `400`; the stored role stayed `user` and her next token still said `authenticated`.
+**T8 asked Managed Better Auth to change her role claim.** The Data API picks the Postgres role from the token's `role` claim, so a user who could set it would pick their own database role. Managed Better Auth refused the update with `400`; the stored role stayed `user` and her next token still said `authenticated`.
 
-**R10 is weaker than it looks.** It asks for the `neon_auth` schema with an `Accept-Profile` header. The Data API ignored the header and looked in `public`, where there is no `user` table, so it answered 404. That shows the Data API only serves `public` here; it does not test the permissions on Neon Auth's own tables.
+**R10 is weaker than it looks.** It asks for the `neon_auth` schema with an `Accept-Profile` header. The Data API ignored the header and looked in `public`, where there is no `user` table, so it answered 404. That shows the Data API only serves `public` here; it does not test the permissions on Managed Better Auth's own tables.
 
 ## Four ways to break it
 
@@ -227,7 +231,7 @@ A test suite that has only ever passed proves little. The break script applies o
 
 Policies decide what a token may do. They do not decide how long a token lives.
 
-The revocation script signs bob in, removes him from Acme through Neon Auth, and keeps using the token he already had:
+The revocation script signs bob in, removes him from Acme through Managed Better Auth, and keeps using the token he already had:
 
 ```terminal
 {
@@ -248,7 +252,7 @@ The revocation script signs bob in, removes him from Acme through Neon Auth, and
 
 Right after the removal, bob's request for a new token fails with HTTP 500. The token he already holds does not notice: it still reads Acme's tasks and comments, calls the RPC, and writes a new task (the fourth task in the list is the probe it wrote a line earlier). Task reads kept working for the rest of the token's 900-second life and 28 seconds past its `exp` by our client's clock; the next check, two seconds later, was refused. The extra seconds look like leeway for clock skew, but we did not measure the verifier's setting. We checked writes and the RPC right after the removal, not to the end. If "removed from the team" has to mean "cannot touch the team's data", fifteen and a half minutes is a long time.
 
-The fix is to ask a second question in every policy: is this user still a member right now? Neon Auth keeps memberships in `neon_auth.member`, which the `authenticated` role cannot read, so a `security definer` function looks it up:
+The fix is to ask a second question in every policy: is this user still a member right now? Managed Better Auth keeps memberships in `neon_auth.member`, which the `authenticated` role cannot read, so a `security definer` function looks it up:
 
 ```sql
 create function current_org_role() returns text
@@ -301,7 +305,7 @@ Reads and writes stayed within a millisecond of the token-only run (the table un
 
 A read with embedded counts and an RPC took a millisecond or two more than a bare TCP connect to the same address; a write took about four. We did not isolate how much of that is JWT verification, the policies or the query, and the tables are tiny: a policy that has to join or scan grows with the data, and this does not measure that.
 
-**On the page, one JavaScript file.** The production build is three files: 587 kB of JavaScript (161 kB gzipped), 11 kB of CSS and the HTML. It includes React, the Neon Auth client with its organization plugin, and the PostgREST client; we did not break down which part weighs what.
+**On the page, one JavaScript file.** The production build is three files: 587 kB of JavaScript (161 kB gzipped), 11 kB of CSS and the HTML. It includes React, the Managed Better Auth client with its organization plugin, and the PostgREST client; we did not break down which part weighs what.
 
 **In operations, nothing to run.** There is no server to deploy, patch or scale. The trade is that your security review moves into SQL, and SQL is where the four breaks above live.
 
@@ -312,15 +316,15 @@ A read with embedded counts and an RPC took a millisecond or two more than a bar
 - **New functions need a schema refresh.** The Data API caches the schema. After adding a function, some requests returned `404` until we ran `neon data-api refresh-schema`.
 - **An empty result is the refusal.** A delete that RLS blocks returns `200` and zero rows, not an error. The app checks the returned rows and tells the user.
 - **Switching teams means a new token.** The client caches the token until shortly before it expires, and the cached one names the old team. Our app reloads after switching.
-- **Scripts must look like a browser to Neon Auth.** Sign-in from Node fails with `Origin header is required` until you send one, and Neon Auth rate-limits sign-ins, so the test harness reuses sessions.
+- **Scripts must look like a browser to Managed Better Auth.** Sign-in from Node fails with `Origin header is required` until you send one, and Managed Better Auth rate-limits sign-ins, so the test harness reuses sessions.
 
 ## What we could not conclude
 
 - **Performance at scale.** Five tasks and one comment say nothing about how a policy with a subquery behaves over millions of rows. The latency numbers are about the request path, not the data.
 - **Whether fifteen minutes is fixed.** We measured the token lifetime we were given. We did not look for a way to shorten it, and a shorter one would narrow the gap without closing it.
-- **Demotion.** Strict mode reads the role from Neon Auth's table, so a demoted owner should lose delete at once. We did not test it.
+- **Demotion.** Strict mode reads the role from Managed Better Auth's table, so a demoted owner should lose delete at once. We did not test it.
 - **Anything about the anonymous role.** Requests without a token were rejected before they reached Postgres; we never exercised the `anonymous` role itself.
-- **The limits of Neon itself.** This tests an application's security layer through the Data API. It is not a penetration test of Neon Auth or the Data API.
+- **The limits of Neon itself.** This tests an application's security layer through the Data API. It is not a penetration test of Managed Better Auth or the Data API.
 - **Browser behaviour beyond Chromium.** The session cookie is a partitioned third-party cookie. We drove the app in headless Chromium only, and did not test Firefox or Safari.
 
 ## What we would do
@@ -328,7 +332,7 @@ A read with embedded counts and an RPC took a millisecond or two more than a bar
 1. **Take the tenant from the token and default the column to it.** `default auth.organization_id()` means the client never names a tenant, so it cannot name the wrong one.
 2. **Grant columns, not tables.** It is what turned our weakest policy into a non-event. Skip the table-wide default grants unless you are sure every `WITH CHECK` is right.
 3. **Treat every `security definer` function as a policy of its own.** Put the tenant filter in it, revoke it from `public`, and test it with a hostile token.
-4. **Check live membership in the policies.** A lookup in Neon Auth's member table, once per statement, closes a fifteen-minute gap.
+4. **Check live membership in the policies.** A lookup in Managed Better Auth's member table, once per statement, closes a fifteen-minute gap.
 5. **Keep a hostile client in the repository.** Twenty-seven requests take seconds to run. The break script checks that each mistake opens exactly the attacks it should, which proves the suite catches real mistakes.
 
 The schema, the attacks, the breaks and every recorded run are in the repository.

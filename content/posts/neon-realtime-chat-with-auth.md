@@ -1,12 +1,12 @@
 ---
-title: 'Realtime Chat With Auth: Next.js, Neon Auth, and WebSockets'
-excerpt: 'A WebSocket cannot carry an Authorization header, so how do you know who is on the other end? This build-log wires a realtime chat where every socket is authenticated with a Neon Auth JWT, verified before the connection is accepted, and fanned out across isolates with Postgres LISTEN/NOTIFY. Real code, the security gotcha that matters, and the test output that proves it.'
+title: 'Realtime Chat With Auth: Next.js, Managed Better Auth, and WebSockets'
+excerpt: 'A WebSocket cannot carry an Authorization header, so how do you know who is on the other end? This build-log wires a realtime chat where every socket is authenticated with a Managed Better Auth JWT, verified before the connection is accepted, and fanned out across isolates with Postgres LISTEN/NOTIFY. Real code, the security gotcha that matters, and the test output that proves it.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-08-11'
 publishedAt: '2026-08-11T09:00:00Z'
-updatedAt: '2026-08-11T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,21 +22,25 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** Neon Auth is now called Managed Better Auth, and this post uses the new name. Commands and recorded output keep `neon-auth` and "Neon Auth" where the tools printed them at the time.
+:::
+
 Realtime and auth are each straightforward on their own. Put them together and you hit a wall almost immediately: a browser cannot set an `Authorization` header on a WebSocket. The `WebSocket` constructor takes a URL and, optionally, a subprotocol, and that is it. So the moment you want a socket that only authenticated users can open, you have to answer a question that a normal HTTP request never asks: how does the server know who is on the other end of this connection, before it accepts it?
 
-This post is a build-log for a realtime chat that answers it. It runs a [Neon Function](https://neon.com/docs/compute/functions/overview) as the WebSocket server, uses [Neon Auth](https://neon.com/docs/neon-auth/overview) for identity, and stores messages in the same Postgres. Every socket is authenticated with a Neon Auth JWT that the function verifies before it accepts the upgrade, the stored identity comes from the verified token rather than anything the client claims, and messages fan out across isolates with Postgres `LISTEN`/`NOTIFY`. If you have not seen how Neon Auth issues those tokens, the previous post, [auth for a Postgres app without a separate service](/posts/neon-auth-without-a-separate-service), covers it. The full [repo](https://github.com/The-DevOps-Daily/neon-auth-demo) is at the end.
+This post is a build-log for a realtime chat that answers it. It runs a [Neon Function](https://neon.com/docs/compute/functions/overview) as the WebSocket server, uses [Managed Better Auth](https://neon.com/docs/auth/overview) for identity, and stores messages in the same Postgres. Every socket is authenticated with a Managed Better Auth JWT that the function verifies before it accepts the upgrade, the stored identity comes from the verified token rather than anything the client claims, and messages fan out across isolates with Postgres `LISTEN`/`NOTIFY`. If you have not seen how Managed Better Auth issues those tokens, the previous post, [auth for a Postgres app without a separate service](/posts/neon-auth-without-a-separate-service), covers it. The full [repo](https://github.com/The-DevOps-Daily/neon-auth-demo) is at the end.
 
 ## TL;DR
 
-- Browsers cannot set headers on a WebSocket, so the client passes its Neon Auth JWT as a `?token=` query parameter. The `Sec-WebSocket-Protocol` subprotocol is the alternative that keeps it out of access logs, and the post covers when to prefer it.
-- The function exports `{ fetch, upgrade }`. The `upgrade` hook verifies the token against the Neon Auth JWKS and rejects with `401` before the socket is ever accepted.
+- Browsers cannot set headers on a WebSocket, so the client passes its Managed Better Auth JWT as a `?token=` query parameter. The `Sec-WebSocket-Protocol` subprotocol is the alternative that keeps it out of access logs, and the post covers when to prefer it.
+- The function exports `{ fetch, upgrade }`. The `upgrade` hook verifies the token against the Managed Better Auth JWKS and rejects with `401` before the socket is ever accepted.
 - The identity written to each message is the `sub` from the verified token, never a name the client sends. That is the difference between "signed in as Alice" and "typed the name Alice".
 - Broadcasting in-process only reaches clients on the same isolate. Postgres `LISTEN`/`NOTIFY` fans each message out to every isolate so the chat is genuinely shared.
 - The client reconnects with backoff and re-mints a token on each attempt, because serverless isolates get evicted when idle.
 
 ## Prerequisites
 
-- A [Neon](https://neon.com) project with Neon Auth enabled (`auth: true` in `neon.ts`, see [the previous post](/posts/neon-auth-without-a-separate-service))
+- A [Neon](https://neon.com) project with Managed Better Auth enabled (`auth: true` in `neon.ts`, see [the previous post](/posts/neon-auth-without-a-separate-service))
 - Comfort with WebSockets and JWTs
 - Node.js and the Neon CLI
 
@@ -52,7 +56,7 @@ There are two backends and one browser. The Next.js app handles sign-in and serv
     [ { "id": "b", "label": "Browser", "icon": "globe", "tone": "slate" } ],
     [
       { "id": "next", "label": "Next.js", "sub": "/api/messages", "icon": "box", "tone": "blue", "detail": "Handles sign-in and serves chat history over ordinary HTTP." },
-      { "id": "fn", "label": "Neon Function", "sub": "WebSocket server", "icon": "shield", "tone": "accent", "detail": "The upgrade hook verifies the JWT against the Neon Auth JWKS and rejects with 401 before the socket is accepted. Stored identity is the token's sub, never a name the client sends." }
+      { "id": "fn", "label": "Neon Function", "sub": "WebSocket server", "icon": "shield", "tone": "accent", "detail": "The upgrade hook verifies the JWT against the Managed Better Auth JWKS and rejects with 401 before the socket is accepted. Stored identity is the token's sub, never a name the client sends." }
     ],
     [ { "id": "pg", "label": "Postgres", "sub": "messages + LISTEN/NOTIFY", "icon": "database", "tone": "violet" } ],
     [ { "id": "iso", "label": "Every isolate", "sub": "its own sockets", "icon": "gear", "tone": "green" } ]
@@ -87,7 +91,7 @@ export default {
 
 ## Auth over a WebSocket
 
-Because the browser cannot add a header, the token rides in the URL. The client mints a JWT from its Neon Auth session and opens the socket with it as a query parameter:
+Because the browser cannot add a header, the token rides in the URL. The client mints a JWT from its Managed Better Auth session and opens the socket with it as a query parameter:
 
 ```typescript
 const token = await getToken();           // from the Neon Auth session
@@ -127,7 +131,7 @@ async upgrade(req, socket, head) {
 Rejecting at the handshake matters. An unauthenticated client never gets an open socket, so there is no "connected but not yet authenticated" state to babysit, no first-message-must-be-a-token dance, and no window where an anonymous connection is holding a slot. The check is a precondition of the upgrade, not a step after it.
 
 :::warning
-Tokens in a URL are visible in server and proxy logs, so keep them short-lived. Neon Auth tokens expire quickly (about 15 minutes), and the client re-mints on every reconnect, so a leaked one is stale fast. The short TTL is what makes this acceptable.
+Tokens in a URL are visible in server and proxy logs, so keep them short-lived. Managed Better Auth tokens expire quickly (about 15 minutes), and the client re-mints on every reconnect, so a leaked one is stale fast. The short TTL is what makes this acceptable.
 :::
 
 ### The subprotocol alternative
@@ -201,7 +205,7 @@ So the path of a message is: verify the sender at connect, insert the row on rec
 
 ## Proving it works
 
-Claims about auth are cheap; the interesting question is whether the wall actually holds. The repo ships an end-to-end test that runs the whole flow against the deployed function: it tries to connect without a token, with a garbage token, and then with a real Neon Auth JWT, and finally checks that a message from one client reaches a second client and lands in Postgres under the verified identity.
+Claims about auth are cheap; the interesting question is whether the wall actually holds. The repo ships an end-to-end test that runs the whole flow against the deployed function: it tries to connect without a token, with a garbage token, and then with a real Managed Better Auth JWT, and finally checks that a message from one client reaches a second client and lands in Postgres under the verified identity.
 
 ```terminal
 {
@@ -213,7 +217,7 @@ Claims about auth are cheap; the interesting question is whether the wall actual
 }
 ```
 
-The two `401` lines are the important ones: they confirm the handshake refuses anything without a valid token. The last line confirms the row was stored under the identity from the JWT, not a name off the wire. The test signs a throwaway user up against Neon Auth and exchanges the session for a JWT exactly the way the browser does, so it exercises the real token path rather than a mock.
+The two `401` lines are the important ones: they confirm the handshake refuses anything without a valid token. The last line confirms the row was stored under the identity from the JWT, not a name off the wire. The test signs a throwaway user up against Managed Better Auth and exchanges the session for a JWT exactly the way the browser does, so it exercises the real token path rather than a mock.
 
 ## Reconnecting like a serverless client should
 
@@ -232,7 +236,7 @@ That is what makes the short token TTL from earlier a non-issue in practice: the
 
 ## The repo
 
-The full function, the Next.js app with Neon Auth, and the integration test are here:
+The full function, the Next.js app with Managed Better Auth, and the integration test are here:
 
 ```github
 https://github.com/The-DevOps-Daily/neon-auth-demo
@@ -240,4 +244,4 @@ https://github.com/The-DevOps-Daily/neon-auth-demo
 
 ## Wrapping up
 
-The hard part of realtime auth is not the cryptography, it is the handshake: a WebSocket cannot carry a header, so you pass the token in the URL and verify it before you accept the connection, refusing anything invalid with a `401` up front. From there the rules are ordinary but easy to skip under deadline: take identity from the verified token and never from the client, and remember that in-process broadcasting fragments across isolates, so route fan-out through the database with `LISTEN`/`NOTIFY`. Because Neon Auth issues the tokens and Postgres stores both the messages and the pub/sub, the whole thing is one project with nothing else to run, and the test suite proves the wall around it actually stands.
+The hard part of realtime auth is not the cryptography, it is the handshake: a WebSocket cannot carry a header, so you pass the token in the URL and verify it before you accept the connection, refusing anything invalid with a `401` up front. From there the rules are ordinary but easy to skip under deadline: take identity from the verified token and never from the client, and remember that in-process broadcasting fragments across isolates, so route fan-out through the database with `LISTEN`/`NOTIFY`. Because Managed Better Auth issues the tokens and Postgres stores both the messages and the pub/sub, the whole thing is one project with nothing else to run, and the test suite proves the wall around it actually stands.
