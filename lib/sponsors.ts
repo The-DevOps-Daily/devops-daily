@@ -83,6 +83,16 @@ export const sponsors: Sponsor[] = [
       'Design and automation for reliable AWS and Kubernetes platforms, safer delivery workflows, and preview and UAT environments your engineers can understand and own.',
   },
   {
+    name: 'Plakar',
+    logo: '/plakar-brand.svg',
+    darkLogo: '/plakar-brand-light.svg',
+    url: 'https://plakar.io/',
+    goSlug: 'plakar',
+    tagline: 'Open-source backup and restore',
+    description:
+      'Encrypted, deduplicated snapshots with instant browsing and restore, across clouds and on-prem. Open source, with developer-friendly tooling.',
+  },
+  {
     name: 'DigitalOcean',
     logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
     url: 'https://m.do.co/c/2a9bba940f39',
@@ -148,6 +158,14 @@ export const sponsorHistory: Pick<
     className: 'h-[30px]',
     url: 'https://bitrise.io/platform/build-hub',
     goSlug: 'bitrise',
+  },
+  {
+    name: 'Plakar',
+    logo: '/plakar-brand.svg',
+    darkLogo: '/plakar-brand-light.svg',
+    className: 'h-[24px]',
+    url: 'https://plakar.io/',
+    goSlug: 'plakar',
   },
   {
     name: 'DigitalOcean',
