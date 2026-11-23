@@ -38,7 +38,7 @@ This post has the prices at three sizes, the measured branch and upgrade times, 
 - **Statistics.** After a Postgres 17 to 18 `pg_upgrade`, the planner statistics were there. After `pg_dump`/`pg_restore` with default flags they were not, until we ran `ANALYZE` or added `--statistics` to `pg_dump`.
 
 :::note
-Neon sponsors other posts on DevOps Daily. This one is not sponsored. Neon was timed with the scripts in the repo, the other managed services were read from their docs and price lists, and Neon loses on several rows below: no standby compute, no uptime SLA on the plan we priced, and no in-place upgrade.
+Neon and Supabase Free were run with the scripts in the repo. The other managed services were priced from their price lists and described from their docs, with a source for every claim in the repo.
 :::
 
 ## Prerequisites
