@@ -77,7 +77,7 @@ Introducing Replica and the Open Source Accessibility Framework, new open source
 
 **[gt 2.0.0: a quarter of the tokens for AI agents, and flags like gh](https://blog.gitea.com/release-of-gitea-cli-2.0.0/)**
 Gitea Blog · Nov 18
-We are releasing gitea-cli 2.0.0. Just over two weeks after \[1.0.0\](/release-of-gitea-cli-1.0.0/), this major release makes \`gt\` much cheaper to use from AI coding agents: the log of a failed run now costs about a quarter of the tokens...
+We are releasing gitea-cli 2.0.0. Just over two weeks after 1.0.0, this major release makes \`gt\` much cheaper to use from AI coding agents: the log of a failed run now costs about a quarter of the tokens...
 
 **[Cut your vulnerability backlog with agentic remediation](https://about.gitlab.com/blog/gitlab-agentic-remediation/)**
 GitLab Blog · Nov 19
