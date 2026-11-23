@@ -14,8 +14,6 @@ import { useHeadroom } from '@/hooks/use-headroom';
 // Pages where the header slides away while reading down and comes back on the
 // first scroll up. Add a pattern here to opt more pages in.
 const HEADROOM_PAGES = [/^\/guides\/[^/]+/];
-// Guide chapters use a wider page on large screens; the header lines up with it.
-const WIDE_PAGES = [/^\/guides\/[^/]+\/[^/]+/];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,7 +25,6 @@ export function Header() {
   // so it never covers or shifts the game.
   const onSimulator = /^\/games\/[^/]+/.test(pathname ?? '');
   const headroom = HEADROOM_PAGES.some((re) => re.test(pathname ?? ''));
-  const wide = WIDE_PAGES.some((re) => re.test(pathname ?? ''));
   const hidden = useHeadroom(headerRef, { enabled: headroom, pinned: mobileMenuOpen });
 
   // Sticky elements below the header read its height from --site-header-h.
@@ -134,12 +131,7 @@ export function Header() {
             : 'z-40 [transition:z-index_0s_200ms]'
       )}
     >
-      <nav
-        className={cn(
-          'container flex items-center justify-between p-4 mx-auto lg:px-8',
-          wide && '2xl:max-w-[1680px] 2xl:px-4'
-        )}
-      >
+      <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
         {/* Logo */}
         <div className="flex lg:flex-1">
           <Logo size={55} href="/" showText />

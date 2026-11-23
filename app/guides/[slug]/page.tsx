@@ -1,6 +1,8 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
+import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { guideLayout } from '@/components/guide-layout';
 import { getGuideBySlug, getAllGuides, getRelatedGuides, toGuideNav } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
@@ -103,93 +105,107 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
       />
       <ReadingProgressBar />
 
-      <div className="container px-4 py-8 mx-auto">
+      <div className={guideLayout.container}>
         <Breadcrumb items={breadcrumbItems} />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <aside className="order-last lg:col-span-3 lg:order-first">
-            <GuideSidebar guide={toGuideNav(guide)} />
-          </aside>
-          <div className="lg:col-span-9">
-            <article className="prose dark:prose-invert max-w-none">
-              <GuideContent guide={guide} />
+        {/* Same columns as a chapter page, so moving between them does not shift. */}
+        <div className={guideLayout.grid}>
+          <div className="min-w-0">
+            <div className={guideLayout.row}>
+              <aside className={`order-last lg:order-first ${guideLayout.nav}`}>
+                <GuideSidebar guide={toGuideNav(guide)} />
+              </aside>
+              <article className={`${guideLayout.article} dark:prose-invert`}>
+                <GuideContent guide={guide} />
 
-              {/* Inline Sponsors */}
-              <InlineSponsors variant="full" />
+                {/* Inline Sponsors, where the sponsor column is not shown */}
+                <div className="xl:hidden">
+                  <InlineSponsors variant="full" />
+                </div>
 
-              {/* Add navigation buttons */}
-              {firstPart && (
-                <GuidePartNavigation
-                  nextPart={{ slug: firstPart.slug, title: firstPart.title, number: 1 }}
-                  guideSlug={guide.slug}
-                  isOverview={true}
-                />
-              )}
+                {/* Add navigation buttons */}
+                {firstPart && (
+                  <GuidePartNavigation
+                    nextPart={{ slug: firstPart.slug, title: firstPart.title, number: 1 }}
+                    guideSlug={guide.slug}
+                    isOverview={true}
+                  />
+                )}
 
-              {/* Add structured data for guide */}
-              <div className="pt-8 mt-8 border-t border-border" id="article-end">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {guide.updatedAt ? (
-                    <span>
-                      Last updated: <time dateTime={guide.updatedAt}>{guide.updatedAt}</time>
-                    </span>
-                  ) : (
-                    <span>Last updated: Recently</span>
+                {/* Add structured data for guide */}
+                <div className="pt-8 mt-8 border-t border-border" id="article-end">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    {guide.updatedAt ? (
+                      <span>
+                        Last updated: <time dateTime={guide.updatedAt}>{guide.updatedAt}</time>
+                      </span>
+                    ) : (
+                      <span>Last updated: Recently</span>
+                    )}
+                  </div>
+
+                  {guide.tags && guide.tags.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="mb-2 text-lg font-semibold">Tags</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {guide.tags.map((tag) => {
+                          const tagSlug = tagToSlug(tag);
+                          const base =
+                            'px-3 py-1 text-sm rounded-full bg-secondary text-secondary-foreground';
+                          return linkableTags.has(tagSlug) ? (
+                            <a
+                              key={tag}
+                              href={`/tags/${tagSlug}`}
+                              className={`${base} transition-colors hover:bg-primary/40 hover:text-primary-foreground`}
+                            >
+                              {tag}
+                            </a>
+                          ) : (
+                            <span key={tag} className={base}>
+                              {tag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                {guide.tags && guide.tags.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="mb-2 text-lg font-semibold">Tags</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {guide.tags.map((tag) => {
-                        const tagSlug = tagToSlug(tag);
-                        const base =
-                          'px-3 py-1 text-sm rounded-full bg-secondary text-secondary-foreground';
-                        return linkableTags.has(tagSlug) ? (
-                          <a
-                            key={tag}
-                            href={`/tags/${tagSlug}`}
-                            className={`${base} transition-colors hover:bg-primary/40 hover:text-primary-foreground`}
-                          >
-                            {tag}
-                          </a>
-                        ) : (
-                          <span key={tag} className={base}>
-                            {tag}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
+                {/* Report Issue Component */}
+                <div className="mt-8">
+                  <ReportIssue
+                    title={guide.title}
+                    type="guide"
+                    slug={guide.slug}
+                    variant="compact"
+                  />
+                </div>
+
+                {/* Giscus Discussions */}
+                <GiscusComments className="mt-12" title={guide.title} />
+
+                {/* Related Guides */}
+                {relatedGuides.length > 0 && (
+                  <RelatedPosts
+                    posts={relatedGuides.map((g) => ({
+                      title: g.title,
+                      slug: g.slug,
+                      date: g.publishedAt || '',
+                      readingTime: g.readingTime || '',
+                      category: g.category || { name: '', slug: '' },
+                    }))}
+                    title="Related Guides"
+                    linkPrefix="/guides"
+                    className="mt-12"
+                  />
                 )}
-              </div>
-
-              {/* Report Issue Component */}
-              <div className="mt-8">
-                <ReportIssue title={guide.title} type="guide" slug={guide.slug} variant="compact" />
-              </div>
-
-              {/* Giscus Discussions */}
-              <GiscusComments className="mt-12" title={guide.title} />
-
-              {/* Related Guides */}
-              {relatedGuides.length > 0 && (
-                <RelatedPosts
-                  posts={relatedGuides.map((g) => ({
-                    title: g.title,
-                    slug: g.slug,
-                    date: g.publishedAt || '',
-                    readingTime: g.readingTime || '',
-                    category: g.category || { name: '', slug: '' },
-                  }))}
-                  title="Related Guides"
-                  linkPrefix="/guides"
-                  className="mt-12"
-                />
-              )}
-            </article>
+              </article>
+            </div>
           </div>
+
+          <aside className="hidden min-w-0 xl:block">
+            <SponsorSidebar className={guideLayout.sponsors} />
+          </aside>
         </div>
       </div>
     </>
