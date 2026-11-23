@@ -76,7 +76,8 @@ export function generateMarkdown(digest: Digest): string {
  * <p> that the digest styles, so it would look different from the others.
  */
 export function formatItem(item: NewsItem, short: boolean): string {
-  const text = item.summary || cutExcerpt(item.excerpt);
+  // Feeds sometimes carry Markdown links, often relative to their own site.
+  const text = stripMarkdownLinks(item.summary || cutExcerpt(item.excerpt));
   const line = short ? firstSentence(text) : text;
   const lines = [
     `**${markdownLink(item.title, item.url)}**`,
@@ -84,6 +85,10 @@ export function formatItem(item: NewsItem, short: boolean): string {
   ];
   if (line) lines.push(escapeMarkdown(line));
   return lines.join('\n');
+}
+
+export function stripMarkdownLinks(text: string): string {
+  return text.replace(/!?\[([^\]]*)\]\([^)\s]*\)/g, '$1');
 }
 
 /** "- **Grafana** [13.3.1](url) (also 13.2.6 and 13.1.10)" */

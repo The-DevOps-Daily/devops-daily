@@ -18,6 +18,7 @@ import {
   generateMarkdown,
   generateSummary,
   shortHeadline,
+  stripMarkdownLinks,
   EDITOR_INTRO_END,
   EDITOR_INTRO_START,
 } from '../devops-daily/pipeline/template';
@@ -330,6 +331,15 @@ describe('summary builder', () => {
     expect(a.length).toBeLessThanOrEqual(155);
     expect(a).not.toBe(b);
     expect(a).toContain('week 47');
+  });
+
+  it('keeps the text of Markdown links in excerpts and drops the URL', () => {
+    expect(
+      stripMarkdownLinks('Just over two weeks after [1.0.0](/release-of-gitea-cli-1.0.0/), this')
+    ).toBe('Just over two weeks after 1.0.0, this');
+    expect(stripMarkdownLinks('See ![logo](/a.png)[docs](https://x.dev/d) now')).toBe(
+      'See logodocs now'
+    );
   });
 
   it('shortens a headline to its lead before a colon', () => {
