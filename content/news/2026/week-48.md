@@ -1,12 +1,15 @@
 ---
 title: "DevOps Weekly Digest - Week 48, 2026"
 date: "2026-11-23"
-summary: "Amazon CloudWatch EKS Container Insights now offers and When a sync window closes, plus 23 more DevOps updates from week 48."
+summary: "PostgreSQL 19 is out, nginx2root and Java4Shell need patching, kube-proxy IPVS gets a removal date, plus 22 more DevOps updates from week 48."
 ---
 
 ## 📌 This week in short
 
 <!-- editor-intro: 2-4 plain lines from the editor go between these markers. Empty renders nothing. -->
+A patch-heavy week. PostgreSQL 19 is out (our upgrade checklist is below), and nginx2root, Java4Shell and ruby2shell all need attention if you run nginx, Java or Ruby.
+
+If you still use the IPVS mode of kube-proxy, Kubernetes has now scheduled its removal, so plan the move to iptables or nftables.
 <!-- /editor-intro -->
 
 **[Amazon CloudWatch EKS Container Insights now offers built-in monitoring for open source Kubernetes tools](https://aws.amazon.com/about-aws/whats-new/2026/11/cloudwatch-eks-kubernetes-tools/)**
