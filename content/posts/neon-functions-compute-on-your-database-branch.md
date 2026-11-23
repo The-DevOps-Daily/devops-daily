@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-27'
 publishedAt: '2026-06-27T09:00:00Z'
-updatedAt: '2026-06-27T09:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,9 +21,13 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this post was written on the June 2026 private preview, and the measurements below are from then. On 17 September 2026 [Neon Functions became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free. The `us-east-2`, new-projects-only limit is gone: Functions now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), and [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) can now start a function on a cron schedule or an Object Storage upload.
+:::
+
 Ask where your backend code runs relative to your database and the answer is often "somewhere else." Your function is in one provider's `us-east-1`, your Postgres is in another region entirely, and every query crosses that gap. Most of the time you don't see it, because one query is fast enough to ignore. Then a request makes eight queries in sequence, each pays the round trip, and suddenly an endpoint that should take milliseconds takes most of a second.
 
-[Neon Functions](https://neon.com/docs/compute/functions/overview), part of Neon's June 2026 platform preview, takes a different position: run the compute in the same region as the database branch, on a URL scoped to that branch. This is the first in a series on what that buys you. It is also the simplest to demonstrate, because the benefit is something you can measure. I deployed a small REST API and timed a trivial query two ways. The numbers are at the bottom, and they are not close.
+[Neon Functions](https://neon.com/docs/compute/functions/overview), added in Neon's June 2026 preview and generally available since September 2026, takes a different position: run the compute in the same region as the database branch, on a URL scoped to that branch. This is the first in a series on what that buys you. It is also the simplest to demonstrate, because the benefit is something you can measure. I deployed a small REST API and timed a trivial query two ways. The numbers are at the bottom, and they are not close.
 
 (Companion repo, deploy it yourself: [The-DevOps-Daily/neon-functions-demo](https://github.com/The-DevOps-Daily/neon-functions-demo).)
 
@@ -37,7 +41,7 @@ Neon ships starter templates through its CLI. The REST API is one of them:
   "steps": [
     { "comment": "scaffold a Hono + Drizzle REST API" },
     { "cmd": "neonctl bootstrap ./api --template hono", "output": "Scaffolded 23 files into ./api" },
-    { "comment": "create a project (us-east-2, preview only) and deploy" },
+    { "comment": "create a project (us-east-2 in June 2026) and deploy" },
     { "cmd": "neonctl link --project-name api --region-id aws-us-east-2", "output": "Created project (\"api\") in aws-us-east-2 and linked .neon on branch main" },
     { "cmd": "neonctl deploy", "output": "Applied changes\n  create  service  function:todos\n\nFunction URLs\n  todos: https://br-restless-sound-...-todos.compute.c-3.us-east-2.aws.neon.tech/\n\nUtilized services: Postgres, Functions" }
   ]
@@ -137,16 +141,16 @@ To be fair about the comparison: a real deployment is rarely as far away as Euro
 
 ## What it is, and what it is not
 
-A few things are worth stating plainly before you build around this, because it is a private preview and it has clear edges.
+A few things are worth stating plainly before you build around this, because it has clear edges. Some of them were preview limits that GA removed, and those are marked.
 
 :::warning
-**Private preview, one region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created inside the preview. You cannot turn this on for an existing production database today.
+**Private preview, one region, new projects only (June 2026).** When we wrote this, everything was in AWS `us-east-2` and only worked on projects created inside the preview. That limit was lifted at GA: Functions now run in four AWS regions. A project's region cannot be changed, so check [availability by region](https://neon.com/docs/introduction/regions) before you pick one.
 :::
 
 Beyond that:
 
-- **These are request/response functions, not a job runner.** They are built for APIs, agents, webhooks, and real-time connections (they support streaming and long-lived sockets, not just quick replies). Background work, queues, retries, and schedules are a different kind of compute; pair them with something like Inngest or QStash.
-- **Function memory is fixed** (2048 MiB at preview), so this is not yet a knob-for-everything compute platform.
+- **These are request/response functions, not a job runner.** They are built for APIs, agents, webhooks, and real-time connections (they support streaming and long-lived sockets, not just quick replies). Queues and retries are a different kind of compute; pair them with something like Inngest or QStash. Schedules are the exception since September 2026: [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) run a function on a cron schedule or when a file lands in Object Storage.
+- **Function memory is fixed** at 2048 MiB (unchanged at GA), so this is not yet a knob-for-everything compute platform.
 - **It is a Neon-shaped commitment.** One config file declaring your functions is convenient precisely because it is integrated. That is coupling, traded for the locality and the branching.
 
 ## Who this is for

@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-26'
 publishedAt: '2026-06-26T13:00:00Z'
-updatedAt: '2026-06-26T13:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,9 +21,13 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** this build ran on the June 2026 private preview. On 17 September 2026 [Functions, Object Storage, the AI Gateway, and Managed Better Auth became generally available](https://neon.com/blog/neon-backend-is-ga), on every plan including Free. The `us-east-2`, new-projects-only limits below are gone: Functions, Object Storage, and the AI Gateway now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), and AI Gateway pricing is now documented as provider list prices with no markup. The build log itself is unchanged.
+:::
+
 A working AI agent has an unglamorous shopping list. It needs a database to remember things, somewhere to run that can stream tokens without timing out, object storage for whatever it produces, and access to a model. Assembled the usual way, that is four separate signups: a Postgres host, a compute platform, an S3 bucket, and an OpenAI or Anthropic account, each with its own credential to provision, inject, and rotate per environment.
 
-Neon's June 2026 platform preview collapses that list. The pitch is that the database, the compute, the storage, and the model gateway all come from one account and branch together. I wanted to know if that was real or a slide, so I built the canonical example end to end: an image-generating agent that takes a prompt, calls a model, stores the result, and indexes it in Postgres. This is the build log, with the real commands and output, and the parts where the preview still shows.
+Neon's June 2026 preview of its backend services collapses that list. The pitch is that the database, the compute, the storage, and the model gateway all come from one account and branch together. I wanted to know if that was real or a slide, so I built the canonical example end to end: an image-generating agent that takes a prompt, calls a model, stores the result, and indexes it in Postgres. This is the build log, with the real commands and output, and the parts where the preview still shows.
 
 (Companion repo: [The-DevOps-Daily/neon-ai-agent](https://github.com/The-DevOps-Daily/neon-ai-agent). Everything below ran against a fresh project created while writing.)
 
@@ -62,7 +66,7 @@ Three lines of intent: turn on the AI gateway, give me a bucket called `images`,
 
 ## Linking creates the project, deploying creates everything else
 
-`neon link` creates and attaches a Neon project. The new platform features are private preview, so there are two constraints worth stating up front: everything is in AWS `us-east-2`, and it only works on projects created inside the preview. Your existing Neon projects do not grow these features in place.
+`neon link` creates and attaches a Neon project. When I built this in June 2026, these features were a private preview with two constraints: everything was in AWS `us-east-2`, and it only worked on projects created inside the preview. Both limits were lifted at GA in September 2026; today you create the project in one of the four regions that run Functions, Object Storage, and the AI Gateway.
 
 Then `neon deploy` reads `neon.ts` and provisions the declared services. Here is the whole sequence, link through deploy:
 
@@ -70,7 +74,7 @@ Then `neon deploy` reads `neon.ts` and provisions the declared services. Here is
 {
   "title": "link + deploy",
   "steps": [
-    { "comment": "create the project (us-east-2, preview only)" },
+    { "comment": "create the project (us-east-2 in June 2026)" },
     { "cmd": "neonctl link --project-name ai-agent --region-id aws-us-east-2", "output": "Created project (\"ai-agent\") in aws-us-east-2 and linked .neon on branch main" },
     { "comment": "read neon.ts and provision everything it declares" },
     { "cmd": "neonctl deploy", "output": "Applied changes\n  create  service  bucket:images\n  create  service  function:imagegen\n\nFunction URLs\n  imagegen: https://br-green-star-...-imagegen.compute.c-3.us-east-2.aws.neon.tech/\n\nUtilized services: Postgres, Object Storage, Functions, AI Gateway\nPulled 11 Neon variables into .env.local" }
@@ -158,28 +162,28 @@ The response streams back as the agent narrates and draws, and afterward the sid
   1 | Draw a small minimalist server... | generated/9125d5b4-…-63b54a892695.jpg | 47372
 ```
 
-From an empty directory to a deployed agent that generates an image, stores it, and indexes it in Postgres took a few minutes and exactly one credential. The model call, the file write, and the database insert were all wired by the platform, not by me.
+From an empty directory to a deployed agent that generates an image, stores it, and indexes it in Postgres took a few minutes and exactly one credential. The model call, the file write, and the database insert were all wired by Neon, not by me.
 
-## Where it still shows the preview
+## Where it showed the preview
 
-The build was smooth, but it is private preview and a few seams are worth knowing before you plan around it.
+The build was smooth, but in June 2026 it was a private preview, and a few seams were worth knowing before you plan around it. Where that changed since, it says so.
 
 :::warning
-**One region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created inside the preview. You cannot bolt these features onto an existing production database today.
+**One region, new projects only (June 2026).** Everything was in AWS `us-east-2` and only worked on projects created inside the preview. That limit was lifted at GA: check [product availability by region](https://neon.com/docs/introduction/regions) for where each service runs, since a project's region cannot be changed.
 :::
 
-- **Functions are request/response, not a job runner.** Great for the agent's synchronous loop and streaming; background work (queues, retries, schedules) still belongs to something like Inngest or QStash.
+- **Functions are request/response, not a job runner.** Great for the agent's synchronous loop and streaming; queues and retries still belong to something like Inngest or QStash. Schedules no longer do: since September 2026 [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) run a function on a cron schedule or when a file lands in a bucket.
 - **Two gateway dialects, and it matters.** The `OPENAI_BASE_URL` Neon injects points at the OpenAI *Responses* API route. A plain chat-completions call needs the `mlflow` dialect route instead. I hit a `404` until I switched routes. The SKILL docs the template ships actually explain this, which is the kind of detail that saves you ten minutes if you read it first.
-- **Billing is half-public.** Per-model token prices are listed, but whether there is a markup or preview credits on top is not spelled out. Fine for a demo, a question to ask before a budget.
+- **Billing was half-public at preview.** It is documented now: Neon's [plans page](https://neon.com/docs/introduction/plans) says AI Gateway prices match each provider's list prices with no markup, drawn from prepaid credits.
 - **The convenience is also coupling.** One config file declaring your functions, buckets, and gateway is, by design, Neon-shaped. The S3-compatible API and standard SDKs keep the exit ramps wide, but this is a bet on one vendor for four things you used to buy separately.
 
 ## So is it real?
 
-Yes, with an asterisk for "preview." The genuinely useful part is not any single feature, it is that the four pieces an agent needs arrive together, branch together, and authenticate with one credential. If you have ever spent the first afternoon of an AI side project wiring a database to a compute host to an S3 bucket to a model provider, collapsing that into one `neon.ts` and one `deploy` is a real reduction in moving parts.
+Yes. The asterisk for "preview" is gone since September 2026. The useful part is not any single feature, it is that the four pieces an agent needs arrive together, branch together, and authenticate with one credential. If you have ever spent the first afternoon of an AI side project wiring a database to a compute host to an S3 bucket to a model provider, collapsing that into one `neon.ts` and one `deploy` is a real reduction in moving parts.
 
-Whether you should build on it today depends on your appetite for a private preview and for vendor consolidation. But as a statement of direction, an agent stack from one CLI is a clear one. We dig into the strategy behind it in [Neon is becoming a backend platform, not just Postgres](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres), and we benchmark the database side in the [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks). As these features leave preview, we will keep testing them the same way: real projects, real output, and the demo code published so you can run it yourself.
+Whether you should build on it depends on your appetite for vendor consolidation. But as a statement of direction, an agent stack from one CLI is a clear one. We dig into the strategy behind it in [Neon is becoming a backend platform, not just Postgres](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres), and we benchmark the database side in the [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks). These features left preview in September 2026, and we keep testing them the same way: real projects, real output, and the demo code published so you can run it yourself.
 
-The full project is on GitHub. Clone it, point `neonctl` at a new `us-east-2` project, and `deploy`:
+The full project is on GitHub. Clone it, point `neonctl` at a new project in a [region that runs Functions](https://neon.com/docs/introduction/regions) (we used `us-east-2`), and `deploy`:
 
 ```github
 https://github.com/The-DevOps-Daily/neon-ai-agent

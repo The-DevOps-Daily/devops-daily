@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-27'
 publishedAt: '2026-06-27T14:00:00Z'
-updatedAt: '2026-06-27T14:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -19,6 +19,10 @@ tags:
   - functions
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** this post was written on the June 2026 private preview, and the streaming runs below are from then. On 17 September 2026 [Neon Functions became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free. The `us-east-2`, new-projects-only limit is gone: Functions now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), and [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) can now start a function on a cron schedule or an Object Storage upload.
+:::
 
 An AI agent and a serverless function want different things. The agent wants to think, call a tool, stream some tokens, call another tool, and keep the connection open the whole time, which can be tens of seconds or more. A lot of serverless tiers want the opposite: do your work quickly and return, because the invocation has an execution cap. Put them together and you get the failure everyone who has shipped an agent has seen at least once: the response is still streaming when the platform decides time is up and closes the socket.
 
@@ -130,12 +134,12 @@ Two seconds is short because the model and the prompt are small. The reason this
 ## What it is, and what it is not
 
 :::warning
-**Private preview, one region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created inside the preview. Plan accordingly before building on it.
+**Private preview, one region, new projects only (June 2026).** When we wrote this, everything was in AWS `us-east-2` and only worked on projects created inside the preview. That limit was lifted at GA: Functions now run in four AWS regions, listed on Neon's [availability by region](https://neon.com/docs/introduction/regions) page.
 :::
 
 Two more things worth knowing before you reach for this:
 
-- **It is request/response, even when the response is long.** These functions answer a caller and can keep streaming to it for a long time, including over WebSockets and SSE. They are not a background job runner. Work that should outlive the request (queues, retries, scheduled tasks) belongs to something like Inngest or QStash.
+- **It is request/response, even when the response is long.** These functions answer a caller and can keep streaming to it for a long time, including over WebSockets and SSE. They are not a background job runner. Work that should outlive the request (queues, retries) belongs to something like Inngest or QStash. Scheduled tasks no longer need one: since September 2026 [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) run a function on a cron schedule or when a file lands in Object Storage.
 - **Idle functions can be evicted.** A long *active* stream is fine; a function sitting idle may be scaled to zero and cold-start on the next call. That is the usual serverless tradeoff, not a streaming-specific one.
 
 ## Who this is for

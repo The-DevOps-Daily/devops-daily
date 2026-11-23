@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-11'
 publishedAt: '2026-06-11T16:00:00Z'
-updatedAt: '2026-06-11T16:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
   - sre
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 23 November 2026:** every number in this post was measured in June 2026 and stays as measured. Two facts around them changed: Neon's auth, object storage, and functions, which were only announced when we ran these benchmarks, are now generally available, and Supabase now offers its PITR add-on on all compute sizes, not only Small and up. The verdict section is updated to match.
+:::
 
 Free tiers are where you evaluate a database. Paid tiers are where you operate one, and operating means the unglamorous verbs: resize the compute because traffic doubled, add a read replica because the dashboard queries are hurting, branch the database for a preview environment, restore because someone ran the wrong migration. Vendor documentation describes these operations. It rarely tells you how long they take, and it almost never tells you what they cost in downtime.
 
@@ -256,7 +260,7 @@ Both platforms absorb a 200-connection stampede in about a second, scaling near-
 
 We restored Neon branches to a point 60 seconds in the past, with 100k rows of data, eight runs per session: **5.6 to 6.9 seconds median** until the management API confirmed completion and SQL answered on the restored state. That is point-in-time recovery at interactive speed, and it comes included.
 
-On Supabase, point-in-time recovery is a $100/month add-on (per 7-day retention window, Small compute minimum), so we documented it rather than benchmarked it; daily backups are included on Pro but a daily backup is a very different promise from PITR when the bad migration ran at 14:47. If sub-minute-granularity recovery matters to your operation, price the add-on into the comparison.
+On Supabase, point-in-time recovery is a $100/month add-on (per 7-day retention window, on any compute size as of November 2026), so we documented it rather than benchmarked it; daily backups are included on Pro but a daily backup is a very different promise from PITR when the bad migration ran at 14:47. If sub-minute-granularity recovery matters to your operation, price the add-on into the comparison.
 
 ## The finding we didn't go looking for
 
@@ -305,6 +309,6 @@ A benchmark that reports only clean numbers is hiding something. Ours hit three 
 
 The free-tier conclusion was "pick on shape, not speed". The production-tier conclusion is sharper: **the operational gap is real, and it favors Neon almost everywhere it exists**. Resize without downtime vs a 39-second outage with a minutes-long cooldown; replicas in 8 seconds vs 3 minutes with compute prerequisites; branches with data vs without; included interactive PITR vs a $100/month add-on. The one place the platforms tie (connection stampedes) is the one place most teams assumed serverless Postgres would struggle, and neither does.
 
-What this verdict does not say: Supabase Pro still bundles auth, storage, realtime, and edge functions that Neon does not have today (announced, not shipped), and part one's conclusion stands: teams shipping a v1 product buy real velocity with that bundle. But if the database is the load-bearing component of your operation and you expect to resize, replicate, branch, and occasionally restore it, the operational benchmarks have a clear winner.
+What this verdict does not say: when we ran these benchmarks in June 2026, Supabase Pro bundled auth, storage, realtime, and edge functions that Neon had only announced. That gap has closed: Neon's [Managed Better Auth](https://neon.com/docs/auth/overview), [Object Storage](https://neon.com/docs/storage/overview), [Functions](https://neon.com/docs/compute/functions/overview), and AI Gateway became generally available in September 2026, and [Realtime](https://neon.com/docs/realtime/overview) followed as a public beta in October 2026. Supabase's bundle is the older and more proven one; we have not benchmarked Neon's new services here. But if the database is the load-bearing component of your operation and you expect to resize, replicate, branch, and occasionally restore it, the operational benchmarks have a clear winner.
 
 Every number above links to raw committed samples, the [live dashboard](https://postgres-benchmarks.devops-daily.com/) updates with every benchmark session, and the [harness is open source](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks): if you see something off in the methodology or get different numbers, open an issue or a pull request, corrections are welcome and credited. For the architectural side by side rather than the timings, our [full Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covers pricing models, PITR, and the bundled features in one place. Part three prices all of this against a growing application, including the cost crossover points nobody talks about.

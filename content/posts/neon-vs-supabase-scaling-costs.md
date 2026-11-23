@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-11'
 publishedAt: '2026-06-11T18:00:00Z'
-updatedAt: '2026-06-11T18:00:00Z'
+updatedAt: '2026-11-23T10:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,10 @@ tags:
 sponsorCampaign: 'neon'
 ---
 
+:::note
+**Updated 23 November 2026:** the cost model and its numbers are from June 2026 and stay as published. We rechecked the main list prices it uses on 23 November 2026 against [Neon's pricing page](https://neon.com/pricing) and [Supabase's pricing page](https://supabase.com/pricing): Neon Launch compute at $0.106 per CU-hour, storage at $0.35 per GB-month and extra branches at $1.50, and Supabase Pro at $25 with $10 of compute credits, $0.125 per GB of disk over 8 GB and $0.00325 per MAU over 100K are all unchanged. What changed is naming and scope: Neon Auth is now Managed Better Auth, and Neon's object storage and functions have shipped.
+:::
+
 Pricing pages answer the question "what does a unit cost". They are conspicuously silent on the question you actually have: "what will my application cost in a year, when it has real users?" The honest answer depends on workload shape, and workload shape changes as you grow, which is why the same two platforms can each be the cheap option at different points in the same product's life.
 
 This is part three of our Neon vs Supabase series ([free tiers](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks), [operational benchmarks](https://devops-daily.com/posts/neon-vs-supabase-operational-benchmarks)). Instead of benchmarking operations, we built a cost model: one application, five growth stages, priced on Neon Launch and Supabase Pro using list prices we verified against both pricing pages this week. The model is [open source in the same repo](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks) as the benchmarks (`npm run costs`), every price carries its source, and you can change the workload assumptions and rerun it for your own product.
@@ -30,7 +34,7 @@ This is part three of our Neon vs Supabase series ([free tiers](https://devops-d
 
 - There are **three cost regimes, not one winner**: Neon wins early (scale-to-zero means a quiet app costs almost nothing), Supabase wins the middle (a flat fee beats usage billing once the database runs hot but small), and Neon wins at scale by a wide margin.
 - The two **crossover points** sit roughly where your app stops sleeping (Supabase becomes competitive) and where your user count passes Supabase's included 100k monthly active users (Supabase stops being competitive, fast).
-- The scale-stage surprise: on Supabase, **the database is not the bill**. Metered auth MAU is. Our scale stage prices at $1,213/month on Supabase Pro, of which $975 is MAU overage; the same stage on Neon Launch is $278, because Neon Auth carries no per-MAU meter up to 1M users.
+- The scale-stage surprise: on Supabase, **the database is not the bill**. Metered auth MAU is. Our scale stage prices at $1,213/month on Supabase Pro, of which $975 is MAU overage; the same stage on Neon Launch is $278, because Neon's auth (now called Managed Better Auth) carries no per-MAU meter up to 1M users.
 - This comparison assumes you use each platform's bundled auth. If you bring your own auth provider, the picture changes substantially in Supabase's favor, and we show you where.
 
 ## The application and its growth
@@ -141,14 +145,14 @@ Disagree with the assumptions? Good: they are parameters, not conclusions. Clone
 
 That chart is the article. At 400k monthly active users, the compute (a Medium instance, $50 after credits) and even 200 GB of storage ($24) are rounding errors next to **$975 of MAU overage**: Supabase Auth includes 100k monthly active users on Pro and bills $0.00325 for each one beyond. Auth, the feature that felt free when you started, becomes 80% of the bill precisely when your product succeeds.
 
-Neon's side has no equivalent meter: Neon Auth (in beta) carries no per-MAU billing up to one million users on the paid plans, so the scale stage is honest compute and storage: $155 + $70 + $53 of always-active database, branches included.
+Neon's side has no equivalent meter: Managed Better Auth (called Neon Auth and in beta when we built this model, generally available since September 2026) carries no per-MAU billing up to one million users per project on the paid plans, so the scale stage is honest compute and storage: $155 + $70 + $53 of always-active database, branches included.
 
 Now the fairness flip, because this cuts both ways: **the comparison above assumes you use the bundled auth.** Plenty of teams run Clerk, Auth0, WorkOS, or their own auth regardless of database, and at 400k MAU those run hundreds to thousands of dollars a month on their own. If you bring your own auth, delete the MAU line from the Supabase column, and the scale stage becomes roughly $238 vs $278: a near-tie that Supabase arguably wins. The platform decision and the auth decision are one decision wearing two coats; make them together.
 
 ## What the model deliberately leaves out
 
 - **The PITR add-on** ($100/month on Supabase per 7-day window): add it if sub-minute recovery is a requirement; part two explains what you get on each platform without it.
-- **Replacement costs for the rest of the bundle**: if you would otherwise pay for storage, realtime, or edge functions separately, Supabase's flat fee is buying more than a database. Neon announced its own storage and functions in June 2026, but they have not shipped.
+- **Replacement costs for the rest of the bundle**: if you would otherwise pay for storage, realtime, or edge functions separately, Supabase's flat fee is buying more than a database. Neon's own [Object Storage](https://neon.com/docs/storage/overview) and [Functions](https://neon.com/docs/compute/functions/overview) were only announced when we built this model; both have been generally available since September 2026, with their own usage prices (Object Storage at $0.023 per GB-month on paid plans, Functions per capacity-hour and per million invocations). This model does not price either of them.
 - **Committed-use and enterprise discounts**, support tiers, and the Team/Scale tiers above these plans: that comparison is coming later in this series.
 - **Egress shape**: we model it linearly; a media-heavy product will not be linear, and Supabase's $0.09/GB beyond 250 GB deserves your own modeling if that is you.
 

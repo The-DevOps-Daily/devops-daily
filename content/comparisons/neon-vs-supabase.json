@@ -3,35 +3,36 @@
   "id": "neon-vs-supabase",
   "slug": "neon-vs-supabase",
   "title": "Neon vs Supabase",
-  "description": "A technical comparison of Neon and Supabase for hosted Postgres workloads in 2026. Covers architecture, branching, autoscaling, connection pooling, replication, pricing, and the trade-offs between a serverless Postgres engine and a full backend-as-a-service platform.",
+  "description": "A technical comparison of Neon and Supabase for hosted Postgres workloads in 2026. Covers architecture, branching, autoscaling, connection pooling, replication, pricing, and the backend services each one now ships around Postgres.",
   "category": "Databases",
   "tags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"],
   "createdDate": "2026-05-02T10:00:00Z",
-  "updatedDate": "2026-06-10T10:00:00Z",
+  "updatedDate": "2026-11-23T10:00:00Z",
   "estimatedReadTime": "13 min read",
-  "introduction": "If you want managed Postgres without standing up RDS yourself, Neon and Supabase are the two names that come up first. They look superficially similar. Both run Postgres, both have generous free tiers, both ship branching, both index pgvector for AI workloads, and as of 2026 both ship a managed authentication layer. Underneath, they are very different products solving very different problems.\n\nNeon is a serverless Postgres engine. The team rebuilt the bottom half of Postgres in Rust so that compute and storage can scale independently, then wrapped it in a control plane that exposes branching, autoscaling, and scale-to-zero as first-class primitives. It looks like Postgres to your application. Same wire protocol, same extensions, same SQL. But every dial that used to require operations work (provisioning, vacuuming pages off hot disks, building read replicas, restoring from a snapshot) is now a metadata operation. Databricks acquired Neon in 2025 and used the headroom to drop storage prices from $1.75 to $0.35 per GB-month, cut compute rates, and double the free tier's compute allowance. Neon Auth was rebuilt on Better Auth in late 2025 (currently in beta, with the earlier Stack Auth-based version kept on as legacy), narrowing the one application-layer gap reviewers used to flag, and the same architecture now powers Databricks' Lakebase as a technical proof point. The 2026 cadence has been heavy on AI-agent tooling. Neon Launchpad provisions a new database in about two seconds without an account, and `neon init` wires up Claude Code, Cursor, and VS Code directly, with MCP flows for Codex, Cline, Zed, and most other AI assistants in the wild.\n\nSupabase is a backend-as-a-service built around a regular Postgres instance. Each project gets a dedicated Postgres VM plus a stack of services on top: PostgREST for an instant REST API, Supabase Auth (which started life as a GoTrue fork), a Realtime server for websocket subscriptions, an S3-compatible Storage gateway, Supavisor for connection pooling, and Edge Functions on a Deno-compatible runtime for serverless logic. The marketing line is \"open-source Firebase alternative,\" and that framing is accurate. You trade some database-level control for a batteries-included backend that can ship a working product in a weekend. The platform is moving fast too: a $500M raise in June 2026 at a $10.5B valuation, a preview of Multigres for Vitess-style horizontal scaling, and a security overhaul that stopped auto-exposing database tables through the Data API on new projects.\n\nThe choice is rarely \"Postgres vs Postgres.\" It is about how much of the surrounding stack you want bundled with the database. This comparison walks through the dimensions that actually matter when picking between them: how branching works at the storage layer, what scale-to-zero means for your bill, where the connection pooling lives, and which platform handles the long tail of database operations (PITR, replicas, version coverage) without forcing you off the happy path.",
+  "introduction": "If you want managed Postgres without standing up RDS yourself, Neon and Supabase are the two names that come up first. They look superficially similar. Both run Postgres, both have generous free tiers, both ship branching, both index pgvector for AI workloads, and since September 2026 both bundle auth, object storage, and functions with the database. Underneath, they are very different products solving very different problems.\n\nNeon is a complete backend built on Lakebase Postgres, its serverless Postgres. The team rebuilt the bottom half of Postgres in Rust so that compute and storage can scale independently, then wrapped it in a control plane that exposes branching, autoscaling, and scale-to-zero as first-class primitives. It looks like Postgres to your application. Same wire protocol, same extensions, same SQL. But every dial that used to require operations work (provisioning, vacuuming pages off hot disks, building read replicas, restoring from a snapshot) is now a metadata operation. Databricks acquired Neon in 2025 and used the headroom to drop storage prices from $1.75 to $0.35 per GB-month, cut compute rates, and double the free tier's compute allowance. In June 2026 Neon added Object Storage, Functions, and an AI Gateway around the database, and on 17 September 2026 those, together with Managed Better Auth (the Better Auth-based rebuild of Neon Auth), became generally available. Realtime followed as a public beta in October 2026. Each branch carries its own copy of that backend, so a preview gets its own data, files, and users. The same architecture powers Databricks' Lakebase. The 2026 cadence has been heavy on AI-agent tooling. Claimable Neon (the account-free database formerly called Neon Launchpad) provisions a new database in about two seconds without an account, and `neon init` wires up Claude Code, Cursor, and VS Code directly, with MCP flows for Codex, Cline, Zed, and most other AI assistants in the wild.\n\nSupabase is a backend-as-a-service built around a regular Postgres instance. Each project gets a dedicated Postgres VM plus a stack of services on top: PostgREST for an instant REST API, Supabase Auth (which started life as a GoTrue fork), a Realtime server for websocket subscriptions, an S3-compatible Storage gateway, Supavisor for connection pooling, and Edge Functions on a Deno-compatible runtime for serverless logic. The marketing line is \"open-source Firebase alternative,\" and that framing is accurate. You trade some database-level control for a batteries-included backend that can ship a working product in a weekend. The platform is moving fast too: a $500M raise in June 2026 at a $10.5B valuation, a preview of Multigres for Vitess-style horizontal scaling, and a security overhaul that stopped auto-exposing database tables through the Data API on new projects.\n\nThe choice is rarely \"Postgres vs Postgres.\" Both now bundle a backend; the difference is how it is built, how mature each piece is, and what it costs as you add previews, users, and projects. This comparison walks through the dimensions that actually matter when picking between them: how branching works at the storage layer, what scale-to-zero means for your bill, where the connection pooling lives, and which platform handles the long tail of database operations (PITR, replicas, version coverage) without forcing you off the happy path. Prices and plan limits on this page were checked against both vendors' live pricing pages and docs on 23 November 2026.",
   "toolA": {
     "name": "Neon",
     "icon": "Database",
     "website": "https://neon.com",
-    "description": "A serverless Postgres platform with separated compute and storage. Branching is copy-on-write at the storage layer, autoscaling is built in, and idle databases scale to zero. Postgres-native, so existing extensions, ORMs, and tooling work without modification.",
+    "description": "A complete backend built on Lakebase Postgres, with separated compute and storage. Branching is copy-on-write at the storage layer, autoscaling is built in, and idle databases scale to zero. Managed Better Auth, Object Storage, Functions, an AI Gateway, the Data API, and Realtime (public beta) sit next to the database and branch with it.",
     "color": "#00E699",
     "pros": [
       "Copy-on-write branching at the storage layer creates a full data branch in milliseconds regardless of database size",
       "Scale-to-zero on idle and autoscaling between 0.25 and 16 CU mean you only pay for the compute you actually use",
       "Custom Rust storage engine (Pageservers + Safekeepers) decouples compute restarts from data durability and restores to any timestamp or LSN in seconds",
-      "Postgres 14 through 18, with 18 the default for new projects. The broadest version coverage among managed serverless Postgres providers",
+      "Postgres 14 through 19, with 18 the default for new projects. The broadest version coverage among managed serverless Postgres providers",
       "Native serverless driver over WebSockets removes TCP setup cost on Vercel Functions, Cloudflare Workers, and other edge runtimes",
       "Read replicas are first-class compute endpoints that share storage with the primary, so adding one is an API call rather than a streaming-replication setup",
       "Postgres-native: every wire-protocol client, ORM, migration tool, and extension that runs on vanilla Postgres works without special drivers",
-      "Neon Auth (rebuilt on Better Auth, currently beta) ships managed authentication with users in the neon_auth schema, isolated per branch, and queryable via SQL and RLS"
+      "Managed Better Auth ships authentication with users in the neon_auth schema, isolated per branch, queryable via SQL and RLS, and included up to 1M monthly active users per project on paid plans (60K on Free)",
+      "The whole backend branches: a branch gets its own Object Storage buckets, Functions, and auth users, so a preview environment is a copy of the backend, not just the database"
     ],
     "cons": [
-      "No bundled object storage, realtime server, or edge-functions runtime yet. Pair Neon with S3/R2 and your own serverless platform today; Neon announced S3-compatible branching object storage, serverless functions, and an AI gateway as coming soon in June 2026",
+      "The backend services are younger than Supabase's: Object Storage, Functions, the AI Gateway, and Managed Better Auth went GA in September 2026, Realtime is a public beta since October 2026, and Functions, Object Storage, the AI Gateway, and Realtime run in four of Neon's eight AWS regions so far",
       "Cold-start latency on scale-to-zero compute is typically 300-500 ms, which matters for the very first request after an idle window",
       "Compute sizes above 16 CU are fixed-size (no autoscaling), so the largest workloads still need manual capacity planning",
       "Some Postgres extensions take longer to land than on a self-managed instance because they have to be vetted against the Pageserver",
-      "Smaller community than Supabase for application-layer recipes, since Neon is squarely a database product"
+      "Smaller community than Supabase for application-layer recipes and mobile SDKs, and Functions are not a job queue: queued, retryable work still needs a queue such as Inngest or Upstash QStash"
     ]
   },
   "toolB": {
@@ -79,7 +80,7 @@
     {
       "name": "Postgres Version Coverage",
       "category": "Compatibility",
-      "toolA": { "value": "Postgres 14 through 18 (18 default for new projects); you choose the major version per project", "rating": "good" },
+      "toolA": { "value": "Postgres 14 through 19 (18 default for new projects, 19 available since its release day); you choose the major version per project", "rating": "good" },
       "toolB": { "value": "New projects run Postgres 17; older majors live on existing projects until forced upgrade (Postgres 14 support ends July 2026)", "rating": "neutral" }
     },
     {
@@ -98,7 +99,7 @@
       "name": "Point-in-Time Recovery",
       "category": "Operations",
       "toolA": { "value": "Restore any branch to a timestamp or LSN in seconds; up to 30 days of restore window on Scale, 7 days on Launch, 6 hours on Free", "rating": "good" },
-      "toolB": { "value": "Daily backups on Pro (7 days retained); PITR is a paid add-on from $100/month per 7-day window, requiring Small compute or larger", "rating": "neutral" }
+      "toolB": { "value": "Daily backups on Pro (7 days retained); PITR is a paid add-on from $100/month per 7-day window, available on all compute sizes", "rating": "neutral" }
     },
     {
       "name": "Vector / pgvector for AI",
@@ -109,19 +110,19 @@
     {
       "name": "Authentication & RLS",
       "category": "Application Layer",
-      "toolA": { "value": "Neon Auth (rebuilt on Better Auth, beta) stores users/sessions/config in the neon_auth schema; queryable with SQL and RLS; per-branch auth environments mirror database branching", "rating": "good" },
+      "toolA": { "value": "Managed Better Auth (GA since September 2026) stores users/sessions/config in the neon_auth schema; queryable with SQL and RLS; per-branch auth environments mirror database branching; no per-MAU charge up to 1M users per project on paid plans", "rating": "good" },
       "toolB": { "value": "Supabase Auth with email, OAuth, magic links, phone, passkeys, SAML SSO, and custom OIDC providers; the most mature managed-Postgres auth offering with deep RLS integration", "rating": "good" }
     },
     {
       "name": "Realtime Subscriptions",
       "category": "Application Layer",
-      "toolA": { "value": "Native Postgres LISTEN/NOTIFY plus logical replication; subscribers integrate via your own WebSocket layer", "rating": "neutral" },
+      "toolA": { "value": "Neon Realtime (public beta since October 2026, free during the beta) lets clients subscribe to a SQL query; available in four AWS regions, and in our October measurements most joins and every aggregate were re-sent in full on each change", "rating": "neutral" },
       "toolB": { "value": "Realtime server multiplexes Postgres changes onto WebSocket channels; 500 concurrent connections included on Pro, scaling to 10K+ with spend cap off or on Team and above", "rating": "good" }
     },
     {
       "name": "Storage & Edge Functions",
       "category": "Application Layer",
-      "toolA": { "value": "No bundled object storage or function runtime; pairs with S3, R2, or any serverless platform of your choice", "rating": "neutral" },
+      "toolA": { "value": "S3-compatible Object Storage that branches with the database, and long-running Node.js Functions deployed onto a branch, with cron and upload triggers; both on every plan, including Free (5 GB of storage and 1M invocations per project)", "rating": "good" },
       "toolB": { "value": "S3-compatible Storage and Deno-based Edge Functions on every plan; image transformations are Pro and above", "rating": "good" }
     },
     {
@@ -151,13 +152,13 @@
     {
       "name": "Auto-Generated APIs",
       "category": "Application Layer",
-      "toolA": { "value": "No bundled API layer; pair with PostgREST, Hasura, or pg_graphql yourself when you need an instant REST or GraphQL endpoint", "rating": "neutral" },
+      "toolA": { "value": "Data API: a managed, PostgREST-compatible REST interface authorized by your GRANTs and RLS policies, included on every plan; no GraphQL layer, so pair with Hasura or pg_graphql if you need one", "rating": "good" },
       "toolB": { "value": "PostgREST REST and pg_graphql GraphQL APIs that mirror the schema and respect RLS; since May 2026 new projects require explicit grants to expose tables, and pg_graphql is opt-in", "rating": "good" }
     },
     {
       "name": "AI Agent & MCP Tooling",
       "category": "Developer Workflow",
-      "toolA": { "value": "Neon Launchpad provisions an account-free database in about two seconds; the claimable-postgres agent skill lets agents grab a connection string autonomously; neon init wires up Claude Code, Cursor, and VS Code, with MCP flows for Codex, Cline, Zed, and more", "rating": "good" },
+      "toolA": { "value": "Claimable Neon provisions an account-free database in about two seconds that a human can claim later; agent skills let assistants grab a connection string autonomously; one AI Gateway credential reaches models from several providers; neon init wires up Claude Code, Cursor, and VS Code, with MCP flows for Codex, Cline, Zed, and more", "rating": "good" },
       "toolB": { "value": "MCP server for Supabase exposes schema and RLS context; `mcp-use` SDK runs MCP servers on Edge Functions; CLI integrates with the major AI IDEs but the agent-native workflow story is younger", "rating": "neutral" }
     }
   ],
@@ -175,7 +176,7 @@
     {
       "scenario": "B2C consumer product that needs auth, storage, file uploads, and realtime presence on day one",
       "recommendation": "toolB",
-      "explanation": "Supabase's bundled stack shortens time-to-launch when you'd otherwise be wiring up Auth0, S3, Pusher, and PostgREST yourself. The trade-off is operational coupling: if Realtime has an incident, your database can be affected. For a small team shipping a v1, the integration cost saved is usually worth it."
+      "explanation": "Both bundles shorten time-to-launch when you'd otherwise be wiring up Auth0, S3, Pusher, and PostgREST yourself. Supabase's is the longer-running one, with mobile SDKs and a Realtime server that is out of beta. Neon's pieces branch with the database, and Managed Better Auth has no per-MAU meter up to 1M users, which matters once a consumer product grows past the 100K MAU included in Supabase Pro. For a small team that needs presence on day one, Supabase is the safer pick today."
     },
     {
       "scenario": "Background-worker product with bursty Sidekiq/BullMQ traffic and long idle stretches overnight",
@@ -185,7 +186,7 @@
     {
       "scenario": "Mobile app with thousands of simultaneous WebSocket connections subscribing to row changes",
       "recommendation": "toolB",
-      "explanation": "Supabase Realtime is purpose-built for this and ships with the platform. You can build the same thing on Neon with logical replication and your own server, but the integration cost is real, especially for the auth-aware row-level filtering that Realtime gives you for free against RLS policies."
+      "explanation": "Supabase Realtime is purpose-built for this and has been in production for years, with auth-aware filtering against RLS policies. Neon Realtime, a public beta since October 2026, lets clients subscribe to a SQL query, but for a product that lives on thousands of concurrent row subscriptions the established service is the lower-risk choice."
     },
     {
       "scenario": "RAG pipeline storing tens of millions of embeddings with sparse, spiky retrieval traffic",
@@ -195,22 +196,22 @@
     {
       "scenario": "AI agent or autonomous tool that needs to spin up disposable test databases with specific seed data",
       "recommendation": "toolA",
-      "explanation": "Neon ships specifically for this loop. Neon Launchpad provisions a brand-new database in about two seconds without an account, the claimable-postgres agent skill lets an assistant claim one autonomously, and `neon init` integrates with Claude Code, Cursor, and VS Code directly plus MCP flows for Codex, Cline, Zed, and most other AI assistants. Branching from a known-good parent database in milliseconds is the same primitive used to reset state between runs. Migration-based provisioning is too slow for an agent loop."
+      "explanation": "Neon ships specifically for this loop. Claimable Neon provisions a brand-new database in about two seconds without an account, agent skills let an assistant claim one autonomously, and `neon init` integrates with Claude Code, Cursor, and VS Code directly plus MCP flows for Codex, Cline, Zed, and most other AI assistants. Branching from a known-good parent database in milliseconds is the same primitive used to reset state between runs. Migration-based provisioning is too slow for an agent loop."
     },
     {
       "scenario": "Existing app with a complex schema and hundreds of migrations moving from RDS to a managed serverless option",
       "recommendation": "toolA",
-      "explanation": "Postgres-native compatibility matters most here. Neon supports Postgres 14-18 and accepts the same migrations, extensions, and ORM configurations as RDS. Supabase imposes a coupled Auth/Realtime/Storage stack that may conflict with your existing application-layer choices."
+      "explanation": "Postgres-native compatibility matters most here. Neon supports Postgres 14-19 and accepts the same migrations, extensions, and ORM configurations as RDS. Supabase imposes a coupled Auth/Realtime/Storage stack that may conflict with your existing application-layer choices."
     },
     {
       "scenario": "Internal admin tool or back-office app that wants instant REST and GraphQL APIs over a schema",
       "recommendation": "toolB",
-      "explanation": "PostgREST and pg_graphql come with Supabase (on new projects you grant table access explicitly and flip pg_graphql on, a one-time setup since the May 2026 security changes), and the auto-generated TypeScript types make a typed admin UI nearly drop-in. On Neon you'd reach for Hasura, PostgREST, or write the API yourself, which is fine but adds a moving piece you don't strictly need."
+      "explanation": "PostgREST and pg_graphql come with Supabase (on new projects you grant table access explicitly and flip pg_graphql on, a one-time setup since the May 2026 security changes), and the auto-generated TypeScript types make a typed admin UI nearly drop-in. Neon's Data API gives you PostgREST-compatible REST over the same schema; for GraphQL and generated admin types you'd add a piece yourself."
     },
     {
       "scenario": "Mobile-first product where the iOS, Android, and React Native SDK story matters as much as the database",
       "recommendation": "toolB",
-      "explanation": "Supabase ships well-tested mobile SDKs that bundle auth, realtime, and storage in one client. Neon is a database. Perfectly usable from a mobile app via your own backend, but you'll be doing the SDK integration work yourself."
+      "explanation": "Supabase ships well-tested mobile SDKs that bundle auth, realtime, and storage in one client. Neon's backend works from a mobile app through Managed Better Auth, the Data API, and Functions, but you'll be doing more of the client SDK integration work yourself."
     }
   ],
   "faqs": [
@@ -224,7 +225,7 @@
     },
     {
       "question": "If I'm already on Supabase, is migrating to Neon hard?",
-      "answer": "The database side is straightforward: pg_dump from Supabase, pg_restore into Neon, repoint your connection string. The harder part is the auth/storage/realtime layers, which are Supabase-specific. You either keep Supabase for those and use Neon as the application database, or you replace each layer (Clerk/WorkOS for auth, R2/S3 for storage, your own WebSocket gateway for realtime) at your own pace."
+      "answer": "The database side is straightforward: pg_dump from Supabase, pg_restore into Neon, repoint your connection string. The harder part is the auth/storage/realtime layers, which are Supabase-specific. Each now has a Neon counterpart you can move to at your own pace: Managed Better Auth for auth, S3-compatible Object Storage for files, Functions for Edge Functions, and Realtime (public beta) for subscriptions. Or keep Supabase for some of them and use Neon as the application database."
     },
     {
       "question": "Does Supabase support branching the same way Neon does?",
@@ -236,15 +237,15 @@
     },
     {
       "question": "How do the free tiers actually compare in practice?",
-      "answer": "Neon's free tier gives you 100 CU-hours per project per month, 0.5 GB storage per project, and up to 100 projects. Free databases scale to zero after 5 minutes of inactivity (you can't disable that on the free plan), but they wake automatically on the next connection in well under a second. Supabase's free tier gives you 500 MB database, 1 GB storage, 50K MAUs, 500K edge function calls across a maximum of 2 active projects, but pauses any project after 7 days of inactivity, and a paused project stays down until you restore it from the dashboard. For a side project that gets traffic in fits and starts, Neon's behavior is more forgiving: idle costs nothing and recovery is automatic."
+      "answer": "Neon's Free plan gives you up to 100 projects, each with 100 CU-hours per month and 1 GB of Postgres storage (up from 0.5 GB on 2 October 2026, 20 GB across all projects), plus Managed Better Auth up to 60K MAU, 5 GB of Object Storage, and Functions with 1M invocations per project. Free databases scale to zero after 5 minutes of inactivity (you can't disable that on the free plan), but they wake automatically on the next connection in well under a second. Supabase's free tier gives you 500 MB database, 1 GB storage, 50K MAUs, 500K edge function calls across a maximum of 2 active projects, but pauses any project after 7 days of inactivity, and a paused project stays down until you restore it from the dashboard. For a side project that gets traffic in fits and starts, Neon's behavior is more forgiving: idle costs nothing and recovery is automatic. (Both free plans verified on 23 November 2026 against neon.com/pricing and supabase.com/pricing.)"
     },
     {
       "question": "Which one has better tooling for AI agents and Cursor/Claude Code workflows?",
-      "answer": "Both ship official MCP servers now. Neon's pairs with a clean management API, account-free Launchpad databases, and a branching model that maps naturally to agent reset-state semantics: spawn a branch, run experiment, drop branch. Supabase's MCP server exposes schema and SQL access, and you can even host your own MCP servers on Edge Functions, but provisioning a fresh environment still means standing up a project or branch instance, which is a slower loop than Neon's millisecond copy-on-write branches."
+      "answer": "Both ship official MCP servers now. Neon's pairs with a clean management API, account-free Claimable Neon databases, an AI Gateway behind one credential, and a branching model that maps naturally to agent reset-state semantics: spawn a branch, run experiment, drop branch. Supabase's MCP server exposes schema and SQL access, and you can even host your own MCP servers on Edge Functions, but provisioning a fresh environment still means standing up a project or branch instance, which is a slower loop than Neon's millisecond copy-on-write branches."
     },
     {
       "question": "Doesn't Supabase have an auth advantage that Neon can't match?",
-      "answer": "Less true now than it used to be, but Supabase still leads here. Neon Auth was rebuilt on Better Auth in late 2025 and is currently in beta (the earlier Stack Auth-based version is legacy-only): users, sessions, and configuration land in the neon_auth schema and are queryable like any other Postgres data, RLS policies work out of the box, and every database branch gets its own isolated auth environment. Supabase Auth is the more mature product, with a broader provider list, more SSO integrations, and a longer-running ecosystem, but the binary 'Neon doesn't do auth' framing no longer holds."
+      "answer": "Not the way it used to. Managed Better Auth, Neon's auth built on Better Auth (it replaced the earlier Stack Auth-based Neon Auth, which no longer takes new users), went generally available in September 2026: users, sessions, and configuration land in the neon_auth schema and are queryable like any other Postgres data, RLS policies work out of the box, and every database branch gets its own isolated auth environment. It is included up to 1M monthly active users per project on paid plans, where Supabase Pro bills $0.00325 per MAU above 100K. Supabase Auth has the longer track record and a broad provider list (SAML SSO and phone login among them), so check the providers you need, but the 'Neon doesn't do auth' framing no longer holds."
     }
   ],
   "decisionMatrix": [
@@ -253,8 +254,8 @@
       "recommendation": "toolA"
     },
     {
-      "criteria": "You need authentication, storage, realtime, and edge functions bundled with the database",
-      "recommendation": "toolB"
+      "criteria": "You want auth, storage, and functions bundled with the database, and branched with it for every preview",
+      "recommendation": "toolA"
     },
     {
       "criteria": "You run preview environments per pull request with full production-like data",
@@ -273,7 +274,7 @@
       "recommendation": "toolA"
     },
     {
-      "criteria": "You want to ship a working backend in a weekend without picking auth, storage, and realtime providers",
+      "criteria": "You want the longest-running bundled backend, with mature mobile SDKs and Realtime out of beta",
       "recommendation": "toolB"
     },
     {
@@ -282,10 +283,10 @@
     }
   ],
   "verdict": {
-    "summary": "Neon and Supabase solve different problems and both do their thing well. Neon is a serverless Postgres engine. Branching, autoscaling, and scale-to-zero are baked into the storage layer, and the wire-protocol contract is plain Postgres. Supabase is a backend-as-a-service built around a regular Postgres instance, bundling auth, realtime, storage, and edge functions so a small team can ship an entire product without picking each layer separately. The choice is rarely about which is better in the abstract. It is about whether you want a database that fits anywhere or a backend that ships faster.",
+    "summary": "Neon and Supabase both bundle a backend around Postgres now, and they build it differently. Neon is a complete backend built on Lakebase Postgres: branching, autoscaling, and scale-to-zero are baked into the storage layer, the wire-protocol contract is plain Postgres, and Managed Better Auth, Object Storage, and Functions branch with the database. Supabase is a backend-as-a-service built around a dedicated Postgres instance, with a longer-running bundle of auth, realtime, storage, and edge functions. The choice comes down to whether you want a backend that branches and scales to zero, or the more established bundle and its mobile SDKs.",
     "toolAScore": 4.4,
     "toolBScore": 3.9,
-    "recommendation": "Choose Neon when Postgres is the primary thing you need from the platform: serverless apps, ephemeral CI environments, agent-driven test loops, RAG workloads with bursty traffic, or migrations away from RDS where you don't want to inherit a coupled BaaS stack. Choose Supabase when the auth/storage/realtime/auto-API bundle is the real value proposition, like internal tools, mobile-first products, and v1 launches where saving on integration time matters more than fine-grained control over each layer."
+    "recommendation": "Choose Neon for serverless apps, preview environments that need a full copy of the backend, agent-driven test loops, bursty RAG workloads, apps that will grow past 100K monthly active users, and migrations away from RDS. Choose Supabase for mobile-first products, products built on heavy realtime subscriptions, and internal tools that want instant GraphQL and generated types."
   },
   "relatedTags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"],
   "relatedLinks": [
