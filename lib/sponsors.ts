@@ -73,16 +73,6 @@ export const sponsors: Sponsor[] = [
       'Bitrise Build Hub runs your GitHub Actions jobs on M4 Macs and AMD Linux machines. Change runs-on and keep your workflows, secrets and logs on GitHub.',
   },
   {
-    name: 'Atomsized',
-    logo: '/atomsized.svg',
-    darkLogo: '/atomsized-light.svg',
-    url: 'https://atomsized.com/',
-    goSlug: 'atomsized',
-    tagline: 'AWS platform engineering and GitOps',
-    description:
-      'Design and automation for reliable AWS and Kubernetes platforms, safer delivery workflows, and preview and UAT environments your engineers can understand and own.',
-  },
-  {
     name: 'Plakar',
     logo: '/plakar-brand.svg',
     darkLogo: '/plakar-brand-light.svg',
@@ -91,6 +81,16 @@ export const sponsors: Sponsor[] = [
     tagline: 'Open-source backup and restore',
     description:
       'Encrypted, deduplicated snapshots with instant browsing and restore, across clouds and on-prem. Open source, with developer-friendly tooling.',
+  },
+  {
+    name: 'Atomsized',
+    logo: '/atomsized.svg',
+    darkLogo: '/atomsized-light.svg',
+    url: 'https://atomsized.com/',
+    goSlug: 'atomsized',
+    tagline: 'AWS platform engineering and GitOps',
+    description:
+      'Design and automation for reliable AWS and Kubernetes platforms, safer delivery workflows, and preview and UAT environments your engineers can understand and own.',
   },
   {
     name: 'DigitalOcean',
