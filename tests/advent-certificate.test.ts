@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ADVENTS,
   certificateUrl,
+  cleanName,
   entryDetails,
   formatCertificateDate,
   isCertificateId,
@@ -40,7 +41,16 @@ describe('certificate ids', () => {
 });
 
 describe('certificate names', () => {
-  it.each(['Jane Doe', 'José Álvarez-Núñez', '李小龍', "Conan O'Brien"])('accepts %s', (name) => {
+  it.each([
+    'Jane Doe',
+    'José Álvarez-Núñez',
+    '李小龍',
+    "Conan O'Brien",
+    'D\u2019Angelo Russo',
+    'J. R. R. Tolkien',
+    'Jean-Luc Picard',
+    'Zoë Saldaña',
+  ])('accepts %s', (name) => {
     expect(nameProblem(name)).toBeNull();
   });
 
@@ -48,12 +58,48 @@ describe('certificate names', () => {
     '',
     'J',
     '1234',
+    'Jane Doe 2',
     'Visit https://spam.example',
     'www.spam.test',
     'me@example.com',
     '<b>x</b>',
+    'example.com',
+    'example.c0m',
+    'Jane example.store',
+    'Jane Doe, call now',
+    'Jane  -Doe',
+    // fullwidth dot: NFKC turns it into "." and the allowlist refuses it
+    'example\uff0ecom',
+    // zero-width space hiding a domain
+    'exa\u200bmple.com',
+    'Jane\u200bDoe',
+    // right-to-left override that would flip how the name reads
+    'Jane \u202emoc.elpmaxe',
+    'Jane\u2066Doe\u2069',
+    'A'.repeat(61),
   ])('rejects %j', (name) => {
     expect(nameProblem(name)).not.toBeNull();
+  });
+
+  it('normalises compatibility characters and spacing', () => {
+    expect(cleanName('  \uff2aane   Doe ')).toBe('Jane Doe');
+  });
+
+  it('refuses the same names on the public page', () => {
+    for (const name of [
+      'example\uff0ecom',
+      'Jane \u202emoc.elpmaxe',
+      'exa\u200bmple.com',
+      'example.c0m',
+    ]) {
+      const params = new URLSearchParams({
+        name,
+        days: '25',
+        date: '2026-12-25',
+        id: 'AOD26-7K2M9X',
+      });
+      expect(parseCertificateParams(devops, params), name).toBeNull();
+    }
   });
 });
 

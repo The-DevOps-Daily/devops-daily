@@ -93,27 +93,35 @@ export function isCertificateId(advent: AdventEvent, id: string): boolean {
   return ID_PATTERN.test(id) && id.startsWith(`${advent.idPrefix}-`);
 }
 
-/** Collapses whitespace and drops control characters. */
+/** NFKC, no control or format characters (zero-width, bidi), single spaces. */
 export function cleanName(raw: string): string {
   return raw
-    .replace(/[\u0000-\u001f\u007f-\u009f]/g, ' ')
+    .normalize('NFKC')
+    .replace(/[\p{Cc}\p{Cf}]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, MAX_NAME_LENGTH);
 }
 
-/**
- * A name that can go on a certificate: 2 to 60 characters with a letter in it, and
- * no links or addresses, so a certificate URL cannot be used to show one.
- */
+// A name is words of letters (with their combining marks), joined by single
+// spaces. Inside a word: an apostrophe or hyphen between letters. At the end of
+// a word: one period, for an initial. No digits, no other punctuation, so the
+// name cannot spell a link, a domain or an address on a devops-daily.com page.
+const NAME_WORD = String.raw`(?:\p{L}\p{M}*)+(?:['\u2019-](?:\p{L}\p{M}*)+)*\.?`;
+const NAME_PATTERN = new RegExp(`^${NAME_WORD}(?: ${NAME_WORD})*$`, 'u');
+
+/** Why a name cannot go on a certificate, or null when it can. */
 export function nameProblem(raw: string): string | null {
+  const normalized = raw.normalize('NFKC');
+  if (/[\p{Cc}\p{Cf}]/u.test(normalized.replace(/[\t\n\r]/g, ' '))) {
+    return 'Use letters, spaces, apostrophes and hyphens only.';
+  }
   const name = cleanName(raw);
   if (name.length < 2) return 'Type your name.';
-  if (raw.trim().length > MAX_NAME_LENGTH) return `Use ${MAX_NAME_LENGTH} characters or fewer.`;
-  if (!/\p{L}/u.test(name)) return 'Use letters in your name.';
-  if (/https?:|www\.|@|[<>]|\.(com|net|org|io|dev|xyz|ru)\b/i.test(name)) {
-    return 'A name cannot contain a link or an email address.';
+  if (normalized.trim().replace(/\s+/g, ' ').length > MAX_NAME_LENGTH) {
+    return `Use ${MAX_NAME_LENGTH} characters or fewer.`;
   }
+  if (!NAME_PATTERN.test(name)) return 'Use letters, spaces, apostrophes and hyphens only.';
   return null;
 }
 
