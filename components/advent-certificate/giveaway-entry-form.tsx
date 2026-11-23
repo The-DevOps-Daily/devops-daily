@@ -22,7 +22,7 @@ import {
 // The SMTPfast signup form for the giveaway, in its own SMTPfast team so entries
 // never join the newsletter list. Empty until the form exists: the page then
 // says the form opens soon.
-export const GIVEAWAY_FORM_ID = 'cmwt8hzxn000mpqut7vt708v2';
+export const GIVEAWAY_FORM_ID = '';
 const SUBMIT_TIMEOUT_MS = 10_000;
 
 const KEYS: AdventKey[] = ['devops', 'postgres'];
