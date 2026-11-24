@@ -169,6 +169,8 @@ The memory figure is the one that changes designs. 128 MB is not a per-request a
 
 The CPU figure is worth reading twice, because CPU time is not wall-clock time. Waiting on a fetch is not CPU. A 10 ms CPU budget is far more generous than it sounds for a service that mostly calls other services, and completely unworkable for one that does real computation.
 
+For what these limits look like on a real free-plan app over a month, see [A Link Tracker on the Cloudflare Free Plan: 30 Days of Numbers Against Every Limit](/posts/cloudflare-free-plan-link-tracker-limits-measured). The 10 ms CPU limit turned out to be softer than it reads, and D1 rows read mattered more than requests.
+
 ## Where the vendors actually sit
 
 The word "edge" is doing too much work in most of this market. It is more useful to sort by what happens between requests.
