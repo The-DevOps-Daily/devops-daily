@@ -6,7 +6,7 @@ category:
   slug: 'cloud'
 date: '2026-09-28'
 publishedAt: '2026-09-28T09:00:00Z'
-updatedAt: '2026-09-28T15:00:00Z'
+updatedAt: '2026-11-24T19:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
@@ -117,7 +117,7 @@ List prices on 28 September 2026. "Active" means CPU is billed only while it is 
 | Vercel Sandbox                   | GA      | Firecracker microVM | $0.128, active    | $0.0212 per GB       | 8 vCPU (Pro), 32 (Enterprise) | 24 h (Pro)                            | About 20     |
 | Modal Sandboxes                  | GA      | gVisor              | about $0.071      | $0.024 per GiB       | Not stated                    | 24 h                                  | Not stated   |
 
-Note on DigitalOcean: its price is quoted per vCPU-hour of actual use, but active-CPU billing is "coming soon". Until then it bills 25% of the vCPUs you allocate, whatever the agent does. Microsoft's public pricing page shows placeholders; its rates above come from Microsoft's Azure Retail Prices API.
+Note on DigitalOcean: when this was written, active-CPU billing was "coming soon" and DigitalOcean billed 25% of the vCPUs you allocate. Updated 24 November 2026: it now bills the CPU a session actually uses ($0.044 per vCPU-hour) plus allocated memory ($0.0095 per GB-hour), per second, with no compute charge while paused. The worked example below assumes 25% average CPU, so its total is the same under the new rule. Microsoft's public pricing page shows placeholders; its rates above come from Microsoft's Azure Retail Prices API.
 
 ## 1. DigitalOcean Managed Agents
 
