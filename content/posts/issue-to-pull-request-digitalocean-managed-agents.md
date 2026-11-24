@@ -269,7 +269,7 @@ GitHub and the model endpoint still work, because the platform adds those hosts 
 
 The `file.write` rule for `/workspace/**` did not cover OpenCode's `edit` and `write` tools in these runs, so `default: deny` refused them. The agent did not stop. It changed the files through `bash` instead, with `sed -i` and `cat >` heredocs, which we had allowed. Every merged fix in this post was written that way.
 
-DigitalOcean's docs warn about exactly this: "Rules match literally ... A denied action doesn't block the goal behind it." If `bash` is allowed, the agent can do anything `bash` can do inside the sandbox, whatever the other rules say. Treat tool rules as a way to shape the agent's behaviour, and treat the microVM, the missing credentials and the egress allowlist as the security boundary.
+DigitalOcean's docs warn about exactly this: "Rules match literally ... A denied action doesn't block the goal behind it." If `bash` is allowed, the agent can do anything `bash` can do inside the sandbox, whatever the other rules say. Treat tool rules as a way to shape the agent's behaviour, and treat the microVM, the missing credentials and the egress allowlist as the security boundary. For how that microVM, its pause and its billing compare with Render, Vercel, Cloudflare, E2B and Daytona, see [our AI agent sandbox comparison](/posts/ai-agent-sandboxes-compared-render-vercel-cloudflare-e2b-daytona).
 
 ## What it cost
 
