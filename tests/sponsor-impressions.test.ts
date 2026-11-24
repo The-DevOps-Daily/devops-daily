@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GameSponsors } from '@/components/games/game-sponsors';
 import { ImpressionTracker, linkKey } from '@/components/sponsor-impressions';
-import { sponsors } from '@/lib/sponsors';
+import { visibleSponsors } from '@/lib/sponsors';
 
 class FakeObserver {
   static last: FakeObserver;
@@ -88,7 +88,7 @@ describe('sponsor impression beacon', () => {
 
   it('puts own product placements in the one beacon per page view, next to go links', () => {
     const links = [...FakeObserver.last.observed];
-    expect(links).toHaveLength(sponsors.length);
+    expect(links).toHaveLength(visibleSponsors.length);
     FakeObserver.last.show(links);
     vi.advanceTimersByTime(1000);
     hide();
@@ -99,11 +99,10 @@ describe('sponsor impression beacon', () => {
           'simulator:bitrise',
           'simulator:devdojo',
           'simulator:smtpfast',
-          'simulator:quizapi',
         ]),
       },
     ]);
-    expect(beacons()[0].seen).toHaveLength(sponsors.length);
+    expect(beacons()[0].seen).toHaveLength(visibleSponsors.length);
   });
 
   it('sends a click on an own product at once, with the impressions not sent yet', () => {
@@ -133,13 +132,13 @@ describe('sponsor impression beacon', () => {
   });
 
   it('counts middle clicks, but not right clicks or clicks on go links', () => {
-    const own = link('simulator:quizapi');
+    const own = link('simulator:smtpfast');
     own.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 2 }));
     link('https://go.devops-daily.com/bitrise?p=simulator').dispatchEvent(
       new MouseEvent('click', { bubbles: true })
     );
     expect(sendBeacon).not.toHaveBeenCalled();
     own.dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 1 }));
-    expect(beacons()).toEqual([{ page: '/games/x', seen: [], click: 'simulator:quizapi' }]);
+    expect(beacons()).toEqual([{ page: '/games/x', seen: [], click: 'simulator:smtpfast' }]);
   });
 });

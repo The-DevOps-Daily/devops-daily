@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { sponsorGoKey, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
+import { sponsorGoKey, sponsorHref, sponsorRel, visibleSponsors } from '@/lib/sponsors';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface GameSponsorsProps {
@@ -30,7 +30,7 @@ export function GameSponsors({ className, placement = 'simulator' }: GameSponsor
         </div>
 
         <div className="grid grid-cols-2 gap-px bg-border/30 sm:grid-cols-3 lg:grid-cols-6">
-          {sponsors.map((sponsor) => (
+          {visibleSponsors.map((sponsor) => (
             <Link
               key={sponsor.name}
               href={sponsorHref(sponsor, placement)}

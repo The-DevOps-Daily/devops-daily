@@ -6,7 +6,7 @@ import { HomeSponsors } from '@/components/home-sponsors';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import SponsorshipPage from '@/app/sponsorship/page';
-import { sponsorHistory, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
+import { sponsorHistory, sponsorHref, sponsorRel, sponsors, visibleSponsors } from '@/lib/sponsors';
 
 function sponsorAnchors(html: string) {
   return [...html.matchAll(/<a\s([^>]*)>/g)]
@@ -36,15 +36,27 @@ describe('sponsor links', () => {
   });
 
   const placements: [string, ComponentType<never>, object, typeof sponsors][] = [
-    ['sidebar', SponsorSidebar, {}, sponsors],
-    ['inline', InlineSponsors, { variant: 'full' }, sponsors],
-    ['inline', InlineSponsors, { variant: 'compact' }, sponsors],
-    ['inline', InlineSponsors, { variant: 'banner' }, sponsors],
-    ['simulator', GameSponsors, {}, sponsors],
-    ['inline', GameSponsors, { placement: 'inline' }, sponsors],
-    ['home', HomeSponsors, {}, sponsors],
+    ['sidebar', SponsorSidebar, {}, visibleSponsors],
+    ['inline', InlineSponsors, { variant: 'full' }, visibleSponsors],
+    ['inline', InlineSponsors, { variant: 'compact' }, visibleSponsors],
+    ['inline', InlineSponsors, { variant: 'banner' }, visibleSponsors],
+    ['simulator', GameSponsors, {}, visibleSponsors],
+    ['inline', GameSponsors, { placement: 'inline' }, visibleSponsors],
+    ['home', HomeSponsors, {}, visibleSponsors],
     ['sponsorship', SponsorshipPage, {}, sponsorHistory as typeof sponsors],
   ];
+
+  it('leaves hidden sponsors out of every placement', () => {
+    const hidden = sponsors.filter((s) => s.hidden);
+    expect(hidden.map((s) => s.name)).toEqual(['QuizAPI']);
+    for (const [placement, component, props] of placements.slice(0, -1)) {
+      const html = renderToStaticMarkup(createElement(component, props as never));
+      for (const s of hidden) {
+        expect(html, placement).not.toContain(s.url.replaceAll('&', '&amp;'));
+        expect(html, placement).not.toContain(`alt="${s.name}"`);
+      }
+    }
+  });
 
   it.each(placements)(
     'marks own products in the %s placement with data-go and keeps their direct link',

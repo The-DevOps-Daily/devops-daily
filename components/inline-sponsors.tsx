@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Sparkles, ExternalLink, Heart } from 'lucide-react';
-import { sponsorGoKey, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
+import { sponsorGoKey, sponsorHref, sponsorRel, visibleSponsors } from '@/lib/sponsors';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface InlineSponsorsProps {
@@ -40,7 +40,7 @@ export function InlineSponsors({
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-              {sponsors.map((sponsor) => (
+              {visibleSponsors.map((sponsor) => (
                 <Link
                   key={sponsor.name}
                   href={sponsorHref(sponsor, 'inline')}
@@ -103,7 +103,7 @@ export function InlineSponsors({
           <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">
             Supported by
           </span>
-          {sponsors.map((sponsor) => (
+          {visibleSponsors.map((sponsor) => (
             <Link
               key={sponsor.name}
               href={sponsorHref(sponsor, 'inline')}
@@ -148,7 +148,7 @@ export function InlineSponsors({
 
           {/* Sponsors Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {sponsors.map((sponsor) => (
+            {visibleSponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
                 href={sponsorHref(sponsor, 'inline')}

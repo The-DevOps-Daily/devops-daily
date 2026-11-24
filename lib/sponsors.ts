@@ -32,6 +32,11 @@ export interface Sponsor {
    * so the link counts for search; paid sponsors keep both.
    */
   ownProduct?: boolean;
+  /**
+   * Keep the entry but leave it out of every placement on the site and in the
+   * README. Placements read `visibleSponsors`.
+   */
+  hidden?: boolean;
 }
 
 export const GO_LINKS_ORIGIN = 'https://go.devops-daily.com';
@@ -135,6 +140,8 @@ export const sponsors: Sponsor[] = [
     url: 'https://quizapi.io?ref=devops-daily',
     goSlug: 'quizapi',
     ownProduct: true,
+    // Hidden to keep the sponsor grids even (2026-11-24).
+    hidden: true,
     tagline: 'Developer-first quiz platform',
     shortTagline: 'Quiz API',
     description:
@@ -143,11 +150,11 @@ export const sponsors: Sponsor[] = [
   },
 ];
 
-/**
- * Get all active sponsors
- */
+/** The sponsors that placements show: every entry above except the hidden ones. */
+export const visibleSponsors: Sponsor[] = sponsors.filter((s) => !s.hidden);
+
 export function getSponsors(): Sponsor[] {
-  return sponsors;
+  return visibleSponsors;
 }
 
 /**

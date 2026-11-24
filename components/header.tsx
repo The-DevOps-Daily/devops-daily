@@ -13,7 +13,7 @@ import { useHeadroom } from '@/hooks/use-headroom';
 
 // Pages where the header slides away while reading down and comes back on the
 // first scroll up. Add a pattern here to opt more pages in.
-const HEADROOM_PAGES = [/^\/guides\/[^/]+/];
+const HEADROOM_PAGES = [/^\/guides\/[^/]+/, /^\/posts(\/|$)/];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

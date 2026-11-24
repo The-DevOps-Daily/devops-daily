@@ -14,7 +14,7 @@
  *   pnpm generate:readme-sponsors --check  fail if it is out of date (CI)
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { sponsorHref, sponsors, type Sponsor } from "../lib/sponsors";
+import { sponsorHref, visibleSponsors, type Sponsor } from "../lib/sponsors";
 
 const README = "README.md";
 const START = "<!-- sponsors:start -->";
@@ -54,8 +54,8 @@ function logoTag(s: Sponsor, height: number): string {
  * wildly in aspect ratio, so height is fixed and width left to the image.
  */
 function render(): string {
-  const featured = sponsors.filter((s) => s.featured);
-  const rest = sponsors.filter((s) => !s.featured);
+  const featured = visibleSponsors.filter((s) => s.featured);
+  const rest = visibleSponsors.filter((s) => !s.featured);
 
   const lines: string[] = [START, ""];
   lines.push(
@@ -115,7 +115,7 @@ function main() {
   const next = readme.slice(0, from) + render() + readme.slice(to + END.length);
 
   if (next === readme) {
-    console.log(`README sponsors are up to date (${sponsors.length} sponsors).`);
+    console.log(`README sponsors are up to date (${visibleSponsors.length} sponsors).`);
     return;
   }
 
@@ -128,7 +128,7 @@ function main() {
   }
 
   writeFileSync(README, next);
-  console.log(`README sponsors rewritten (${sponsors.length} sponsors).`);
+  console.log(`README sponsors rewritten (${visibleSponsors.length} sponsors).`);
 }
 
 main();

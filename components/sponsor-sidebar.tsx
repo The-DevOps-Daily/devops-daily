@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
-import { sponsorGoKey, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
+import { sponsorGoKey, sponsorHref, sponsorRel, visibleSponsors } from '@/lib/sponsors';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
@@ -14,6 +14,12 @@ interface SponsorSidebarProps {
     readingTime?: string;
   }>;
 }
+
+// Pass as className where the header hides on scroll (HEADROOM_PAGES in
+// components/header.tsx): the column sticks just below the header and moves up
+// with it when it hides.
+export const sponsorSidebarBelowHeader =
+  'top-[calc(var(--site-header-h,5rem)+1rem)] transition-[top] duration-200 motion-reduce:transition-none';
 
 export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarProps) {
   return (
@@ -41,7 +47,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
           </div>
 
           <div className="grid grid-cols-2 gap-px border-y border-border/40 bg-border/40">
-            {sponsors.map((sponsor) => (
+            {visibleSponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
                 href={sponsorHref(sponsor, 'sidebar')}

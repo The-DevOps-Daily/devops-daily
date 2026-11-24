@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { buildCliData, getQuizDropSummary, type CliDataInput } from '../lib/cli-export.js';
 import { getActiveGames } from '../lib/games.js';
 import { getAllPosts } from '../lib/posts.js';
-import { sponsors } from '../lib/sponsors.js';
+import { visibleSponsors } from '../lib/sponsors.js';
 
 const MAX_FILE_BYTES = 20 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 25 * 1024 * 1024;
@@ -59,7 +59,7 @@ async function generateCliData() {
     checklists,
     incidents,
     games,
-    sponsors,
+    sponsors: visibleSponsors,
     site,
     generatedAt: new Date().toISOString(),
   };
