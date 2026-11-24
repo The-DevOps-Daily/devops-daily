@@ -128,7 +128,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           <div className="min-w-0 lg:col-span-9">
             <article
               className="prose dark:prose-invert max-w-none"
-              data-sponsor-campaign={post.sponsorCampaign}
+              data-sponsor-campaign={post.sponsorCampaign ?? post.trackCampaign}
             >
               <PostHeader
                 post={{
