@@ -18,7 +18,7 @@ import {
   type SyllabusStage,
   type TopicPriority,
 } from '@/lib/roadmap-syllabus';
-import { sponsors } from '@/lib/sponsors';
+import { visibleSponsors } from '@/lib/sponsors';
 import { SyllabusProvider, type SyllabusStageInfo } from './syllabus-provider';
 import { StageProgress, SyllabusContinueLink, SyllabusStatusCard } from './syllabus-status';
 import { TopicRow, TopicStatusControl, UpNextTag } from './syllabus-topic';
@@ -394,7 +394,7 @@ export async function SyllabusRoadmap({
         </section>
 
         <div className="container mx-auto px-4">
-          {sponsors.length > 0 && <GameSponsors placement="inline" className="mb-0 mt-8" />}
+          {visibleSponsors.length > 0 && <GameSponsors placement="inline" className="mb-0 mt-8" />}
 
           <div className="xl:grid xl:grid-cols-[13rem_minmax(0,1fr)] xl:gap-10">
             <SyllabusNav />

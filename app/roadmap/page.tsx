@@ -15,7 +15,7 @@ import { KindMarker, StatusIcon } from '@/components/roadmap/roadmap-marks';
 import { CareerNotes } from '@/components/roadmap/career-notes';
 import { getRoadmapTotals } from '@/lib/roadmap-data';
 import { resolveRoadmap } from '@/lib/roadmap-resources';
-import { sponsors } from '@/lib/sponsors';
+import { visibleSponsors } from '@/lib/sponsors';
 
 const ISSUE_URL = `https://github.com/The-DevOps-Daily/devops-daily/issues/new?title=${encodeURIComponent(
   'Issue with the DevOps roadmap'
@@ -114,7 +114,7 @@ export default async function RoadmapPage() {
         </section>
 
         <div className="container mx-auto px-4">
-          {sponsors.length > 0 && <GameSponsors placement="inline" className="mb-0 mt-8" />}
+          {visibleSponsors.length > 0 && <GameSponsors placement="inline" className="mb-0 mt-8" />}
 
           <SectionSeparator command="roadmap map --all" />
           <div id="roadmap" className="scroll-mt-24">

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
-import { sponsorGoKey, sponsorHref, sponsorRel, sponsors } from '@/lib/sponsors';
+import { sponsorGoKey, sponsorHref, sponsorRel, visibleSponsors } from '@/lib/sponsors';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
@@ -14,6 +14,12 @@ interface SponsorSidebarProps {
     readingTime?: string;
   }>;
 }
+
+// Pass as className where the header hides on scroll (HEADROOM_PAGES in
+// components/header.tsx): the column sticks just below the header and moves up
+// with it when it hides.
+export const sponsorSidebarBelowHeader =
+  'top-[calc(var(--site-header-h,5rem)+1rem)] transition-[top] duration-200 motion-reduce:transition-none';
 
 export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarProps) {
   return (
@@ -41,7 +47,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
           </div>
 
           <div className="grid grid-cols-2 gap-px border-y border-border/40 bg-border/40">
-            {sponsors.map((sponsor) => (
+            {visibleSponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
                 href={sponsorHref(sponsor, 'sidebar')}
@@ -51,7 +57,8 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
                 className={cn(
                   // An odd last tile spans both columns, so the grid has no empty cell.
-                  'group relative isolate flex h-[4.75rem] min-w-0 flex-col items-center justify-center gap-1 bg-card/90 px-2 transition-all last:odd:col-span-2',
+                  // Top-aligned, so a tagline that wraps on a narrow column keeps the logos in line.
+                  'group relative isolate flex h-[4.75rem] min-w-0 flex-col items-center justify-start gap-1 bg-card/90 px-2 pt-[0.9rem] transition-all last:odd:col-span-2',
                   sponsor.featured
                     ? 'bg-linear-to-b from-[#2c70ff]/[0.08] to-card/90 shadow-[inset_0_2px_0_rgba(44,112,255,0.55)] hover:from-[#2c70ff]/[0.12]'
                     : 'hover:bg-muted/70'
@@ -69,7 +76,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                   />
                 </div>
                 {sponsor.shortTagline && (
-                  <span className="whitespace-nowrap text-[10.5px] leading-none text-muted-foreground">
+                  <span className="text-center text-[10.5px] leading-[1.15] text-muted-foreground">
                     {sponsor.shortTagline}
                   </span>
                 )}
