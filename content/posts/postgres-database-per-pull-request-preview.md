@@ -4,9 +4,9 @@ excerpt: 'Create a Neon branch of your main database when a pull request opens, 
 category:
   name: 'CI/CD'
   slug: 'ci-cd'
-date: '2026-11-25'
-publishedAt: '2026-11-25T15:00:00Z'
-updatedAt: '2026-11-25T15:00:00Z'
+date: '2026-11-30'
+publishedAt: '2026-11-30T07:07:00Z'
+updatedAt: '2026-11-30T07:07:00Z'
 readingTime: '18 min read'
 author:
   name: 'DevOps Daily Team'
