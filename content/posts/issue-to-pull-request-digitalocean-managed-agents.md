@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-09-28'
 publishedAt: '2026-09-28T09:00:00Z'
-updatedAt: '2026-10-12T09:00:00Z'
+updatedAt: '2026-11-24T09:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
@@ -274,6 +274,8 @@ DigitalOcean's docs warn about exactly this: "Rules match literally ... A denied
 ## What it cost
 
 :::note
+**Updated 24 November 2026:** DigitalOcean has changed how Harness Runtime compute is billed. The sandbox paragraph below the table now uses the [current public pricing](https://www.digitalocean.com/pricing/harness-runtime): CPU actually consumed and memory allocated, billed per second. Our runs were billed under the old rule, and their compute cost rounds to zero either way.
+
 **Update, 12 October 2026:** the September invoice has arrived, and the figures in this table were too low. They count only the input and output tokens that the agent reported. The invoice also bills cache-read tokens, 57,000 to 105,000 per run at $0.348 per million, and every token line on the invoice was rounded to the cent, with a one-cent minimum. The five runs were billed $0.05 to $0.08 each, $0.32 in total, which is about 11 cents per merged pull request. Compute came to $0.00. The full breakdown is in [DigitalOcean Agent Droplets: when the $50 plan pays off](/posts/digitalocean-agent-droplets-when-the-plan-pays-off).
 :::
 
@@ -287,7 +289,7 @@ Token counts come from the `prompt` command's JSON output; the price is DigitalO
 | Issue #2, third  | Merged (#6)                  | 9,868 / 1,605         | $0.023     |
 | Issue #3         | Merged (#7)                  | 8,750 / 2,109         | $0.023     |
 
-Two smaller costs sit on top. Each new session starts with a short readiness run, which used between 235 and 4,587 input tokens in ours. And the sandbox is billed while it exists: a Medium session lists at about $0.060 an hour under the current billing rule (25% of the allocated vCPUs plus peak memory), and by the script's timestamps each of ours existed for under two minutes, so compute came to a fraction of a cent per issue. These figures are derived from token counts and list prices; the new usage had not reached the invoice when we wrote this.
+Two smaller costs sit on top. Each new session starts with a short readiness run, which used between 235 and 4,587 input tokens in ours. And the sandbox is billed while it exists. DigitalOcean now charges $0.044 per vCPU-hour of CPU actually consumed and $0.0095 per GB-hour of allocated memory, billed per second, and a paused session has no compute charge. A Medium session (2 vCPUs, 4 GB) therefore costs $0.038 an hour for memory while it exists, plus up to $0.088 an hour for CPU at full use, $0.126 an hour at most. By the script's timestamps each of ours existed for under two minutes, which at that ceiling is under half a cent per issue. These runs were billed under the earlier rule (25% of the allocated vCPUs plus peak memory, about $0.060 an hour for a Medium session). The table's figures are derived from token counts and list prices; the new usage had not reached the invoice when we wrote this.
 
 ## Gotchas we hit
 
