@@ -4,9 +4,9 @@ excerpt: 'We compared the free plans of Neon, Firebase, Appwrite, Convex, Nhost,
 category:
   name: 'Cloud'
   slug: 'cloud'
-date: '2026-11-30'
-publishedAt: '2026-11-30T07:07:00Z'
-updatedAt: '2026-11-30T07:07:00Z'
+date: '2026-12-03'
+publishedAt: '2026-12-03T07:07:00Z'
+updatedAt: '2026-12-03T07:07:00Z'
 readingTime: '20 min read'
 author:
   name: 'DevOps Daily Team'
