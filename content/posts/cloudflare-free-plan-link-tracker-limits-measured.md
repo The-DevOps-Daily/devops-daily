@@ -339,18 +339,18 @@ Ranked by how close each limit is, with our current traffic:
 
 1. **D1 rows read**, on a day of heavy report use, and a little closer every day because of the sync. It has already reached 45% by the main dataset and possibly more. The fix is cheap: precompute the all-time report numbers in the hourly cron, cache a rendered report for a few minutes, and give the dashboard sync an index it can use. Each of those trades a few writes for a lot of reads.
 2. **CPU**, if the beacon grows. It runs at 3 ms median and 9 ms p99 today, already brushing the limit at the tail. Anything heavy added to the beacon path (more hashing, larger bodies, a slow regular expression) would make the overruns frequent.
-3. **Requests**, only at about 25 times this Worker's busiest day (less if other Workers on the account grow), or with a flood. A flood also burns rows written, which is why the rollup is chunked and the beacon has allowlists.
+3. **Requests**, only at about 25 times this Worker's busiest day (the limit is per account), or with a flood. A flood also burns rows written, which is why the rollup is chunked and the beacon has allowlists.
 
 When either daily D1 row allowance is used up, the redirects still work, by falling back, but clicks and impressions for the rest of the UTC day are lost and reports fail. When the request limit is hit, the links themselves stop working until midnight UTC. For a sponsor link that is the worst outcome, which is why the alert matters more than the headroom.
 
-Our only alert before this post watched Workers requests at 60% of the daily limit. It never fired. The alert we are adding is `scripts/free-plan-usage.mjs` in the demo repo. It reads today's numbers for the whole account from the GraphQL API and exits 1 when requests, rows read or rows written pass a threshold (50% by default; we pass 40%). Schedule it with anything that tells you about a non-zero exit: cron with `MAILTO`, a scheduled CI job, or a monitor. Here it is against our account at 11:54 UTC on 2026-11-24:
+Our only alert before this post watched Workers requests at 60% of the daily limit. It never fired. The alert we are adding is `scripts/free-plan-usage.mjs` in the demo repo. It reads today's numbers for the whole account from the GraphQL API and exits 1 when requests, rows read or rows written pass a threshold (50% by default; we pass 40%). Schedule it with anything that tells you about a non-zero exit: cron with `MAILTO`, a scheduled CI job, or a monitor. Here it is against our account at 11:54 UTC on 2026-11-24. We removed the requests line from this sample, because the script watches the whole account (the limits are per account), not just the tracker:
 
 ```terminal
 {
   "title": "free-plan-usage",
   "prompt": "$",
   "steps": [
-    { "cmd": "node scripts/free-plan-usage.mjs --threshold 0.4", "output": "2026-11-24 UTC, 50% of the day gone\nWorkers requests        2,859 / 100,000  2.9% now, ~6% by midnight\nD1 rows read          895,225 / 5,000,000  17.9% now, ~36% by midnight\nD1 rows written         4,111 / 100,000  4.1% now, ~8% by midnight\nWorker errors     0\nCPU p99 (worst Worker) 9.0 ms against the 10 ms free limit\nunder 40%" }
+    { "cmd": "node scripts/free-plan-usage.mjs --threshold 0.4", "output": "2026-11-24 UTC, 50% of the day gone\nWorkers requests        [removed from this sample: it counts the whole account]\nD1 rows read          895,225 / 5,000,000  17.9% now, ~36% by midnight\nD1 rows written         4,111 / 100,000  4.1% now, ~8% by midnight\nWorker errors     0\nCPU p99 (worst Worker) 9.0 ms against the 10 ms free limit\nunder 40%" }
   ]
 }
 ```
