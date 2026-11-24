@@ -157,6 +157,8 @@ Three questions, in order, get most teams to an answer:
 2. **Documents or relations?** This decides your migration cost and your day-to-day afterward more than any feature checklist. Most teams leaving Firestore for cost or query-flexibility reasons are really deciding to go relational.
 3. **Managed or self-hosted?** Be honest about whether you want to own uptime and backups. Appwrite and PocketBase give you control and hand you the pager; Supabase, Convex, and the hyperscalers keep more of that off your plate.
 
+If you are starting on a free plan, compare what each one gives you for $0 and what it does to an idle project before you choose: our [free plans side by side for Supabase and its alternatives](/posts/supabase-alternatives-2026) has the limits, verified on the live pricing pages, and measured idle behavior.
+
 ## Wrapping up
 
 Firebase gets replaced one service at a time, for one of two reasons: a Firestore bill that grows with your queries instead of your users, or a data model that gets more expensive to leave the longer you stay. Once you name which of those is pushing you and which piece you are actually replacing, the field narrows fast. Supabase is the safe default for a relational, Firebase-shaped swap; Neon if you want the whole backend to branch with your data; Appwrite and PocketBase if you want to own the stack; Convex if reactivity is the whole point; focused tools if you only need one slice. The winning move is not picking the top of a list, it is being honest about why you are leaving and letting that choose for you.
