@@ -145,6 +145,8 @@ kubectl patch cronjob backup -p '{"spec":{"suspend":false}}'
 
 Two of these explain most "my CronJob did not run" questions. If `concurrencyPolicy: Forbid` is set and an earlier Job still runs, for example because it hangs, every new run is skipped. And if the controller was down at the scheduled time, `startingDeadlineSeconds` decides whether the missed run still starts when it comes back. `kubectl describe cronjob backup` shows the last schedule time and the events.
 
+We put these settings through a reboot, a power-off and overlapping runs, next to plain cron, Kestra and Prefect, in [Cron Is Not a Workflow Engine](/posts/cron-vs-workflow-engine-when-scheduled-jobs-need-orchestration). After three missed schedules, the CronJob started only the most recent one. And a pod that the Job retried after a reboot loaded the wrong day, because it took the date from the clock instead of from the schedule.
+
 ## Related Resources
 
 - [Introduction to Kubernetes: Jobs and CronJobs](/guides/introduction-to-kubernetes/04-deployments-and-replicasets#h3-a-cronjob): a CronJob and a manual run with real output
