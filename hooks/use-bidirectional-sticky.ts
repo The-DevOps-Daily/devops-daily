@@ -59,12 +59,19 @@ export function useBidirectionalSticky(
     };
 
     // Keep the top edge where it is when the column grows or shrinks (ads and
-    // Turnstile load late) or the page above it changes. In "up" mode the column hangs from its bottom, so
-    // its new height has to be known before it is measured.
+    // Turnstile load late) or the page above it changes. In "up" mode the
+    // column hangs from its bottom, so its new height has to be applied
+    // (without the transition) before it is measured.
     const onResize = () => {
       if (!mq.matches) return;
-      if (mode === 'up') setHeight();
-      align('down');
+      if (mode === 'up') {
+        el.style.transition = 'none';
+        setHeight();
+        align('down');
+        el.style.transition = '';
+      } else {
+        align('down');
+      }
       setHeight();
     };
     const onBreakpoint = () => {
