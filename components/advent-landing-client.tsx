@@ -5,6 +5,7 @@ import { AdventProgressStats } from './advent-progress-stats';
 import { AdventCalendarGrid } from './advent-calendar-grid';
 import { useOpenAdventDays } from '@/hooks/use-open-advent-days';
 import type { AdventDay } from '@/lib/advent';
+import { StickySidebar } from '@/components/sticky-sidebar';
 
 interface AdventLandingClientProps {
   days: AdventDay[];
@@ -33,9 +34,9 @@ export function AdventLandingClient({ days }: AdventLandingClientProps) {
 
           {/* Sidebar with stats */}
           <aside className="order-first lg:order-none lg:col-span-3">
-            <div className="lg:sticky lg:top-8">
+            <StickySidebar>
               <AdventProgressStats />
-            </div>
+            </StickySidebar>
           </aside>
         </div>
       </div>

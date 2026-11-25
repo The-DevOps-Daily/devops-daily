@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { StickySidebar } from '@/components/sticky-sidebar';
 import { ReportIssue } from '@/components/report-issue';
 import { cn } from '@/lib/utils';
 import {
@@ -180,7 +181,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
   ];
 
   return (
-    <div className="container px-4 py-8 mx-auto overflow-hidden">
+    <div className="container px-4 py-8 mx-auto overflow-clip">
       {/* Confetti Effect */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50">
@@ -702,7 +703,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
 
         {/* Sidebar */}
         <aside className="xl:col-span-3">
-          <div className="sticky space-y-6 top-8">
+          <StickySidebar from="xl" className="space-y-6">
             {/* Step Progress Sidebar (only when started) */}
             {isStarted && (
               <Card>
@@ -787,7 +788,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
             )}
 
             <SponsorSidebar stickFrom={null} />
-          </div>
+          </StickySidebar>
         </aside>
       </div>
     </div>

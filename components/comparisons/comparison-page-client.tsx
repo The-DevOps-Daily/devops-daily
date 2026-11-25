@@ -8,6 +8,7 @@ import { toolText, toolVars } from './tool-style';
 import { ComparisonMatchup } from './comparison-matchup';
 import { CategoryScoreboard } from './category-scoreboard';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { StickySidebar } from '@/components/sticky-sidebar';
 import { ReportIssue } from '@/components/report-issue';
 import { FeatureComparisonTable } from './feature-comparison-table';
 import { ToolProsCons } from './tool-pros-cons';
@@ -221,7 +222,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
 
         {/* Sidebar */}
         <aside className="xl:col-span-3">
-          <div className="sticky space-y-6 top-8">
+          <StickySidebar from="xl" className="space-y-6">
             {/* Table of Contents */}
             <Card>
               <CardHeader className="p-3">
@@ -250,7 +251,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
             </Card>
 
             <SponsorSidebar stickFrom={null} />
-          </div>
+          </StickySidebar>
         </aside>
       </div>
     </div>
