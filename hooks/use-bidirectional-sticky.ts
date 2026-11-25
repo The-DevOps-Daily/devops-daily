@@ -8,14 +8,20 @@ import { useEffect, type RefObject } from 'react';
  * sticks there; on the way up it scrolls back until its top reaches the header
  * and sticks there. CSS does the sticking (data-stick and --sb-h, see
  * components/sticky-sidebar.tsx). On a change of scroll direction this moves
- * the column's flow position (--sb-m) to where it is on screen, so the browser
- * scrolls it natively from there and nothing jumps.
+ * the column's flow position to where it is on screen, with a spacer above it,
+ * so the browser scrolls it natively from there and nothing jumps. (A margin
+ * would not do: it would stop the column from sticking above its flow position.)
  */
-export function useBidirectionalSticky(ref: RefObject<HTMLElement | null>, minWidth: string) {
+export function useBidirectionalSticky(
+  ref: RefObject<HTMLElement | null>,
+  spacerRef: RefObject<HTMLElement | null>,
+  minWidth: string
+) {
   useEffect(() => {
     const el = ref.current;
+    const spacer = spacerRef.current;
     const parent = el?.parentElement;
-    if (!el || !parent) return;
+    if (!el || !spacer || !parent) return;
 
     const mq = window.matchMedia(`(min-width: ${minWidth})`);
     let mode: 'down' | 'up' = 'down';
@@ -30,8 +36,7 @@ export function useBidirectionalSticky(ref: RefObject<HTMLElement | null>, minWi
       const start = p.top + parent.clientTop + parseFloat(cs.paddingTop);
       const room = parent.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
       const offset = el.getBoundingClientRect().top - start;
-      const m = Math.max(0, Math.min(offset, room - el.offsetHeight));
-      el.style.setProperty('--sb-m', `${Math.round(m)}px`);
+      spacer.style.height = `${Math.round(Math.max(0, Math.min(offset, room - el.offsetHeight)))}px`;
       el.dataset.stick = next;
       mode = next;
     };
@@ -73,5 +78,5 @@ export function useBidirectionalSticky(ref: RefObject<HTMLElement | null>, minWi
       mq.removeEventListener('change', onBreakpoint);
       cancelAnimationFrame(frame);
     };
-  }, [ref, minWidth]);
+  }, [ref, spacerRef, minWidth]);
 }

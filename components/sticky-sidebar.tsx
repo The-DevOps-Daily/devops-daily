@@ -8,8 +8,8 @@ import { useBidirectionalSticky } from '@/hooks/use-bidirectional-sticky';
 // the column is taller than the screen it may rise until its bottom is 5rem
 // above the screen bottom, clear of the fixed back-to-top button.
 const stickyColumn = {
-  lg: 'lg:sticky lg:mt-[var(--sb-m,0px)] lg:top-[min(calc(var(--site-header-h,5rem)+1rem),calc(100dvh-5rem-var(--sb-h,0px)))] lg:data-[stick=up]:top-auto lg:data-[stick=up]:bottom-[calc(100dvh-var(--site-header-h,5rem)-1rem-var(--sb-h,0px))]',
-  xl: 'xl:sticky xl:mt-[var(--sb-m,0px)] xl:top-[min(calc(var(--site-header-h,5rem)+1rem),calc(100dvh-5rem-var(--sb-h,0px)))] xl:data-[stick=up]:top-auto xl:data-[stick=up]:bottom-[calc(100dvh-var(--site-header-h,5rem)-1rem-var(--sb-h,0px))]',
+  lg: 'lg:sticky lg:top-[min(calc(var(--site-header-h,5rem)+1rem),calc(100dvh-5rem-var(--sb-h,0px)))] lg:data-[stick=up]:top-auto lg:data-[stick=up]:bottom-[calc(100dvh-var(--site-header-h,5rem)-1rem-var(--sb-h,0px))]',
+  xl: 'xl:sticky xl:top-[min(calc(var(--site-header-h,5rem)+1rem),calc(100dvh-5rem-var(--sb-h,0px)))] xl:data-[stick=up]:top-auto xl:data-[stick=up]:bottom-[calc(100dvh-var(--site-header-h,5rem)-1rem-var(--sb-h,0px))]',
 };
 const minWidth = { lg: '1024px', xl: '1280px' };
 
@@ -24,17 +24,25 @@ export function StickySidebar({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  useBidirectionalSticky(ref, minWidth[from]);
+  const spacerRef = useRef<HTMLDivElement>(null);
+  useBidirectionalSticky(ref, spacerRef, minWidth[from]);
   return (
-    <div
-      ref={ref}
-      className={cn(
-        stickyColumn[from],
-        'transition-[top,bottom] duration-200 motion-reduce:transition-none',
-        className
-      )}
-    >
-      {children}
-    </div>
+    <>
+      <div
+        ref={spacerRef}
+        aria-hidden
+        className={from === 'xl' ? 'hidden xl:block' : 'hidden lg:block'}
+      />
+      <div
+        ref={ref}
+        className={cn(
+          stickyColumn[from],
+          'transition-[top,bottom] duration-200 motion-reduce:transition-none',
+          className
+        )}
+      >
+        {children}
+      </div>
+    </>
   );
 }
