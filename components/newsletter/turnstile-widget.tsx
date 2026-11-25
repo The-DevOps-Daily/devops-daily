@@ -73,13 +73,16 @@ export function TurnstileWidget({ className }: { className?: string }) {
       loadTurnstile()
         .then((turnstile) => {
           if (cancelled || !ref.current) return;
+          // "flexible" is at least 300 px wide, wider than narrow cards such
+          // as the sponsor sidebar, so those get the compact widget instead.
+          const width = ref.current.clientWidth;
           widgetId = turnstile.render(ref.current, {
             sitekey: SITE_KEY,
             // smtpfast accepts a form token only for this action (and the page's hostname).
             action: 'smtpfast-form',
             appearance: 'interaction-only',
             theme: 'auto',
-            size: 'flexible',
+            size: width > 0 && width < 300 ? 'compact' : 'flexible',
             'refresh-expired': 'auto',
           });
           if (widgetId) ref.current.setAttribute(WIDGET_ATTR, widgetId);

@@ -299,7 +299,7 @@ export default async function GuidePartPage({
 
           {/* Sponsor Sidebar */}
           <aside className="min-w-0">
-            <SponsorSidebar className={guideLayout.sponsors} />
+            <SponsorSidebar stickFrom="xl" />
           </aside>
         </div>
       </div>

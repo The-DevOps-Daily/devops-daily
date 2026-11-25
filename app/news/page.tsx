@@ -204,7 +204,7 @@ export default async function NewsPage() {
               </div>
 
               {/* Sponsor */}
-              <SponsorSidebar />
+              <SponsorSidebar stickFrom={null} />
             </div>
           </aside>
         </div>

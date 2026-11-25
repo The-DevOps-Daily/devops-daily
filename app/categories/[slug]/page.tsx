@@ -138,9 +138,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
           {/* Sponsor Sidebar */}
           <aside className="lg:col-span-3">
-            <div className="sticky top-8">
-              <SponsorSidebar />
-            </div>
+            <SponsorSidebar />
           </aside>
         </div>
       </div>

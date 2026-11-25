@@ -53,9 +53,7 @@ export default async function GuidesPage() {
             <GuidesList guides={guides.map(toGuideSummary)} />
           </div>
           <aside className="lg:col-span-3">
-            <div className="sticky top-8">
-              <SponsorSidebar />
-            </div>
+            <SponsorSidebar />
           </aside>
         </div>
       </div>
