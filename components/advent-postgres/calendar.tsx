@@ -30,6 +30,7 @@ import { isUnlocked, loadSolved, saveSolved } from '@/lib/advent-postgres-client
 import type { PostgresAdventDaySummary } from '@/lib/advent-postgres';
 import { AdventProgressBar } from '@/components/advent-hero-progress';
 import { AdventCardIcon, AdventSectionHeader } from '@/components/advent-hero';
+import { StickySidebar } from '@/components/sticky-sidebar';
 
 const TOTAL_DAYS = 24;
 
@@ -198,7 +199,7 @@ export function PostgresAdventCalendar({
         </div>
       </div>
       <aside className="order-first lg:order-none lg:col-span-3">
-        <div className="lg:sticky lg:top-8">
+        <StickySidebar>
           <PostgresProgressStats
             solved={solved.length}
             onReset={() => {
@@ -206,7 +207,7 @@ export function PostgresAdventCalendar({
               setSolved([]);
             }}
           />
-        </div>
+        </StickySidebar>
       </aside>
     </div>
   );
