@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-09-24'
 publishedAt: '2026-09-24T09:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,6 +23,8 @@ sponsorCampaign: 'neon'
 ---
 
 :::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-mini` will fail after that date. The default model below and in the [repo](https://github.com/The-DevOps-Daily/neon-incident-atlas) is now `gpt-6-luna`, a small OpenAI model in the gateway catalog ($0.10 input, $0.50 output per million tokens), which costs less than `gpt-5-mini` did. We checked metadata extraction and a cited answer with it through the gateway. The smoke-test output below is from the September run with `gpt-5-mini`.
+
 **Updated 23 November 2026:** Neon Auth is now called Managed Better Auth, and this post uses the new name. Commands and recorded output keep `neon-auth` and "Neon Auth" where the tools printed them at the time.
 :::
 
@@ -165,7 +167,7 @@ export default defineConfig({
       env: {
         ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ?? 'http://localhost:5173',
         INCIDENT_ATLAS_BUCKET: process.env.INCIDENT_ATLAS_BUCKET ?? 'incident-files',
-        INCIDENT_ATLAS_AI_MODEL: process.env.INCIDENT_ATLAS_AI_MODEL ?? 'gpt-5-mini',
+        INCIDENT_ATLAS_AI_MODEL: process.env.INCIDENT_ATLAS_AI_MODEL ?? 'gpt-6-luna',
         INCIDENT_ATLAS_RELEASE,
       },
       dev: { port: 8787 },
@@ -225,7 +227,7 @@ When the browser confirms the upload, the Function checks that:
 
 Only then does it create the `queued` database row. The object key is unique, so retrying the confirmation returns the existing incident instead of creating a duplicate or deleting its file. If a new insert fails and the database can confirm that no row references the object, the Function makes a best-effort cleanup attempt. If the database is unavailable, it preserves the object for later reconciliation rather than risk deleting referenced data.
 
-`waitUntil()` allows the Function to return HTTP `202 Accepted` while a bounded promise reads the private object and calls `gpt-5-mini` through Neon AI Gateway. The second read rechecks the size and content type and rejects invalid UTF-8. The model extracts a title, severity, summary, systems, and tags, and the Function stores the original text for retrieval. A failed read or model call moves the incident to `failed` instead of leaving it stuck in `queued`.
+`waitUntil()` allows the Function to return HTTP `202 Accepted` while a bounded promise reads the private object and calls `gpt-6-luna` through Neon AI Gateway. The second read rechecks the size and content type and rejects invalid UTF-8. The model extracts a title, severity, summary, systems, and tags, and the Function stores the original text for retrieval. A failed read or model call moves the incident to `failed` instead of leaving it stuck in `queued`.
 
 Incident Atlas accepts only Markdown, plain text, and JSON reports up to 32 KiB. That bound lets the Function send the complete report to the model instead of silently truncating a larger file. Browsers sometimes omit the MIME type for Markdown, so the UI falls back to the filename extension before the server enforces the same allowlist.
 

@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-14'
 publishedAt: '2026-07-14T09:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,6 +23,8 @@ sponsorCampaign: 'neon'
 ---
 
 :::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-nano` will fail after that date. The SDK example below now uses `gpt-6-luna`, and so does the [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo). The fallback run is unchanged.
+
 **Updated 23 November 2026:** when this post was written, the AI Gateway only ran in `us-east-2`. It has been [generally available](https://neon.com/blog/neon-backend-is-ga) since 17 September 2026, works on any plan with prepaid credits, and now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The results below are from the original run.
 :::
 
@@ -49,7 +51,7 @@ Suppose you want "try GPT, fall back to Claude." With provider SDKs, that is two
 ```typescript
 // The shape you end up with when each provider has its own SDK.
 try {
-  return await openai.chat.completions.create({ model: 'gpt-5-nano', messages });
+  return await openai.chat.completions.create({ model: 'gpt-6-luna', messages });
 } catch (err) {
   if (isRetryable(err)) {
     // Different SDK, different client, different error type, different options.
