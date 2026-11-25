@@ -1,5 +1,6 @@
 import { AdventPostContent } from '@/components/advent-post-content';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { StickySidebar } from '@/components/sticky-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { AdventDayHeader, AdventDayNav, AdventShareBox } from '@/components/advent-day-parts';
 import { AdventDayClient } from '@/components/advent-day-client';
@@ -178,7 +179,7 @@ export default async function AdventDayPage({ params }: { params: Promise<{ slug
 
           {/* Sidebar */}
           <aside className="lg:col-span-3">
-            <div className="sticky top-8 space-y-6">
+            <StickySidebar className="space-y-6">
               <SponsorSidebar stickFrom={null} />
 
               {/* Tags */}
@@ -197,7 +198,7 @@ export default async function AdventDayPage({ params }: { params: Promise<{ slug
                   </div>
                 </div>
               )}
-            </div>
+            </StickySidebar>
           </aside>
         </div>
       </div>

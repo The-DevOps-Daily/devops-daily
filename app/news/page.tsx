@@ -1,4 +1,5 @@
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
+import { StickySidebar } from '@/components/sticky-sidebar';
 import { getAllNews } from '@/lib/news';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -156,7 +157,7 @@ export default async function NewsPage() {
 
           {/* Sidebar */}
           <aside className="lg:col-span-3">
-            <div className="sticky top-8 space-y-5">
+            <StickySidebar className="space-y-5">
               {/* About Section */}
               <div className="bg-card border rounded-lg p-5">
                 <h3 className="font-semibold text-base mb-2.5">About the Digest</h3>
@@ -205,7 +206,7 @@ export default async function NewsPage() {
 
               {/* Sponsor */}
               <SponsorSidebar stickFrom={null} />
-            </div>
+            </StickySidebar>
           </aside>
         </div>
       </div>
