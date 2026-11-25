@@ -23,6 +23,7 @@ export function useBidirectionalSticky(
     const parent = el?.parentElement;
     if (!el || !spacer || !parent) return;
 
+    const root = document.documentElement;
     const mq = window.matchMedia(`(min-width: ${minWidth})`);
     let mode: 'down' | 'up' = 'down';
     let lastY = window.scrollY;
@@ -35,7 +36,11 @@ export function useBidirectionalSticky(
       const cs = getComputedStyle(parent);
       const start = p.top + parent.clientTop + parseFloat(cs.paddingTop);
       const room = parent.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
-      const offset = el.getBoundingClientRect().top - start;
+      // While the column's box starts below the sticky line nothing can move
+      // the column, so a spacer left from an earlier layout is dropped.
+      const header = parseFloat(getComputedStyle(root).getPropertyValue('--site-header-h'));
+      const line = (Number.isNaN(header) ? 80 : header) + 16;
+      const offset = start >= line ? 0 : el.getBoundingClientRect().top - start;
       spacer.style.height = `${Math.round(Math.max(0, Math.min(offset, room - el.offsetHeight)))}px`;
       el.dataset.stick = next;
       mode = next;
@@ -54,7 +59,7 @@ export function useBidirectionalSticky(
     };
 
     // Keep the top edge where it is when the column grows or shrinks (ads and
-    // Turnstile load late). In "up" mode the column hangs from its bottom, so
+    // Turnstile load late) or the page above it changes. In "up" mode the column hangs from its bottom, so
     // its new height has to be known before it is measured.
     const onResize = () => {
       if (!mq.matches) return;
@@ -70,6 +75,7 @@ export function useBidirectionalSticky(
     onResize();
     const ro = new ResizeObserver(onResize);
     ro.observe(el);
+    ro.observe(document.body);
     window.addEventListener('scroll', onScroll, { passive: true });
     mq.addEventListener('change', onBreakpoint);
     return () => {

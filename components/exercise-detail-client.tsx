@@ -181,7 +181,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
   ];
 
   return (
-    <div className="container px-4 py-8 mx-auto overflow-hidden">
+    <div className="container px-4 py-8 mx-auto overflow-clip">
       {/* Confetti Effect */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50">
