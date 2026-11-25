@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-27'
 publishedAt: '2026-06-27T14:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,6 +21,8 @@ sponsorCampaign: 'neon'
 ---
 
 :::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-nano` will fail after that date. The `/agent` code below and the [repo](https://github.com/The-DevOps-Daily/neon-streaming-demo) now use `gpt-6-luna`, a small OpenAI model in the gateway catalog ($0.10 input, $0.50 output per million tokens). The timings below are from the June run with `gpt-5-nano`; we did not measure them again.
+
 **Updated 23 November 2026:** this post was written on the June 2026 private preview, and the streaming runs below are from then. On 17 September 2026 [Neon Functions became generally available](https://neon.com/blog/neon-backend-is-ga) on every plan, including Free. The `us-east-2`, new-projects-only limit is gone: Functions now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), and [Function Triggers](https://neon.com/docs/compute/functions/triggers/overview) can now start a function on a cron schedule or an Object Storage upload.
 :::
 
@@ -108,7 +110,7 @@ A ticking clock proves the connection lasts. The real workload is a model stream
 const upstream = await fetch(`${process.env.NEON_AI_GATEWAY_BASE_URL}/ai-gateway/mlflow/v1/chat/completions`, {
   method: 'POST',
   headers: { Authorization: `Bearer ${process.env.NEON_AI_GATEWAY_TOKEN}`, 'content-type': 'application/json' },
-  body: JSON.stringify({ model: 'gpt-5-nano', stream: true, messages }),
+  body: JSON.stringify({ model: 'gpt-6-luna', stream: true, messages }),
 });
 // ...parse the upstream SSE and re-emit each delta as it lands
 await stream.writeSSE({ event: 'token', data: JSON.stringify({ delta }) });

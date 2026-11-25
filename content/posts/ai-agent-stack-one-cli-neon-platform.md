@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-26'
 publishedAt: '2026-06-26T13:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -22,6 +22,8 @@ sponsorCampaign: 'neon'
 ---
 
 :::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-nano` or `gpt-5-mini` will fail after that date. The gateway call examples below now use `gpt-6-luna`, a small OpenAI model in the gateway catalog ($0.10 input, $0.50 output per million tokens). The image agent in the [repo](https://github.com/The-DevOps-Daily/neon-ai-agent) now runs on `gpt-5-4-mini` instead of `gpt-5-mini`, because the gateway catalog lists image generation for it. The response and the price chart below are from June and still show `gpt-5-nano`.
+
 **Updated 23 November 2026:** this build ran on the June 2026 private preview. On 17 September 2026 [Functions, Object Storage, the AI Gateway, and Managed Better Auth became generally available](https://neon.com/blog/neon-backend-is-ga), on every plan including Free. The `us-east-2`, new-projects-only limits below are gone: Functions, Object Storage, and the AI Gateway now run in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), and AI Gateway pricing is now documented as provider list prices with no markup. The build log itself is unchanged.
 :::
 
@@ -86,15 +88,15 @@ That last line is the actual product. Eleven environment variables (the `DATABAS
 
 ## The model call: one credential, any provider
 
-The AI Gateway is OpenAI-compatible. Your existing SDK works by changing only the base URL, so the same chat completion against the cheapest catalog model looks like this in whatever you already use:
+The AI Gateway is OpenAI-compatible. Your existing SDK works by changing only the base URL, so the same chat completion against a cheap catalog model looks like this in whatever you already use:
 
 ```tabs
 {
   "title": "Same gateway call, three SDKs (only the base URL changes)",
   "tabs": [
-    { "label": "curl", "lang": "bash", "code": "curl \"$NEON_AI_GATEWAY_BASE_URL/ai-gateway/mlflow/v1/chat/completions\" \\\n  -H \"Authorization: Bearer $NEON_AI_GATEWAY_TOKEN\" \\\n  -d '{\"model\":\"gpt-5-nano\",\"messages\":[\n        {\"role\":\"user\",\"content\":\"What is Neon branching?\"}]}'" },
-    { "label": "Python", "lang": "python", "code": "from openai import OpenAI\n\nclient = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_TOKEN)\nclient.chat.completions.create(\n    model=\"gpt-5-nano\",\n    messages=[{\"role\": \"user\", \"content\": \"What is Neon branching?\"}],\n)" },
-    { "label": "Node", "lang": "javascript", "code": "import OpenAI from 'openai';\n\nconst client = new OpenAI({ baseURL: GATEWAY_URL, apiKey: GATEWAY_TOKEN });\nawait client.chat.completions.create({\n  model: 'gpt-5-nano',\n  messages: [{ role: 'user', content: 'What is Neon branching?' }],\n});" }
+    { "label": "curl", "lang": "bash", "code": "curl \"$NEON_AI_GATEWAY_BASE_URL/ai-gateway/mlflow/v1/chat/completions\" \\\n  -H \"Authorization: Bearer $NEON_AI_GATEWAY_TOKEN\" \\\n  -d '{\"model\":\"gpt-6-luna\",\"messages\":[\n        {\"role\":\"user\",\"content\":\"What is Neon branching?\"}]}'" },
+    { "label": "Python", "lang": "python", "code": "from openai import OpenAI\n\nclient = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_TOKEN)\nclient.chat.completions.create(\n    model=\"gpt-6-luna\",\n    messages=[{\"role\": \"user\", \"content\": \"What is Neon branching?\"}],\n)" },
+    { "label": "Node", "lang": "javascript", "code": "import OpenAI from 'openai';\n\nconst client = new OpenAI({ baseURL: GATEWAY_URL, apiKey: GATEWAY_TOKEN });\nawait client.chat.completions.create({\n  model: 'gpt-6-luna',\n  messages: [{ role: 'user', content: 'What is Neon branching?' }],\n});" }
   ]
 }
 ```

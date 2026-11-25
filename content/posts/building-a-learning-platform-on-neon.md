@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-08-04'
 publishedAt: '2026-08-04T09:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '19 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,6 +21,10 @@ tags:
   - AI
 sponsorCampaign: 'neon'
 ---
+
+:::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-nano` will fail after that date. The worker's default model below is now `gpt-6-luna`, which is what the platform runs in production.
+:::
 
 Teaching Postgres by showing someone a code block is a waste of everybody's time. They need a database they can break.
 
@@ -177,7 +181,7 @@ export default defineConfig({
           WORKER_SECRET: process.env.NEON_FUNCTION_SECRET!,
           AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY!,
           AI_GATEWAY_BASE_URL: process.env.AI_GATEWAY_BASE_URL!,
-          AI_MODEL: process.env.AI_MODEL ?? "gpt-5-nano",
+          AI_MODEL: process.env.AI_MODEL ?? "gpt-6-luna",
         },
       },
     },

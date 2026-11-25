@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-12'
 publishedAt: '2026-07-12T09:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '9 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,6 +23,8 @@ sponsorCampaign: 'neon'
 ---
 
 :::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-nano` will fail after that date. The examples here and in the [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) now use `gpt-6-luna`, a small OpenAI model in the gateway catalog ($0.10 input, $0.50 output per million tokens), and the token-limit check covers newer GPT models too. The terminal output below is from the July run and still shows `gpt-5-nano`.
+
 **Updated 23 November 2026:** this post was written on Neon's July 2026 platform preview, and the responses below are from then. On 17 September 2026 [the AI Gateway became generally available](https://neon.com/blog/neon-backend-is-ga). It works on any plan with prepaid credits and now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)), not only `us-east-2`.
 :::
 
@@ -95,10 +97,8 @@ async function callGateway(model: string, prompt: string, maxTokens: number) {
     body: JSON.stringify({
       model,
       messages: [{ role: 'user', content: prompt }],
-      // GPT-5 models want max_completion_tokens; others want max_tokens.
-      ...(model.startsWith('gpt-5')
-        ? { max_completion_tokens: maxTokens }
-        : { max_tokens: maxTokens }),
+      // GPT-5 and newer GPT models want max_completion_tokens; others want max_tokens.
+      ...(/^gpt-\d/.test(model) ? { max_completion_tokens: maxTokens } : { max_tokens: maxTokens }),
     }),
   });
   return res.json();
@@ -136,7 +136,7 @@ Two real details the demo handles for you. First, the token-limit parameter is n
 
 - **One secret, not three.** There is a single credential to store and rotate, and on Neon you do not even hold it; it is injected.
 - **No SDK sprawl.** One OpenAI-compatible client reaches every provider. Nothing new to add when you want to try a different one.
-- **Trivial to experiment.** Swapping `gpt-5-nano` for `claude-haiku-4-5` is a one-word change, so comparing models on your own prompts costs almost nothing.
+- **Trivial to experiment.** Swapping `gpt-6-luna` for `claude-haiku-4-5` is a one-word change, so comparing models on your own prompts costs almost nothing.
 - **One bill.** Usage across providers goes through one place instead of three separate invoices to reconcile.
 
 ## The repo

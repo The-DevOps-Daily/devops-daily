@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-07-18'
 publishedAt: '2026-07-18T09:00:00Z'
-updatedAt: '2026-11-23T10:00:00Z'
+updatedAt: '2026-11-25T10:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,6 +23,8 @@ sponsorCampaign: 'neon'
 ---
 
 :::note
+**Updated 25 November 2026:** OpenAI ends API access to GPT-5, GPT-5 mini, GPT-5 nano, GPT-5 pro, o3 and o3-pro on 11 December 2026, so requests that name `gpt-5-nano` will fail after that date. The code below and the [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) now use `gpt-6-luna`. The price chart and the terminal run are from July and still show `gpt-5-nano` at $0.05 input and $0.40 output. `gpt-6-luna` lists at $0.10 and $0.50, so with it as the small model the spread to `claude-opus-4-5` is about 50x on both input and output.
+
 **Updated 23 November 2026:** when this post was written, the AI Gateway only ran in `us-east-2`. It has been [generally available](https://neon.com/blog/neon-backend-is-ga) since 17 September 2026, works on any plan with prepaid credits, and now runs in four AWS regions (N. Virginia, Ohio, Frankfurt, Singapore; see [availability by region](https://neon.com/docs/introduction/regions)). The results below are from the original run.
 :::
 
@@ -48,7 +50,7 @@ Every model is the same request; only the `model` field changes:
 
 ```typescript
 // Same function, same credential. The model is data.
-await callGateway('gpt-5-nano', prompt, maxTokens);       // OpenAI, cheapest
+await callGateway('gpt-6-luna', prompt, maxTokens);       // OpenAI, small and cheap
 await callGateway('gemini-2-5-flash', prompt, maxTokens); // Google
 await callGateway('claude-haiku-4-5', prompt, maxTokens); // Anthropic
 await callGateway('claude-opus-4-5', prompt, maxTokens);  // Anthropic, flagship
