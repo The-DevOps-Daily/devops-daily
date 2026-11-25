@@ -209,7 +209,7 @@ export default async function NewslettersPage() {
                 </a>
               </div>
 
-              <SponsorSidebar />
+              <SponsorSidebar stickFrom={null} />
             </div>
           </aside>
         </div>

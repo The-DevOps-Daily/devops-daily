@@ -249,7 +249,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
               </CardContent>
             </Card>
 
-            <SponsorSidebar />
+            <SponsorSidebar stickFrom={null} />
           </div>
         </aside>
       </div>

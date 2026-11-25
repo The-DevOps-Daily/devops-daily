@@ -179,7 +179,7 @@ export default async function AdventDayPage({ params }: { params: Promise<{ slug
           {/* Sidebar */}
           <aside className="lg:col-span-3">
             <div className="sticky top-8 space-y-6">
-              <SponsorSidebar />
+              <SponsorSidebar stickFrom={null} />
 
               {/* Tags */}
               {day.tags && day.tags.length > 0 && (

@@ -80,9 +80,7 @@ export default async function ComparisonsPage() {
 
         {/* Sidebar */}
         <aside className="lg:col-span-3">
-          <div className="sticky space-y-6 top-8">
-            <SponsorSidebar />
-          </div>
+          <SponsorSidebar />
         </aside>
       </div>
     </div>

@@ -786,7 +786,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
               </Card>
             )}
 
-            <SponsorSidebar />
+            <SponsorSidebar stickFrom={null} />
           </div>
         </aside>
       </div>

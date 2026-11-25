@@ -8,6 +8,8 @@ import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface SponsorSidebarProps {
   className?: string;
+  /** Breakpoint where the sidebar sits beside the content and sticks; null never sticks. */
+  stickFrom?: 'lg' | 'xl' | null;
   relatedPosts?: Array<{
     title: string;
     slug: string;
@@ -15,15 +17,32 @@ interface SponsorSidebarProps {
   }>;
 }
 
-// Pass as className where the header hides on scroll (HEADROOM_PAGES in
-// components/header.tsx): the column sticks just below the header and moves up
-// with it when it hides.
-export const sponsorSidebarBelowHeader =
-  'top-[calc(var(--site-header-h,5rem)+1rem)] transition-[top] duration-200 motion-reduce:transition-none';
+// The column sticks just below the header (it moves up when a headroom header
+// hides) and scrolls on its own when it is taller than the screen, so the
+// newsletter button and related posts stay reachable. The bottom padding lets
+// its end scroll clear of the fixed back-to-top button.
+const stickyColumn = {
+  lg: 'lg:sticky lg:top-[calc(var(--site-header-h,5rem)+1rem)] lg:max-h-[calc(100dvh-var(--site-header-h,5rem)-2rem)] lg:overflow-y-auto lg:pb-16',
+  xl: 'xl:sticky xl:top-[calc(var(--site-header-h,5rem)+1rem)] xl:max-h-[calc(100dvh-var(--site-header-h,5rem)-2rem)] xl:overflow-y-auto xl:pb-16',
+};
 
-export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarProps) {
+export function SponsorSidebar({
+  className,
+  stickFrom = 'lg',
+  relatedPosts = [],
+}: SponsorSidebarProps) {
   return (
-    <div className={cn('sticky top-8 space-y-5', className)}>
+    <div
+      className={cn(
+        'space-y-5',
+        stickFrom &&
+          cn(
+            stickyColumn[stickFrom],
+            'transition-[top,max-height] duration-200 motion-reduce:transition-none [scrollbar-gutter:stable] [scrollbar-width:thin] [scrollbar-color:hsl(var(--muted-foreground)/0.35)_transparent]'
+          ),
+        className
+      )}
+    >
       {/* Carbon Ads sits first: the sponsor list below it grows every time a
           sponsor is added, and at four sponsors the ad had been pushed off the
           bottom of a laptop screen entirely. */}

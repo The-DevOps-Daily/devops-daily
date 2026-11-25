@@ -1,6 +1,6 @@
 import { PostContent } from '@/components/post-content';
 import { PostHeader } from '@/components/post-header';
-import { SponsorSidebar, sponsorSidebarBelowHeader } from '@/components/sponsor-sidebar';
+import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { NewsletterNudge } from '@/components/newsletter/newsletter-nudge';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { OptimizedImage } from '@/components/optimized-image';
@@ -239,10 +239,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             </article>
           </div>
           <aside className="lg:col-span-3">
-            <SponsorSidebar
-              className={sponsorSidebarBelowHeader}
-              relatedPosts={sidebarRelatedPosts}
-            />
+            <SponsorSidebar relatedPosts={sidebarRelatedPosts} />
           </aside>
         </div>
       </div>

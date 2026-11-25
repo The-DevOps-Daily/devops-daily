@@ -204,7 +204,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           </div>
 
           <aside className="hidden min-w-0 xl:block">
-            <SponsorSidebar className={guideLayout.sponsors} />
+            <SponsorSidebar stickFrom="xl" />
           </aside>
         </div>
       </div>

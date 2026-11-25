@@ -196,7 +196,7 @@ export default async function NewsDigestPage({
           {/* Sidebar */}
           <aside className="lg:col-span-3">
             <div className="sticky top-8 space-y-6">
-              <SponsorSidebar className="!relative !top-auto" />
+              <SponsorSidebar stickFrom={null} />
 
               {/* Recent digests - five most recent siblings, server-rendered
                   so each week's links flow into the index even before the

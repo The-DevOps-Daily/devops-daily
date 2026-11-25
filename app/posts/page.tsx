@@ -1,7 +1,7 @@
 import { PostsList } from '@/components/posts-list';
 import { PageHero } from '@/components/page-hero';
 import { FileText } from 'lucide-react';
-import { SponsorSidebar, sponsorSidebarBelowHeader } from '@/components/sponsor-sidebar';
+import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { getAllPosts, toPostSummary } from '@/lib/posts';
 
@@ -63,7 +63,7 @@ export default async function PostsPage() {
 
         {/* Sponsor Sidebar */}
         <aside className="lg:col-span-3">
-          <SponsorSidebar className={sponsorSidebarBelowHeader} />
+          <SponsorSidebar />
         </aside>
       </div>
     </div>
