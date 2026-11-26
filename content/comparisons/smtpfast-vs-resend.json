@@ -412,6 +412,10 @@
       "href": "/posts/email-apis-with-hosted-mcp-servers"
     },
     {
+      "label": "Giving an AI Agent a Mailbox: A Security Checklist",
+      "href": "/posts/ai-agent-email-access-security-checklist"
+    },
+    {
       "label": "SMTP Flow Simulator",
       "href": "/games/smtp-flow-simulator"
     },
