@@ -563,7 +563,7 @@ Every certificate goes through the same steps: generate a key, request, validate
 }
 ```
 
-Let's Encrypt moves faster than the rules: 64-day certificates by default from 10 February 2027 and 45 days from 2028. In Kubernetes, cert-manager runs the loop for you. Here `orders-lab-intermediate` is a `ClusterIssuer` of type `ca` whose Secret holds the intermediate's certificate and key:
+Let's Encrypt moves faster than the rules: 64-day certificates by default from 10 February 2027 and 45 days from 2028. What breaks first is usually not the ACME client but everything around it: alert thresholds fixed in days, monthly renewal jobs, copies on load balancers and pins. We scanned the top 10,000 sites and checked the defaults of common tools against each step in [TLS Certificates Are Going to 47 Days: What Breaks First](/posts/tls-certificates-47-days-what-breaks-first). In Kubernetes, cert-manager runs the loop for you. Here `orders-lab-intermediate` is a `ClusterIssuer` of type `ca` whose Secret holds the intermediate's certificate and key:
 
 ```yaml
 apiVersion: cert-manager.io/v1
