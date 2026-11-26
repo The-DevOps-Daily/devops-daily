@@ -252,7 +252,7 @@ function TerminalLine({ line }: { line: RenderedLine }) {
       </div>
     );
   }
-  return <div className="whitespace-pre-wrap break-words text-slate-400">{line.text}</div>;
+  return <samp className="block whitespace-pre-wrap break-words text-slate-400">{line.text}</samp>;
 }
 
 function stepToLines(step: TerminalStep, prompt: string): RenderedLine[] {
