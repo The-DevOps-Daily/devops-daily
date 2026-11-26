@@ -26,7 +26,8 @@ import { cn } from '@/lib/utils';
 
 // Grid configuration
 const GRID_SIZE = 24;
-const CELL_SIZE = 22; // pixels
+const MAX_CELL_SIZE = 22; // pixels
+const MIN_CELL_SIZE = 10;
 const INITIAL_SPEED = 150; // milliseconds per move
 const SPEED_INCREMENT = 5; // speed increase per server eaten
 const MIN_SPEED = 50; // minimum milliseconds per move
@@ -97,6 +98,36 @@ const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
 const timerRef = useRef<NodeJS.Timeout | null>(null);
 const directionRef = useRef<Direction>('RIGHT');
  const directionQueueRef = useRef<Direction[]>([]);
+  const boardAreaRef = useRef<HTMLDivElement>(null);
+  const boardCardRef = useRef<HTMLDivElement>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [cellSize, setCellSize] = useState(MAX_CELL_SIZE);
+
+  // Shrink the board on narrow screens so it never overflows the page.
+  useEffect(() => {
+    const area = boardAreaRef.current;
+    if (!area) return;
+    const fit = () => {
+      const card = boardCardRef.current;
+      const content = boardRef.current?.parentElement;
+      let chrome = 0;
+      if (card && content) {
+        const cardStyle = getComputedStyle(card);
+        const contentStyle = getComputedStyle(content);
+        chrome =
+          parseFloat(cardStyle.borderLeftWidth) +
+          parseFloat(cardStyle.borderRightWidth) +
+          parseFloat(contentStyle.paddingLeft) +
+          parseFloat(contentStyle.paddingRight);
+      }
+      const size = Math.floor((area.clientWidth - chrome) / GRID_SIZE);
+      setCellSize(Math.max(MIN_CELL_SIZE, Math.min(MAX_CELL_SIZE, size)));
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, []);
 
 // Load high score from localStorage
   useEffect(() => {
@@ -418,7 +449,7 @@ return (
           </CardContent>
         </Card>
 
-        <div className="grid lg:grid-cols-[300px_1fr_300px] gap-6 items-start">
+        <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr_300px] gap-6 items-start">
           {/* Left sidebar - Score */}
          <div>
            {/* Score Card */}
@@ -467,13 +498,13 @@ return (
           </div>
 
           {/* Center - Game canvas */}
-         <div className="flex justify-center">
-           <Card className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur overflow-hidden w-fit">
-             <CardContent className="p-6">
-               <div className="relative mx-auto" style={{ width: GRID_SIZE * CELL_SIZE, height: GRID_SIZE * CELL_SIZE }}>
+         <div ref={boardAreaRef} className="flex justify-center min-w-0">
+           <Card ref={boardCardRef} className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur overflow-hidden w-fit">
+             <CardContent className="p-3 sm:p-6">
+               <div ref={boardRef} className="relative mx-auto" style={{ width: GRID_SIZE * cellSize, height: GRID_SIZE * cellSize }}>
                  {/* Grid background */}
                  <div className="absolute inset-0 bg-slate-200 dark:bg-slate-950 rounded-lg border-2 border-slate-400 dark:border-slate-700">
-                   <div className="absolute inset-0 bg-grid opacity-20" />
+                   <div className="absolute inset-0 bg-grid opacity-20" style={{ backgroundSize: `${cellSize}px ${cellSize}px` }} />
                  </div>
 
                   {/* Server (food) */}
@@ -483,14 +514,14 @@ return (
                     animate={{ scale: 1 }}
                     className="absolute flex items-center justify-center"
                     style={{
-                      left: server.x * CELL_SIZE,
-                      top: server.y * CELL_SIZE,
-                      width: CELL_SIZE,
-                      height: CELL_SIZE,
+                      left: server.x * cellSize,
+                      top: server.y * cellSize,
+                      width: cellSize,
+                      height: cellSize,
                     }}
                   >
                     <div className="w-full h-full bg-gradient-to-br from-green-400 to-emerald-600 rounded shadow-lg flex items-center justify-center animate-pulse">
-                      <Server className="w-4 h-4 text-white" />
+                      <Server className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
                   </motion.div>
 
@@ -502,10 +533,10 @@ return (
                       animate={{ scale: 1 }}
                       className="absolute"
                       style={{
-                        left: segment.x * CELL_SIZE,
-                        top: segment.y * CELL_SIZE,
-                        width: CELL_SIZE,
-                        height: CELL_SIZE,
+                        left: segment.x * cellSize,
+                        top: segment.y * cellSize,
+                        width: cellSize,
+                        height: cellSize,
                       }}
                     >
                       <div
@@ -516,7 +547,7 @@ return (
                             : 'bg-gradient-to-br from-red-600 to-orange-700'
                         )}
                       >
-                        {index === 0 && <Bug className="w-4 h-4 text-white" />}
+                        {index === 0 && <Bug className="w-3 h-3 sm:w-4 sm:h-4 text-white" />}
                       </div>
                     </motion.div>
                   ))}
@@ -528,19 +559,19 @@ return (
                        initial={{ opacity: 0 }}
                        animate={{ opacity: 1 }}
                        exit={{ opacity: 0 }}
-                       className="absolute inset-0 bg-white/90 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center"
+                       className="absolute inset-0 bg-white/90 dark:bg-black/80 backdrop-blur-sm flex overflow-y-auto p-2"
                      >
-                       <div className="text-center p-8 max-w-md bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-2xl">
-                        <Bug className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">How to Play</h3>
-                        <div className="text-left space-y-2 text-slate-700 dark:text-gray-300 mb-6">
+                       <div className="m-auto text-center p-3 sm:p-8 max-w-md bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-2xl">
+                        <Bug className="hidden sm:block w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-4">How to Play</h3>
+                        <div className="text-left space-y-1 sm:space-y-2 text-xs sm:text-base text-slate-700 dark:text-gray-300 mb-3 sm:mb-6">
                            <p>• Control the <span className="text-red-400 font-semibold">bug</span> to infect <span className="text-green-400 font-semibold">healthy servers</span></p>
                             <p>• The bug grows longer with each infection</p>
                             <p>• Avoid crashing into walls or yourself</p>
                             <p>• Speed increases as you infect more servers</p>
                             <p>• Unlock achievements as you progress</p>
                           </div>
-                          <Button onClick={startGame} size="lg">
+                          <Button onClick={startGame} size="lg" className="h-9 sm:h-11">
                             Start Game
                           </Button>
                         </div>
@@ -573,27 +604,27 @@ return (
                        initial={{ opacity: 0 }}
                        animate={{ opacity: 1 }}
                        exit={{ opacity: 0 }}
-                       className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
+                       className="absolute inset-0 bg-black/80 backdrop-blur-sm flex overflow-y-auto p-2"
                      >
-                       <div className="text-center p-8 bg-slate-100/90 dark:bg-slate-900/90 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md">
-                         <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                       <div className="m-auto text-center p-4 sm:p-8 bg-slate-100/90 dark:bg-slate-900/90 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md">
+                         <AlertTriangle className="hidden sm:block w-16 h-16 text-red-500 mx-auto mb-4" />
+                         <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2">
                            {gameOverReason === 'wall' ? 'Bug Patched!' : 'System Crash!'}
                          </h3>
-                         <p className="text-slate-600 dark:text-gray-400 mb-4">
+                         <p className="text-sm sm:text-base text-slate-600 dark:text-gray-400 mb-3 sm:mb-4">
                            {gameOverReason === 'wall'
                              ? 'The bug hit a firewall and was patched!'
                              : 'The bug corrupted itself and crashed!'}
                          </p>
-                         <div className="grid grid-cols-2 gap-4 mb-6">
-                           <div className="p-4 bg-slate-200/80 dark:bg-slate-800/50 rounded-lg">
-                             <div className="text-3xl font-bold text-orange-400">
+                         <div className="grid grid-cols-2 gap-2 sm:gap-4 mb-4 sm:mb-6">
+                           <div className="p-2 sm:p-4 bg-slate-200/80 dark:bg-slate-800/50 rounded-lg">
+                             <div className="text-2xl sm:text-3xl font-bold text-orange-400">
                                {score}
                              </div>
                              <div className="text-sm text-slate-600 dark:text-gray-400">Final Score</div>
                            </div>
-                           <div className="p-4 bg-slate-200/80 dark:bg-slate-800/50 rounded-lg">
-                             <div className="text-3xl font-bold text-red-400">
+                           <div className="p-2 sm:p-4 bg-slate-200/80 dark:bg-slate-800/50 rounded-lg">
+                             <div className="text-2xl sm:text-3xl font-bold text-red-400">
                                {serversInfected}
                              </div>
                              <div className="text-sm text-slate-600 dark:text-gray-400">Infected</div>
@@ -763,7 +794,6 @@ return (
         .bg-grid {
           background-image: linear-gradient(to right, rgba(100, 100, 100, 0.1) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(100, 100, 100, 0.1) 1px, transparent 1px);
-          background-size: ${CELL_SIZE}px ${CELL_SIZE}px;
         }
       `}</style>
     </div>
