@@ -161,7 +161,7 @@ permissions:
       action: ask
 ```
 
-One catch from our hands-on run: `doctl` 1.175.0 still asks for a real Anthropic API key when you create a `claude-code` session, even with the inference fields above, and which models your DigitalOcean inference key may use depends on your account's tier. [Issue to Pull Request with DigitalOcean Managed Agents](/posts/issue-to-pull-request-digitalocean-managed-agents) walks through the setup we got working, with OpenCode and DeepSeek V4 Pro.
+One catch from our hands-on run: `doctl` 1.175.0 still asks for a real Anthropic API key when you create a `claude-code` session, even with the inference fields above, and which models your DigitalOcean inference key may use depends on your account's tier. [Issue to Pull Request with DigitalOcean Managed Agents](/posts/issue-to-pull-request-digitalocean-managed-agents) walks through the setup we got working, with OpenCode and DeepSeek V4 Pro. From TypeScript, the DoTs SDK runs Claude Code on DigitalOcean-hosted models without that check; [Run Claude Code in a DigitalOcean sandbox from TypeScript](/posts/run-claude-code-digitalocean-sandbox-typescript-sdk) covers it, including the cleanup step that also revokes the model key.
 
 **Price.** $0.044 per vCPU-hour and $0.0095 per GB-hour of peak memory, the lowest vCPU list price in this comparison. Action Gateway calls cost $0.10 per 1,000, and the Exa search tool $10.10 per 1,000.
 
