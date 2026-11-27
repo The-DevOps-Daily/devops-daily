@@ -232,6 +232,10 @@
   "relatedTags": ["Nginx", "Traefik", "Reverse Proxy", "Load Balancing", "Ingress", "Kubernetes"],
   "relatedLinks": [
     {
+      "label": "API Gateway or Load Balancer? What Each Gateway Feature Costs, Measured",
+      "href": "/posts/api-gateway-vs-load-balancer-what-it-costs"
+    },
+    {
       "label": "Nginx Load Balancing and Reverse Proxy",
       "href": "/exercises/nginx-load-balancing-reverse-proxy"
     },

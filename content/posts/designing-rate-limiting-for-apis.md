@@ -307,6 +307,8 @@ server {
 
 nginx's `limit_req` is a leaky bucket under the hood. This stops abusive traffic before it ever reaches your application, which is exactly where you want to drop it. Use the application-level Redis approach when you need per-user limits, different tiers, or limits that depend on the request body. Use both together for defense in depth.
 
+The same 10 requests per second is not the same limit everywhere, though. We sent identical bursts through nginx, Kong and Tyk and got three different answers, and measured what each one charges per request for the limit, in [API gateway or load balancer: what each feature costs](/posts/api-gateway-vs-load-balancer-what-it-costs).
+
 ## Seeing it work
 
 Fire a quick loop at the endpoint and watch the limit kick in:
