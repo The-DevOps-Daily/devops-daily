@@ -6,8 +6,8 @@ category:
   slug: 'cloud'
 date: '2026-11-27'
 publishedAt: '2026-11-27T15:00:00Z'
-updatedAt: '2026-11-27T15:00:00Z'
-readingTime: '20 min read'
+updatedAt: '2026-11-27T16:00:00Z'
+readingTime: '22 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -23,19 +23,21 @@ tags:
   - FinOps
 ---
 
-Teams leave RDS for three reasons: the bill, the time it takes to get a copy of production for a test, and the major version upgrade they keep putting off. We checked all three across RDS and ten alternatives, and the first result surprised us. Once you compare plans that include a standby, RDS is not the expensive one. Google Cloud SQL, Crunchy Bridge, DigitalOcean and Azure all land between 8% below and about 10% above it at both sizes we priced with high availability. Most of the much cheaper options are cheaper because they sell you one node.
+Teams leave RDS for three reasons: the bill, the wait for a copy of production to test on, and the major version upgrade they keep putting off. We checked all three across RDS and ten alternatives.
 
-The differences that decide the choice are the other two. A Neon branch of a 1.58 GB database was queryable in 2.7 seconds, the same as a branch of a 0.16 GB one. On RDS, the same request is "restore a snapshot into a new instance". And a major version upgrade is four different procedures depending on where you run, with downtime that ranges from seconds to however long a dump and restore of your database takes.
+The first result surprised us. With a standby in the price, RDS is not the expensive one: Google Cloud SQL, Crunchy Bridge, DigitalOcean and Azure land between 8% below and about 10% above it at both sizes we priced with high availability. Most of the much cheaper options sell you one node.
 
-This post has the prices at three sizes, the measured branch and upgrade times, and a table of what each provider does for branching, upgrades and free tiers, with links to their docs. The scripts, raw results and every price quote are in a public repo you can run.
+The other two decide the choice. A Neon branch of a 1.58 GB database was queryable in 2.7 seconds, the same as for 0.16 GB. On RDS, the same request is "restore a snapshot into a new instance". A major version upgrade is four different procedures, with downtime from seconds to however long a dump and restore of your database takes.
+
+The scripts, raw results and every price quote are in a public repo you can run.
 
 ## TLDR
 
-- **Price.** With a standby that takes over on its own, a 2 vCPU / 8 GB / 200 GB database costs $266 to $319 a month on Cloud SQL, RDS, Crunchy Bridge, DigitalOcean and Azure (RDS: $289). An 8 vCPU / 32 GB / 1 TB one costs $1,126 to $1,275 on the same five (RDS: $1,198). If Crunchy Bridge bills HA storage twice, its rows rise to $320 and $1,320, about 10% above RDS.
-- **Cheaper rows mostly have no standby.** Supabase ($150 and $549) and Neon ($225 and $969, always on) are one compute. Xata with one replica comes to $196 and $841, but it does not publish a replica price, so that row rests on our assumption. Aurora costs 1.4 to 2 times RDS, depending on how much I/O you do.
-- **Branching.** Neon branches carried the parent's data and were queryable in a median 2.70 and 2.72 seconds at 0.16 GB and 1.58 GB. A Supabase Free project refused to branch (HTTP 402, Pro plan only), and Supabase branches are data-less by default. RDS, Azure, DigitalOcean, Aiven and Crunchy Bridge clone by restoring a backup into a new, fully billed instance.
-- **Upgrades.** On our own server, stopping Postgres 17, running `pg_upgrade --link` and starting 18 took 3.4 seconds on a 4.71 GB database, and 15.8 seconds in copy mode. A dump and restore of the same data took 3 minutes 34 seconds. Neon and PlanetScale have no in-place upgrade; Supabase has one, but our new project had no target to upgrade to.
-- **Statistics.** After a Postgres 17 to 18 `pg_upgrade`, the planner statistics were there. After `pg_dump`/`pg_restore` with default flags they were not, until we ran `ANALYZE` or added `--statistics` to `pg_dump`.
+- **Price.** With a standby that takes over on its own, a 2 vCPU / 8 GB / 200 GB database costs $266 to $319 a month on Cloud SQL, RDS, Crunchy Bridge, DigitalOcean and Azure (RDS: $289). At 8 vCPU / 32 GB / 1 TB it is $1,126 to $1,275 (RDS: $1,198). If HA bills storage twice, Crunchy Bridge rises to $320 and $1,320.
+- **Cheaper rows mostly have no standby.** Supabase ($150 and $549) is one node. Neon ($225 and $969, always on) is one compute on storage replicated across zones: a failed compute restarts, a short outage, not a failover. Scaled to zero, a 2 vCPU staging database busy 8 hours on weekdays costs about $107.
+- **Branching.** Neon branches had the parent's data and were queryable in a median 2.70 s at 0.16 GB and 2.72 s at 1.58 GB. Supabase branches need Pro and are data-less by default. RDS, Azure, DigitalOcean, Aiven and Crunchy Bridge restore a backup into a new, fully billed instance.
+- **Restore.** After a `DROP TABLE` on 1.58 GB, Neon's instant restore brought the data back on the same connection string in a median 9.71 s. RDS restores into a new DB instance; we did not time that.
+- **Upgrades.** On our server, stopping Postgres 17, running `pg_upgrade --link` and starting 18 took 3.4 s on 4.71 GB and kept the planner statistics. A dump and restore took 3 min 34 s, with no statistics until `ANALYZE` or `pg_dump --statistics`.
 
 :::note
 Neon and Supabase Free were run with the scripts in the repo. The other managed services were priced from their price lists and described from their docs, with a source for every claim in the repo.
@@ -55,34 +57,43 @@ https://github.com/The-DevOps-Daily/rds-alternatives-measured
 
 ## What we measured and what we only read
 
-We could only time services we could run for free or on accounts we already pay for, and we would not touch a production AWS account for a benchmark. So the work splits in three:
+We only timed services we could run for free or already pay for, and we would not touch a production AWS account for a benchmark:
 
-1. **Measured on managed services:** Neon (branching, and a 17 to 18 upgrade by dump and restore) and Supabase Free (what the API allows). Both in AWS eu-central-1, driven from a DigitalOcean droplet in Frankfurt.
-2. **Measured on our own server:** three of the four ways managed services do a major version upgrade (`pg_upgrade`, dump and restore, logical replication), with the same data, on Postgres 17.12 and 18.7 from the official Docker images. This shows what the upgrade step costs before a provider wraps it in snapshots and restarts. The fourth way, `pg_upgrade` on a hidden standby followed by a failover, we did not build.
-3. **Read, not measured:** RDS, Aurora, Cloud SQL, Azure Flexible Server, DigitalOcean, Crunchy Bridge, Aiven, PlanetScale and Xata. Prices come from their price lists and pricing APIs, and mechanics from their docs, all fetched on 23 November 2026. Every price in the repo carries its URL and a one-line quote.
+| Stage                        | Services                                                                                              | What and where                                                                                                                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Measured on managed services | Neon, Supabase Free                                                                                   | Neon: branching, point-in-time restore, a 17 to 18 upgrade by dump and restore. Supabase: what the API allows. AWS eu-central-1, client on a DigitalOcean droplet in Frankfurt (Amsterdam for the restore). |
+| Measured on our own server   | Postgres 17.12 and 18.7, official Docker images, same data                                            | Three of the four upgrade methods: `pg_upgrade`, dump and restore, logical replication. Not built: `pg_upgrade` on a hidden standby plus failover.                                                          |
+| Read, not measured           | RDS, Aurora, Cloud SQL, Azure Flexible Server, DigitalOcean, Crunchy Bridge, Aiven, PlanetScale, Xata | Price lists, pricing APIs and docs, fetched 23 November 2026. Every price in the repo has its URL and a one-line quote.                                                                                     |
 
-All stages ran one after the other on the same droplet, so no two measurements shared it. The dataset is one pgbench-style `accounts` table with a primary key and an 84-character filler of md5 hex, generated on the server: 1 million rows (0.16 GB), 10 million (1.58 GB) and 30 million (4.71 GB). A real schema has many more tables and indexes, and `pg_upgrade` time grows with the number of objects, so read our upgrade times as illustrative measurements for this host and a one-table schema.
+Stages ran one after the other on the same droplet, so no two shared it. The data is one pgbench-style `accounts` table with a primary key and an 84-character md5-hex filler, generated on the server: 1 million rows (0.16 GB), 10 million (1.58 GB) and 30 million (4.71 GB).
+
+Real schemas have many more tables and indexes, and `pg_upgrade` time grows with the object count. Treat our upgrade times as illustrative for this host and a one-table schema.
 
 ## What you pay at three sizes
 
-We picked three sizes that match real deployments:
+Three sizes that match real deployments:
 
 - **S:** about 2 vCPU and 4 GB, 50 GB of storage, one node. A side project or an internal tool.
 - **M:** about 2 vCPU and 8 GB, 200 GB, with a high-availability standby. A small production app.
 - **L:** about 8 vCPU and 32 GB, 1 TB, with a standby. A busy production database.
 
-The rule for every provider: the smallest plan with at least that many vCPUs and that much RAM (shared or burstable CPU allowed at S), and at least that much storage, rounded up to the provider's increments. Prices are US East, on demand, 730 hours a month, for compute and storage only: no egress, no discounts, and no separately billed backups or restore history (Cloud SQL, for example, charges $0.08 per GiB-month of backup storage used). Storage sizes are in GB; for providers that bill in GiB we converted, then rounded to their increments.
+Pricing rules, the same for every provider:
+
+- The smallest plan with at least those vCPUs and that RAM (shared or burstable CPU allowed at S) and at least that storage, rounded up to the provider's increments.
+- US East, on demand, 730 hours a month.
+- Compute and storage only: no egress, discounts, or separately billed backups or restore history (Cloud SQL, for one, charges $0.08 per GiB-month of backup storage used).
+- Storage in GB; for GiB-billed providers we converted, then rounded to their increments.
 
 ```chart
 {
   "type": "bar",
   "title": "M: about 2 vCPU / 8 GB / 200 GB, monthly list price",
   "unit": "$",
-  "caption": "Verified 23 Nov 2026 from each provider's price list or pricing API. US East, on demand, 730 h. 'One node' rows have no standby that takes over on its own. Xata: replica price not published, assumed equal to the primary. Aurora: r7g.large (16 GB) writer plus a replica; Standard excludes I/O charges. PlanetScale: PS-160 (16 GB), primary plus two replicas. Crunchy Bridge: $320 if HA doubles storage. Compute and storage only. Sources: prices/prices.json in the repo.",
+  "caption": "Verified 23 Nov 2026 from each provider's price list or pricing API. US East, on demand, 730 h. 'One node' rows have no standby that takes over on its own. Neon has no standby compute either; its storage is replicated across availability zones and a failed compute is restarted. Xata: replica price not published, assumed equal to the primary. Aurora: r7g.large (16 GB) writer plus a replica; Standard excludes I/O charges. PlanetScale: PS-160 (16 GB), primary plus two replicas. Crunchy Bridge: $320 if HA doubles storage. Compute and storage only. Sources: prices/prices.json in the repo.",
   "rows": [
     { "label": "Supabase (one node)", "value": 150, "series": "One node" },
     { "label": "Xata (replica price assumed)", "value": 196, "series": "With standby" },
-    { "label": "Neon Launch (one compute, always on)", "value": 225, "series": "One node" },
+    { "label": "Neon Launch (one compute, always on)", "value": 225, "series": "One compute, replicated storage" },
     { "label": "Cloud SQL", "value": 266, "series": "With standby" },
     { "label": "RDS Multi-AZ", "value": 289, "series": "RDS" },
     { "label": "Crunchy Bridge", "value": 300, "series": "With standby" },
@@ -96,55 +107,121 @@ The rule for every provider: the smallest plan with at least that many vCPUs and
   "series": [
     { "name": "RDS", "color": "#ff9900" },
     { "name": "With standby", "color": "#38bdf8" },
-    { "name": "One node", "color": "#94a3b8" }
+    { "name": "One node", "color": "#94a3b8" },
+    { "name": "One compute, replicated storage", "color": "#a78bfa" }
   ]
 }
 ```
 
-| Provider                     | S, one node | M, with standby |  L, with standby | Standby takes over on its own  |
-| ---------------------------- | ----------: | --------------: | ---------------: | ------------------------------ |
-| Cloud SQL                    |         $89 |            $266 |           $1,126 | Yes                            |
-| RDS                          |         $53 |            $289 |           $1,198 | Yes                            |
-| Crunchy Bridge               |         $75 |    $300 to $320 | $1,220 to $1,320 | Yes                            |
-| DigitalOcean                 |         $61 |            $304 |           $1,256 | Yes                            |
-| Azure Flexible Server        |         $57 |            $319 |           $1,275 | Yes                            |
-| PlanetScale Postgres         |        $101 |            $357 |           $1,506 | Yes (two replicas)             |
-| Aurora Standard, before I/O  |         $58 |            $423 |           $1,715 | Yes                            |
-| Aurora I/O-Optimized         |         $81 |            $569 |           $2,323 | Yes                            |
-| Aiven                        |         $99 |            $465 |           $2,500 | Yes                            |
-| Xata (replica price assumed) |         $49 |            $196 |             $841 | Yes, price not published       |
-| Supabase                     |         $80 |  $150, one node |   $549, one node | No generally available standby |
-| Neon Launch, always on       |        $172 |  $225, one node |   $969, one node | No standby compute             |
+| Provider                     | S, one node |   M, with standby |   L, with standby | Standby takes over on its own                             |
+| ---------------------------- | ----------: | ----------------: | ----------------: | --------------------------------------------------------- |
+| Cloud SQL                    |         $89 |              $266 |            $1,126 | Yes                                                       |
+| RDS                          |         $53 |              $289 |            $1,198 | Yes                                                       |
+| Crunchy Bridge               |         $75 |      $300 to $320 |  $1,220 to $1,320 | Yes                                                       |
+| DigitalOcean                 |         $61 |              $304 |            $1,256 | Yes                                                       |
+| Azure Flexible Server        |         $57 |              $319 |            $1,275 | Yes                                                       |
+| PlanetScale Postgres         |        $101 |              $357 |            $1,506 | Yes (two replicas)                                        |
+| Aurora Standard, before I/O  |         $58 |              $423 |            $1,715 | Yes                                                       |
+| Aurora I/O-Optimized         |         $81 |              $569 |            $2,323 | Yes                                                       |
+| Aiven                        |         $99 |              $465 |            $2,500 | Yes                                                       |
+| Xata (replica price assumed) |         $49 |              $196 |              $841 | Yes, price not published                                  |
+| Supabase                     |         $80 |    $150, one node |    $549, one node | No generally available standby                            |
+| Neon Launch, always on       |        $172 | $225, one compute | $969, one compute | No standby compute; storage replicated, compute restarted |
 
-What the table hides is how much each row is not like the others:
+### What the table hides
 
-- **Aurora** has no 8 GB instance class in this family, so its M row is an r7g.large with 16 GB, and its L row has 64 GB. Aurora Standard adds $0.20 per million I/O requests on top of the price shown; I/O-Optimized has no I/O charge and becomes the cheaper of the two above about 731 million requests a month at M and about 3 billion at L.
-- **Neon** couples CPU and memory: 1 CU is 1 vCPU and 4 GB, so 2 vCPU comes with 8 GB, which is why its S row is the most expensive. These are always-on prices on the Launch plan; a database that idles scales to zero and costs a fraction of this. Launch has no uptime SLA; on the Scale plan, which has one, M is $394 and L is $1,646. Restore history ($0.20 per GB-month of changes) is not included. Storage is $0.35 per GB-month, so $350 of the $969 at L is storage.
-- **Xata** replicas "provide high availability, automated failover", per its docs, but the pricing page lists no replica price. We assumed a replica costs the same as the primary and counted storage once. Xata is also joining ClickHouse and says it will eventually move its customers to ClickHouse's managed Postgres.
-- **Aiven** has no 8 CPU / 32 GB plan. Its L row is business-64 with 61 GB; business-32 (4 CPUs, 30 GB) plus storage would be about $1,580.
-- **Crunchy Bridge** says HA "doubles the cluster price" and does not say whether that includes storage, so its M and L rows are ranges. Its S row is Hobby-4, which Crunchy's docs list with 2 burstable cores and its pricing page with 1; with 2 dedicated cores (Standard-8, 8 GB) S is $145.
-- **PlanetScale** ties 8 GB of RAM to each vCPU, and its HA plans always run a primary and two replicas, with storage billed on all three (less 10 GB each).
-- **Azure** Premium SSD comes in fixed sizes, so 50 GB bills as 64 GiB and 200 GB as 256 GiB, and those disks provision 240 and 1,100 IOPS, below the 3,000 IOPS baseline of gp3 on RDS.
-- **DigitalOcean** bills storage apart from compute. New Standard edition clusters cannot have more than 4 GiB of RAM or a standby (for new accounts since 15 October 2026, for all accounts from 30 November), so M and L use the Advanced edition.
-- **Supabase** has no generally available standby. A read replica exists, but it does not take over on its own.
+The rows are not like for like:
+
+| Provider       | The catch                                                                                                                                                 |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aurora         | No 8 GB class in this family: M is an r7g.large (16 GB), L has 64 GB. Standard adds $0.20 per million I/O requests. 1.4 to 2 times RDS, depending on I/O. |
+| Neon           | 1 CU is 1 vCPU and 4 GB, so 2 vCPU brings 8 GB and S is its priciest row. Always-on Launch prices, no standby compute (next section).                     |
+| Xata           | No published replica price. We assumed it equals the primary and counted storage once.                                                                    |
+| Aiven          | No 8 CPU / 32 GB plan. L is business-64 with 61 GB.                                                                                                       |
+| Crunchy Bridge | HA "doubles the cluster price", storage not specified, so M and L are ranges.                                                                             |
+| PlanetScale    | 8 GB RAM per vCPU. HA is always a primary and two replicas, storage billed on all three (less 10 GB each).                                                |
+| Azure          | Fixed Premium SSD sizes: 50 GB bills as 64 GiB, 200 GB as 256 GiB, with 240 and 1,100 IOPS. gp3 on RDS has a 3,000 IOPS baseline.                         |
+| DigitalOcean   | Storage billed apart. New Standard clusters cannot exceed 4 GiB of RAM or have a standby, so M and L use Advanced.                                        |
+| Supabase       | No generally available standby. Read replicas do not take over on their own.                                                                              |
+
+<details>
+<summary>More detail on Aurora, Xata, Aiven, Crunchy Bridge and DigitalOcean</summary>
+
+- **Aurora:** I/O-Optimized has no I/O charge and is the cheaper of the two above about 731 million requests a month at M and about 3 billion at L.
+- **Xata:** its docs say replicas "provide high availability, automated failover". Xata is joining ClickHouse and says it will eventually move customers to ClickHouse's managed Postgres.
+- **Aiven:** business-32 (4 CPUs, 30 GB) plus storage would be about $1,580.
+- **Crunchy Bridge:** S is Hobby-4, listed with 2 burstable cores in Crunchy's docs and 1 on its pricing page. With 2 dedicated cores (Standard-8, 8 GB), S is $145.
+- **DigitalOcean:** the Standard limit applies to new accounts since 15 October 2026 and to all accounts from 30 November.
+
+</details>
+
+### Neon: one compute on replicated storage
+
+The Neon rows are always-on Launch plan prices. What moves them:
+
+- **Scale to zero.** Compute bills only while it runs. A staging or preview database at M, busy 8 hours on weekdays, runs about 174 hours a month (8 hours × about 21.75 weekdays): 2 CU × 174 h × $0.106 per CU-hour is $36.89 of compute, plus $70 for 200 GB at $0.35 per GB-month. About $107 a month instead of $225. The 5 minutes the compute stays up after the last query each day add about $0.38 a month.
+- **An uptime SLA.** Launch has none. On the Scale plan, which has one, M is $394 and L is $1,646.
+- **Restore history** ($0.20 per GB-month of changes) is not included. At $0.35 per GB-month, storage is $350 of the $969 at L.
+
+Neon has no standby compute, and a compute runs in one availability zone at a time. The storage is what is replicated.
+
+Per [Neon's high availability docs](https://neon.com/docs/introduction/high-availability), the safekeepers that receive the WAL "are distributed across multiple Availability Zones", secondary pageservers keep copies of the data, and the long-term copy is in object storage. A failed compute is restarted or moved to another node, on the same storage. Typical times, per the docs:
+
+| Failure        | What happens                                       |
+| -------------- | -------------------------------------------------- |
+| Postgres crash | Restarted "within a few seconds"                   |
+| Failed node    | Its computes move to another node in "1-2 minutes" |
+| Zone outage    | Computes move to a healthy zone in "1-10 minutes"  |
+
+Compute failures "don't affect your data", Neon says, but connections, temporary tables and the compute's cache are lost. Plan for a short outage, not a failover.
 
 ### What grows an RDS bill
 
-If RDS is in the middle on list price, the stories about RDS bills come from somewhere else. Three things in the price list do it:
+If RDS is mid-pack on list price, the big RDS bills come from three lines in the price list:
 
-1. **Multi-AZ doubles everything.** db.m7g.large is $0.168 an hour in one zone and $0.337 with a standby, and gp3 storage goes from $0.115 to $0.23 per GB-month. Cloud SQL and Azure double the same way; it only looks like an RDS tax when the comparison is against a one-node service.
-2. **Storage performance above the baseline.** gp3 on RDS gives 3,000 IOPS and 125 MiB/s below 400 GiB. Each extra provisioned IOPS is $0.02 a month in one zone and $0.04 with Multi-AZ.
-3. **Extended Support.** When a major version leaves standard support, RDS enrolls the instance in paid Extended Support: $0.10 per vCPU-hour in years one and two, $0.20 in year three. For one 8 vCPU instance that is $584 a month, then $1,168, and AWS charges it on the Multi-AZ standby too, so the L configuration pays $1,168 and then $2,336 a month. Cloud SQL and Azure have paid extended support as well, at their own rates. Supabase, Aiven and Crunchy Bridge upgrade you automatically instead, and DigitalOcean publishes end-of-life dates and mentions scheduled upgrades, without a timing we could confirm. We wrote about [the same charge on RDS for MySQL 8.0](/posts/aws-rds-extended-support-mysql-8-0-charges).
+1. **Multi-AZ doubles everything.** db.m7g.large is $0.168 an hour in one zone and $0.337 with a standby; gp3 goes from $0.115 to $0.23 per GB-month. Cloud SQL and Azure double the same way. It only looks like an RDS tax next to a one-node service.
+2. **IOPS above the baseline.** gp3 on RDS gives 3,000 IOPS and 125 MiB/s below 400 GiB. Each extra provisioned IOPS is $0.02 a month, or $0.04 with Multi-AZ.
+3. **Extended Support.** Once a major version leaves standard support, RDS enrolls the instance in paid Extended Support: $0.10 per vCPU-hour in years one and two, $0.20 in year three.
+   - One 8 vCPU instance pays $584 a month, then $1,168. The Multi-AZ standby is charged too, so L pays $1,168, then $2,336.
+   - Cloud SQL and Azure charge for extended support too, at their own rates.
+   - Supabase, Aiven and Crunchy Bridge upgrade you automatically instead. DigitalOcean publishes end-of-life dates and mentions scheduled upgrades, with no timing we could confirm.
+   - We covered [the same charge on RDS for MySQL 8.0](/posts/aws-rds-extended-support-mysql-8-0-charges).
 
-The third one connects price to upgrades: on the providers that charge for old versions, putting off the upgrade has a monthly cost.
+Where old versions cost extra, putting off the upgrade has a monthly cost.
 
 ## Branching: seconds or a new instance
 
-A branch is a copy of the database you can break. Teams want one per pull request, one for a migration rehearsal, one for a support engineer who needs production-shaped data. How fast you get one, and whether it has data in it, depends on how the service stores data.
+A branch is a copy of the database you can break: one per pull request, one for a migration rehearsal, one for a support engineer who needs production-shaped data. How fast you get one, and whether it has data, depends on how the service stores data:
+
+```diagram
+{
+  "type": "graph",
+  "columns": [
+    [
+      { "id": "parent", "label": "Neon parent", "sub": "its own compute", "icon": "cpu", "tone": "blue" },
+      { "id": "branch", "label": "Neon branch", "sub": "new 1 CU compute", "icon": "branch", "tone": "green", "detail": "No data is copied at creation. Queryable in a median 2.70 s at 0.16 GB and 2.72 s at 1.58 GB." },
+      { "id": "rds", "label": "RDS instance", "sub": "the source", "icon": "server", "tone": "amber" }
+    ],
+    [
+      { "id": "store", "label": "Shared storage", "sub": "copy-on-write", "icon": "database", "tone": "violet" },
+      { "id": "s3", "label": "Snapshot and logs", "sub": "in S3", "icon": "cloud", "tone": "slate" }
+    ],
+    [
+      { "id": "copy", "label": "New RDS instance", "sub": "new endpoint, billed in full", "icon": "server", "tone": "amber", "detail": "Available before all blocks are loaded; the rest load from S3 in the background. We did not time this." }
+    ]
+  ],
+  "edges": [
+    ["parent", "store", "reads"],
+    ["branch", "store", "reads"],
+    ["rds", "s3", "backups"],
+    ["s3", "copy", "restore"]
+  ]
+}
+```
 
 ### Neon: measured
 
-We loaded the table into a Neon Postgres 17 project, created 10 branches with their own 1 CU compute, and timed each from the API request to the first query that read the last row of the parent's table through the branch. Then we read the whole table on the branch and compared the row count and a sum of per-row hashes over every column with the parent's.
+We loaded the table into a Postgres 17 project on Neon and created 10 branches, each with its own 1 CU compute. The clock ran from the API request to the first query that read the parent's last row through the branch. Then we read the whole branch table and compared the row count and a sum of per-row hashes over every column with the parent's.
 
 ```chart
 {
@@ -159,13 +236,17 @@ We loaded the table into a Neon Postgres 17 project, created 10 branches with th
 }
 ```
 
-Ten times the data, the same time: a median of 2.70 seconds at 0.16 GB and 2.72 seconds at 1.58 GB, with all 20 runs between 2.6 and 3.5 seconds. Of the median, about 0.5 seconds is the API call, 1.7 seconds is waiting for Neon's operations to finish (creating the branch and starting its compute), and 0.5 seconds is getting the connection string, connecting and running the query. A Neon branch does not copy the data at creation; its compute reads pages from the storage it shares with the parent.
+Ten times the data, the same time: a median 2.70 s at 0.16 GB and 2.72 s at 1.58 GB, all 20 runs between 2.6 and 3.5 s. A Neon branch copies no data at creation; its compute reads pages from storage it shares with the parent.
 
-The full-table check on a new branch took a median 12.3 seconds at 1.58 GB on a 1 CU compute. We did not time the same check on the parent separately, so we cannot say how much of that was data not yet cached on the branch's compute and how much was the hashing itself.
+Of the median, about 0.5 s is the API call, 1.7 s is waiting for Neon's operations (creating the branch, starting its compute), and 0.5 s is getting the connection string, connecting and querying.
+
+The full-table check on a new branch took a median 12.3 s at 1.58 GB on 1 CU. We did not time it on the parent, so we cannot split it into uncached reads on the branch's compute and the hashing itself.
 
 ### What the others do
 
-For a sense of what copying costs, we timed `CREATE DATABASE ... TEMPLATE` on our own Postgres 18 server, which copies every file of the source database. With the faster `file_copy` strategy it took a median 0.21 seconds, 2.37 seconds and 11.42 seconds at the three sizes, on local SSD. That is quick at these sizes, but it grows with the data, and the copy-on-write branch did not. It is not a model of a managed restore: those provision a new instance, and RDS, for one, makes the instance available first and loads blocks from S3 in the background.
+For a sense of what copying costs, we timed `CREATE DATABASE ... TEMPLATE` on our own Postgres 18 server, which copies every file of the source. With the faster `file_copy` strategy: a median 0.21 s, 2.37 s and 11.42 s at the three sizes, on local SSD. Quick at these sizes, but it grows with the data; the copy-on-write branch did not.
+
+It is not a model of a managed restore. Those provision a new instance, and RDS, for one, makes it available first and loads blocks from S3 in the background.
 
 | Provider              | How you get a copy                                                                                                                 | Carries data                            | On the free tier          |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ------------------------- |
@@ -189,9 +270,46 @@ On Supabase we asked the API directly. A new Free project, Postgres 17.12, answe
 HTTP 402 {"message":"Branching is supported only on the Pro plan or above"}
 ```
 
-We measured Supabase Pro branches in June: [they arrived in about 6.5 seconds, schema only](/posts/neon-vs-supabase-operational-benchmarks), and the `with_data` option failed on a fresh project. If your preview environments need production-shaped data, check that path before you commit to it. The [Neon vs Supabase comparison](/comparisons/neon-vs-supabase) has the rest of that matchup.
+We measured Supabase Pro branches in June: [about 6.5 seconds, schema only](/posts/neon-vs-supabase-operational-benchmarks), and `with_data` failed on a fresh project. If preview environments need production-shaped data, check that path first. The [Neon vs Supabase comparison](/comparisons/neon-vs-supabase) has the rest of that matchup.
 
-A restore-based clone is not useless. It is a full, independent copy you can resize and keep, and on RDS it can be from any second in your retention window. It is the wrong tool for one database per pull request, which is where copy-on-write wins.
+A restore-based clone is still useful: a full, independent copy you can resize and keep, billed as a full instance, and on RDS from any second in your retention window. It is the wrong tool for one database per pull request, where copy-on-write wins.
+
+### Neon: measured restore
+
+The same storage design answers the other question: how fast can you undo a bad change? We loaded the 1.58 GB table into a new Postgres 17 project in aws-eu-central-1. Five times, we read the server's clock, waited 2 seconds, ran `DROP TABLE accounts`, and asked Neon's [instant restore](https://neon.com/docs/guides/branch-restore) API to restore the branch to that timestamp.
+
+The clock ran from the API request to the first query that read the original table's last row, through the branch's pre-restore connection string. Then we compared the row count and per-row hash sum with the values from before the drop.
+
+```chart
+{
+  "type": "dots",
+  "title": "Neon instant restore after DROP TABLE, 1.58 GB: API request to first query on the original data",
+  "unit": "s",
+  "caption": "5 runs, restore to 2 s before the drop, 1 CU compute, Postgres 17, aws-eu-central-1, client in DigitalOcean AMS3, 27 Nov 2026. Every run matched the original row count and per-row hash sum. Source: results/09-neon-restore.jsonl in the repo.",
+  "series": [
+    { "name": "Instant restore", "samples": [15.32, 10.53, 9.71, 9.01, 8.42], "median": 9.71 }
+  ]
+}
+```
+
+On RDS, a point-in-time restore means "creating a new DB instance without modifying the source DB instance" ([AWS docs](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html)). We did not time it. Side by side:
+
+|                         | Neon instant restore (measured)                                                                                    | RDS point-in-time restore (docs)                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| What you get            | The same branch, at the timestamp                                                                                  | A new DB instance; the source is not modified                              |
+| Connection string       | Unchanged; existing connections are interrupted                                                                    | The new instance's endpoint; repoint the application                       |
+| Time                    | Median 9.71 s at 1.58 GB (8.42 to 15.32 s, 5 runs)                                                                 | Not timed; volumes keep loading blocks from S3 after it is available       |
+| Restore point           | We used 2 s before the drop                                                                                        | Up to `LatestRestorableTime`; transaction logs go to S3 every five minutes |
+| Writes after that point | On a backup branch of the pre-restore state; copy them back from there                                             | Still on the untouched source; compare the two before you switch           |
+| How far back            | History window: up to 7 days on Launch, 30 on Scale; Launch bills restore history at $0.20 per GB-month of changes | Any second in your retention window                                        |
+
+Notes on the Neon runs:
+
+- **Where the time went.** Of the median, about 0.4 s was the API call, 8.2 s waiting for Neon's operations, and 1.1 s connecting and querying.
+- **Why slower than a branch (2.72 s).** The operations stop and start the branch's own compute, which a new branch does not need. That is the likely reason, and it is why, as Neon's docs say, existing connections are interrupted.
+- **Run order.** The first run, right after the load, was the slowest; each later run was a little faster.
+- **Checks.** The first connection after the operations worked in every run, and every run matched the original data. The full-table check after the restore took a median 14.3 s on 1 CU.
+- **Setup.** Scale plan account, default 1-day window. The client was in Amsterdam because Frankfurt had no droplet sizes available that day.
 
 ## Major version upgrades: four procedures
 
@@ -213,7 +331,7 @@ Every managed Postgres service does a major upgrade in one of four ways:
 }
 ```
 
-To see what the steps cost before a provider wraps them, we ran three of them on one 4 vCPU droplet with local SSD, Postgres 17.12 to 18.7, three runs at each size. For `pg_upgrade`, the clock runs from stopping the old server to the first answered connection on the new one, and a separate client opened a new connection every 250 ms the whole time.
+To price the steps before a provider wraps them, we ran three on one 4 vCPU droplet with local SSD, Postgres 17.12 to 18.7, three runs per size. For `pg_upgrade`, the clock runs from stopping the old server to the first answered connection on the new one, with a separate client opening a connection every 250 ms.
 
 ```chart
 {
@@ -280,20 +398,36 @@ To see what the steps cost before a provider wraps them, we ran three of them on
 | `pg_dump --statistics` + `pg_restore` |   7.4 s |                                 71.8 s | 217.6 s | Yes, it never stopped           | Kept             |
 | Logical replication                   |         | 102 ms gap after a 40.2 s initial copy |         | Yes, it never stopped           | None             |
 
-Times are medians of three runs. The largest spread between runs at one size was 7.1 seconds for the `pg_upgrade` modes and 32.3 seconds for dump and restore. The `pg_upgrade` command alone took 3.0 s, 2.7 s, 2.9 s in link mode and 3.1 s, 5.5 s, 15.4 s in copy mode; the rest is stopping and starting the servers. Every run matched the source row count and per-row hash sum, and the logical replication runs lost 0 acknowledged rows with 0 failed writes.
+Times are medians of three runs. Every run matched the source row count and per-row hash sum; the logical replication runs lost 0 acknowledged rows with 0 failed writes.
+
+<details>
+<summary>Run-to-run spread, and the pg_upgrade command on its own</summary>
+
+- The largest spread between runs at one size was 7.1 seconds for the `pg_upgrade` modes and 32.3 seconds for dump and restore.
+- The `pg_upgrade` command alone took 3.0 s, 2.7 s, 2.9 s in link mode and 3.1 s, 5.5 s, 15.4 s in copy mode. The rest is stopping and starting the servers.
+
+</details>
 
 What the numbers say:
 
-- **`pg_upgrade --link` barely depends on size.** It hard-links the data files instead of copying them, so most of the time is the catalog: 3.5 s, 3.6 s, 3.4 s at 0.16, 1.58 and 4.71 GB from stop to first answer. Copy mode grows with the data: 3.5 s, 6.7 s, 15.8 s. Swap mode, new in Postgres 18, moves the directories and behaved like link mode.
-- **Link and swap trade the rollback.** In link mode the old data directory is unusable once the new server starts; in swap mode, once `pg_upgrade` starts moving files. Copy mode leaves the old cluster untouched, which is why it needs twice the disk.
-- **Dump and restore grows with the data**: 7.3 seconds, 1 minute 7 seconds, 3 minutes 34 seconds at the three sizes for dump plus restore. No writer ran during these runs, so this is an estimate of the transfer part of a write freeze, not an observed outage; switching the application over comes on top.
-- **Logical replication moves the wait out of the outage.** The initial copy of 10M rows took a median 40.2 seconds while the old server kept taking writes. At the cut-over, the gap between the last write on the old server and the first on the new one was a median 102 ms, of which up to 50 ms is the writer's own pause between inserts, and no acknowledged row was lost. This is one writer on one table on one machine, so it shows the order of magnitude for a subscriber that has caught up, not what a managed switchover takes; AWS says an RDS Blue/Green switchover "typically takes under a minute". Logical replication does not copy DDL or sequence values, which is why the script moves the sequence by hand.
+- **`pg_upgrade --link` barely depends on size.** It hard-links the data files, so most of the time is the catalog: 3.5 s, 3.6 s, 3.4 s from stop to first answer. Copy mode grows with the data: 3.5 s, 6.7 s, 15.8 s. Swap mode, new in Postgres 18, moves the directories and behaved like link mode.
+- **Link and swap trade away the rollback.** The old data directory is unusable once the new server starts (link) or once `pg_upgrade` starts moving files (swap). Copy mode leaves the old cluster untouched, so it needs twice the disk.
+- **Dump and restore grows with the data:** 7.3 s, 1 min 7 s, 3 min 34 s. No writer ran, so this estimates the transfer part of a write freeze, not an observed outage. Switching the application over comes on top.
+- **Logical replication moves the wait out of the outage.** The initial copy of 10M rows took a median 40.2 s while the old server kept taking writes. At cut-over, the gap from the last write on the old server to the first on the new one was a median 102 ms (up to 50 ms of it the writer's own pause between inserts). No acknowledged row was lost.
+  - One writer, one table, one machine: this is the order of magnitude for a caught-up subscriber, not a managed switchover. AWS says an RDS Blue/Green switchover "typically takes under a minute".
+  - It does not copy DDL or sequence values, so the script moves the sequence by hand.
 
-These numbers are for this host and this one-table schema; other hardware and more objects change them. A managed in-place upgrade adds snapshots before and after, pre-checks and an instance restart, and the providers' own estimates are in minutes, not seconds: Supabase says a small project is offline for about 15 minutes, and Crunchy Bridge and Snowflake Postgres say "a few minutes". DigitalOcean says the time "isn't predictable in advance".
+These numbers are for this host and one-table schema; other hardware and more objects change them. A managed in-place upgrade adds snapshots before and after, pre-checks and a restart, and the providers estimate minutes, not seconds:
+
+- Supabase says a small project is offline for about 15 minutes.
+- Crunchy Bridge and Snowflake Postgres say "a few minutes".
+- DigitalOcean says the time "isn't predictable in advance".
 
 ### Neon: measured
 
-Neon "doesn't upgrade a project to a new major version in place, and doesn't support pg_upgrade", in its own words. You create a project on the new version and move the data with its Import Data Assistant (under 10 GB), `pg_dump`/`pg_restore`, or logical replication. We did the dump and restore of the 10M-row table from a Postgres 17 project into a Postgres 18 project, from the droplet in the same region, three times with pg_dump's default flags and three times with `--statistics`, alternating:
+Neon "doesn't upgrade a project to a new major version in place, and doesn't support pg_upgrade", in its own words. You create a project on the new version and move the data with its Import Data Assistant (under 10 GB), `pg_dump`/`pg_restore`, or logical replication.
+
+We dumped the 10M-row table from a Postgres 17 project and restored it into a Postgres 18 project, from the droplet in the same region: three runs with default flags and three with `--statistics`, alternating.
 
 ```chart
 {
@@ -310,9 +444,13 @@ Neon "doesn't upgrade a project to a new major version in place, and doesn't sup
 }
 ```
 
-The new Postgres 18 project was ready in a few seconds. Each dump plus its restore took a median 58.4 seconds with default flags and 57.6 seconds with `--statistics` (the two were timed separately and added), and every run matched the source's row count and per-row hash sum. Most of it was the dump, which compresses on the client; we did not measure whether the client's CPU was the limit. As an estimate, writes would have to stop for that long, plus the time to switch your application over.
+The new 18 project was ready in a few seconds. Dump plus restore took a median 58.4 s with default flags and 57.6 s with `--statistics` (timed separately and added). Every run matched the source's row count and per-row hash sum.
 
-In our test the source project was deleted before the target was created, because the account had one free project slot. In a real migration, keep the old project until the new one has taken over. It is then a copy of your data as of the cut-over, not a rollback: writes made on the new project after the switch are not in it, so going back means reconciling them or replicating them back. If you cannot stop writes for the dump and restore, the logical replication path is the one to rehearse, and a branch is a good place to [rehearse the migration](/posts/rehearse-migrations-on-a-neon-branch) first.
+Most of it was the dump, which compresses on the client; we did not check whether client CPU was the limit. As an estimate, writes would stop for that long, plus the time to switch your application over.
+
+Our test deleted the source project before creating the target, because the account had one free project slot. In a real migration, keep the old project until the new one has taken over. It is then a copy as of the cut-over, not a rollback: writes made on the new project are not in it, so going back means reconciling or replicating them back.
+
+If you cannot stop writes that long, rehearse the logical replication path, and a branch is a good place to [rehearse the migration](/posts/rehearse-migrations-on-a-neon-branch) first.
 
 ### Supabase: no target for our project
 
@@ -320,28 +458,28 @@ The Supabase Management API answered our new Free project's upgrade check with `
 
 ### Your planner statistics
 
-After a major upgrade, the planner needs statistics, and without them it can pick bad plans until autovacuum gets to each table. The docs differ on who runs `ANALYZE`:
+After a major upgrade the planner needs statistics; without them it can pick bad plans until autovacuum reaches each table. Who runs `ANALYZE` differs:
 
 - RDS, Aurora, Cloud SQL and Azure tell you to run it after the upgrade.
 - Aiven runs `ANALYZE` for you, and Crunchy Bridge runs `vacuumdb --analyze-in-stages`.
 
-On stock Postgres, the answer depends on the method. We counted the table's rows in `pg_stats` right after each upgrade, with autovacuum off on the new local server so it could not fill them in:
+On stock Postgres it depends on the method. We counted the table's rows in `pg_stats` right after each upgrade, with autovacuum off on the new local server so it could not fill them in:
 
 - After `pg_upgrade` from 17 to 18, all four columns had statistics, in every run at every size. Postgres 18's `pg_upgrade` carries them over.
 - After `pg_dump`/`pg_restore` with default flags, and after logical replication, there were none.
 - After `pg_dump --statistics`, all four columns had them, locally and on Neon. On Neon we did not turn autovacuum off, but it had not added statistics in the default-flag runs either.
 
-We checked that the statistics were present, not that they were identical to the old ones. Whether your provider's upgrade keeps them depends on how it calls `pg_upgrade`, and we could not see that. `ANALYZE` on the 30M-row table took 1.3 to 4.2 seconds across all runs. Run it.
+We checked that statistics were present, not identical to the old ones. Whether your provider's upgrade keeps them depends on how it calls `pg_upgrade`, which we could not see. `ANALYZE` on the 30M-row table took 1.3 to 4.2 s across all runs. Run it.
 
 ### A trap if you upgrade your own servers
 
-Postgres 18's `initdb` turns data checksums on by default, and Postgres 17's did not. A `pg_upgrade --check` from a default 17 cluster to a default 18 cluster stops with:
+Postgres 18's `initdb` enables data checksums by default; 17's did not. So `pg_upgrade --check` from a default 17 cluster to a default 18 cluster stops with:
 
 ```text
 old cluster does not use data checksums but the new one does
 ```
 
-Create the new cluster with `--no-data-checksums` (or enable checksums on the old one first). Managed services handle this; a self-managed upgrade, or a container image that runs `initdb` for you, has to.
+Create the new cluster with `--no-data-checksums`, or enable checksums on the old one first. Managed services handle this. A self-managed upgrade, or a container image that runs `initdb` for you, has to.
 
 | Provider              | Major upgrade                                                               | Newest major we found               | After a successful upgrade                                                 |
 | --------------------- | --------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------- |
@@ -371,24 +509,37 @@ Before any of these, our [zero-downtime Postgres migrations checklist](/checklis
 | Google Cloud                                    | No free Cloud SQL; $300 in credits and a 30-day trial instance                                                                                                   |
 | DigitalOcean, Crunchy Bridge, PlanetScale, Xata | None (PlanetScale starts at $5, Crunchy Bridge Hobby at $9, Xata has a trial)                                                                                    |
 
-Three free tiers have no end date: Neon's, Supabase's and Aiven's. They are different shapes. Neon gives many small projects that sleep when idle, Supabase gives two that pause after a week, and Aiven gives one small server that powers off when you stop using it.
+Three free tiers have no end date, in different shapes: Neon gives many small projects that sleep when idle, Supabase two that pause after a week, and Aiven one small server that powers off when unused.
 
 ## What we could not measure
 
-- **No managed in-place upgrade was timed.** Neon has no in-place upgrade (we timed its dump-and-restore path), our Supabase Free project had no eligible target, and the other providers were not benchmarked. The local numbers show the `pg_upgrade` step on one host, not a managed service's downtime.
-- **No branch or clone on RDS, Aurora, Cloud SQL, Azure, DigitalOcean, Crunchy Bridge, Aiven, PlanetScale or Xata was timed.** The table describes them from their docs.
-- **Price is list price only.** No egress, no reserved or committed-use discounts, no support plans, no separately billed backup storage or restore history. A one-year RDS reservation changes the RDS row; we did not model it.
-- **One region, one day.** The Neon numbers come from one session in aws-eu-central-1. The branch times were tight (2.6 to 3.5 seconds across all 20 runs), but another region or another day can differ.
-- **One table.** Upgrade times grow with the number of tables and indexes, which our dataset does not have.
+- **No managed in-place upgrade was timed.** Neon has none (we timed its dump-and-restore path), our Supabase Free project had no eligible target, and we did not benchmark the others. The local numbers are the `pg_upgrade` step on one host, not a managed service's downtime.
+- **No branch, clone or point-in-time restore outside Neon was timed.** RDS, Aurora, Cloud SQL, Azure, DigitalOcean, Crunchy Bridge, Aiven, PlanetScale and Xata are described from their docs. The Neon restore was timed at one size, so it says nothing about how restore time grows with data.
+- **List price only.** No egress, reserved or committed-use discounts, support plans, separately billed backup storage or restore history. A one-year RDS reservation changes the RDS row; we did not model it.
+- **One region, two days.** Neon branch and upgrade numbers come from one session in aws-eu-central-1, restore numbers from a second session four days later with the client in Amsterdam. Branch times were tight (2.6 to 3.5 s over 20 runs), but another region or day can differ.
+- **One table.** Upgrade times grow with tables and indexes, which our dataset lacks.
 - **Sizes do not match exactly.** Every mismatch is in the notes above and in `prices/plans.mjs`.
 
-We also threw away a first full run. A security review of the repo found that `pg_dump` and `pg_restore` connected with `sslmode=require`, which encrypts but does not check the server's certificate, and our own fact check found that the data check summed only two columns, and that the filler (one repeated character) made dumps compress unrealistically well. We fixed all three and ran every stage again. The first run's files are in `results/run1-superseded/` for comparison; the change in proportion was largest for the Neon dump, from 17 to 47 seconds, most likely because the new filler compresses far less (the first run did not record dump size).
+We also threw away a first full run, fixed three problems, and reran every stage:
+
+- `pg_dump` and `pg_restore` used `sslmode=require`, which encrypts but does not check the server's certificate (found by a security review of the repo).
+- The data check summed only two columns (found by our fact check).
+- The filler, one repeated character, made dumps compress unrealistically well (also the fact check).
+
+The first run's files are in `results/run1-superseded/`. The biggest proportional change was the Neon dump, from 17 to 47 seconds, most likely because the new filler compresses far less (the first run did not record dump size).
 
 ## So which one
 
-- **You want RDS without RDS:** Cloud SQL, Crunchy Bridge, DigitalOcean and Azure cost about the same with a standby. Pick on the cloud you already use and on how the upgrade works. On Crunchy Bridge, writes stop while `pg_upgrade` runs on a hidden standby and during the failover, and if the upgrade fails they resume on the original server. DigitalOcean's in-place upgrade has no rollback once it starts.
-- **You want branches with data for every pull request:** Neon and Xata do copy-on-write, and so does Aurora up to 15 clones per source. On Supabase and PlanetScale, plan for data-less branches or restores.
-- **You are cost-bound and can live without a standby:** Supabase costs about half the RDS HA total at M and L, and the always-on Neon Launch configuration 78% to 81% of it, before restore history, and less when it scales to zero. Know what happens when the one node fails, and test it.
-- **You are on an old major version:** price the Extended Support months on RDS, Cloud SQL or Azure against an upgrade you will have to do anyway.
+| If you                                         | Look at                                                         | Why                                                                                                                                                                                                          |
+| ---------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Want RDS without RDS                           | Cloud SQL, Crunchy Bridge, DigitalOcean, Azure                  | About the same price with a standby. Pick on your cloud and the upgrade method (below).                                                                                                                      |
+| Want branches with data for every pull request | Neon, Xata (copy-on-write); Aurora (up to 15 clones per source) | On Supabase and PlanetScale, plan for data-less branches or restores.                                                                                                                                        |
+| Are cost-bound and can live without a standby  | Supabase, Neon                                                  | Supabase (one node) is about half the RDS HA total at M and L. Always-on Neon Launch is 78% to 81% of it before restore history, and about $107 at M scaled to zero for a database busy 8 hours on weekdays. |
+| Are on an old major version                    | Extended Support on RDS, Cloud SQL or Azure                     | Price those months against the upgrade you will have to do anyway.                                                                                                                                           |
+
+Before you commit, check two things:
+
+- **The upgrade path.** On Crunchy Bridge, writes stop while `pg_upgrade` runs on a hidden standby and during the failover; if the upgrade fails, they resume on the original server. DigitalOcean's in-place upgrade has no rollback once it starts.
+- **A compute failure.** Neon is one compute on storage replicated across zones; Neon says a failed compute is restarted or moved on the same storage, typically in seconds to minutes. No standby compute, and no uptime SLA on Launch. On Supabase or Neon, know what happens when the compute fails, and test it.
 
 Whichever you pick, rehearse the next major upgrade before you need it. That is the operation the price list does not show, and the one most likely to decide whether you move again.
