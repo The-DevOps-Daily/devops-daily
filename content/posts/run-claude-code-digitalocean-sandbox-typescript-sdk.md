@@ -16,7 +16,7 @@ tags:
   - DevOps
   - DigitalOcean
   - AI Agents
-  - Claude Code
+  - AI
   - TypeScript
   - Sandboxes
   - Security
@@ -248,7 +248,7 @@ The original tests still run in the checker, for the record only, with the TAP r
 
 Its comment and final message also mention a case the tests do not cover, fractional byte counts below 1 KiB. Our inputs are whole numbers, so we did not check that part.
 
-This check proves something specific: for 220 inputs the agent could not know in advance, its function returned our reference answers. It is not tamper-proof. The probe loads the agent's module, as root, in a throwaway sandbox that holds no keys, and that module could rewrite what the probe prints. To pass, it would still have to produce the right answers. The verdict in `04-verify.ts` is the answer match; the file hashes are reported next to it. In the [issue-to-PR runs on Managed Agents](/posts/issue-to-pull-request-digitalocean-managed-agents), an agent produced a pull request that passed its tests and was still wrong, which is why this step exists.
+This check proves something specific: for 220 inputs, 200 of them random from a seed the agent never saw, the answers the probe printed matched our reference. It is not tamper-proof. The probe loads the agent's module into its own process, as root, in a throwaway sandbox that holds no keys, and that module could rewrite what the probe prints. To pass, it would still have to print the right answers. The verdict in `04-verify.ts` is the answer match; the file hashes are reported next to it.
 
 ## Step 6: preview the app through a port-forward
 
