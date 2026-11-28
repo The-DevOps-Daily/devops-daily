@@ -74,6 +74,8 @@ export function useNewsletterSubscribe(location: SignupLocation) {
       const res = await fetch(SUBMIT_URL, {
         method: 'POST',
         body: formData,
+        // Without it smtpfast answers errors as HTML, and the real reason is lost.
+        headers: { Accept: 'application/json' },
         signal: controller.signal,
       });
       if (!res.ok) {
