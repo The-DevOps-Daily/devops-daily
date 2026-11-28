@@ -423,7 +423,7 @@ aws s3 cp "$FILE" "s3://example-db-backups/postgres/$(basename "$FILE")"
 rm -f "$FILE"
 ```
 
-Give the server's credentials permission to upload but not to delete, and turn on S3 Object Lock (or your provider's equivalent) so that nobody can delete or overwrite a backup during its retention period. Versioning alone is not enough: anyone allowed to delete object versions can still remove them. Set a lifecycle rule to expire old backups.
+Give the server's credentials permission to upload but not to delete, and turn on S3 Object Lock (or your provider's equivalent) so that nobody can delete or overwrite a backup during its retention period. Versioning alone is not enough: anyone allowed to delete object versions can still remove them. Set a lifecycle rule to expire old backups. For what happens when backups sit where one token can delete them, see our [rebuild of an AI agent deleting a database and its backups](/posts/ai-agent-deleted-database-and-backups-what-survives).
 
 ### Incremental Backups with pgBackRest
 
