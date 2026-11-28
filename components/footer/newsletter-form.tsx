@@ -48,7 +48,7 @@ export function NewsletterForm({ bare, headline, description, source }: Props = 
         <div className="rounded-md border border-primary/30 bg-primary/[0.06] px-4 py-3 text-sm text-foreground">
           <p className="font-semibold mb-1">Thanks for subscribing!</p>
           <p className="text-muted-foreground text-xs">
-            Check your inbox for a confirmation email — click the link inside to finish signing up.
+            Check your inbox for a confirmation email. Click the link inside to finish signing up.
           </p>
         </div>
       ) : (

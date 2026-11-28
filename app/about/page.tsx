@@ -74,7 +74,7 @@ const offerings = [
     icon: Code2,
     title: 'Hands-On Labs',
     description:
-      '15+ interactive exercises where you practice real-world scenarios — from Git workflows to Redis caching strategies to Linux performance troubleshooting. Learn by doing.',
+      '15+ interactive exercises where you practice real-world scenarios, from Git workflows to Redis caching strategies to Linux performance troubleshooting. Learn by doing.',
     color: 'green',
     href: '/exercises',
     cta: 'Start a Lab',

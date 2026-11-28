@@ -65,7 +65,7 @@ export default function LogAggregationPipelineSimulatorPage() {
       fallbackDescription="Follow logs through collection, parsing, buffering, sharded indexing, and search."
       educational={<LogAggregationEducational />}
       seoLearningPoints={seoLearningPoints}
-      shareText="See how production logs move from applications to searchable shards—and where parser failures and backpressure can lose them."
+      shareText="See how production logs move from applications to searchable shards, and where parser failures and backpressure can lose them."
     >
       <LogAggregationPipelineSimulator />
     </SimulatorShell>

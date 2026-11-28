@@ -247,7 +247,7 @@ const STARTER_LINKS: Array<{
   },
   {
     title: 'Tool Comparisons',
-    copy: 'Side-by-side breakdowns of competing tools — Snyk vs Trivy, Grafana vs Kibana, Loki vs Splunk, and dozens more.',
+    copy: 'Side-by-side breakdowns of competing tools: Snyk vs Trivy, Grafana vs Kibana, Loki vs Splunk, and dozens more.',
     href: '/comparisons',
     cta: 'Browse comparisons',
   },
@@ -394,7 +394,7 @@ function UnsubscribedAlternates() {
     {
       icon: BookOpen,
       title: 'Just the site',
-      copy: 'No emails, no subscriptions — just bookmark devops-daily.com and check in when you feel like it.',
+      copy: 'No emails, no subscriptions. Just bookmark devops-daily.com and check in when you feel like it.',
       href: '/',
       cta: 'Back to the site',
     },

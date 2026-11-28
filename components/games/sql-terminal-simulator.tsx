@@ -308,7 +308,7 @@ export const LESSONS: Lesson[] = [
         hint: 'Use "DELETE FROM orders WHERE status = \'cancelled\';".',
         expectedCommand: "DELETE FROM orders WHERE status = 'cancelled';",
         explanation:
-          'DELETE removes matching rows and reports the count ("DELETE 2" — two orders are cancelled). Again, nothing is persisted here so the lessons stay reproducible.',
+          'DELETE removes matching rows and reports the count ("DELETE 2": two orders are cancelled). Again, nothing is persisted here so the lessons stay reproducible.',
       },
     ],
   },
@@ -438,7 +438,7 @@ export const CHALLENGES: Challenge[] = [
   {
     id: 'category-stats',
     question:
-      'For each product category, show the count of products and the average price rounded to 2 decimals — highest average first.',
+      'For each product category, show the count of products and the average price rounded to 2 decimals, highest average first.',
     solution:
       'SELECT category, count(*) AS n, round(avg(price),2) AS avg_price FROM products GROUP BY category ORDER BY avg_price DESC',
   },
@@ -477,7 +477,7 @@ function gradeChallenge(
     lines.push({ type: 'error', content: `ERROR:  ${userResult.error}`, timestamp: now() });
     lines.push({
       type: 'error',
-      content: "Not quite — that query didn't run. Fix the error and try again.",
+      content: "Not quite: that query didn't run. Fix the error and try again.",
       timestamp: now(),
     });
     return { lines, solved: false };
@@ -486,7 +486,7 @@ function gradeChallenge(
     lines.push({ type: 'output', content: userResult.command, timestamp: now() });
     lines.push({
       type: 'error',
-      content: 'Not quite — a challenge expects a SELECT query that returns rows.',
+      content: 'Not quite: a challenge expects a SELECT query that returns rows.',
       timestamp: now(),
     });
     return { lines, solved: false };
